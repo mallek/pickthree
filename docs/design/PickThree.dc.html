@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0f1019;font-family:"Inter",system-ui,sans-serif;color:#e9e9ed}
+a{color:#9184d9;text-underline-offset:3px}a:hover{color:#b5abfc}
+[data-theme="dark"]{--bg:#161826;--surface:#232532;--surface2:#2c2e3d;--text:#e9e9ed;--muted:#9397ab;--faint:#75798c;--divider:rgba(233,233,237,.16);--accent:#9184d9;--accent-text:#d2cefd;--accent-tint:#2b2741;--accent-tint2:#423a6a;--warn:#d9b384;--warn-tint:#3a3224;--shadow-md:0 0 0 1px #595d6c,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #9397ab,0 16px 40px rgba(0,0,0,.65);--overlay:rgba(9,10,16,.6)}
+[data-theme="light"]{--bg:#f3f5fe;--surface:#fbfbfe;--surface2:#e4e7f5;--text:#292b31;--muted:#595d6c;--faint:#75798c;--divider:rgba(41,43,49,.14);--accent:#796cbf;--accent-text:#5d5294;--accent-tint:#e7e5fe;--accent-tint2:#d2cefd;--warn:#8a6a2c;--warn-tint:#f5ead4;--shadow-md:0 0 0 1px #cfd3e5,0 6px 18px rgba(41,43,49,.12);--shadow-lg:0 0 0 1px #b2b6ca,0 16px 40px rgba(41,43,49,.18);--overlay:rgba(41,43,49,.35)}
+.pt-screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font-family:"Inter",system-ui,sans-serif;font-size:15px;line-height:1.45}
+.pt-scroll{flex:1;overflow-y:auto;scrollbar-width:none}.pt-scroll::-webkit-scrollbar{display:none}
+.pt-tap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.pt-tap:active{filter:brightness(1.15)}
+.pt-in{animation:ptIn .22s ease-out}
+@keyframes ptIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes ptSheet{from{transform:translateY(100%)}to{transform:none}}
+input[type=range]{accent-color:var(--accent)}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:18px;padding:28px 16px 48px;box-sizing:border-box">
+  <div style="width:100%;max-width:760px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:baseline;gap:10px"><span style="font-weight:600;font-size:17px;letter-spacing:-.01em">PickThree</span><span style="font-size:12px;color:#9397ab">pickthree.gg · Great League team builder · interactive prototype</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <a href="PickThree Tokens and Components.dc.html" style="font-size:13px">Tokens & components →</a>
+      <button class="pt-tap" onClick="{{ toggleTheme }}" style="min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #9184d9;background:transparent;color:#9184d9;font:500 13px Inter,system-ui,sans-serif;cursor:pointer">{{ themeLabel }}</button>
+    </div>
+  </div>
+  <div style="width:100%;max-width:760px;display:flex;gap:6px;flex-wrap:wrap">
+    <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="7">
+      <button class="pt-tap" onClick="{{ j.go }}" style="min-height:32px;padding:0 10px;border-radius:7px;border:1px solid {{ j.border }};background:{{ j.bg }};color:{{ j.color }};font:500 12px Inter,system-ui,sans-serif;cursor:pointer">{{ j.label }}</button>
+    </sc-for>
+  </div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w390 }}" height="{{ h844 }}" dark="{{ isDark }}" hint-size="390px,844px">
+    <div data-theme="{{ theme }}" style="position:relative;width:390px;height:844px;overflow:hidden">
+
+      <!-- 1 · Welcome / Import -->
+      <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+      <div class="pt-screen pt-in" data-screen-label="Welcome">
+        <div class="pt-scroll" style="padding:72px 24px 24px;display:flex;flex-direction:column;gap:28px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="display:flex;gap:-4px"><span style="width:14px;height:14px;border-radius:50%;background:#D685AD;display:inline-block"></span><span style="width:14px;height:14px;border-radius:50%;background:#6F35FC;display:inline-block;margin-left:-4px"></span><span style="width:14px;height:14px;border-radius:50%;background:#C22E28;display:inline-block;margin-left:-4px"></span></div>
+              <span style="font-size:13px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">PickThree</span>
+            </div>
+            <h1 style="margin:0;font-size:30px;line-height:1.12;font-weight:500;letter-spacing:-.015em;text-wrap:pretty">Three Pokemon. Pick them from what you already own.</h1>
+            <p style="margin:0;color:var(--muted);font-size:15px;text-wrap:pretty">Great League teams built from your collection, with the moves, the order, and the cost.</p>
+          </div>
+          <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0">
+            <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+              <li style="display:grid;grid-template-columns:28px 1fr;gap:14px;padding:14px 0;border-top:1px solid var(--divider)">
+                <span style="width:28px;height:28px;border-radius:50%;border:1px solid var(--accent);color:var(--accent);display:grid;place-items:center;font-size:13px;font-weight:500">{{ s.n }}</span>
+                <div><div style="font-weight:500">{{ s.t }}</div><div style="font-size:13px;color:var(--muted);text-wrap:pretty">{{ s.d }}</div></div>
+              </li>
+            </sc-for>
+          </ol>
+          <a href="#" onClick="{{ noop }}" style="font-size:14px;color:var(--accent-text);text-decoration:underline;text-underline-offset:3px">How to export from Poke Genie</a>
+        </div>
+        <div style="padding:12px 20px 44px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goReport }}" style="min-height:52px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent);display:inline-block"></span>Upload Poke Genie CSV</button>
+          <button class="pt-tap" onClick="{{ goReport }}" style="min-height:44px;border-radius:12px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Paste CSV text</button>
+          <p style="margin:2px 0 0;text-align:center;font-size:12px;color:var(--faint);text-wrap:pretty">Your file is processed on your phone and never uploaded anywhere.</p>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 2 · Import report -->
+      <sc-if value="{{ isReport }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Import report">
+        <div class="pt-scroll" style="padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+          <div><div style="font-size:12px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase">Import finished</div><h2 style="margin:4px 0 0;font-size:26px;font-weight:500;line-height:1.15;letter-spacing:-.015em">331 Pokemon ready to build teams from</h2></div>
+          <div style="display:flex;flex-direction:column;background:var(--surface);border-radius:12px;overflow:hidden">
+            <sc-for list="{{ reportRows }}" as="r" hint-placeholder-count="5">
+              <div style="border-top:1px solid var(--divider)">
+                <div class="pt-tap" onClick="{{ r.toggle }}" style="display:grid;grid-template-columns:52px 1fr 20px;align-items:center;gap:12px;min-height:52px;padding:8px 14px;cursor:{{ r.cursor }}">
+                  <span style="font-size:20px;font-weight:500;color:{{ r.numColor }};font-variant-numeric:tabular-nums">{{ r.n }}</span>
+                  <div><div style="font-size:15px">{{ r.label }}</div><sc-if value="{{ r.sub }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:var(--muted)">{{ r.sub }}</div></sc-if></div>
+                  <span style="color:var(--faint);font-size:16px;text-align:center;transform:rotate({{ r.chev }}deg);transition:transform .2s">⌄</span>
+                </div>
+                <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+                  <div class="pt-in" style="padding:0 14px 14px 14px;display:flex;flex-direction:column;gap:10px">
+                    <div style="font-size:14px;color:var(--text);background:var(--accent-tint);border-radius:8px;padding:10px 12px;text-wrap:pretty">{{ r.fix }}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px">
+                      <sc-for list="{{ r.mons }}" as="m" hint-placeholder-count="4">
+                        <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:999px;border:1px solid var(--divider);font-size:13px"><span style="width:16px;height:16px;border-radius:50%;background:{{ m.bg }};display:inline-block"></span>{{ m.name }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin:0;font-size:13px;color:var(--muted);text-wrap:pretty">IVs are the three hidden stats Poke Genie reads from the appraisal screen. Without them, PickThree cannot rank a Pokemon.</p>
+        </div>
+        <div style="padding:12px 20px 44px;border-top:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goTeams }}" style="width:100%;min-height:52px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer">Show my teams</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 3 · Teams -->
+      <sc-if value="{{ isTeams }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Teams">
+        <div style="padding:60px 20px 10px;display:flex;flex-direction:column;gap:12px;background:var(--bg);border-bottom:1px solid var(--divider);z-index:2">
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Your teams</h2><span style="font-size:12px;color:var(--muted)">{{ teamCount }} from 331 Pokemon</span></div>
+          <div style="display:inline-flex;border:1px solid var(--divider);border-radius:8px;overflow:hidden;align-self:flex-start">
+            <span style="padding:7px 14px;font-size:13px;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);min-height:36px;display:flex;align-items:center;white-space:nowrap">Great League</span>
+            <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Ultra <span style="font-size:10px;opacity:.8">soon</span></span>
+            <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Master <span style="font-size:10px;opacity:.8">soon</span></span>
+          </div>
+          <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 4px">
+            <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+              <button class="pt-tap" onClick="{{ c.toggle }}" style="flex:none;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};font:500 13px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div class="pt-scroll" style="padding:14px 20px 110px;display:flex;flex-direction:column;gap:14px">
+          <sc-if value="{{ noTeams }}" hint-placeholder-val="{{ false }}"><div style="padding:32px 12px;text-align:center;color:var(--muted);font-size:14px;text-wrap:pretty">No team fits these filters. Loosen one to see recommendations again.</div></sc-if>
+          <sc-for list="{{ teams }}" as="t" hint-placeholder-count="3">
+            <div class="pt-tap" onClick="{{ t.open }}" style="background:var(--surface);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;cursor:pointer;box-shadow:{{ t.shadow }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span style="display:inline-flex;align-items:center;gap:6px;flex:none"><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:12px;letter-spacing:.02em;white-space:nowrap;background:{{ t.fitBg }};color:{{ t.fitColor }};border:1px solid {{ t.fitBorder }}">{{ t.fitLabel }}</span><span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;letter-spacing:.02em;white-space:nowrap;color:var(--muted);border:1px solid var(--divider)">{{ t.structureLabel }}</span></span>
+                <span style="text-align:right;display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:12px;color:var(--text)">{{ t.difficulty }} to build</span><span style="font-size:11px;color:var(--muted);text-wrap:pretty;max-width:150px">{{ t.diffWhy }}</span></span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <sc-for list="{{ t.slots }}" as="p" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+                    <span style="width:52px;height:52px;border-radius:50%;background:{{ p.bg }};box-shadow:{{ p.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:18px;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ p.initial }}</span>
+                    <span style="font-size:13px;font-weight:500;line-height:1.2;text-wrap:balance">{{ p.name }}</span>
+                    <span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">{{ p.role }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ t.first }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:12px;color:var(--muted);text-align:center;text-wrap:pretty">Lead opens the battle · Safe Switch answers a bad start · Closer finishes once shields are gone. Balanced means each covers a different part of the meta.</p></sc-if>
+              <sc-if value="{{ t.firstABB }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:12px;color:var(--muted);text-align:center;text-wrap:pretty">An ABB line: the back line (your Safe Switch and Closer) is picked to beat whatever counters the lead, so the opponent’s answer loses either way.</p></sc-if>
+              <p style="margin:0;font-size:14px;text-wrap:pretty">{{ t.why }}</p>
+              <div style="border-top:1px solid var(--divider);padding-top:10px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px"><span>{{ t.costLine }}</span><span style="color:var(--accent);flex:none">Details ›</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 4 · Team detail -->
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Team detail">
+        <div style="padding:54px 12px 8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goTeams }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px">‹ Teams</button>
+          <span style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center"><span style="font-weight:500;font-size:15px">{{ team.headLine }}</span><span style="font-size:11px;color:var(--muted)">{{ team.subLine }}</span></span><span style="width:70px"></span>
+        </div>
+        <div class="pt-scroll" style="padding:16px 20px 110px;display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ team.slots }}" as="p" hint-placeholder-count="3">
+              <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:start">
+                  <span style="width:48px;height:48px;border-radius:50%;background:{{ p.bg }};box-shadow:{{ p.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:17px;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ p.initial }}</span>
+                  <div><span style="font-size:11px;color:var(--accent-text);letter-spacing:.08em;text-transform:uppercase">{{ p.order }} · {{ p.role }}</span>
+                    <div style="font-size:17px;font-weight:500">{{ p.name }}</div>
+                    <div style="font-size:13px;color:var(--muted);text-wrap:pretty">{{ p.roleWhy }}</div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;border-top:1px solid var(--divider)">
+                  <div style="display:flex;align-items:center;min-height:40px;font-size:14px;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Fast</span>{{ p.fast }}</div>
+                  <sc-for list="{{ p.charged }}" as="m" hint-placeholder-count="2">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px;font-size:14px;border-top:1px solid var(--divider)">
+                      <span style="display:flex;align-items:center;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Charged</span>{{ m.name }}<sc-if value="{{ m.tm }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:{{ m.tmBg }};color:{{ m.tmColor }}">{{ m.tm }}</span></sc-if></span>
+                      <span style="font-size:12px;color:var(--muted);flex:none">{{ m.countLine }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="border-top:1px solid var(--divider);padding-top:10px;display:flex;flex-direction:column;gap:4px;font-size:13px">
+                  <div style="display:flex;justify-content:space-between;gap:8px"><span style="color:var(--muted)">Yours</span><span style="text-align:right">{{ p.spec }}<sc-if value="{{ p.flagLine }}" hint-placeholder-val="{{ false }}"><span style="margin-left:6px;color:var(--warn)">{{ p.flagLine }}</span></sc-if></span></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px"><span style="color:var(--muted)">To build</span><span style="text-align:right">{{ p.cost }}</span></div>
+                </div>
+              </div>
+            </sc-for>
+            <p style="margin:0;font-size:12px;color:var(--muted);text-wrap:pretty">“Fairy Wind ×7” means seven fast moves to charge that move. An Elite TM teaches a move the Pokemon can no longer learn normally. XL Candy powers up past level 40. IV rank compares your specimen with every possible one for Great League.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><h3 style="margin:0;font-size:17px;font-weight:500">Team structure</h3><span style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--divider);color:var(--muted)">{{ team.structureLabel }}</span></div>
+            <sc-if value="{{ team.isABB }}" hint-placeholder-val="{{ false }}">
+              <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><span style="width:40px;height:40px;border-radius:50%;background:{{ team.leadBg }};box-shadow:{{ team.leadRing }};display:block"></span><span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">Lead</span></div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <span style="font-size:12px;color:var(--muted)">Beaten by</span>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ team.counters }}" as="k" hint-placeholder-count="3"><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:999px;border:1px solid var(--divider);font-size:13px"><span style="width:18px;height:18px;border-radius:50%;background:{{ k.bg }};display:inline-block"></span>{{ k.name }}</span></sc-for></div>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;border-top:1px solid var(--divider);padding-top:12px">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="display:flex"><sc-for list="{{ team.backLine }}" as="p" hint-placeholder-count="2"><span style="width:40px;height:40px;border-radius:50%;background:{{ p.bg }};box-shadow:{{ p.ring }};border:2px solid var(--surface);margin-left:-10px;display:block"></span></sc-for></div><span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">Back line</span></div>
+                  <div style="font-size:14px;text-wrap:pretty">Both your back-line Pokemon beat these.<span style="display:block;font-size:12px;color:var(--muted);margin-top:4px">The back line is your Safe Switch and Closer together. Whatever the opponent uses to answer {{ team.leadName }}, you switch and win, so you never need to guess.</span></div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ team.isABC }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <sc-for list="{{ team.slices }}" as="sl" hint-placeholder-count="3">
+                  <div style="background:var(--surface);border-radius:12px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+                    <span style="width:32px;height:32px;border-radius:50%;background:{{ sl.bg }};box-shadow:{{ sl.ring }};display:block"></span>
+                    <span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">{{ sl.role }}</span>
+                    <span style="font-size:12px;color:var(--muted);text-wrap:balance;line-height:1.3">covers {{ sl.label }}</span>
+                    <div style="display:flex;justify-content:center"><sc-for list="{{ sl.mons }}" as="k" hint-placeholder-count="2"><span title="{{ k.name }}" style="width:22px;height:22px;border-radius:50%;background:{{ k.bg }};border:2px solid var(--surface);margin-left:-6px;display:block"></span></sc-for></div>
+                  </div>
+                </sc-for>
+              </div>
+              <p style="margin:0;font-size:12px;color:var(--muted);text-wrap:pretty">Balanced: each Pokemon covers a different slice of the meta, so you switch to whichever one fits the opponent’s lead.</p>
+            </sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <h3 style="margin:0;font-size:17px;font-weight:500">Key wins</h3>
+            <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px">
+              <sc-for list="{{ team.wins }}" as="k" hint-placeholder-count="4">
+                <div style="flex:none;width:140px;background:var(--surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="width:32px;height:32px;border-radius:50%;background:{{ k.bg }};display:block"></span><span style="font-size:13px;font-weight:500">{{ k.name }}</span><span style="font-size:12px;color:var(--muted);text-wrap:pretty">{{ k.line }}</span></div>
+              </sc-for>
+            </div>
+            <h3 style="margin:8px 0 0;font-size:17px;font-weight:500">Key threats</h3>
+            <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px">
+              <sc-for list="{{ team.threats }}" as="k" hint-placeholder-count="3">
+                <div style="flex:none;width:160px;background:var(--surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px dashed var(--divider)"><span style="width:32px;height:32px;border-radius:50%;background:{{ k.bg }};display:block"></span><span style="font-size:13px;font-weight:500">{{ k.name }}</span><span style="font-size:12px;color:var(--muted);text-wrap:pretty">{{ k.line }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-size:17px;font-weight:500">Why this team</h3><p style="margin:0;font-size:15px;text-wrap:pretty">{{ team.why }}</p></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h3 style="margin:0 0 4px;font-size:17px;font-weight:500">Alternatives you own</h3>
+            <sc-for list="{{ team.slots }}" as="p" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--divider)">
+                <span style="width:36px;height:36px;border-radius:50%;background:{{ p.altBg }};display:block"></span>
+                <div><div style="font-size:12px;color:var(--muted)">Instead of {{ p.name }} as {{ p.role }}</div><div style="font-size:14px;text-wrap:pretty">{{ p.altLine }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;overflow:hidden">
+            <button class="pt-tap" onClick="{{ toggleAssumptions }}" style="width:100%;min-height:48px;padding:0 14px;border:0;background:transparent;color:var(--text);font:500 14px Inter,system-ui,sans-serif;cursor:pointer;display:flex;justify-content:space-between;align-items:center"><span>Assumptions and detail</span><span style="color:var(--faint);transform:rotate({{ assumptionsChev }}deg);transition:transform .2s">⌄</span></button>
+            <sc-if value="{{ assumptionsOpen }}" hint-placeholder-val="{{ false }}">
+              <div class="pt-in" style="padding:0 14px 14px;display:flex;flex-direction:column;gap:12px;font-size:13px;color:var(--muted)">
+                <div><span style="color:var(--text)">Shields</span> · 1 shield each. A shield blocks one charged move.</div>
+                <div><span style="color:var(--text)">Opponent meta</span> · PvPoke Great League top 48, 10 Sep 2026</div>
+                <div><span style="color:var(--text)">IVs</span> · Your exact specimens vs. opponents at their best IVs</div>
+                <div style="display:flex;flex-direction:column;gap:6px"><span style="color:var(--text)">Matchup grid</span>
+                  <div style="display:grid;grid-template-columns:76px repeat(4,1fr);gap:3px;font-size:11px">
+                    <span></span>
+                    <sc-for list="{{ gridCols }}" as="g" hint-placeholder-count="4"><span style="text-align:center;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g }}</span></sc-for>
+                    <sc-for list="{{ gridRows }}" as="row" hint-placeholder-count="3">
+                      <span style="align-self:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">{{ row.name }}</span>
+                      <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="4"><span style="height:30px;border-radius:5px;display:grid;place-items:center;background:{{ c.bg }};color:{{ c.color }};font-weight:500">{{ c.label }}</span></sc-for>
+                    </sc-for>
+                  </div>
+                  <span style="font-size:11px">W wins · L loses · ~ close, decided by shields</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 5 · Collection -->
+      <sc-if value="{{ isCollection }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Collection">
+        <div style="padding:60px 20px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--divider)">
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Collection</h2><span style="font-size:12px;color:var(--muted)">{{ rowCount }} shown</span></div>
+          <input value="{{ query }}" onChange="{{ setQuery }}" placeholder="Search your Pokemon" style="width:100%;min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);color:var(--text);font:400 15px Inter,system-ui,sans-serif;outline:none;box-sizing:border-box">
+          <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 4px">
+            <sc-for list="{{ verdictChips }}" as="c" hint-placeholder-count="6">
+              <button class="pt-tap" onClick="{{ c.toggle }}" style="flex:none;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};font:500 13px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)">
+            <sc-for list="{{ toggles }}" as="c" hint-placeholder-count="3"><button class="pt-tap" onClick="{{ c.toggle }}" style="min-height:32px;padding:0 10px;border-radius:7px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};font:500 12px Inter,system-ui,sans-serif;cursor:pointer">{{ c.label }}</button></sc-for>
+            <button class="pt-tap" onClick="{{ cycleSort }}" style="margin-left:auto;min-height:32px;padding:0 10px;border-radius:7px;border:0;background:transparent;color:var(--accent);font:500 12px Inter,system-ui,sans-serif;cursor:pointer">Sort: {{ sortLabel }} ⇅</button>
+          </div>
+        </div>
+        <div class="pt-scroll" style="padding:4px 20px 110px;display:flex;flex-direction:column">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+            <div class="pt-tap" onClick="{{ r.open }}" style="display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;min-height:64px;padding:10px 0;border-bottom:1px solid var(--divider);cursor:pointer">
+              <span style="width:44px;height:44px;border-radius:50%;background:{{ r.bg }};box-shadow:{{ r.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:16px;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ r.initial }}</span>
+              <div style="min-width:0"><div style="font-size:15px;font-weight:500;display:flex;gap:6px;align-items:baseline">{{ r.displayName }}<sc-if value="{{ r.shadow }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)">Shadow</span></sc-if></div>
+                <div style="font-size:12px;color:var(--muted)">CP {{ r.cp }} · {{ r.rankLabel }}</div></div>
+              <span style="font-size:11px;padding:4px 9px;border-radius:6px;background:{{ r.vBg }};color:{{ r.vColor }};border:1px solid {{ r.vBorder }};white-space:nowrap;text-align:center;max-width:110px;line-height:1.25">{{ r.verdict }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><div style="padding:32px 12px;text-align:center;color:var(--muted);font-size:14px">Nothing matches. Try another name or clear a filter.</div></sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 6 · Specimen detail -->
+      <sc-if value="{{ isSpecimen }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Specimen detail">
+        <div style="padding:54px 12px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goCollection }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">‹ Collection</button>
+          <span style="flex:1;text-align:center;font-weight:500;font-size:15px">{{ spec.displayName }}</span><span style="width:96px"></span>
+        </div>
+        <div class="pt-scroll" style="padding:20px 20px 120px;display:flex;flex-direction:column;gap:22px">
+          <div style="display:grid;grid-template-columns:64px 1fr;gap:16px;align-items:center">
+            <span style="width:64px;height:64px;border-radius:50%;background:{{ spec.bg }};box-shadow:{{ spec.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:22px;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ spec.initial }}</span>
+            <div><div style="font-size:22px;font-weight:500;letter-spacing:-.01em">{{ spec.displayName }}</div><div style="font-size:13px;color:var(--muted)">{{ spec.typeLine }} · CP {{ spec.cp }} · Level {{ spec.level }}</div>
+              <span style="display:inline-block;margin-top:6px;font-size:11px;padding:4px 9px;border-radius:6px;background:{{ spec.vBg }};color:{{ spec.vColor }};border:1px solid {{ spec.vBorder }}">{{ spec.verdict }}</span></div>
+          </div>
+          <div style="background:var(--surface);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;color:var(--muted)">IVs · Attack / Defense / HP</span><span style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">{{ spec.ivs }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;color:var(--muted)">IV rank for Great League</span><span style="font-size:15px;font-weight:500">{{ spec.rankLabel }}</span></div>
+            <p style="margin:4px 0 0;font-size:15px;text-wrap:pretty">{{ spec.rankLine }}</p>
+            <sc-if value="{{ spec.perfect }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:13px;color:var(--muted);text-wrap:pretty">{{ spec.perfect }}</p></sc-if>
+          </div>
+          <sc-if value="{{ spec.evo }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--accent);border-radius:12px"><span style="width:36px;height:36px;border-radius:50%;background:{{ spec.evoBg }};display:block"></span><div><div style="font-size:12px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">Best stage for Great League</div><div style="font-size:15px">Evolve to {{ spec.evo }} before powering up</div></div></div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h3 style="margin:0;font-size:17px;font-weight:500">Recommended moves</h3>
+            <div style="background:var(--surface);border-radius:12px;padding:0 14px">
+              <div style="display:flex;align-items:center;min-height:44px;font-size:14px;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Fast</span>{{ spec.fast }}</div>
+              <sc-for list="{{ spec.charged }}" as="m" hint-placeholder-count="2">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;font-size:14px;border-top:1px solid var(--divider)">
+                  <span style="display:flex;align-items:center;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Charged</span>{{ m.name }}<sc-if value="{{ m.tm }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:{{ m.tmBg }};color:{{ m.tmColor }}">{{ m.tm }}</span></sc-if></span>
+                  <span style="font-size:12px;color:var(--muted);flex:none">{{ m.countLine }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ spec.upgrade }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <h3 style="margin:0;font-size:17px;font-weight:500">Cost to build</h3>
+              <div style="font-size:13px;color:var(--muted)">Level {{ spec.upgrade.from }} → {{ spec.upgrade.to }}</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <div style="background:var(--surface);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:500;font-variant-numeric:tabular-nums">{{ spec.upgrade.dust }}</span><span style="font-size:12px;color:var(--muted)">Stardust</span></div>
+                <div style="background:var(--surface);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:500;font-variant-numeric:tabular-nums">{{ spec.upgrade.candy }}</span><span style="font-size:12px;color:var(--muted)">Candy</span></div>
+                <div style="background:var(--surface);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:500;font-variant-numeric:tabular-nums">{{ spec.upgrade.xl }}</span><span style="font-size:12px;color:var(--muted)">XL Candy</span></div>
+              </div>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h3 style="margin:0;font-size:17px;font-weight:500">Teams with this Pokemon</h3>
+            <sc-if value="{{ spec.noTeams }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;color:var(--muted)">Not in any recommended team right now.</p></sc-if>
+            <sc-for list="{{ spec.teamRefs }}" as="t" hint-placeholder-count="2">
+              <div class="pt-tap" onClick="{{ t.open }}" style="display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;background:var(--surface);border-radius:12px;cursor:pointer">
+                <div style="display:flex"><sc-for list="{{ t.slots }}" as="p" hint-placeholder-count="3"><span style="width:28px;height:28px;border-radius:50%;background:{{ p.bg }};border:2px solid var(--surface);margin-left:-8px;display:block"></span></sc-for></div>
+                <span style="flex:1;font-size:14px">{{ t.names }}</span><span style="font-size:12px;color:var(--muted)">{{ t.fit }} ›</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 44px;background:linear-gradient(to top,var(--bg) 70%,transparent)">
+          <button class="pt-tap" onClick="{{ spec.toggleExclude }}" style="width:100%;min-height:48px;border-radius:12px;border:1px solid {{ spec.exBorder }};background:transparent;color:{{ spec.exColor }};font:500 15px Inter,system-ui,sans-serif;cursor:pointer">{{ spec.exLabel }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- Tab bar -->
+      <sc-if value="{{ showTabs }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:0;right:0;bottom:0;height:84px;padding:6px 8px 26px;box-sizing:border-box;display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-top:1px solid var(--divider);color:var(--text);font-family:Inter,system-ui,sans-serif;z-index:5">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+            <button class="pt-tap" onClick="{{ t.go }}" style="min-height:48px;border:0;background:transparent;color:{{ t.color }};font:500 12px Inter,system-ui,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><span style="width:20px;height:20px;border-radius:{{ t.shape }};border:2px solid currentColor;display:block;background:{{ t.fill }}"></span>{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- 7 · Filters and settings sheet -->
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:var(--overlay);z-index:10"></div>
+        <div data-screen-label="Filters and settings" style="position:absolute;left:0;right:0;bottom:0;max-height:78%;display:flex;flex-direction:column;background:var(--surface);color:var(--text);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg);z-index:11;font-family:Inter,system-ui,sans-serif;animation:ptSheet .28s cubic-bezier(.2,.8,.2,1)">
+          <div style="display:flex;justify-content:center;padding:10px 0 4px"><span style="width:36px;height:4px;border-radius:2px;background:var(--faint);display:block"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px"><h3 style="margin:0;font-size:19px;font-weight:500">Filters and settings</h3><button class="pt-tap" onClick="{{ closeSheet }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Done</button></div>
+          <div class="pt-scroll" style="padding:0 20px 40px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ sheetToggles }}" as="t" hint-placeholder-count="4">
+                <div class="pt-tap" onClick="{{ t.toggle }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;border-top:1px solid var(--divider);cursor:pointer">
+                  <div><div style="font-size:15px">{{ t.label }}</div><div style="font-size:12px;color:var(--muted)">{{ t.sub }}</div></div>
+                  <span style="width:44px;height:26px;border-radius:13px;background:{{ t.trackBg }};border:1px solid {{ t.trackBorder }};position:relative;flex:none;transition:background .2s"><span style="position:absolute;top:2px;left:{{ t.knobLeft }}px;width:20px;height:20px;border-radius:50%;background:{{ t.knobBg }};transition:left .2s"></span></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--divider);padding-top:14px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:15px">Stardust budget</span><span style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--accent-text)">{{ budgetLabel }}</span></div>
+              <input type="range" min="50000" max="500000" step="10000" value="{{ budgetCap }}" onChange="{{ setBudget }}" style="width:100%;height:44px;margin:0">
+              <div style="font-size:12px;color:var(--muted)">Applies when “Budget builds” is on. Teams costing more are hidden.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--divider);padding-top:14px">
+              <span style="font-size:15px">Excluded Pokemon</span>
+              <sc-if value="{{ noExcluded }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:var(--muted);text-wrap:pretty">None yet. Open any Pokemon in your collection to exclude it from team suggestions.</span></sc-if>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ excludedChips }}" as="x" hint-placeholder-count="0">
+                  <button class="pt-tap" onClick="{{ x.remove }}" style="display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px 0 6px;border-radius:999px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 13px Inter,system-ui,sans-serif;cursor:pointer"><span style="width:20px;height:20px;border-radius:50%;background:{{ x.bg }};display:block"></span>{{ x.name }}<span style="color:var(--muted)">×</span></button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--divider);padding-top:14px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px"><span>Game data from PvPoke, updated 10 Sep 2026</span><span>Your collection stays on this phone. Last import: today.</span></div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;tokenStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;split&quot;,&quot;ring&quot;],&quot;default&quot;:&quot;split&quot;,&quot;tsType&quot;:&quot;'split'|'ring'&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+class Component extends DCLogic {
+  state = { screen:'welcome', theme:'dark', data:null, openRows:{}, detailId:'t1', specId:'c1', assumptionsOpen:false,
+    sheet:false, filters:{noXL:false,noShadow:false,noETM:false,budget:false}, budgetCap:250000, excluded:[],
+    query:'', verdictFilter:'All', sort:'verdict', tab:'teams' };
+  componentDidMount(){ import('./pickthree-data.js').then(d=>this.setState({data:d})); }
+  tokenBg(types){
+    const C=(this.state.data||{}).TYPE_COLORS||{}; const a=C[types[0]]||'#888', b=C[types[1]]||a;
+    const style=this.props.tokenStyle??'split';
+    if(types.length<2) return a;
+    return style==='ring' ? a : `linear-gradient(135deg, ${a} 50%, ${b} 50%)`;
+  }
+  ring(types){ const C=(this.state.data||{}).TYPE_COLORS||{}; const style=this.props.tokenStyle??'split'; return (style==='ring'&&types[1]) ? `0 0 0 3px ${C[types[1]]}` : 'none'; }
+  go(screen, extra={}){ this.setState({screen, sheet:false, ...extra}); }
+  renderVals(){
+    const s=this.state, d=s.data, theme=this.props.theme??s.theme;
+    const jumpDefs=[['welcome','1 Welcome'],['report','2 Import report'],['teams','3 Teams'],['detail','4 Team detail'],['collection','5 Collection'],['specimen','6 Specimen'],['sheet','7 Filters sheet']];
+    const jumps=jumpDefs.map(([id,label])=>{const on=id==='sheet'?s.sheet:(s.screen===id&&!s.sheet);return{label,go:()=>id==='sheet'?this.setState({sheet:true,screen:s.screen==='welcome'||s.screen==='report'?'teams':s.screen}):this.go(id),border:on?'#9184d9':'#3f424d',bg:on?'#2b2741':'transparent',color:on?'#d2cefd':'#b2b6ca'}});
+    const reportDefs=[
+      ['412','Scans read',null,null,[]],['331','Pokemon recognized','Ready to rank for Great League',null,[]],
+      ['4','Duplicates merged','Same Pokemon scanned twice','Kept the newest scan of each. Nothing to do.',['Azumarill','Medicham','Skarmory','Lickitung']],
+      ['77','Skipped for missing IVs','Poke Genie saved a scan without the appraisal','Rescan these 77 in Poke Genie with the IV appraisal screen open, then upload again.',['Lilligant','Clodsire','Feraligatr','Talonflame','Cresselia']],
+      ['3','Species not recognized','Newer than our game data','Check back after the next game-data update. These are kept in your collection unranked.',['Dipplin','Sinistcha','Poltchageist']]];
+    const reportRows=reportDefs.map(([n,label,sub,fix,mons],i)=>{const problem=!!fix;const open=!!s.openRows[i];return{n,label,sub,fix,open,cursor:problem?'pointer':'default',chev:open?180:0,numColor:problem?'var(--warn)':'var(--text)',toggle:()=>problem&&this.setState({openRows:{...s.openRows,[i]:!open}}),mons:mons.map(name=>({name,bg:this.tokenBg((d&&d.META[name]&&d.META[name].types)||(d&&d.COLLECTION.find(c=>c.name===name)||{types:['normal']}).types)}))}});
+    const steps=[{n:'1',t:'Export from Poke Genie',d:'Scan your Pokemon, then Export → CSV.'},{n:'2',t:'Upload it here',d:'Or paste the text. It stays on your phone.'},{n:'3',t:'Get your teams',d:'Three Pokemon, in order, with moves and cost.'}];
+    return { theme, isDark:theme==='dark', themeLabel:theme==='dark'?'Switch to light':'Switch to dark', w390:390, h844:844,
+      toggleTheme:()=>this.setState({theme:theme==='dark'?'light':'dark'}), jumps, steps, reportRows,
+      isWelcome:s.screen==='welcome', isReport:s.screen==='report',
+      goReport:()=>this.go('report'), goTeams:()=>this.go('teams',{tab:'teams'}), noop:e=>e.preventDefault(),
+      ...this.teamVals(), ...this.collectionVals(), ...this.sheetVals() };
+  }
+  mon(p){ return { ...p, bg:this.tokenBg(p.types), ring:this.ring(p.types), initial:p.name.replace(/^(Shadow|Galarian) /,'')[0] }; }
+  metaTok(name){ const d=this.state.data; const m=(d&&d.META[name])||{types:['normal']}; return {name, bg:this.tokenBg(m.types)}; }
+  fitStyle(fit){ return fit==='Strong'?{fitBg:'var(--accent-tint)',fitColor:'var(--accent-text)',fitBorder:'var(--accent-tint)'}:fit==='Solid'?{fitBg:'var(--surface2)',fitColor:'var(--text)',fitBorder:'var(--surface2)'}:{fitBg:'transparent',fitColor:'var(--muted)',fitBorder:'var(--divider)'}; }
+  costLine(t){ const parts=[t.dust.toLocaleString('en-US')+' Stardust', t.candy+' Candy']; if(t.xl) parts.push(t.xl+' XL Candy'); if(t.etm) parts.push(t.etm+' Elite TM'); return parts.join(' · '); }
+  teamVals(){
+    const s=this.state, d=s.data; if(!d) return { teams:[], team:{slots:[],wins:[],threats:[]}, chips:[], gridCols:[], gridRows:[] };
+    const f=s.filters;
+    const style=s.teamStyle||'Any';
+    const visible=d.TEAMS.filter(t=>!(f.noXL&&t.xl)&&!(f.noShadow&&t.hasShadow)&&!(f.noETM&&t.etm)&&!(f.budget&&t.dust>s.budgetCap)&&!t.slots.some(p=>s.excluded.includes(p.name))&&(style==='Any'||(style==='ABB'?t.structure==='ABB':t.structure==='ABC')));
+    const structureLabel=t=>t.structure==='ABB'?'ABB line':'Balanced ABC';
+    const firstABBIdx=visible.findIndex(t=>t.structure==='ABB');
+    const teams=visible.map((t,i)=>({ ...t, ...this.fitStyle(t.fit), first:i===0, firstABB:i===firstABBIdx, structureLabel:structureLabel(t), fitLabel:t.fit+' fit', costLine:this.costLine(t), shadow:i===0?'var(--shadow-md)':'none',
+      slots:t.slots.map(p=>this.mon(p)), open:()=>this.go('detail',{detailId:t.id,assumptionsOpen:false}) }));
+    const chipDefs=[['noXL','No XL'],['noShadow','No Shadows'],['noETM','No Elite TM'],['budget','Budget builds']];
+    const styles=['Any','Balanced','ABB'];
+    const chips=[{label:style==='Any'?'Team style: Any':style==='ABB'?'Team style: ABB line':'Team style: Balanced',toggle:()=>this.setState({teamStyle:styles[(styles.indexOf(style)+1)%3]}),border:style!=='Any'?'var(--accent)':'var(--divider)',bg:style!=='Any'?'var(--accent-tint)':'transparent',color:style!=='Any'?'var(--accent-text)':'var(--text)'}];
+    chipDefs.forEach(([k,label])=>{const on=f[k];chips.push({label,toggle:()=>this.setState({filters:{...f,[k]:!on}}),border:on?'var(--accent)':'var(--divider)',bg:on?'var(--accent-tint)':'transparent',color:on?'var(--accent-text)':'var(--text)'})});
+    chips.push({label:s.excluded.length?`Exclude Pokemon · ${s.excluded.length}`:'Exclude Pokemon',toggle:()=>this.setState({sheet:true}),border:'var(--divider)',bg:'transparent',color:'var(--text)'});
+    const raw=d.TEAMS.find(t=>t.id===s.detailId)||d.TEAMS[0];
+    const orders=['First','Second','Third'];
+    const team={ ...raw, why:raw.why, slots:raw.slots.map((p,i)=>({ ...this.mon(p), order:orders[i], flagLine:p.flags.join(' · '), altBg:this.tokenBg(p.alt.types), altLine:p.alt.line,
+        charged:p.charged.map(m=>({ ...m, countLine:`${p.fast} ×${m.count}`, tmBg:m.tm==='Elite TM'?'var(--warn-tint)':'var(--surface2)', tmColor:m.tm==='Elite TM'?'var(--warn)':'var(--muted)' })) })),
+      wins:raw.wins.map(([n,l])=>({...this.metaTok(n),line:l})), threats:raw.threats.map(([n,l])=>({...this.metaTok(n),line:l})),
+      structureLabel:structureLabel(raw), headLine:`${raw.fit} fit · ${structureLabel(raw)}`, subLine:`${raw.difficulty} to build · ${raw.diffWhy}`, isABB:raw.structure==='ABB', isABC:raw.structure!=='ABB',
+      leadName:raw.slots[0].name, leadBg:this.tokenBg(raw.slots[0].types), leadRing:this.ring(raw.slots[0].types),
+      counters:(raw.counters||[]).map(n=>this.metaTok(n)), backLine:raw.slots.slice(1).map(p=>this.mon(p)),
+      slices:(raw.slices||[]).map(([label,mons],i)=>({label,role:raw.slots[i].role,bg:this.tokenBg(raw.slots[i].types),ring:this.ring(raw.slots[i].types),mons:mons.map(n=>this.metaTok(n))})) };
+    const gridCols=['Azumarill','G. Stunfisk','Talonflame','Cresselia'];
+    const grid={t1:[['W','W','L','L'],['~','W','L','~'],['W','W','L','W']],t4:[['~','L','L','~'],['W','~','L','W'],['W','~','~','W']],t2:[['~','L','L','W'],['L','W','~','W'],['~','L','L','W']],t3:[['~','L','L','W'],['W','L','L','~'],['W','W','L','W']]}[raw.id];
+    const cell=v=>v==='W'?{bg:'var(--accent-tint2)',color:'var(--text)'}:v==='L'?{bg:'var(--surface2)',color:'var(--muted)'}:{bg:'transparent',color:'var(--muted)'};
+    const gridRows=raw.slots.map((p,i)=>({name:p.name.replace('Shadow ','S. '),cells:grid[i].map(v=>({label:v,...cell(v)}))}));
+    return { isTeams:s.screen==='teams', isDetail:s.screen==='detail', teams, noTeams:visible.length===0, teamCount:visible.length, chips, team, gridCols, gridRows,
+      assumptionsOpen:s.assumptionsOpen, assumptionsChev:s.assumptionsOpen?180:0, toggleAssumptions:()=>this.setState({assumptionsOpen:!s.assumptionsOpen}) };
+  }
+  verdictStyle(v){
+    if(v==='Great League ready') return {vBg:'var(--accent-tint)',vColor:'var(--accent-text)',vBorder:'var(--accent-tint)'};
+    if(v==='Worth building') return {vBg:'transparent',vColor:'var(--accent)',vBorder:'var(--accent)'};
+    if(v==='Needs rescan') return {vBg:'var(--warn-tint)',vColor:'var(--warn)',vBorder:'var(--warn-tint)'};
+    if(v==='Not eligible') return {vBg:'transparent',vColor:'var(--faint)',vBorder:'var(--divider)'};
+    return {vBg:'var(--surface2)',vColor:'var(--muted)',vBorder:'var(--surface2)'};
+  }
+  collectionVals(){
+    const s=this.state, d=s.data; if(!d) return { rows:[], verdictChips:[], toggles:[], spec:{charged:[],teamRefs:[]} };
+    const VERD=['All','Great League ready','Worth building','Wait for better IVs','Not eligible','Needs rescan'];
+    const order=v=>VERD.indexOf(v);
+    const row=c=>({ ...this.mon(c), displayName:c.shadow?`Shadow ${c.name}`:c.name, rankLabel:c.rank==='—'?'Over 1500 CP':c.rank==='?'?'IVs unknown':`Top ${c.rank}`, ...this.verdictStyle(c.verdict),
+      typeLine:c.types.map(t=>t[0].toUpperCase()+t.slice(1)).join(' / '), open:()=>this.go('specimen',{specId:c.id}) });
+    const q=s.query.trim().toLowerCase();
+    let list=d.COLLECTION.filter(c=>(!q||c.name.toLowerCase().includes(q))&&(s.verdictFilter==='All'||c.verdict===s.verdictFilter)&&(!s.eligibleOnly||c.verdict!=='Not eligible')&&(!s.shadowsOnly||c.shadow)&&(!s.recentOnly||c.recent));
+    const rankNum=c=>parseFloat(c.rank)||999;
+    list=[...list].sort((a,b)=>s.sort==='name'?a.name.localeCompare(b.name):s.sort==='rank'?rankNum(a)-rankNum(b):order(a.verdict)-order(b.verdict)||rankNum(a)-rankNum(b));
+    const rows=list.map(row);
+    const chip=(label,on,toggle)=>({label,toggle,border:on?'var(--accent)':'var(--divider)',bg:on?'var(--accent-tint)':'transparent',color:on?'var(--accent-text)':'var(--text)'});
+    const verdictChips=VERD.map(v=>chip(v,s.verdictFilter===v,()=>this.setState({verdictFilter:v})));
+    const toggles=[chip('Eligible only',s.eligibleOnly,()=>this.setState({eligibleOnly:!s.eligibleOnly})),chip('Shadows',s.shadowsOnly,()=>this.setState({shadowsOnly:!s.shadowsOnly})),chip('Scanned recently',s.recentOnly,()=>this.setState({recentOnly:!s.recentOnly}))];
+    const sorts=['verdict','rank','name'], sortLabels={verdict:'Verdict',rank:'IV rank',name:'Name'};
+    const c=d.COLLECTION.find(x=>x.id===s.specId)||d.COLLECTION[0];
+    const excluded=s.excluded.includes(c.name);
+    const spec={ ...row(c), evoBg:c.evo?this.tokenBg(d.META[c.evo]?d.META[c.evo].types:c.types):null,
+      charged:c.charged.map(m=>({...m,countLine:`${c.fast} ×${m.count}`,tmBg:m.tm==='Elite TM'?'var(--warn-tint)':'var(--surface2)',tmColor:m.tm==='Elite TM'?'var(--warn)':'var(--muted)'})),
+      noTeams:c.teams.length===0, teamRefs:c.teams.map(id=>d.TEAMS.find(t=>t.id===id)).filter(Boolean).map(t=>({fit:t.fit,names:t.slots.map(p=>p.name).join(' · '),slots:t.slots.map(p=>({bg:this.tokenBg(p.types)})),open:()=>this.go('detail',{detailId:t.id,assumptionsOpen:false})})),
+      exLabel:excluded?'Include in recommendations again':'Exclude from recommendations', exBorder:excluded?'var(--accent)':'var(--divider)', exColor:excluded?'var(--accent)':'var(--text)',
+      toggleExclude:()=>this.setState({excluded:excluded?s.excluded.filter(n=>n!==c.name):[...s.excluded,c.name]}) };
+    return { isCollection:s.screen==='collection', isSpecimen:s.screen==='specimen', rows, rowCount:rows.length, noRows:rows.length===0, query:s.query, setQuery:e=>this.setState({query:e.target.value}),
+      verdictChips, toggles, sortLabel:sortLabels[s.sort], cycleSort:()=>this.setState({sort:sorts[(sorts.indexOf(s.sort)+1)%3]}), spec, goCollection:()=>this.go('collection',{tab:'collection'}) };
+  }
+  sheetVals(){
+    const s=this.state, f=s.filters;
+    const showTabs=['teams','detail','collection','specimen'].includes(s.screen);
+    const tabDefs=[['teams','Teams','6px',()=>this.go('teams',{tab:'teams'}),['teams','detail'].includes(s.screen)],['collection','Collection','50%',()=>this.go('collection',{tab:'collection'}),['collection','specimen'].includes(s.screen)],['settings','Filters','2px',()=>this.setState({sheet:true}),s.sheet]];
+    const tabs=tabDefs.map(([id,label,shape,go,on])=>({label,shape,go,color:on?'var(--accent)':'var(--muted)',fill:on?'currentColor':'transparent'}));
+    const defs=[['noXL','No XL','Skip Pokemon that need XL Candy (levels above 40)'],['noShadow','No Shadows','Skip Shadow Pokemon'],['noETM','No Elite TM','Skip moves that need an Elite TM'],['budget','Budget builds','Hide teams above your Stardust budget']];
+    const sheetToggles=defs.map(([k,label,sub])=>{const on=f[k];return{label,sub,toggle:()=>this.setState({filters:{...f,[k]:!on}}),trackBg:on?'var(--accent)':'var(--surface2)',trackBorder:on?'var(--accent)':'var(--divider)',knobLeft:on?20:2,knobBg:on?'var(--bg)':'var(--faint)'}});
+    const excludedChips=s.excluded.map(name=>{const d=s.data;const c=d&&d.COLLECTION.find(x=>x.name===name.replace('Shadow ',''));return{name,bg:this.tokenBg(c?c.types:['normal']),remove:()=>this.setState({excluded:s.excluded.filter(n=>n!==name)})}});
+    return { showTabs, tabs, sheetOpen:s.sheet, closeSheet:()=>this.setState({sheet:false}), sheetToggles, budgetCap:s.budgetCap, budgetLabel:s.budgetCap.toLocaleString('en-US'),
+      setBudget:e=>this.setState({budgetCap:+e.target.value}), excludedChips, noExcluded:s.excluded.length===0 };
+  }
+}
+</script>
+</body>
+</html>

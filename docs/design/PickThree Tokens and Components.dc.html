@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0f1019;font-family:"Inter",system-ui,sans-serif;color:#e9e9ed}
+a{color:#9184d9;text-underline-offset:3px}a:hover{color:#b5abfc}
+[data-theme="dark"]{--bg:#161826;--surface:#232532;--surface2:#2c2e3d;--text:#e9e9ed;--muted:#9397ab;--faint:#75798c;--divider:rgba(233,233,237,.16);--accent:#9184d9;--accent-text:#d2cefd;--accent-tint:#2b2741;--accent-tint2:#423a6a;--warn:#d9b384;--warn-tint:#3a3224;--shadow-md:0 0 0 1px #595d6c,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #9397ab,0 16px 40px rgba(0,0,0,.65)}
+[data-theme="light"]{--bg:#f3f5fe;--surface:#fbfbfe;--surface2:#e4e7f5;--text:#292b31;--muted:#595d6c;--faint:#75798c;--divider:rgba(41,43,49,.14);--accent:#796cbf;--accent-text:#5d5294;--accent-tint:#e7e5fe;--accent-tint2:#d2cefd;--warn:#8a6a2c;--warn-tint:#f5ead4;--shadow-md:0 0 0 1px #cfd3e5,0 6px 18px rgba(41,43,49,.12);--shadow-lg:0 0 0 1px #b2b6ca,0 16px 40px rgba(41,43,49,.18)}
+</style>
+</helmet>
+<div style="max-width:1100px;margin:0 auto;padding:40px 24px 80px;display:flex;flex-direction:column;gap:48px">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:12px;color:#9397ab;letter-spacing:.1em;text-transform:uppercase">PickThree · design tokens and components</span>
+    <h1 style="margin:0;font-size:32px;font-weight:500;letter-spacing:-.015em">One token set, two themes</h1>
+    <p style="margin:0;color:#9397ab;max-width:640px;text-wrap:pretty">Semantic tokens are CSS custom properties switched by <code>[data-theme]</code> on the app root. Type colors are constant across themes. Inter is the only typeface. Density follows Nocturne (compact); radii 8 / 12 / 14 / 999.</p>
+    <p style="margin:0;font-size:13px"><a href="PickThree.dc.html">← Interactive prototype</a></p>
+  </div>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:20px;font-weight:500">Semantic colors</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+      <sc-for list="{{ themes }}" as="th" hint-placeholder-count="2">
+        <div data-theme="{{ th.id }}" style="background:var(--bg);color:var(--text);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-md)">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">{{ th.label }}</div>
+          <sc-for list="{{ th.tokens }}" as="t" hint-placeholder-count="10">
+            <div style="display:grid;grid-template-columns:28px 130px 1fr;gap:10px;align-items:center;font-size:12px"><span style="width:28px;height:28px;border-radius:7px;background:{{ t.val }};border:1px solid var(--divider);display:block"></span><code style="color:var(--text)">{{ t.name }}</code><span style="color:var(--muted);font-family:ui-monospace,Menlo,monospace">{{ t.val }}</span></div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:20px;font-weight:500">Type colors · 18</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+      <sc-for list="{{ typeColors }}" as="t" hint-placeholder-count="18">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#232532;border-radius:10px"><span style="width:32px;height:32px;border-radius:50%;background:{{ t.val }};display:block"></span><div><div style="font-size:13px;font-weight:500">{{ t.name }}</div><div style="font-size:11px;color:#9397ab;font-family:ui-monospace,Menlo,monospace">{{ t.val }}</div></div></div>
+      </sc-for>
+    </div>
+    <p style="margin:0;font-size:13px;color:#9397ab">Token rule: single type = solid fill. Dual type = 135° hard split, primary type top-left (<code>tokenStyle: split</code>), or solid primary with a 3px ring of the secondary (<code>tokenStyle: ring</code>). White initial at 92% on top. Never artwork.</p>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 style="margin:0;font-size:20px;font-weight:500">Type scale · Inter</h2>
+      <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="8">
+        <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:baseline;border-top:1px solid rgba(233,233,237,.12);padding-top:8px"><code style="font-size:11px;color:#9397ab">{{ t.name }} · {{ t.spec }}</code><span style="font-size:{{ t.px }}px;font-weight:{{ t.w }};line-height:1.2;letter-spacing:{{ t.ls }}">{{ t.sample }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0;font-size:20px;font-weight:500">Spacing</h2>
+        <div style="display:flex;align-items:flex-end;gap:12px"><sc-for list="{{ spacing }}" as="s" hint-placeholder-count="7"><div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:{{ s }}px;height:{{ s }}px;background:#9184d9;border-radius:2px;display:block"></span><code style="font-size:11px;color:#9397ab">{{ s }}</code></div></sc-for></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0;font-size:20px;font-weight:500">Radii</h2>
+        <div style="display:flex;gap:12px"><sc-for list="{{ radii }}" as="r" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:56px;height:40px;border:1px solid #9184d9;border-radius:{{ r.px }}px;display:block"></span><code style="font-size:11px;color:#9397ab">{{ r.name }} {{ r.px }}</code></div></sc-for></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0;font-size:20px;font-weight:500">Elevation</h2>
+        <div data-theme="dark" style="display:flex;gap:20px;padding:20px;background:var(--bg);border-radius:12px"><div style="flex:1;height:56px;border-radius:12px;background:var(--surface);display:grid;place-items:center;font-size:11px;color:var(--muted)">0 · surface</div><div style="flex:1;height:56px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-md);display:grid;place-items:center;font-size:11px;color:var(--muted)">1 · --shadow-md</div><div style="flex:1;height:56px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-lg);display:grid;place-items:center;font-size:11px;color:var(--muted)">2 · --shadow-lg</div></div></div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:20px;font-weight:500">Components</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+      <sc-for list="{{ themes }}" as="th" hint-placeholder-count="2">
+        <div data-theme="{{ th.id }}" style="background:var(--bg);color:var(--text);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:22px;font-size:15px;box-shadow:var(--shadow-md)">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">{{ th.label }}</div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Pokemon token · split / ring / single · 52 / 44 / 32 / 16</span>
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#D685AD 50%,#B7B7CE 50%);display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:18px;text-shadow:0 1px 2px rgba(0,0,0,.4)">T</span>
+              <span style="width:52px;height:52px;border-radius:50%;background:#6F35FC;box-shadow:0 0 0 3px #A98FF3;display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:18px;text-shadow:0 1px 2px rgba(0,0,0,.4)">A</span>
+              <span style="width:44px;height:44px;border-radius:50%;background:#7AC74C;display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:16px">L</span>
+              <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#C22E28 50%,#735797 50%);display:block"></span>
+              <span style="width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#6390F0 50%,#D685AD 50%);display:block"></span>
+            </div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Role label</span>
+            <div style="display:flex;gap:18px"><span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">Lead</span><span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">Safe Switch</span><span style="font-size:11px;color:var(--accent-text);letter-spacing:.06em;text-transform:uppercase">Closer</span></div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Move row with TM badge · fast-move count</span>
+            <div style="background:var(--surface);border-radius:12px;padding:0 14px">
+              <div style="display:flex;align-items:center;min-height:44px;font-size:14px;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Fast</span>Dragon Breath</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;min-height:44px;font-size:14px;border-top:1px solid var(--divider)"><span style="display:flex;align-items:center;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Charged</span>Moonblast<span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--warn-tint);color:var(--warn)">Elite TM</span></span><span style="font-size:12px;color:var(--muted)">Dragon Breath ×8</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;min-height:44px;font-size:14px;border-top:1px solid var(--divider)"><span style="display:flex;align-items:center;gap:8px"><span style="color:var(--muted);font-size:12px;width:56px">Charged</span>Bulldoze<span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--surface2);color:var(--muted)">TM</span></span><span style="font-size:12px;color:var(--muted)">Fairy Wind ×12</span></div>
+            </div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Cost line · fit label · difficulty</span>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="display:inline-flex;padding:3px 10px;border-radius:6px;font-size:12px;background:var(--accent-tint);color:var(--accent-text)">Strong fit</span><span style="display:inline-flex;padding:3px 10px;border-radius:6px;font-size:12px;background:var(--surface2)">Solid fit</span><span style="display:inline-flex;padding:3px 10px;border-radius:6px;font-size:12px;border:1px solid var(--divider);color:var(--muted)">Situational fit</span><span style="display:inline-flex;padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--divider);color:var(--muted)">ABB line</span><span style="display:inline-flex;padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--divider);color:var(--muted)">Balanced ABC</span></div>
+            <div style="font-size:12px;color:var(--muted)">214,000 Stardust · 231 Candy · 12 XL Candy · 1 Elite TM</div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Verdict chip</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span style="font-size:11px;padding:4px 9px;border-radius:6px;background:var(--accent-tint);color:var(--accent-text)">Great League ready</span>
+              <span style="font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--accent);color:var(--accent)">Worth building</span>
+              <span style="font-size:11px;padding:4px 9px;border-radius:6px;background:var(--surface2);color:var(--muted)">Wait for better IVs</span>
+              <span style="font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--divider);color:var(--faint)">Not eligible</span>
+              <span style="font-size:11px;padding:4px 9px;border-radius:6px;background:var(--warn-tint);color:var(--warn)">Needs rescan</span>
+            </div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Filter chip · off / on</span>
+            <div style="display:flex;gap:6px"><span style="display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--divider);font-size:13px;font-weight:500">No XL</span><span style="display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font-size:13px;font-weight:500">No Shadows</span></div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Matchup grid cell · win / close / loss</span>
+            <div style="display:grid;grid-template-columns:repeat(3,64px);gap:3px;font-size:11px;font-weight:500"><span style="height:30px;border-radius:5px;display:grid;place-items:center;background:var(--accent-tint2)">W</span><span style="height:30px;border-radius:5px;display:grid;place-items:center;color:var(--muted)">~</span><span style="height:30px;border-radius:5px;display:grid;place-items:center;background:var(--surface2);color:var(--muted)">L</span></div></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--muted)">Bottom sheet · grabber, title, Done, toggle row</span>
+            <div style="background:var(--surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg);padding:10px 16px 16px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:center"><span style="width:36px;height:4px;border-radius:2px;background:var(--faint);display:block"></span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:17px;font-weight:500">Filters and settings</span><span style="color:var(--accent);font-weight:500;font-size:14px">Done</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;min-height:48px;border-top:1px solid var(--divider)"><div><div style="font-size:14px">No Elite TM</div><div style="font-size:12px;color:var(--muted)">Skip moves that need an Elite TM</div></div><span style="width:44px;height:26px;border-radius:13px;background:var(--accent);position:relative;display:block"><span style="position:absolute;top:2px;left:20px;width:20px;height:20px;border-radius:50%;background:var(--bg)"></span></span></div>
+            </div></div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    const names=['bg','surface','surface2','text','muted','faint','divider','accent','accent-text','accent-tint','accent-tint2','warn','warn-tint'];
+    const dark={bg:'#161826',surface:'#232532',surface2:'#2c2e3d',text:'#e9e9ed',muted:'#9397ab',faint:'#75798c',divider:'rgba(233,233,237,.16)',accent:'#9184d9','accent-text':'#d2cefd','accent-tint':'#2b2741','accent-tint2':'#423a6a',warn:'#d9b384','warn-tint':'#3a3224'};
+    const light={bg:'#f3f5fe',surface:'#fbfbfe',surface2:'#e4e7f5',text:'#292b31',muted:'#595d6c',faint:'#75798c',divider:'rgba(41,43,49,.14)',accent:'#796cbf','accent-text':'#5d5294','accent-tint':'#e7e5fe','accent-tint2':'#d2cefd',warn:'#8a6a2c','warn-tint':'#f5ead4'};
+    const themes=[{id:'dark',label:'Dark (default)',tokens:names.map(n=>({name:'--'+n,val:dark[n]}))},{id:'light',label:'Light',tokens:names.map(n=>({name:'--'+n,val:light[n]}))}];
+    const T={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#F7D02C',Grass:'#7AC74C',Ice:'#96D9D6',Fighting:'#C22E28',Poison:'#A33EA1',Ground:'#E2BF65',Flying:'#A98FF3',Psychic:'#F95587',Bug:'#A6B91A',Rock:'#B6A136',Ghost:'#735797',Dragon:'#6F35FC',Dark:'#705746',Steel:'#B7B7CE',Fairy:'#D685AD'};
+    const typeScale=[
+      {name:'display',spec:'30/500/-0.015em',px:30,w:500,ls:'-0.015em',sample:'Three Pokemon.'},{name:'title',spec:'24/500',px:24,w:500,ls:'-0.015em',sample:'Your teams'},
+      {name:'heading',spec:'17/500',px:17,w:500,ls:'0',sample:'Key wins'},{name:'body',spec:'15/400',px:15,w:400,ls:'0',sample:'Tinkaton pressures the common openers.'},
+      {name:'body-sm',spec:'14/400',px:14,w:400,ls:'0',sample:'Cheaper: your Galarian Stunfisk'},{name:'caption',spec:'13/400',px:13,w:400,ls:'0',sample:'CP 1494 · Top 2%'},
+      {name:'meta',spec:'12/400',px:12,w:400,ls:'0',sample:'214,000 Stardust · 231 Candy'},{name:'label',spec:'11/400/.06em caps',px:11,w:400,ls:'.06em',sample:'SAFE SWITCH'}];
+    return { themes, typeColors:Object.entries(T).map(([name,val])=>({name,val})), typeScale, spacing:[2,4,6,8,12,16,20,24], radii:[{name:'sm',px:6},{name:'md',px:8},{name:'lg',px:12},{name:'xl',px:14},{name:'sheet',px:20}] };
+  }
+}
+</script>
+</body>
+</html>

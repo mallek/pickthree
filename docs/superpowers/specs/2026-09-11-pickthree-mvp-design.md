@@ -288,7 +288,14 @@ Fixed content rules:
 - Phone frame 390 x 844 is the design target. Layout verified at iPhone 14 and Pixel 7 viewports.
 - Light and dark themes from one token set.
 
-When the export arrives, its tokens and component sheet become `apps/web/src/design/tokens.css` and the component inventory; this section is updated with the export reference.
+Design export received 2026-09-12 and committed under `docs/design/` (Claude Design, Nocturne-derived):
+
+- `PickThree.dc.html`: interactive prototype of all seven screens plus the bottom tab bar (Teams, Collection, Filters), 390 x 844, dark default and light.
+- `PickThree Tokens and Components.dc.html`: semantic token set (`--bg`, `--surface`, `--surface2`, `--text`, `--muted`, `--faint`, `--divider`, `--accent`, `--accent-text`, `--accent-tint`, `--accent-tint2`, `--warn`, `--warn-tint`, shadows) for both themes, the 18 type colors, type scale (display 30 to label 11, Inter only), spacing 2 to 24, radii 6/8/12/14/20, elevation.
+- `pickthree-data.js`: the sample content the prototype renders; it doubles as copy reference for role explanations, verdict labels, and first-use term explanations.
+- Pokemon token rule: single type solid fill; dual type 135 degree hard split (primary top-left) or primary fill with a 3 px ring of the secondary; white initial at 92 percent; never artwork.
+
+Plan 3 turns the token sheet into `apps/web/src/design/tokens.css` and rebuilds the prototype's components in React.
 
 ## 8. Testing, fixtures, deploy
 
