@@ -64,7 +64,13 @@ export function buildsFor(specimen: Specimen, index: GameDataIndex, opts: BuildO
       return;
     }
     const floor = Math.max(currentLevel, species.levelFloor ?? 1);
-    const level = maxLevelUnderCap(species.baseStats, specimen.ivs as IVs, opts.cpCap, levelCap, floor);
+    const level = maxLevelUnderCap(
+      species.baseStats,
+      specimen.ivs as IVs,
+      opts.cpCap,
+      levelCap,
+      floor,
+    );
     if (level === null) {
       return;
     }

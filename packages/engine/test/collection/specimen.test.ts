@@ -20,9 +20,9 @@ describe.skipIf(!haveStaticData())('toSpecimens', () => {
 
   it('accounts for every scan', () => {
     const unrecognizedRows = report.unrecognized.reduce((n, u) => n + u.count, 0);
-    expect(report.recognized + report.duplicatesMerged + unrecognizedRows + report.rowProblems.length).toBe(
-      report.scansRead,
-    );
+    expect(
+      report.recognized + report.duplicatesMerged + unrecognizedRows + report.rowProblems.length,
+    ).toBe(report.scansRead);
     expect(report.recognized).toBe(specimens.length);
     expect(report.scansRead).toBe(parsed.totalLines);
   });

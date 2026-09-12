@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
-const source = process.env.PICKTHREE_PRIVATE_CSV ?? path.join(repoRoot, 'private', 'poke_genie_export.csv');
+const source =
+  process.env.PICKTHREE_PRIVATE_CSV ?? path.join(repoRoot, 'private', 'poke_genie_export.csv');
 
 if (!fs.existsSync(source)) {
   console.error(`No private export at ${source}. Nothing to do.`);
@@ -45,9 +46,7 @@ function parseLine(line: string): string[] {
 }
 
 function toLine(fields: string[]): string {
-  return fields
-    .map((f) => (/[",\n]/.test(f) ? `"${f.replace(/"/g, '""')}"` : f))
-    .join(',');
+  return fields.map((f) => (/[",\n]/.test(f) ? `"${f.replace(/"/g, '""')}"` : f)).join(',');
 }
 
 // Small seeded PRNG so the fixture is reproducible.

@@ -48,7 +48,12 @@ export function allSpreads(
         if (level === null) {
           combos.push({ ivs, level: levelFloor, product: 0, cp: cpFor(base, ivs, levelFloor) });
         } else {
-          combos.push({ ivs, level, product: statProduct(base, ivs, level), cp: cpFor(base, ivs, level) });
+          combos.push({
+            ivs,
+            level,
+            product: statProduct(base, ivs, level),
+            cp: cpFor(base, ivs, level),
+          });
         }
       }
     }

@@ -75,7 +75,11 @@ export function recommendMoveset(
 ): Moveset {
   const species = index.mustSpecies(speciesId);
   const entry = rankings.get(speciesId) ?? rankings.get(index.baseOf(speciesId));
-  const allowed = (id: string): boolean => opts.allowEliteTm || !isEliteMove(species, id) || current.charged.includes(id) || current.fast === id;
+  const allowed = (id: string): boolean =>
+    opts.allowEliteTm ||
+    !isEliteMove(species, id) ||
+    current.charged.includes(id) ||
+    current.fast === id;
 
   let fastIds: string[];
   let chargedIds: string[];

@@ -6,7 +6,15 @@ import { GameDataIndex } from '../../src/gamedata/index.js';
 import { cpFor, maxLevelUnderCap, statsFor } from '../../src/math/cp.js';
 import { REPO_ROOT, haveStaticData, loadStaticData } from '../fixtures.js';
 
-const gmPath = path.join(REPO_ROOT, 'packages', 'data', '.pvpoke', 'src', 'data', 'gamemaster.json');
+const gmPath = path.join(
+  REPO_ROOT,
+  'packages',
+  'data',
+  '.pvpoke',
+  'src',
+  'data',
+  'gamemaster.json',
+);
 
 describe.skipIf(!haveStaticData())('cp math', () => {
   const data = loadStaticData();

@@ -10,7 +10,12 @@ describe.skipIf(!haveStaticData())('ivRank', () => {
   const index = new GameDataIndex(data.species, data.moves);
 
   it('ranks the PvPoke default azumarill spread near the top', () => {
-    const r = ivRank(index.mustSpecies('azumarill').baseStats, { atk: 4, def: 15, sta: 13 }, 1500, 50);
+    const r = ivRank(
+      index.mustSpecies('azumarill').baseStats,
+      { atk: 4, def: 15, sta: 13 },
+      1500,
+      50,
+    );
     // PvPoke's default spread is a representative one, not the rank-1 spread.
     expect(r.total).toBe(4096);
     expect(r.rank).toBeLessThan(400);
@@ -60,7 +65,9 @@ describe.skipIf(!haveStaticData())('ivRank', () => {
       if (Math.abs(r.rank - pg.rankNumG) <= 5) {
         within5 += 1;
       } else {
-        misses.push(`${target.speciesId} ${s.ivs.atk}/${s.ivs.def}/${s.ivs.sta}: ours ${r.rank}, pg ${pg.rankNumG}`);
+        misses.push(
+          `${target.speciesId} ${s.ivs.atk}/${s.ivs.def}/${s.ivs.sta}: ours ${r.rank}, pg ${pg.rankNumG}`,
+        );
       }
       // Poke Genie's "Rank %" is the percentile: (4097 - rank) / 4096.
       if (Math.abs(r.percentile - pg.rankPctG) <= 0.5) {

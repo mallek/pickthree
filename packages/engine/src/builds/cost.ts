@@ -36,7 +36,9 @@ export function buildCost(build: Build, moveset: Moveset, index: GameDataIndex):
   // Unknown scanned moves are treated as "needs the unlock": Poke Genie only records moves when
   // the appraisal captured them, and a missing second move is the common case.
   const needsSecond = moveset.charged.length > 1 && specimen.currentMoves.charged.length < 2;
-  const second = needsSecond ? secondMoveCost(species.thirdMoveCost, mods) : { stardust: 0, candy: 0 };
+  const second = needsSecond
+    ? secondMoveCost(species.thirdMoveCost, mods)
+    : { stardust: 0, candy: 0 };
   const partial = {
     stardust: power.stardust + second.stardust,
     candy: power.candy + evo.candy + second.candy,
