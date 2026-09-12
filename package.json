@@ -7,7 +7,8 @@
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "workers/*"
   ],
   "engines": {
     "node": ">=24.0.0"
@@ -23,9 +24,11 @@
     "data:build": "npm -w @pickthree/data run build",
     "data:refresh": "npm -w @pickthree/data run refresh",
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
-    "web:screens": "node apps/web/scripts/screens.mjs"
+    "web:screens": "node apps/web/scripts/screens.mjs",
+    "counter:deploy": "npm -w @pickthree/counter run deploy"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20260908.1",
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.3",
     "eslint": "10.10.0",
@@ -36,7 +39,8 @@
     "tsx": "4.23.13",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.0",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "wrangler": "4.130.0"
   },
   "overrides": {
     "@types/node": "24.13.3"

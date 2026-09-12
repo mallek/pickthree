@@ -130,7 +130,8 @@ export function Sheet() {
               {s.data?.metaSize ?? '...'} Pokemon.
             </span>
             <span>
-              Your collection stays on this phone.
+              Your collection stays on this phone. The only outbound request is an anonymous tick to
+              the player counter when you build teams.
               {s.collection ? ` Last import: ${dateLabel(s.collection.importedAt)}.` : ''}
             </span>
             <span>

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Progress } from '../components.tsx';
+import { fetchCount } from '../counter.ts';
+import { num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function Welcome() {
@@ -8,6 +10,19 @@ export function Welcome() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState('');
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void fetchCount().then((c) => {
+      if (alive) {
+        setCount(c);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const loadSample = async (): Promise<void> => {
     const res = await fetch('/fixtures/pokegenie-sample.csv');
@@ -153,8 +168,15 @@ export function Welcome() {
           Paste CSV text
         </button>
         <p className="meta faint" style={{ textAlign: 'center' }}>
-          Your file is processed on your phone and never uploaded anywhere.
+          Your file is processed on your phone and never uploaded anywhere. The only thing sent is
+          an anonymous tick to the counter when you build teams.
         </p>
+        {count !== null ? (
+          <p className="counter" aria-live="polite">
+            <span className="counter-digits">{num(count)}</span>{' '}
+            {count === 1 ? 'player has' : 'players have'} pick3ed
+          </p>
+        ) : null}
       </div>
     </div>
   );

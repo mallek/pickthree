@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { SpeciesLite } from '../host/protocol.ts';
+import { recordPick3 } from '../counter.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
 
@@ -343,6 +344,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         (p) => dispatch({ type: 'rec-progress', progress: p }),
       );
       dispatch({ type: 'rec-done', recommendation });
+      if (recommendation.teams.length > 0) {
+        void recordPick3();
+      }
     } catch (e) {
       dispatch({ type: 'rec-error', message: e instanceof Error ? e.message : String(e) });
     }
