@@ -25,7 +25,8 @@
     "data:refresh": "npm -w @pickthree/data run refresh",
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
     "web:screens": "node apps/web/scripts/screens.mjs",
-    "counter:deploy": "npm -w @pickthree/counter run deploy"
+    "counter:deploy": "npm -w @pickthree/counter run deploy",
+    "brand:lockup": "node apps/web/scripts/lockup.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260908.1",
@@ -34,6 +35,7 @@
     "eslint": "10.10.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.12.0",
+    "opentype.js": "2.0.0",
     "prettier": "3.9.6",
     "puppeteer-core": "25.10.0",
     "tsx": "4.23.13",
