@@ -1,0 +1,44 @@
+name: data-refresh
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - id: bump
+        run: |
+          before=$(node -p "require('./packages/data/pvpoke.lock.json').commit")
+          npm run data:refresh
+          after=$(node -p "require('./packages/data/pvpoke.lock.json').commit")
+          echo "changed=$([ "$before" != "$after" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "after=$after" >> "$GITHUB_OUTPUT"
+      - if: steps.bump.outputs.changed == 'true'
+        run: |
+          npm run data:fetch
+          npm -w @pickthree/sim-pvpoke run vendor:sync
+          PICKTHREE_REQUIRE_PVPOKE=1 npm test
+          npm run data:build
+      - if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: data-refresh/${{ steps.bump.outputs.after }}
+          title: 'Refresh PvPoke data to ${{ steps.bump.outputs.after }}'
+          commit-message: 'Refresh PvPoke data to ${{ steps.bump.outputs.after }}'
+          body: |
+            Automated PvPoke refresh. Golden simulator tests passed against the new rankings.
+            Review the vendor diff (if any) and the ranking movement before merging.
+          add-paths: |
+            packages/data/pvpoke.lock.json
+            packages/sim-pvpoke/vendor/**
+            packages/sim-pvpoke/LICENSE-pvpoke

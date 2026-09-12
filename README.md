@@ -20,6 +20,8 @@ npm run dev
 npm test
 ```
 
+See `docs/setup.md`. Game data comes from PvPoke at the commit pinned in `packages/data/pvpoke.lock.json`.
+
 ## License
 
 MIT. PvPoke data and simulator code are used under the MIT license, copyright 2019 pvpoke.
