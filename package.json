@@ -22,7 +22,8 @@
     "data:fetch": "npm -w @pickthree/data run fetch",
     "data:build": "npm -w @pickthree/data run build",
     "data:refresh": "npm -w @pickthree/data run refresh",
-    "fixtures:make": "tsx fixtures/make-fixtures.ts"
+    "fixtures:make": "tsx fixtures/make-fixtures.ts",
+    "web:screens": "node apps/web/scripts/screens.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -31,6 +32,7 @@
     "eslint-config-prettier": "10.1.8",
     "globals": "17.12.0",
     "prettier": "3.9.6",
+    "puppeteer-core": "25.10.0",
     "tsx": "4.23.13",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.0",

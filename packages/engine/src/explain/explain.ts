@@ -32,12 +32,25 @@ export const ROLE_LABEL: Record<Role, string> = {
   closer: 'Closer',
 };
 
+const REGIONAL_PREFIX: Record<string, string> = {
+  Alolan: 'Alolan',
+  Galarian: 'Galarian',
+  Hisuian: 'Hisuian',
+  Paldean: 'Paldean',
+};
+
+/** PvPoke "Raichu (Alolan)" -> "Alolan Raichu"; other parentheticals stay as they are. */
 export function displayName(speciesId: string, index: GameDataIndex): string {
   const s = index.species(speciesId);
   if (!s) {
     return speciesId;
   }
-  return s.speciesName.replace(' (Shadow)', '');
+  const name = s.speciesName.replace(' (Shadow)', '');
+  const m = /^(.*) \(([^)]+)\)$/.exec(name);
+  if (m && m[2] && REGIONAL_PREFIX[m[2]]) {
+    return `${REGIONAL_PREFIX[m[2]]} ${m[1]}`;
+  }
+  return name;
 }
 
 export function fullName(speciesId: string, index: GameDataIndex): string {

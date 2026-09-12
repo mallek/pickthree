@@ -6,7 +6,7 @@ import { writeManifest } from './build-manifest.js';
 import { writeMatrix } from './build-matrix.js';
 import { writeRankings } from './build-rankings.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
-import { OUTPUT_DIR } from './paths.js';
+import { GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
 
 async function main(): Promise<void> {
   await ensurePvPokeCheckout();
@@ -26,6 +26,8 @@ async function main(): Promise<void> {
     };
   }
   writeBundle(path.join(OUTPUT_DIR, 'vendor', 'pvpoke-sim.js'));
+  // The vendored simulator reads PvPoke's own game master format, so ship it alongside.
+  fs.copyFileSync(GAMEMASTER_PATH, path.join(OUTPUT_DIR, 'gamemaster.json'));
   const manifest = writeManifest(OUTPUT_DIR, {
     gamemasterTimestamp: data.gamemasterTimestamp,
     metaSize: meta.length,

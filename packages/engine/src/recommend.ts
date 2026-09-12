@@ -169,7 +169,7 @@ export function recommend(
   progress('score', 0, sims.length);
   const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view) }));
   scored2.sort((a, b) => b.score.total - a.score.total);
-  const top = scored2.slice(0, opts.results);
+  const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
     const explanation = explainTeam(t, score, pool, view, index);
     const slots = t.slots.map((s) => ({
@@ -206,6 +206,34 @@ export function recommend(
       dropped,
     },
   };
+}
+
+/**
+ * Pick the top N while keeping the feed varied: a team may share at most one species with any
+ * team already picked. Falls back to the plain ranking when that runs dry.
+ */
+function diversify<T extends { t: TeamSim }>(sorted: T[], n: number): T[] {
+  const picked: T[] = [];
+  const speciesOf = (x: T): string[] => x.t.slots.map((s) => s.candidate.build.speciesId);
+  for (const item of sorted) {
+    if (picked.length >= n) {
+      break;
+    }
+    const mine = speciesOf(item);
+    const clash = picked.some((p) => speciesOf(p).filter((id) => mine.includes(id)).length >= 2);
+    if (!clash) {
+      picked.push(item);
+    }
+  }
+  for (const item of sorted) {
+    if (picked.length >= n) {
+      break;
+    }
+    if (!picked.includes(item)) {
+      picked.push(item);
+    }
+  }
+  return picked;
 }
 
 export function verdictsFor(
