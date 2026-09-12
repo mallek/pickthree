@@ -40,7 +40,7 @@ Everything runs on the player's device. No accounts, no server, no upload of col
 | Backend | None | No product reason for one in v1 |
 | Hosting | GitHub Pages, custom domain pickthree.gg | Free for a public repo, CI already lives on GitHub |
 | Persistence | IndexedDB on device | Reopened tab keeps the collection; nothing leaves the phone |
-| PvPoke integration | Vendor seven battle files verbatim at a pinned commit, shim the GameMaster, adapt behind a `BattleSimulator` interface | Files are jQuery-free ES5 with a nine-method surface; a golden test pins fidelity |
+| PvPoke integration | Vendor nine simulator files verbatim at a pinned commit (GameMaster.js included), shim the jQuery subset and page globals it needs, adapt behind a `BattleSimulator` interface | The battle files are jQuery-free; GameMaster's derived move fields are worth keeping verbatim; a golden test pins fidelity |
 | Data refresh | Repo script plus weekly GitHub Action that opens a PR | Refresh is reviewed, never automatic |
 | Package manager | npm workspaces, exact pinned versions | House rule |
 | Team structures | ABC (balanced) and ABB (line) both searched, labelled, and filterable | Core PvP team-building concept players already use |
