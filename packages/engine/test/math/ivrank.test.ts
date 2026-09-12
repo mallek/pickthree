@@ -48,6 +48,12 @@ describe.skipIf(!haveStaticData())('ivRank', () => {
       if (!s.ivs || pg.rankNumG === null || pg.rankPctG === null || pg.nameG === null) {
         continue;
       }
+      // Poke Genie ranks shadow Pokemon by a method of its own (its ranks come out lower than a
+      // plain stat-product rank for the same IVs). PickThree follows PvPoke's method for both, so
+      // the oracle comparison is limited to non-shadows.
+      if (s.shadow) {
+        continue;
+      }
       // Poke Genie ranks the evolution it recommends (Name (G)), not necessarily the scanned stage.
       const target = data.species.find(
         (sp) => sp.speciesName === pg.nameG && !sp.speciesId.endsWith('_shadow'),

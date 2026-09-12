@@ -101,13 +101,21 @@ rows.forEach((r, i) => {
   groups.set(k, g);
 });
 
+let shadowsKept = 0;
 rows.forEach((r, i) => {
   const form = r[cForm] ?? '';
-  const shadow = r[cShadow] === '1' || r[cShadow] === '2';
+  const purified = r[cShadow] === '2';
+  const frustration = /Frustration/.test(`${r[col('Charge Move')]}${r[col('Charge Move 2')]}`);
+  // Keep every purified specimen and Frustration holder, but cap plain shadows so the fixture
+  // stays representative of a mixed collection.
+  const shadow = r[cShadow] === '1' && (frustration || shadowsKept < 25);
+  if (shadow) {
+    shadowsKept += 1;
+  }
   const blankIv = (r[cAtk] ?? '') === '';
   const levelRange = r[cLMin] !== r[cLMax];
   const unmapped = ['Gimmighoul', 'Tatsugiri', 'Morpeko', 'Thundurus'].includes(r[cName] ?? '');
-  if ((form !== '' && form !== 'Normal') || shadow || levelRange || unmapped) {
+  if ((form !== '' && form !== 'Normal') || shadow || purified || levelRange || unmapped) {
     pick.add(i);
   }
   if (blankIv && [...pick].filter((j) => (rows[j]?.[cAtk] ?? '') === '').length < 10) {
@@ -123,7 +131,7 @@ for (const g of groups.values()) {
   }
 }
 
-const target = 120;
+const target = 150;
 const others = rows.map((_, i) => i).filter((i) => !pick.has(i));
 while (pick.size < target && others.length > 0) {
   const j = Math.floor(rand() * others.length);

@@ -94,7 +94,7 @@ Facts from the reference export (607 rows, 50 columns, UTF-8, no BOM, RFC 4180 q
 - 3 rows have a level range (Level Min != Level Max).
 - 9 exact-duplicate scan groups.
 - Forms seen: Mega, Mega Y, Galar, Alola, Hisui, Paldea, Armored, Origin, Altered, Incarnate, Therian, Small, Male, Hero, 10%, Roaming, Normal, and blank.
-- Shadow/Purified: 0 or 1 in this file. 1 is shadow (all four Frustration holders carry it). Purified code unverified, assumed 2 until a purified specimen is exported.
+- Shadow/Purified: 0 normal, 1 shadow, 2 purified. Verified 2026-09-12 with a purified Seel (Shadow/Purified = 2, holds Return).
 - Per-league Sha/Pur columns: 1 = keep shadow, 2 = purify for this league's build (inferred).
 - Gender is a Unicode symbol. Names are English and can carry accents (Flabebe).
 - Scan Date is `YYYY-MM-DD HH:mm`, Catch Date is `M/D/YYYY`.
@@ -337,7 +337,7 @@ Documented in `docs/setup.md`.
 
 ## 10. Risks and open items
 
-- Purified encoding in the Poke Genie export is unverified. Assumed `Shadow/Purified = 2`. Confirm when Travis exports a purified specimen.
+- Poke Genie ranks shadow Pokemon by a method of its own; PickThree's IV rank follows PvPoke's stat-product method for shadows and non-shadows alike, so shadow ranks differ from Poke Genie's. The oracle test compares non-shadows only.
 - Hosted as a subdomain of a domain Travis already owns (demome.com). GitHub Pages issues the certificate once the CNAME resolves.
 - Simulator fidelity: `ActionLogic.js` may read `gm.rankings` for shield and bait decisions. The shim must provide rankings, and the golden test is the gate.
 - Search budget on a phone is estimated, not measured. Section 6.12 states the fallback levers.
