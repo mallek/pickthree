@@ -1,3 +1,5 @@
+<p align="center"><img src="apps/web/public/lockup.svg" alt="pick3" width="240"></p>
+
 # PickThree
 
 Great League team building from the Pokemon you actually own.

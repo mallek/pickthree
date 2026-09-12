@@ -46,6 +46,31 @@ export function PokemonToken({
   );
 }
 
+/** The pick3 mark: a 3 drawn in Fairy pink and Dragon violet with Fighting red terminals. */
+export function Mark({ height = 22 }: { height?: number }) {
+  const width = Math.round(height * (152 / 172));
+  return (
+    <svg width={width} height={height} viewBox="60 56 152 172" aria-hidden="true" focusable="false">
+      <path
+        d="M92 78 H156 a32 32 0 0 1 0 64 H136"
+        fill="none"
+        stroke="#D685AD"
+        strokeWidth="30"
+        strokeLinecap="round"
+      />
+      <path
+        d="M136 142 H156 a32 32 0 0 1 0 64 H92"
+        fill="none"
+        stroke="#6F35FC"
+        strokeWidth="30"
+        strokeLinecap="round"
+      />
+      <circle cx="92" cy="78" r="15" fill="#C22E28" />
+      <circle cx="92" cy="206" r="15" fill="#C22E28" />
+    </svg>
+  );
+}
+
 export const ROLE_TEXT = { lead: 'Lead', switch: 'Safe Switch', closer: 'Closer' } as const;
 
 export function RoleLabel({ role }: { role: 'lead' | 'switch' | 'closer' }) {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Progress } from '../components.tsx';
+import { Mark, Progress } from '../components.tsx';
 import { fetchCount } from '../counter.ts';
 import { num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -54,13 +54,9 @@ export function Welcome() {
       >
         <div className="stack">
           <div className="brand">
-            <div className="dots">
-              <span style={{ background: 'var(--type-fairy)' }} />
-              <span style={{ background: 'var(--type-dragon)' }} />
-              <span style={{ background: 'var(--type-fighting)' }} />
-            </div>
+            <Mark height={26} />
             <span className="meta" style={{ letterSpacing: '.08em', textTransform: 'uppercase' }}>
-              PickThree
+              pick3
             </span>
           </div>
           <h1>Three Pokemon. Pick them from what you already own.</h1>
