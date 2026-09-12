@@ -138,9 +138,9 @@ export function TeamDetail({ id }: { id: string }) {
             );
           })}
           <p className="meta">
-            &ldquo;{team.slots[0].candidate.moveset.fast.name} x7&rdquo; means seven fast moves to
-            charge that move. An <Term term="Elite TM">{GLOSSARY['Elite TM']}</Term> teaches a move
-            the Pokémon can no longer learn normally.{' '}
+            A move count like &ldquo;4-4-3&rdquo; is how many fast moves reach the charged move on
+            its first, second and third use. An <Term term="Elite TM">{GLOSSARY['Elite TM']}</Term>{' '}
+            teaches a move the Pokémon can no longer learn normally.{' '}
             <Term term="XL Candy">{GLOSSARY['XL Candy']}</Term> powers up past level 40.{' '}
             <Term term="IV rank">{GLOSSARY['IV rank']}</Term> compares your specimen with every
             possible one for Great League.

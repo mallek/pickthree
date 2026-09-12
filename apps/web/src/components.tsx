@@ -142,13 +142,12 @@ export function EffectIcons({ effects }: { effects: MoveEffect[] }) {
   );
 }
 
+/** PvPoke-style move count: "4-4-3" means four fast moves, then four, then three. */
 export function countsText(fastName: string, counts: number[] | null): string | null {
   if (!counts || counts.length === 0) {
     return null;
   }
-  const [a, ...rest] = counts;
-  const same = rest.every((n) => n === a);
-  return same ? `${fastName} x${a}` : `${fastName} x${a}, then ${rest.join(', ')}`;
+  return `${counts.join('-')} ${fastName}`;
 }
 
 export const ROLE_TEXT = { lead: 'Lead', switch: 'Safe Switch', closer: 'Closer' } as const;
