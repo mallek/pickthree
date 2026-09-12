@@ -181,24 +181,42 @@ export function MoveRows({
     <div className="moves">
       <div className="move-row">
         <span className="move-kind">Fast</span>
-        <span className="move-name">
-          {fast.name} <TypeChip type={fast.type} small />
-          <EffectIcons effects={fast.effects} />
-        </span>
-        <TmBadge tm={fast.tm} />
-      </div>
-      {charged.map((m) => (
-        <div className="move-row" key={m.moveId}>
-          <span className="move-kind">Charged</span>
-          <span className="move-name">
-            {m.name} <TypeChip type={m.type} small />
-            <EffectIcons effects={m.effects} />
+        <span className="move-main">
+          <span className="move-line">
+            <span className="move-name">{fast.name}</span>
+            <span className="move-tags">
+              <TypeChip type={fast.type} small />
+              <EffectIcons effects={fast.effects} />
+            </span>
+            <TmBadge tm={fast.tm} />
           </span>
-          <TmBadge tm={m.tm} />
-          <span className="move-count">{countsText(fast.name, m.counts)}</span>
-          {reads?.[m.moveId] ? <span className="move-read">{reads[m.moveId]}</span> : null}
-        </div>
-      ))}
+        </span>
+      </div>
+      {charged.map((m) => {
+        const count = countsText(fast.name, m.counts);
+        const read = reads?.[m.moveId];
+        return (
+          <div className="move-row" key={m.moveId}>
+            <span className="move-kind">Charged</span>
+            <span className="move-main">
+              <span className="move-line">
+                <span className="move-name">{m.name}</span>
+                <span className="move-tags">
+                  <TypeChip type={m.type} small />
+                  <EffectIcons effects={m.effects} />
+                </span>
+                <TmBadge tm={m.tm} />
+              </span>
+              {count || read ? (
+                <span className="move-sub">
+                  {count ? <span>{count}</span> : null}
+                  {read ? <span>{read}</span> : null}
+                </span>
+              ) : null}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

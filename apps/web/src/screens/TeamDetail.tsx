@@ -76,21 +76,34 @@ export function TeamDetail({ id }: { id: string }) {
                     team.explanation.slotDetail[i]!.moveReads.map((r) => [r.moveId, r.line]),
                   )}
                 />
-                <div className="shield-line">
-                  <span>Shield</span>
-                  {team.explanation.slotDetail[i]!.weaknesses.map((t) => (
-                    <TypeChip key={t} type={t} small />
-                  ))}
-                  <span>charged moves.</span>
-                  {team.explanation.slotDetail[i]!.resistances.length > 0 ? (
-                    <>
-                      <span>Let</span>
-                      {team.explanation.slotDetail[i]!.resistances.slice(0, 5).map((t) => (
+                <div className="strategy">
+                  <span className="strategy-title">Opponent charged attack strategy</span>
+                  <div className="strategy-row">
+                    <span>Shield</span>
+                    <span className="tchips">
+                      {team.explanation.slotDetail[i]!.weaknesses.map((t) => (
                         <TypeChip key={t} type={t} small />
                       ))}
-                      <span>through.</span>
-                    </>
-                  ) : null}
+                      {team.explanation.slotDetail[i]!.weaknesses.length === 0 ? (
+                        <span className="small muted">the biggest one you see</span>
+                      ) : null}
+                    </span>
+                  </div>
+                  <div className="strategy-row">
+                    <span>Safe</span>
+                    <span className="tchips">
+                      {team.explanation.slotDetail[i]!.resistances.map((t) => (
+                        <TypeChip key={t} type={t} small />
+                      ))}
+                      {team.explanation.slotDetail[i]!.resistances.length === 0 ? (
+                        <span className="small muted">none, everything hits neutral or better</span>
+                      ) : null}
+                    </span>
+                  </div>
+                  <span className="strategy-note">
+                    * Low on health and close to your own charged move? Shielding a neutral hit can
+                    be worth it.
+                  </span>
                 </div>
                 {team.explanation.slotDetail[i]!.keepShield ? (
                   <div className="small" style={{ color: 'var(--accent-text)' }}>

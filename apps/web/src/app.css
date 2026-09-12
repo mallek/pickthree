@@ -409,13 +409,12 @@ a {
   border-top: 1px solid var(--divider);
 }
 .move-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 56px 1fr;
   gap: 8px;
-  min-height: 40px;
+  padding: 8px 0;
   font-size: 14px;
   border-bottom: 1px solid var(--divider);
-  flex-wrap: wrap;
 }
 .move-row:last-child {
   border-bottom: 0;
@@ -423,16 +422,38 @@ a {
 .move-kind {
   color: var(--muted);
   font-size: 12px;
-  width: 56px;
-  flex: none;
+  padding-top: 4px;
+}
+.move-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.move-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.move-line .tm {
+  margin-left: auto;
 }
 .move-name {
-  flex: 1;
+  font-size: 14px;
 }
-.move-count {
+.move-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.move-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 12px;
   color: var(--muted);
-  flex: none;
 }
 
 /* type chips, one style everywhere */
@@ -454,6 +475,7 @@ a {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
   line-height: 1.3;
   vertical-align: middle;
+  white-space: nowrap;
 }
 .tchip-sm {
   padding: 1px 6px;
@@ -464,7 +486,6 @@ a {
 .fx {
   display: inline-flex;
   gap: 4px;
-  margin-left: 6px;
   vertical-align: middle;
 }
 .fx-icon {
@@ -476,6 +497,7 @@ a {
   font-size: 10px;
   line-height: 1;
   background: var(--surface2);
+  white-space: nowrap;
 }
 .fx-icon b {
   font-weight: 600;
@@ -492,22 +514,37 @@ a {
 .fx-bad {
   color: var(--warn);
 }
-.move-read {
-  flex-basis: 100%;
+
+/* opponent charged attack strategy */
+.strategy {
+  border-top: 1px solid var(--divider);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.strategy-title {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.strategy-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.strategy-row > span:first-child {
+  color: var(--muted);
+}
+.strategy-note {
   font-size: 11px;
   color: var(--faint);
-  padding-left: 64px;
-  margin-top: -4px;
-  padding-bottom: 6px;
-}
-.move-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
 }
 
-/* switch plan and shields */
+/* switch plan */
 .switch-row {
   display: grid;
   grid-template-columns: 32px 1fr;
@@ -519,14 +556,6 @@ a {
 }
 .switch-row .meta {
   margin-top: 2px;
-}
-.shield-line {
-  font-size: 13px;
-  color: var(--muted);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  align-items: center;
 }
 
 /* terms */
