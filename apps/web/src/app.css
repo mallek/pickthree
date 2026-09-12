@@ -1106,6 +1106,34 @@ input[type='range'] {
   font-variant-numeric: tabular-nums;
 }
 
+/* theme-paired assets (mirrors the token switching in tokens.css) */
+.only-dark {
+  display: block;
+}
+.only-light {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light {
+    display: block;
+  }
+}
+:root[data-theme='light'] .only-dark {
+  display: none;
+}
+:root[data-theme='light'] .only-light {
+  display: block;
+}
+:root[data-theme='dark'] .only-dark {
+  display: block;
+}
+:root[data-theme='dark'] .only-light {
+  display: none;
+}
+
 .boot {
   padding: 80px 24px;
   text-align: center;

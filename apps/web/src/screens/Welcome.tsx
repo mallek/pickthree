@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Mark, Progress } from '../components.tsx';
+import { Progress } from '../components.tsx';
 import { fetchCount } from '../counter.ts';
 import { num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -54,10 +54,8 @@ export function Welcome() {
       >
         <div className="stack">
           <div className="brand">
-            <Mark height={26} />
-            <span className="meta" style={{ letterSpacing: '.08em', textTransform: 'uppercase' }}>
-              pick3
-            </span>
+            <img className="only-dark" src="/lockup.svg" alt="pick3" height={30} />
+            <img className="only-light" src="/lockup-light.svg" alt="pick3" height={30} />
           </div>
           <h1>Three Pokemon. Pick them from what you already own.</h1>
           <p className="muted">
