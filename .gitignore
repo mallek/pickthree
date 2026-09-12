@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+
+# pinned PvPoke checkout, produced by npm run data:build
+packages/data/.pvpoke/
+
+# generated static data (rebuilt from the pinned commit)
+apps/web/public/data/
+
+# real Poke Genie exports live here locally and never enter the repo
+private/
+
+# playwright
+test-results/
+playwright-report/
