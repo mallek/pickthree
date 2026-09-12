@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Progress } from '../components.tsx';
 import { fetchCount } from '../counter.ts';
 import { num } from '../format.ts';
+import { arrivedFromShare, clearShareMarker, takeSharedCsv } from '../share.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function Welcome() {
@@ -36,6 +37,22 @@ export function Welcome() {
     if (q.get('sample') === '1' && boot === 'ready' && !importing) {
       void loadSample();
     }
+  }, [boot]);
+
+  const [shareMiss, setShareMiss] = useState(false);
+  useEffect(() => {
+    // Arrived from the share sheet: the service worker parked the CSV for us.
+    if (!arrivedFromShare() || boot !== 'ready' || importing) {
+      return;
+    }
+    clearShareMarker();
+    void takeSharedCsv().then((shared) => {
+      if (shared) {
+        void importCsv(shared.text, shared.name);
+      } else {
+        setShareMiss(true);
+      }
+    });
   }, [boot]);
 
   const onFile = async (f: File | undefined): Promise<void> => {
@@ -76,7 +93,10 @@ export function Welcome() {
             <span>2</span>
             <div>
               <b>Upload it here</b>
-              <span className="small muted">Or paste the text. It stays on your phone.</span>
+              <span className="small muted">
+                Or share it from Poke Genie straight to pick3 once the app is installed. It stays on
+                your phone.
+              </span>
             </div>
           </li>
           <li>
@@ -99,6 +119,12 @@ export function Welcome() {
           </p>
         </details>
         {importError ? <div className="error">{importError}</div> : null}
+        {shareMiss ? (
+          <div className="error">
+            The share did not include a CSV file. In Poke Genie choose Export to CSV, then share the
+            file to pick3.
+          </div>
+        ) : null}
         {bootError ? (
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}

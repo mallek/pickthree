@@ -10,6 +10,10 @@ export default defineConfig({
       // main.tsx imports virtual:pwa-register; no inline script, which keeps the CSP strict.
       injectRegister: false,
       registerType: 'autoUpdate',
+      // Hand-written service worker (src/sw.ts) so it can answer the Web Share Target POST.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       manifest: {
         id: '/',
         name: 'pick3',
@@ -29,36 +33,34 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Poke Genie's share sheet lists installed pick3; the CSV lands on /share (see src/sw.ts).
+        share_target: {
+          action: '/share',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            files: [
+              {
+                name: 'csv',
+                accept: [
+                  '.csv',
+                  'text/csv',
+                  'text/comma-separated-values',
+                  'application/csv',
+                  'application/vnd.ms-excel',
+                ],
+              },
+            ],
+          },
+        },
       },
-      workbox: {
+      injectManifest: {
         // App shell is precached. Game data (about 7 MB) is fetched on first use and then served
-        // from cache while it revalidates, so a reinstall does not redownload it and offline works.
+        // from cache while it revalidates (runtime route in src/sw.ts).
         globPatterns: ['**/*.{js,css,html,svg,png,csv}'],
         globIgnores: ['data/**'],
-        navigateFallback: '/index.html',
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) =>
-              url.origin === self.location.origin && url.pathname.startsWith('/data/'),
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'pick3-data',
-              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: ({ url }) =>
-              url.origin === 'https://fonts.googleapis.com' ||
-              url.origin === 'https://fonts.gstatic.com',
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'pick3-fonts',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],

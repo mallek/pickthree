@@ -1,0 +1,33 @@
+import { SHARE_CACHE, SHARE_KEY, SHARE_PARAM } from './share-protocol.ts';
+
+/** True when this page load came from the share target redirect. */
+export function arrivedFromShare(): boolean {
+  return new URLSearchParams(window.location.search).get(SHARE_PARAM) === '1';
+}
+
+/** The CSV the service worker parked for us, if any. Cleared once read. */
+export async function takeSharedCsv(): Promise<{ text: string; name: string | null } | null> {
+  if (!('caches' in window)) {
+    return null;
+  }
+  try {
+    const cache = await caches.open(SHARE_CACHE);
+    const res = await cache.match(SHARE_KEY);
+    if (!res) {
+      return null;
+    }
+    const text = await res.text();
+    const rawName = res.headers.get('x-file-name');
+    await cache.delete(SHARE_KEY);
+    return { text, name: rawName ? decodeURIComponent(rawName) : null };
+  } catch {
+    return null;
+  }
+}
+
+/** Drop the share marker from the address bar so a reload does not look like a new share. */
+export function clearShareMarker(): void {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(SHARE_PARAM);
+  window.history.replaceState(null, '', url.toString());
+}

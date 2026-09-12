@@ -18,6 +18,7 @@ import {
 } from 'react';
 import type { SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
+import { arrivedFromShare } from '../share.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
 
@@ -257,7 +258,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         if (!cancelled) {
           dispatch({ type: 'loaded', collection, settings });
           const initialRoute = parseHash(window.location.hash);
-          if (collection && initialRoute.screen === 'welcome') {
+          if (collection && initialRoute.screen === 'welcome' && !arrivedFromShare()) {
             dispatch({ type: 'route', route: { screen: 'teams' } });
             window.location.hash = hashFor({ screen: 'teams' });
           } else {
