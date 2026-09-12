@@ -1,0 +1,16 @@
+{
+  "name": "@pickthree/data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "fetch": "tsx src/fetch-pvpoke.ts",
+    "build": "tsx src/build.ts",
+    "refresh": "tsx src/refresh.ts"
+  },
+  "dependencies": {
+    "@pickthree/engine": "0.0.0",
+    "@pickthree/sim-pvpoke": "0.0.0"
+  }
+}
