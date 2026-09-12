@@ -15,6 +15,19 @@ Note on install speed: a user-level `min-release-age` npm setting makes the firs
 resolution slow (npm fetches full metadata for every package to check publish dates). Once
 `package-lock.json` exists, `npm ci` skips resolution and is fast.
 
+## Web app
+
+    npm -w @pickthree/web run dev          # http://localhost:5173
+    npm -w @pickthree/web run build        # apps/web/dist
+    npm -w @pickthree/web run preview      # serves dist on :4173
+    npm run web:screens                    # puppeteer (uses installed Chrome) -> apps/web/screenshots/
+
+The app loads `/data/*` at runtime, so run `npm run data:build` before `dev`. `#/?sample=1` (or the
+"Try a sample collection" link) imports `apps/web/public/fixtures/pokegenie-sample.csv`.
+
+Deploy: pushing to `main` runs `.github/workflows/pages.yml`, which builds the data and the app and
+publishes to GitHub Pages at pick3.demome.com (CNAME on demome.com at GoDaddy).
+
 ## Refreshing PvPoke
 
     npm run data:refresh                      # bumps pvpoke.lock.json to upstream HEAD

@@ -1,7 +1,7 @@
 # PickThree MVP design
 
 Date: 2026-09-11
-Status: approved in discussion, UI section pending the Claude Design export
+Status: implemented 2026-09-12 (plans 1 to 3); live at pick3.demome.com
 Domain: pick3.demome.com (CNAME to GitHub Pages; pickthree.gg was priced at $100 and passed on)
 Repo: github.com/mallek/pickthree, public, MIT
 
@@ -118,7 +118,7 @@ Unmapped rows are reported with the raw name and form so the override table can 
 
 ```ts
 interface Specimen {
-  id: string;              // stable hash of speciesId, form, shadow, ivs, level, originalScanDate
+  id: string;              // stable hash of speciesId, shadow, ivs, level (blank-IV rows add cp and hp)
   speciesId: string;       // PvPoke id of the scanned stage, e.g. "rookidee"
   familyId: string;        // from game master
   ivs: { atk: number; def: number; sta: number } | null;
@@ -134,7 +134,7 @@ interface Specimen {
 }
 ```
 
-Dedupe: rows with the same `id` collapse to the newest `scannedAt`. Specimens with `ivs: null` are kept in the collection with verdict "Needs rescan" and excluded from all recommendation stages.
+Dedupe: rows with the same `id` collapse to the newest `scannedAt`. Scan dates are not part of the identity, so the same Pokemon scanned twice on different days merges. Specimens with `ivs: null` are kept in the collection with verdict "Needs rescan" and excluded from all recommendation stages.
 
 ### 4.5 Staleness and re-import
 
