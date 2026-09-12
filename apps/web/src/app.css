@@ -521,7 +521,7 @@ a {
   padding-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 .strategy-title {
   font-size: 12px;
@@ -533,8 +533,14 @@ a {
   display: grid;
   grid-template-columns: 56px 1fr;
   gap: 8px;
-  align-items: center;
+  align-items: start;
   font-size: 13px;
+}
+.strategy-row > span:first-child {
+  padding-top: 2px;
+}
+.strategy-row .tchips {
+  gap: 6px;
 }
 .strategy-row > span:first-child {
   color: var(--muted);
@@ -542,6 +548,7 @@ a {
 .strategy-note {
   font-size: 11px;
   color: var(--faint);
+  margin-top: 2px;
 }
 
 /* switch plan */
