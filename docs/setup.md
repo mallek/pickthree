@@ -28,6 +28,14 @@ The app loads `/data/*` at runtime, so run `npm run data:build` before `dev`. `#
 Deploy: pushing to `main` runs `.github/workflows/pages.yml`, which builds the data and the app and
 publishes to GitHub Pages at pick3.demome.com (CNAME on demome.com at GoDaddy).
 
+## PWA
+
+`vite-plugin-pwa` (generateSW) emits `manifest.webmanifest` and `sw.js` at build. The app shell is
+precached; `/data/*` and Google Fonts are cached stale-while-revalidate on first use, so the app
+works offline after one visit. Registration lives in `src/main.tsx` (no inline script, so the CSP
+stays strict). Updates apply on the next launch. Icons: `icon-192.png`, `icon-512.png` (also used as
+maskable), `apple-touch-icon.png`.
+
 ## Counter worker
 
 `workers/counter` is a Cloudflare Worker (Durable Object) with `POST /hit` and `GET /count`, live at

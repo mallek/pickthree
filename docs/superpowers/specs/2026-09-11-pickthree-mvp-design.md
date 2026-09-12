@@ -28,7 +28,7 @@ Everything runs on the player's device. No accounts, no server, no upload of col
 - Pokemon GO account access of any kind.
 - Persistent server-side storage, accounts, billing, admin surfaces.
 - Pokemon artwork or sprites.
-- PWA share target registration (v2 once the app is installable).
+- PWA share target registration (the app is installable as of 2026-09-12; share target is still v2).
 
 ## 2. Decisions
 
