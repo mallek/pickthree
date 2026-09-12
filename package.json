@@ -1,0 +1,41 @@
+{
+  "name": "pickthree",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Great League team building from the Pokemon you actually own.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "data:fetch": "npm -w @pickthree/data run fetch",
+    "data:build": "npm -w @pickthree/data run build",
+    "data:refresh": "npm -w @pickthree/data run refresh"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.12.0",
+    "prettier": "3.9.6",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "@types/node": "24.13.3"
+  }
+}

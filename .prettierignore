@@ -1,0 +1,4 @@
+packages/sim-pvpoke/vendor/
+packages/data/.pvpoke/
+apps/web/public/data/
+package-lock.json
