@@ -1,3 +1,4 @@
+import type { MetaRank } from '@pickthree/engine';
 import type { Cost, IvRankResult, PokemonType, Species } from '@pickthree/engine';
 
 const REGIONAL: Record<string, string> = {
@@ -97,4 +98,22 @@ export function scanAge(scanDate: string, now = new Date()): string {
     return `scanned ${days} days ago`;
   }
   return `scanned ${dateLabel(d.toISOString())}`;
+}
+
+/** Only species inside this cutoff get meta tags. Mirrors the engine's META_CUTOFF. */
+export const META_CUTOFF = 50;
+
+/** "#18 overall", "#5 closer". Empty outside the cutoff. Mirrors the engine's metaRankTags. */
+export function metaTags(rank: MetaRank | undefined, cutoff = META_CUTOFF): string[] {
+  if (!rank) {
+    return [];
+  }
+  const tags: string[] = [];
+  if (rank.overall <= cutoff) {
+    tags.push(`#${rank.overall} overall`);
+  }
+  if (rank.role && rank.roleRank !== null && rank.roleRank <= cutoff) {
+    tags.push(`#${rank.roleRank} ${rank.role}`);
+  }
+  return tags;
 }

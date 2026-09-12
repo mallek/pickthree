@@ -1,3 +1,4 @@
+import type { MetaRank } from '@pickthree/engine';
 import { useEffect } from 'react';
 import {
   Header,
@@ -6,11 +7,23 @@ import {
   Progress,
   TypeChips,
   VerdictChip,
+  useMetaRank,
   useName,
   useSpecies,
 } from '../components.tsx';
-import { ivLine, levelLabel, num, scanAge } from '../format.ts';
+import { META_CUTOFF, ivLine, levelLabel, num, scanAge } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
+
+function metaLine(rank: MetaRank | undefined): string {
+  if (!rank) {
+    return 'Unranked';
+  }
+  const role =
+    rank.role && rank.roleRank !== null && rank.roleRank <= META_CUTOFF
+      ? ` · #${rank.roleRank} ${rank.role}`
+      : '';
+  return `#${rank.overall} overall${role}`;
+}
 
 export function SpecimenScreen({ id }: { id: string }) {
   const s = useAppState();
@@ -45,6 +58,7 @@ export function SpecimenScreen({ id }: { id: string }) {
     );
   }
   const v = s.verdicts[sp.id];
+  const metaRank = useMetaRank();
   const display = name(sp.speciesId);
   const types = species(sp.speciesId)?.types ?? ['normal', 'none'];
   const excluded = s.settings.excludedSpecimenIds.includes(sp.id);
@@ -109,6 +123,14 @@ export function SpecimenScreen({ id }: { id: string }) {
                     ? 'Not eligible'
                     : '...'
                   : 'Unknown'}
+            </span>
+          </div>
+          <div className="kv" style={{ alignItems: 'baseline' }}>
+            <span className="muted">
+              Meta rank{build && build.stageOffset > 0 ? ' when evolved' : ''}
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 500 }}>
+              {metaLine(metaRank(build?.speciesId ?? sp.speciesId))}
             </span>
           </div>
           {v ? <p style={{ marginTop: 4 }}>{v.line}</p> : null}

@@ -8,6 +8,8 @@ import {
   StructureTag,
   Term,
   TypeChip,
+  MetaTags,
+  RankTag,
   TypeChips,
   useName,
 } from '../components.tsx';
@@ -66,6 +68,7 @@ export function TeamDetail({ id }: { id: string }) {
                       {name(c.build.speciesId)}{' '}
                       <TypeChips types={team.explanation.slotDetail[i]!.types} small />
                     </div>
+                    <MetaTags speciesId={c.build.speciesId} />
                     <div className="small muted">{slot.roleWhy}</div>
                   </div>
                 </div>
@@ -226,8 +229,8 @@ export function TeamDetail({ id }: { id: string }) {
         <div className="stack" style={{ gap: 4 }}>
           <h3 style={{ marginBottom: 4 }}>When to switch</h3>
           <p className="meta">
-            What beats your {name(lead.candidate.build.speciesId)} lead, worst first, and who
-            answers it.
+            What beats your {name(lead.candidate.build.speciesId)} lead and who answers it.
+            Unanswered threats first, then the ones you meet most.
           </p>
           {team.explanation.switchPlan.length === 0 ? (
             <p className="small muted">
@@ -241,6 +244,7 @@ export function TeamDetail({ id }: { id: string }) {
                 <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
                   <b style={{ fontWeight: 500 }}>{sw.opponentName}</b>
                   <TypeChips types={sw.opponentTypes} small />
+                  <RankTag rank={sw.opponentRank} />
                 </div>
                 <div className="meta">
                   {sw.to === null
@@ -260,6 +264,7 @@ export function TeamDetail({ id }: { id: string }) {
                 <PokemonToken speciesId={w.opponent} size={32} showInitial={false} />
                 <b>{w.opponentName}</b>
                 <TypeChips types={w.opponentTypes} small />
+                <RankTag rank={w.opponentRank} />
                 <span>{w.line}</span>
               </div>
             ))}
@@ -277,6 +282,7 @@ export function TeamDetail({ id }: { id: string }) {
                   <PokemonToken speciesId={w.opponent} size={32} showInitial={false} />
                   <b>{w.opponentName}</b>
                   <TypeChips types={w.opponentTypes} small />
+                  <RankTag rank={w.opponentRank} />
                   <span>{w.line}</span>
                 </div>
               ))}

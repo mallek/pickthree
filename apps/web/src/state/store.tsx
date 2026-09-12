@@ -1,3 +1,4 @@
+import type { MetaRank } from '@pickthree/engine';
 import type { ProgressEvent, Recommendation, RecommendOptions, Verdict } from '@pickthree/engine';
 import {
   createContext,
@@ -29,6 +30,7 @@ export interface DataInfo {
   metaSize: number;
   species: Record<string, SpeciesLite>;
   meta: string[];
+  metaRanks: Record<string, MetaRank>;
 }
 
 export interface AppState {
@@ -245,7 +247,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         if (!cancelled) {
           dispatch({
             type: 'boot-ready',
-            data: { ...r.manifest, species: r.species, meta: r.meta },
+            data: { ...r.manifest, species: r.species, meta: r.meta, metaRanks: r.metaRanks },
           });
         }
       })

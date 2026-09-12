@@ -4,6 +4,7 @@ import { recommendMoveset, type Moveset } from '../builds/moves.js';
 import type { Specimen } from '../collection/specimen.js';
 import { fullName } from '../explain/explain.js';
 import type { GameDataIndex } from '../gamedata/index.js';
+import { metaRankSentence, type MetaRank } from '../gamedata/metaRank.js';
 import type { MetaEntry, RankingEntry } from '../gamedata/types.js';
 import { statProduct } from '../math/cp.js';
 import type { MatrixView } from '../search/matrixView.js';
@@ -25,11 +26,14 @@ export interface Verdict {
   perfectLine: string | null;
   metaWins: number | null;
   metaSize: number;
+  /** Where the verdict's stage sits in the current meta, ignoring IVs. */
+  metaRank: MetaRank | null;
 }
 
 export interface VerdictDeps {
   index: GameDataIndex;
   overall: Map<string, RankingEntry>;
+  metaRanks: Map<string, MetaRank>;
   view: MatrixView;
   meta: MetaEntry[];
   sim: BattleSimulator | null;
@@ -95,6 +99,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     perfectLine: null,
     metaWins: null,
     metaSize,
+    metaRank: null,
   };
   const name = fullName(s.speciesId, deps.index);
   if (!s.ivs) {
@@ -154,6 +159,9 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
 
   const alreadyBuilt = build.level <= s.level.max + 0.5 && build.stageOffset === 0;
   const evoNote = build.stageOffset > 0 ? ` as ${stageName}` : '';
+  const metaRank = deps.metaRanks.get(build.speciesId) ?? null;
+  const metaNote = metaRankSentence(stageName, metaRank ?? undefined);
+  const withMeta = (line: string): string => (metaNote ? `${line} ${metaNote}` : line);
   if (!competitive) {
     return {
       ...base,
@@ -163,6 +171,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       metaWins,
       perfectDelta,
       perfectLine,
+      metaRank,
       label: 'Wait for better IVs',
       line: `${stageName} is not a strong Great League pick right now (PvPoke score ${ranked?.score ?? 0}). Keep it for fun, not for ranked play.`,
     };
@@ -176,8 +185,11 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       metaWins,
       perfectDelta,
       perfectLine,
+      metaRank,
       label: 'Great League ready',
-      line: `Top ${topPct}% for Great League and already at level ${s.level.max}. Use it.`,
+      line: withMeta(
+        `Top ${topPct}% for Great League and already at level ${s.level.max}. Use it.`,
+      ),
     };
   }
   if (topPct <= 25 || (s.shadow && topPct <= 40) || (perfectDelta !== null && perfectDelta <= 1)) {
@@ -189,8 +201,11 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       metaWins,
       perfectDelta,
       perfectLine,
+      metaRank,
       label: 'Worth building',
-      line: `Top ${topPct}% for Great League${evoNote}. ${perfectDelta !== null && perfectDelta <= 1 ? 'A better one would barely change results.' : 'Worth the Stardust.'}`,
+      line: withMeta(
+        `Top ${topPct}% for Great League${evoNote}. ${perfectDelta !== null && perfectDelta <= 1 ? 'A better one would barely change results.' : 'Worth the Stardust.'}`,
+      ),
     };
   }
   return {
@@ -201,7 +216,10 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     metaWins,
     perfectDelta,
     perfectLine,
+    metaRank,
     label: 'Wait for better IVs',
-    line: `Top ${topPct}% for Great League${evoNote}. Usable, but a better one is likely to show up before you finish the build.`,
+    line: withMeta(
+      `Top ${topPct}% for Great League${evoNote}. Usable, but a better one is likely to show up before you finish the build.`,
+    ),
   };
 }

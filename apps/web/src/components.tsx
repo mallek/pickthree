@@ -1,4 +1,5 @@
 import type {
+  MetaRank,
   MoveChoice,
   MoveEffect,
   PokemonType,
@@ -6,7 +7,7 @@ import type {
   VerdictLabel,
 } from '@pickthree/engine';
 import { useState, type ReactNode } from 'react';
-import { initialOf, speciesDisplayName, typeColor, typeLabel } from './format.ts';
+import { initialOf, metaTags, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { useAppState } from './state/store.tsx';
 
@@ -21,6 +22,37 @@ export function useName(): (id: string) => string {
     const s = sp(id);
     return speciesDisplayName(id, s ? ({ speciesName: s.name } as never) : undefined);
   };
+}
+
+export function useMetaRank(): (id: string) => MetaRank | undefined {
+  const { data } = useAppState();
+  return (id: string) => data?.metaRanks[id];
+}
+
+/** "#18 overall" and "#5 closer" pills for a species, nothing outside the top 50. */
+export function MetaTags({ speciesId }: { speciesId: string }) {
+  const rank = useMetaRank()(speciesId);
+  const tags = metaTags(rank);
+  if (tags.length === 0) {
+    return null;
+  }
+  return (
+    <span className="mtags">
+      {tags.map((t) => (
+        <span className="mtag" key={t}>
+          {t}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** One pill for an opponent's overall rank, so you know how often you will meet it. */
+export function RankTag({ rank }: { rank: number | null }) {
+  if (rank === null) {
+    return null;
+  }
+  return <span className="mtag">#{rank} overall</span>;
 }
 
 export function PokemonToken({

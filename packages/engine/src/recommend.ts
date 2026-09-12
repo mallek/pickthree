@@ -6,6 +6,7 @@ import {
   type BuildOptions,
 } from './builds/eligibility.js';
 import { rankingsById } from './builds/moves.js';
+import { metaRanks } from './gamedata/metaRank.js';
 import type { Specimen } from './collection/specimen.js';
 import { explainTeam, type Explanation } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
@@ -170,8 +171,9 @@ export function recommend(
   const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view) }));
   scored2.sort((a, b) => b.score.total - a.score.total);
   const top = diversify(scored2, opts.results);
+  const ranks = metaRanks(deps.data.rankings);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
-    const explanation = explainTeam(t, score, pool, view, index);
+    const explanation = explainTeam(t, score, pool, view, index, ranks);
     const slots = t.slots.map((s) => ({
       role: s.role,
       candidate: s.candidate,
@@ -246,11 +248,13 @@ export function verdictsFor(
   const index = new GameDataIndex(deps.data.species, deps.data.moves);
   const view = new MatrixView(deps.data.matrix);
   const overall = rankingsById(deps.data.rankings.overall);
+  const ranks = metaRanks(deps.data.rankings);
   const out: Record<string, Verdict> = {};
   specimens.forEach((s, i) => {
     out[s.id] = specimenVerdict(s, {
       index,
       overall,
+      metaRanks: ranks,
       view,
       meta: deps.data.meta,
       sim: deps.sim,

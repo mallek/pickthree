@@ -1,6 +1,15 @@
 import type { Specimen, VerdictLabel } from '@pickthree/engine';
 import { useEffect, useMemo, useState } from 'react';
-import { Chip, PokemonToken, Progress, VerdictChip, useName } from '../components.tsx';
+import {
+  Chip,
+  MetaTags,
+  PokemonToken,
+  Progress,
+  VerdictChip,
+  useMetaRank,
+  useName,
+} from '../components.tsx';
+import { metaTags } from '../format.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
 const VERDICTS: ('All' | VerdictLabel)[] = [
@@ -41,12 +50,14 @@ export function Collection() {
   const s = useAppState();
   const { navigate, loadVerdicts } = useActions();
   const name = useName();
+  const metaRank = useMetaRank();
   const [query, setQuery] = useState('');
   const [verdict, setVerdict] = useState<'All' | VerdictLabel>('All');
   const [eligibleOnly, setEligibleOnly] = useState(false);
   const [shadowsOnly, setShadowsOnly] = useState(false);
   const [recentOnly, setRecentOnly] = useState(false);
-  const [sort, setSort] = useState<'verdict' | 'rank' | 'name'>('verdict');
+  const [metaOnly, setMetaOnly] = useState(false);
+  const [sort, setSort] = useState<'verdict' | 'rank' | 'meta' | 'name'>('verdict');
 
   useEffect(() => {
     if (
@@ -66,6 +77,10 @@ export function Collection() {
     const q = query.trim().toLowerCase();
     const newest = s.collection.report.newestScan ?? '';
     const cutoff = newest ? new Date(newest.replace(' ', 'T')).getTime() - 14 * 86_400_000 : 0;
+    // Meta rank follows the stage the verdict is about, so a Swinub row ranks as Mamoswine.
+    const metaSpecies = (sp: Specimen): string =>
+      s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId;
+    const metaOf = (sp: Specimen): number => metaRank(metaSpecies(sp))?.overall ?? 9999;
     let list = s.collection.specimens.filter((sp) => {
       const v = s.verdicts[sp.id];
       const nm = name(sp.speciesId).toLowerCase();
@@ -84,6 +99,9 @@ export function Collection() {
       if (recentOnly && new Date(sp.scannedAt.replace(' ', 'T')).getTime() < cutoff) {
         return false;
       }
+      if (metaOnly && metaTags(metaRank(metaSpecies(sp))).length === 0) {
+        return false;
+      }
       return true;
     });
     const rankOf = (sp: Specimen): number => {
@@ -97,6 +115,9 @@ export function Collection() {
       if (sort === 'rank') {
         return rankOf(a) - rankOf(b);
       }
+      if (sort === 'meta') {
+        return metaOf(a) - metaOf(b) || rankOf(a) - rankOf(b);
+      }
       const va = s.verdicts[a.id]?.label;
       const vb = s.verdicts[b.id]?.label;
       const oa = va ? ORDER[va] : 9;
@@ -104,7 +125,19 @@ export function Collection() {
       return oa - ob || rankOf(a) - rankOf(b);
     });
     return list;
-  }, [s.collection, s.verdicts, query, verdict, eligibleOnly, shadowsOnly, recentOnly, sort, name]);
+  }, [
+    s.collection,
+    s.verdicts,
+    query,
+    verdict,
+    eligibleOnly,
+    shadowsOnly,
+    recentOnly,
+    metaOnly,
+    sort,
+    name,
+    metaRank,
+  ]);
 
   if (!s.collection) {
     return (
@@ -122,7 +155,8 @@ export function Collection() {
       </div>
     );
   }
-  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', name: 'Name' };
+  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta rank', name: 'Name' };
+  const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
   return (
     <div className="screen">
       <div className="page-head">
@@ -168,11 +202,16 @@ export function Collection() {
           </button>
           <button
             type="button"
+            className={`mini-chip${metaOnly ? ' on' : ''}`}
+            onClick={() => setMetaOnly((x) => !x)}
+          >
+            Top 50 meta
+          </button>
+          <button
+            type="button"
             className="btn-ghost"
             style={{ marginLeft: 'auto', fontSize: 12, minHeight: 32 }}
-            onClick={() =>
-              setSort((x) => (x === 'verdict' ? 'rank' : x === 'rank' ? 'name' : 'verdict'))
-            }
+            onClick={() => setSort((x) => nextSort[x])}
           >
             Sort: {sortLabels[sort]} &#8645;
           </button>
@@ -195,6 +234,7 @@ export function Collection() {
                 <span className="meta" style={{ display: 'block' }}>
                   CP {sp.cp} · {rankLabel(sp, v)}
                 </span>
+                <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
               </span>
               {v ? <VerdictChip label={v.label} /> : <span className="meta">...</span>}
             </a>

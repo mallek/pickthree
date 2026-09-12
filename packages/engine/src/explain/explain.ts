@@ -1,6 +1,7 @@
 import type { GameDataIndex } from '../gamedata/index.js';
 import { classify, effectiveness, resistances, weaknesses } from '../gamedata/typeChart.js';
 import type { PokemonType } from '../gamedata/types.js';
+import type { MetaRank } from '../gamedata/metaRank.js';
 import type { Candidate, Role } from '../search/candidates.js';
 import type { SlotSim, TeamSim } from '../search/finalists.js';
 import type { MatrixView } from '../search/matrixView.js';
@@ -10,6 +11,8 @@ export interface KeyMatchup {
   opponent: string;
   opponentName: string;
   opponentTypes: [PokemonType, PokemonType | 'none'];
+  /** Overall meta rank of the opponent, how likely you are to run into it. */
+  opponentRank: number | null;
   line: string;
 }
 
@@ -45,6 +48,8 @@ export interface SwitchAdvice {
   opponent: string;
   opponentName: string;
   opponentTypes: [PokemonType, PokemonType | 'none'];
+  /** Overall meta rank of the opponent, how likely you are to run into it. */
+  opponentRank: number | null;
   /** Slot to switch to, or null when nobody on the team beats it. */
   to: 1 | 2 | null;
   toName: string | null;
@@ -170,8 +175,14 @@ export function slotDetailFor(slot: SlotSim, view: MatrixView, index: GameDataIn
   return { types, weaknesses: weak, resistances: resist, shieldLine, keepShield, moveReads };
 }
 
-export function switchPlanFor(t: TeamSim, view: MatrixView, index: GameDataIndex): SwitchAdvice[] {
+export function switchPlanFor(
+  t: TeamSim,
+  view: MatrixView,
+  index: GameDataIndex,
+  ranks: Map<string, MetaRank> = new Map(),
+): SwitchAdvice[] {
   void view;
+  const rankOf = (id: string): number => ranks.get(id)?.overall ?? 9999;
   const [lead, sw, closer] = t.slots;
   const out: SwitchAdvice[] = [];
   for (const r of lead.results) {
@@ -199,6 +210,7 @@ export function switchPlanFor(t: TeamSim, view: MatrixView, index: GameDataIndex
         opponent,
         opponentName: oppName,
         opponentTypes: typesOf(opponent, index),
+        opponentRank: ranks.get(opponent)?.overall ?? null,
         to: best.to,
         toName,
         rating: best.rating,
@@ -209,6 +221,7 @@ export function switchPlanFor(t: TeamSim, view: MatrixView, index: GameDataIndex
         opponent,
         opponentName: oppName,
         opponentTypes: typesOf(opponent, index),
+        opponentRank: ranks.get(opponent)?.overall ?? null,
         to: null,
         toName: null,
         rating: Math.max(swR?.rating ?? 0, clR?.rating ?? 0),
@@ -216,15 +229,19 @@ export function switchPlanFor(t: TeamSim, view: MatrixView, index: GameDataIndex
       });
     }
   }
-  // Worst threats first: the ones with no answer, then by how badly the lead loses.
+  // The ones with no answer first, then the opponents you are most likely to meet.
   const leadRating = new Map(lead.results.map((x) => [x.opponent, x.rating]));
   out.sort((a, b) => {
     if ((a.to === null) !== (b.to === null)) {
       return a.to === null ? -1 : 1;
     }
-    return (leadRating.get(a.opponent) ?? 0) - (leadRating.get(b.opponent) ?? 0);
+    return (
+      rankOf(a.opponent) - rankOf(b.opponent) ||
+      (leadRating.get(a.opponent) ?? 0) - (leadRating.get(b.opponent) ?? 0)
+    );
   });
-  return out;
+  // A species listed twice in the meta group keeps its worse entry.
+  return uniqueByOpponent(out);
 }
 
 export function explainTeam(
@@ -233,9 +250,11 @@ export function explainTeam(
   pool: Candidate[],
   view: MatrixView,
   index: GameDataIndex,
+  ranks: Map<string, MetaRank> = new Map(),
 ): Explanation {
   const [lead, sw, closer] = t.slots;
   const name = (c: Candidate): string => fullName(c.build.speciesId, index);
+  const rankOf = (id: string): number => ranks.get(id)?.overall ?? 9999;
 
   const wins: KeyMatchup[] = [];
   const threats: KeyMatchup[] = [];
@@ -252,6 +271,7 @@ export function explainTeam(
         opponent,
         opponentName: oppName,
         opponentTypes: oppTypes,
+        opponentRank: ranks.get(opponent)?.overall ?? null,
         line: `${name(best.slot.candidate)} ${verb} as ${ROLE_LABEL[best.slot.role]}`,
       });
     } else {
@@ -261,12 +281,19 @@ export function explainTeam(
         opponent,
         opponentName: oppName,
         opponentTypes: oppTypes,
+        opponentRank: ranks.get(opponent)?.overall ?? null,
         line: `${closest}. Best try: ${name(best.slot.candidate)}`,
       });
     }
   }
-  const keyWins = wins.slice(0, 4);
-  const keyThreats = threats.slice(0, 3);
+  // Most common opponents first: beating the #2 Pokemon matters more than beating the #40.
+  // The meta group lists some species twice with different movesets; show each once, and a
+  // species that threatens with either moveset is a threat, not a win.
+  wins.sort((a, b) => rankOf(a.opponent) - rankOf(b.opponent));
+  threats.sort((a, b) => rankOf(a.opponent) - rankOf(b.opponent));
+  const threatIds = new Set(threats.map((x) => x.opponent));
+  const keyWins = uniqueByOpponent(wins.filter((w) => !threatIds.has(w.opponent))).slice(0, 4);
+  const keyThreats = uniqueByOpponent(threats).slice(0, 3);
 
   const topWinNames = keyWins.slice(0, 2).map((w) => w.opponentName);
   const threatName = keyThreats[0]?.opponentName;
@@ -297,7 +324,7 @@ export function explainTeam(
     slotDetailFor(sw, view, index),
     slotDetailFor(closer, view, index),
   ];
-  const switchPlan = switchPlanFor(t, view, index);
+  const switchPlan = switchPlanFor(t, view, index, ranks);
   void score;
   return {
     why,
@@ -309,6 +336,17 @@ export function explainTeam(
     slotDetail,
     switchPlan,
   };
+}
+
+function uniqueByOpponent<T extends { opponent: string }>(list: T[]): T[] {
+  const seen = new Set<string>();
+  return list.filter((x) => {
+    if (seen.has(x.opponent)) {
+      return false;
+    }
+    seen.add(x.opponent);
+    return true;
+  });
 }
 
 function roleScore(c: Candidate, role: Role): number {

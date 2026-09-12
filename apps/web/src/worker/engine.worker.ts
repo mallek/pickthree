@@ -2,6 +2,7 @@
 import {
   GameDataIndex,
   parsePokeGenieCsv,
+  metaRanks,
   recommend,
   toSpecimens,
   verdictsFor,
@@ -136,6 +137,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
             env.data.species.map((sp) => [sp.speciesId, { name: sp.speciesName, types: sp.types }]),
           ),
           meta: env.data.meta.map((x) => x.speciesId),
+          metaRanks: Object.fromEntries(metaRanks(env.data.rankings)),
         },
       });
       return;

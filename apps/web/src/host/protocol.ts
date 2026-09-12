@@ -7,6 +7,7 @@ import type {
   BuildOptions,
   PokemonType,
   ImportReport,
+  MetaRank,
   Recommendation,
   RecommendOptions,
   Specimen,
@@ -30,6 +31,8 @@ export type WorkerResult =
       manifest: { pvpokeCommit: string; pvpokeDate: string; builtAt: string; metaSize: number };
       species: Record<string, SpeciesLite>;
       meta: string[];
+      /** Overall and best-role meta rank per species, ignoring IVs. */
+      metaRanks: Record<string, MetaRank>;
     }
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }
   | { kind: 'recommend'; recommendation: Recommendation }

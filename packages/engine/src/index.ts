@@ -2,6 +2,7 @@ export const ENGINE_NAME = '@pickthree/engine';
 export * from './gamedata/types.js';
 export * from './gamedata/index.js';
 export * from './gamedata/typeChart.js';
+export * from './gamedata/metaRank.js';
 export * from './sim/BattleSimulator.js';
 export * from './tables/cpm.js';
 export * from './tables/powerup.js';
