@@ -53,13 +53,14 @@ export function Welcome() {
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)', gap: 28 }}
       >
         <div className="stack">
-          <div className="brand">
-            <img className="only-dark" src="/lockup.svg" alt="pick3" height={30} />
-            <img className="only-light" src="/lockup-light.svg" alt="pick3" height={30} />
-          </div>
-          <h1>Three Pokemon. Pick them from what you already own.</h1>
+          <h1 className="hero">
+            <img className="only-dark hero-lockup" src="/lockup.svg" alt="pick3" />
+            <img className="only-light hero-lockup" src="/lockup-light.svg" alt="pick3" /> your
+            Great League team from the Pokemon you already own.
+          </h1>
           <p className="muted">
-            Great League teams built from your collection, with the moves, the order, and the cost.
+            Three Pokemon from your collection, in order, with the moves and what they cost to
+            build.
           </p>
         </div>
         <ol className="steps">
@@ -168,7 +169,7 @@ export function Welcome() {
         {count !== null ? (
           <p className="counter" aria-live="polite">
             <span className="counter-digits">{num(count)}</span>{' '}
-            {count === 1 ? 'player has' : 'players have'} pick3ed
+            {count === 1 ? 'trainer has' : 'trainers have'} pick3ed
           </p>
         ) : null}
       </div>
