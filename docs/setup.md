@@ -28,6 +28,15 @@ The app loads `/data/*` at runtime, so run `npm run data:build` before `dev`. `#
 Deploy: pushing to `main` runs `.github/workflows/pages.yml`, which builds the data and the app and
 publishes to GitHub Pages at pick3.demome.com (CNAME on demome.com at GoDaddy).
 
+## Counter worker
+
+`workers/counter` is a Cloudflare Worker (Durable Object) with `POST /hit` and `GET /count`, live at
+https://pickthree-counter.travis-c82.workers.dev. The site sends one anonymous tick per device
+when teams are built and shows the total on the welcome screen. Deploys on push via
+`.github/workflows/counter.yml` using the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo
+secrets (account-owned token, "Edit Cloudflare Workers" template). Local deploy:
+`CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... npm run counter:deploy`.
+
 ## Refreshing PvPoke
 
     npm run data:refresh                      # bumps pvpoke.lock.json to upstream HEAD
