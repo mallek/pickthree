@@ -21,7 +21,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "data:fetch": "npm -w @pickthree/data run fetch",
     "data:build": "npm -w @pickthree/data run build",
-    "data:refresh": "npm -w @pickthree/data run refresh"
+    "data:refresh": "npm -w @pickthree/data run refresh",
+    "fixtures:make": "tsx fixtures/make-fixtures.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
