@@ -328,6 +328,7 @@ export function Progress({ stage, done, total }: { stage: string; done: number; 
     simulate: 'Simulating battles with your exact Pokémon',
     score: 'Scoring and explaining',
     verdicts: 'Judging each Pokémon',
+    counters: 'Scoring every species against the meta',
   };
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return (

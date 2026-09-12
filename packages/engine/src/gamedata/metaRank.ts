@@ -61,6 +61,14 @@ export function metaRanks(
   return out;
 }
 
+/**
+ * How often you meet a species relative to the #1 pick: 1 at rank 1, 0.5 at rank 4, 0.25 at
+ * rank 16. Unranked counts as rank 64.
+ */
+export function facingWeight(rank: number | null): number {
+  return 1 / Math.sqrt(rank ?? 64);
+}
+
 /** Short tags like "#18 overall" and "#5 closer". Empty outside the cutoff. */
 export function metaRankTags(rank: MetaRank | undefined, cutoff = META_CUTOFF): string[] {
   if (!rank) {

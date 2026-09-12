@@ -6,7 +6,7 @@ import {
   type BuildOptions,
 } from './builds/eligibility.js';
 import { rankingsById } from './builds/moves.js';
-import { metaRanks } from './gamedata/metaRank.js';
+import { facingWeight, metaRanks } from './gamedata/metaRank.js';
 import type { Specimen } from './collection/specimen.js';
 import { explainTeam, type Explanation } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
@@ -168,10 +168,13 @@ export function recommend(
   );
 
   progress('score', 0, sims.length);
-  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view) }));
+  const ranks = metaRanks(deps.data.rankings);
+  const facing = new Map(
+    view.opponents.map((id) => [id, facingWeight(ranks.get(id)?.overall ?? null)] as const),
+  );
+  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing) }));
   scored2.sort((a, b) => b.score.total - a.score.total);
   const top = diversify(scored2, opts.results);
-  const ranks = metaRanks(deps.data.rankings);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
     const explanation = explainTeam(t, score, pool, view, index, ranks);
     const slots = t.slots.map((s) => ({

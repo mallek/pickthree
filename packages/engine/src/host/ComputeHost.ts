@@ -2,6 +2,7 @@ import type { BuildOptions } from '../builds/eligibility.js';
 import type { ImportReport, Specimen } from '../collection/specimen.js';
 import type { Recommendation, RecommendOptions } from '../recommend.js';
 import type { Verdict } from '../verdicts/worth.js';
+import type { CounterEntry, CountersOptions } from '../counters/counters.js';
 
 export interface ProgressEvent {
   stage: string;
@@ -26,4 +27,5 @@ export interface ComputeHost {
     options: Partial<BuildOptions>,
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<Record<string, Verdict>>;
+  counters(specimens: Specimen[], options: Partial<CountersOptions>): Promise<CounterEntry[]>;
 }

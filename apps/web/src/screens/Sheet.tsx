@@ -4,7 +4,7 @@ import { useActions, useAppState } from '../state/store.tsx';
 
 export function Sheet() {
   const s = useAppState();
-  const { closeSheet, updateSettings, toggleExcluded, forget } = useActions();
+  const { closeSheet, updateSettings, toggleExcluded, forget, navigate } = useActions();
   const name = useName();
   const f = s.settings.filters;
   const toggle = (k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'): void =>
@@ -140,6 +140,18 @@ export function Sheet() {
               <a href="https://github.com/mallek/pickthree">Source</a>.
             </span>
           </div>
+          {s.collection ? (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                closeSheet();
+                navigate({ screen: 'welcome' });
+              }}
+            >
+              Import a new Poke Genie export
+            </button>
+          ) : null}
           {s.collection ? (
             <button
               type="button"

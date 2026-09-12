@@ -114,11 +114,9 @@ export function Teams() {
       <div className="page-head">
         <div className="between">
           <h2>Your teams</h2>
-          <span className="meta">
-            {teams.length > 0
-              ? `${teams.length} from ${s.collection.report.recognized} Pokémon`
-              : `${s.collection.report.recognized} Pokémon`}
-          </span>
+          <a className="meta head-link" href={hashFor({ screen: 'welcome' })}>
+            {s.collection.report.recognized} Pokémon · New export &rsaquo;
+          </a>
         </div>
         <div className="seg" aria-label="League">
           <span className="on">Great League</span>

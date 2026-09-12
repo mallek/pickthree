@@ -1,6 +1,8 @@
 import type {
   BuildOptions,
   ComputeHost,
+  CounterEntry,
+  CountersOptions,
   ImportReport,
   ProgressEvent,
   Recommendation,
@@ -115,5 +117,16 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.verdicts;
+  }
+
+  async counters(
+    specimens: Specimen[],
+    options: Partial<CountersOptions>,
+  ): Promise<CounterEntry[]> {
+    const r = await this.send({ kind: 'counters', specimens, options });
+    if (r.kind !== 'counters') {
+      throw new Error('unexpected reply');
+    }
+    return r.counters;
   }
 }

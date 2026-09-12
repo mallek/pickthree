@@ -1,5 +1,11 @@
 import type { MetaRank } from '@pickthree/engine';
-import type { ProgressEvent, Recommendation, RecommendOptions, Verdict } from '@pickthree/engine';
+import type {
+  CounterEntry,
+  ProgressEvent,
+  Recommendation,
+  RecommendOptions,
+  Verdict,
+} from '@pickthree/engine';
 import {
   createContext,
   useCallback,
@@ -21,7 +27,8 @@ export type Route =
   | { screen: 'teams' }
   | { screen: 'team'; id: string }
   | { screen: 'collection' }
-  | { screen: 'specimen'; id: string };
+  | { screen: 'specimen'; id: string }
+  | { screen: 'counters' };
 
 export interface DataInfo {
   pvpokeCommit: string;
@@ -50,6 +57,8 @@ export interface AppState {
   recommendError: string | null;
   verdicts: Record<string, Verdict>;
   verdictsLoading: boolean;
+  counters: CounterEntry[] | null;
+  countersLoading: boolean;
   /** Filters snapshot the current recommendation was computed with. */
   recommendedWith: string | null;
 }
@@ -70,6 +79,8 @@ type Action =
   | { type: 'rec-error'; message: string }
   | { type: 'verdicts-start' }
   | { type: 'verdicts-done'; verdicts: Record<string, Verdict> }
+  | { type: 'counters-start' }
+  | { type: 'counters-done'; counters: CounterEntry[] | null }
   | { type: 'forget' };
 
 const initial: AppState = {
@@ -89,6 +100,8 @@ const initial: AppState = {
   recommendError: null,
   verdicts: {},
   verdictsLoading: false,
+  counters: null,
+  countersLoading: false,
   recommendedWith: null,
 };
 
@@ -113,6 +126,7 @@ function reducer(s: AppState, a: Action): AppState {
         collection: a.collection,
         recommendation: null,
         verdicts: {},
+        counters: null,
         recommendedWith: null,
       };
     case 'import-error':
@@ -133,6 +147,10 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, recommending: false, recommendation: a.recommendation, progress: null };
     case 'rec-error':
       return { ...s, recommending: false, recommendError: a.message, progress: null };
+    case 'counters-start':
+      return { ...s, countersLoading: true };
+    case 'counters-done':
+      return { ...s, countersLoading: false, counters: a.counters };
     case 'verdicts-start':
       return { ...s, verdictsLoading: true };
     case 'verdicts-done':
@@ -162,6 +180,9 @@ export function parseHash(hash: string): Route {
   if (a === 'collection') {
     return b ? { screen: 'specimen', id: decodeURIComponent(b) } : { screen: 'collection' };
   }
+  if (a === 'counters') {
+    return { screen: 'counters' };
+  }
   return { screen: 'welcome' };
 }
 
@@ -179,6 +200,8 @@ export function hashFor(r: Route): string {
       return '#/collection';
     case 'specimen':
       return `#/collection/${encodeURIComponent(r.id)}`;
+    case 'counters':
+      return '#/counters';
     default:
       return '#/';
   }
@@ -208,6 +231,7 @@ interface Actions {
   importCsv(text: string, fileName: string | null): Promise<boolean>;
   runRecommend(): Promise<void>;
   loadVerdicts(): Promise<void>;
+  loadCounters(): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
@@ -369,6 +393,21 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
+  const loadCounters = useCallback(async () => {
+    const h = hostRef.current as WorkerHost;
+    const s = stateRef.current;
+    if (!s.collection || s.countersLoading) {
+      return;
+    }
+    dispatch({ type: 'counters-start' });
+    try {
+      const counters = await h.counters(s.collection.specimens, {});
+      dispatch({ type: 'counters-done', counters });
+    } catch {
+      dispatch({ type: 'counters-done', counters: [] });
+    }
+  }, []);
+
   const toggleExcluded = useCallback(
     (specimenId: string) => {
       updateSettings((s) => {
@@ -399,11 +438,22 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       importCsv,
       runRecommend,
       loadVerdicts,
+      loadCounters,
       updateSettings,
       toggleExcluded,
       forget,
     }),
-    [navigate, back, importCsv, runRecommend, loadVerdicts, updateSettings, toggleExcluded, forget],
+    [
+      navigate,
+      back,
+      importCsv,
+      runRecommend,
+      loadVerdicts,
+      loadCounters,
+      updateSettings,
+      toggleExcluded,
+      forget,
+    ],
   );
 
   return (

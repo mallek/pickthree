@@ -95,10 +95,19 @@ await page.goto(`${base}/${specHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.stat3, .verdict');
 await shot('05-specimen');
 
+console.log('counters');
+await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.counter-row', { timeout: 120_000 });
+console.log(`  counters rendered at ${Date.now() - t0} ms`);
+await shot('08-counters');
+await page.click('.chips .chip:nth-child(3)');
+await new Promise((r) => setTimeout(r, 300));
+await shot('09-counters-own', false);
+
 console.log('filters sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.tabs');
-await page.click('.tabs .tab:nth-child(3)');
+await page.click('.tabs .tab:nth-child(4)');
 await page.waitForSelector('.sheet');
 await new Promise((r) => setTimeout(r, 400));
 await shot('06-sheet', false);

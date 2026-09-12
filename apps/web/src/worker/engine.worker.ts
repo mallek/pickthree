@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import {
   GameDataIndex,
+  metaCounters,
   parsePokeGenieCsv,
   metaRanks,
   recommend,
@@ -166,6 +167,16 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         (stage, done, total) => post({ id: msg.id, kind: 'progress', stage, done, total }),
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'verdicts', verdicts } });
+      return;
+    }
+    if (msg.kind === 'counters') {
+      const counters = metaCounters(
+        { matrix: env.data.matrix, rankings: env.data.rankings },
+        msg.specimens,
+        env.index,
+        msg.options,
+      );
+      post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
       return;
     }
   } catch (err) {

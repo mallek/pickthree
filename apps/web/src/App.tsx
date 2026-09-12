@@ -1,4 +1,5 @@
 import { Collection } from './screens/Collection.tsx';
+import { Counters } from './screens/Counters.tsx';
 import { Report } from './screens/Report.tsx';
 import { Sheet } from './screens/Sheet.tsx';
 import { SpecimenScreen } from './screens/Specimen.tsx';
@@ -21,6 +22,14 @@ function TabBar() {
       >
         <i />
         Teams
+      </button>
+      <button
+        type="button"
+        className={`tab diamond${route.screen === 'counters' && !sheetOpen ? ' on' : ''}`}
+        onClick={() => navigate({ screen: 'counters' })}
+      >
+        <i />
+        Counters
       </button>
       <button
         type="button"
@@ -52,6 +61,8 @@ function renderScreen(r: Route) {
       return <Collection />;
     case 'specimen':
       return <SpecimenScreen id={r.id} />;
+    case 'counters':
+      return <Counters />;
     default:
       return <Welcome />;
   }

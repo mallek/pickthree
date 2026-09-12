@@ -87,8 +87,13 @@ export function nameOf(c: Candidate): string {
     .join(' ');
 }
 
-export function scoreTeam(t: TeamSim, all: TeamSim[], view: MatrixView): TeamScore {
-  const n = view.opponents.length;
+export function scoreTeam(
+  t: TeamSim,
+  all: TeamSim[],
+  view: MatrixView,
+  /** Per-opponent weight, how often you meet it. Unweighted when absent. */
+  facing?: Map<string, number>,
+): TeamScore {
   const covered = new Set<string>();
   for (const s of t.slots) {
     for (const r of s.results) {
@@ -97,7 +102,16 @@ export function scoreTeam(t: TeamSim, all: TeamSim[], view: MatrixView): TeamSco
       }
     }
   }
-  const coverage = (covered.size / n) * 100;
+  const weightOf = (id: string): number => facing?.get(id) ?? 1;
+  let got = 0;
+  let facingTotal = 0;
+  for (const id of view.opponents) {
+    facingTotal += weightOf(id);
+    if (covered.has(id)) {
+      got += weightOf(id);
+    }
+  }
+  const coverage = facingTotal === 0 ? 0 : (got / facingTotal) * 100;
 
   // Consistency: simulated wins that also hold in the 0-0 and 2-2 matrix cells for that species.
   const s00 = view.scenarioIndex([0, 0]);
