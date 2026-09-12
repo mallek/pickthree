@@ -1,0 +1,48 @@
+name: pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Cache PvPoke checkout
+        uses: actions/cache@v4
+        with:
+          path: packages/data/.pvpoke
+          key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
+      - run: npm run data:build
+      - name: Build site
+        run: |
+          if [ -f apps/web/package.json ]; then
+            npm -w @pickthree/web run build
+            echo "site=apps/web/dist" >> "$GITHUB_ENV"
+          else
+            echo "site=apps/web/public" >> "$GITHUB_ENV"
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.site }}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

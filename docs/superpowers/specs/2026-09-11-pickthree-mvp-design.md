@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 Status: approved in discussion, UI section pending the Claude Design export
-Domain: pickthree.gg (to be purchased by Travis)
+Domain: pick3.demome.com (CNAME to GitHub Pages; pickthree.gg was priced at $100 and passed on)
 Repo: github.com/mallek/pickthree, public, MIT
 
 ## 1. Summary
@@ -38,7 +38,7 @@ Everything runs on the player's device. No accounts, no server, no upload of col
 | Growth path | Engine behind a `ComputeHost` interface; the Web Worker is one host, a fetch-backed host can replace it later (option C) | Relieves the phone if search cost ever demands it, without a rewrite |
 | Frontend | Vite + React + TypeScript strict | Small, boring, Travis is comfortable in it |
 | Backend | None | No product reason for one in v1 |
-| Hosting | GitHub Pages, custom domain pickthree.gg | Free for a public repo, CI already lives on GitHub |
+| Hosting | GitHub Pages, custom domain pick3.demome.com | Free for a public repo, CI already lives on GitHub |
 | Persistence | IndexedDB on device | Reopened tab keeps the collection; nothing leaves the phone |
 | PvPoke integration | Vendor nine simulator files verbatim at a pinned commit (GameMaster.js included), shim the jQuery subset and page globals it needs, adapt behind a `BattleSimulator` interface | The battle files are jQuery-free; GameMaster's derived move fields are worth keeping verbatim; a golden test pins fidelity |
 | Data refresh | Repo script plus weekly GitHub Action that opens a PR | Refresh is reviewed, never automatic |
@@ -312,8 +312,8 @@ Plan 3 turns the token sheet into `apps/web/src/design/tokens.css` and rebuilds 
 
 ### 8.3 Deploy
 
-- `ci.yml`: on push and PR, install, lint, test, build. On push to main, publish `apps/web/dist` to GitHub Pages with `CNAME` = pickthree.gg.
-- DNS at GoDaddy: four A records to GitHub Pages IPs plus `www` CNAME. Writable with the existing DNS-scoped API key once the domain exists.
+- `ci.yml`: on push and PR, install, lint, test, build. On push to main, publish `apps/web/dist` to GitHub Pages with `CNAME` = pick3.demome.com.
+- DNS at GoDaddy: one CNAME record `pick3` on demome.com pointing at `mallek.github.io`. Writable with the existing DNS-scoped API key.
 - HTTPS via GitHub Pages' Let's Encrypt.
 - CSP `default-src 'self'` via meta tag (Pages cannot set headers).
 
@@ -338,7 +338,7 @@ Documented in `docs/setup.md`.
 ## 10. Risks and open items
 
 - Purified encoding in the Poke Genie export is unverified. Assumed `Shadow/Purified = 2`. Confirm when Travis exports a purified specimen.
-- pickthree.gg not yet purchased. `.gg` is not on the HSTS preload list, so GitHub Pages HTTPS is unaffected.
+- Hosted as a subdomain of a domain Travis already owns (demome.com). GitHub Pages issues the certificate once the CNAME resolves.
 - Simulator fidelity: `ActionLogic.js` may read `gm.rankings` for shield and bait decisions. The shim must provide rankings, and the golden test is the gate.
 - Search budget on a phone is estimated, not measured. Section 6.12 states the fallback levers.
 - Evolution candy costs are not in PvPoke's game master. Hand-maintained table; wrong values show up as wrong costs, so it gets a test per family in the fixtures.
