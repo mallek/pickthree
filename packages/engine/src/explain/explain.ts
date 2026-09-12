@@ -123,11 +123,11 @@ export function explainTeam(
 
   const structureLine =
     t.draft.structure === 'ABB'
-      ? `Anything that beats your ${name(lead.candidate)} lead loses to both your back-line Pokemon, so you win the back line either way.`
-      : 'Each Pokemon covers a different slice of the meta, so no single opponent breaks the team.';
+      ? `Anything that beats your ${name(lead.candidate)} lead loses to both your back-line Pokémon, so you win the back line either way.`
+      : 'Each Pokémon covers a different slice of the meta, so no single opponent breaks the team.';
 
   const roleWhy: Record<Role, string> = {
-    lead: `Your opener. Wins the first shield exchange against ${lead.wins} of ${view.opponents.length} meta Pokemon.`,
+    lead: `Your opener. Wins the first shield exchange against ${lead.wins} of ${view.opponents.length} meta Pokémon.`,
     switch: `Comes in when your lead loses. Beats ${sw.wins} of ${view.opponents.length} with a shield each, so switching is rarely a gamble.`,
     closer: `Finishes the battle once shields are gone. Wins ${closer.wins} of ${view.opponents.length} with no shields.`,
   };

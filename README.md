@@ -2,10 +2,10 @@
 
 # PickThree
 
-Great League team building from the Pokemon you actually own.
+Great League team building from the Pokémon you actually own.
 
 Upload a Poke Genie CSV export. PickThree combines it with [PvPoke](https://github.com/pvpoke/pvpoke)'s
-game data, rankings, and battle simulator, and tells you which three Pokemon to use, in what order,
+game data, rankings, and battle simulator, and tells you which three Pokémon to use, in what order,
 with which moves, what the build costs, what it beats, what beats it, and why.
 
 Everything runs in your browser. Your collection never leaves your device.
@@ -48,4 +48,4 @@ See `docs/setup.md`. Game data comes from PvPoke at the commit pinned in `packag
 MIT. PvPoke data and simulator code are used under the MIT license, copyright 2019 pvpoke.
 See `packages/sim-pvpoke/LICENSE-pvpoke`.
 
-PickThree is not affiliated with Niantic, Nintendo, The Pokemon Company, Poke Genie, or PvPoke.
+PickThree is not affiliated with Niantic, Nintendo, The Pokémon Company, Poke Genie, or PvPoke.

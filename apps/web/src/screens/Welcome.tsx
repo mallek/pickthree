@@ -54,13 +54,12 @@ export function Welcome() {
       >
         <div className="stack">
           <h1 className="hero">
+            Find your best battle team with{' '}
             <img className="only-dark hero-lockup" src="/lockup.svg" alt="pick3" />
-            <img className="only-light hero-lockup" src="/lockup-light.svg" alt="pick3" /> your
-            Great League team from the Pokemon you already own.
+            <img className="only-light hero-lockup" src="/lockup-light.svg" alt="pick3" />
           </h1>
           <p className="muted">
-            Three Pokemon from your collection, in order, with the moves and what they cost to
-            build.
+            Which Pokémon to use, in what order, with which moves, and what it costs.
           </p>
         </div>
         <ol className="steps">
@@ -69,7 +68,7 @@ export function Welcome() {
             <div>
               <b>Export from Poke Genie</b>
               <span className="small muted">
-                Scan your Pokemon, then Export to CSV and save it to Files.
+                Scan your Pokémon, then Export to CSV and save it to Files.
               </span>
             </div>
           </li>
@@ -84,7 +83,7 @@ export function Welcome() {
             <span>3</span>
             <div>
               <b>Get your teams</b>
-              <span className="small muted">Three Pokemon, in order, with moves and cost.</span>
+              <span className="small muted">Three Pokémon, in order, with moves and cost.</span>
             </div>
           </li>
         </ol>

@@ -26,14 +26,14 @@ export function Report() {
     { n: r.scansRead, label: 'Scans read', names: [] },
     {
       n: r.recognized,
-      label: 'Pokemon recognized',
+      label: 'Pokémon recognized',
       sub: `${r.recognized - r.missingIvs.count} with IVs, ready to rank for Great League`,
       names: [],
     },
     {
       n: r.duplicatesMerged,
       label: 'Duplicates merged',
-      sub: 'Same Pokemon scanned twice',
+      sub: 'Same Pokémon scanned twice',
       fix: r.duplicatesMerged > 0 ? 'Kept the newest scan of each. Nothing to do.' : undefined,
       names: dupNames,
     },
@@ -78,7 +78,7 @@ export function Report() {
         <div>
           <div className="kicker">Import finished</div>
           <h2 style={{ marginTop: 4, fontSize: 26 }}>
-            {r.recognized} Pokemon ready to build teams from
+            {r.recognized} Pokémon ready to build teams from
           </h2>
           {collection.fileName ? <p className="meta">{collection.fileName}</p> : null}
         </div>
@@ -142,7 +142,7 @@ export function Report() {
         ) : null}
         <p className="small muted">
           IVs are the three hidden stats Poke Genie reads from the appraisal screen. Without them,
-          PickThree cannot rank a Pokemon.
+          PickThree cannot rank a Pokémon.
         </p>
       </div>
       <div className="bottom-actions">

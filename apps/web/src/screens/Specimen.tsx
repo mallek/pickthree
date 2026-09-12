@@ -33,12 +33,12 @@ export function SpecimenScreen({ id }: { id: string }) {
     return (
       <div className="screen">
         <Header
-          title="Pokemon"
+          title="Pokémon"
           onBack={() => navigate({ screen: 'collection' })}
           backLabel="Collection"
         />
         <div className="boot">
-          <p>That Pokemon is not in the current collection.</p>
+          <p>That Pokémon is not in the current collection.</p>
         </div>
       </div>
     );
@@ -164,7 +164,7 @@ export function SpecimenScreen({ id }: { id: string }) {
         ) : null}
 
         <div className="stack" style={{ gap: 8 }}>
-          <h3>Teams with this Pokemon</h3>
+          <h3>Teams with this Pokémon</h3>
           {teams.length === 0 ? (
             <p className="small muted">Not in any recommended team right now.</p>
           ) : null}

@@ -488,10 +488,12 @@ a {
   line-height: 1.18;
 }
 .hero-lockup {
-  height: 0.98em;
+  /* Inter 700 metrics: the SVG spans cap height + descender + padding; these put its baseline on
+     the text baseline and its cap height on the headline's cap height. */
+  height: 1.135em;
   width: auto;
-  vertical-align: -0.1em;
-  margin-right: 0.08em;
+  vertical-align: -0.325em;
+  margin-left: 0.02em;
 }
 .only-light.hero-lockup {
   display: none;

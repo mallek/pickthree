@@ -11,7 +11,7 @@ export function Sheet() {
     updateSettings((cur) => ({ ...cur, filters: { ...cur.filters, [k]: !cur.filters[k] } }));
   const defs: { k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'; label: string; sub: string }[] = [
     { k: 'noXl', label: 'No XL', sub: 'Skip builds that need XL Candy (levels above 40)' },
-    { k: 'noShadow', label: 'No Shadows', sub: 'Skip Shadow Pokemon' },
+    { k: 'noShadow', label: 'No Shadows', sub: 'Skip Shadow Pokémon' },
     { k: 'noEliteTm', label: 'No Elite TM', sub: 'Skip movesets that need an Elite TM' },
     { k: 'budget', label: 'Budget builds', sub: 'Hide builds above your Stardust budget' },
   ];
@@ -52,7 +52,7 @@ export function Sheet() {
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <div className="between">
-              <span>Stardust budget per Pokemon</span>
+              <span>Stardust budget per Pokémon</span>
               <span
                 style={{
                   fontWeight: 500,
@@ -82,10 +82,10 @@ export function Sheet() {
             </span>
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
-            <span>Excluded Pokemon</span>
+            <span>Excluded Pokémon</span>
             {excluded.length === 0 ? (
               <span className="small muted">
-                None yet. Open any Pokemon in your collection to exclude it from team suggestions.
+                None yet. Open any Pokémon in your collection to exclude it from team suggestions.
               </span>
             ) : null}
             <div className="pills">
@@ -127,7 +127,7 @@ export function Sheet() {
             <span>
               Game data from PvPoke, updated {s.data ? dateLabel(s.data.pvpokeDate) : '...'}
               {s.data ? ` (${s.data.pvpokeCommit.slice(0, 7)})` : ''}. Opponent meta:{' '}
-              {s.data?.metaSize ?? '...'} Pokemon.
+              {s.data?.metaSize ?? '...'} Pokémon.
             </span>
             <span>
               Your collection stays on this phone. The only outbound request is an anonymous tick to
@@ -136,7 +136,7 @@ export function Sheet() {
             </span>
             <span>
               Built on <a href="https://github.com/pvpoke/pvpoke">PvPoke</a> (MIT). Not affiliated
-              with Niantic, Nintendo, The Pokemon Company, Poke Genie, or PvPoke.{' '}
+              with Niantic, Nintendo, The Pokémon Company, Poke Genie, or PvPoke.{' '}
               <a href="https://github.com/mallek/pickthree">Source</a>.
             </span>
           </div>

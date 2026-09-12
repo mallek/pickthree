@@ -95,7 +95,7 @@ export function TeamDetail({ id }: { id: string }) {
           <p className="meta">
             &ldquo;{team.slots[0].candidate.moveset.fast.name} x7&rdquo; means seven fast moves to
             charge that move. An <Term term="Elite TM">{GLOSSARY['Elite TM']}</Term> teaches a move
-            the Pokemon can no longer learn normally.{' '}
+            the Pokémon can no longer learn normally.{' '}
             <Term term="XL Candy">{GLOSSARY['XL Candy']}</Term> powers up past level 40.{' '}
             <Term term="IV rank">{GLOSSARY['IV rank']}</Term> compares your specimen with every
             possible one for Great League.
@@ -148,7 +148,7 @@ export function TeamDetail({ id }: { id: string }) {
                   <span className="role">Back line</span>
                 </div>
                 <div style={{ fontSize: 14 }}>
-                  Both your <Term term="back line">{GLOSSARY['back line']}</Term> Pokemon beat
+                  Both your <Term term="back line">{GLOSSARY['back line']}</Term> Pokémon beat
                   these.
                   <span className="meta" style={{ display: 'block', marginTop: 4 }}>
                     {team.explanation.structureLine}
@@ -237,7 +237,7 @@ export function TeamDetail({ id }: { id: string }) {
             </div>
           ))}
           {team.explanation.alternatives.length === 0 ? (
-            <p className="small muted">No other Pokemon in your collection fits these slots yet.</p>
+            <p className="small muted">No other Pokémon in your collection fits these slots yet.</p>
           ) : null}
         </div>
 
@@ -259,7 +259,7 @@ export function TeamDetail({ id }: { id: string }) {
                 charged move.
               </div>
               <div>
-                <b>Opponent meta</b> · {a.metaName}, {a.metaSize} Pokemon, PvPoke data from{' '}
+                <b>Opponent meta</b> · {a.metaName}, {a.metaSize} Pokémon, PvPoke data from{' '}
                 {a.pvpokeDate}
               </div>
               <div>

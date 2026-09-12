@@ -116,8 +116,8 @@ export function Teams() {
           <h2>Your teams</h2>
           <span className="meta">
             {teams.length > 0
-              ? `${teams.length} from ${s.collection.report.recognized} Pokemon`
-              : `${s.collection.report.recognized} Pokemon`}
+              ? `${teams.length} from ${s.collection.report.recognized} Pokémon`
+              : `${s.collection.report.recognized} Pokémon`}
           </span>
         </div>
         <div className="seg" aria-label="League">
@@ -147,8 +147,8 @@ export function Teams() {
           </Chip>
           <Chip onClick={openSheet}>
             {s.settings.excludedSpecimenIds.length > 0
-              ? `Exclude Pokemon · ${s.settings.excludedSpecimenIds.length}`
-              : 'Exclude Pokemon'}
+              ? `Exclude Pokémon · ${s.settings.excludedSpecimenIds.length}`
+              : 'Exclude Pokémon'}
           </Chip>
         </div>
       </div>
@@ -173,7 +173,7 @@ export function Teams() {
         {s.recommendation ? (
           <p className="meta" style={{ textAlign: 'center' }}>
             {s.recommendation.stats.triosScored.toLocaleString('en-US')} combinations scored,{' '}
-            {s.recommendation.stats.finalists} simulated with your exact Pokemon.
+            {s.recommendation.stats.finalists} simulated with your exact Pokémon.
           </p>
         ) : null}
       </div>

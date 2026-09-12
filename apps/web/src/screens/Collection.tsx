@@ -132,7 +132,7 @@ export function Collection() {
         </div>
         <input
           className="search"
-          placeholder="Search your Pokemon"
+          placeholder="Search your Pokémon"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           inputMode="search"

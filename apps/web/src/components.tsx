@@ -164,29 +164,29 @@ export function Term({ term, children }: { term: string; children: ReactNode }) 
 }
 
 export const GLOSSARY: Record<string, string> = {
-  lead: "Your first Pokemon. It fights the opponent's lead and usually decides the first shield exchange.",
+  lead: "Your first Pokémon. It fights the opponent's lead and usually decides the first shield exchange.",
   'safe switch':
-    'The Pokemon you bring in when the lead matchup goes badly. It should rarely have a hard loss.',
+    'The Pokémon you bring in when the lead matchup goes badly. It should rarely have a hard loss.',
   closer:
-    'The Pokemon that finishes the battle after shields are gone, so it has to win without protection.',
+    'The Pokémon that finishes the battle after shields are gone, so it has to win without protection.',
   shield: 'You get two Protect Shields per battle. A shield blocks one charged move completely.',
   bait: 'Firing a cheap charged move to draw out a shield before using the expensive one.',
-  'Elite TM': 'A rare item that teaches a move the Pokemon can no longer learn with a regular TM.',
+  'Elite TM': 'A rare item that teaches a move the Pokémon can no longer learn with a regular TM.',
   'XL Candy': 'Candy needed to power up past level 40. You collect it from catches and trades.',
   'IV rank':
-    "How your Pokemon's hidden stats compare with every possible spread of that species for Great League.",
+    "How your Pokémon's hidden stats compare with every possible spread of that species for Great League.",
   line: 'A team built so the back line beats whatever counters the lead.',
   'back line': 'Your Safe Switch and Closer together.',
 };
 
 export function Progress({ stage, done, total }: { stage: string; done: number; total: number }) {
   const labels: Record<string, string> = {
-    eligibility: 'Checking which Pokemon fit Great League',
+    eligibility: 'Checking which Pokémon fit Great League',
     candidates: 'Picking the strongest candidates',
     trios: 'Trying team combinations',
-    simulate: 'Simulating battles with your exact Pokemon',
+    simulate: 'Simulating battles with your exact Pokémon',
     score: 'Scoring and explaining',
-    verdicts: 'Judging each Pokemon',
+    verdicts: 'Judging each Pokémon',
   };
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
