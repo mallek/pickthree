@@ -1,6 +1,12 @@
-import type { MoveChoice, PokemonType, Structure, VerdictLabel } from '@pickthree/engine';
+import type {
+  MoveChoice,
+  MoveEffect,
+  PokemonType,
+  Structure,
+  VerdictLabel,
+} from '@pickthree/engine';
 import { useState, type ReactNode } from 'react';
-import { initialOf, speciesDisplayName, typeColor } from './format.ts';
+import { initialOf, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { useAppState } from './state/store.tsx';
 
@@ -71,6 +77,80 @@ export function Mark({ height = 22 }: { height?: number }) {
   );
 }
 
+/** The one way a type is shown anywhere in the app: a small chip in the type's color. */
+export function TypeChip({ type, small }: { type: PokemonType; small?: boolean | undefined }) {
+  return (
+    <span className={`tchip${small ? ' tchip-sm' : ''}`} style={{ background: typeColor(type) }}>
+      {typeLabel(type)}
+    </span>
+  );
+}
+
+export function TypeChips({
+  types,
+  small,
+}: {
+  types: readonly (PokemonType | 'none')[];
+  small?: boolean;
+}) {
+  return (
+    <span className="tchips">
+      {types
+        .filter((t): t is PokemonType => t !== 'none')
+        .map((t) => (
+          <TypeChip key={t} type={t} small={small} />
+        ))}
+    </span>
+  );
+}
+
+const STAT = { atk: 'A', def: 'D' } as const;
+
+function effectText(e: MoveEffect): string {
+  const who = e.who === 'self' ? 'your' : "the opponent's";
+  const stat = e.stat === 'atk' ? 'attack' : 'defense';
+  const dir = e.stages > 0 ? 'raises' : 'lowers';
+  const chance = e.chance < 1 ? ` (${Math.round(e.chance * 100)}% chance)` : '';
+  return `${dir} ${who} ${stat} by ${Math.abs(e.stages)} stage${Math.abs(e.stages) === 1 ? '' : 's'}${chance}`;
+}
+
+/** Buff and debuff icons: an arrow with the stat letter. Tinted green when it helps you, amber when it hurts. */
+export function EffectIcons({ effects }: { effects: MoveEffect[] }) {
+  if (effects.length === 0) {
+    return null;
+  }
+  return (
+    <span className="fx" role="img" aria-label={effects.map(effectText).join('; ')}>
+      {effects.map((e, i) => {
+        const good = (e.who === 'self') === e.stages > 0;
+        const up = e.stages > 0;
+        return (
+          <span key={i} className={`fx-icon ${good ? 'fx-good' : 'fx-bad'}`} title={effectText(e)}>
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+              {up ? (
+                <path d="M7 1.5 L11.5 7 H8.5 V12.5 H5.5 V7 H2.5 Z" fill="currentColor" />
+              ) : (
+                <path d="M7 12.5 L2.5 7 H5.5 V1.5 H8.5 V7 H11.5 Z" fill="currentColor" />
+              )}
+            </svg>
+            <b>{STAT[e.stat]}</b>
+            {e.who === 'opponent' ? <i>opp</i> : null}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+export function countsText(fastName: string, counts: number[] | null): string | null {
+  if (!counts || counts.length === 0) {
+    return null;
+  }
+  const [a, ...rest] = counts;
+  const same = rest.every((n) => n === a);
+  return same ? `${fastName} x${a}` : `${fastName} x${a}, then ${rest.join(', ')}`;
+}
+
 export const ROLE_TEXT = { lead: 'Lead', switch: 'Safe Switch', closer: 'Closer' } as const;
 
 export function RoleLabel({ role }: { role: 'lead' | 'switch' | 'closer' }) {
@@ -87,24 +167,36 @@ export function TmBadge({ tm }: { tm: MoveChoice['tm'] }) {
   return <span className="tm">TM</span>;
 }
 
-export function MoveRows({ fast, charged }: { fast: MoveChoice; charged: MoveChoice[] }) {
+export function MoveRows({
+  fast,
+  charged,
+  reads,
+}: {
+  fast: MoveChoice;
+  charged: MoveChoice[];
+  /** Optional per-charged-move line, e.g. "extra damage on 31 of 48". */
+  reads?: Record<string, string>;
+}) {
   return (
     <div className="moves">
       <div className="move-row">
         <span className="move-kind">Fast</span>
-        <span className="move-name">{fast.name}</span>
+        <span className="move-name">
+          {fast.name} <TypeChip type={fast.type} small />
+          <EffectIcons effects={fast.effects} />
+        </span>
         <TmBadge tm={fast.tm} />
       </div>
       {charged.map((m) => (
         <div className="move-row" key={m.moveId}>
           <span className="move-kind">Charged</span>
-          <span className="move-name">{m.name}</span>
+          <span className="move-name">
+            {m.name} <TypeChip type={m.type} small />
+            <EffectIcons effects={m.effects} />
+          </span>
           <TmBadge tm={m.tm} />
-          {m.countFromFast !== null ? (
-            <span className="move-count">
-              {fast.name} x{m.countFromFast}
-            </span>
-          ) : null}
+          <span className="move-count">{countsText(fast.name, m.counts)}</span>
+          {reads?.[m.moveId] ? <span className="move-read">{reads[m.moveId]}</span> : null}
         </div>
       ))}
     </div>

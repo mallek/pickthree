@@ -3,6 +3,15 @@ import type { Move, PokemonType, RankingEntry, Species } from '../gamedata/types
 
 export type TmBadge = 'have' | 'tm' | 'elite';
 
+export interface MoveEffect {
+  who: 'self' | 'opponent';
+  stat: 'atk' | 'def';
+  /** Stages, negative lowers. */
+  stages: number;
+  /** 0..1 */
+  chance: number;
+}
+
 export interface MoveChoice {
   moveId: string;
   name: string;
@@ -13,6 +22,59 @@ export interface MoveChoice {
   turns: number;
   /** Fast moves needed to reach this charged move from zero energy. Charged moves only. */
   countFromFast: number | null;
+  /** Fast moves per charged move over the first three uses, energy carried over. Charged only. */
+  counts: number[] | null;
+  effects: MoveEffect[];
+}
+
+/**
+ * PvPoke-style move counts: how many fast moves reach the charged move on the first, second and
+ * third use, with leftover energy carried between uses.
+ */
+export function moveCounts(chargedEnergy: number, fastGain: number, uses = 3): number[] {
+  if (fastGain <= 0 || chargedEnergy <= 0) {
+    return [];
+  }
+  const out: number[] = [];
+  let energy = 0;
+  for (let i = 0; i < uses; i++) {
+    let n = 0;
+    while (energy < chargedEnergy) {
+      energy += fastGain;
+      n += 1;
+    }
+    out.push(n);
+    energy = Math.min(100, energy) - chargedEnergy;
+  }
+  return out;
+}
+
+export function moveEffects(move: Move): MoveEffect[] {
+  if (!move.buffs) {
+    return [];
+  }
+  const chance = move.buffApplyChance ?? 1;
+  const out: MoveEffect[] = [];
+  const push = (who: 'self' | 'opponent', pair: [number, number] | null): void => {
+    if (!pair) {
+      return;
+    }
+    if (pair[0] !== 0) {
+      out.push({ who, stat: 'atk', stages: pair[0], chance });
+    }
+    if (pair[1] !== 0) {
+      out.push({ who, stat: 'def', stages: pair[1], chance });
+    }
+  };
+  if (move.buffTarget === 'both') {
+    push('self', move.buffsSelf);
+    push('opponent', move.buffsOpponent);
+  } else if (move.buffTarget === 'opponent') {
+    push('opponent', move.buffs);
+  } else {
+    push('self', move.buffs);
+  }
+  return out;
 }
 
 export interface Moveset {
@@ -58,6 +120,8 @@ function choice(
     energyGain: move.energyGain,
     turns: move.turns,
     countFromFast: fast && fast.energyGain > 0 ? Math.ceil(move.energy / fast.energyGain) : null,
+    counts: fast && fast.energyGain > 0 ? moveCounts(move.energy, fast.energyGain) : null,
+    effects: moveEffects(move),
   };
 }
 

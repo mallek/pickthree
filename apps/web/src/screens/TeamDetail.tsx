@@ -7,6 +7,8 @@ import {
   ROLE_TEXT,
   StructureTag,
   Term,
+  TypeChip,
+  TypeChips,
   useName,
 } from '../components.tsx';
 import { costLine, ivLine, num, shortName, topPct } from '../format.ts';
@@ -60,11 +62,41 @@ export function TeamDetail({ id }: { id: string }) {
                     <span className="role">
                       {orders[i]} · {ROLE_TEXT[slot.role]}
                     </span>
-                    <div style={{ fontSize: 17, fontWeight: 500 }}>{name(c.build.speciesId)}</div>
+                    <div style={{ fontSize: 17, fontWeight: 500 }}>
+                      {name(c.build.speciesId)}{' '}
+                      <TypeChips types={team.explanation.slotDetail[i]!.types} small />
+                    </div>
                     <div className="small muted">{slot.roleWhy}</div>
                   </div>
                 </div>
-                <MoveRows fast={c.moveset.fast} charged={c.moveset.charged} />
+                <MoveRows
+                  fast={c.moveset.fast}
+                  charged={c.moveset.charged}
+                  reads={Object.fromEntries(
+                    team.explanation.slotDetail[i]!.moveReads.map((r) => [r.moveId, r.line]),
+                  )}
+                />
+                <div className="shield-line">
+                  <span>Shield</span>
+                  {team.explanation.slotDetail[i]!.weaknesses.map((t) => (
+                    <TypeChip key={t} type={t} small />
+                  ))}
+                  <span>charged moves.</span>
+                  {team.explanation.slotDetail[i]!.resistances.length > 0 ? (
+                    <>
+                      <span>Let</span>
+                      {team.explanation.slotDetail[i]!.resistances.slice(0, 5).map((t) => (
+                        <TypeChip key={t} type={t} small />
+                      ))}
+                      <span>through.</span>
+                    </>
+                  ) : null}
+                </div>
+                {team.explanation.slotDetail[i]!.keepShield ? (
+                  <div className="small" style={{ color: 'var(--accent-text)' }}>
+                    {team.explanation.slotDetail[i]!.keepShield!.line}
+                  </div>
+                ) : null}
                 <div className="divider-top stack" style={{ gap: 4 }}>
                   <div className="kv">
                     <span className="muted">Yours</span>
@@ -178,6 +210,35 @@ export function TeamDetail({ id }: { id: string }) {
           )}
         </div>
 
+        <div className="stack" style={{ gap: 4 }}>
+          <h3 style={{ marginBottom: 4 }}>When to switch</h3>
+          <p className="meta">
+            What beats your {name(lead.candidate.build.speciesId)} lead, worst first, and who
+            answers it.
+          </p>
+          {team.explanation.switchPlan.length === 0 ? (
+            <p className="small muted">
+              Nothing in the meta group beats your lead in a 1-shield fight.
+            </p>
+          ) : null}
+          {team.explanation.switchPlan.slice(0, 8).map((sw) => (
+            <div className="switch-row" key={sw.opponent}>
+              <PokemonToken speciesId={sw.opponent} size={32} showInitial={false} />
+              <div>
+                <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                  <b style={{ fontWeight: 500 }}>{sw.opponentName}</b>
+                  <TypeChips types={sw.opponentTypes} small />
+                </div>
+                <div className="meta">
+                  {sw.to === null
+                    ? 'Nobody on the team beats it. Shield, farm energy, switch on your terms.'
+                    : `Switch to ${sw.toName}, ${sw.rating >= 650 ? 'wins comfortably' : sw.rating >= 550 ? 'wins' : 'edges it'}.`}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="stack">
           <h3>Key wins</h3>
           <div className="hscroll">
@@ -185,6 +246,7 @@ export function TeamDetail({ id }: { id: string }) {
               <div className="mini" key={w.opponent}>
                 <PokemonToken speciesId={w.opponent} size={32} showInitial={false} />
                 <b>{w.opponentName}</b>
+                <TypeChips types={w.opponentTypes} small />
                 <span>{w.line}</span>
               </div>
             ))}
@@ -201,6 +263,7 @@ export function TeamDetail({ id }: { id: string }) {
                 <div className="mini threat" key={w.opponent}>
                   <PokemonToken speciesId={w.opponent} size={32} showInitial={false} />
                   <b>{w.opponentName}</b>
+                  <TypeChips types={w.opponentTypes} small />
                   <span>{w.line}</span>
                 </div>
               ))}

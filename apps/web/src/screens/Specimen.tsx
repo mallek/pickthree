@@ -4,11 +4,12 @@ import {
   MoveRows,
   PokemonToken,
   Progress,
+  TypeChips,
   VerdictChip,
   useName,
   useSpecies,
 } from '../components.tsx';
-import { ivLine, levelLabel, num, scanAge, typeLabel } from '../format.ts';
+import { ivLine, levelLabel, num, scanAge } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function SpecimenScreen({ id }: { id: string }) {
@@ -71,12 +72,16 @@ export function SpecimenScreen({ id }: { id: string }) {
           <PokemonToken speciesId={sp.speciesId} size={64} />
           <div>
             <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-.01em' }}>{display}</div>
-            <div className="small muted">
-              {typeLabel(types[0])}
-              {types[1] !== 'none' ? ` / ${typeLabel(types[1])}` : ''} · CP {sp.cp} · Level{' '}
-              {levelLabel(sp.level)}
-              {sp.lucky ? ' · Lucky' : ''}
-              {sp.purified ? ' · Purified' : ''}
+            <div
+              className="small muted"
+              style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}
+            >
+              <TypeChips types={types} small />
+              <span>
+                CP {sp.cp} · Level {levelLabel(sp.level)}
+                {sp.lucky ? ' · Lucky' : ''}
+                {sp.purified ? ' · Purified' : ''}
+              </span>
             </div>
             <div className="meta">{scanAge(sp.scannedAt)}</div>
             <div style={{ marginTop: 6 }}>

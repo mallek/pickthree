@@ -15,6 +15,8 @@ export interface SlotSim {
   role: Role;
   results: SlotResult[];
   wins: number;
+  /** Closers only: wins when each side keeps one shield. Tells whether saving a shield pays. */
+  winsWithShield: number | null;
 }
 
 export interface TeamSim {
@@ -79,7 +81,21 @@ export function simulateSlot(
     });
     memo.set(key, results);
   }
-  return { candidate: c, role, results, wins: results.filter((r) => r.win).length };
+  let winsWithShield: number | null = null;
+  if (role === 'closer') {
+    const shieldedKey = slotKey(c, 'closer-shielded' as Role);
+    let shielded = memo.get(shieldedKey);
+    if (!shielded) {
+      const me = { ...candidateSpec(c, role), shields: 1 };
+      shielded = meta.map((m) => {
+        const r = sim.simulate(me, { ...opponentSpec(m, role), shields: 1 }, opts);
+        return { opponent: m.speciesId, rating: r.rating, win: r.rating > 500 };
+      });
+      memo.set(shieldedKey, shielded);
+    }
+    winsWithShield = shielded.filter((r) => r.win).length;
+  }
+  return { candidate: c, role, results, wins: results.filter((r) => r.win).length, winsWithShield };
 }
 
 export function simulateFinalists(

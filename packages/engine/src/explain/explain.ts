@@ -1,4 +1,6 @@
 import type { GameDataIndex } from '../gamedata/index.js';
+import { classify, effectiveness, resistances, weaknesses } from '../gamedata/typeChart.js';
+import type { PokemonType } from '../gamedata/types.js';
 import type { Candidate, Role } from '../search/candidates.js';
 import type { SlotSim, TeamSim } from '../search/finalists.js';
 import type { MatrixView } from '../search/matrixView.js';
@@ -7,6 +9,7 @@ import { nameOf, type TeamScore } from '../score/score.js';
 export interface KeyMatchup {
   opponent: string;
   opponentName: string;
+  opponentTypes: [PokemonType, PokemonType | 'none'];
   line: string;
 }
 
@@ -17,6 +20,38 @@ export interface Alternative {
   line: string;
 }
 
+export interface MoveRead {
+  moveId: string;
+  /** Meta opponents this move hits for extra damage. */
+  superCount: number;
+  /** Meta opponents that resist it. */
+  resistedCount: number;
+  line: string;
+}
+
+export interface SlotDetail {
+  types: [PokemonType, PokemonType | 'none'];
+  /** Attack types that hit this Pokemon for extra damage: shield those charged moves. */
+  weaknesses: PokemonType[];
+  /** Attack types it resists: those charged moves can usually be taken. */
+  resistances: PokemonType[];
+  shieldLine: string;
+  /** Closer only: how many more meta matchups it wins with one shield kept for it. */
+  keepShield: { delta: number; line: string } | null;
+  moveReads: MoveRead[];
+}
+
+export interface SwitchAdvice {
+  opponent: string;
+  opponentName: string;
+  opponentTypes: [PokemonType, PokemonType | 'none'];
+  /** Slot to switch to, or null when nobody on the team beats it. */
+  to: 1 | 2 | null;
+  toName: string | null;
+  rating: number;
+  line: string;
+}
+
 export interface Explanation {
   why: string;
   structureLine: string;
@@ -24,6 +59,9 @@ export interface Explanation {
   keyThreats: KeyMatchup[];
   roleWhy: Record<Role, string>;
   alternatives: Alternative[];
+  slotDetail: [SlotDetail, SlotDetail, SlotDetail];
+  /** What beats the lead and who to switch to, worst threats first. */
+  switchPlan: SwitchAdvice[];
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -58,6 +96,22 @@ export function fullName(speciesId: string, index: GameDataIndex): string {
   return speciesId.endsWith('_shadow') ? `Shadow ${base}` : base;
 }
 
+export function typeName(t: PokemonType): string {
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function listTypes(types: PokemonType[]): string {
+  const names = types.map(typeName);
+  if (names.length <= 1) {
+    return names.join('');
+  }
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+function typesOf(id: string, index: GameDataIndex): [PokemonType, PokemonType | 'none'] {
+  return index.species(id)?.types ?? ['normal', 'none'];
+}
+
 function bestSlotFor(t: TeamSim, opponent: string): { slot: SlotSim; rating: number } | null {
   let best: { slot: SlotSim; rating: number } | null = null;
   for (const s of t.slots) {
@@ -67,6 +121,110 @@ function bestSlotFor(t: TeamSim, opponent: string): { slot: SlotSim; rating: num
     }
   }
   return best;
+}
+
+export function slotDetailFor(slot: SlotSim, view: MatrixView, index: GameDataIndex): SlotDetail {
+  const c = slot.candidate;
+  const types = typesOf(c.build.speciesId, index);
+  const weak = weaknesses(types);
+  const resist = resistances(types);
+  const shieldLine =
+    weak.length > 0
+      ? `Shield ${listTypes(weak)} charged moves.${resist.length > 0 ? ` ${listTypes(resist)} moves can usually be taken.` : ''}`
+      : 'No type hits it for extra damage; shield the biggest charged move you see.';
+  let keepShield: SlotDetail['keepShield'] = null;
+  if (slot.role === 'closer' && slot.winsWithShield !== null) {
+    const delta = slot.winsWithShield - slot.wins;
+    if (delta >= 3) {
+      keepShield = {
+        delta,
+        line: `Keep a shield for ${fullName(c.build.speciesId, index)}: it wins ${delta} more of ${slot.results.length} matchups with one.`,
+      };
+    } else {
+      keepShield = {
+        delta,
+        line: `${fullName(c.build.speciesId, index)} does about as well without shields; spend them earlier.`,
+      };
+    }
+  }
+  const n = view.opponents.length;
+  const moveReads: MoveRead[] = c.moveset.charged.map((m) => {
+    let superCount = 0;
+    let resistedCount = 0;
+    for (const op of view.opponents) {
+      const e = classify(effectiveness(m.type, typesOf(op, index)));
+      if (e === 'super') {
+        superCount += 1;
+      } else if (e === 'resisted') {
+        resistedCount += 1;
+      }
+    }
+    const line =
+      superCount >= n / 3
+        ? `extra damage on ${superCount} of ${n}`
+        : resistedCount >= n / 3
+          ? `resisted by ${resistedCount} of ${n}`
+          : `extra damage on ${superCount}, resisted by ${resistedCount}`;
+    return { moveId: m.moveId, superCount, resistedCount, line };
+  });
+  return { types, weaknesses: weak, resistances: resist, shieldLine, keepShield, moveReads };
+}
+
+export function switchPlanFor(t: TeamSim, view: MatrixView, index: GameDataIndex): SwitchAdvice[] {
+  void view;
+  const [lead, sw, closer] = t.slots;
+  const out: SwitchAdvice[] = [];
+  for (const r of lead.results) {
+    if (r.win) {
+      continue;
+    }
+    const opponent = r.opponent;
+    const swR = sw.results.find((x) => x.opponent === opponent);
+    const clR = closer.results.find((x) => x.opponent === opponent);
+    const candidates: { to: 1 | 2; rating: number; slot: SlotSim }[] = [];
+    if (swR && swR.win) {
+      candidates.push({ to: 1, rating: swR.rating, slot: sw });
+    }
+    if (clR && clR.win) {
+      candidates.push({ to: 2, rating: clR.rating, slot: closer });
+    }
+    candidates.sort((a, b) => b.rating - a.rating);
+    const best = candidates[0];
+    const oppName = fullName(opponent, index);
+    if (best) {
+      const toName = fullName(best.slot.candidate.build.speciesId, index);
+      const how =
+        best.rating >= 650 ? 'wins comfortably' : best.rating >= 550 ? 'wins' : 'edges it';
+      out.push({
+        opponent,
+        opponentName: oppName,
+        opponentTypes: typesOf(opponent, index),
+        to: best.to,
+        toName,
+        rating: best.rating,
+        line: `${oppName}: switch to ${toName}, ${how}.`,
+      });
+    } else {
+      out.push({
+        opponent,
+        opponentName: oppName,
+        opponentTypes: typesOf(opponent, index),
+        to: null,
+        toName: null,
+        rating: Math.max(swR?.rating ?? 0, clR?.rating ?? 0),
+        line: `${oppName}: nobody on the team beats it. Shield, farm energy, and switch on your terms.`,
+      });
+    }
+  }
+  // Worst threats first: the ones with no answer, then by how badly the lead loses.
+  const leadRating = new Map(lead.results.map((x) => [x.opponent, x.rating]));
+  out.sort((a, b) => {
+    if ((a.to === null) !== (b.to === null)) {
+      return a.to === null ? -1 : 1;
+    }
+    return (leadRating.get(a.opponent) ?? 0) - (leadRating.get(b.opponent) ?? 0);
+  });
+  return out;
 }
 
 export function explainTeam(
@@ -79,8 +237,6 @@ export function explainTeam(
   const [lead, sw, closer] = t.slots;
   const name = (c: Candidate): string => fullName(c.build.speciesId, index);
 
-  // Key wins: top meta opponents (matrix order is PvPoke meta order) that the team beats,
-  // ranked by how decisively the best slot wins.
   const wins: KeyMatchup[] = [];
   const threats: KeyMatchup[] = [];
   for (const opponent of view.opponents) {
@@ -89,11 +245,13 @@ export function explainTeam(
       continue;
     }
     const oppName = fullName(opponent, index);
+    const oppTypes = typesOf(opponent, index);
     if (best.rating > 500) {
       const verb = best.rating >= 650 ? 'wins comfortably' : 'wins';
       wins.push({
         opponent,
         opponentName: oppName,
+        opponentTypes: oppTypes,
         line: `${name(best.slot.candidate)} ${verb} as ${ROLE_LABEL[best.slot.role]}`,
       });
     } else {
@@ -102,6 +260,7 @@ export function explainTeam(
       threats.push({
         opponent,
         opponentName: oppName,
+        opponentTypes: oppTypes,
         line: `${closest}. Best try: ${name(best.slot.candidate)}`,
       });
     }
@@ -133,8 +292,23 @@ export function explainTeam(
   };
 
   const alternatives = alternativesFor(t, pool, view, index);
+  const slotDetail: [SlotDetail, SlotDetail, SlotDetail] = [
+    slotDetailFor(lead, view, index),
+    slotDetailFor(sw, view, index),
+    slotDetailFor(closer, view, index),
+  ];
+  const switchPlan = switchPlanFor(t, view, index);
   void score;
-  return { why, structureLine, keyWins, keyThreats, roleWhy, alternatives };
+  return {
+    why,
+    structureLine,
+    keyWins,
+    keyThreats,
+    roleWhy,
+    alternatives,
+    slotDetail,
+    switchPlan,
+  };
 }
 
 function roleScore(c: Candidate, role: Role): number {
@@ -186,7 +360,6 @@ export function alternativesFor(
         roleScore(alt, role) > roleScore(current, role) ? 'Stronger on paper' : 'Similar',
       );
     }
-    // First meta opponent where the swap flips a win into a loss.
     const curWins = view.wins(current.matrixRow, s11);
     const altWins = view.wins(alt.matrixRow, s11);
     let loses: string | null = null;

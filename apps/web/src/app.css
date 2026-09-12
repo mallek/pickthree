@@ -435,6 +435,100 @@ a {
   flex: none;
 }
 
+/* type chips, one style everywhere */
+.tchips {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  vertical-align: middle;
+}
+.tchip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  line-height: 1.3;
+  vertical-align: middle;
+}
+.tchip-sm {
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+/* buff and debuff icons */
+.fx {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.fx-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 5px 1px 3px;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1;
+  background: var(--surface2);
+}
+.fx-icon b {
+  font-weight: 600;
+}
+.fx-icon i {
+  font-style: normal;
+  font-size: 9px;
+  opacity: 0.8;
+  margin-left: 2px;
+}
+.fx-good {
+  color: #7ac74c;
+}
+.fx-bad {
+  color: var(--warn);
+}
+.move-read {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--faint);
+  padding-left: 64px;
+  margin-top: -4px;
+  padding-bottom: 6px;
+}
+.move-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* switch plan and shields */
+.switch-row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 0;
+  border-top: 1px solid var(--divider);
+  font-size: 14px;
+}
+.switch-row .meta {
+  margin-top: 2px;
+}
+.shield-line {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+}
+
 /* terms */
 .term-wrap {
   position: relative;
