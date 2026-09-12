@@ -62,7 +62,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-const text = fs.readFileSync(source, 'utf8').replace(/^﻿/, '');
+const text = fs.readFileSync(source, 'utf8').replace(/^\uFEFF/, '');
 const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
 const header = parseLine(lines[0] as string);
 const rows = lines.slice(1).map(parseLine);

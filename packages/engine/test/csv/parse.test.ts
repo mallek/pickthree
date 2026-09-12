@@ -65,7 +65,7 @@ describe('parsePokeGenieCsv', () => {
   });
 
   it('strips a BOM', () => {
-    const parsed = parsePokeGenieCsv('﻿' + loadFixtureCsv());
+    const parsed = parsePokeGenieCsv('\uFEFF' + loadFixtureCsv());
     expect(parsed.header.ok).toBe(true);
   });
 });

@@ -80,7 +80,7 @@ function str(v: string | undefined): string | null {
 }
 
 export function parsePokeGenieCsv(text: string): ParsedCsv {
-  const cleaned = text.replace(/^﻿/, '');
+  const cleaned = text.replace(/^\uFEFF/, '');
   const parsed = Papa.parse<string[]>(cleaned, { skipEmptyLines: 'greedy' });
   const data = parsed.data;
   const headerRow = (data[0] ?? []).map((h) => h.trim());
