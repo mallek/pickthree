@@ -408,6 +408,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     const h = hostRef.current as WorkerHost;
     const known = state.data?.leagues.some((l) => l.id === leagueId);
     const id = known ? leagueId : 'great';
+    if (!known && state.data) {
+      // A cup that PvPoke has since retired: fall back and remember it, so the switcher agrees.
+      void storage.saveSettings({ ...stateRef.current.settings, league: 'great' });
+      dispatch({ type: 'settings', settings: { ...stateRef.current.settings, league: 'great' } });
+      return;
+    }
     h.league = id;
     let cancelled = false;
     dispatch({ type: 'league-start' });
