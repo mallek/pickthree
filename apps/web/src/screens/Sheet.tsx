@@ -35,7 +35,12 @@ export function Sheet() {
           </button>
         </div>
         <div className="sheet-body">
-          <div>
+          <div className={s.collection ? undefined : 'dimmed'}>
+            {!s.collection ? (
+              <span className="meta" style={{ display: 'block', paddingBottom: 6 }}>
+                Filters apply once you have a collection.
+              </span>
+            ) : null}
             {defs.map((d) => (
               <button
                 type="button"
@@ -51,37 +56,37 @@ export function Sheet() {
                 <span className={`switch${f[d.k] ? ' on' : ''}`} />
               </button>
             ))}
-          </div>
-          <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
-            <div className="between">
-              <span>Stardust budget per Pokémon</span>
-              <span
-                style={{
-                  fontWeight: 500,
-                  color: 'var(--accent-text)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {num(f.budgetCap)}
+            <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
+              <div className="between">
+                <span>Stardust budget per Pokémon</span>
+                <span
+                  style={{
+                    fontWeight: 500,
+                    color: 'var(--accent-text)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {num(f.budgetCap)}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={20_000}
+                max={500_000}
+                step={10_000}
+                value={f.budgetCap}
+                onChange={(e) =>
+                  updateSettings((cur) => ({
+                    ...cur,
+                    filters: { ...cur.filters, budgetCap: Number(e.target.value) },
+                  }))
+                }
+                aria-label="Stardust budget"
+              />
+              <span className="meta">
+                Applies when Budget builds is on. Builds costing more are left out.
               </span>
             </div>
-            <input
-              type="range"
-              min={20_000}
-              max={500_000}
-              step={10_000}
-              value={f.budgetCap}
-              onChange={(e) =>
-                updateSettings((cur) => ({
-                  ...cur,
-                  filters: { ...cur.filters, budgetCap: Number(e.target.value) },
-                }))
-              }
-              aria-label="Stardust budget"
-            />
-            <span className="meta">
-              Applies when Budget builds is on. Builds costing more are left out.
-            </span>
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Excluded Pokémon</span>
@@ -150,18 +155,16 @@ export function Sheet() {
               <a href="https://github.com/mallek/pickthree">Source</a>.
             </span>
           </div>
-          {s.collection ? (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                closeSheet();
-                navigate({ screen: 'welcome' });
-              }}
-            >
-              Import a new Poke Genie export
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              closeSheet();
+              navigate({ screen: 'welcome' });
+            }}
+          >
+            {s.collection ? 'Import a new Poke Genie export' : 'Import a Poke Genie export'}
+          </button>
           {s.collection ? (
             <button
               type="button"

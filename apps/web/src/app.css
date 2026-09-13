@@ -1445,6 +1445,41 @@ textarea.paste {
   word-break: break-word;
 }
 
+.dimmed {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.more-btn.flush {
+  padding-left: 0;
+}
+.more-chip {
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.counter-row.counter-row {
+  font: inherit;
+  cursor: pointer;
+}
+button.counter-row {
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  text-align: left;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .mtag.good {
+    color: #2f6a12;
+    background: rgba(63, 125, 31, 0.16);
+  }
+}
+:root[data-theme='light'] .mtag.good {
+  color: #2f6a12;
+  background: rgba(63, 125, 31, 0.16);
+}
+
 /* scan list */
 .scan-string {
   width: 100%;

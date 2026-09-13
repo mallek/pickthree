@@ -49,6 +49,7 @@ export function TeamDetail({ id }: { id: string }) {
   const lead = team.slots[0];
   const back = team.slots.slice(1);
   const [allOpps, setAllOpps] = useState(false);
+  const [openSafe, setOpenSafe] = useState<Set<number>>(() => new Set());
   const metaRank = useMetaRank();
   // Meta group, one row per species (PvPoke lists a few twice), most common first.
   const seenOpp = new Set<string>();
@@ -149,9 +150,33 @@ export function TeamDetail({ id }: { id: string }) {
                   <div className="strategy-row">
                     <span>Safe</span>
                     <span className="tchips">
-                      {team.explanation.slotDetail[i]!.resistances.map((t) => (
+                      {(openSafe.has(i)
+                        ? team.explanation.slotDetail[i]!.resistances
+                        : team.explanation.slotDetail[i]!.resistances.slice(0, 6)
+                      ).map((t) => (
                         <TypeChip key={t} type={t} small />
                       ))}
+                      {team.explanation.slotDetail[i]!.resistances.length > 6 ? (
+                        <button
+                          type="button"
+                          className="mtag more-chip"
+                          onClick={() =>
+                            setOpenSafe((cur) => {
+                              const next = new Set(cur);
+                              if (next.has(i)) {
+                                next.delete(i);
+                              } else {
+                                next.add(i);
+                              }
+                              return next;
+                            })
+                          }
+                        >
+                          {openSafe.has(i)
+                            ? 'fewer'
+                            : `+${team.explanation.slotDetail[i]!.resistances.length - 6} more`}
+                        </button>
+                      ) : null}
                       {team.explanation.slotDetail[i]!.resistances.length === 0 ? (
                         <span className="small muted">none, everything hits neutral or better</span>
                       ) : null}
@@ -448,11 +473,12 @@ export function TeamDetail({ id }: { id: string }) {
                 {opps.length > 12 ? (
                   <button
                     type="button"
-                    className="btn-ghost"
-                    style={{ alignSelf: 'flex-start', fontSize: 12, minHeight: 32 }}
+                    className={`more-btn flush${allOpps ? ' on' : ''}`}
+                    aria-expanded={allOpps}
                     onClick={() => setAllOpps((x) => !x)}
                   >
-                    {allOpps ? 'Show fewer' : `Show all ${opps.length} meta Pokémon`} &rsaquo;
+                    {allOpps ? 'Show fewer' : `Show all ${opps.length} meta Pokémon`}
+                    <span className="more-caret">{allOpps ? '\u2303' : '\u2304'}</span>
                   </button>
                 ) : null}
                 <span className="meta">

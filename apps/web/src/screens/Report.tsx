@@ -149,6 +149,9 @@ export function Report() {
         <button type="button" className="btn" onClick={() => navigate({ screen: 'teams' })}>
           Show my teams
         </button>
+        <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'add' })}>
+          Add more by hand &rsaquo;
+        </button>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ type Own = 'all' | 'have' | 'build';
 
 export function Counters() {
   const s = useAppState();
-  const { loadCounters, navigate } = useActions();
+  const { loadCounters, navigate, setPick } = useActions();
   const name = useName();
   const species = useSpecies();
   const [own, setOwn] = useState<Own>('all');
@@ -96,7 +96,6 @@ export function Counters() {
                 </span>
                 <span className="meta" style={{ display: 'block' }}>
                   #{c.antiRank} vs meta · {c.overallRank ? `#${c.overallRank} overall` : 'unranked'}
-                  {c.gap >= 10 ? ' · under the radar' : ''}
                 </span>
                 <MetaTags speciesId={c.speciesId} />
                 {c.beats.length > 0 ? (
@@ -111,7 +110,9 @@ export function Counters() {
                   <span className="counter-own">You own one &rsaquo;</span>
                 ) : c.owned === 'build' && from ? (
                   <span className="counter-own">Build from your {name(from)} &rsaquo;</span>
-                ) : null}
+                ) : (
+                  <span className="counter-own faint">Tap to build a team around it &rsaquo;</span>
+                )}
               </span>
               <span className="anti">
                 <b>{Math.round(c.antiMeta)}%</b>
@@ -124,9 +125,18 @@ export function Counters() {
               {inner}
             </a>
           ) : (
-            <div className="counter-row" key={c.speciesId}>
+            <button
+              type="button"
+              className="counter-row"
+              key={c.speciesId}
+              title="Build a team around it"
+              onClick={() => {
+                setPick(0, { kind: 'species', id: c.speciesId });
+                navigate({ screen: 'build' });
+              }}
+            >
               {inner}
-            </div>
+            </button>
           );
         })}
         {s.counters && rows.length === 0 ? (

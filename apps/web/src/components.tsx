@@ -144,7 +144,7 @@ export function TypeChips({
   );
 }
 
-const STAT = { atk: 'A', def: 'D' } as const;
+const STAT = { atk: 'Atk', def: 'Def' } as const;
 
 function effectText(e: MoveEffect): string {
   const who = e.who === 'self' ? 'your' : "the opponent's";
@@ -173,7 +173,9 @@ export function EffectIcons({ effects }: { effects: MoveEffect[] }) {
                 <path d="M7 12.5 L2.5 7 H5.5 V1.5 H8.5 V7 H11.5 Z" fill="currentColor" />
               )}
             </svg>
-            <b>{STAT[e.stat]}</b>
+            <b>
+              {STAT[e.stat]} {up ? 'up' : 'down'}
+            </b>
             {e.who === 'opponent' ? <i>opp</i> : null}
           </span>
         );
