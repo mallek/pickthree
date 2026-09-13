@@ -38,11 +38,12 @@ export function SpecimenScreen({ id }: { id: string }) {
       s.boot === 'ready' &&
       s.collection &&
       Object.keys(s.verdicts).length === 0 &&
-      !s.verdictsLoading
+      !s.verdictsLoading &&
+      !s.verdictsError
     ) {
       void loadVerdicts();
     }
-  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, loadVerdicts]);
+  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, s.verdictsError, loadVerdicts]);
 
   if (!sp) {
     return (

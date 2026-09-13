@@ -73,11 +73,20 @@ export function Teams() {
       s.boot === 'ready' &&
       s.collection &&
       !s.recommending &&
+      !s.recommendError &&
       (s.recommendation === null || stale)
     ) {
       void runRecommend();
     }
-  }, [s.boot, s.collection, s.recommendation, s.recommending, stale, runRecommend]);
+  }, [
+    s.boot,
+    s.collection,
+    s.recommendation,
+    s.recommending,
+    s.recommendError,
+    stale,
+    runRecommend,
+  ]);
 
   if (!s.collection) {
     return (

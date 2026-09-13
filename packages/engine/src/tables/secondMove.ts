@@ -1,6 +1,7 @@
 import type { CostModifiers } from './powerup.js';
 
-const TIERS: Record<number, number> = { 10000: 25, 50000: 50, 75000: 75, 100000: 100 };
+/** Stardust tier to candy. Tier 0 is a species with no second charged move to unlock (Smeargle). */
+const TIERS: Record<number, number> = { 0: 0, 10000: 25, 50000: 50, 75000: 75, 100000: 100 };
 
 export function secondMoveCost(
   thirdMoveCost: number,

@@ -16,7 +16,7 @@ interface RawPokemon {
   tags?: string[];
   family?: { id: string; parent?: string; evolutions?: string[] };
   released?: boolean;
-  thirdMoveCost?: number;
+  thirdMoveCost?: number | false;
   levelCap?: number;
   levelFloor?: number;
   defaultIVs?: Record<string, [number, number, number, number]>;
@@ -96,7 +96,8 @@ export function buildGameData(input: unknown): GameData {
       shadow: tags.includes('shadow'),
       shadowEligible: tags.includes('shadoweligible'),
       released: p.released !== false,
-      thirdMoveCost: p.thirdMoveCost ?? 75000,
+      // PvPoke marks a species that cannot learn a second charged move (Smeargle) with false.
+      thirdMoveCost: typeof p.thirdMoveCost === 'number' ? p.thirdMoveCost : 0,
       levelCap: p.levelCap ?? null,
       levelFloor: p.levelFloor ?? null,
       greatLeagueIneligible: banned.has(p.speciesId),

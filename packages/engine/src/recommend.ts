@@ -267,16 +267,34 @@ export function verdictsFor(
   const ranks = metaRanks(deps.data.rankings);
   const out: Record<string, Verdict> = {};
   specimens.forEach((s, i) => {
-    out[s.id] = specimenVerdict(s, {
-      index,
-      overall,
-      metaRanks: ranks,
-      view,
-      meta: deps.data.meta,
-      sim: deps.sim,
-      simOptions: deps.simOptions ?? { ...GREAT_LEAGUE, cp: opts.cpCap },
-      buildOptions: opts,
-    });
+    try {
+      out[s.id] = specimenVerdict(s, {
+        index,
+        overall,
+        metaRanks: ranks,
+        view,
+        meta: deps.data.meta,
+        sim: deps.sim,
+        simOptions: deps.simOptions ?? { ...GREAT_LEAGUE, cp: opts.cpCap },
+        buildOptions: opts,
+      });
+    } catch (e) {
+      // One bad row must never take the whole collection down with it.
+      out[s.id] = {
+        specimenId: s.id,
+        label: 'Not eligible',
+        line: `pick3 could not judge this one: ${e instanceof Error ? e.message : String(e)}`,
+        build: null,
+        moveset: null,
+        cost: null,
+        perfectDelta: null,
+        perfectLine: null,
+        metaWins: null,
+        metaSize: deps.data.meta.length,
+        metaRank: null,
+        formNote: null,
+      };
+    }
     if (onProgress && (i % 10 === 0 || i === specimens.length - 1)) {
       onProgress('verdicts', i + 1, specimens.length);
     }

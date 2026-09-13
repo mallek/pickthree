@@ -69,6 +69,8 @@ export interface AppState {
   recommendError: string | null;
   verdicts: Record<string, Verdict>;
   verdictsLoading: boolean;
+  /** Set when the last verdict run failed; the screens stop retrying until the collection changes. */
+  verdictsError: string | null;
   counters: CounterEntry[] | null;
   countersLoading: boolean;
   scanList: ScanList | null;
@@ -98,6 +100,7 @@ type Action =
   | { type: 'rec-error'; message: string }
   | { type: 'verdicts-start' }
   | { type: 'verdicts-done'; verdicts: Record<string, Verdict> }
+  | { type: 'verdicts-error'; message: string }
   | { type: 'counters-start' }
   | { type: 'counters-done'; counters: CounterEntry[] | null }
   | { type: 'scanlist'; scanList: ScanList }
@@ -125,6 +128,7 @@ const initial: AppState = {
   recommendError: null,
   verdicts: {},
   verdictsLoading: false,
+  verdictsError: null,
   counters: null,
   countersLoading: false,
   scanList: null,
@@ -157,6 +161,7 @@ function reducer(s: AppState, a: Action): AppState {
         collection: a.collection,
         recommendation: null,
         verdicts: {},
+        verdictsError: null,
         counters: null,
         recommendedWith: null,
       };
@@ -198,9 +203,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'analyze-error':
       return { ...s, analyzing: false, analyzeError: a.message, progress: null };
     case 'verdicts-start':
-      return { ...s, verdictsLoading: true };
+      return { ...s, verdictsLoading: true, verdictsError: null };
     case 'verdicts-done':
       return { ...s, verdictsLoading: false, verdicts: a.verdicts };
+    case 'verdicts-error':
+      return { ...s, verdictsLoading: false, verdictsError: a.message };
     case 'forget':
       return {
         ...initial,
@@ -459,8 +466,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     try {
       const verdicts = await h.verdicts(s.collection.specimens, optionsFrom(s.settings));
       dispatch({ type: 'verdicts-done', verdicts });
-    } catch {
-      dispatch({ type: 'verdicts-done', verdicts: {} });
+    } catch (e) {
+      dispatch({ type: 'verdicts-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, []);
 

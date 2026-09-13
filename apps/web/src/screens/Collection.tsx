@@ -68,11 +68,12 @@ export function Collection() {
       s.boot === 'ready' &&
       s.collection &&
       Object.keys(s.verdicts).length === 0 &&
-      !s.verdictsLoading
+      !s.verdictsLoading &&
+      !s.verdictsError
     ) {
       void loadVerdicts();
     }
-  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, loadVerdicts]);
+  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, s.verdictsError, loadVerdicts]);
 
   const rows = useMemo(() => {
     if (!s.collection) {
@@ -260,6 +261,12 @@ export function Collection() {
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
         {s.verdictsLoading && Object.keys(s.verdicts).length === 0 ? (
           <Progress stage="verdicts" done={0} total={0} />
+        ) : null}
+        {s.verdictsError ? (
+          <div className="error" style={{ margin: '8px 0' }}>
+            Could not judge this collection: {s.verdictsError}. The list still works; verdicts will
+            retry on the next import.
+          </div>
         ) : null}
         {groups.map((g) => {
           const sp = g.best;

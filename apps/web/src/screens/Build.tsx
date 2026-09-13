@@ -40,11 +40,12 @@ export function Build() {
       s.boot === 'ready' &&
       s.collection &&
       Object.keys(s.verdicts).length === 0 &&
-      !s.verdictsLoading
+      !s.verdictsLoading &&
+      !s.verdictsError
     ) {
       void loadVerdicts();
     }
-  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, loadVerdicts]);
+  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, s.verdictsError, loadVerdicts]);
 
   const q = query.trim().toLowerCase();
   const picked = new Set(s.picks.map((p) => p?.id));
