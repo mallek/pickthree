@@ -84,27 +84,28 @@ export function Welcome() {
           <li>
             <span>1</span>
             <div>
-              <b>Export from Poke Genie</b>
+              <b>Get your Pokémon in</b>
               <span className="small muted">
-                Scan your Pokémon, then Export to CSV and save it to Files.
+                Upload a Poke Genie export, add them by hand, or skip it and build from any Pokémon.
               </span>
             </div>
           </li>
           <li>
             <span>2</span>
             <div>
-              <b>Upload it here</b>
+              <b>Get your teams</b>
               <span className="small muted">
-                On Android you can share it from Poke Genie straight to pick3 once the app is
-                installed. It stays on your phone.
+                Three Pokémon, in order, with moves, what to shield, and what it costs.
               </span>
             </div>
           </li>
           <li>
             <span>3</span>
             <div>
-              <b>Get your teams</b>
-              <span className="small muted">Three Pokémon, in order, with moves and cost.</span>
+              <b>Check any team</b>
+              <span className="small muted">
+                Build your own three and see how it holds up against the meta.
+              </span>
             </div>
           </li>
         </ol>
@@ -114,9 +115,10 @@ export function Welcome() {
           </summary>
           <p className="small muted" style={{ marginTop: 8 }}>
             In Poke Genie open the scan history (the list icon), tap the share or export button,
-            choose CSV, then Save to Files. Come back here and pick that file. Scans made with the
-            IV appraisal screen open carry the IVs PickThree needs; bulk scans without it will be
-            listed as needing a rescan.
+            choose CSV, then Save to Files. Come back here and pick that file. On Android with pick3
+            installed you can share the CSV straight to it. Scans made with the IV appraisal screen
+            open carry the IVs pick3 needs; bulk scans without it will be listed as needing a
+            rescan. Poke Genie charges for the export; the other two ways in are free.
           </p>
         </details>
         <details onToggle={(e) => (e.currentTarget.open ? void loadScanList() : undefined)}>
@@ -191,30 +193,30 @@ export function Welcome() {
           <i />
           Upload Poke Genie CSV
         </button>
-        <button type="button" className="btn btn-secondary" onClick={() => setPaste((p) => !p)}>
-          Paste CSV text
-        </button>
-        <div className="no-export">
-          <span className="small muted">
-            No export? Poke Genie charges for it. You do not need it.
-          </span>
+        <span className="small muted" style={{ textAlign: 'center' }}>
+          No Poke Genie export? You do not need one.
+        </span>
+        <div className="btn-pair">
           <button
             type="button"
-            className="btn-ghost"
+            className="btn btn-secondary"
             disabled={boot !== 'ready'}
             onClick={() => navigate({ screen: 'build' })}
           >
-            Build a team from any Pokémon &rsaquo;
+            Build a team
           </button>
           <button
             type="button"
-            className="btn-ghost"
+            className="btn btn-secondary"
             disabled={boot !== 'ready'}
             onClick={() => navigate({ screen: 'add' })}
           >
-            Add your Pokémon by hand for team picks &rsaquo;
+            Add by hand
           </button>
         </div>
+        <button type="button" className="btn-ghost" onClick={() => setPaste((p) => !p)}>
+          {paste ? 'Hide the paste box' : 'Paste CSV text instead'}
+        </button>
         <p className="meta faint" style={{ textAlign: 'center' }}>
           Your file is processed on your phone and never uploaded anywhere. The only thing sent is
           an anonymous tick to the counter when you build teams.

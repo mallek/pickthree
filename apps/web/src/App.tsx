@@ -11,6 +11,37 @@ import { Welcome } from './screens/Welcome.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
 
+const ICONS = {
+  teams: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle className="f" cx="8" cy="9" r="3.2" />
+      <circle className="f" cx="16" cy="9" r="3.2" />
+      <circle className="f" cx="12" cy="15.5" r="3.2" />
+    </svg>
+  ),
+  counters: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path className="f" d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  ),
+  collection: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle className="f" cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h5.5M15 12h5.5" />
+      <circle cx="12" cy="12" r="2.6" />
+    </svg>
+  ),
+  filters: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+      <circle className="f" cx="9" cy="7" r="2" />
+      <circle className="f" cx="15" cy="12" r="2" />
+      <circle className="f" cx="7" cy="17" r="2" />
+    </svg>
+  ),
+};
+
 function TabBar() {
   const { route, sheetOpen } = useAppState();
   const { navigate, openSheet } = useActions();
@@ -28,27 +59,27 @@ function TabBar() {
         className={`tab${onTeams && !sheetOpen ? ' on' : ''}`}
         onClick={() => navigate({ screen: 'teams' })}
       >
-        <i />
+        {ICONS.teams}
         Teams
       </button>
       <button
         type="button"
-        className={`tab diamond${route.screen === 'counters' && !sheetOpen ? ' on' : ''}`}
+        className={`tab${route.screen === 'counters' && !sheetOpen ? ' on' : ''}`}
         onClick={() => navigate({ screen: 'counters' })}
       >
-        <i />
+        {ICONS.counters}
         Counters
       </button>
       <button
         type="button"
-        className={`tab round${onCollection && !sheetOpen ? ' on' : ''}`}
+        className={`tab${onCollection && !sheetOpen ? ' on' : ''}`}
         onClick={() => navigate({ screen: 'collection' })}
       >
-        <i />
+        {ICONS.collection}
         Collection
       </button>
-      <button type="button" className={`tab square${sheetOpen ? ' on' : ''}`} onClick={openSheet}>
-        <i />
+      <button type="button" className={`tab${sheetOpen ? ' on' : ''}`} onClick={openSheet}>
+        {ICONS.filters}
         Filters
       </button>
     </nav>

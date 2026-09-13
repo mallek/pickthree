@@ -120,7 +120,6 @@ export function Teams() {
           </span>
         </div>
         <div className="chips">
-          <Chip onClick={() => navigate({ screen: 'build' })}>Build your own &rsaquo;</Chip>
           <Chip on={f.style !== 'any'} onClick={cycleStyle}>
             {styleLabel}
           </Chip>
@@ -144,6 +143,13 @@ export function Teams() {
         </div>
       </div>
       <div className="scroll" style={{ gap: 14 }}>
+        <button type="button" className="action-row" onClick={() => navigate({ screen: 'build' })}>
+          <span>
+            <b>Build your own team</b>
+            <span className="small muted">Pick any three and get the same breakdown.</span>
+          </span>
+          <span className="chev">&rsaquo;</span>
+        </button>
         {s.boot === 'loading' ? <Progress stage="boot" done={0} total={0} /> : null}
         {s.recommending && s.progress ? <Progress {...s.progress} /> : null}
         {s.recommending && !s.progress ? <Progress stage="eligibility" done={0} total={0} /> : null}
