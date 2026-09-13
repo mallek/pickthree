@@ -8,6 +8,7 @@ import {
   RoleLabel,
   StructureTag,
   useName,
+  NoCollection,
 } from '../components.tsx';
 import { costLine } from '../format.ts';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
@@ -81,22 +82,7 @@ export function Teams() {
   if (!s.collection) {
     return (
       <div className="screen">
-        <div className="boot">
-          <p>No collection yet.</p>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => navigate({ screen: 'welcome' })}
-          >
-            Import a Poke Genie CSV
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'add' })}>
-            Add Pokémon by hand
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'build' })}>
-            Build a team from any Pokémon
-          </button>
-        </div>
+        <NoCollection navigate={navigate} />
       </div>
     );
   }

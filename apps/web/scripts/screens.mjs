@@ -75,6 +75,11 @@ await page.evaluate(() =>
 );
 await shot('10-scan-list', false);
 
+console.log('empty state');
+await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.choice-card');
+await shot('18-empty-state', false);
+
 console.log('import sample');
 await page.goto(`${base}/?sample=1#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.kicker', { timeout: 90_000 });

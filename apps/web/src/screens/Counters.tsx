@@ -8,6 +8,7 @@ import {
   TypeChips,
   useName,
   useSpecies,
+  NoCollection,
 } from '../components.tsx';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
@@ -30,16 +31,7 @@ export function Counters() {
   if (!s.collection) {
     return (
       <div className="screen">
-        <div className="boot">
-          <p>No collection yet.</p>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => navigate({ screen: 'welcome' })}
-          >
-            Import a Poke Genie CSV
-          </button>
-        </div>
+        <NoCollection navigate={navigate} />
       </div>
     );
   }

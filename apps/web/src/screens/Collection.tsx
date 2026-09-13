@@ -8,6 +8,7 @@ import {
   VerdictChip,
   useMetaRank,
   useName,
+  NoCollection,
 } from '../components.tsx';
 import { metaTags } from '../format.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
@@ -169,19 +170,7 @@ export function Collection() {
   if (!s.collection) {
     return (
       <div className="screen">
-        <div className="boot">
-          <p>No collection yet.</p>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => navigate({ screen: 'welcome' })}
-          >
-            Import a Poke Genie CSV
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'add' })}>
-            Add a Pokémon by hand
-          </button>
-        </div>
+        <NoCollection navigate={navigate} />
       </div>
     );
   }

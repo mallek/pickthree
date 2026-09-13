@@ -370,3 +370,47 @@ export function Header({
     </header>
   );
 }
+
+/** Empty state for Teams, Collection and Counters: three full-width ways in, none paid. */
+export function NoCollection({
+  navigate,
+}: {
+  navigate: (r: { screen: 'welcome' | 'add' | 'build' }) => void;
+}) {
+  return (
+    <div className="boot choices">
+      <p>No collection yet. Pick a way in.</p>
+      <div className="choice-card">
+        <b>Add Pokémon by hand</b>
+        <span className="small muted">
+          Species, IVs from the appraisal screen, and CP. Three or more and pick3 builds teams.
+        </span>
+        <button type="button" className="btn" onClick={() => navigate({ screen: 'add' })}>
+          Add a Pokémon
+        </button>
+      </div>
+      <div className="choice-card">
+        <b>Build a team from any Pokémon</b>
+        <span className="small muted">
+          Pick any three and get the full breakdown at their best IVs. Nothing to enter.
+        </span>
+        <button type="button" className="btn" onClick={() => navigate({ screen: 'build' })}>
+          Build a team
+        </button>
+      </div>
+      <div className="choice-card">
+        <b>Import a Poke Genie export</b>
+        <span className="small muted">
+          If you have the CSV, upload it and every scan comes in at once.
+        </span>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => navigate({ screen: 'welcome' })}
+        >
+          Import a CSV
+        </button>
+      </div>
+    </div>
+  );
+}
