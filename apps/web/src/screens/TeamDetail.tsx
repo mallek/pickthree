@@ -11,10 +11,13 @@ import {
   MetaTags,
   RankTag,
   TypeChips,
+  useMetaRank,
   useName,
 } from '../components.tsx';
-import { costLine, ivLine, num, shortName, topPct } from '../format.ts';
+import { costLine, ivLine, num, topPct } from '../format.ts';
 import { useActions, useAppState, type Route } from '../state/store.tsx';
+
+const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const;
 
 export function TeamDetail({ id }: { id: string }) {
   const s = useAppState();
@@ -45,7 +48,19 @@ export function TeamDetail({ id }: { id: string }) {
   const orders = ['First', 'Second', 'Third'];
   const lead = team.slots[0];
   const back = team.slots.slice(1);
-  const gridCols = s.data?.meta.slice(0, 8) ?? [];
+  const [allOpps, setAllOpps] = useState(false);
+  const metaRank = useMetaRank();
+  // Meta group, one row per species (PvPoke lists a few twice), most common first.
+  const seenOpp = new Set<string>();
+  const opps = (s.data?.meta ?? [])
+    .filter((id) => (seenOpp.has(id) ? false : (seenOpp.add(id), true)))
+    .sort((a2, b2) => (metaRank(a2)?.overall ?? 9999) - (metaRank(b2)?.overall ?? 9999));
+  const shownOpps = allOpps ? opps : opps.slice(0, 12);
+  /** Worst rating against a species listed twice with different movesets. */
+  const ratingFor = (slot: (typeof team.slots)[number], op: string): number => {
+    const rs = slot.sim.results.filter((r) => r.opponent === op).map((r) => r.rating);
+    return rs.length === 0 ? 500 : Math.min(...rs);
+  };
   const structureLabel = team.structure === 'ABB' ? 'ABB line' : 'Balanced ABC';
   const a = custom ? s.analysis?.assumptions : s.recommendation?.assumptions;
   const tried = custom ? (s.analysis?.orders ?? []) : [];
@@ -391,45 +406,58 @@ export function TeamDetail({ id }: { id: string }) {
               </div>
               <div className="stack" style={{ gap: 6 }}>
                 <b>Matchup grid</b>
-                <div className="grid-wrap">
-                  <div
-                    className="grid"
-                    style={{
-                      gridTemplateColumns: `76px repeat(${gridCols.length}, minmax(34px, 1fr))`,
-                    }}
-                  >
+                <div className="ogrid">
+                  <div className="ogrid-head">
                     <span />
-                    {gridCols.map((op) => (
-                      <span className="head" key={op} title={name(op)}>
-                        {shortName(
-                          op,
-                          s.data?.species[op]
-                            ? ({ speciesName: s.data.species[op]!.name } as never)
-                            : undefined,
-                        )}
+                    {team.slots.map((slot) => (
+                      <span className="ogrid-col" key={slot.candidate.build.specimenId}>
+                        <PokemonToken
+                          speciesId={slot.candidate.build.speciesId}
+                          size={28}
+                          showInitial={false}
+                        />
+                        <span>{ROLE_SHORT[slot.role]}</span>
                       </span>
                     ))}
-                    {team.slots.map((slot) => (
-                      <RowCells
-                        key={slot.candidate.build.specimenId}
-                        label={shortName(
-                          slot.candidate.build.speciesId,
-                          s.data?.species[slot.candidate.build.speciesId]
-                            ? ({
-                                speciesName: s.data.species[slot.candidate.build.speciesId]!.name,
-                              } as never)
-                            : undefined,
-                        )}
-                        cells={gridCols.map(
-                          (op) => slot.sim.results.find((r) => r.opponent === op)?.rating ?? 500,
-                        )}
-                      />
-                    ))}
                   </div>
+                  {shownOpps.map((op) => (
+                    <div className="ogrid-row" key={op}>
+                      <span className="ogrid-opp">
+                        <PokemonToken speciesId={op} size={22} showInitial={false} />
+                        <span className="ogrid-name">{name(op)}</span>
+                        {metaRank(op)?.overall ? (
+                          <span className="ogrid-rank">#{metaRank(op)!.overall}</span>
+                        ) : null}
+                      </span>
+                      {team.slots.map((slot) => {
+                        const r = ratingFor(slot, op);
+                        const cls = r > 550 ? 'w' : r < 450 ? 'l' : 'c';
+                        return (
+                          <span
+                            className={`cell ${cls}`}
+                            key={slot.candidate.build.specimenId}
+                            title={`${r}`}
+                          >
+                            {cls === 'w' ? 'W' : cls === 'l' ? 'L' : '~'}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
+                {opps.length > 12 ? (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    style={{ alignSelf: 'flex-start', fontSize: 12, minHeight: 32 }}
+                    onClick={() => setAllOpps((x) => !x)}
+                  >
+                    {allOpps ? 'Show fewer' : `Show all ${opps.length} meta Pokémon`} &rsaquo;
+                  </button>
+                ) : null}
                 <span className="meta">
-                  W wins · L loses · ~ close, decided by shields. Ratings out of 1000 in each
-                  slot&apos;s scenario.
+                  W wins · L loses · ~ close, decided by shields. Most common opponents first.
+                  Ratings out of 1000 in each slot&apos;s scenario.
                 </span>
               </div>
               <div>
@@ -441,22 +469,5 @@ export function TeamDetail({ id }: { id: string }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function RowCells({ label, cells }: { label: string; cells: number[] }) {
-  return (
-    <>
-      <span className="rowname">{label}</span>
-      {cells.map((r, i) => {
-        const cls = r > 550 ? 'w' : r < 450 ? 'l' : 'c';
-        const txt = cls === 'w' ? 'W' : cls === 'l' ? 'L' : '~';
-        return (
-          <span className={`cell ${cls}`} key={i} title={`${r}`}>
-            {txt}
-          </span>
-        );
-      })}
-    </>
   );
 }
