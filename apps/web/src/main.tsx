@@ -4,10 +4,13 @@ import { App } from './App.tsx';
 import './app.css';
 import { AppProvider } from './state/store.tsx';
 import { installUpdater } from './update.ts';
+import { recordError } from './diag.ts';
 
 // Installs the service worker (app shell precached, game data cached on first use) and the
 // update checks plus toast that go with it.
 installUpdater();
+window.addEventListener('error', (e) => recordError('window', e.error ?? e.message));
+window.addEventListener('unhandledrejection', (e) => recordError('promise', e.reason));
 document.documentElement.dataset.build = __PICK3_BUILD__;
 
 const root = document.getElementById('root');

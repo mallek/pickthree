@@ -218,8 +218,8 @@ export function Welcome() {
           {paste ? 'Hide the paste box' : 'Paste CSV text instead'}
         </button>
         <p className="meta faint" style={{ textAlign: 'center' }}>
-          Your file is processed on your phone and never uploaded anywhere. The only thing sent is
-          an anonymous tick to the counter when you build teams.
+          Your file is processed on your phone and never uploaded anywhere. The only things sent are
+          an anonymous tick to the counter and anonymous error reports without your Pokémon.
         </p>
         {count !== null ? (
           <p className="counter" aria-live="polite">

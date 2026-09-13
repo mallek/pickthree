@@ -26,6 +26,7 @@ import {
 import type { SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { arrivedFromShare } from '../share.ts';
+import { recordError, setErrorReportsEnabled } from '../diag.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
 
@@ -354,6 +355,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         }
       })
       .catch((e: unknown) => {
+        recordError('boot', e);
         if (!cancelled) {
           dispatch({ type: 'boot-error', message: e instanceof Error ? e.message : String(e) });
         }
@@ -365,6 +367,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       window.removeEventListener('hashchange', onHash);
     };
   }, []);
+
+  useEffect(() => {
+    setErrorReportsEnabled(state.settings.errorReports !== false);
+  }, [state.settings.errorReports]);
 
   useEffect(() => {
     const t = state.settings.theme;
@@ -426,6 +432,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
             : e instanceof Error
               ? `Could not read that file: ${e.message}`
               : 'Could not read that file.';
+        recordError('import', e);
         dispatch({ type: 'import-error', message });
         return false;
       }
@@ -452,6 +459,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         void recordPick3();
       }
     } catch (e) {
+      recordError('recommend', e);
       dispatch({ type: 'rec-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, []);
@@ -465,8 +473,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     dispatch({ type: 'verdicts-start' });
     try {
       const verdicts = await h.verdicts(s.collection.specimens, optionsFrom(s.settings));
+      // Rows the engine could not judge are a bug report waiting to happen.
+      const bad = Object.values(verdicts).filter((v) => v.line.startsWith('pick3 could not judge'));
+      if (bad.length > 0) {
+        recordError('verdict-row', new Error(`${bad.length} could not be judged: ${bad[0]!.line}`));
+      }
       dispatch({ type: 'verdicts-done', verdicts });
     } catch (e) {
+      recordError('verdicts', e);
       dispatch({ type: 'verdicts-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, []);
@@ -481,7 +495,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     try {
       const counters = await h.counters(s.collection.specimens, {});
       dispatch({ type: 'counters-done', counters });
-    } catch {
+    } catch (e) {
+      recordError('counters', e);
       dispatch({ type: 'counters-done', counters: [] });
     }
   }, []);
@@ -496,8 +511,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     try {
       const list = await h.scanList({});
       dispatch({ type: 'scanlist', scanList: list });
-    } catch {
-      // The welcome page just keeps the section closed.
+    } catch (e) {
+      recordError('scanlist', e);
     } finally {
       scanListPending.current = false;
     }
@@ -532,6 +547,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       dispatch({ type: 'analyze-done', analysis });
       navigate({ screen: 'custom' });
     } catch (e) {
+      recordError('analyze', e);
       dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, [navigate]);

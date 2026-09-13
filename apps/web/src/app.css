@@ -1431,6 +1431,20 @@ textarea.paste {
   outline-offset: 1px;
 }
 
+.diag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font:
+    11px/1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  color: var(--muted);
+  word-break: break-word;
+}
+
 /* scan list */
 .scan-string {
   width: 100%;

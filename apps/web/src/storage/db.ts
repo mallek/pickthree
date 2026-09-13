@@ -21,6 +21,8 @@ export interface Settings {
     style: 'any' | 'balanced' | 'abb';
   };
   excludedSpecimenIds: string[];
+  /** Anonymous error reports to the counter worker. Absent in older saves means on. */
+  errorReports?: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -35,6 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
     style: 'any',
   },
   excludedSpecimenIds: [],
+  errorReports: true,
 };
 
 interface PickThreeDb extends DBSchema {
