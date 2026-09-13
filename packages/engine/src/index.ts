@@ -13,6 +13,7 @@ export * from './csv/schema.js';
 export * from './csv/parse.js';
 export * from './mapping/mapSpecies.js';
 export * from './collection/specimen.js';
+export * from './collection/manual.js';
 export * from './math/cp.js';
 export * from './math/ivrank.js';
 export * from './builds/eligibility.js';

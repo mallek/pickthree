@@ -194,6 +194,27 @@ export function Welcome() {
         <button type="button" className="btn btn-secondary" onClick={() => setPaste((p) => !p)}>
           Paste CSV text
         </button>
+        <div className="no-export">
+          <span className="small muted">
+            No export? Poke Genie charges for it. You do not need it.
+          </span>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={boot !== 'ready'}
+            onClick={() => navigate({ screen: 'build' })}
+          >
+            Build a team from any Pokémon &rsaquo;
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={boot !== 'ready'}
+            onClick={() => navigate({ screen: 'add' })}
+          >
+            Add your Pokémon by hand for team picks &rsaquo;
+          </button>
+        </div>
         <p className="meta faint" style={{ textAlign: 'center' }}>
           Your file is processed on your phone and never uploaded anywhere. The only thing sent is
           an anonymous tick to the counter when you build teams.

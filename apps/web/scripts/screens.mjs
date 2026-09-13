@@ -138,6 +138,21 @@ await page.waitForSelector('.custom-note', { timeout: 120_000 });
 console.log(`  custom team analyzed at ${Date.now() - t0} ms`);
 await shot('14-custom-team');
 
+console.log('add a pokemon by hand');
+await page.goto(`${base}/#/add`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.search');
+await page.type('.search', 'swampert');
+await page.waitForSelector('.picker-list .spec-row');
+await shot('15-add-search', false);
+await page.click('.picker-list .spec-row');
+await page.type('.field input[placeholder]', '1497');
+await shot('16-add-form', false);
+await page.click('.scroll > .btn');
+await page.waitForSelector('.stat3, .verdict', { timeout: 60_000 });
+await new Promise((r) => setTimeout(r, 600));
+console.log(`  manual add landed at ${page.url()}`);
+await shot('17-added', false);
+
 console.log('filters sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.tabs');

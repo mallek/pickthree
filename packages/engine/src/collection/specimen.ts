@@ -17,6 +17,8 @@ export interface Specimen {
   currentMoves: { fast: string | null; charged: string[] };
   scannedAt: string;
   raw: RawScan;
+  /** Absent for Poke Genie scans; manual for Pokémon typed in by hand. */
+  source?: 'manual';
 }
 
 export interface ImportReport {

@@ -1,10 +1,14 @@
 import type { MetaRank } from '@pickthree/engine';
 import type {
   CounterEntry,
+  ImportReport,
+  ManualInput,
+  ManualResult,
   ProgressEvent,
   Recommendation,
   RecommendOptions,
   ScanList,
+  Specimen,
   TeamAnalysis,
   TeamPick,
   Verdict,
@@ -34,7 +38,8 @@ export type Route =
   | { screen: 'specimen'; id: string }
   | { screen: 'counters' }
   | { screen: 'build' }
-  | { screen: 'custom' };
+  | { screen: 'custom' }
+  | { screen: 'add' };
 
 export interface DataInfo {
   pvpokeCommit: string;
@@ -228,6 +233,9 @@ export function parseHash(hash: string): Route {
   if (a === 'build') {
     return b === 'team' ? { screen: 'custom' } : { screen: 'build' };
   }
+  if (a === 'add') {
+    return { screen: 'add' };
+  }
   return { screen: 'welcome' };
 }
 
@@ -251,6 +259,8 @@ export function hashFor(r: Route): string {
       return '#/build';
     case 'custom':
       return '#/build/team';
+    case 'add':
+      return '#/add';
     default:
       return '#/';
   }
@@ -285,6 +295,8 @@ interface Actions {
   setPick(slot: number, pick: TeamPick | null): void;
   setOrderMode(mode: 'best' | 'given'): void;
   analyze(): Promise<void>;
+  addManual(input: ManualInput): Promise<ManualResult>;
+  removeSpecimen(id: string): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
@@ -517,6 +529,50 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, [navigate]);
 
+  const EMPTY_REPORT: ImportReport = {
+    scansRead: 0,
+    recognized: 0,
+    duplicatesMerged: 0,
+    missingIvs: { count: 0, names: [] },
+    unrecognized: [],
+    rowProblems: [],
+    header: { ok: true, missingRequired: [], missingOptional: [], unknown: [], columnCount: 0 },
+    newestScan: null,
+  };
+  const saveSpecimens = useCallback(async (specimens: Specimen[], fileName: string | null) => {
+    const cur = stateRef.current.collection;
+    const collection: StoredCollection = {
+      key: 'current',
+      specimens,
+      report: { ...(cur?.report ?? EMPTY_REPORT), recognized: specimens.length },
+      importedAt: cur?.importedAt ?? new Date().toISOString(),
+      fileName: cur?.fileName ?? fileName,
+    };
+    await storage.saveCollection(collection);
+    dispatch({ type: 'import-done', collection });
+  }, []);
+  const addManual = useCallback(
+    async (input: ManualInput) => {
+      const h = hostRef.current as WorkerHost;
+      const r = await h.manual(input);
+      const existing = stateRef.current.collection?.specimens ?? [];
+      const without = existing.filter((x) => x.id !== r.specimen.id);
+      await saveSpecimens([...without, r.specimen], 'typed in by hand');
+      return r;
+    },
+    [saveSpecimens],
+  );
+  const removeSpecimen = useCallback(
+    async (id: string) => {
+      const existing = stateRef.current.collection?.specimens ?? [];
+      await saveSpecimens(
+        existing.filter((x) => x.id !== id),
+        null,
+      );
+    },
+    [saveSpecimens],
+  );
+
   const toggleExcluded = useCallback(
     (specimenId: string) => {
       updateSettings((s) => {
@@ -552,6 +608,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setPick,
       setOrderMode,
       analyze,
+      addManual,
+      removeSpecimen,
       updateSettings,
       toggleExcluded,
       forget,
@@ -567,6 +625,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setPick,
       setOrderMode,
       analyze,
+      addManual,
+      removeSpecimen,
       updateSettings,
       toggleExcluded,
       forget,

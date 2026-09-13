@@ -27,7 +27,7 @@ function metaLine(rank: MetaRank | undefined): string {
 
 export function SpecimenScreen({ id }: { id: string }) {
   const s = useAppState();
-  const { navigate, loadVerdicts, toggleExcluded } = useActions();
+  const { navigate, loadVerdicts, toggleExcluded, removeSpecimen } = useActions();
   const name = useName();
   const species = useSpecies();
   const sp = s.collection?.specimens.find((x) => x.id === id);
@@ -254,6 +254,20 @@ export function SpecimenScreen({ id }: { id: string }) {
         >
           {excluded ? 'Include in recommendations again' : 'Exclude from recommendations'}
         </button>
+        {sp.source === 'manual' ? (
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ color: 'var(--warn)' }}
+            onClick={() => {
+              if (window.confirm(`Remove this ${display} from your collection?`)) {
+                void removeSpecimen(sp.id).then(() => navigate({ screen: 'collection' }));
+              }
+            }}
+          >
+            Remove from collection
+          </button>
+        ) : null}
       </div>
     </div>
   );

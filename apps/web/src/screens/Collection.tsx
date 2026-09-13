@@ -178,6 +178,9 @@ export function Collection() {
           >
             Import a Poke Genie CSV
           </button>
+          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'add' })}>
+            Add a Pokémon by hand
+          </button>
         </div>
       </div>
     );
@@ -189,10 +192,19 @@ export function Collection() {
       <div className="page-head">
         <div className="between">
           <h2>Collection</h2>
-          <span className="meta">
-            {grouped && groups.length !== rows.length
-              ? `${rows.length} Pokémon · ${groups.length} kinds`
-              : `${rows.length} shown`}
+          <span className="row" style={{ gap: 10, alignItems: 'center' }}>
+            <span className="meta">
+              {grouped && groups.length !== rows.length
+                ? `${rows.length} Pokémon · ${groups.length} kinds`
+                : `${rows.length} shown`}
+            </span>
+            <button
+              type="button"
+              className="mini-chip on"
+              onClick={() => navigate({ screen: 'add' })}
+            >
+              + Add
+            </button>
           </span>
         </div>
         <input

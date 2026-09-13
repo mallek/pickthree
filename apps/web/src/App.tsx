@@ -1,3 +1,4 @@
+import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
 import { Collection } from './screens/Collection.tsx';
 import { Counters } from './screens/Counters.tsx';
@@ -18,7 +19,8 @@ function TabBar() {
     route.screen === 'team' ||
     route.screen === 'build' ||
     route.screen === 'custom';
-  const onCollection = route.screen === 'collection' || route.screen === 'specimen';
+  const onCollection =
+    route.screen === 'collection' || route.screen === 'specimen' || route.screen === 'add';
   return (
     <nav className="tabs" aria-label="Sections">
       <button
@@ -73,6 +75,8 @@ function renderScreen(r: Route) {
       return <Build />;
     case 'custom':
       return <TeamDetail id="custom" />;
+    case 'add':
+      return <AddPokemon />;
     default:
       return <Welcome />;
   }
@@ -81,7 +85,7 @@ function renderScreen(r: Route) {
 export function App() {
   const s = useAppState();
   const r = s.route;
-  const showTabs = r.screen !== 'welcome' && r.screen !== 'report';
+  const showTabs = r.screen !== 'welcome' && r.screen !== 'report' && r.screen !== 'add';
   const screen = renderScreen(r);
   return (
     <div className="app">

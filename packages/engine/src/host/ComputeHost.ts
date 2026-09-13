@@ -5,6 +5,7 @@ import type { Verdict } from '../verdicts/worth.js';
 import type { CounterEntry, CountersOptions } from '../counters/counters.js';
 import type { ScanList, ScanListOptions } from '../scan/scanList.js';
 import type { AnalyzeOptions, TeamAnalysis, TeamPick } from '../analyze.js';
+import type { ManualInput, ManualResult } from '../collection/manual.js';
 
 export interface ProgressEvent {
   stage: string;
@@ -37,4 +38,5 @@ export interface ComputeHost {
     options: Partial<AnalyzeOptions>,
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<TeamAnalysis>;
+  manual(input: ManualInput): Promise<ManualResult>;
 }

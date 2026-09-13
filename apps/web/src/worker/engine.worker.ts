@@ -3,6 +3,7 @@ import {
   analyzeTeam,
   GameDataIndex,
   displayName,
+  manualSpecimen,
   metaCounters,
   parsePokeGenieCsv,
   metaRanks,
@@ -207,6 +208,11 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         (stage, done, total) => post({ id: msg.id, kind: 'progress', stage, done, total }),
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'analyze', analysis } });
+      return;
+    }
+    if (msg.kind === 'manual') {
+      const result = manualSpecimen(msg.input, env.index);
+      post({ id: msg.id, kind: 'result', result: { kind: 'manual', result } });
       return;
     }
   } catch (err) {

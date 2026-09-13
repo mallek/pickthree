@@ -5,6 +5,8 @@ import type {
   CounterEntry,
   CountersOptions,
   ImportReport,
+  ManualInput,
+  ManualResult,
   ProgressEvent,
   Recommendation,
   RecommendOptions,
@@ -154,5 +156,13 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.analysis;
+  }
+
+  async manual(input: ManualInput): Promise<ManualResult> {
+    const r = await this.send({ kind: 'manual', input });
+    if (r.kind !== 'manual') {
+      throw new Error('unexpected reply');
+    }
+    return r.result;
   }
 }

@@ -10,6 +10,8 @@ import type {
   CountersOptions,
   PokemonType,
   ImportReport,
+  ManualInput,
+  ManualResult,
   MetaRank,
   Recommendation,
   RecommendOptions,
@@ -34,7 +36,8 @@ export type WorkerRequest =
       picks: [TeamPick, TeamPick, TeamPick];
       specimens: Specimen[];
       options: Partial<AnalyzeOptions>;
-    };
+    }
+  | { id: number; kind: 'manual'; input: ManualInput };
 
 export type WorkerResponse =
   | { id: number; kind: 'progress'; stage: string; done: number; total: number }
@@ -57,4 +60,5 @@ export type WorkerResult =
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }
   | { kind: 'counters'; counters: CounterEntry[] }
   | { kind: 'scanlist'; scanList: ScanList }
-  | { kind: 'analyze'; analysis: TeamAnalysis };
+  | { kind: 'analyze'; analysis: TeamAnalysis }
+  | { kind: 'manual'; result: ManualResult };

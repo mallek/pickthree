@@ -90,6 +90,12 @@ export function Teams() {
           >
             Import a Poke Genie CSV
           </button>
+          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'add' })}>
+            Add Pokémon by hand
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'build' })}>
+            Build a team from any Pokémon
+          </button>
         </div>
       </div>
     );
