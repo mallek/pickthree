@@ -45,9 +45,12 @@ page.on('console', (m) => {
   }
 });
 page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
-page.on('requestfailed', (r) =>
-  errors.push(`[requestfailed] ${r.url()} ${r.failure()?.errorText}`),
-);
+page.on('requestfailed', (r) => {
+  // Chrome aborts its own speculative fetches against the live origin; those are not app errors.
+  if (r.failure()?.errorText !== 'net::ERR_ABORTED') {
+    errors.push(`[requestfailed] ${r.url()} ${r.failure()?.errorText}`);
+  }
+});
 
 async function shot(name, fullPage = true) {
   await new Promise((r) => setTimeout(r, 350));
