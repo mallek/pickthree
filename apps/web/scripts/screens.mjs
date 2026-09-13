@@ -102,6 +102,10 @@ await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.verdict', { timeout: 120_000 });
 console.log(`  verdicts rendered at ${Date.now() - t0} ms`);
 await shot('04-collection');
+await page.click('.more-btn');
+await new Promise((r) => setTimeout(r, 300));
+await page.evaluate(() => document.querySelector('.more-btn').scrollIntoView({ block: 'center' }));
+await shot('11-collection-group', false);
 const specHref = await page.$eval('.spec-row', (a) => a.getAttribute('href'));
 
 console.log('specimen');

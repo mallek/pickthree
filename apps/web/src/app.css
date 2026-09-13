@@ -1035,6 +1035,43 @@ textarea.paste {
   align-items: baseline;
   flex-wrap: wrap;
 }
+.spec-group {
+  display: flex;
+  flex-direction: column;
+}
+.spec-group .spec-row {
+  border-bottom: 0;
+}
+.spec-group {
+  border-bottom: 1px solid var(--divider);
+}
+.more-btn {
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  padding: 0 0 10px 56px;
+  min-height: 28px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.more-caret {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.spec-row.sub {
+  min-height: 44px;
+  padding: 6px 0 6px 0;
+  border-top: 1px dashed var(--divider);
+}
+.spec-row.sub .verdict {
+  font-size: 10px;
+  padding: 3px 7px;
+}
+
 .shadow-flag {
   font-size: 10px;
   letter-spacing: 0.06em;

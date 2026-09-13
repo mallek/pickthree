@@ -58,6 +58,8 @@ export function Collection() {
   const [recentOnly, setRecentOnly] = useState(false);
   const [metaOnly, setMetaOnly] = useState(false);
   const [sort, setSort] = useState<'verdict' | 'rank' | 'meta' | 'name'>('verdict');
+  const [grouped, setGrouped] = useState(true);
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (
@@ -139,6 +141,31 @@ export function Collection() {
     metaRank,
   ]);
 
+  const rankOfSpecimen = (sp: Specimen): number => {
+    const v = s.verdicts[sp.id];
+    return v?.build ? v.build.ivRank.rank : 99_999;
+  };
+  /** Same species and shadow status folded together, best IV rank on top, list order kept. */
+  const groups = useMemo(() => {
+    const byKey = new Map<string, { key: string; best: Specimen; others: Specimen[] }>();
+    for (const sp of rows) {
+      const key = grouped ? `${sp.speciesId}|${sp.shadow ? 1 : 0}` : sp.id;
+      const g = byKey.get(key);
+      if (!g) {
+        byKey.set(key, { key, best: sp, others: [] });
+      } else if (rankOfSpecimen(sp) < rankOfSpecimen(g.best)) {
+        g.others.push(g.best);
+        g.best = sp;
+      } else {
+        g.others.push(sp);
+      }
+    }
+    for (const g of byKey.values()) {
+      g.others.sort((a, b) => rankOfSpecimen(a) - rankOfSpecimen(b));
+    }
+    return [...byKey.values()];
+  }, [rows, grouped, s.verdicts]);
+
   if (!s.collection) {
     return (
       <div className="screen">
@@ -162,7 +189,11 @@ export function Collection() {
       <div className="page-head">
         <div className="between">
           <h2>Collection</h2>
-          <span className="meta">{rows.length} shown</span>
+          <span className="meta">
+            {grouped && groups.length !== rows.length
+              ? `${rows.length} Pokémon · ${groups.length} kinds`
+              : `${rows.length} shown`}
+          </span>
         </div>
         <input
           className="search"
@@ -209,6 +240,13 @@ export function Collection() {
           </button>
           <button
             type="button"
+            className={`mini-chip${grouped ? ' on' : ''}`}
+            onClick={() => setGrouped((x) => !x)}
+          >
+            Group same Pokémon
+          </button>
+          <button
+            type="button"
             className="btn-ghost"
             style={{ marginLeft: 'auto', fontSize: 12, minHeight: 32 }}
             onClick={() => setSort((x) => nextSort[x])}
@@ -221,23 +259,73 @@ export function Collection() {
         {s.verdictsLoading && Object.keys(s.verdicts).length === 0 ? (
           <Progress stage="verdicts" done={0} total={0} />
         ) : null}
-        {rows.map((sp) => {
+        {groups.map((g) => {
+          const sp = g.best;
           const v = s.verdicts[sp.id];
+          const isOpen = open.has(g.key);
+          const nextBest = g.others[0];
+          const nextLabel = nextBest ? rankLabel(nextBest, s.verdicts[nextBest.id]) : null;
           return (
-            <a className="spec-row" key={sp.id} href={hashFor({ screen: 'specimen', id: sp.id })}>
-              <PokemonToken speciesId={sp.speciesId} size={44} />
-              <span style={{ minWidth: 0 }}>
-                <span className="spec-name">
-                  {name(sp.speciesId).replace(/^Shadow /, '')}
-                  {sp.shadow ? <span className="shadow-flag">Shadow</span> : null}
+            <div className="spec-group" key={g.key}>
+              <a className="spec-row" href={hashFor({ screen: 'specimen', id: sp.id })}>
+                <PokemonToken speciesId={sp.speciesId} size={44} />
+                <span style={{ minWidth: 0 }}>
+                  <span className="spec-name">
+                    {name(sp.speciesId).replace(/^Shadow /, '')}
+                    {sp.shadow ? <span className="shadow-flag">Shadow</span> : null}
+                  </span>
+                  <span className="meta" style={{ display: 'block' }}>
+                    CP {sp.cp} · {rankLabel(sp, v)}
+                  </span>
+                  <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
                 </span>
-                <span className="meta" style={{ display: 'block' }}>
-                  CP {sp.cp} · {rankLabel(sp, v)}
-                </span>
-                <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
-              </span>
-              {v ? <VerdictChip label={v.label} /> : <span className="meta">...</span>}
-            </a>
+                {v ? <VerdictChip label={v.label} /> : <span className="meta">...</span>}
+              </a>
+              {g.others.length > 0 ? (
+                <button
+                  type="button"
+                  className={`more-btn${isOpen ? ' on' : ''}`}
+                  aria-expanded={isOpen}
+                  onClick={() =>
+                    setOpen((cur) => {
+                      const next = new Set(cur);
+                      if (next.has(g.key)) {
+                        next.delete(g.key);
+                      } else {
+                        next.add(g.key);
+                      }
+                      return next;
+                    })
+                  }
+                >
+                  {isOpen
+                    ? 'Hide the others'
+                    : `${g.others.length} more${nextLabel ? `, next best ${nextLabel}` : ''}`}
+                  <span className="more-caret">{isOpen ? '\u2303' : '\u2304'}</span>
+                </button>
+              ) : null}
+              {isOpen
+                ? g.others.map((o) => {
+                    const ov = s.verdicts[o.id];
+                    return (
+                      <a
+                        className="spec-row sub"
+                        key={o.id}
+                        href={hashFor({ screen: 'specimen', id: o.id })}
+                      >
+                        <span />
+                        <span style={{ minWidth: 0 }}>
+                          <span className="meta" style={{ display: 'block' }}>
+                            CP {o.cp} · {rankLabel(o, ov)} · Level {o.level.max}
+                            {o.lucky ? ' · Lucky' : ''}
+                          </span>
+                        </span>
+                        {ov ? <VerdictChip label={ov.label} /> : <span className="meta">...</span>}
+                      </a>
+                    );
+                  })
+                : null}
+            </div>
           );
         })}
         {rows.length === 0 ? (
