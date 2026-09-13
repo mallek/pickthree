@@ -7,7 +7,9 @@ export function secondMoveCost(
   thirdMoveCost: number,
   mods: CostModifiers,
 ): { stardust: number; candy: number } {
-  const candy = TIERS[thirdMoveCost];
+  // Older cached game data can still carry PvPoke's "false" for Smeargle; treat it as tier 0.
+  const tier = typeof thirdMoveCost === 'number' ? thirdMoveCost : 0;
+  const candy = TIERS[tier];
   if (candy === undefined) {
     throw new RangeError(`Unknown second move cost tier: ${thirdMoveCost}`);
   }
@@ -17,5 +19,5 @@ export function secondMoveCost(
   } else if (mods.purified) {
     mult = 0.8;
   }
-  return { stardust: Math.round(thirdMoveCost * mult), candy: Math.round(candy * mult) };
+  return { stardust: Math.round(tier * mult), candy: Math.round(candy * mult) };
 }

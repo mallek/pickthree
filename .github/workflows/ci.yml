@@ -22,11 +22,16 @@ jobs:
           key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
       - run: npm run lint
       - run: npm run typecheck
+      - name: Cache built game data
+        id: data
+        uses: actions/cache@v4
+        with:
+          path: apps/web/public/data
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/sim-pvpoke/src/**') }}
       - run: npm run data:fetch
-      - run: npm test
       - run: npm run data:build
-        env:
-          PICKTHREE_SKIP_MATRIX: '1'
+        if: steps.data.outputs.cache-hit != 'true'
+      - run: npm test
   screens:
     # Drives the built app in Chrome the way a phone would: import, teams, detail, collection,
     # counters, build a team, add by hand, share target. Fails on any console error.
@@ -52,7 +57,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/web/public/data
-          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/src/**') }}
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/sim-pvpoke/src/**') }}
       - run: npm run data:fetch
         if: steps.data.outputs.cache-hit != 'true'
       - run: npm run data:build
