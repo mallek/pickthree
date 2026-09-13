@@ -22,7 +22,7 @@ const csv = fs.readFileSync(
 const browser = await puppeteer.launch({
   executablePath: chrome,
   headless: true,
-  args: ['--no-first-run', '--disable-gpu'],
+  args: ['--no-first-run', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : [])],
 });
 const page = await browser.newPage();
 await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true });

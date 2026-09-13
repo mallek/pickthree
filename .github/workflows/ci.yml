@@ -27,3 +27,48 @@ jobs:
       - run: npm run data:build
         env:
           PICKTHREE_SKIP_MATRIX: '1'
+  screens:
+    # Drives the built app in Chrome the way a phone would: import, teams, detail, collection,
+    # counters, build a team, add by hand, share target. Fails on any console error.
+    runs-on: ubuntu-latest
+    needs: test
+    env:
+      PICKTHREE_REQUIRE_PVPOKE: '1'
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Cache PvPoke checkout
+        uses: actions/cache@v4
+        with:
+          path: packages/data/.pvpoke
+          key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
+      - name: Cache built game data
+        id: data
+        uses: actions/cache@v4
+        with:
+          path: apps/web/public/data
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/src/**') }}
+      - run: npm run data:fetch
+        if: steps.data.outputs.cache-hit != 'true'
+      - run: npm run data:build
+        if: steps.data.outputs.cache-hit != 'true'
+      - run: npm -w @pickthree/web run build
+      - name: Serve the build
+        run: (cd apps/web && npx vite preview --port 4173 --strictPort &) && sleep 3
+      - run: npm run web:screens
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - run: node apps/web/scripts/share-test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: apps/web/screenshots/*.png
+          retention-days: 7

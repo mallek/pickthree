@@ -27,7 +27,7 @@ for (const f of fs.readdirSync(outDir)) {
 const browser = await puppeteer.launch({
   executablePath: chrome,
   headless: true,
-  args: ['--no-first-run', '--disable-gpu'],
+  args: ['--no-first-run', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : [])],
 });
 const page = await browser.newPage();
 await page.setViewport({
