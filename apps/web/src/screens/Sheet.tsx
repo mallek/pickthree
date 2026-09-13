@@ -1,6 +1,7 @@
 import { PokemonToken, useName } from '../components.tsx';
 import { dateLabel, num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
+import { UpdateStatus } from '../components/UpdateToast.tsx';
 
 export function Sheet() {
   const s = useAppState();
@@ -134,6 +135,7 @@ export function Sheet() {
               the player counter when you build teams.
               {s.collection ? ` Last import: ${dateLabel(s.collection.importedAt)}.` : ''}
             </span>
+            <UpdateStatus />
             <span>
               Built on <a href="https://github.com/pvpoke/pvpoke">PvPoke</a> (MIT). Not affiliated
               with Niantic, Nintendo, The Pokémon Company, Poke Genie, or PvPoke.{' '}

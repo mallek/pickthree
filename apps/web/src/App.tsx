@@ -7,6 +7,7 @@ import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
+import { UpdateToast } from './components/UpdateToast.tsx';
 
 function TabBar() {
   const { route, sheetOpen } = useAppState();
@@ -78,6 +79,7 @@ export function App() {
       {screen}
       {showTabs ? <TabBar /> : null}
       {s.sheetOpen ? <Sheet /> : null}
+      <UpdateToast />
     </div>
   );
 }

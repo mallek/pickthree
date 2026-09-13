@@ -2,14 +2,21 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const build = process.env.PICK3_BUILD ?? process.env.GITHUB_SHA?.slice(0, 7) ?? 'dev';
+
 export default defineConfig({
   base: '/',
+  define: {
+    __PICK3_BUILD__: JSON.stringify(build),
+    __PICK3_BUILT_AT__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     VitePWA({
       // main.tsx imports virtual:pwa-register; no inline script, which keeps the CSP strict.
       injectRegister: false,
-      registerType: 'autoUpdate',
+      // A new worker waits until the user taps the update toast (src/update.ts).
+      registerType: 'prompt',
       // Hand-written service worker (src/sw.ts) so it can answer the Web Share Target POST.
       strategies: 'injectManifest',
       srcDir: 'src',

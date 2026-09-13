@@ -21,8 +21,11 @@ declare let self: ServiceWorkerGlobalScope;
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-self.addEventListener('install', () => {
-  void self.skipWaiting();
+// Prompt-mode updates: the new worker waits until the page asks it to take over.
+self.addEventListener('message', (event) => {
+  if ((event.data as { type?: string } | null)?.type === 'SKIP_WAITING') {
+    void self.skipWaiting();
+  }
 });
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
