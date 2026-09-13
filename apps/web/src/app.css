@@ -1087,6 +1087,13 @@ textarea.paste {
   flex-wrap: wrap;
   margin-top: 4px;
 }
+.mtags .mtags {
+  margin-top: 0;
+}
+.mtag.good {
+  color: #7ac74c;
+  background: rgba(122, 199, 76, 0.14);
+}
 .mtag,
 .mini .mtag {
   display: inline-flex;

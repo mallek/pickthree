@@ -2,6 +2,7 @@ import type { Specimen, VerdictLabel } from '@pickthree/engine';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Chip,
+  HundoTag,
   MetaTags,
   PokemonToken,
   Progress,
@@ -278,7 +279,10 @@ export function Collection() {
                   <span className="meta" style={{ display: 'block' }}>
                     CP {sp.cp} · {rankLabel(sp, v)}
                   </span>
-                  <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
+                  <span className="mtags">
+                    <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
+                    <HundoTag delta={v?.perfectDelta ?? null} />
+                  </span>
                 </span>
                 {v ? <VerdictChip label={v.label} /> : <span className="meta">...</span>}
               </a>

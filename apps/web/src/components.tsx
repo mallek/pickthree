@@ -47,6 +47,14 @@ export function MetaTags({ speciesId }: { speciesId: string }) {
   );
 }
 
+/** "Same wins as a hundo" when the perfect-IV twin would win no more meta matchups. */
+export function HundoTag({ delta }: { delta: number | null }) {
+  if (delta === null || delta > 0) {
+    return null;
+  }
+  return <span className="mtag good">Same wins as a hundo</span>;
+}
+
 /** One pill for an opponent's overall rank, so you know how often you will meet it. */
 export function RankTag({ rank }: { rank: number | null }) {
   if (rank === null) {

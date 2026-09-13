@@ -6,6 +6,7 @@ import {
   PokemonToken,
   Progress,
   TypeChips,
+  HundoTag,
   VerdictChip,
   useMetaRank,
   useName,
@@ -98,8 +99,9 @@ export function SpecimenScreen({ id }: { id: string }) {
               </span>
             </div>
             <div className="meta">{scanAge(sp.scannedAt)}</div>
-            <div style={{ marginTop: 6 }}>
+            <div className="row" style={{ marginTop: 6, gap: 8, alignItems: 'center' }}>
               {v ? <VerdictChip label={v.label} /> : <span className="meta">Judging...</span>}
+              <HundoTag delta={v?.perfectDelta ?? null} />
             </div>
           </div>
         </div>
