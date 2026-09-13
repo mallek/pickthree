@@ -95,7 +95,7 @@ export function TeamDetail({ id }: { id: string }) {
               <span className="small muted">
                 {hypothetical.map((h) => name(h)).join(', ')}{' '}
                 {hypothetical.length === 1 ? 'is' : 'are'} not in your collection, so the numbers
-                assume the best possible IVs.
+                assume a top-10% IV spread rather than a perfect one.
               </span>
             ) : null}
           </div>

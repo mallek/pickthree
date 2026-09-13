@@ -24,7 +24,7 @@ const ORDER: Record<VerdictLabel, number> = {
   'Needs rescan': 4,
 };
 
-/** Hand-pick three Pokémon, from the collection or any species at best IVs, and analyze them. */
+/** Hand-pick three Pokémon, from the collection or any species at top-10% IVs, and analyze them. */
 export function Build() {
   const s = useAppState();
   const { navigate, setPick, setOrderMode, analyze, loadVerdicts } = useActions();
@@ -100,7 +100,7 @@ export function Build() {
       return null;
     }
     if (p.kind === 'species') {
-      return { title: name(p.id), sub: 'Best possible IVs', speciesId: p.id };
+      return { title: name(p.id), sub: 'Top 10% IVs, not one you own', speciesId: p.id };
     }
     const sp = s.collection?.specimens.find((x) => x.id === p.id);
     if (!sp) {
@@ -248,7 +248,7 @@ export function Build() {
                           </span>
                           <MetaTags speciesId={id} />
                         </span>
-                        <span className="meta small">{taken ? 'picked' : 'best IVs'}</span>
+                        <span className="meta small">{taken ? 'picked' : 'top 10% IVs'}</span>
                       </button>
                     );
                   })}
@@ -277,8 +277,9 @@ export function Build() {
           {s.analyzing ? 'Analyzing...' : 'Analyze this team'}
         </button>
         <p className="meta faint" style={{ margin: 0 }}>
-          Pokémon picked by species run at their best possible IVs. Your own run with their real IVs
-          at the level pick3 would build them to.
+          Pokémon picked by species run at a top-10% IV spread, the kind you would realistically
+          find, not the perfect one. Your own run with their real IVs at the level pick3 would build
+          them to.
         </p>
       </div>
     </div>

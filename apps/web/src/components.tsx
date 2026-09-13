@@ -392,7 +392,7 @@ export function NoCollection({
       <div className="choice-card">
         <b>Build a team from any Pokémon</b>
         <span className="small muted">
-          Pick any three and get the full breakdown at their best IVs. Nothing to enter.
+          Pick any three and get the full breakdown at realistic top-10% IVs. Nothing to enter.
         </span>
         <button type="button" className="btn" onClick={() => navigate({ screen: 'build' })}>
           Build a team

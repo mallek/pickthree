@@ -29,12 +29,17 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
   const owned = specimens.filter((s) => buildsFor(s, index, DEFAULT_BUILD_OPTIONS).length > 0);
   const [a, b] = owned;
 
-  it('runs at best IVs for a species you do not own', () => {
+  it('runs at a top-10% spread for a species you do not own', () => {
     const s = hypotheticalSpecimen('swampert', index, DEFAULT_BUILD_OPTIONS);
     expect(s.ivs).not.toBeNull();
     expect(s.id).toBe('species:swampert');
     const builds = buildsFor(s, index, { ...DEFAULT_BUILD_OPTIONS, minCp: 0 });
-    expect(builds.some((x) => x.speciesId === 'swampert' && x.ivRank.rank === 1)).toBe(true);
+    const b = builds.find((x) => x.speciesId === 'swampert');
+    expect(b).toBeDefined();
+    // The last spread inside the top 10%: about rank 410 of 4096 (ties can shave a place).
+    const line = Math.ceil(b!.ivRank.total * 0.1);
+    expect(b!.ivRank.rank).toBeGreaterThanOrEqual(line - 3);
+    expect(b!.ivRank.rank).toBeLessThanOrEqual(line);
   });
 
   it('tries all six orders and keeps the best', () => {

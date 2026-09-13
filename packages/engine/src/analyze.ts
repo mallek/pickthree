@@ -37,7 +37,7 @@ import { bestBuild } from './verdicts/worth.js';
 
 /** One member of a hand-built team. */
 export interface TeamPick {
-  /** specimen: a Pokémon from the collection. species: any species, run at its best IVs. */
+  /** specimen: a Pokémon from the collection. species: any species, run at top-10% IVs. */
   kind: 'specimen' | 'species';
   /** The specimen id, or the species id (shadow ids like swampert_shadow are their own species). */
   id: string;
@@ -68,13 +68,19 @@ export interface TeamAnalysis {
   team: TeamRecommendation;
   /** Every order simulated, best first. One entry when the order was fixed. */
   orders: OrderTried[];
-  /** Species run at best possible IVs because they were picked by species, not from the collection. */
+  /** Species run at top-10% IVs because they were picked by species, not from the collection. */
   hypothetical: string[];
   assumptions: Assumptions;
   ms: number;
 }
 
-/** A stand-in specimen for a species you do not own: rank-1 IVs, level 1, no moves yet. */
+/** The IV spread a species you do not own is assumed to have: the last one inside the top 10%. */
+export const HYPOTHETICAL_TOP_SHARE = 0.1;
+
+/**
+ * A stand-in specimen for a species you do not own: a top-10% IV spread rather than the perfect
+ * one, since that is what a player is likely to actually have. Level 1, no moves yet.
+ */
 export function hypotheticalSpecimen(
   speciesId: string,
   index: GameDataIndex,
@@ -82,7 +88,8 @@ export function hypotheticalSpecimen(
 ): Specimen {
   const sp = index.mustSpecies(speciesId);
   const levelCap = opts.allowXl ? opts.levelCap : Math.min(opts.levelCap, 40);
-  const best = allSpreads(sp.baseStats, opts.cpCap, levelCap, sp.levelFloor ?? 1)[0];
+  const spreads = allSpreads(sp.baseStats, opts.cpCap, levelCap, sp.levelFloor ?? 1);
+  const best = spreads[Math.max(0, Math.ceil(spreads.length * HYPOTHETICAL_TOP_SHARE) - 1)];
   if (!best) {
     throw new Error(`${sp.speciesName} cannot fit under ${opts.cpCap} CP.`);
   }
@@ -141,7 +148,7 @@ function resolvePick(
 
 /**
  * The same breakdown a recommended team gets, for three Pokémon the player chose. Picks come from
- * the collection or by species (best IVs). The order is either kept or chosen by simulating all
+ * the collection or by species (top-10% IVs). The order is either kept or chosen by simulating all
  * six and keeping the strongest.
  */
 export function analyzeTeam(
