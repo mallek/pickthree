@@ -14,22 +14,29 @@ import {
   useName,
 } from '../components.tsx';
 import { costLine, ivLine, num, shortName, topPct } from '../format.ts';
-import { useActions, useAppState } from '../state/store.tsx';
+import { useActions, useAppState, type Route } from '../state/store.tsx';
 
 export function TeamDetail({ id }: { id: string }) {
   const s = useAppState();
   const { navigate } = useActions();
   const name = useName();
   const [open, setOpen] = useState(false);
-  const team = s.recommendation?.teams.find((t) => t.id === id);
+  const custom = id === 'custom';
+  const team = custom ? s.analysis?.team : s.recommendation?.teams.find((t) => t.id === id);
+  const backRoute: Route = custom ? { screen: 'build' } : { screen: 'teams' };
+  const backLabel = custom ? 'Build' : 'Teams';
   if (!team) {
     return (
       <div className="screen">
-        <Header title="Team" onBack={() => navigate({ screen: 'teams' })} backLabel="Teams" />
+        <Header title="Team" onBack={() => navigate(backRoute)} backLabel={backLabel} />
         <div className="boot">
-          <p>This team is not in the current results. Filters may have changed.</p>
-          <button type="button" className="btn-ghost" onClick={() => navigate({ screen: 'teams' })}>
-            Back to teams
+          <p>
+            {custom
+              ? 'No hand-built team yet. Pick three and analyze them.'
+              : 'This team is not in the current results. Filters may have changed.'}
+          </p>
+          <button type="button" className="btn-ghost" onClick={() => navigate(backRoute)}>
+            {custom ? 'Build a team' : 'Back to teams'}
           </button>
         </div>
       </div>
@@ -40,17 +47,44 @@ export function TeamDetail({ id }: { id: string }) {
   const back = team.slots.slice(1);
   const gridCols = s.data?.meta.slice(0, 8) ?? [];
   const structureLabel = team.structure === 'ABB' ? 'ABB line' : 'Balanced ABC';
-  const a = s.recommendation?.assumptions;
+  const a = custom ? s.analysis?.assumptions : s.recommendation?.assumptions;
+  const tried = custom ? (s.analysis?.orders ?? []) : [];
+  const hypothetical = custom ? (s.analysis?.hypothetical ?? []) : [];
 
   return (
     <div className="screen">
       <Header
         title={`${team.score.fit} fit · ${structureLabel}`}
         sub={`${team.score.difficulty} to play · ${team.score.difficultyWhy}`}
-        onBack={() => navigate({ screen: 'teams' })}
-        backLabel="Teams"
+        onBack={() => navigate(backRoute)}
+        backLabel={backLabel}
       />
       <div className="scroll" style={{ gap: 24 }}>
+        {custom ? (
+          <div className="card custom-note" style={{ gap: 6 }}>
+            {tried.length > 1 ? (
+              <>
+                <b>Order</b>
+                <span className="small">
+                  pick3 tried all six orders. Best: {tried[0]!.names.join(', ')} at{' '}
+                  {tried[0]!.total}.
+                  {tried.length > 1 && tried[tried.length - 1]
+                    ? ` Weakest: ${tried[tried.length - 1]!.names.join(', ')} at ${tried[tried.length - 1]!.total}.`
+                    : ''}
+                </span>
+              </>
+            ) : (
+              <span className="small">Run in the order you picked.</span>
+            )}
+            {hypothetical.length > 0 ? (
+              <span className="small muted">
+                {hypothetical.map((h) => name(h)).join(', ')}{' '}
+                {hypothetical.length === 1 ? 'is' : 'are'} not in your collection, so the numbers
+                assume the best possible IVs.
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         <div className="stack" style={{ gap: 12 }}>
           {team.slots.map((slot, i) => {
             const c = slot.candidate;

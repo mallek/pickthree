@@ -4,6 +4,7 @@ export interface SpeciesLite {
 }
 
 import type {
+  AnalyzeOptions,
   BuildOptions,
   CounterEntry,
   CountersOptions,
@@ -15,6 +16,8 @@ import type {
   ScanList,
   ScanListOptions,
   Specimen,
+  TeamAnalysis,
+  TeamPick,
   Verdict,
 } from '@pickthree/engine';
 
@@ -24,7 +27,14 @@ export type WorkerRequest =
   | { id: number; kind: 'recommend'; specimens: Specimen[]; options: Partial<RecommendOptions> }
   | { id: number; kind: 'verdicts'; specimens: Specimen[]; options: Partial<BuildOptions> }
   | { id: number; kind: 'counters'; specimens: Specimen[]; options: Partial<CountersOptions> }
-  | { id: number; kind: 'scanlist'; options: Partial<ScanListOptions> };
+  | { id: number; kind: 'scanlist'; options: Partial<ScanListOptions> }
+  | {
+      id: number;
+      kind: 'analyze';
+      picks: [TeamPick, TeamPick, TeamPick];
+      specimens: Specimen[];
+      options: Partial<AnalyzeOptions>;
+    };
 
 export type WorkerResponse =
   | { id: number; kind: 'progress'; stage: string; done: number; total: number }
@@ -39,9 +49,12 @@ export type WorkerResult =
       meta: string[];
       /** Overall and best-role meta rank per species, ignoring IVs. */
       metaRanks: Record<string, MetaRank>;
+      /** Species with a matchup matrix row, so they can be hand-picked for a team. */
+      analyzable: string[];
     }
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }
   | { kind: 'recommend'; recommendation: Recommendation }
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }
   | { kind: 'counters'; counters: CounterEntry[] }
-  | { kind: 'scanlist'; scanList: ScanList };
+  | { kind: 'scanlist'; scanList: ScanList }
+  | { kind: 'analyze'; analysis: TeamAnalysis };

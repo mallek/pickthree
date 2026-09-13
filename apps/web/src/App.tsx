@@ -1,3 +1,4 @@
+import { Build } from './screens/Build.tsx';
 import { Collection } from './screens/Collection.tsx';
 import { Counters } from './screens/Counters.tsx';
 import { Report } from './screens/Report.tsx';
@@ -12,7 +13,11 @@ import { UpdateToast } from './components/UpdateToast.tsx';
 function TabBar() {
   const { route, sheetOpen } = useAppState();
   const { navigate, openSheet } = useActions();
-  const onTeams = route.screen === 'teams' || route.screen === 'team';
+  const onTeams =
+    route.screen === 'teams' ||
+    route.screen === 'team' ||
+    route.screen === 'build' ||
+    route.screen === 'custom';
   const onCollection = route.screen === 'collection' || route.screen === 'specimen';
   return (
     <nav className="tabs" aria-label="Sections">
@@ -64,6 +69,10 @@ function renderScreen(r: Route) {
       return <SpecimenScreen id={r.id} />;
     case 'counters':
       return <Counters />;
+    case 'build':
+      return <Build />;
+    case 'custom':
+      return <TeamDetail id="custom" />;
     default:
       return <Welcome />;
   }

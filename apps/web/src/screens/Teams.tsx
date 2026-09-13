@@ -128,6 +128,7 @@ export function Teams() {
           </span>
         </div>
         <div className="chips">
+          <Chip onClick={() => navigate({ screen: 'build' })}>Build your own &rsaquo;</Chip>
           <Chip on={f.style !== 'any'} onClick={cycleStyle}>
             {styleLabel}
           </Chip>

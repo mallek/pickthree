@@ -1,4 +1,5 @@
 import type {
+  AnalyzeOptions,
   BuildOptions,
   ComputeHost,
   CounterEntry,
@@ -10,6 +11,8 @@ import type {
   ScanList,
   ScanListOptions,
   Specimen,
+  TeamAnalysis,
+  TeamPick,
   Verdict,
 } from '@pickthree/engine';
 import type { WorkerRequest, WorkerResponse, WorkerResult } from './protocol.ts';
@@ -138,5 +141,18 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.scanList;
+  }
+
+  async analyze(
+    picks: [TeamPick, TeamPick, TeamPick],
+    specimens: Specimen[],
+    options: Partial<AnalyzeOptions>,
+    onProgress?: (e: ProgressEvent) => void,
+  ): Promise<TeamAnalysis> {
+    const r = await this.send({ kind: 'analyze', picks, specimens, options }, onProgress);
+    if (r.kind !== 'analyze') {
+      throw new Error('unexpected reply');
+    }
+    return r.analysis;
   }
 }

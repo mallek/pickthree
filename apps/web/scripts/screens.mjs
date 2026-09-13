@@ -122,6 +122,22 @@ await page.click('.chips .chip:nth-child(3)');
 await new Promise((r) => setTimeout(r, 300));
 await shot('09-counters-own', false);
 
+console.log('build a team');
+await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.pick-slot');
+for (let i = 0; i < 3; i++) {
+  await page.click(`.pick-slot:nth-of-type(${i + 1})`);
+  await page.waitForSelector('.picker-list .spec-row:not([disabled])', { timeout: 120_000 });
+  const rows = await page.$$('.picker-list .spec-row:not([disabled])');
+  await rows[i * 2].click();
+  await new Promise((r) => setTimeout(r, 200));
+}
+await shot('13-build', false);
+await page.click('.scroll > .btn');
+await page.waitForSelector('.custom-note', { timeout: 120_000 });
+console.log(`  custom team analyzed at ${Date.now() - t0} ms`);
+await shot('14-custom-team');
+
 console.log('filters sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.tabs');

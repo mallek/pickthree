@@ -42,7 +42,7 @@ export const DEFAULT_TRIO_OPTIONS: TrioOptions = {
   minAbb: 5,
 };
 
-interface Prepared {
+export interface Prepared {
   c: Candidate;
   win11: boolean[];
   win00: boolean[];
@@ -50,7 +50,7 @@ interface Prepared {
   types: Set<PokemonType>;
 }
 
-function prepare(
+export function prepare(
   pool: Candidate[],
   view: MatrixView,
   index: { types(id: string): [PokemonType, PokemonType | 'none'] },
@@ -84,7 +84,7 @@ function roleScore(c: Candidate, role: Role): number {
   return c.roleScores.closers;
 }
 
-const ORDERINGS: [number, number, number][] = [
+export const ALL_ORDERINGS: [number, number, number][] = [
   [0, 1, 2],
   [0, 2, 1],
   [1, 0, 2],
@@ -97,6 +97,8 @@ export function evaluateTrio(
   members: [Prepared, Prepared, Prepared],
   view: MatrixView,
   opts: TrioOptions,
+  /** Orders to consider as lead, switch, closer. Defaults to all six. */
+  orderings: readonly [number, number, number][] = ALL_ORDERINGS,
 ): TrioDraft {
   const n = view.opponents.length;
   const covered = new Array<boolean>(n).fill(false);
@@ -134,7 +136,7 @@ export function evaluateTrio(
   }
 
   let best: TrioDraft | null = null;
-  for (const order of ORDERINGS) {
+  for (const order of orderings) {
     const lead = members[order[0]] as Prepared;
     const sw = members[order[1]] as Prepared;
     const cl = members[order[2]] as Prepared;

@@ -28,4 +28,5 @@ export * from './verdicts/worth.js';
 export * from './counters/counters.js';
 export * from './scan/scanList.js';
 export * from './recommend.js';
+export * from './analyze.js';
 export * from './host/ComputeHost.js';

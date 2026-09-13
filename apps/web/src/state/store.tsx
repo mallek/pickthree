@@ -5,6 +5,8 @@ import type {
   Recommendation,
   RecommendOptions,
   ScanList,
+  TeamAnalysis,
+  TeamPick,
   Verdict,
 } from '@pickthree/engine';
 import {
@@ -30,7 +32,9 @@ export type Route =
   | { screen: 'team'; id: string }
   | { screen: 'collection' }
   | { screen: 'specimen'; id: string }
-  | { screen: 'counters' };
+  | { screen: 'counters' }
+  | { screen: 'build' }
+  | { screen: 'custom' };
 
 export interface DataInfo {
   pvpokeCommit: string;
@@ -40,6 +44,7 @@ export interface DataInfo {
   species: Record<string, SpeciesLite>;
   meta: string[];
   metaRanks: Record<string, MetaRank>;
+  analyzable: string[];
 }
 
 export interface AppState {
@@ -62,6 +67,12 @@ export interface AppState {
   counters: CounterEntry[] | null;
   countersLoading: boolean;
   scanList: ScanList | null;
+  /** Hand-built team: the three picks, how to order them, and the last analysis. */
+  picks: [TeamPick | null, TeamPick | null, TeamPick | null];
+  orderMode: 'best' | 'given';
+  analysis: TeamAnalysis | null;
+  analyzing: boolean;
+  analyzeError: string | null;
   /** Filters snapshot the current recommendation was computed with. */
   recommendedWith: string | null;
 }
@@ -85,6 +96,11 @@ type Action =
   | { type: 'counters-start' }
   | { type: 'counters-done'; counters: CounterEntry[] | null }
   | { type: 'scanlist'; scanList: ScanList }
+  | { type: 'pick'; slot: number; pick: TeamPick | null }
+  | { type: 'order-mode'; mode: 'best' | 'given' }
+  | { type: 'analyze-start' }
+  | { type: 'analyze-done'; analysis: TeamAnalysis }
+  | { type: 'analyze-error'; message: string }
   | { type: 'forget' };
 
 const initial: AppState = {
@@ -107,6 +123,11 @@ const initial: AppState = {
   counters: null,
   countersLoading: false,
   scanList: null,
+  picks: [null, null, null],
+  orderMode: 'best',
+  analysis: null,
+  analyzing: false,
+  analyzeError: null,
   recommendedWith: null,
 };
 
@@ -158,6 +179,19 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, countersLoading: false, counters: a.counters };
     case 'scanlist':
       return { ...s, scanList: a.scanList };
+    case 'pick': {
+      const picks = [...s.picks] as AppState['picks'];
+      picks[a.slot] = a.pick;
+      return { ...s, picks, analyzeError: null };
+    }
+    case 'order-mode':
+      return { ...s, orderMode: a.mode };
+    case 'analyze-start':
+      return { ...s, analyzing: true, analyzeError: null, progress: null };
+    case 'analyze-done':
+      return { ...s, analyzing: false, analysis: a.analysis, progress: null };
+    case 'analyze-error':
+      return { ...s, analyzing: false, analyzeError: a.message, progress: null };
     case 'verdicts-start':
       return { ...s, verdictsLoading: true };
     case 'verdicts-done':
@@ -191,6 +225,9 @@ export function parseHash(hash: string): Route {
   if (a === 'counters') {
     return { screen: 'counters' };
   }
+  if (a === 'build') {
+    return b === 'team' ? { screen: 'custom' } : { screen: 'build' };
+  }
   return { screen: 'welcome' };
 }
 
@@ -210,6 +247,10 @@ export function hashFor(r: Route): string {
       return `#/collection/${encodeURIComponent(r.id)}`;
     case 'counters':
       return '#/counters';
+    case 'build':
+      return '#/build';
+    case 'custom':
+      return '#/build/team';
     default:
       return '#/';
   }
@@ -241,6 +282,9 @@ interface Actions {
   loadVerdicts(): Promise<void>;
   loadCounters(): Promise<void>;
   loadScanList(): Promise<void>;
+  setPick(slot: number, pick: TeamPick | null): void;
+  setOrderMode(mode: 'best' | 'given'): void;
+  analyze(): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
@@ -280,7 +324,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         if (!cancelled) {
           dispatch({
             type: 'boot-ready',
-            data: { ...r.manifest, species: r.species, meta: r.meta, metaRanks: r.metaRanks },
+            data: {
+              ...r.manifest,
+              species: r.species,
+              meta: r.meta,
+              metaRanks: r.metaRanks,
+              analyzable: r.analyzable,
+            },
           });
         }
       })
@@ -434,6 +484,39 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
+  const setPick = useCallback((slot: number, pick: TeamPick | null) => {
+    dispatch({ type: 'pick', slot, pick });
+  }, []);
+  const setOrderMode = useCallback((mode: 'best' | 'given') => {
+    dispatch({ type: 'order-mode', mode });
+  }, []);
+  const analyze = useCallback(async () => {
+    const h = hostRef.current as WorkerHost;
+    const s = stateRef.current;
+    const picks = s.picks;
+    if (s.analyzing || !picks[0] || !picks[1] || !picks[2]) {
+      return;
+    }
+    dispatch({ type: 'analyze-start' });
+    try {
+      const base = optionsFrom(s.settings);
+      const analysis = await h.analyze(
+        [picks[0], picks[1], picks[2]],
+        s.collection?.specimens ?? [],
+        {
+          order: s.orderMode,
+          ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
+          ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
+        },
+        (p) => dispatch({ type: 'rec-progress', progress: p }),
+      );
+      dispatch({ type: 'analyze-done', analysis });
+      navigate({ screen: 'custom' });
+    } catch (e) {
+      dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
+    }
+  }, [navigate]);
+
   const toggleExcluded = useCallback(
     (specimenId: string) => {
       updateSettings((s) => {
@@ -466,6 +549,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       loadVerdicts,
       loadCounters,
       loadScanList,
+      setPick,
+      setOrderMode,
+      analyze,
       updateSettings,
       toggleExcluded,
       forget,
@@ -478,6 +564,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       loadVerdicts,
       loadCounters,
       loadScanList,
+      setPick,
+      setOrderMode,
+      analyze,
       updateSettings,
       toggleExcluded,
       forget,

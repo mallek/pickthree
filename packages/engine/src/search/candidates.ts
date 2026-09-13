@@ -29,6 +29,49 @@ function scoreOf(entries: Map<string, RankingEntry>, speciesId: string): number 
   return entries.get(speciesId)?.score ?? 0;
 }
 
+/** A candidate for one build. Throws when the species has no row in the matchup matrix. */
+export function candidateFor(
+  build: Build,
+  rankings: Rankings,
+  view: MatrixView,
+  index: GameDataIndex,
+  opts: { allowEliteTm: boolean },
+): Candidate {
+  const row = view.rowOf(build.speciesId);
+  if (row === null) {
+    throw new Error(
+      `${index.mustSpecies(build.speciesId).speciesName} is not in the matchup matrix.`,
+    );
+  }
+  const overall = rankingsById(rankings.overall);
+  const moveset = recommendMoveset(
+    build.speciesId,
+    overall,
+    build.specimen.currentMoves,
+    { allowEliteTm: opts.allowEliteTm },
+    index,
+  );
+  const cost = buildCost(build, moveset, index);
+  const roleScores: RoleScores = {
+    leads: scoreOf(rankingsById(rankings.leads), build.speciesId),
+    switches: scoreOf(rankingsById(rankings.switches), build.speciesId),
+    closers: scoreOf(rankingsById(rankings.closers), build.speciesId),
+    chargers: scoreOf(rankingsById(rankings.chargers), build.speciesId),
+  };
+  const overallScore = scoreOf(overall, build.speciesId);
+  const roleMean =
+    (roleScores.leads + roleScores.switches + roleScores.closers + roleScores.chargers) / 4;
+  return {
+    build,
+    moveset,
+    cost,
+    score: 0.5 * overallScore + 0.5 * roleMean,
+    overallScore,
+    roleScores,
+    matrixRow: row,
+  };
+}
+
 /**
  * Reduce all eligible builds to the strongest N distinct species. Rankings act as a filter only
  * here; everything downstream uses matchup data and simulation.

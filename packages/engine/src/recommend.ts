@@ -6,7 +6,7 @@ import {
   type BuildOptions,
 } from './builds/eligibility.js';
 import { rankingsById } from './builds/moves.js';
-import { facingWeight, metaRanks } from './gamedata/metaRank.js';
+import { facingWeight, metaRanks, type MetaRank } from './gamedata/metaRank.js';
 import type { Specimen } from './collection/specimen.js';
 import { explainTeam, type Explanation } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
@@ -127,6 +127,36 @@ export function assumptionsFor(data: StaticData, opts: BuildOptions): Assumption
   };
 }
 
+/** A simulated, scored team with its explanation attached. */
+export function teamFrom(
+  t: TeamSim,
+  score: TeamScore,
+  pool: Candidate[],
+  view: MatrixView,
+  index: GameDataIndex,
+  ranks: Map<string, MetaRank>,
+): TeamRecommendation {
+  const explanation = explainTeam(t, score, pool, view, index, ranks);
+  const slots = t.slots.map((s) => ({
+    role: s.role,
+    candidate: s.candidate,
+    sim: s,
+    roleWhy: explanation.roleWhy[s.role],
+  })) as [SlotRecommendation, SlotRecommendation, SlotRecommendation];
+  return {
+    id: t.slots.map((s) => s.candidate.build.specimenId).join('-'),
+    slots,
+    structure: t.draft.structure,
+    score,
+    explanation,
+    cost: sumCosts(t.slots.map((s) => s.candidate.cost)),
+    hasShadow: t.slots.some((s) => s.candidate.build.shadow),
+    needsXl: t.slots.some((s) => s.candidate.build.needsXl),
+    eliteTms: t.slots.reduce((acc, s) => acc + s.candidate.moveset.eliteTmCount, 0),
+    leadCounters: t.draft.leadCounters,
+  };
+}
+
 export function recommend(
   specimens: Specimen[],
   options: Partial<RecommendOptions>,
@@ -176,26 +206,9 @@ export function recommend(
   scored2.sort((a, b) => b.score.total - a.score.total);
   const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
-    const explanation = explainTeam(t, score, pool, view, index, ranks);
-    const slots = t.slots.map((s) => ({
-      role: s.role,
-      candidate: s.candidate,
-      sim: s,
-      roleWhy: explanation.roleWhy[s.role],
-    })) as [SlotRecommendation, SlotRecommendation, SlotRecommendation];
+    const team = teamFrom(t, score, pool, view, index, ranks);
     progress('score', i + 1, top.length);
-    return {
-      id: t.slots.map((s) => s.candidate.build.specimenId).join('-'),
-      slots,
-      structure: t.draft.structure,
-      score,
-      explanation,
-      cost: sumCosts(t.slots.map((s) => s.candidate.cost)),
-      hasShadow: t.slots.some((s) => s.candidate.build.shadow),
-      needsXl: t.slots.some((s) => s.candidate.build.needsXl),
-      eliteTms: t.slots.reduce((acc, s) => acc + s.candidate.moveset.eliteTmCount, 0),
-      leadCounters: t.draft.leadCounters,
-    };
+    return team;
   });
 
   return {

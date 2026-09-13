@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import {
+  analyzeTeam,
   GameDataIndex,
   displayName,
   metaCounters,
@@ -144,6 +145,10 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
           ),
           meta: env.data.meta.map((x) => x.speciesId),
           metaRanks: Object.fromEntries(metaRanks(env.data.rankings)),
+          analyzable: env.data.matrix.candidates.filter((id) => {
+            const sp = env.index.species(id);
+            return Boolean(sp && sp.released && !sp.greatLeagueIneligible);
+          }),
         },
       });
       return;
@@ -191,6 +196,17 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         msg.options,
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'scanlist', scanList: list } });
+      return;
+    }
+    if (msg.kind === 'analyze') {
+      const analysis = analyzeTeam(
+        msg.picks,
+        msg.specimens,
+        msg.options,
+        { data: env.data, sim: env.sim },
+        (stage, done, total) => post({ id: msg.id, kind: 'progress', stage, done, total }),
+      );
+      post({ id: msg.id, kind: 'result', result: { kind: 'analyze', analysis } });
       return;
     }
   } catch (err) {
