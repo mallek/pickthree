@@ -91,7 +91,6 @@ await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.team-card', { timeout: 120_000 });
 console.log(`  teams rendered at ${Date.now() - t0} ms`);
 await shot('02-teams');
-const teamHref = await page.$eval('.team-card', (a) => a.getAttribute('href'));
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
 console.log(`  ${stats}`);
 
@@ -116,8 +115,12 @@ await page.waitForFunction(
 );
 
 console.log('team detail');
+const teamHref = await page.$eval('.team-card', (a) => a.getAttribute('href'));
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.assump');
+await page.waitForSelector('.assump', { timeout: 60_000 }).catch(async () => {
+  const text = await page.$eval('.screen', (e) => e.textContent.slice(0, 200));
+  throw new Error(`team detail did not render: ${text}`);
+});
 await page.click('.assump-head');
 await new Promise((r) => setTimeout(r, 300));
 await shot('03-team-detail');

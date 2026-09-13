@@ -15,6 +15,7 @@ import {
   ImportError,
   type StaticData,
   type BattleSimulator,
+  type Verdict,
   type DataManifest,
   type League,
   type MatchupMatrix,
@@ -214,7 +215,16 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       return;
     }
     if (msg.kind === 'verdicts') {
-      const verdicts = verdictsFor(msg.specimens, msg.options, deps, progress);
+      // Chunked so the Collection fills in as it goes; a 3k-scan bag takes a while.
+      const CHUNK = 25;
+      const verdicts: Record<string, Verdict> = {};
+      const total = msg.specimens.length;
+      for (let i = 0; i < total; i += CHUNK) {
+        const slice = verdictsFor(msg.specimens.slice(i, i + CHUNK), msg.options, deps);
+        Object.assign(verdicts, slice);
+        post({ id: msg.id, kind: 'partial', verdicts: slice });
+        progress('verdicts', Math.min(total, i + CHUNK), total);
+      }
       post({ id: msg.id, kind: 'result', result: { kind: 'verdicts', verdicts } });
       return;
     }

@@ -26,6 +26,7 @@ interface Pending {
   resolve: (r: WorkerResult) => void;
   reject: (e: Error) => void;
   onProgress?: (e: ProgressEvent) => void;
+  onPartial?: (verdicts: Record<string, Verdict>) => void;
 }
 
 export class ImportFailed extends Error {
@@ -71,6 +72,10 @@ export class WorkerHost implements ComputeHost {
       p.onProgress?.({ stage: msg.stage, done: msg.done, total: msg.total });
       return;
     }
+    if (msg.kind === 'partial') {
+      p.onPartial?.(msg.verdicts);
+      return;
+    }
     this.pending.delete(msg.id);
     if (msg.kind === 'error') {
       p.reject(msg.header ? new ImportFailed(msg.message, msg.header) : new Error(msg.message));
@@ -79,12 +84,19 @@ export class WorkerHost implements ComputeHost {
     p.resolve(msg.result);
   }
 
-  private send(req: RequestBody, onProgress?: (e: ProgressEvent) => void): Promise<WorkerResult> {
+  private send(
+    req: RequestBody,
+    onProgress?: (e: ProgressEvent) => void,
+    onPartial?: (verdicts: Record<string, Verdict>) => void,
+  ): Promise<WorkerResult> {
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
       const pending: Pending = { resolve, reject };
       if (onProgress) {
         pending.onProgress = onProgress;
+      }
+      if (onPartial) {
+        pending.onPartial = onPartial;
       }
       this.pending.set(id, pending);
       this.worker.postMessage({ ...req, id } as WorkerRequest);
@@ -133,8 +145,13 @@ export class WorkerHost implements ComputeHost {
     options: Partial<BuildOptions>,
     onProgress?: (e: ProgressEvent) => void,
     league = this.league,
+    onPartial?: (verdicts: Record<string, Verdict>) => void,
   ): Promise<Record<string, Verdict>> {
-    const r = await this.send({ kind: 'verdicts', league, specimens, options }, onProgress);
+    const r = await this.send(
+      { kind: 'verdicts', league, specimens, options },
+      onProgress,
+      onPartial,
+    );
     if (r.kind !== 'verdicts') {
       throw new Error('unexpected reply');
     }

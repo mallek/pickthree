@@ -74,6 +74,8 @@ export type WorkerRequest =
 
 export type WorkerResponse =
   | { id: number; kind: 'progress'; stage: string; done: number; total: number }
+  /** A slice of the final result, so the UI can fill in while the rest computes. */
+  | { id: number; kind: 'partial'; verdicts: Record<string, Verdict> }
   | { id: number; kind: 'result'; result: WorkerResult }
   | { id: number; kind: 'error'; message: string; header?: unknown };
 

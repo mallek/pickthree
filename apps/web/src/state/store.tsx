@@ -106,6 +106,7 @@ type Action =
   | { type: 'verdicts-start' }
   | { type: 'verdicts-done'; verdicts: Record<string, Verdict> }
   | { type: 'verdicts-error'; message: string }
+  | { type: 'verdicts-partial'; verdicts: Record<string, Verdict> }
   | { type: 'counters-start' }
   | { type: 'counters-done'; counters: CounterEntry[] | null }
   | { type: 'scanlist'; scanList: ScanList }
@@ -230,6 +231,8 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, verdictsLoading: true, verdictsError: null };
     case 'verdicts-done':
       return { ...s, verdictsLoading: false, verdicts: a.verdicts };
+    case 'verdicts-partial':
+      return { ...s, verdicts: { ...s.verdicts, ...a.verdicts } };
     case 'verdicts-error':
       return { ...s, verdictsLoading: false, verdictsError: a.message };
     case 'forget':
@@ -525,7 +528,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     dispatch({ type: 'verdicts-start' });
     try {
-      const verdicts = await h.verdicts(s.collection.specimens, optionsFrom(s.settings));
+      const verdicts = await h.verdicts(
+        s.collection.specimens,
+        optionsFrom(s.settings),
+        (p) => dispatch({ type: 'rec-progress', progress: p }),
+        h.league,
+        (slice) => dispatch({ type: 'verdicts-partial', verdicts: slice }),
+      );
       // Rows the engine could not judge are a bug report waiting to happen.
       const bad = Object.values(verdicts).filter((v) => v.line.startsWith('pick3 could not judge'));
       if (bad.length > 0) {

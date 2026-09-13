@@ -60,12 +60,34 @@ export function bestBuild(builds: Build[], overall: Map<string, RankingEntry>): 
   return best;
 }
 
+/**
+ * Meta wins per exact specimen, remembered across runs. The perfect twin of a species is the same
+ * for every specimen of that species, so a collection with eight Meltan simulates it once.
+ */
+const winsMemo = new Map<string, number>();
+const WINS_MEMO_MAX = 20_000;
+
 function simWins(
   spec: { speciesId: string; ivs: Build['ivs']; level: number; moveset: Moveset },
   deps: VerdictDeps,
 ): number {
   if (!deps.sim) {
     return 0;
+  }
+  const key = [
+    deps.league.id,
+    spec.speciesId,
+    spec.ivs.atk,
+    spec.ivs.def,
+    spec.ivs.sta,
+    spec.level,
+    spec.moveset.fast.moveId,
+    spec.moveset.charged.map((c) => c.moveId).join('+'),
+    deps.meta.length,
+  ].join('|');
+  const hit = winsMemo.get(key);
+  if (hit !== undefined) {
+    return hit;
   }
   let wins = 0;
   for (const m of deps.meta) {
@@ -90,6 +112,10 @@ function simWins(
       wins += 1;
     }
   }
+  if (winsMemo.size >= WINS_MEMO_MAX) {
+    winsMemo.clear();
+  }
+  winsMemo.set(key, wins);
   return wins;
 }
 

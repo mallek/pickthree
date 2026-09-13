@@ -270,8 +270,12 @@ export function Collection() {
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
-        {s.verdictsLoading && Object.keys(s.verdicts).length === 0 ? (
-          <Progress stage="verdicts" done={0} total={0} />
+        {s.verdictsLoading ? (
+          <Progress
+            stage="verdicts"
+            done={s.progress?.stage === 'verdicts' ? s.progress.done : 0}
+            total={s.progress?.stage === 'verdicts' ? s.progress.total : 0}
+          />
         ) : null}
         {s.verdictsError ? (
           <div className="error" style={{ margin: '8px 0' }}>
