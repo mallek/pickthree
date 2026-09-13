@@ -1169,6 +1169,25 @@ textarea.paste {
   margin: 2px 0;
 }
 
+/* scan list */
+.scan-string {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--divider);
+  background: var(--surface);
+  color: var(--fg);
+  font:
+    12px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  word-break: break-all;
+}
+
 /* counters */
 .head-link {
   text-decoration: none;

@@ -4,6 +4,7 @@ import type {
   ProgressEvent,
   Recommendation,
   RecommendOptions,
+  ScanList,
   Verdict,
 } from '@pickthree/engine';
 import {
@@ -60,6 +61,7 @@ export interface AppState {
   verdictsLoading: boolean;
   counters: CounterEntry[] | null;
   countersLoading: boolean;
+  scanList: ScanList | null;
   /** Filters snapshot the current recommendation was computed with. */
   recommendedWith: string | null;
 }
@@ -82,6 +84,7 @@ type Action =
   | { type: 'verdicts-done'; verdicts: Record<string, Verdict> }
   | { type: 'counters-start' }
   | { type: 'counters-done'; counters: CounterEntry[] | null }
+  | { type: 'scanlist'; scanList: ScanList }
   | { type: 'forget' };
 
 const initial: AppState = {
@@ -103,6 +106,7 @@ const initial: AppState = {
   verdictsLoading: false,
   counters: null,
   countersLoading: false,
+  scanList: null,
   recommendedWith: null,
 };
 
@@ -152,6 +156,8 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, countersLoading: true };
     case 'counters-done':
       return { ...s, countersLoading: false, counters: a.counters };
+    case 'scanlist':
+      return { ...s, scanList: a.scanList };
     case 'verdicts-start':
       return { ...s, verdictsLoading: true };
     case 'verdicts-done':
@@ -159,6 +165,7 @@ function reducer(s: AppState, a: Action): AppState {
     case 'forget':
       return {
         ...initial,
+        scanList: s.scanList,
         boot: s.boot,
         data: s.data,
         settingsLoaded: true,
@@ -233,6 +240,7 @@ interface Actions {
   runRecommend(): Promise<void>;
   loadVerdicts(): Promise<void>;
   loadCounters(): Promise<void>;
+  loadScanList(): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
@@ -409,6 +417,23 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
+  const scanListPending = useRef(false);
+  const loadScanList = useCallback(async () => {
+    const h = hostRef.current as WorkerHost;
+    if (stateRef.current.scanList || scanListPending.current) {
+      return;
+    }
+    scanListPending.current = true;
+    try {
+      const list = await h.scanList({});
+      dispatch({ type: 'scanlist', scanList: list });
+    } catch {
+      // The welcome page just keeps the section closed.
+    } finally {
+      scanListPending.current = false;
+    }
+  }, []);
+
   const toggleExcluded = useCallback(
     (specimenId: string) => {
       updateSettings((s) => {
@@ -440,6 +465,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       runRecommend,
       loadVerdicts,
       loadCounters,
+      loadScanList,
       updateSettings,
       toggleExcluded,
       forget,
@@ -451,6 +477,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       runRecommend,
       loadVerdicts,
       loadCounters,
+      loadScanList,
       updateSettings,
       toggleExcluded,
       forget,

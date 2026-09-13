@@ -12,6 +12,8 @@ import type {
   MetaRank,
   Recommendation,
   RecommendOptions,
+  ScanList,
+  ScanListOptions,
   Specimen,
   Verdict,
 } from '@pickthree/engine';
@@ -21,7 +23,8 @@ export type WorkerRequest =
   | { id: number; kind: 'import'; text: string }
   | { id: number; kind: 'recommend'; specimens: Specimen[]; options: Partial<RecommendOptions> }
   | { id: number; kind: 'verdicts'; specimens: Specimen[]; options: Partial<BuildOptions> }
-  | { id: number; kind: 'counters'; specimens: Specimen[]; options: Partial<CountersOptions> };
+  | { id: number; kind: 'counters'; specimens: Specimen[]; options: Partial<CountersOptions> }
+  | { id: number; kind: 'scanlist'; options: Partial<ScanListOptions> };
 
 export type WorkerResponse =
   | { id: number; kind: 'progress'; stage: string; done: number; total: number }
@@ -40,4 +43,5 @@ export type WorkerResult =
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }
   | { kind: 'recommend'; recommendation: Recommendation }
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }
-  | { kind: 'counters'; counters: CounterEntry[] };
+  | { kind: 'counters'; counters: CounterEntry[] }
+  | { kind: 'scanlist'; scanList: ScanList };

@@ -5,6 +5,7 @@ import {
   parsePokeGenieCsv,
   metaRanks,
   recommend,
+  scanList,
   toSpecimens,
   verdictsFor,
   ImportError,
@@ -177,6 +178,15 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         msg.options,
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
+      return;
+    }
+    if (msg.kind === 'scanlist') {
+      const list = scanList(
+        { matrix: env.data.matrix, rankings: env.data.rankings },
+        env.index,
+        msg.options,
+      );
+      post({ id: msg.id, kind: 'result', result: { kind: 'scanlist', scanList: list } });
       return;
     }
   } catch (err) {

@@ -1,3 +1,4 @@
+/* global document */
 /**
  * Drives the built app in the locally installed Chrome, imports the sample collection, and
  * screenshots every screen at phone size. Run `npx vite preview --port 4173` in apps/web first.
@@ -60,6 +61,19 @@ console.log('welcome');
 await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('h1');
 await shot('00-welcome', false);
+
+console.log('scan list');
+await page.evaluate(() => {
+  const d = [...document.querySelectorAll('details')].find((x) =>
+    x.textContent.includes('What to scan'),
+  );
+  d.open = true;
+});
+await page.waitForSelector('.scan-string', { timeout: 60_000 });
+await page.evaluate(() =>
+  document.querySelector('.scan-string').scrollIntoView({ block: 'center' }),
+);
+await shot('10-scan-list', false);
 
 console.log('import sample');
 await page.goto(`${base}/?sample=1#/`, { waitUntil: 'networkidle0' });

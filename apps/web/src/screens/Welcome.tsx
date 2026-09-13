@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Progress } from '../components.tsx';
+import { ScanListPanel } from '../components/ScanListPanel.tsx';
 import { fetchCount } from '../counter.ts';
 import { num } from '../format.ts';
 import { arrivedFromShare, clearShareMarker, takeSharedCsv } from '../share.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function Welcome() {
-  const { importing, importError, boot, bootError, collection } = useAppState();
-  const { importCsv, navigate } = useActions();
+  const { importing, importError, boot, bootError, collection, scanList } = useAppState();
+  const { importCsv, navigate, loadScanList } = useActions();
   const fileRef = useRef<HTMLInputElement>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState('');
@@ -117,6 +118,12 @@ export function Welcome() {
             IV appraisal screen open carry the IVs PickThree needs; bulk scans without it will be
             listed as needing a rescan.
           </p>
+        </details>
+        <details onToggle={(e) => (e.currentTarget.open ? void loadScanList() : undefined)}>
+          <summary className="small" style={{ color: 'var(--accent-text)', cursor: 'pointer' }}>
+            3,000 Pokémon? What to scan first
+          </summary>
+          <ScanListPanel list={scanList} ready={boot === 'ready'} />
         </details>
         {importError ? <div className="error">{importError}</div> : null}
         {shareMiss ? (

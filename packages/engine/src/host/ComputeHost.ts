@@ -3,6 +3,7 @@ import type { ImportReport, Specimen } from '../collection/specimen.js';
 import type { Recommendation, RecommendOptions } from '../recommend.js';
 import type { Verdict } from '../verdicts/worth.js';
 import type { CounterEntry, CountersOptions } from '../counters/counters.js';
+import type { ScanList, ScanListOptions } from '../scan/scanList.js';
 
 export interface ProgressEvent {
   stage: string;
@@ -28,4 +29,5 @@ export interface ComputeHost {
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<Record<string, Verdict>>;
   counters(specimens: Specimen[], options: Partial<CountersOptions>): Promise<CounterEntry[]>;
+  scanList(options: Partial<ScanListOptions>): Promise<ScanList>;
 }

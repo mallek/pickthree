@@ -7,6 +7,8 @@ import type {
   ProgressEvent,
   Recommendation,
   RecommendOptions,
+  ScanList,
+  ScanListOptions,
   Specimen,
   Verdict,
 } from '@pickthree/engine';
@@ -128,5 +130,13 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.counters;
+  }
+
+  async scanList(options: Partial<ScanListOptions>): Promise<ScanList> {
+    const r = await this.send({ kind: 'scanlist', options });
+    if (r.kind !== 'scanlist') {
+      throw new Error('unexpected reply');
+    }
+    return r.scanList;
   }
 }

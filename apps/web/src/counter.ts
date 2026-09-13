@@ -20,6 +20,10 @@ export async function fetchCount(): Promise<number | null> {
 
 /** Counts this device once. Safe to call after every recommendation run. */
 export async function recordPick3(): Promise<void> {
+  // Screenshot and share-test runs drive the app with automation; they are not trainers.
+  if (navigator.webdriver) {
+    return;
+  }
   try {
     if (localStorage.getItem(KEY)) {
       return;
