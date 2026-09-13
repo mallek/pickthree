@@ -10,6 +10,7 @@ import type {
   RankingEntry,
   Species,
 } from '../src/gamedata/types.js';
+import type { League } from '../src/gamedata/league.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(here, '..', '..', '..');
@@ -33,6 +34,7 @@ if (!haveStaticData() && process.env.PICKTHREE_REQUIRE_PVPOKE === '1') {
 export interface StaticData {
   species: Species[];
   moves: Move[];
+  league: League;
   rankings: Record<RankingCategory, RankingEntry[]>;
   meta: MetaEntry[];
   matrix: MatchupMatrix;
@@ -57,6 +59,7 @@ export function loadStaticData(): StaticData {
       closers: read<RankingEntry[]>('rankings/great/closers.json'),
       chargers: read<RankingEntry[]>('rankings/great/chargers.json'),
     },
+    league: read<League[]>('leagues.json').find((l) => l.id === 'great') as League,
     meta: read<MetaEntry[]>('meta/great.json'),
     matrix: read<MatchupMatrix>('matrix/great.json'),
     manifest: read<DataManifest>('data-manifest.json'),

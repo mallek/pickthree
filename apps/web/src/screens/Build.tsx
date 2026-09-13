@@ -13,11 +13,12 @@ import {
   useSpecies,
 } from '../components.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
+import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { rankLabel } from './Collection.tsx';
 
 const SLOT_LABELS = ['Lead', 'Safe Switch', 'Closer'] as const;
 const ORDER: Record<VerdictLabel, number> = {
-  'Great League ready': 0,
+  'Ready to use': 0,
   'Worth building': 1,
   'Wait for better IVs': 2,
   'Not eligible': 3,
@@ -38,6 +39,7 @@ export function Build() {
   useEffect(() => {
     if (
       s.boot === 'ready' &&
+      s.leagueInfo &&
       s.collection &&
       Object.keys(s.verdicts).length === 0 &&
       !s.verdictsLoading &&
@@ -45,7 +47,15 @@ export function Build() {
     ) {
       void loadVerdicts();
     }
-  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, s.verdictsError, loadVerdicts]);
+  }, [
+    s.boot,
+    s.leagueInfo,
+    s.collection,
+    s.verdicts,
+    s.verdictsLoading,
+    s.verdictsError,
+    loadVerdicts,
+  ]);
 
   const q = query.trim().toLowerCase();
   const picked = new Set(s.picks.map((p) => p?.id));
@@ -78,12 +88,12 @@ export function Build() {
   }, [s.collection, s.verdicts, q, name]);
 
   const any = useMemo(() => {
-    const ids = s.data?.analyzable ?? [];
+    const ids = s.leagueInfo?.analyzable ?? [];
     return ids
       .filter((id) => !q || name(id).toLowerCase().includes(q))
       .sort((a, b) => (metaRank(a)?.overall ?? 9999) - (metaRank(b)?.overall ?? 9999))
       .slice(0, 60);
-  }, [s.data, q, name, metaRank]);
+  }, [s.leagueInfo, q, name, metaRank]);
 
   const choose = (pick: TeamPick): void => {
     if (slot === null) {
@@ -127,6 +137,7 @@ export function Build() {
         backLabel="Teams"
       />
       <div className="scroll" style={{ gap: 16 }}>
+        <LeagueSwitcher compact />
         <div className="stack" style={{ gap: 10 }}>
           {s.picks.map((p, i) => {
             const info = pickLabel(p);

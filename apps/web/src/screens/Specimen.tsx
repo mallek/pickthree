@@ -14,6 +14,7 @@ import {
 } from '../components.tsx';
 import { META_CUTOFF, ivLine, levelLabel, num, scanAge } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
+import { useLeague } from '../components/LeagueSwitcher.tsx';
 
 function metaLine(rank: MetaRank | undefined): string {
   if (!rank) {
@@ -29,6 +30,7 @@ function metaLine(rank: MetaRank | undefined): string {
 export function SpecimenScreen({ id }: { id: string }) {
   const s = useAppState();
   const { navigate, loadVerdicts, toggleExcluded, removeSpecimen } = useActions();
+  const league = useLeague();
   const name = useName();
   const species = useSpecies();
   const sp = s.collection?.specimens.find((x) => x.id === id);
@@ -36,6 +38,7 @@ export function SpecimenScreen({ id }: { id: string }) {
   useEffect(() => {
     if (
       s.boot === 'ready' &&
+      s.leagueInfo &&
       s.collection &&
       Object.keys(s.verdicts).length === 0 &&
       !s.verdictsLoading &&
@@ -43,7 +46,15 @@ export function SpecimenScreen({ id }: { id: string }) {
     ) {
       void loadVerdicts();
     }
-  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, s.verdictsError, loadVerdicts]);
+  }, [
+    s.boot,
+    s.leagueInfo,
+    s.collection,
+    s.verdicts,
+    s.verdictsLoading,
+    s.verdictsError,
+    loadVerdicts,
+  ]);
 
   if (!sp) {
     return (
@@ -117,7 +128,7 @@ export function SpecimenScreen({ id }: { id: string }) {
             </span>
           </div>
           <div className="kv" style={{ alignItems: 'baseline' }}>
-            <span className="muted">IV rank for Great League</span>
+            <span className="muted">IV rank for {league.title}</span>
             <span style={{ fontSize: 15, fontWeight: 500 }}>
               {build
                 ? `${build.ivRank.rank} of ${build.ivRank.total}`
@@ -145,7 +156,7 @@ export function SpecimenScreen({ id }: { id: string }) {
             <PokemonToken speciesId={build.speciesId} size={36} showInitial={false} />
             <div>
               <div className="role" style={{ display: 'block' }}>
-                Best stage for Great League
+                Best stage for {league.title}
               </div>
               <div style={{ fontSize: 15 }}>
                 Evolve to {name(build.speciesId)} before powering up

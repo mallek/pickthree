@@ -11,6 +11,7 @@ import {
   NoCollection,
 } from '../components.tsx';
 import { costLine } from '../format.ts';
+import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
 
 export function TeamCard({
@@ -71,6 +72,7 @@ export function Teams() {
   useEffect(() => {
     if (
       s.boot === 'ready' &&
+      s.leagueInfo &&
       s.collection &&
       !s.recommending &&
       !s.recommendError &&
@@ -80,6 +82,7 @@ export function Teams() {
     }
   }, [
     s.boot,
+    s.leagueInfo,
     s.collection,
     s.recommendation,
     s.recommending,
@@ -117,15 +120,7 @@ export function Teams() {
           <h2>Your teams</h2>
           <span className="meta">{s.collection.report.recognized} Pokémon</span>
         </div>
-        <div className="seg" aria-label="League">
-          <span className="on">Great League</span>
-          <span>
-            Ultra <small>soon</small>
-          </span>
-          <span>
-            Master <small>soon</small>
-          </span>
-        </div>
+        <LeagueSwitcher />
         <div className="chips">
           <Chip on={f.style !== 'any'} onClick={cycleStyle}>
             {styleLabel}

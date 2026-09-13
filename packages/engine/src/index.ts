@@ -4,6 +4,8 @@ export * from './gamedata/index.js';
 export * from './gamedata/typeChart.js';
 export * from './gamedata/metaRank.js';
 export * from './gamedata/forms.js';
+export * from './gamedata/league.js';
+export * from './gamedata/league.js';
 export * from './sim/BattleSimulator.js';
 export * from './tables/cpm.js';
 export * from './tables/powerup.js';

@@ -4,7 +4,10 @@ import { writeBundle } from '@pickthree/sim-pvpoke';
 import { writeGameData } from './build-gamedata.js';
 import { writeManifest } from './build-manifest.js';
 import { writeMatrix } from './build-matrix.js';
-import { writeRankings } from './build-rankings.js';
+import { writeLeagueRankings } from './build-rankings.js';
+import { readLeagues } from './leagues.js';
+import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
+import { readRawGameMaster } from './build-gamedata.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
 import { GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
 
@@ -14,17 +17,29 @@ async function main(): Promise<void> {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   const data = writeGameData(OUTPUT_DIR);
   console.log(`gamedata: ${data.species.length} species, ${data.moves.length} moves`);
-  const { meta } = writeRankings(OUTPUT_DIR);
-  console.log(`rankings: meta ${meta.length}`);
+  const leagues = readLeagues();
   let matrixCounts = { candidates: 0, opponents: 0, scenarios: 0 };
-  if (process.env.PICKTHREE_SKIP_MATRIX !== '1') {
-    const m = writeMatrix(OUTPUT_DIR);
-    matrixCounts = {
-      candidates: m.candidates.length,
-      opponents: m.opponents.length,
-      scenarios: m.scenarios.length,
-    };
+  const sim =
+    process.env.PICKTHREE_SKIP_MATRIX === '1'
+      ? null
+      : new PvPokeSimulator(loadPvPokeInNode(readRawGameMaster()));
+  for (const league of leagues) {
+    const { meta } = writeLeagueRankings(OUTPUT_DIR, league);
+    league.metaSize = meta.length;
+    console.log(`${league.id}: meta ${meta.length}`);
+    if (sim) {
+      const m = writeMatrix(OUTPUT_DIR, league, sim);
+      if (league.id === 'great') {
+        matrixCounts = {
+          candidates: m.candidates.length,
+          opponents: m.opponents.length,
+          scenarios: m.scenarios.length,
+        };
+      }
+    }
   }
+  fs.writeFileSync(path.join(OUTPUT_DIR, 'leagues.json'), JSON.stringify(leagues));
+  const meta = { length: leagues[0]?.metaSize ?? 0 };
   writeBundle(path.join(OUTPUT_DIR, 'vendor', 'pvpoke-sim.js'));
   // The vendored simulator reads PvPoke's own game master format, so ship it alongside.
   fs.copyFileSync(GAMEMASTER_PATH, path.join(OUTPUT_DIR, 'gamemaster.json'));

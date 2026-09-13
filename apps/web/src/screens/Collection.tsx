@@ -12,18 +12,19 @@ import {
   NoCollection,
 } from '../components.tsx';
 import { metaTags } from '../format.ts';
+import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
 const VERDICTS: ('All' | VerdictLabel)[] = [
   'All',
-  'Great League ready',
+  'Ready to use',
   'Worth building',
   'Wait for better IVs',
   'Not eligible',
   'Needs rescan',
 ];
 const ORDER: Record<VerdictLabel, number> = {
-  'Great League ready': 0,
+  'Ready to use': 0,
   'Worth building': 1,
   'Wait for better IVs': 2,
   'Not eligible': 3,
@@ -66,6 +67,7 @@ export function Collection() {
   useEffect(() => {
     if (
       s.boot === 'ready' &&
+      s.leagueInfo &&
       s.collection &&
       Object.keys(s.verdicts).length === 0 &&
       !s.verdictsLoading &&
@@ -73,7 +75,15 @@ export function Collection() {
     ) {
       void loadVerdicts();
     }
-  }, [s.boot, s.collection, s.verdicts, s.verdictsLoading, s.verdictsError, loadVerdicts]);
+  }, [
+    s.boot,
+    s.leagueInfo,
+    s.collection,
+    s.verdicts,
+    s.verdictsLoading,
+    s.verdictsError,
+    loadVerdicts,
+  ]);
 
   const rows = useMemo(() => {
     if (!s.collection) {
@@ -198,6 +208,7 @@ export function Collection() {
             </button>
           </span>
         </div>
+        <LeagueSwitcher compact />
         <input
           className="search"
           placeholder="Search your Pokémon"

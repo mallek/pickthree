@@ -3,6 +3,7 @@ import { dateLabel, num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
 import { Diagnostics } from '../components/Diagnostics.tsx';
+import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 
 export function Sheet() {
   const s = useAppState();
@@ -111,6 +112,10 @@ export function Sheet() {
             </div>
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
+            <span>League</span>
+            <LeagueSwitcher />
+          </div>
+          <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Appearance</span>
             <div className="seg">
               {themes.map((t) => (
@@ -134,7 +139,7 @@ export function Sheet() {
             <span>
               Game data from PvPoke, updated {s.data ? dateLabel(s.data.pvpokeDate) : '...'}
               {s.data ? ` (${s.data.pvpokeCommit.slice(0, 7)})` : ''}. Opponent meta:{' '}
-              {s.data?.metaSize ?? '...'} Pokémon.
+              {s.leagueInfo?.metaSize ?? '...'} Pokémon.
             </span>
             <span>
               Your collection stays on this phone. The only outbound requests are an anonymous tick

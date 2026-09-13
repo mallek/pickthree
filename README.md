@@ -8,8 +8,7 @@ what it costs.
 Live at **[pick3.demome.com](https://pick3.demome.com)**. Free, no account, nothing uploaded.
 
 pick3 takes the Pokémon you own and, using [PvPoke](https://github.com/pvpoke/pvpoke)'s game data,
-rankings and battle simulator, tells you which three to run for Great League, what order to run
-them in, which moves to teach, what to shield, what the build costs in Stardust and Candy, what it
+rankings and battle simulator, tells you which three to run, what order to run them in, which moves to teach, what to shield, what the build costs in Stardust and Candy, what it
 beats, what beats it, and why. Every number is simulated with your actual IVs against the current
 meta.
 
@@ -31,6 +30,11 @@ Everything runs in your browser. Your collection is stored on your device and ne
 
 ## What you get
 
+**Leagues.** Great, Ultra and Master, plus whatever special cups PvPoke is ranking at the moment
+(Mega Great, Mega Ultra, Mega Master, Willpower Cup and the LAIC 2027 cup at the pinned commit).
+Every league has its own rankings, meta group and matchup matrix, and the cup rules (types, bans,
+megas) are applied to your collection the way PvPoke applies them.
+
 **Teams.** Ranked trios from your collection, each with a lead, safe switch and closer, a fit
 rating, and whether it plays as an ABB line or a balanced ABC. Filters for no XL, no shadows, no
 Elite TM, and a Stardust budget.
@@ -42,8 +46,8 @@ Candy and XL Candy to get there. Then a switch plan (what beats your lead and wh
 key wins and threats ordered by how often you meet each opponent, alternatives you already own, and
 a full matchup grid.
 
-**Collection.** Every Pokémon judged: Great League ready, worth building, wait for better IVs, or
-not eligible, with its IV rank and where the species sits in the meta. A "Same wins as a hundo"
+**Collection.** Every Pokémon judged for the league in play: ready to use, worth building, wait for
+better IVs, or not eligible, with its IV rank and where the species sits in the meta. A "Same wins as a hundo"
 pill when a perfect-IV twin would win nothing extra, which is most of the time. Same species fold
 together behind your best one.
 
@@ -73,9 +77,10 @@ Copy button, so a bug report can carry evidence.
 
 ## How it works
 
-1. **`packages/data`** pins a PvPoke commit, normalizes its game master and Great League rankings,
-   and precomputes a matchup matrix of every ranked species against PvPoke's meta group with the
-   vendored simulator (about a minute; 274 KB gzipped). A weekly workflow opens a PR when PvPoke
+1. **`packages/data`** pins a PvPoke commit, normalizes its game master, reads the leagues and cups
+   PvPoke is showing, and per league writes the rankings, meta group and a matchup matrix of every
+   ranked species against the meta group with the vendored simulator (about a minute per league;
+   under 300 KB gzipped each). A weekly workflow opens a PR when PvPoke
    moves.
 2. **`packages/sim-pvpoke`** vendors PvPoke's battle simulator byte for byte behind a small shim. A
    golden test reproduces PvPoke's published matchup ratings exactly, 600 battles, zero misses.

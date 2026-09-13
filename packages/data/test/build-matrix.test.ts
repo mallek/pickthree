@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { GREAT_LEAGUE, matrixIndex } from '@pickthree/engine';
+import { GREAT_LEAGUE, GREAT_LEAGUE_DEF, matrixIndex } from '@pickthree/engine';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { buildMatrix, MATRIX_SCENARIOS } from '../src/build-matrix.js';
 import { GAMEMASTER_PATH } from '../src/paths.js';
@@ -22,7 +22,13 @@ describe.skipIf(!havePvPoke)('buildMatrix', () => {
   ];
 
   it('has the right dimensions and index layout', () => {
-    const m = buildMatrix({ sim, candidates, opponents, scenarios: MATRIX_SCENARIOS });
+    const m = buildMatrix({
+      sim,
+      league: GREAT_LEAGUE_DEF,
+      candidates,
+      opponents,
+      scenarios: MATRIX_SCENARIOS,
+    });
     expect(m.candidates).toEqual(['azumarill', 'medicham', 'altaria']);
     expect(m.opponents).toEqual(['altaria', 'tinkaton']);
     expect(m.scenarios.length).toBe(3);
@@ -31,7 +37,13 @@ describe.skipIf(!havePvPoke)('buildMatrix', () => {
   });
 
   it('cells equal a direct simulation', () => {
-    const m = buildMatrix({ sim, candidates, opponents, scenarios: MATRIX_SCENARIOS });
+    const m = buildMatrix({
+      sim,
+      league: GREAT_LEAGUE_DEF,
+      candidates,
+      opponents,
+      scenarios: MATRIX_SCENARIOS,
+    });
     const direct = sim.simulate(
       {
         speciesId: 'azumarill',
@@ -51,7 +63,13 @@ describe.skipIf(!havePvPoke)('buildMatrix', () => {
   });
 
   it('mirror matchups score 500 in symmetric scenarios', () => {
-    const m = buildMatrix({ sim, candidates, opponents, scenarios: MATRIX_SCENARIOS });
+    const m = buildMatrix({
+      sim,
+      league: GREAT_LEAGUE_DEF,
+      candidates,
+      opponents,
+      scenarios: MATRIX_SCENARIOS,
+    });
     expect(m.ratings[matrixIndex(m, 2, 0, 1)]).toBe(500);
   });
 
@@ -59,6 +77,7 @@ describe.skipIf(!havePvPoke)('buildMatrix', () => {
     const seen: number[] = [];
     buildMatrix({
       sim,
+      league: GREAT_LEAGUE_DEF,
       candidates,
       opponents,
       scenarios: MATRIX_SCENARIOS,

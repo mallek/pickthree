@@ -25,8 +25,8 @@ export function useName(): (id: string) => string {
 }
 
 export function useMetaRank(): (id: string) => MetaRank | undefined {
-  const { data } = useAppState();
-  return (id: string) => data?.metaRanks[id];
+  const { leagueInfo } = useAppState();
+  return (id: string) => leagueInfo?.metaRanks[id];
 }
 
 /** "#18 overall" and "#5 closer" pills for a species, nothing outside the top 50. */
@@ -273,7 +273,7 @@ export function StructureTag({ structure }: { structure: Structure }) {
 
 export function VerdictChip({ label }: { label: VerdictLabel }) {
   const cls: Record<VerdictLabel, string> = {
-    'Great League ready': 'v-ready',
+    'Ready to use': 'v-ready',
     'Worth building': 'v-worth',
     'Wait for better IVs': 'v-wait',
     'Not eligible': 'v-no',
@@ -326,14 +326,14 @@ export const GLOSSARY: Record<string, string> = {
   'Elite TM': 'A rare item that teaches a move the Pokémon can no longer learn with a regular TM.',
   'XL Candy': 'Candy needed to power up past level 40. You collect it from catches and trades.',
   'IV rank':
-    "How your Pokémon's hidden stats compare with every possible spread of that species for Great League.",
+    "How your Pokémon's hidden stats compare with every possible spread of that species at the league's CP cap.",
   line: 'A team built so the back line beats whatever counters the lead.',
   'back line': 'Your Safe Switch and Closer together.',
 };
 
 export function Progress({ stage, done, total }: { stage: string; done: number; total: number }) {
   const labels: Record<string, string> = {
-    eligibility: 'Checking which Pokémon fit Great League',
+    eligibility: 'Checking which Pokémon fit the league',
     candidates: 'Picking the strongest candidates',
     trios: 'Trying team combinations',
     simulate: 'Simulating battles with your exact Pokémon',

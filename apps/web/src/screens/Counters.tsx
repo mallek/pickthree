@@ -11,22 +11,30 @@ import {
   NoCollection,
 } from '../components.tsx';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
 
 type Own = 'all' | 'have' | 'build';
 
 export function Counters() {
   const s = useAppState();
   const { loadCounters, navigate, setPick } = useActions();
+  const league = useLeague();
   const name = useName();
   const species = useSpecies();
   const [own, setOwn] = useState<Own>('all');
   const [radar, setRadar] = useState(false);
 
   useEffect(() => {
-    if (s.boot === 'ready' && s.collection && s.counters === null && !s.countersLoading) {
+    if (
+      s.boot === 'ready' &&
+      s.leagueInfo &&
+      s.collection &&
+      s.counters === null &&
+      !s.countersLoading
+    ) {
       void loadCounters();
     }
-  }, [s.boot, s.collection, s.counters, s.countersLoading, loadCounters]);
+  }, [s.boot, s.leagueInfo, s.collection, s.counters, s.countersLoading, loadCounters]);
 
   if (!s.collection) {
     return (
@@ -58,10 +66,11 @@ export function Counters() {
       <div className="page-head">
         <div className="between">
           <h2>Counters</h2>
-          <span className="meta">vs {s.data?.metaSize ?? '...'} meta Pokémon</span>
+          <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
         </div>
+        <LeagueSwitcher compact />
         <p className="meta" style={{ margin: 0 }}>
-          Who beats the current Great League meta, weighted by how often you meet each opponent.
+          Who beats the current {league.title} meta, weighted by how often you meet each opponent.
           Under the radar means strong against the meta but ranked lower than that suggests.
         </p>
         <div className="chips">

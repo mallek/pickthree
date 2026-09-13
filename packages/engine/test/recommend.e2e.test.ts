@@ -89,7 +89,7 @@ describe.skipIf(!ready)('recommend end to end', () => {
     );
     expect(labels.has('Needs rescan')).toBe(true);
     expect(labels.has('Not eligible')).toBe(true);
-    expect(labels.has('Worth building') || labels.has('Great League ready')).toBe(true);
+    expect(labels.has('Worth building') || labels.has('Ready to use')).toBe(true);
     expect(Object.keys(verdicts).length).toBe(specimens.length);
     expect(report.missingIvs.count).toBe(
       Object.values(verdicts).filter((v) => v.label === 'Needs rescan').length,

@@ -53,7 +53,7 @@ export function TeamDetail({ id }: { id: string }) {
   const metaRank = useMetaRank();
   // Meta group, one row per species (PvPoke lists a few twice), most common first.
   const seenOpp = new Set<string>();
-  const opps = (s.data?.meta ?? [])
+  const opps = (s.leagueInfo?.meta ?? [])
     .filter((id) => (seenOpp.has(id) ? false : (seenOpp.add(id), true)))
     .sort((a2, b2) => (metaRank(a2)?.overall ?? 9999) - (metaRank(b2)?.overall ?? 9999));
   const shownOpps = allOpps ? opps : opps.slice(0, 12);
@@ -225,7 +225,7 @@ export function TeamDetail({ id }: { id: string }) {
             teaches a move the Pokémon can no longer learn normally.{' '}
             <Term term="XL Candy">{GLOSSARY['XL Candy']}</Term> powers up past level 40.{' '}
             <Term term="IV rank">{GLOSSARY['IV rank']}</Term> compares your specimen with every
-            possible one for Great League.
+            possible one at this league&apos;s CP cap.
           </p>
         </div>
 

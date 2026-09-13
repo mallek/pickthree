@@ -1480,6 +1480,49 @@ button.counter-row {
   background: rgba(63, 125, 31, 0.16);
 }
 
+/* league switcher */
+.league-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.league-switcher .seg button {
+  padding: 7px 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--faint);
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+.league-switcher .seg button + button {
+  border-left: 1px solid var(--divider);
+}
+.league-switcher .seg button.on {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--accent-tint);
+}
+.league-switcher.compact .seg button {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.league-cups {
+  margin: 0;
+  padding: 0;
+}
+.league-cups .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.league-shield {
+  flex: none;
+}
+
 /* scan list */
 .scan-string {
   width: 100%;

@@ -138,7 +138,8 @@ export interface MatrixScenario {
 }
 
 export interface MatchupMatrix {
-  league: 'great';
+  /** League id the matrix was built for. */
+  league: string;
   cp: number;
   scenarios: MatrixScenario[];
   candidates: string[];

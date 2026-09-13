@@ -1,7 +1,10 @@
 import { metaCounters, type CountersData } from '../counters/counters.js';
 import type { GameDataIndex } from '../gamedata/index.js';
+import type { BuildOptions } from '../builds/eligibility.js';
 
 export interface ScanListOptions {
+  /** Eligibility rules for the league; defaults to open Great League. */
+  buildOptions?: BuildOptions;
   /** PvPoke overall rank cutoff for species worth scanning. */
   overallTop: number;
   /** How many anti-meta counters to include. */
@@ -63,7 +66,10 @@ export function scanList(
     }
   }
   let counters = 0;
-  for (const c of metaCounters(data, [], index, { limit: opts.countersTop })) {
+  for (const c of metaCounters(data, [], index, {
+    limit: opts.countersTop,
+    ...(options.buildOptions ? { buildOptions: options.buildOptions } : {}),
+  })) {
     if (!picked.has(c.speciesId)) {
       picked.add(c.speciesId);
       counters += 1;
@@ -85,7 +91,8 @@ export function scanList(
   const dex = [...picked]
     .map((id) => index.species(id)?.dex)
     .filter((d): d is number => typeof d === 'number' && d > 0);
-  const search = `cp-${opts.cpCap}&${compressRanges(dex)}`;
+  const search =
+    opts.cpCap >= 10000 ? compressRanges(dex) : `cp-${opts.cpCap}&${compressRanges(dex)}`;
   return {
     search,
     dexCount: new Set(dex).size,

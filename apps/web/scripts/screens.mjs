@@ -95,6 +95,26 @@ const teamHref = await page.$eval('.team-card', (a) => a.getAttribute('href'));
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
 console.log(`  ${stats}`);
 
+console.log('ultra league');
+await page.click('.league-switcher .seg button:nth-child(2)');
+await page.waitForFunction(
+  () =>
+    document.querySelector('.league-switcher[data-league="ultra"]') &&
+    document.querySelector('.team-card') &&
+    !document.querySelector('.progress'),
+  { timeout: 120_000 },
+);
+console.log(`  ultra teams rendered at ${Date.now() - t0} ms`);
+await shot('19-teams-ultra', false);
+await page.click('.league-switcher .seg button:nth-child(1)');
+await page.waitForFunction(
+  () =>
+    document.querySelector('.league-switcher[data-league="great"]') &&
+    document.querySelector('.team-card') &&
+    !document.querySelector('.progress'),
+  { timeout: 120_000 },
+);
+
 console.log('team detail');
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.assump');
@@ -123,7 +143,7 @@ await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.counter-row', { timeout: 120_000 });
 console.log(`  counters rendered at ${Date.now() - t0} ms`);
 await shot('08-counters');
-await page.click('.chips .chip:nth-child(3)');
+await page.click('.page-head > .chips:not(.league-cups) .chip:nth-child(3)');
 await new Promise((r) => setTimeout(r, 300));
 await shot('09-counters-own', false);
 
@@ -133,13 +153,16 @@ await page.waitForSelector('.pick-slot');
 for (let i = 0; i < 3; i++) {
   await page.click(`.pick-slot:nth-of-type(${i + 1})`);
   await page.waitForSelector('.picker-list .spec-row:not([disabled])', { timeout: 120_000 });
-  const rows = await page.$$('.picker-list .spec-row:not([disabled])');
-  await rows[i * 2].click();
+  await page.$$eval('.picker-list .spec-row:not([disabled])', (rows, n) => rows[n].click(), i * 2);
   await new Promise((r) => setTimeout(r, 200));
 }
 await shot('13-build', false);
 await page.click('.scroll > .btn');
-await page.waitForSelector('.custom-note', { timeout: 120_000 });
+await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
+const analyzeError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
+if (analyzeError) {
+  throw new Error(`analyze failed: ${analyzeError}`);
+}
 console.log(`  custom team analyzed at ${Date.now() - t0} ms`);
 await shot('14-custom-team');
 
@@ -161,7 +184,7 @@ await shot('17-added', false);
 console.log('filters sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.tabs');
-await page.click('.tabs .tab:nth-child(4)');
+await page.$eval('.tabs .tab:nth-child(4)', (el) => el.click());
 await page.waitForSelector('.sheet');
 await new Promise((r) => setTimeout(r, 400));
 await shot('06-sheet', false);

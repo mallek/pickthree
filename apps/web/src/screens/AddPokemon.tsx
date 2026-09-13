@@ -31,7 +31,7 @@ export function AddPokemon() {
 
   const q = query.trim().toLowerCase();
   const matches = useMemo(() => {
-    const ids = s.data?.analyzable ?? [];
+    const ids = s.data?.allSpecies ?? [];
     if (!q) {
       return [];
     }

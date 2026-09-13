@@ -21,6 +21,8 @@ export interface Settings {
     style: 'any' | 'balanced' | 'abb';
   };
   excludedSpecimenIds: string[];
+  /** League id in play; absent in older saves means Great League. */
+  league?: string;
   /** Anonymous error reports to the counter worker. Absent in older saves means on. */
   errorReports?: boolean;
 }
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
     style: 'any',
   },
   excludedSpecimenIds: [],
+  league: 'great',
   errorReports: true,
 };
 

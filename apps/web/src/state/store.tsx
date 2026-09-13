@@ -1,7 +1,7 @@
-import type { MetaRank } from '@pickthree/engine';
 import type {
   CounterEntry,
   ImportReport,
+  League,
   ManualInput,
   ManualResult,
   ProgressEvent,
@@ -23,7 +23,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import type { SpeciesLite } from '../host/protocol.ts';
+import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { arrivedFromShare } from '../share.ts';
 import { recordError, setErrorReportsEnabled } from '../diag.ts';
@@ -46,17 +46,19 @@ export interface DataInfo {
   pvpokeCommit: string;
   pvpokeDate: string;
   builtAt: string;
-  metaSize: number;
   species: Record<string, SpeciesLite>;
-  meta: string[];
-  metaRanks: Record<string, MetaRank>;
-  analyzable: string[];
+  leagues: League[];
+  /** Released, non-mega species for adding by hand. */
+  allSpecies: string[];
 }
 
 export interface AppState {
   boot: 'loading' | 'ready' | 'error';
   bootError: string | null;
   data: DataInfo | null;
+  /** Meta, ranks and analyzable species for the league in play. */
+  leagueInfo: LeagueInfo | null;
+  leagueLoading: boolean;
   collection: StoredCollection | null;
   settings: Settings;
   settingsLoaded: boolean;
@@ -87,6 +89,8 @@ export interface AppState {
 
 type Action =
   | { type: 'boot-ready'; data: DataInfo }
+  | { type: 'league-start' }
+  | { type: 'league-done'; info: LeagueInfo }
   | { type: 'boot-error'; message: string }
   | { type: 'loaded'; collection: StoredCollection | null; settings: Settings }
   | { type: 'route'; route: Route }
@@ -116,6 +120,8 @@ const initial: AppState = {
   boot: 'loading',
   bootError: null,
   data: null,
+  leagueInfo: null,
+  leagueLoading: false,
   collection: null,
   settings: DEFAULT_SETTINGS,
   settingsLoaded: false,
@@ -145,6 +151,23 @@ function reducer(s: AppState, a: Action): AppState {
   switch (a.type) {
     case 'boot-ready':
       return { ...s, boot: 'ready', data: a.data };
+    case 'league-start':
+      // Everything derived from a league goes stale the moment the league changes.
+      return {
+        ...s,
+        leagueLoading: true,
+        leagueInfo: null,
+        recommendation: null,
+        recommendedWith: null,
+        recommendError: null,
+        verdicts: {},
+        verdictsError: null,
+        counters: null,
+        scanList: null,
+        analysis: null,
+      };
+    case 'league-done':
+      return { ...s, leagueLoading: false, leagueInfo: a.info };
     case 'boot-error':
       return { ...s, boot: 'error', bootError: a.message };
     case 'loaded':
@@ -287,7 +310,7 @@ export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
 }
 
 export function filterKey(settings: Settings): string {
-  return JSON.stringify(optionsFrom(settings));
+  return JSON.stringify({ league: settings.league ?? 'great', ...optionsFrom(settings) });
 }
 
 interface Actions {
@@ -306,6 +329,7 @@ interface Actions {
   addManual(input: ManualInput): Promise<ManualResult>;
   removeSpecimen(id: string): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
+  setLeague(id: string): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
 }
@@ -347,9 +371,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
             data: {
               ...r.manifest,
               species: r.species,
-              meta: r.meta,
-              metaRanks: r.metaRanks,
-              analyzable: r.analyzable,
+              leagues: r.leagues,
+              allSpecies: r.allSpecies,
             },
           });
         }
@@ -371,6 +394,36 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   useEffect(() => {
     setErrorReportsEnabled(state.settings.errorReports !== false);
   }, [state.settings.errorReports]);
+
+  // Fetch the league bundle whenever the league changes (and once at boot). The host keeps the
+  // league so ComputeHost-shaped calls stay league-correct.
+  const leagueId = state.settings.league ?? 'great';
+  useEffect(() => {
+    if (state.boot !== 'ready' || !state.settingsLoaded) {
+      return;
+    }
+    const h = hostRef.current as WorkerHost;
+    const known = state.data?.leagues.some((l) => l.id === leagueId);
+    const id = known ? leagueId : 'great';
+    h.league = id;
+    let cancelled = false;
+    dispatch({ type: 'league-start' });
+    h.leagueInfo(id)
+      .then((info) => {
+        if (!cancelled) {
+          dispatch({ type: 'league-done', info });
+        }
+      })
+      .catch((e: unknown) => {
+        recordError('league', e);
+        if (!cancelled) {
+          dispatch({ type: 'boot-error', message: e instanceof Error ? e.message : String(e) });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [state.boot, state.settingsLoaded, state.data, leagueId]);
 
   useEffect(() => {
     const t = state.settings.theme;
@@ -443,7 +496,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const runRecommend = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
-    if (!s.collection || s.recommending) {
+    if (!s.collection || s.recommending || !s.leagueInfo) {
       return;
     }
     const key = filterKey(s.settings);
@@ -467,7 +520,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const loadVerdicts = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
-    if (!s.collection || s.verdictsLoading) {
+    if (!s.collection || s.verdictsLoading || !s.leagueInfo) {
       return;
     }
     dispatch({ type: 'verdicts-start' });
@@ -488,7 +541,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const loadCounters = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
-    if (!s.collection || s.countersLoading) {
+    if (!s.collection || s.countersLoading || !s.leagueInfo) {
       return;
     }
     dispatch({ type: 'counters-start' });
@@ -504,7 +557,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const scanListPending = useRef(false);
   const loadScanList = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
-    if (stateRef.current.scanList || scanListPending.current) {
+    if (stateRef.current.scanList || scanListPending.current || !stateRef.current.leagueInfo) {
       return;
     }
     scanListPending.current = true;
@@ -528,7 +581,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
     const picks = s.picks;
-    if (s.analyzing || !picks[0] || !picks[1] || !picks[2]) {
+    if (s.analyzing || !picks[0] || !picks[1] || !picks[2] || !s.leagueInfo) {
       return;
     }
     dispatch({ type: 'analyze-start' });
@@ -596,6 +649,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [saveSpecimens],
   );
 
+  const setLeague = useCallback(
+    (id: string) => {
+      updateSettings((cur) => ({ ...cur, league: id }));
+    },
+    [updateSettings],
+  );
+
   const toggleExcluded = useCallback(
     (specimenId: string) => {
       updateSettings((s) => {
@@ -634,6 +694,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       addManual,
       removeSpecimen,
       updateSettings,
+      setLeague,
       toggleExcluded,
       forget,
     }),
@@ -651,6 +712,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       addManual,
       removeSpecimen,
       updateSettings,
+      setLeague,
       toggleExcluded,
       forget,
     ],

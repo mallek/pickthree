@@ -32,9 +32,9 @@ export function ScanListPanel({ list, ready }: { list: ScanList | null; ready: b
     <div className="stack" style={{ gap: 10, marginTop: 8 }}>
       <p className="small muted" style={{ margin: 0 }}>
         You do not need to scan everything. Paste this into the search box in Pokémon GO. It shows
-        only your Pokémon at or under 1500 CP that are a top Great League pick, a counter to the
-        current meta, or evolve into one. Open each one with the appraisal screen up and let Poke
-        Genie scan as you swipe.
+        only your Pokémon that fit the league and are a top pick, a counter to the current meta, or
+        evolve into one. Open each one with the appraisal screen up and let Poke Genie scan as you
+        swipe.
       </p>
       {list ? (
         <>

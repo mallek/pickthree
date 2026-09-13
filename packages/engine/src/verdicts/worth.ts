@@ -6,13 +6,14 @@ import { fullName } from '../explain/explain.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import { formNote } from '../gamedata/forms.js';
 import { metaRankSentence, type MetaRank } from '../gamedata/metaRank.js';
+import { allowedInLeague, type League } from '../gamedata/league.js';
 import type { MetaEntry, RankingEntry } from '../gamedata/types.js';
 import { statProduct } from '../math/cp.js';
 import type { MatrixView } from '../search/matrixView.js';
 import type { BattleSimulator, SimOptions } from '../sim/BattleSimulator.js';
 
 export type VerdictLabel =
-  'Great League ready' | 'Worth building' | 'Wait for better IVs' | 'Not eligible' | 'Needs rescan';
+  'Ready to use' | 'Worth building' | 'Wait for better IVs' | 'Not eligible' | 'Needs rescan';
 
 export interface Verdict {
   specimenId: string;
@@ -35,6 +36,7 @@ export interface Verdict {
 
 export interface VerdictDeps {
   index: GameDataIndex;
+  league: League;
   overall: Map<string, RankingEntry>;
   metaRanks: Map<string, MetaRank>;
   view: MatrixView;
@@ -116,9 +118,11 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   const builds = buildsFor(s, deps.index, { ...deps.buildOptions, minCp: 0 });
   const build = bestBuild(builds, deps.overall);
   if (!build) {
-    const over = deps.index.species(s.speciesId)?.greatLeagueIneligible
-      ? 'is not allowed in Great League'
-      : 'is over 1500 CP and cannot be powered down';
+    const sp = deps.index.species(s.speciesId);
+    const over =
+      sp && !allowedInLeague(sp, deps.league)
+        ? `is not allowed in ${deps.league.title}`
+        : `is over ${deps.league.cp} CP and cannot be powered down`;
     return { ...base, label: 'Not eligible', line: `This ${name} ${over}.` };
   }
   const moveset = recommendMoveset(
@@ -179,7 +183,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       metaRank,
       formNote: note,
       label: 'Wait for better IVs',
-      line: `${stageName} is not a strong Great League pick right now (PvPoke score ${ranked?.score ?? 0}). Keep it for fun, not for ranked play.`,
+      line: `${stageName} is not a strong ${deps.league.title} pick right now (PvPoke score ${ranked?.score ?? 0}). Keep it for fun, not for ranked play.`,
     };
   }
   if (alreadyBuilt && topPct <= 25) {
@@ -193,9 +197,9 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       perfectLine,
       metaRank,
       formNote: note,
-      label: 'Great League ready',
+      label: 'Ready to use',
       line: withMeta(
-        `Top ${topPct}% for Great League and already at level ${s.level.max}. Use it.`,
+        `Top ${topPct}% for ${deps.league.title} and already at level ${s.level.max}. Use it.`,
       ),
     };
   }
@@ -212,7 +216,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       formNote: note,
       label: 'Worth building',
       line: withMeta(
-        `Top ${topPct}% for Great League${evoNote}. ${perfectDelta !== null && perfectDelta <= 1 ? 'A better one would barely change results.' : 'Worth the Stardust.'}`,
+        `Top ${topPct}% for ${deps.league.title}${evoNote}. ${perfectDelta !== null && perfectDelta <= 1 ? 'A better one would barely change results.' : 'Worth the Stardust.'}`,
       ),
     };
   }
@@ -228,7 +232,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     formNote: note,
     label: 'Wait for better IVs',
     line: withMeta(
-      `Top ${topPct}% for Great League${evoNote}. Usable, but a better one is likely to show up before you finish the build.`,
+      `Top ${topPct}% for ${deps.league.title}${evoNote}. Usable, but a better one is likely to show up before you finish the build.`,
     ),
   };
 }

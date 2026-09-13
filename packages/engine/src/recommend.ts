@@ -1,10 +1,12 @@
 import { sumCosts, type Cost } from './builds/cost.js';
 import {
+  buildOptionsFor,
   buildsFor,
   DEFAULT_BUILD_OPTIONS,
   type Build,
   type BuildOptions,
 } from './builds/eligibility.js';
+import { simOptionsFor, type League } from './gamedata/league.js';
 import { rankingsById } from './builds/moves.js';
 import { facingWeight, metaRanks, type MetaRank } from './gamedata/metaRank.js';
 import type { Specimen } from './collection/specimen.js';
@@ -21,12 +23,14 @@ import {
   type TeamStyle,
 } from './search/trios.js';
 import { scoreTeam, type TeamScore } from './score/score.js';
-import { GREAT_LEAGUE, type BattleSimulator, type SimOptions } from './sim/BattleSimulator.js';
+import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
 import { specimenVerdict, type Verdict } from './verdicts/worth.js';
 
 export interface StaticData {
   species: Species[];
   moves: Move[];
+  /** The league this bundle's rankings, meta and matrix belong to. */
+  league: League;
   rankings: Rankings;
   meta: MetaEntry[];
   matrix: MatchupMatrix;
@@ -52,7 +56,8 @@ export const DEFAULT_RECOMMEND_OPTIONS: RecommendOptions = {
 };
 
 export interface Assumptions {
-  league: 'great';
+  league: string;
+  leagueTitle: string;
   cpCap: number;
   levelCap: number;
   shields: { lead: string; switch: string; closer: string };
@@ -109,7 +114,8 @@ export interface EngineDeps {
 
 export function assumptionsFor(data: StaticData, opts: BuildOptions): Assumptions {
   return {
-    league: 'great',
+    league: data.league.id,
+    leagueTitle: data.league.title,
     cpCap: opts.cpCap,
     levelCap: opts.allowXl ? opts.levelCap : Math.min(opts.levelCap, 40),
     shields: {
@@ -118,7 +124,7 @@ export function assumptionsFor(data: StaticData, opts: BuildOptions): Assumption
       closer: 'no shields',
     },
     ivs: 'Your exact specimens versus opponents at PvPoke default IVs',
-    metaName: 'PvPoke Great League meta group',
+    metaName: `PvPoke ${data.league.title} meta group`,
     metaSize: data.meta.length,
     pvpokeCommit: data.manifest.pvpokeCommit,
     pvpokeDate: data.manifest.pvpokeDate,
@@ -164,8 +170,12 @@ export function recommend(
   onProgress?: ProgressFn,
 ): Recommendation {
   const started = Date.now();
-  const opts: RecommendOptions = { ...DEFAULT_RECOMMEND_OPTIONS, ...options };
-  const simOptions = deps.simOptions ?? { ...GREAT_LEAGUE, cp: opts.cpCap };
+  const opts: RecommendOptions = {
+    ...DEFAULT_RECOMMEND_OPTIONS,
+    ...buildOptionsFor(deps.data.league),
+    ...options,
+  };
+  const simOptions = deps.simOptions ?? simOptionsFor(deps.data.league);
   const index = new GameDataIndex(deps.data.species, deps.data.moves);
   const view = new MatrixView(deps.data.matrix);
   const progress: ProgressFn = onProgress ?? (() => {});
@@ -260,7 +270,7 @@ export function verdictsFor(
   deps: EngineDeps,
   onProgress?: ProgressFn,
 ): Record<string, Verdict> {
-  const opts: BuildOptions = { ...DEFAULT_BUILD_OPTIONS, ...options };
+  const opts: BuildOptions = { ...buildOptionsFor(deps.data.league), ...options };
   const index = new GameDataIndex(deps.data.species, deps.data.moves);
   const view = new MatrixView(deps.data.matrix);
   const overall = rankingsById(deps.data.rankings.overall);
@@ -270,12 +280,13 @@ export function verdictsFor(
     try {
       out[s.id] = specimenVerdict(s, {
         index,
+        league: deps.data.league,
         overall,
         metaRanks: ranks,
         view,
         meta: deps.data.meta,
         sim: deps.sim,
-        simOptions: deps.simOptions ?? { ...GREAT_LEAGUE, cp: opts.cpCap },
+        simOptions: deps.simOptions ?? simOptionsFor(deps.data.league),
         buildOptions: opts,
       });
     } catch (e) {

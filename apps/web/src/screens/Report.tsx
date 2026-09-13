@@ -27,7 +27,7 @@ export function Report() {
     {
       n: r.recognized,
       label: 'Pokémon recognized',
-      sub: `${r.recognized - r.missingIvs.count} with IVs, ready to rank for Great League`,
+      sub: `${r.recognized - r.missingIvs.count} with IVs, ready to rank`,
       names: [],
     },
     {

@@ -3,6 +3,7 @@ import type { IVs } from '../csv/parse.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import { cpFor, maxLevelUnderCap } from '../math/cp.js';
 import { ivRank, type IvRankResult } from '../math/ivrank.js';
+import { allowedInLeague, type League } from '../gamedata/league.js';
 
 export interface BuildOptions {
   cpCap: number;
@@ -13,6 +14,8 @@ export interface BuildOptions {
   allowEliteTm: boolean;
   allowXl: boolean;
   budgetStardust: number | null;
+  /** The league's cup rules; absent means open Great League rules. */
+  league?: League;
 }
 
 export const DEFAULT_BUILD_OPTIONS: BuildOptions = {
@@ -45,6 +48,14 @@ export interface Build {
  * its current level already exceeds the cap in that stage (Pokemon cannot be powered down); or its
  * best CP under the cap is below minCp.
  */
+/** Build options a league implies: its cap, its competitive floor, its cup rules. */
+export function buildOptionsFor(
+  league: League,
+  base: BuildOptions = DEFAULT_BUILD_OPTIONS,
+): BuildOptions {
+  return { ...base, cpCap: league.cp, minCp: league.minCp, league };
+}
+
 export function buildsFor(specimen: Specimen, index: GameDataIndex, opts: BuildOptions): Build[] {
   if (!specimen.ivs) {
     return [];
@@ -56,7 +67,10 @@ export function buildsFor(specimen: Specimen, index: GameDataIndex, opts: BuildO
   const stages = index.stagesFrom(specimen.speciesId);
   const out: Build[] = [];
   stages.forEach((species, stageOffset) => {
-    if (species.greatLeagueIneligible || species.tags.includes('mega') || !species.released) {
+    const barred = opts.league
+      ? !allowedInLeague(species, opts.league)
+      : species.greatLeagueIneligible || species.tags.includes('mega') || !species.released;
+    if (barred) {
       return;
     }
     const currentLevel = specimen.level.max;

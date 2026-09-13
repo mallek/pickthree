@@ -3,16 +3,29 @@ export interface SpeciesLite {
   types: [PokemonType, PokemonType | 'none'];
 }
 
+/** What the UI needs about the league in play, computed in the worker. */
+export interface LeagueInfo {
+  id: string;
+  /** Meta group species ids, in PvPoke order. */
+  meta: string[];
+  metaSize: number;
+  /** Overall and best-role meta rank per species, ignoring IVs. */
+  metaRanks: Record<string, MetaRank>;
+  /** Species with a matchup matrix row in this league, so they can be hand-picked for a team. */
+  analyzable: string[];
+}
+
 import type {
   AnalyzeOptions,
   BuildOptions,
   CounterEntry,
   CountersOptions,
-  PokemonType,
   ImportReport,
+  League,
   ManualInput,
   ManualResult,
   MetaRank,
+  PokemonType,
   Recommendation,
   RecommendOptions,
   ScanList,
@@ -25,19 +38,39 @@ import type {
 
 export type WorkerRequest =
   | { id: number; kind: 'ready' }
+  | { id: number; kind: 'league'; league: string }
   | { id: number; kind: 'import'; text: string }
-  | { id: number; kind: 'recommend'; specimens: Specimen[]; options: Partial<RecommendOptions> }
-  | { id: number; kind: 'verdicts'; specimens: Specimen[]; options: Partial<BuildOptions> }
-  | { id: number; kind: 'counters'; specimens: Specimen[]; options: Partial<CountersOptions> }
-  | { id: number; kind: 'scanlist'; options: Partial<ScanListOptions> }
+  | { id: number; kind: 'manual'; input: ManualInput }
+  | {
+      id: number;
+      kind: 'recommend';
+      league: string;
+      specimens: Specimen[];
+      options: Partial<RecommendOptions>;
+    }
+  | {
+      id: number;
+      kind: 'verdicts';
+      league: string;
+      specimens: Specimen[];
+      options: Partial<BuildOptions>;
+    }
+  | {
+      id: number;
+      kind: 'counters';
+      league: string;
+      specimens: Specimen[];
+      options: Partial<CountersOptions>;
+    }
+  | { id: number; kind: 'scanlist'; league: string; options: Partial<ScanListOptions> }
   | {
       id: number;
       kind: 'analyze';
+      league: string;
       picks: [TeamPick, TeamPick, TeamPick];
       specimens: Specimen[];
       options: Partial<AnalyzeOptions>;
-    }
-  | { id: number; kind: 'manual'; input: ManualInput };
+    };
 
 export type WorkerResponse =
   | { id: number; kind: 'progress'; stage: string; done: number; total: number }
@@ -47,14 +80,13 @@ export type WorkerResponse =
 export type WorkerResult =
   | {
       kind: 'ready';
-      manifest: { pvpokeCommit: string; pvpokeDate: string; builtAt: string; metaSize: number };
+      manifest: { pvpokeCommit: string; pvpokeDate: string; builtAt: string };
       species: Record<string, SpeciesLite>;
-      meta: string[];
-      /** Overall and best-role meta rank per species, ignoring IVs. */
-      metaRanks: Record<string, MetaRank>;
-      /** Species with a matchup matrix row, so they can be hand-picked for a team. */
-      analyzable: string[];
+      leagues: League[];
+      /** Released, non-mega species ids for adding a Pokémon by hand. */
+      allSpecies: string[];
     }
+  | { kind: 'league'; info: LeagueInfo }
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }
   | { kind: 'recommend'; recommendation: Recommendation }
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }

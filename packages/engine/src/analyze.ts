@@ -1,9 +1,11 @@
 import {
+  buildOptionsFor,
   buildsFor,
   DEFAULT_BUILD_OPTIONS,
   type Build,
   type BuildOptions,
 } from './builds/eligibility.js';
+import { simOptionsFor } from './gamedata/league.js';
 import { rankingsById } from './builds/moves.js';
 import type { Specimen } from './collection/specimen.js';
 import type { RawScan } from './csv/parse.js';
@@ -32,7 +34,6 @@ import {
   type Prepared,
 } from './search/trios.js';
 import { scoreTeam, type Fit } from './score/score.js';
-import { GREAT_LEAGUE } from './sim/BattleSimulator.js';
 import { bestBuild } from './verdicts/worth.js';
 
 /** One member of a hand-built team. */
@@ -159,8 +160,13 @@ export function analyzeTeam(
   onProgress?: ProgressFn,
 ): TeamAnalysis {
   const started = Date.now();
-  const opts: AnalyzeOptions = { ...DEFAULT_ANALYZE_OPTIONS, ...options };
-  const simOptions = deps.simOptions ?? { ...GREAT_LEAGUE, cp: opts.cpCap };
+  const opts: AnalyzeOptions = {
+    ...DEFAULT_ANALYZE_OPTIONS,
+    ...buildOptionsFor(deps.data.league),
+    minCp: 0,
+    ...options,
+  };
+  const simOptions = deps.simOptions ?? simOptionsFor(deps.data.league);
   const index = new GameDataIndex(deps.data.species, deps.data.moves);
   const view = new MatrixView(deps.data.matrix);
   const progress: ProgressFn = onProgress ?? (() => {});
@@ -194,7 +200,7 @@ export function analyzeTeam(
   if (specimens.length > 0) {
     const builds: Build[] = [];
     for (const s of specimens) {
-      builds.push(...buildsFor(s, index, { ...opts, minCp: DEFAULT_BUILD_OPTIONS.minCp }));
+      builds.push(...buildsFor(s, index, { ...opts, minCp: deps.data.league.minCp }));
     }
     pool = candidatePool(builds, deps.data.rankings, view, index, {
       ...DEFAULT_RECOMMEND_OPTIONS,

@@ -17,7 +17,7 @@ import type {
   TeamPick,
   Verdict,
 } from '@pickthree/engine';
-import type { WorkerRequest, WorkerResponse, WorkerResult } from './protocol.ts';
+import type { LeagueInfo, WorkerRequest, WorkerResponse, WorkerResult } from './protocol.ts';
 
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 type RequestBody = DistributiveOmit<WorkerRequest, 'id'>;
@@ -38,11 +38,16 @@ export class ImportFailed extends Error {
   }
 }
 
-/** ComputeHost backed by the engine Web Worker. One request at a time per id, progress streamed. */
+/**
+ * ComputeHost backed by the engine Web Worker. One request at a time per id, progress streamed.
+ * League-specific calls name the league; the worker fetches that league's bundle on first use.
+ */
 export class WorkerHost implements ComputeHost {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private nextId = 1;
+  /** League the ComputeHost-shaped calls (no league argument) run in. */
+  league = 'great';
 
   constructor(worker?: Worker) {
     this.worker =
@@ -94,6 +99,14 @@ export class WorkerHost implements ComputeHost {
     return r;
   }
 
+  async leagueInfo(league: string): Promise<LeagueInfo> {
+    const r = await this.send({ kind: 'league', league });
+    if (r.kind !== 'league') {
+      throw new Error('unexpected reply');
+    }
+    return r.info;
+  }
+
   async importCsv(text: string): Promise<{ specimens: Specimen[]; report: ImportReport }> {
     const r = await this.send({ kind: 'import', text });
     if (r.kind !== 'import') {
@@ -106,8 +119,9 @@ export class WorkerHost implements ComputeHost {
     specimens: Specimen[],
     options: Partial<RecommendOptions>,
     onProgress?: (e: ProgressEvent) => void,
+    league = this.league,
   ): Promise<Recommendation> {
-    const r = await this.send({ kind: 'recommend', specimens, options }, onProgress);
+    const r = await this.send({ kind: 'recommend', league, specimens, options }, onProgress);
     if (r.kind !== 'recommend') {
       throw new Error('unexpected reply');
     }
@@ -118,8 +132,9 @@ export class WorkerHost implements ComputeHost {
     specimens: Specimen[],
     options: Partial<BuildOptions>,
     onProgress?: (e: ProgressEvent) => void,
+    league = this.league,
   ): Promise<Record<string, Verdict>> {
-    const r = await this.send({ kind: 'verdicts', specimens, options }, onProgress);
+    const r = await this.send({ kind: 'verdicts', league, specimens, options }, onProgress);
     if (r.kind !== 'verdicts') {
       throw new Error('unexpected reply');
     }
@@ -129,16 +144,17 @@ export class WorkerHost implements ComputeHost {
   async counters(
     specimens: Specimen[],
     options: Partial<CountersOptions>,
+    league = this.league,
   ): Promise<CounterEntry[]> {
-    const r = await this.send({ kind: 'counters', specimens, options });
+    const r = await this.send({ kind: 'counters', league, specimens, options });
     if (r.kind !== 'counters') {
       throw new Error('unexpected reply');
     }
     return r.counters;
   }
 
-  async scanList(options: Partial<ScanListOptions>): Promise<ScanList> {
-    const r = await this.send({ kind: 'scanlist', options });
+  async scanList(options: Partial<ScanListOptions>, league = this.league): Promise<ScanList> {
+    const r = await this.send({ kind: 'scanlist', league, options });
     if (r.kind !== 'scanlist') {
       throw new Error('unexpected reply');
     }
@@ -150,8 +166,9 @@ export class WorkerHost implements ComputeHost {
     specimens: Specimen[],
     options: Partial<AnalyzeOptions>,
     onProgress?: (e: ProgressEvent) => void,
+    league = this.league,
   ): Promise<TeamAnalysis> {
-    const r = await this.send({ kind: 'analyze', picks, specimens, options }, onProgress);
+    const r = await this.send({ kind: 'analyze', league, picks, specimens, options }, onProgress);
     if (r.kind !== 'analyze') {
       throw new Error('unexpected reply');
     }

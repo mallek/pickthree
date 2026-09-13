@@ -25,7 +25,14 @@ jobs:
         with:
           path: packages/data/.pvpoke
           key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
+      - name: Cache built game data
+        id: data
+        uses: actions/cache@v4
+        with:
+          path: apps/web/public/data
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/sim-pvpoke/src/**') }}
       - run: npm run data:build
+        if: steps.data.outputs.cache-hit != 'true'
       - name: Build site
         run: |
           if [ -f apps/web/package.json ]; then

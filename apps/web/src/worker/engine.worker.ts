@@ -1,12 +1,13 @@
 /// <reference lib="webworker" />
 import {
   analyzeTeam,
-  GameDataIndex,
+  buildOptionsFor,
   displayName,
+  GameDataIndex,
   manualSpecimen,
   metaCounters,
-  parsePokeGenieCsv,
   metaRanks,
+  parsePokeGenieCsv,
   recommend,
   scanList,
   toSpecimens,
@@ -15,6 +16,7 @@ import {
   type StaticData,
   type BattleSimulator,
   type DataManifest,
+  type League,
   type MatchupMatrix,
   type MetaEntry,
   type Move,
@@ -22,7 +24,7 @@ import {
   type Species,
 } from '@pickthree/engine';
 import { PvPokeSimulator, type PvPokeRuntime } from '@pickthree/sim-pvpoke/browser';
-import type { WorkerRequest, WorkerResponse } from '../host/protocol.ts';
+import type { LeagueInfo, WorkerRequest, WorkerResponse } from '../host/protocol.ts';
 
 declare const self: DedicatedWorkerGlobalScope & {
   __pvpoke?: {
@@ -36,7 +38,24 @@ declare const self: DedicatedWorkerGlobalScope & {
 
 const post = (m: WorkerResponse): void => self.postMessage(m);
 
-let ready: Promise<{ data: StaticData; sim: BattleSimulator; index: GameDataIndex }> | null = null;
+interface Env {
+  species: Species[];
+  moves: Move[];
+  manifest: DataManifest;
+  leagues: League[];
+  sim: BattleSimulator;
+  index: GameDataIndex;
+}
+
+interface LeagueBundle {
+  league: League;
+  rankings: StaticData['rankings'];
+  meta: MetaEntry[];
+  matrix: MatchupMatrix;
+}
+
+let ready: Promise<Env> | null = null;
+const bundles = new Map<string, Promise<LeagueBundle>>();
 
 async function json<T>(path: string): Promise<T> {
   const res = await fetch(path, { cache: 'force-cache' });
@@ -48,33 +67,13 @@ async function json<T>(path: string): Promise<T> {
 
 type BootStep = (step: string, done: number) => void;
 
-async function boot(
-  step: BootStep,
-): Promise<{ data: StaticData; sim: BattleSimulator; index: GameDataIndex }> {
+async function boot(step: BootStep): Promise<Env> {
   step('fetching game data', 0);
-  const [
-    species,
-    moves,
-    overall,
-    leads,
-    switches,
-    closers,
-    chargers,
-    meta,
-    matrix,
-    manifest,
-    gamemaster,
-  ] = await Promise.all([
+  const [species, moves, manifest, leagues, gamemaster] = await Promise.all([
     json<Species[]>('/data/pokemon.json'),
     json<Move[]>('/data/moves.json'),
-    json<RankingEntry[]>('/data/rankings/great/overall.json'),
-    json<RankingEntry[]>('/data/rankings/great/leads.json'),
-    json<RankingEntry[]>('/data/rankings/great/switches.json'),
-    json<RankingEntry[]>('/data/rankings/great/closers.json'),
-    json<RankingEntry[]>('/data/rankings/great/chargers.json'),
-    json<MetaEntry[]>('/data/meta/great.json'),
-    json<MatchupMatrix>('/data/matrix/great.json'),
     json<DataManifest>('/data/data-manifest.json'),
+    json<League[]>('/data/leagues.json'),
     json<unknown>('/data/gamemaster.json'),
   ]);
   // The vendored PvPoke bundle reads the game master from this global when its shimmed ajax
@@ -97,26 +96,68 @@ async function boot(
     gm,
   };
   const sim = new PvPokeSimulator(runtime);
-  const data: StaticData = {
-    species,
-    moves,
-    rankings: { overall, leads, switches, closers, chargers },
-    meta,
-    matrix,
-    manifest,
-  };
   const index = new GameDataIndex(species, moves);
   step('ready', 4);
-  return { data, sim, index };
+  return { species, moves, manifest, leagues, sim, index };
 }
 
-function ensureReady(
-  step: BootStep,
-): Promise<{ data: StaticData; sim: BattleSimulator; index: GameDataIndex }> {
+function ensureReady(step: BootStep): Promise<Env> {
   if (!ready) {
     ready = boot(step);
   }
   return ready;
+}
+
+/** Rankings, meta group and matrix for one league, fetched once and kept. */
+function bundleFor(env: Env, id: string): Promise<LeagueBundle> {
+  let p = bundles.get(id);
+  if (!p) {
+    const league = env.leagues.find((l) => l.id === id);
+    if (!league) {
+      return Promise.reject(new Error(`Unknown league ${id}`));
+    }
+    p = (async () => {
+      const [overall, leads, switches, closers, chargers, meta, matrix] = await Promise.all([
+        json<RankingEntry[]>(`/data/rankings/${id}/overall.json`),
+        json<RankingEntry[]>(`/data/rankings/${id}/leads.json`),
+        json<RankingEntry[]>(`/data/rankings/${id}/switches.json`),
+        json<RankingEntry[]>(`/data/rankings/${id}/closers.json`),
+        json<RankingEntry[]>(`/data/rankings/${id}/chargers.json`),
+        json<MetaEntry[]>(`/data/meta/${id}.json`),
+        json<MatchupMatrix>(`/data/matrix/${id}.json`),
+      ]);
+      return { league, rankings: { overall, leads, switches, closers, chargers }, meta, matrix };
+    })();
+    bundles.set(id, p);
+    p.catch(() => bundles.delete(id));
+  }
+  return p;
+}
+
+async function dataFor(env: Env, id: string): Promise<StaticData> {
+  const b = await bundleFor(env, id);
+  return {
+    species: env.species,
+    moves: env.moves,
+    league: b.league,
+    rankings: b.rankings,
+    meta: b.meta,
+    matrix: b.matrix,
+    manifest: env.manifest,
+  };
+}
+
+function leagueInfo(env: Env, data: StaticData): LeagueInfo {
+  return {
+    id: data.league.id,
+    meta: data.meta.map((x) => x.speciesId),
+    metaSize: data.meta.length,
+    metaRanks: Object.fromEntries(metaRanks(data.rankings)),
+    analyzable: data.matrix.candidates.filter((id) => {
+      const sp = env.index.species(id);
+      return Boolean(sp && sp.released);
+    }),
+  };
 }
 
 self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
@@ -126,32 +167,30 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       post({ id: msg.id, kind: 'progress', stage: `boot: ${stage}`, done, total: 4 }),
     );
     if (msg.kind === 'ready') {
-      const m = env.data.manifest;
+      const m = env.manifest;
       post({
         id: msg.id,
         kind: 'result',
         result: {
           kind: 'ready',
-          manifest: {
-            pvpokeCommit: m.pvpokeCommit,
-            pvpokeDate: m.pvpokeDate,
-            builtAt: m.builtAt,
-            metaSize: m.metaSize,
-          },
+          manifest: { pvpokeCommit: m.pvpokeCommit, pvpokeDate: m.pvpokeDate, builtAt: m.builtAt },
           species: Object.fromEntries(
-            env.data.species.map((sp) => [
+            env.species.map((sp) => [
               sp.speciesId,
               { name: displayName(sp.speciesId, env.index), types: sp.types },
             ]),
           ),
-          meta: env.data.meta.map((x) => x.speciesId),
-          metaRanks: Object.fromEntries(metaRanks(env.data.rankings)),
-          analyzable: env.data.matrix.candidates.filter((id) => {
-            const sp = env.index.species(id);
-            return Boolean(sp && sp.released && !sp.greatLeagueIneligible);
-          }),
+          leagues: env.leagues,
+          allSpecies: env.species
+            .filter((sp) => sp.released && !sp.tags.includes('mega'))
+            .map((sp) => sp.speciesId),
         },
       });
+      return;
+    }
+    if (msg.kind === 'league') {
+      const data = await dataFor(env, msg.league);
+      post({ id: msg.id, kind: 'result', result: { kind: 'league', info: leagueInfo(env, data) } });
       return;
     }
     if (msg.kind === 'import') {
@@ -160,59 +199,47 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       post({ id: msg.id, kind: 'result', result: { kind: 'import', specimens, report } });
       return;
     }
+    if (msg.kind === 'manual') {
+      const result = manualSpecimen(msg.input, env.index);
+      post({ id: msg.id, kind: 'result', result: { kind: 'manual', result } });
+      return;
+    }
+    const data = await dataFor(env, msg.league);
+    const deps = { data, sim: env.sim };
+    const progress = (stage: string, done: number, total: number): void =>
+      post({ id: msg.id, kind: 'progress', stage, done, total });
     if (msg.kind === 'recommend') {
-      const recommendation = recommend(
-        msg.specimens,
-        msg.options,
-        { data: env.data, sim: env.sim },
-        (stage, done, total) => post({ id: msg.id, kind: 'progress', stage, done, total }),
-      );
+      const recommendation = recommend(msg.specimens, msg.options, deps, progress);
       post({ id: msg.id, kind: 'result', result: { kind: 'recommend', recommendation } });
       return;
     }
     if (msg.kind === 'verdicts') {
-      const verdicts = verdictsFor(
-        msg.specimens,
-        msg.options,
-        { data: env.data, sim: env.sim },
-        (stage, done, total) => post({ id: msg.id, kind: 'progress', stage, done, total }),
-      );
+      const verdicts = verdictsFor(msg.specimens, msg.options, deps, progress);
       post({ id: msg.id, kind: 'result', result: { kind: 'verdicts', verdicts } });
       return;
     }
     if (msg.kind === 'counters') {
       const counters = metaCounters(
-        { matrix: env.data.matrix, rankings: env.data.rankings },
+        { matrix: data.matrix, rankings: data.rankings },
         msg.specimens,
         env.index,
-        msg.options,
+        { buildOptions: buildOptionsFor(data.league), ...msg.options },
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
       return;
     }
     if (msg.kind === 'scanlist') {
-      const list = scanList(
-        { matrix: env.data.matrix, rankings: env.data.rankings },
-        env.index,
-        msg.options,
-      );
+      const list = scanList({ matrix: data.matrix, rankings: data.rankings }, env.index, {
+        cpCap: data.league.cp,
+        buildOptions: buildOptionsFor(data.league),
+        ...msg.options,
+      });
       post({ id: msg.id, kind: 'result', result: { kind: 'scanlist', scanList: list } });
       return;
     }
     if (msg.kind === 'analyze') {
-      const analysis = analyzeTeam(
-        msg.picks,
-        msg.specimens,
-        msg.options,
-        { data: env.data, sim: env.sim },
-        (stage, done, total) => post({ id: msg.id, kind: 'progress', stage, done, total }),
-      );
+      const analysis = analyzeTeam(msg.picks, msg.specimens, msg.options, deps, progress);
       post({ id: msg.id, kind: 'result', result: { kind: 'analyze', analysis } });
-      return;
-    }
-    if (msg.kind === 'manual') {
-      const result = manualSpecimen(msg.input, env.index);
-      post({ id: msg.id, kind: 'result', result: { kind: 'manual', result } });
       return;
     }
   } catch (err) {
