@@ -95,8 +95,8 @@ export function Welcome() {
             <div>
               <b>Upload it here</b>
               <span className="small muted">
-                Or share it from Poke Genie straight to pick3 once the app is installed. It stays on
-                your phone.
+                On Android you can share it from Poke Genie straight to pick3 once the app is
+                installed. It stays on your phone.
               </span>
             </div>
           </li>
