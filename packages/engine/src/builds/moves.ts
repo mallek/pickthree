@@ -1,3 +1,4 @@
+import { altMoveType } from '../gamedata/forms.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import type { Move, PokemonType, RankingEntry, Species } from '../gamedata/types.js';
 
@@ -25,6 +26,8 @@ export interface MoveChoice {
   /** Fast moves per charged move over the first three uses, energy carried over. Charged only. */
   counts: number[] | null;
   effects: MoveEffect[];
+  /** Type of the same move on the species' other battle form (Aura Wheel: dark), else null. */
+  altType: PokemonType | null;
 }
 
 /**
@@ -110,6 +113,7 @@ function choice(
   species: Species,
   current: { fast: string | null; charged: string[] },
   fast: Move | null,
+  index: GameDataIndex,
 ): MoveChoice {
   return {
     moveId: move.moveId,
@@ -122,6 +126,7 @@ function choice(
     countFromFast: fast && fast.energyGain > 0 ? Math.ceil(move.energy / fast.energyGain) : null,
     counts: fast && fast.energyGain > 0 ? moveCounts(move.energy, fast.energyGain) : null,
     effects: moveEffects(move),
+    altType: altMoveType(species.speciesId, move.name, index),
   };
 }
 
@@ -185,8 +190,10 @@ export function recommendMoveset(
       chargedPicked.push(any);
     }
   }
-  const fast = choice(fastMove, species, current, null);
-  const charged = chargedPicked.map((id) => choice(index.mustMove(id), species, current, fastMove));
+  const fast = choice(fastMove, species, current, null, index);
+  const charged = chargedPicked.map((id) =>
+    choice(index.mustMove(id), species, current, fastMove, index),
+  );
   const eliteTmCount = [fast, ...charged].filter((m) => m.tm === 'elite').length;
   return { fast, charged, source, eliteTmCount };
 }

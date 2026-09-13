@@ -157,6 +157,7 @@ export function SpecimenScreen({ id }: { id: string }) {
             <div className="card" style={{ padding: '0 14px' }}>
               <MoveRows fast={v.moveset.fast} charged={v.moveset.charged} />
             </div>
+            {v.formNote ? <p className="small form-note">{v.formNote}</p> : null}
           </div>
         ) : null}
 

@@ -70,6 +70,11 @@ export function TeamDetail({ id }: { id: string }) {
                     </div>
                     <MetaTags speciesId={c.build.speciesId} />
                     <div className="small muted">{slot.roleWhy}</div>
+                    {team.explanation.slotDetail[i]!.formNote ? (
+                      <div className="small form-note">
+                        {team.explanation.slotDetail[i]!.formNote}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <MoveRows

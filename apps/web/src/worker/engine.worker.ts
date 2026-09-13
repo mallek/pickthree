@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import {
   GameDataIndex,
+  displayName,
   metaCounters,
   parsePokeGenieCsv,
   metaRanks,
@@ -136,7 +137,10 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
             metaSize: m.metaSize,
           },
           species: Object.fromEntries(
-            env.data.species.map((sp) => [sp.speciesId, { name: sp.speciesName, types: sp.types }]),
+            env.data.species.map((sp) => [
+              sp.speciesId,
+              { name: displayName(sp.speciesId, env.index), types: sp.types },
+            ]),
           ),
           meta: env.data.meta.map((x) => x.speciesId),
           metaRanks: Object.fromEntries(metaRanks(env.data.rankings)),

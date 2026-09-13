@@ -20,6 +20,16 @@ interface RawPokemon {
   levelCap?: number;
   levelFloor?: number;
   defaultIVs?: Record<string, [number, number, number, number]>;
+  formChange?: {
+    type: 'set' | 'toggle';
+    trigger: string;
+    moveId?: string;
+    moveIDs?: string[];
+    alternativeFormId?: string;
+    defaultFormId?: string;
+    effect?: string;
+    resetOnSwitch?: boolean;
+  };
 }
 
 interface RawMove {
@@ -91,6 +101,25 @@ export function buildGameData(input: unknown): GameData {
       levelFloor: p.levelFloor ?? null,
       greatLeagueIneligible: banned.has(p.speciesId),
       defaultIVs: { ...(p.defaultIVs ?? {}) },
+      formChange: p.formChange
+        ? {
+            type: p.formChange.type,
+            trigger: p.formChange.trigger,
+            moveIds: [
+              ...(p.formChange.moveIDs ?? []),
+              ...(p.formChange.moveId && p.formChange.moveId !== 'ANY'
+                ? [p.formChange.moveId]
+                : []),
+            ],
+            alternativeFormId:
+              p.formChange.alternativeFormId && p.formChange.alternativeFormId !== 'variable'
+                ? p.formChange.alternativeFormId
+                : null,
+            defaultFormId: p.formChange.defaultFormId ?? null,
+            effect: p.formChange.effect ?? null,
+            resetOnSwitch: p.formChange.resetOnSwitch ?? false,
+          }
+        : null,
     };
   });
 

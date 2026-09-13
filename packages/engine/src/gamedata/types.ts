@@ -24,6 +24,20 @@ export interface BaseStats {
   hp: number;
 }
 
+/** A mid-battle form change, straight from the game master. */
+export interface FormChange {
+  type: 'set' | 'toggle';
+  /** charged_move, charged_move_damage, activate_charged, activate_shield, none. */
+  trigger: string;
+  /** Moves that trigger it; empty means any charged move. */
+  moveIds: string[];
+  /** Null when the game master says "variable" (the alternate forms point back instead). */
+  alternativeFormId: string | null;
+  defaultFormId: string | null;
+  effect: string | null;
+  resetOnSwitch: boolean;
+}
+
 export interface Species {
   speciesId: string;
   speciesName: string;
@@ -46,6 +60,7 @@ export interface Species {
   levelFloor: number | null;
   greatLeagueIneligible: boolean;
   defaultIVs: Record<string, [number, number, number, number]>;
+  formChange: FormChange | null;
 }
 
 export interface Move {

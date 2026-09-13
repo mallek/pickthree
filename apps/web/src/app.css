@@ -1247,6 +1247,11 @@ textarea.paste {
   padding: 0 8px;
 }
 
+.form-note {
+  color: var(--accent-text);
+  margin-top: 4px;
+}
+
 /* scan list */
 .scan-string {
   width: 100%;

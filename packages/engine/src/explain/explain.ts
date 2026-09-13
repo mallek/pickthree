@@ -2,6 +2,7 @@ import type { GameDataIndex } from '../gamedata/index.js';
 import { classify, effectiveness, resistances, weaknesses } from '../gamedata/typeChart.js';
 import type { PokemonType } from '../gamedata/types.js';
 import type { MetaRank } from '../gamedata/metaRank.js';
+import { formNote, isDefaultToggleForm } from '../gamedata/forms.js';
 import type { Candidate, Role } from '../search/candidates.js';
 import type { SlotSim, TeamSim } from '../search/finalists.js';
 import type { MatrixView } from '../search/matrixView.js';
@@ -42,6 +43,8 @@ export interface SlotDetail {
   /** Closer only: how many more meta matchups it wins with one shield kept for it. */
   keepShield: { delta: number; line: string } | null;
   moveReads: MoveRead[];
+  /** What its battle form change does, or null. */
+  formNote: string | null;
 }
 
 export interface SwitchAdvice {
@@ -92,6 +95,10 @@ export function displayName(speciesId: string, index: GameDataIndex): string {
   const m = /^(.*) \(([^)]+)\)$/.exec(name);
   if (m && m[2] && REGIONAL_PREFIX[m[2]]) {
     return `${REGIONAL_PREFIX[m[2]]} ${m[1]}`;
+  }
+  // The form you bring in is just the Pokemon: "Morpeko (Full Belly)" is Morpeko.
+  if (m && m[1] && isDefaultToggleForm(s)) {
+    return m[1];
   }
   return name;
 }
@@ -172,7 +179,15 @@ export function slotDetailFor(slot: SlotSim, view: MatrixView, index: GameDataIn
           : `extra damage on ${superCount}, resisted by ${resistedCount}`;
     return { moveId: m.moveId, superCount, resistedCount, line };
   });
-  return { types, weaknesses: weak, resistances: resist, shieldLine, keepShield, moveReads };
+  return {
+    types,
+    weaknesses: weak,
+    resistances: resist,
+    shieldLine,
+    keepShield,
+    moveReads,
+    formNote: formNote(c.build.speciesId, index),
+  };
 }
 
 export function switchPlanFor(

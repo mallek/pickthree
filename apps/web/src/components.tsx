@@ -234,6 +234,7 @@ export function MoveRows({
                 <span className="move-name">{m.name}</span>
                 <span className="move-tags">
                   <TypeChip type={m.type} small />
+                  {m.altType ? <TypeChip type={m.altType} small /> : null}
                   <EffectIcons effects={m.effects} />
                 </span>
                 <TmBadge tm={m.tm} />
