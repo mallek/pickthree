@@ -1523,36 +1523,66 @@ button.counter-row {
   flex: none;
 }
 
-/* collection sort */
-.sort-row {
+/* collection: search with a settings cog, verdict pills, tap-to-cycle sort */
+.search-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  gap: 8px;
+  align-items: stretch;
 }
-.sort-seg {
-  display: flex;
+.search-row .search {
   flex: 1;
+  min-width: 0;
+}
+.cog {
+  flex: none;
+  width: 44px;
   border: 1px solid var(--divider);
   border-radius: var(--r-md);
-  overflow: hidden;
+  background: var(--surface);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  position: relative;
 }
-.sort-seg button {
-  flex: 1;
+.cog svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cog.open {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.cog.active::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.filters-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0 4px;
+}
+.sort-toggle {
+  align-self: flex-start;
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--accent-text);
   font: inherit;
   font-size: 12px;
   font-weight: 500;
-  padding: 6px 4px;
-  white-space: nowrap;
-}
-.sort-seg button + button {
-  border-left: 1px solid var(--divider);
-}
-.sort-seg button.on {
-  color: var(--accent-text);
-  background: var(--accent-tint);
+  padding: 0;
+  min-height: 24px;
 }
 
 /* scan list */

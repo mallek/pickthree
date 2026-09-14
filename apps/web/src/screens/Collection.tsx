@@ -67,6 +67,7 @@ export function Collection() {
   );
   const [grouped, setGrouped] = useSticky('collection.grouped', true);
   const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
+  const [settingsOpen, setSettingsOpen] = useSticky('collection.settingsOpen', false);
 
   useEffect(() => {
     if (
@@ -190,7 +191,9 @@ export function Collection() {
       </div>
     );
   }
-  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta', name: 'Name' };
+  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta rank', name: 'Name' };
+  const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
+  const settingsOn = eligibleOnly || shadowsOnly || recentOnly || metaOnly || !grouped;
   return (
     <div className="screen">
       <div className="page-head">
@@ -212,13 +215,66 @@ export function Collection() {
           </span>
         </div>
         <LeagueSwitcher compact />
-        <input
-          className="search"
-          placeholder="Search your Pokémon"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          inputMode="search"
-        />
+        <div className="search-row">
+          <input
+            className="search"
+            placeholder="Search your Pokémon"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            inputMode="search"
+          />
+          <button
+            type="button"
+            className={`cog${settingsOn ? ' active' : ''}${settingsOpen ? ' open' : ''}`}
+            aria-label="List settings"
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((x) => !x)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+            </svg>
+          </button>
+        </div>
+        {settingsOpen ? (
+          <div className="filters-panel">
+            <button
+              type="button"
+              className={`mini-chip${eligibleOnly ? ' on' : ''}`}
+              onClick={() => setEligibleOnly((x) => !x)}
+            >
+              Eligible only
+            </button>
+            <button
+              type="button"
+              className={`mini-chip${shadowsOnly ? ' on' : ''}`}
+              onClick={() => setShadowsOnly((x) => !x)}
+            >
+              Shadows
+            </button>
+            <button
+              type="button"
+              className={`mini-chip${recentOnly ? ' on' : ''}`}
+              onClick={() => setRecentOnly((x) => !x)}
+            >
+              Scanned recently
+            </button>
+            <button
+              type="button"
+              className={`mini-chip${metaOnly ? ' on' : ''}`}
+              onClick={() => setMetaOnly((x) => !x)}
+            >
+              Top 50 meta
+            </button>
+            <button
+              type="button"
+              className={`mini-chip${grouped ? ' on' : ''}`}
+              onClick={() => setGrouped((x) => !x)}
+            >
+              Group same Pokémon
+            </button>
+          </div>
+        ) : null}
         <div className="chips">
           {VERDICTS.map((v) => (
             <Chip key={v} on={verdict === v} onClick={() => setVerdict(v)}>
@@ -226,60 +282,14 @@ export function Collection() {
             </Chip>
           ))}
         </div>
-        <div className="toggle-row">
-          <button
-            type="button"
-            className={`mini-chip${eligibleOnly ? ' on' : ''}`}
-            onClick={() => setEligibleOnly((x) => !x)}
-          >
-            Eligible only
-          </button>
-          <button
-            type="button"
-            className={`mini-chip${shadowsOnly ? ' on' : ''}`}
-            onClick={() => setShadowsOnly((x) => !x)}
-          >
-            Shadows
-          </button>
-          <button
-            type="button"
-            className={`mini-chip${recentOnly ? ' on' : ''}`}
-            onClick={() => setRecentOnly((x) => !x)}
-          >
-            Scanned recently
-          </button>
-          <button
-            type="button"
-            className={`mini-chip${metaOnly ? ' on' : ''}`}
-            onClick={() => setMetaOnly((x) => !x)}
-          >
-            Top 50 meta
-          </button>
-          <button
-            type="button"
-            className={`mini-chip${grouped ? ' on' : ''}`}
-            onClick={() => setGrouped((x) => !x)}
-          >
-            Group same Pokémon
-          </button>
-        </div>
-        <div className="sort-row">
-          <span className="meta">Sort</span>
-          <div className="sort-seg" role="radiogroup" aria-label="Sort">
-            {(['verdict', 'rank', 'meta', 'name'] as const).map((k) => (
-              <button
-                type="button"
-                key={k}
-                role="radio"
-                aria-checked={sort === k}
-                className={sort === k ? 'on' : ''}
-                onClick={() => setSort(k)}
-              >
-                {sortLabels[k]}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button
+          type="button"
+          className="sort-toggle"
+          onClick={() => setSort((x) => nextSort[x])}
+          aria-label={`Sort by ${sortLabels[sort]}, tap to change`}
+        >
+          Sort: {sortLabels[sort]} <span aria-hidden="true">&#8645;</span>
+        </button>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
         {s.verdictsLoading ? (
