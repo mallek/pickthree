@@ -48,7 +48,7 @@ describe.skipIf(!ready)('recommend end to end', () => {
       expect(team.cost.stardust).toBeGreaterThanOrEqual(0);
       expect(team.score.total).toBeGreaterThanOrEqual(0);
       expect(team.score.total).toBeLessThanOrEqual(100);
-      expect(['Strong', 'Solid', 'Situational']).toContain(team.score.fit);
+      expect(['Strong', 'Solid', 'Situational', 'Weak']).toContain(team.score.fit);
       expect(['Easy', 'Moderate', 'Demanding']).toContain(team.score.difficulty);
       expect(team.explanation.why.length).toBeGreaterThan(20);
       expect(team.explanation.keyWins.length).toBeGreaterThanOrEqual(1);

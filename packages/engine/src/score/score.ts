@@ -2,7 +2,7 @@ import type { Candidate } from '../search/candidates.js';
 import type { TeamSim } from '../search/finalists.js';
 import type { MatrixView } from '../search/matrixView.js';
 
-export type Fit = 'Strong' | 'Solid' | 'Situational';
+export type Fit = 'Strong' | 'Solid' | 'Situational' | 'Weak';
 export type Difficulty = 'Easy' | 'Moderate' | 'Demanding';
 
 export interface TeamScore {
@@ -14,6 +14,14 @@ export interface TeamScore {
     accessibility: number;
   };
   total: number;
+  /**
+   * Battle strength alone, 0 to 100: coverage, consistency and safety, no cost or accessibility.
+   * This is what the fit label reads from, so a hand-built team cannot look good just because it
+   * is cheap.
+   */
+  battle: number;
+  /** How many of the ten most common opponents nobody on the team beats. */
+  topUncovered: number;
   fit: Fit;
   difficulty: Difficulty;
   difficultyWhy: string;
@@ -39,14 +47,41 @@ export function isBaitDependent(c: Candidate): boolean {
   return Math.min(...energies) <= 40 && Math.max(...energies) >= 55;
 }
 
-export function fitFor(total: number): Fit {
-  if (total >= 70) {
+export function battleScore(coverage: number, consistency: number, safety: number): number {
+  return 0.5 * coverage + 0.25 * consistency + 0.25 * safety;
+}
+
+/** Label for a battle score. Weak exists so a bad hand-built team is told so. */
+export function fitFor(battle: number): Fit {
+  if (battle >= 72) {
     return 'Strong';
   }
-  if (total >= 55) {
+  if (battle >= 58) {
     return 'Solid';
   }
-  return 'Situational';
+  if (battle >= 45) {
+    return 'Situational';
+  }
+  return 'Weak';
+}
+
+/** One sentence a player can act on. */
+export function fitWhy(fit: Fit, covered: number, n: number, topUncovered: number): string {
+  const cover = `beats ${covered} of ${n} meta Pokémon`;
+  const top =
+    topUncovered === 0
+      ? 'every one of the top ten has an answer'
+      : `${topUncovered} of the top ten ${topUncovered === 1 ? 'has' : 'have'} no answer`;
+  switch (fit) {
+    case 'Strong':
+      return `Ready to run: ${cover} and ${top}.`;
+    case 'Solid':
+      return `Playable: ${cover}, ${top}. Expect to lose some leads.`;
+    case 'Situational':
+      return `Thin: ${cover} and ${top}. It wins when the matchups fall right.`;
+    default:
+      return `Not competitive: ${cover} and ${top}. Swap at least one member.`;
+  }
 }
 
 export function difficultyFor(t: TeamSim): { difficulty: Difficulty; why: string } {
@@ -166,7 +201,9 @@ export function scoreTeam(
       accessibility: round1(accessibility),
     },
     total: round1(total),
-    fit: fitFor(total),
+    battle: round1(battleScore(coverage, consistency, safety)),
+    topUncovered,
+    fit: fitFor(battleScore(coverage, consistency, safety)),
     difficulty: d.difficulty,
     difficultyWhy: d.why,
     coveredOpponents: view.opponents.filter((id) => covered.has(id)),

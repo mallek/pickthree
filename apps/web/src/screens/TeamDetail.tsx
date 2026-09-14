@@ -8,13 +8,14 @@ import {
   StructureTag,
   Term,
   TypeChip,
+  FitTag,
   MetaTags,
   RankTag,
   TypeChips,
   useMetaRank,
   useName,
 } from '../components.tsx';
-import { costLine, ivLine, num, topPct } from '../format.ts';
+import { costLine, fitWhy, ivLine, num, topPct } from '../format.ts';
 import { useActions, useAppState, type Route } from '../state/store.tsx';
 
 const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const;
@@ -65,6 +66,7 @@ export function TeamDetail({ id }: { id: string }) {
   const structureLabel = team.structure === 'ABB' ? 'ABB line' : 'Balanced ABC';
   const a = custom ? s.analysis?.assumptions : s.recommendation?.assumptions;
   const tried = custom ? (s.analysis?.orders ?? []) : [];
+  const best = custom ? (s.recommendation?.teams[0] ?? null) : null;
   const hypothetical = custom ? (s.analysis?.hypothetical ?? []) : [];
 
   return (
@@ -78,6 +80,25 @@ export function TeamDetail({ id }: { id: string }) {
       <div className="scroll" style={{ gap: 24 }}>
         {custom ? (
           <div className="card custom-note" style={{ gap: 6 }}>
+            <div className="rating-row">
+              <FitTag fit={team.score.fit} />
+              <b>{Math.round(team.score.battle)} / 100 in battle</b>
+            </div>
+            <span className="small">
+              {fitWhy(
+                team.score.fit,
+                team.score.coveredOpponents.length,
+                team.score.coveredOpponents.length + team.score.uncoveredOpponents.length,
+                team.score.topUncovered,
+              )}
+            </span>
+            {best ? (
+              <span className="small muted">
+                Your best recommended team rates {best.score.fit.toLowerCase()} at{' '}
+                {Math.round(best.score.battle)}:{' '}
+                {best.slots.map((x) => name(x.candidate.build.speciesId)).join(', ')}.
+              </span>
+            ) : null}
             {tried.length > 1 ? (
               <>
                 <b>Order</b>

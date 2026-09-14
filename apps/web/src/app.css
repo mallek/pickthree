@@ -289,6 +289,10 @@ a {
 .fit-solid {
   background: var(--surface2);
 }
+.fit-weak {
+  background: var(--warn-tint);
+  color: var(--warn);
+}
 .fit-situational {
   border-color: var(--divider);
   color: var(--muted);
@@ -1521,6 +1525,15 @@ button.counter-row {
 }
 .league-shield {
   flex: none;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rating-row b {
+  font-size: 15px;
 }
 
 /* scan list */

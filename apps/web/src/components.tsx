@@ -263,7 +263,7 @@ export function MoveRows({
   );
 }
 
-export function FitTag({ fit }: { fit: 'Strong' | 'Solid' | 'Situational' }) {
+export function FitTag({ fit }: { fit: 'Strong' | 'Solid' | 'Situational' | 'Weak' }) {
   return <span className={`fit fit-${fit.toLowerCase()}`}>{fit} fit</span>;
 }
 
