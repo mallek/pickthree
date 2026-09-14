@@ -5,7 +5,7 @@ import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { analyzeTeam, hypotheticalSpecimen, type TeamPick } from '../src/analyze.js';
 import { buildsFor, DEFAULT_BUILD_OPTIONS } from '../src/builds/eligibility.js';
 import { toSpecimens } from '../src/collection/specimen.js';
-import { parsePokeGenieCsv } from '../src/csv/parse.js';
+import { parseCollectionCsv } from '../src/csv/parse.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
 import { REPO_ROOT, haveStaticData, loadFixtureCsv, loadStaticData } from './fixtures.js';
 
@@ -24,7 +24,7 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
   const data = loadStaticData();
   const index = new GameDataIndex(data.species, data.moves);
   const sim = new PvPokeSimulator(loadPvPokeInNode(JSON.parse(fs.readFileSync(gmPath, 'utf8'))));
-  const { specimens } = toSpecimens(parsePokeGenieCsv(loadFixtureCsv()), index);
+  const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
   const deps = { data, sim };
   const owned = specimens.filter((s) => buildsFor(s, index, DEFAULT_BUILD_OPTIONS).length > 0);
   const [a, b] = owned;

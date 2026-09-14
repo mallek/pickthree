@@ -11,6 +11,7 @@ import type {
   Species,
 } from '../src/gamedata/types.js';
 import type { League } from '../src/gamedata/league.js';
+import { GameDataIndex } from '../src/gamedata/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(here, '..', '..', '..');
@@ -18,6 +19,17 @@ export const FIXTURES_DIR = path.join(REPO_ROOT, 'fixtures');
 export const STATIC_DATA_DIR =
   process.env.PICKTHREE_DATA_OUT ?? path.join(REPO_ROOT, 'apps', 'web', 'public', 'data');
 export const PRIVATE_CSV = path.join(REPO_ROOT, 'private', 'poke_genie_export.csv');
+
+let cachedIndex: GameDataIndex | null = null;
+
+/** The game data index over the static data, built once per test run. */
+export function loadIndex(): GameDataIndex {
+  if (!cachedIndex) {
+    const d = loadStaticData();
+    cachedIndex = new GameDataIndex(d.species, d.moves);
+  }
+  return cachedIndex;
+}
 
 export function loadFixtureCsv(name = 'pokegenie-sample.csv'): string {
   return fs.readFileSync(path.join(FIXTURES_DIR, name), 'utf8');

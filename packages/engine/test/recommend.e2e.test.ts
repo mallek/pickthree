@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { toSpecimens } from '../src/collection/specimen.js';
-import { parsePokeGenieCsv } from '../src/csv/parse.js';
+import { parseCollectionCsv } from '../src/csv/parse.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
 import { recommend, verdictsFor } from '../src/recommend.js';
 import { REPO_ROOT, haveStaticData, loadFixtureCsv, loadStaticData } from './fixtures.js';
@@ -23,7 +23,7 @@ describe.skipIf(!ready)('recommend end to end', () => {
   const data = loadStaticData();
   const index = new GameDataIndex(data.species, data.moves);
   const sim = new PvPokeSimulator(loadPvPokeInNode(JSON.parse(fs.readFileSync(gmPath, 'utf8'))));
-  const { specimens, report } = toSpecimens(parsePokeGenieCsv(loadFixtureCsv()), index);
+  const { specimens, report } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
   const deps = { data, sim };
 
   it('produces ranked teams from the fixture within budget', () => {

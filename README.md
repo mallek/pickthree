@@ -16,11 +16,11 @@ Everything runs in your browser. Your collection is stored on your device and ne
 
 ## Three ways in
 
-|                                   |                                                                                                                                                                              |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Add Pokémon by hand**           | Species, the three IV bars from the appraisal screen, and the CP on the card. pick3 works out the level. Three or more and it builds teams.                                  |
-| **Build a team from any Pokémon** | Pick any three and get the full breakdown at realistic top-10% IVs. Nothing to enter, nothing to own.                                                                        |
-| **Import a Poke Genie export**    | If you have the CSV (a paid Poke Genie feature), upload it and every scan comes in at once. On Android with pick3 installed you can share the file straight from Poke Genie. |
+|                                   |                                                                                                                                                                                                                                                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Add Pokémon by hand**           | Species, the three IV bars from the appraisal screen, and the CP on the card. pick3 works out the level. Three or more and it builds teams.                                                                                                                                                     |
+| **Build a team from any Pokémon** | Pick any three and get the full breakdown at realistic top-10% IVs. Nothing to enter, nothing to own.                                                                                                                                                                                           |
+| **Import a file**                 | A Poke Genie export (a paid feature), a Calcy IV export, or a sheet of your own. pick3 reads the columns by what is in them, not by their names: it needs a name, CP and the three IVs and works out the rest. On Android with pick3 installed you can share the file straight from Poke Genie. |
 
 <p align="center">
 <img src="docs/screenshots/welcome.png" width="200" alt="Welcome">
@@ -84,8 +84,8 @@ Copy button, so a bug report can carry evidence.
    moves.
 2. **`packages/sim-pvpoke`** vendors PvPoke's battle simulator byte for byte behind a small shim. A
    golden test reproduces PvPoke's published matchup ratings exactly, 600 battles, zero misses.
-3. **`packages/engine`** is pure TypeScript with no browser dependency: CSV parsing, species and
-   form mapping, eligibility across evolution stages, IV rank against all 4096 spreads, movesets and
+3. **`packages/engine`** is pure TypeScript with no browser dependency: reading any collection
+   file by column meaning (headers as hints, values as proof), species and form mapping, eligibility across evolution stages, IV rank against all 4096 spreads, movesets and
    costs, the candidate pool, trio scoring on the matrix (ABB and ABC structures), finalist
    simulation with your exact IVs, the five-factor team score, explanations, verdicts, meta rank,
    counters, hand-built team analysis, and the scan list. A sweep test runs every released species

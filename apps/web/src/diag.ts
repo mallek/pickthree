@@ -53,7 +53,7 @@ export function sanitize(message: string): string {
     .replace(/\d{5,}/g, '[n]')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 300);
+    .slice(0, 600);
 }
 
 /** Browser and OS family only, e.g. "iOS Safari" or "Android Chrome". */

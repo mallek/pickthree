@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toSpecimens } from '../../src/collection/specimen.js';
 import { metaCounters } from '../../src/counters/counters.js';
-import { parsePokeGenieCsv } from '../../src/csv/parse.js';
+import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { facingWeight } from '../../src/gamedata/metaRank.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData } from '../fixtures.js';
@@ -18,7 +18,7 @@ describe('facing weight', () => {
 describe.skipIf(!haveStaticData())('meta counters', () => {
   const data = loadStaticData();
   const index = new GameDataIndex(data.species, data.moves);
-  const { specimens } = toSpecimens(parsePokeGenieCsv(loadFixtureCsv()), index);
+  const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
   const counters = metaCounters(data, specimens, index, { limit: 40 });
 
   it('ranks by anti-meta score, best first', () => {

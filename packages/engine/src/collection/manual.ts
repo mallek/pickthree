@@ -1,4 +1,5 @@
 import type { IVs, RawScan } from '../csv/parse.js';
+import { emptyLayout } from '../csv/layout.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import { cpFor, statsFor } from '../math/cp.js';
 import { specimenId, type ImportReport, type Specimen } from './specimen.js';
@@ -112,7 +113,7 @@ export function emptyReport(): ImportReport {
     missingIvs: { count: 0, names: [] },
     unrecognized: [],
     rowProblems: [],
-    header: { ok: true, missingRequired: [], missingOptional: [], unknown: [], columnCount: 0 },
+    layout: emptyLayout(),
     newestScan: null,
   };
 }

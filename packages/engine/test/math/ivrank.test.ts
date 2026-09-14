@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toSpecimens } from '../../src/collection/specimen.js';
-import { parsePokeGenieCsv } from '../../src/csv/parse.js';
+import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { ivRank } from '../../src/math/ivrank.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData } from '../fixtures.js';
@@ -37,7 +37,7 @@ describe.skipIf(!haveStaticData())('ivRank', () => {
   it('agrees with Poke Genie Rank # and Rank % for the fixture rows at level cap 51', () => {
     // Poke Genie ranks with a level-51 (best buddy) ceiling. Our product-only rank at cap 51 should
     // match its Rank # closely; small differences come from its rounding of stat product.
-    const parsed = parsePokeGenieCsv(loadFixtureCsv());
+    const parsed = parseCollectionCsv(loadFixtureCsv(), index);
     const { specimens } = toSpecimens(parsed, index);
     let compared = 0;
     let within5 = 0;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePokeGenieCsv } from '../../src/csv/parse.js';
+import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { mapSpecies, slug } from '../../src/mapping/mapSpecies.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData } from '../fixtures.js';
@@ -59,7 +59,7 @@ describe.skipIf(!haveStaticData())('mapSpecies', () => {
   });
 
   it('maps every distinct name/form in the sample fixture except the known unsupported one', () => {
-    const parsed = parsePokeGenieCsv(loadFixtureCsv());
+    const parsed = parseCollectionCsv(loadFixtureCsv(), index);
     const seen = new Set<string>();
     const failures: string[] = [];
     for (const row of parsed.rows) {

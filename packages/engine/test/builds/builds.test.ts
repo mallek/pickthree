@@ -3,7 +3,7 @@ import { buildCost } from '../../src/builds/cost.js';
 import { DEFAULT_BUILD_OPTIONS, buildsFor } from '../../src/builds/eligibility.js';
 import { rankingsById, recommendMoveset } from '../../src/builds/moves.js';
 import { toSpecimens, type Specimen } from '../../src/collection/specimen.js';
-import { parsePokeGenieCsv, type RawScan } from '../../src/csv/parse.js';
+import { parseCollectionCsv, type RawScan } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { evolutionCandy, evolutionCandyPath } from '../../src/tables/evolution.js';
 import { costToLevel } from '../../src/tables/powerup.js';
@@ -224,7 +224,7 @@ describe.skipIf(!haveStaticData())('evolution candy and cost', () => {
   });
 
   it('runs over the whole fixture without throwing', () => {
-    const parsed = parsePokeGenieCsv(loadFixtureCsv());
+    const parsed = parseCollectionCsv(loadFixtureCsv(), index);
     const { specimens } = toSpecimens(parsed, index);
     let builds = 0;
     for (const s of specimens) {

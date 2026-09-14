@@ -86,7 +86,8 @@ export function Welcome() {
             <div>
               <b>Get your Pokémon in</b>
               <span className="small muted">
-                Upload a Poke Genie export, add them by hand, or skip it and build from any Pokémon.
+                Upload an export or a sheet of your own, add them by hand, or skip it and build from
+                any Pokémon.
               </span>
             </div>
           </li>
@@ -119,6 +120,10 @@ export function Welcome() {
             installed you can share the CSV straight to it. Scans made with the IV appraisal screen
             open carry the IVs pick3 needs; bulk scans without it will be listed as needing a
             rescan. Poke Genie charges for the export; the other two ways in are free.
+          </p>
+          <p className="small muted">
+            Calcy IV exports and sheets of your own work too. pick3 looks for a name, CP and the
+            three IVs and works out the rest from the values, whatever the columns are called.
           </p>
         </details>
         <details onToggle={(e) => (e.currentTarget.open ? void loadScanList() : undefined)}>
@@ -181,7 +186,7 @@ export function Welcome() {
           ref={fileRef}
           className="file-input"
           type="file"
-          accept=".csv,text/csv,text/comma-separated-values,text/plain"
+          accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/comma-separated-values,text/plain"
           onChange={(e) => void onFile(e.target.files?.[0])}
         />
         <button
@@ -191,7 +196,7 @@ export function Welcome() {
           onClick={() => fileRef.current?.click()}
         >
           <i />
-          Upload Poke Genie CSV
+          Upload a CSV
         </button>
         <span className="small muted" style={{ textAlign: 'center' }}>
           No Poke Genie export? You do not need one.

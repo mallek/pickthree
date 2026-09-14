@@ -1,3 +1,4 @@
+import type { Layout } from '@pickthree/engine';
 export interface SpeciesLite {
   name: string;
   types: [PokemonType, PokemonType | 'none'];
@@ -77,7 +78,7 @@ export type WorkerResponse =
   /** A slice of the final result, so the UI can fill in while the rest computes. */
   | { id: number; kind: 'partial'; verdicts: Record<string, Verdict> }
   | { id: number; kind: 'result'; result: WorkerResult }
-  | { id: number; kind: 'error'; message: string; header?: unknown };
+  | { id: number; kind: 'error'; message: string; layout?: Layout | undefined };
 
 export type WorkerResult =
   | {

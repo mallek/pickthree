@@ -1,0 +1,151 @@
+Pokemon;CP;Attack;Defense;Stamina;Level;Shadow
+Seel;572;3;2;10;25.0;no
+Rookidee;138;7;15;14;8.0;yes
+Amaura;254;0;3;6;8.0;no
+Tyrunt;324;1;14;2;8.0;yes
+Tyrunt;324;1;7;11;8.0;yes
+Tyrunt;552;5;8;12;13.0;yes
+Tyrunt;583;14;6;15;13.0;yes
+Tyrunt;585;14;10;11;13.0;yes
+Helioptile;313;9;8;11;13.0;yes
+Helioptile;342;14;15;14;13.0;yes
+Froakie;178;0;3;3;8.0;yes
+Thundurus;1858;12;15;8;20.0;yes
+Deino;210;8;10;0;8.0;yes
+Shelmet;152;0;11;12;8.0;yes
+Axew;263;1;11;0;8.0;yes
+Axew;269;7;7;1;8.0;yes
+Axew;279;4;11;11;8.0;yes
+Axew;289;13;7;10;8.0;yes
+Axew;295;9;15;13;8.0;yes
+Giratina (Altered);1813;6;14;6;20.0;yes
+Giratina (Altered);1815;6;12;9;20.0;yes
+Giratina (Altered);1820;6;11;12;20.0;yes
+Giratina (Altered);1859;9;13;13;20.0;yes
+Giratina (Altered);1896;13;12;14;20.0;yes
+Palkia;2233;13;12;12;20.0;yes
+Snover;234;7;14;2;8.0;yes
+Stunky;414;15;14;6;13.0;yes
+Shinx;156;1;2;7;8.0;yes
+Shuppet;193;3;5;9;8.0;yes
+Wobbuffet;186;4;4;9;8.0;yes
+Hitmonchan;1273;11;11;10;20.0;yes
+Seel;193;4;15;12;8.0;yes
+Geodude (Alola);258;11;4;1;8.0;yes
+Venonat;195;5;3;15;8.0;yes
+Oddish;406;9;5;6;13.0;yes
+Vulpix (Alola);164;4;7;2;8.0;yes
+Sandslash (Alola);503;5;15;3;8.0;yes
+Sandshrew (Alola);251;9;1;0;8.0;yes
+Sandshrew (Alola);271;12;15;1;8.0;yes
+Rattata (Alola);138;6;0;14;8.0;yes
+Flamigo;801;0;12;13;11.0;no
+Sableye (Mega);804;10;15;14;15.0;no
+Rookidee;235;3;9;7;15.0;no
+Articuno (Galar);557;1;14;13;6.0;no
+Dewpider;298;14;14;12;15.0;no
+Meltan;605;7;9;11;22.0;no
+Meltan;670;2;14;9;25.0;no
+Meltan;147;0;11;3;6.0;no
+Meltan;294;2;11;12;11.0;no
+Meltan;676;12;1;6;25.0;no
+Meltan;747;9;12;15;26.0;no
+Sableye;832;15;14;12;20.0;no
+Sableye (Mega);804;10;15;14;15.0;no
+Snorlax;2332;12;4;2;27.0;no
+Corsola (Galar);559;3;3;12;15.0;no
+Mewtwo (Armored);1786;14;12;11;20.0;no
+Mewtwo (Armored);1809;15;15;12;20.0;no
+Mewtwo (Armored);1779;13;14;10;20.0;no
+Altaria (Mega);2316;14;15;11;26.0;no
+Lilligant (Hisui);1378;;;;20.0;no
+Articuno;2404;10;13;13;28.5;no
+Minun;1064;7;4;1;25.0;no
+Lugia;3222;15;14;11;31.5;no
+Eevee;509;6;15;15;18.0;no
+Chikorita;381;;;;16.0;no
+Chikorita;478;;;;20.5;no
+Chikorita;531;;;;23.0;no
+Chikorita;757;;;;33.5;no
+Chikorita;487;;;;20.0;no
+Meganium;2098;;;;34.5;no
+Chikorita;727;;;;31.5;no
+Chikorita;363;;;;14.5;no
+Chikorita;684;;;;28.0;no
+Typhlosion;1680;10;15;11;21.0;no
+Totodile;403;8;8;6;14.0;no
+Golett;595;;;;19.0;no
+Gimmighoul (Roaming);452;15;10;10;15.0;no
+Palkia (Origin);2279;10;11;10;20.0;no
+Pumpkaboo (Small);797;10;15;5;25.0;no
+Nickit;175;2;2;6;11.0;no
+Wailmer;253;4;11;1;7.0;no
+Lickilicky;887;4;5;7;14.0;no
+Lickitung;787;14;13;11;20.0;no
+Lickitung;959;0;4;2;29.0;no
+Lickilicky;2308;14;15;14;36.0;no
+Sandslash (Alola);1357;11;15;14;20.0;no
+Sandslash (Alola);1386;15;14;15;20.0;no
+Sandshrew (Alola);259;5;15;3;8.0;yes
+Sandshrew (Alola);439;15;15;12;12.0;no
+Sandshrew (Alola);485;11;0;1;15.0;no
+Sandshrew;534;6;9;1;17.0;no
+Sandshrew (Alola);562;15;4;12;16.0;no
+Sandshrew (Alola);708;13;10;12;20.0;no
+Sandshrew (Alola);708;11;13;13;20.0;no
+Sandshrew (Alola);723;13;14;14;20.0;no
+Sandshrew (Alola);726;14;12;15;20.0;no
+Sandslash (Alola);1383;15;13;15;20.0;no
+Sandshrew (Alola);728;13;15;15;20.0;no
+Deino;220;14;0;15;8.0;no
+Deino;592;13;14;14;20.0;no
+Deino;595;15;11;15;20.0;no
+Deino;720;5;7;1;28.0;no
+Sobble;246;6;12;1;9.0;no
+Wooper (Paldea);264;13;13;13;15.0;no
+Stunfisk (Galar);27;1;13;13;1.0;no
+Nickit;452;14;14;9;23.0;no
+Corsola (Galar);812;10;11;14;20.0;no
+Corsola (Galar);842;;;;20.0;no
+Enamorus (Incarnate);1925;14;15;10;20.0;no
+Gyarados (Mega);2683;15;15;13;20.0;no
+Regirock;2186;15;10;10;25.0;no
+Stunfisk (Galar);1380;11;15;13;23.0;no
+Stunfisk (Galar);680;4;15;8;12.0;no
+Stunfisk (Galar);1207;14;11;12;20.0;no
+Stunfisk (Galar);27;6;2;11;1.0;no
+Stunfisk (Galar);1188;11;13;11;20.0;no
+Stunfisk (Galar);1378;12;13;12;23.0;no
+Tatsugiri;1554;14;14;14;20.0;no
+Morpeko;1078;11;15;12;20.0;no
+Swampert (Mega);3783;14;14;15;30.5;no
+Samurott (Hisui);1563;13;10;15;20.0;no
+Lunala;2279;13;14;13;20.0;no
+Shelmet;152;0;11;12;8.0;yes
+Deerling;953;5;13;11;35.0;no
+Octillery;1429;5;13;12;23.0;no
+Raichu (Alola);1306;15;15;15;20.0;no
+Indeedee (Male);1396;15;15;15;20.0;no
+Mewtwo (Mega Y);3673;15;15;15;20.0;no
+Garchomp (Mega);3078;14;15;13;20.0;no
+Jolteon;1627;14;11;15;20.0;no
+Aggron (Mega);2331;13;14;11;20.0;no
+Zacian (Hero);2149;12;14;13;20.0;no
+Tapu Lele;2433;;;;25.0;no
+Tornadus (Therian);1803;;;;20.0;no
+Landorus (Therian);2194;;;;20.0;no
+Palkia (Origin);2885;10;11;15;25.0;no
+Zygarde (10%);987;;;;15.0;no
+Giratina (Altered);1909;15;12;12;20.0;no
+Zamazenta (Hero);2100;;;;20.0;no
+Enamorus (Therian);2325;;;;25.0;no
+Dialga (Origin);2282;12;11;13;20.0;no
+Xurkitree;2199;;;;20.0;no
+Salamence (Mega);2830;10;15;15;20.0;no
+Palkia (Origin);2343;14;13;14;20.0;no
+Ursaring;2470;;;;31.0;no
+Rhydon;2845;;;;35.0;no
+Tyranitar;3410;;;;34.0;no
+Mewtwo (Mega Y);3617;12;15;11;20.0;no
+Machamp;3012;15;15;15;39.0;no
+Mewtwo (Mega Y);3616;11;13;14;20.0;no

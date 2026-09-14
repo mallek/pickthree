@@ -7,7 +7,7 @@ export interface ErrorReport {
   ua: string;
 }
 
-const FIELD = 200;
+const FIELD = 600;
 
 function clip(v: unknown): string {
   return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, FIELD) : '';

@@ -1,4 +1,4 @@
-import type { HeaderReport } from '../csv/schema.js';
+import type { Layout } from '../csv/layout.js';
 import type { IVs, ParsedCsv, RawScan, RowProblem } from '../csv/parse.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import { mapSpecies } from '../mapping/mapSpecies.js';
@@ -28,7 +28,7 @@ export interface ImportReport {
   missingIvs: { count: number; names: string[] };
   unrecognized: { name: string; form: string; shadow: boolean; reason: string; count: number }[];
   rowProblems: RowProblem[];
-  header: HeaderReport;
+  layout: Layout;
   newestScan: string | null;
 }
 
@@ -79,7 +79,9 @@ export function toSpecimens(
   for (const row of parsed.rows) {
     const shadow = row.shadowCode === 1;
     const purified = row.shadowCode === 2;
-    const mapped = mapSpecies(row.name, row.form, shadow, index);
+    const mapped = row.speciesId
+      ? ({ ok: true, speciesId: row.speciesId, viaOverride: false } as const)
+      : mapSpecies(row.name, row.form, shadow, index);
     if (!mapped.ok) {
       const key = `${row.name}|${row.form}|${shadow}`;
       const existing = unrecognized.get(key);
@@ -146,7 +148,7 @@ export function toSpecimens(
       missingIvs: { count: missingIvNames.length, names: missingIvNames },
       unrecognized: [...unrecognized.values()],
       rowProblems: parsed.problems,
-      header: parsed.header,
+      layout: parsed.layout,
       newestScan: newest,
     },
   };

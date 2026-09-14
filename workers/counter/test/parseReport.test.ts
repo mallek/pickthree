@@ -15,7 +15,7 @@ describe('error report parsing', () => {
     expect(r!.ua).toBe('iOS Safari installed');
     expect(r!.at).toMatch(/^\d{4}-/);
     const long = parseReport({ build: 'dev', stage: 'boot', message: 'x'.repeat(1000) });
-    expect(long!.message.length).toBe(200);
+    expect(long!.message.length).toBe(600);
   });
 
   it('drops anything that is not the shape the app sends', () => {

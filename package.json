@@ -24,6 +24,7 @@
     "data:build": "npm -w @pickthree/data run build",
     "data:refresh": "npm -w @pickthree/data run refresh",
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
+    "fixtures:derive": "tsx fixtures/derive-fixtures.ts",
     "web:screens": "node apps/web/scripts/screens.mjs",
     "counter:deploy": "npm -w @pickthree/counter run deploy",
     "brand:lockup": "node apps/web/scripts/lockup.mjs"

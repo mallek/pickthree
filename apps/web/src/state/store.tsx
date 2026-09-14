@@ -1,6 +1,7 @@
 import type {
   CounterEntry,
   ImportReport,
+  Layout,
   League,
   ManualInput,
   ManualResult,
@@ -27,8 +28,24 @@ import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { arrivedFromShare } from '../share.ts';
 import { recordError, setErrorReportsEnabled } from '../diag.ts';
+import { describeLayoutLine, emptyLayoutValue } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
+
+/**
+ * A layout the resolver was unsure about, or one it had to work out from values while a header
+ * row was present, goes to the diagnostics log (and the anonymous report channel): structure
+ * only, so we learn which export formats exist without being told.
+ */
+function noteLayout(layout: Layout | undefined, outcome: 'ok' | 'failed'): void {
+  if (!layout || layout.columnCount === 0) {
+    return;
+  }
+  const guessed = layout.hasHeader && layout.columns.some((c) => c.via !== 'header');
+  if (outcome === 'failed' || layout.confidence < 0.9 || guessed) {
+    recordError('import-layout', `${outcome} ${describeLayoutLine(layout)}`);
+  }
+}
 
 export type Route =
   | { screen: 'welcome' }
@@ -476,6 +493,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       dispatch({ type: 'import-start' });
       try {
         const { specimens, report } = await h.importCsv(text);
+        noteLayout(report.layout, 'ok');
         const collection: StoredCollection = {
           key: 'current',
           specimens,
@@ -495,6 +513,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
               ? `Could not read that file: ${e.message}`
               : 'Could not read that file.';
         recordError('import', e);
+        if (e instanceof ImportFailed) {
+          noteLayout(e.layout, 'failed');
+        }
         dispatch({ type: 'import-error', message });
         return false;
       }
@@ -627,7 +648,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     missingIvs: { count: 0, names: [] },
     unrecognized: [],
     rowProblems: [],
-    header: { ok: true, missingRequired: [], missingOptional: [], unknown: [], columnCount: 0 },
+    layout: emptyLayoutValue(),
     newestScan: null,
   };
   const saveSpecimens = useCallback(async (specimens: Specimen[], fileName: string | null) => {

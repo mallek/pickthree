@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toSpecimens, fnv1a } from '../../src/collection/specimen.js';
-import { parsePokeGenieCsv } from '../../src/csv/parse.js';
+import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData } from '../fixtures.js';
 
@@ -15,7 +15,7 @@ describe('fnv1a', () => {
 describe.skipIf(!haveStaticData())('toSpecimens', () => {
   const data = loadStaticData();
   const index = new GameDataIndex(data.species, data.moves);
-  const parsed = parsePokeGenieCsv(loadFixtureCsv());
+  const parsed = parseCollectionCsv(loadFixtureCsv(), index);
   const { specimens, report } = toSpecimens(parsed, index);
 
   it('accounts for every scan', () => {

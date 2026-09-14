@@ -1,4 +1,4 @@
-import type { MetaRank } from '@pickthree/engine';
+import type { Layout, MetaRank } from '@pickthree/engine';
 import type { Cost, IvRankResult, PokemonType, Species } from '@pickthree/engine';
 
 const REGIONAL: Record<string, string> = {
@@ -141,4 +141,70 @@ export function fitWhy(
     default:
       return `Not competitive: ${cover} and ${top}. Swap at least one member.`;
   }
+}
+
+/** Import summary line: what the file was read as. Mirrors the engine's Layout without importing it. */
+export function layoutLine(layout: Layout | undefined): string | null {
+  if (!layout || layout.columnCount === 0) {
+    return null;
+  }
+  const label =
+    layout.format === 'poke-genie'
+      ? 'a Poke Genie export'
+      : layout.format === 'calcy-iv'
+        ? 'a Calcy IV export'
+        : layout.hasHeader
+          ? 'a sheet'
+          : 'a sheet with no header row';
+  return `Read as ${label}: ${layout.columnCount} columns, ${layout.columns.length} used.`;
+}
+
+/** One sentence per thing the file did not carry, so a wrong guess is visible before you trust the teams. */
+export function layoutNotes(layout: Layout | undefined, hasShadows: boolean): string[] {
+  if (!layout || layout.columnCount === 0) {
+    return [];
+  }
+  const missing = new Set(layout.missing);
+  const notes: string[] = [];
+  if (layout.ivOrderAssumed) {
+    notes.push(
+      'The three IV columns had no labels; pick3 read them as attack, defense, stamina in that order.',
+    );
+  }
+  if (missing.has('levelMin')) {
+    notes.push('Level was worked out from CP and IVs.');
+  }
+  if (missing.has('shadow') && !hasShadows) {
+    notes.push('No shadow column, so every Pokémon is treated as normal.');
+  }
+  if (missing.has('fastMove') && missing.has('chargedMove1')) {
+    notes.push('No moves, so second-move costs assume nothing is unlocked.');
+  }
+  if (missing.has('scanDate')) {
+    notes.push('No scan dates, so the Scanned recently filter is off.');
+  }
+  return notes;
+}
+
+/** One line for the diagnostics log: structure only, never values. Mirrors the engine's describeLayout. */
+export function describeLayoutLine(layout: Layout): string {
+  const cols = layout.columns
+    .map((c) => `${c.concept}=${c.header ?? `col${c.index + 1}`}<${c.via[0]}>`)
+    .join(' ');
+  const unused = layout.unused.length > 0 ? ` unused=${layout.unused.join('|')}` : '';
+  return `format=${layout.format} cols=${layout.columnCount} header=${layout.hasHeader ? 1 : 0} conf=${layout.confidence.toFixed(2)} ${cols}${unused}`;
+}
+
+export function emptyLayoutValue(): Layout {
+  return {
+    format: 'sheet',
+    delimiter: ',',
+    hasHeader: true,
+    columnCount: 0,
+    columns: [],
+    unused: [],
+    missing: [],
+    ivOrderAssumed: false,
+    confidence: 1,
+  };
 }

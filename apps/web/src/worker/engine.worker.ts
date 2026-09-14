@@ -7,7 +7,7 @@ import {
   manualSpecimen,
   metaCounters,
   metaRanks,
-  parsePokeGenieCsv,
+  parseCollectionCsv,
   recommend,
   scanList,
   toSpecimens,
@@ -195,7 +195,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       return;
     }
     if (msg.kind === 'import') {
-      const parsed = parsePokeGenieCsv(msg.text);
+      const parsed = parseCollectionCsv(msg.text, env.index);
       const { specimens, report } = toSpecimens(parsed, env.index);
       post({ id: msg.id, kind: 'result', result: { kind: 'import', specimens, report } });
       return;
@@ -254,7 +254,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const header = err instanceof ImportError ? err.header : undefined;
-    post({ id: msg.id, kind: 'error', message, header });
+    const layout = err instanceof ImportError ? err.layout : undefined;
+    post({ id: msg.id, kind: 'error', message, layout });
   }
 };

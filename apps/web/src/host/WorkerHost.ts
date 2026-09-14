@@ -5,6 +5,7 @@ import type {
   CounterEntry,
   CountersOptions,
   ImportReport,
+  Layout,
   ManualInput,
   ManualResult,
   ProgressEvent,
@@ -30,12 +31,12 @@ interface Pending {
 }
 
 export class ImportFailed extends Error {
-  readonly header: unknown;
+  readonly layout: Layout;
 
-  constructor(message: string, header: unknown) {
+  constructor(message: string, layout: Layout) {
     super(message);
     this.name = 'ImportFailed';
-    this.header = header;
+    this.layout = layout;
   }
 }
 
@@ -78,7 +79,7 @@ export class WorkerHost implements ComputeHost {
     }
     this.pending.delete(msg.id);
     if (msg.kind === 'error') {
-      p.reject(msg.header ? new ImportFailed(msg.message, msg.header) : new Error(msg.message));
+      p.reject(msg.layout ? new ImportFailed(msg.message, msg.layout) : new Error(msg.message));
       return;
     }
     p.resolve(msg.result);

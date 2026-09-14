@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PokemonToken, useName } from '../components.tsx';
+import { layoutLine, layoutNotes } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 interface Row {
@@ -40,10 +41,10 @@ export function Report() {
     {
       n: r.missingIvs.count,
       label: 'Skipped for missing IVs',
-      sub: 'Poke Genie saved a scan without the appraisal',
+      sub: 'The scan had no IV appraisal',
       fix:
         r.missingIvs.count > 0
-          ? `Rescan these ${r.missingIvs.count} in Poke Genie with the IV appraisal screen open, then upload again.`
+          ? `Rescan these ${r.missingIvs.count} with the IV appraisal screen open, then upload again.`
           : undefined,
       names: [...new Set(r.missingIvs.names)].slice(0, 12),
       ids: collection.specimens
@@ -67,11 +68,15 @@ export function Report() {
       n: r.rowProblems.length,
       label: 'Lines that could not be read',
       sub: 'Malformed rows in the file',
-      fix: 'These lines were skipped. Re-export from Poke Genie if the count looks wrong.',
+      fix: 'These lines were skipped. Export the file again if the count looks wrong.',
       names: r.rowProblems.slice(0, 8).map((p) => `line ${p.line}: ${p.detail}`),
     });
   }
-  const optional = r.header.missingOptional.length;
+  const readAs = layoutLine(r.layout);
+  const notes = layoutNotes(
+    r.layout,
+    collection.specimens.some((s) => s.shadow),
+  );
   return (
     <div className="screen">
       <div className="scroll" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}>
@@ -81,6 +86,7 @@ export function Report() {
             {r.recognized} Pokémon ready to build teams from
           </h2>
           {collection.fileName ? <p className="meta">{collection.fileName}</p> : null}
+          {readAs ? <p className="meta">{readAs}</p> : null}
         </div>
         <div className="report">
           {rows.map((row, i) => {
@@ -133,16 +139,14 @@ export function Report() {
             );
           })}
         </div>
-        {optional > 0 ? (
-          <p className="small muted">
-            {optional} optional column{optional === 1 ? '' : 's'} missing from this export (
-            {r.header.missingOptional.slice(0, 4).join(', ')}
-            {optional > 4 ? ', ...' : ''}). Results still work; some details may be blank.
+        {notes.map((n) => (
+          <p className="small muted" key={n}>
+            {n}
           </p>
-        ) : null}
+        ))}
         <p className="small muted">
-          IVs are the three hidden stats Poke Genie reads from the appraisal screen. Without them,
-          PickThree cannot rank a Pokémon.
+          IVs are the three hidden stats a scanner reads from the appraisal screen. Without them,
+          pick3 cannot rank a Pokémon.
         </p>
       </div>
       <div className="bottom-actions">
