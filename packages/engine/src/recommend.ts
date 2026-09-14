@@ -304,6 +304,7 @@ export function verdictsFor(
         metaSize: deps.data.meta.length,
         metaRank: null,
         formNote: null,
+        ineligible: null,
       };
     }
     if (onProgress && (i % 10 === 0 || i === specimens.length - 1)) {

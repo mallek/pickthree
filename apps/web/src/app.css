@@ -1573,16 +1573,68 @@ button.counter-row {
   gap: 6px;
   padding: 2px 0 4px;
 }
-.sort-toggle {
-  align-self: flex-end;
+.sort-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+}
+.sort-toggle,
+.filters-hint {
   border: 0;
   background: transparent;
   color: var(--accent-text);
   font: inherit;
   font-size: 12px;
   font-weight: 500;
-  padding: 0;
-  min-height: 24px;
+  padding: 10px 0;
+  min-height: 44px;
+  margin: -6px 0;
+}
+.filters-hint {
+  color: var(--warn);
+}
+/* the head scrolls away; only the search bar stays pinned */
+.page-head.flow {
+  position: static;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.page-head.flow.under {
+  padding-top: 8px;
+  border-bottom: 1px solid var(--divider);
+}
+.sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg);
+  padding: 8px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chips.tight .chip {
+  padding: 0 11px;
+  font-size: 12.5px;
+}
+/* a soft edge says the pill row keeps going */
+.chips {
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+}
+.spec-row.banned {
+  background: rgba(217, 84, 84, 0.1);
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  width: auto;
+}
+.ban-flag {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d95454;
 }
 
 /* scan list */

@@ -32,6 +32,8 @@ export interface Verdict {
   metaRank: MetaRank | null;
   /** What the stage's battle form change does, or null. */
   formNote: string | null;
+  /** For Not eligible: barred by the league's rules, or simply over the cap. */
+  ineligible: 'banned' | 'over-cap' | null;
 }
 
 export interface VerdictDeps {
@@ -132,6 +134,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     metaSize,
     metaRank: null,
     formNote: null,
+    ineligible: null,
   };
   const name = fullName(s.speciesId, deps.index);
   if (!s.ivs) {
@@ -145,11 +148,16 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   const build = bestBuild(builds, deps.overall);
   if (!build) {
     const sp = deps.index.species(s.speciesId);
-    const over =
-      sp && !allowedInLeague(sp, deps.league)
-        ? `is not allowed in ${deps.league.title}`
-        : `is over ${deps.league.cp} CP and cannot be powered down`;
-    return { ...base, label: 'Not eligible', line: `This ${name} ${over}.` };
+    const banned = Boolean(sp && !allowedInLeague(sp, deps.league));
+    const over = banned
+      ? `is not allowed in ${deps.league.title}`
+      : `is over ${deps.league.cp} CP and cannot be powered down`;
+    return {
+      ...base,
+      label: 'Not eligible',
+      ineligible: banned ? 'banned' : 'over-cap',
+      line: `This ${name} ${over}.`,
+    };
   }
   const moveset = recommendMoveset(
     build.speciesId,

@@ -16,12 +16,12 @@ import { metaTags } from '../format.ts';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
-const VERDICTS: VerdictLabel[] = [
-  'Ready to use',
-  'Worth building',
-  'Wait for better IVs',
-  'Not eligible',
-  'Needs rescan',
+/** Quick pills: short labels so all four fit without scrolling. Ineligible rows hide by default. */
+const PILLS: { label: VerdictLabel; short: string }[] = [
+  { label: 'Ready to use', short: 'Ready' },
+  { label: 'Worth building', short: 'Worth it' },
+  { label: 'Wait for better IVs', short: 'Wait for IVs' },
+  { label: 'Needs rescan', short: 'Rescan' },
 ];
 const ORDER: Record<VerdictLabel, number> = {
   'Ready to use': 0,
@@ -57,7 +57,7 @@ export function Collection() {
   const [query, setQuery] = useSticky('collection.query', '');
   // Verdict pills are a multi-select; nothing picked means everything.
   const [verdicts, setVerdicts] = useSticky<VerdictLabel[]>('collection.verdicts', []);
-  const [eligibleOnly, setEligibleOnly] = useSticky('collection.eligible', false);
+  const [showIneligible, setShowIneligible] = useSticky('collection.showIneligible', false);
   const [shadowsOnly, setShadowsOnly] = useSticky('collection.shadows', false);
   const [recentOnly, setRecentOnly] = useSticky('collection.recent', false);
   const [metaOnly, setMetaOnly] = useSticky('collection.meta', false);
@@ -110,7 +110,7 @@ export function Collection() {
       if (verdicts.length > 0 && (!v || !verdicts.includes(v.label))) {
         return false;
       }
-      if (eligibleOnly && v?.label === 'Not eligible') {
+      if (!showIneligible && v?.label === 'Not eligible') {
         return false;
       }
       if (shadowsOnly && !sp.shadow) {
@@ -150,7 +150,7 @@ export function Collection() {
     s.verdicts,
     query,
     verdicts,
-    eligibleOnly,
+    showIneligible,
     shadowsOnly,
     recentOnly,
     metaOnly,
@@ -193,10 +193,11 @@ export function Collection() {
   }
   const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta rank', name: 'Name' };
   const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
-  const settingsOn = eligibleOnly || shadowsOnly || recentOnly || metaOnly || !grouped;
+  const filtersOn = [showIneligible, shadowsOnly, recentOnly, metaOnly].filter(Boolean).length;
+  const settingsOn = filtersOn > 0 || !grouped;
   return (
     <div className="screen">
-      <div className="page-head">
+      <div className="page-head flow">
         <div className="between">
           <h2>Collection</h2>
           <span className="row" style={{ gap: 10, alignItems: 'center' }}>
@@ -215,9 +216,13 @@ export function Collection() {
           </span>
         </div>
         <LeagueSwitcher compact />
+      </div>
+      <div className="sticky-bar">
         <div className="search-row">
           <input
             className="search"
+            type="search"
+            enterKeyHint="search"
             placeholder="Search your Pokémon"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -240,10 +245,10 @@ export function Collection() {
           <div className="filters-panel">
             <button
               type="button"
-              className={`mini-chip${eligibleOnly ? ' on' : ''}`}
-              onClick={() => setEligibleOnly((x) => !x)}
+              className={`mini-chip${showIneligible ? ' on' : ''}`}
+              onClick={() => setShowIneligible((x) => !x)}
             >
-              Eligible only
+              Show ineligible
             </button>
             <button
               type="button"
@@ -275,27 +280,42 @@ export function Collection() {
             </button>
           </div>
         ) : null}
-        <div className="chips">
-          {VERDICTS.map((v) => (
+      </div>
+      <div className="page-head flow under">
+        <div className="chips tight">
+          {PILLS.map((pill) => (
             <Chip
-              key={v}
-              on={verdicts.includes(v)}
+              key={pill.label}
+              on={verdicts.includes(pill.label)}
               onClick={() =>
-                setVerdicts((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]))
+                setVerdicts((cur) =>
+                  cur.includes(pill.label)
+                    ? cur.filter((x) => x !== pill.label)
+                    : [...cur, pill.label],
+                )
               }
             >
-              {v}
+              {pill.short}
             </Chip>
           ))}
         </div>
-        <button
-          type="button"
-          className="sort-toggle"
-          onClick={() => setSort((x) => nextSort[x])}
-          aria-label={`Sort by ${sortLabels[sort]}, tap to change`}
-        >
-          Sort: {sortLabels[sort]} <span aria-hidden="true">&#8645;</span>
-        </button>
+        <div className="sort-row">
+          {filtersOn > 0 ? (
+            <button type="button" className="filters-hint" onClick={() => setSettingsOpen(true)}>
+              {filtersOn} {filtersOn === 1 ? 'filter' : 'filters'} on
+            </button>
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            className="sort-toggle"
+            onClick={() => setSort((x) => nextSort[x])}
+            aria-label={`Sort by ${sortLabels[sort]}, tap to change`}
+          >
+            Sort: {sortLabels[sort]} <span aria-hidden="true">&#8645;</span>
+          </button>
+        </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
         {s.verdictsLoading ? (
@@ -319,12 +339,16 @@ export function Collection() {
           const nextLabel = nextBest ? rankLabel(nextBest, s.verdicts[nextBest.id]) : null;
           return (
             <div className="spec-group" key={g.key}>
-              <a className="spec-row" href={hashFor({ screen: 'specimen', id: sp.id })}>
+              <a
+                className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}`}
+                href={hashFor({ screen: 'specimen', id: sp.id })}
+              >
                 <PokemonToken speciesId={sp.speciesId} size={44} />
                 <span style={{ minWidth: 0 }}>
                   <span className="spec-name">
                     {name(sp.speciesId).replace(/^Shadow /, '')}
                     {sp.shadow ? <span className="shadow-flag">Shadow</span> : null}
+                    {v?.ineligible === 'banned' ? <span className="ban-flag">Banned</span> : null}
                   </span>
                   <span className="meta" style={{ display: 'block' }}>
                     CP {sp.cp} · {rankLabel(sp, v)}
