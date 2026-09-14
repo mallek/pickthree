@@ -6,7 +6,7 @@ import type {
   Structure,
   VerdictLabel,
 } from '@pickthree/engine';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { initialOf, metaTags, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { useAppState } from './state/store.tsx';
@@ -40,6 +40,44 @@ export function useSticky<T>(key: string, initial: T): [T, (next: T | ((cur: T) 
     });
   };
   return [value, set];
+}
+
+/**
+ * Remembers how far a screen was scrolled and puts it back on return, once `ready` says the
+ * list is rendered. Tapping into a Pokemon and coming back lands where you left off.
+ */
+export function useScrollMemory(key: string, ready: boolean): void {
+  const restored = useRef(false);
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = (): void => {
+      if (frame) {
+        return;
+      }
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        sticky.set(key, window.scrollY);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, [key]);
+  // A passive effect so it runs after the router's scroll-to-top on route change.
+  useEffect(() => {
+    if (restored.current || !ready) {
+      return;
+    }
+    restored.current = true;
+    const y = sticky.get(key);
+    if (typeof y === 'number' && y > 0) {
+      window.scrollTo(0, y);
+    }
+  }, [key, ready]);
 }
 
 export function useMetaRank(): (id: string) => MetaRank | undefined {

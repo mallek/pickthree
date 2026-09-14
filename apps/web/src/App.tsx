@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
 import { Collection } from './screens/Collection.tsx';
@@ -116,6 +117,12 @@ function renderScreen(r: Route) {
 export function App() {
   const s = useAppState();
   const r = s.route;
+  // Each screen opens at the top. A screen that remembers its place (the Collection) scrolls
+  // back after this runs.
+  const routeKey = JSON.stringify(r);
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [routeKey]);
   const showTabs = r.screen !== 'welcome' && r.screen !== 'report' && r.screen !== 'add';
   const screen = renderScreen(r);
   return (

@@ -9,6 +9,7 @@ import {
   VerdictChip,
   useMetaRank,
   useName,
+  useScrollMemory,
   useSticky,
   NoCollection,
 } from '../components.tsx';
@@ -200,6 +201,7 @@ export function Collection() {
   const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
   const filtersOn = [showIneligible, shadowsOnly, recentOnly, metaOnly].filter(Boolean).length;
   const settingsOn = filtersOn > 0 || !grouped;
+  useScrollMemory('collection.scroll', groups.length > 0 && !s.verdictsLoading);
   return (
     <div className="screen">
       <div className="page-head flow">
