@@ -16,8 +16,7 @@ import { metaTags } from '../format.ts';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
-const VERDICTS: ('All' | VerdictLabel)[] = [
-  'All',
+const VERDICTS: VerdictLabel[] = [
   'Ready to use',
   'Worth building',
   'Wait for better IVs',
@@ -56,7 +55,8 @@ export function Collection() {
   const name = useName();
   const metaRank = useMetaRank();
   const [query, setQuery] = useSticky('collection.query', '');
-  const [verdict, setVerdict] = useSticky<'All' | VerdictLabel>('collection.verdict', 'All');
+  // Verdict pills are a multi-select; nothing picked means everything.
+  const [verdicts, setVerdicts] = useSticky<VerdictLabel[]>('collection.verdicts', []);
   const [eligibleOnly, setEligibleOnly] = useSticky('collection.eligible', false);
   const [shadowsOnly, setShadowsOnly] = useSticky('collection.shadows', false);
   const [recentOnly, setRecentOnly] = useSticky('collection.recent', false);
@@ -107,7 +107,7 @@ export function Collection() {
       if (q && !nm.includes(q)) {
         return false;
       }
-      if (verdict !== 'All' && v?.label !== verdict) {
+      if (verdicts.length > 0 && (!v || !verdicts.includes(v.label))) {
         return false;
       }
       if (eligibleOnly && v?.label === 'Not eligible') {
@@ -149,7 +149,7 @@ export function Collection() {
     s.collection,
     s.verdicts,
     query,
-    verdict,
+    verdicts,
     eligibleOnly,
     shadowsOnly,
     recentOnly,
@@ -277,7 +277,13 @@ export function Collection() {
         ) : null}
         <div className="chips">
           {VERDICTS.map((v) => (
-            <Chip key={v} on={verdict === v} onClick={() => setVerdict(v)}>
+            <Chip
+              key={v}
+              on={verdicts.includes(v)}
+              onClick={() =>
+                setVerdicts((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]))
+              }
+            >
               {v}
             </Chip>
           ))}
