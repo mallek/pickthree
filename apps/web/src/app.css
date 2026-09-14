@@ -1574,7 +1574,7 @@ button.counter-row {
   padding: 2px 0 4px;
 }
 .sort-toggle {
-  align-self: flex-start;
+  align-self: flex-end;
   border: 0;
   background: transparent;
   color: var(--accent-text);
