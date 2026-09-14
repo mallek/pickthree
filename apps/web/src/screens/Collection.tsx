@@ -224,7 +224,6 @@ export function Collection() {
       </div>
       <div className="sticky-bar">
         <div className="search-row">
-          <img className="brand-mark" src="/mark.svg" alt="pick3" />
           <div className="search-wrap">
             <input
               className="search"
