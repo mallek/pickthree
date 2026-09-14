@@ -100,7 +100,9 @@ export function buildGameData(input: unknown): GameData {
       thirdMoveCost: typeof p.thirdMoveCost === 'number' ? p.thirdMoveCost : 0,
       levelCap: p.levelCap ?? null,
       levelFloor: p.levelFloor ?? null,
-      greatLeagueIneligible: banned.has(p.speciesId),
+      // GO bans the species; PvPoke's list names the base ids, so shadows inherit it.
+      greatLeagueIneligible:
+        banned.has(p.speciesId) || banned.has(p.speciesId.replace(/_shadow$/, '')),
       defaultIVs: { ...(p.defaultIVs ?? {}) },
       formChange: p.formChange
         ? {

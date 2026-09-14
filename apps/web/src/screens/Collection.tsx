@@ -34,7 +34,12 @@ const ORDER: Record<VerdictLabel, number> = {
 export function rankLabel(
   s: Specimen,
   verdict:
-    { build: { ivRank: { rank: number; total: number } } | null; label: VerdictLabel } | undefined,
+    | {
+        build: { ivRank: { rank: number; total: number } } | null;
+        label: VerdictLabel;
+        ineligible?: 'banned' | 'over-cap' | null;
+      }
+    | undefined,
 ): string {
   if (!s.ivs) {
     return 'IVs unknown';
@@ -43,7 +48,7 @@ export function rankLabel(
     return 'Ranking...';
   }
   if (verdict.label === 'Not eligible' || !verdict.build) {
-    return 'Over the CP cap';
+    return verdict.ineligible === 'banned' ? 'Banned in this league' : 'Over the CP cap';
   }
   const r = verdict.build.ivRank;
   return `Top ${Math.max(1, Math.round((r.rank / r.total) * 100))}%`;
@@ -336,7 +341,8 @@ export function Collection() {
           const v = s.verdicts[sp.id];
           const isOpen = open.has(g.key);
           const nextBest = g.others[0];
-          const nextLabel = nextBest ? rankLabel(nextBest, s.verdicts[nextBest.id]) : null;
+          const nextRaw = nextBest ? rankLabel(nextBest, s.verdicts[nextBest.id]) : null;
+          const nextLabel = nextRaw && nextRaw.startsWith('Top ') ? nextRaw : null;
           return (
             <div className="spec-group" key={g.key}>
               <a

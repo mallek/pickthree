@@ -195,8 +195,8 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       ) / 10;
     perfectLine =
       perfectDelta <= 0
-        ? `A perfect one would not win any more of the ${metaSize} meta matchups.`
-        : `A perfect one would win ${perfectDelta} more of ${metaSize} meta matchups (${productGap}% more stat product).`;
+        ? `The best IV spread would not win any more of the ${metaSize} meta matchups.`
+        : `The best IV spread would win ${perfectDelta} more of ${metaSize} meta matchups (${productGap}% more stat product).`;
   }
 
   const alreadyBuilt = build.level <= s.level.max + 0.5 && build.stageOffset === 0;
