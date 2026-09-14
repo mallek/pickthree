@@ -50,47 +50,29 @@ export function useLeague(): League {
 export function LeagueSwitcher({ compact }: { compact?: boolean }) {
   const s = useAppState();
   const { setLeague } = useActions();
-  const leagues = s.data?.leagues ?? [];
+  const leagues = (s.data?.leagues ?? []).filter((l) => l.kind === 'standard');
   const current = s.settings.league;
-  const standard = leagues.filter((l) => l.kind === 'standard');
-  const special = leagues.filter((l) => l.kind === 'special');
   return (
     <div
       className={`league-switcher${compact ? ' compact' : ''}`}
       data-league={s.leagueInfo?.id ?? ''}
+      role="radiogroup"
+      aria-label="League"
     >
-      <div className="seg" role="radiogroup" aria-label="League">
-        {standard.map((l) => (
-          <button
-            type="button"
-            key={l.id}
-            role="radio"
-            aria-checked={current === l.id}
-            aria-label={l.title}
-            className={current === l.id ? 'on' : ''}
-            onClick={() => setLeague(l.id)}
-          >
-            <LeagueShield id={l.id} />
-            {l.short}
-          </button>
-        ))}
-      </div>
-      {special.length > 0 ? (
-        <div className="chips league-cups">
-          {special.map((l) => (
-            <button
-              type="button"
-              key={l.id}
-              className={`chip${current === l.id ? ' on' : ''}`}
-              onClick={() => setLeague(l.id)}
-              title={l.title}
-            >
-              <LeagueShield id={l.id} size={13} />
-              {l.short}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {leagues.map((l) => (
+        <button
+          type="button"
+          key={l.id}
+          role="radio"
+          aria-checked={current === l.id}
+          aria-label={l.title}
+          className={current === l.id ? 'on' : ''}
+          onClick={() => setLeague(l.id)}
+        >
+          <LeagueShield id={l.id} />
+          {l.short}
+        </button>
+      ))}
     </div>
   );
 }

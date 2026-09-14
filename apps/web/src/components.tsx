@@ -24,6 +24,24 @@ export function useName(): (id: string) => string {
   };
 }
 
+const sticky = new Map<string, unknown>();
+
+/**
+ * useState that survives leaving and returning to a screen within the session, so filters and
+ * sort on the Collection do not reset when you tap into a Pokémon and come back.
+ */
+export function useSticky<T>(key: string, initial: T): [T, (next: T | ((cur: T) => T)) => void] {
+  const [value, setValue] = useState<T>(() => (sticky.has(key) ? (sticky.get(key) as T) : initial));
+  const set = (next: T | ((cur: T) => T)): void => {
+    setValue((cur) => {
+      const v = typeof next === 'function' ? (next as (cur: T) => T)(cur) : next;
+      sticky.set(key, v);
+      return v;
+    });
+  };
+  return [value, set];
+}
+
 export function useMetaRank(): (id: string) => MetaRank | undefined {
   const { leagueInfo } = useAppState();
   return (id: string) => leagueInfo?.metaRanks[id];

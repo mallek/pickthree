@@ -98,7 +98,7 @@ const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch((
 console.log(`  ${stats}`);
 
 console.log('ultra league');
-await page.click('.league-switcher .seg button:nth-child(2)');
+await page.click('.league-switcher button:nth-child(2)');
 await page.waitForFunction(
   () =>
     document.querySelector('.league-switcher[data-league="ultra"]') &&
@@ -108,7 +108,7 @@ await page.waitForFunction(
 );
 console.log(`  ultra teams rendered at ${Date.now() - t0} ms`);
 await shot('19-teams-ultra', false);
-await page.click('.league-switcher .seg button:nth-child(1)');
+await page.click('.league-switcher button:nth-child(1)');
 await page.waitForFunction(
   () =>
     document.querySelector('.league-switcher[data-league="great"]') &&

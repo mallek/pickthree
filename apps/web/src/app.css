@@ -1484,56 +1484,75 @@ button.counter-row {
   background: rgba(63, 125, 31, 0.16);
 }
 
-/* league switcher */
+/* league switcher: the three open leagues, full width */
 .league-switcher {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  overflow: hidden;
 }
-.league-switcher .seg button {
-  padding: 7px 12px;
+.league-switcher button {
+  flex: 1;
+  padding: 8px 6px;
   font-size: 13px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   white-space: nowrap;
   color: var(--faint);
   border: 0;
   background: transparent;
   font: inherit;
+  font-weight: 500;
 }
-.league-switcher .seg button + button {
+.league-switcher button + button {
   border-left: 1px solid var(--divider);
 }
-.league-switcher .seg button.on {
+.league-switcher button.on {
   color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--accent);
   background: var(--accent-tint);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
-.league-switcher.compact .seg button {
-  padding: 5px 10px;
+.league-switcher.compact button {
+  padding: 6px 4px;
   font-size: 12px;
-}
-.league-cups {
-  margin: 0;
-  padding: 0;
-}
-.league-cups .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 .league-shield {
   flex: none;
 }
 
-.rating-row {
+/* collection sort */
+.sort-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.rating-row b {
-  font-size: 15px;
+.sort-seg {
+  display: flex;
+  flex: 1;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.sort-seg button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+.sort-seg button + button {
+  border-left: 1px solid var(--divider);
+}
+.sort-seg button.on {
+  color: var(--accent-text);
+  background: var(--accent-tint);
 }
 
 /* scan list */

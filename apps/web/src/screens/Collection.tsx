@@ -1,5 +1,5 @@
 import type { Specimen, VerdictLabel } from '@pickthree/engine';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Chip,
   HundoTag,
@@ -9,6 +9,7 @@ import {
   VerdictChip,
   useMetaRank,
   useName,
+  useSticky,
   NoCollection,
 } from '../components.tsx';
 import { metaTags } from '../format.ts';
@@ -43,7 +44,7 @@ export function rankLabel(
     return 'Ranking...';
   }
   if (verdict.label === 'Not eligible' || !verdict.build) {
-    return 'Over 1500 CP';
+    return 'Over the CP cap';
   }
   const r = verdict.build.ivRank;
   return `Top ${Math.max(1, Math.round((r.rank / r.total) * 100))}%`;
@@ -54,15 +55,18 @@ export function Collection() {
   const { navigate, loadVerdicts } = useActions();
   const name = useName();
   const metaRank = useMetaRank();
-  const [query, setQuery] = useState('');
-  const [verdict, setVerdict] = useState<'All' | VerdictLabel>('All');
-  const [eligibleOnly, setEligibleOnly] = useState(false);
-  const [shadowsOnly, setShadowsOnly] = useState(false);
-  const [recentOnly, setRecentOnly] = useState(false);
-  const [metaOnly, setMetaOnly] = useState(false);
-  const [sort, setSort] = useState<'verdict' | 'rank' | 'meta' | 'name'>('verdict');
-  const [grouped, setGrouped] = useState(true);
-  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const [query, setQuery] = useSticky('collection.query', '');
+  const [verdict, setVerdict] = useSticky<'All' | VerdictLabel>('collection.verdict', 'All');
+  const [eligibleOnly, setEligibleOnly] = useSticky('collection.eligible', false);
+  const [shadowsOnly, setShadowsOnly] = useSticky('collection.shadows', false);
+  const [recentOnly, setRecentOnly] = useSticky('collection.recent', false);
+  const [metaOnly, setMetaOnly] = useSticky('collection.meta', false);
+  const [sort, setSort] = useSticky<'verdict' | 'rank' | 'meta' | 'name'>(
+    'collection.sort',
+    'verdict',
+  );
+  const [grouped, setGrouped] = useSticky('collection.grouped', true);
+  const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
 
   useEffect(() => {
     if (
@@ -186,8 +190,7 @@ export function Collection() {
       </div>
     );
   }
-  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta rank', name: 'Name' };
-  const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
+  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta', name: 'Name' };
   return (
     <div className="screen">
       <div className="page-head">
@@ -259,14 +262,23 @@ export function Collection() {
           >
             Group same Pokémon
           </button>
-          <button
-            type="button"
-            className="btn-ghost"
-            style={{ marginLeft: 'auto', fontSize: 12, minHeight: 32 }}
-            onClick={() => setSort((x) => nextSort[x])}
-          >
-            Sort: {sortLabels[sort]} &#8645;
-          </button>
+        </div>
+        <div className="sort-row">
+          <span className="meta">Sort</span>
+          <div className="sort-seg" role="radiogroup" aria-label="Sort">
+            {(['verdict', 'rank', 'meta', 'name'] as const).map((k) => (
+              <button
+                type="button"
+                key={k}
+                role="radio"
+                aria-checked={sort === k}
+                className={sort === k ? 'on' : ''}
+                onClick={() => setSort(k)}
+              >
+                {sortLabels[k]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>

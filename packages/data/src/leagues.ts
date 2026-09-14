@@ -78,7 +78,10 @@ export function readLeagues(): League[] {
     exclude: all.exclude ?? [],
     metaSize: 0,
   }));
-  const formats = readJson<RawFormat[]>(FORMATS_PATH);
+  // Special cups are built only when asked for. The rules work, but the app does not yet know
+  // enough about them (megas in the Mega cups, for one) to recommend with a straight face.
+  const formats =
+    process.env.PICKTHREE_SPECIAL_CUPS === '1' ? readJson<RawFormat[]>(FORMATS_PATH) : [];
   for (const f of formats) {
     if (!f.showFormat || f.hideRankings || f.cup === 'custom' || f.cup === 'all') {
       continue;
