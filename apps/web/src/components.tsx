@@ -6,7 +6,7 @@ import type {
   Structure,
   VerdictLabel,
 } from '@pickthree/engine';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { initialOf, metaTags, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { useAppState } from './state/store.tsx';
@@ -176,7 +176,10 @@ export function Mark({ height = 22 }: { height?: number }) {
 /** The one way a type is shown anywhere in the app: a small chip in the type's color. */
 export function TypeChip({ type, small }: { type: PokemonType; small?: boolean | undefined }) {
   return (
-    <span className={`tchip${small ? ' tchip-sm' : ''}`} style={{ background: typeColor(type) }}>
+    <span
+      className={`tchip${small ? ' tchip-sm' : ''}`}
+      style={{ '--c': typeColor(type), '--t': `var(--type-${type}-ink)` } as CSSProperties}
+    >
       {typeLabel(type)}
     </span>
   );
