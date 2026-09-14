@@ -224,15 +224,28 @@ export function Collection() {
       </div>
       <div className="sticky-bar">
         <div className="search-row">
-          <input
-            className="search"
-            type="search"
-            enterKeyHint="search"
-            placeholder="Search your Pokémon"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            inputMode="search"
-          />
+          <img className="brand-mark" src="/mark.svg" alt="pick3" />
+          <div className="search-wrap">
+            <input
+              className="search"
+              type="search"
+              enterKeyHint="search"
+              placeholder="Search your Pokémon"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              inputMode="search"
+            />
+            {query ? (
+              <button
+                type="button"
+                className="search-clear"
+                aria-label="Clear search"
+                onClick={() => setQuery('')}
+              >
+                &times;
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
             className={`cog${settingsOn ? ' active' : ''}${settingsOpen ? ' open' : ''}`}
@@ -246,45 +259,6 @@ export function Collection() {
             </svg>
           </button>
         </div>
-        {settingsOpen ? (
-          <div className="filters-panel">
-            <button
-              type="button"
-              className={`mini-chip${showIneligible ? ' on' : ''}`}
-              onClick={() => setShowIneligible((x) => !x)}
-            >
-              Show ineligible
-            </button>
-            <button
-              type="button"
-              className={`mini-chip${shadowsOnly ? ' on' : ''}`}
-              onClick={() => setShadowsOnly((x) => !x)}
-            >
-              Shadows
-            </button>
-            <button
-              type="button"
-              className={`mini-chip${recentOnly ? ' on' : ''}`}
-              onClick={() => setRecentOnly((x) => !x)}
-            >
-              Scanned recently
-            </button>
-            <button
-              type="button"
-              className={`mini-chip${metaOnly ? ' on' : ''}`}
-              onClick={() => setMetaOnly((x) => !x)}
-            >
-              Top 50 meta
-            </button>
-            <button
-              type="button"
-              className={`mini-chip${grouped ? ' on' : ''}`}
-              onClick={() => setGrouped((x) => !x)}
-            >
-              Group same Pokémon
-            </button>
-          </div>
-        ) : null}
       </div>
       <div className="page-head flow under">
         <div className="chips tight">
@@ -419,6 +393,56 @@ export function Collection() {
           </p>
         ) : null}
       </div>
+      {settingsOpen ? (
+        <>
+          <div
+            className="overlay clear"
+            onClick={() => setSettingsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="popover" role="dialog" aria-label="List settings">
+            <div className="between" style={{ marginBottom: 4 }}>
+              <b>List settings</b>
+              <button type="button" className="btn-ghost" onClick={() => setSettingsOpen(false)}>
+                Done
+              </button>
+            </div>
+            {(
+              [
+                [
+                  'Show ineligible',
+                  'Pokémon over the cap or banned here',
+                  showIneligible,
+                  setShowIneligible,
+                ],
+                ['Shadows only', 'Just the Shadow Pokémon', shadowsOnly, setShadowsOnly],
+                ['Scanned recently', 'Last two weeks of scans', recentOnly, setRecentOnly],
+                [
+                  'Top 50 meta',
+                  'Only species in the top 50 for this league',
+                  metaOnly,
+                  setMetaOnly,
+                ],
+                ['Group same Pokémon', 'One row per species, best first', grouped, setGrouped],
+              ] as const
+            ).map(([label, sub, on, set]) => (
+              <button
+                type="button"
+                className="toggle"
+                key={label}
+                onClick={() => set((x) => !x)}
+                aria-pressed={on}
+              >
+                <span>
+                  <span style={{ display: 'block', fontSize: 15 }}>{label}</span>
+                  <span className="meta">{sub}</span>
+                </span>
+                <span className={`switch${on ? ' on' : ''}`} />
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
