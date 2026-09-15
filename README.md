@@ -5,7 +5,7 @@
 Find your best Pokémon GO battle team. Which Pokémon to use, in what order, with which moves, and
 what it costs.
 
-Live at **[pick3.demome.com](https://pick3.demome.com)**. Free, no account, nothing uploaded.
+Live at **[pick3.gg](https://pick3.gg)**. Free, no account, nothing uploaded.
 
 pick3 takes the Pokémon you own and, using [PvPoke](https://github.com/pvpoke/pvpoke)'s game data,
 rankings and battle simulator, tells you which three to run, what order to run them in, which moves to teach, what to shield, what the build costs in Stardust and Candy, what it

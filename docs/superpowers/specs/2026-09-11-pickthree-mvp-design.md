@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 Status: implemented 2026-09-12 (plans 1 to 3); live at pick3.demome.com
-Domain: pick3.demome.com (CNAME to GitHub Pages; pickthree.gg was priced at $100 and passed on)
+Domain: pick3.gg since 2026-09-15 (Dynadot; apex A/AAAA to GitHub Pages). Was pick3.demome.com, which now redirects.
 Repo: github.com/mallek/pickthree, public, MIT
 
 ## 1. Summary

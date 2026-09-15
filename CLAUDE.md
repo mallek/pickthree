@@ -27,7 +27,7 @@ npm run lint && npm run typecheck
 npm run web:screens                # puppeteer screenshots of every screen (preview server on :4173)
 ```
 
-Live site: pick3.demome.com (GitHub Pages, deployed by .github/workflows/pages.yml on push to main).
+Live site: pick3.gg (GitHub Pages, deployed by .github/workflows/pages.yml on push to main).
 Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/plans/.
 
 ## Rules
