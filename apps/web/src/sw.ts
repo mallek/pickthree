@@ -13,7 +13,7 @@ import {
   precacheAndRoute,
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { SHARE_CACHE, SHARE_KEY, SHARE_LANDING, SHARE_PATH } from './share-protocol.ts';
 
 declare let self: ServiceWorkerGlobalScope;
@@ -67,6 +67,17 @@ self.addEventListener('fetch', (event) => {
 
 // Workbox plugin types predate exactOptionalPropertyTypes, hence the casts below.
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
+
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/data/sprites/'),
+  new CacheFirst({
+    cacheName: 'pick3-sprites',
+    plugins: [
+      new ExpirationPlugin({ maxEntries: 1600, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ] as unknown as WorkboxPlugin[],
+  }),
+);
 
 registerRoute(
   ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/data/'),

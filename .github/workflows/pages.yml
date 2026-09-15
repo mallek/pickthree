@@ -23,7 +23,9 @@ jobs:
       - name: Cache PvPoke checkout
         uses: actions/cache@v4
         with:
-          path: packages/data/.pvpoke
+          path: |
+            packages/data/.pvpoke
+            packages/data/.cache
           key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
       - name: Cache built game data
         id: data

@@ -134,6 +134,20 @@ export function Sheet() {
                 </span>
               ))}
             </div>
+            <button
+              type="button"
+              className="toggle"
+              onClick={() =>
+                updateSettings((cur) => ({ ...cur, sprites: !(cur.sprites !== false) }))
+              }
+              aria-pressed={s.settings.sprites !== false}
+            >
+              <span>
+                <span style={{ display: 'block' }}>Pokémon pictures</span>
+                <span className="meta">Off shows a coloured initial instead</span>
+              </span>
+              <span className={`switch${s.settings.sprites !== false ? ' on' : ''}`} />
+            </button>
           </div>
           <div className="divider-top meta stack" style={{ paddingTop: 14, gap: 4 }}>
             <span>

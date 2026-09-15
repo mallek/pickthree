@@ -132,18 +132,35 @@ export function PokemonToken({
 }) {
   const sp = useSpecies()(speciesId);
   const name = useName()(speciesId);
+  const spritesOn = useAppState().settings.sprites !== false;
+  const [broken, setBroken] = useState(false);
   const types: [PokemonType, PokemonType | 'none'] = sp?.types ?? ['normal', 'none'];
   const a = typeColor(types[0]);
   const b = types[1] === 'none' ? a : typeColor(types[1]);
   const background = types[1] === 'none' ? a : `linear-gradient(135deg, ${a} 50%, ${b} 50%)`;
+  const picture = spritesOn && !broken;
   return (
     <span
-      className="token"
+      className={`token${picture ? ' has-sprite' : ''}`}
       title={title ?? name}
       aria-label={name}
       style={{ width: size, height: size, background, fontSize: Math.round(size * 0.36) }}
     >
-      {showInitial ? initialOf(name) : ''}
+      {picture ? (
+        <img
+          className="sprite"
+          src={`/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp`}
+          alt=""
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+          onError={() => setBroken(true)}
+        />
+      ) : showInitial ? (
+        initialOf(name)
+      ) : (
+        ''
+      )}
     </span>
   );
 }

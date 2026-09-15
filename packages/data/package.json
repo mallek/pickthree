@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@pickthree/engine": "0.0.0",
-    "@pickthree/sim-pvpoke": "0.0.0"
+    "@pickthree/sim-pvpoke": "0.0.0",
+    "sharp": "0.35.4"
   }
 }

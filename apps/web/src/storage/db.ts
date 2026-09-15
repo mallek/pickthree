@@ -23,6 +23,8 @@ export interface Settings {
   excludedSpecimenIds: string[];
   /** League id in play; absent in older saves means Great League. */
   league?: string;
+  /** Pokémon pictures on the tokens. Absent in older saves means on. */
+  sprites?: boolean;
   /** Anonymous error reports to the counter worker. Absent in older saves means on. */
   errorReports?: boolean;
 }

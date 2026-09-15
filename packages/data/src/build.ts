@@ -5,6 +5,7 @@ import { writeGameData } from './build-gamedata.js';
 import { writeManifest } from './build-manifest.js';
 import { writeMatrix } from './build-matrix.js';
 import { writeLeagueRankings } from './build-rankings.js';
+import { writeSprites } from './build-sprites.js';
 import { readLeagues } from './leagues.js';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { readRawGameMaster } from './build-gamedata.js';
@@ -17,6 +18,12 @@ async function main(): Promise<void> {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   const data = writeGameData(OUTPUT_DIR);
   console.log(`gamedata: ${data.species.length} species, ${data.moves.length} moves`);
+  if (process.env.PICKTHREE_SKIP_SPRITES !== '1') {
+    const sprites = await writeSprites(OUTPUT_DIR, data.species);
+    console.log(
+      `sprites: ${sprites.written} written, ${sprites.fellBack.length} on the base picture, ${sprites.missing.length} missing`,
+    );
+  }
   const leagues = readLeagues();
   let matrixCounts = { candidates: 0, opponents: 0, scenarios: 0 };
   const sim =

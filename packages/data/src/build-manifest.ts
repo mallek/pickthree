@@ -16,7 +16,10 @@ export function writeManifest(outDir: string, args: ManifestArgs): DataManifest 
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        walk(p);
+        // pictures are fetched by species id, not listed
+        if (entry.name !== 'sprites' || dir !== outDir) {
+          walk(p);
+        }
       } else if (entry.name !== 'data-manifest.json') {
         files.push(path.relative(outDir, p).split(path.sep).join('/'));
       }

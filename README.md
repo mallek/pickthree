@@ -116,4 +116,4 @@ live under `docs/superpowers/`.
 MIT. PvPoke data and simulator code are used under the MIT license, copyright 2019 pvpoke. See
 `packages/sim-pvpoke/LICENSE-pvpoke`.
 
-pick3 is not affiliated with Niantic, Nintendo, The Pokémon Company, Poke Genie, or PvPoke.
+Pokémon pictures come from the [PokeAPI sprites](https://github.com/PokeAPI/sprites) collection and can be turned off in settings. pick3 is not affiliated with Niantic, Nintendo, The Pokémon Company, Poke Genie, PokeAPI, or PvPoke.
