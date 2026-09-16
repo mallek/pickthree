@@ -1,6 +1,6 @@
 # Your meta: log the opponents you face and let them weigh the advice
 
-Date: 2026-09-16. Status: approved in chat, spec under review.
+Date: 2026-09-16. Status: approved 2026-09-16, plan in progress.
 
 ## Why
 
