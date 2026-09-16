@@ -10,7 +10,7 @@ import { useActions, useAppState } from '../state/store.tsx';
 export function Welcome() {
   const { importing, importError, boot, bootError, collection, scanList, leagueInfo } =
     useAppState();
-  const { importCsv, navigate, loadScanList } = useActions();
+  const { importCsv, importLog, navigate, loadScanList } = useActions();
   const fileRef = useRef<HTMLInputElement>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState('');
@@ -38,6 +38,12 @@ export function Welcome() {
   const loadSample = async (): Promise<void> => {
     const res = await fetch('/fixtures/pokegenie-sample.csv');
     const content = await res.text();
+    const log = await fetch('/fixtures/battle-log-sample.json')
+      .then((r) => r.text())
+      .catch(() => null);
+    if (log) {
+      await importLog(log).catch(() => undefined);
+    }
     await importCsv(content, 'sample collection');
   };
 

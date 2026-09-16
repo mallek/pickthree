@@ -44,6 +44,7 @@ Dependency direction: `apps/web -> engine -> BattleSimulator interface <- sim-pv
 4. Leagues come from PvPoke `formats.json` + `cups/*.json`; `engine/gamedata/league.ts` mirrors PvPoke's cup include/exclude rules.
    Special cups are behind `PICKTHREE_SPECIAL_CUPS=1`. `PICKTHREE_SKIP_SPRITES=1` and `PICKTHREE_SKIP_MATRIX=1` shorten local builds.
 5. `data-refresh.yml` runs weekly: bumps the lock, syncs vendor files, runs the golden test, opens a PR.
+6. `packages/data/seasons.json` is the hand-kept Go Battle League season list, copied to `public/data/seasons.json`. `data-refresh.yml` opens an issue when the newest season is older than 90 days.
 
 ### Simulator (`packages/sim-pvpoke`, ADR 001)
 
@@ -65,6 +66,7 @@ builds/     eligibility (league, XL, shadow, elite TM, budget), moves, cost tabl
 search/     candidatePool from matrix -> generateTrios (ABB and ABC structures) -> simulateFinalists with real IVs
 score/      team score; explain/ turns it into sentences
 verdicts/   per-specimen "worth building" verdicts; counters/ anti-meta scores; scan/ in-game search strings
+yourmeta/   battle log -> season window -> facing profile (blended weights + outsiders) -> recommend, analyze, counters
 ```
 
 `host/ComputeHost.ts` is the interface the UI talks to (importCsv, recommend, verdicts, counters, scanList, analyze, manual).
@@ -75,8 +77,8 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `main.tsx` registers the PWA and mounts `App.tsx`. State is one reducer in `state/store.tsx`, exposed through `useAppState` and `useActions`.
 - `host/WorkerHost.ts` implements `ComputeHost` over `worker/engine.worker.ts` using the request/response union in `host/protocol.ts` (progress, partial, result, error).
 - The worker boots once (game data + gamemaster + PvPoke bundle) and fetches a league bundle (rankings, meta, matrix) lazily per league.
-- `storage/db.ts`: IndexedDB `pickthree` v1 with `collection` and `settings` stores. Settings fields added later are optional with a documented default for old saves.
-- Screens in `screens/`: Welcome (import, scan list), Report, Teams, TeamDetail, Collection, Specimen, Counters, Build, AddPokemon, Sheet (filters, appearance, diagnostics).
+- `storage/db.ts`: IndexedDB `pickthree` v2 with `collection`, `settings` and `battles` (one record per set, indexed by league) stores. Settings fields added later are optional with a documented default for old saves.
+- Screens in `screens/`: Welcome (import, scan list), Report, Teams, TeamDetail, Collection, Specimen, Counters, Build, AddPokemon, YourMeta, NewSet, LogBattle, Sheet (settings: filters, league, your meta, appearance, diagnostics).
 - `sw.ts`: app shell precached, `/data/*` stale-while-revalidate, `/data/sprites/*` cache-first, Web Share Target POST `/share` parks the CSV in a cache and the app imports it on `/?share=1`. Updates are prompt-mode via `update.ts` and `UpdateToast`.
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.
 - CSP is a meta tag in `index.html`. `connect-src` allows only self and the counter worker; fonts come from Google Fonts.
@@ -114,4 +116,5 @@ Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/p
 - Vendored PvPoke files under `packages/sim-pvpoke/vendor/` are verbatim. Do not edit them; fix the shim or adapter instead. Bumps go through `pvpoke.lock.json` and the golden test.
 - PvPoke rankings are an input, not truth. Every result carries its assumptions.
 - The collection never leaves the device. The only outbound calls are the anonymous hit counter and opt-out error reports, both free of collection data. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
+- The battle log never leaves the device either. Export and import are files the player handles.
 - Stage explicit paths when committing. Never `git add -A`.

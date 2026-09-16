@@ -63,7 +63,7 @@ await shot('a5-build-picker-empty', false);
 await go('#/add', '.search');
 await shot('a6-add', false);
 await go('#/teams', '.tabs');
-await page.click('.tabs .tab:nth-child(4)');
+await page.click('.head-cog');
 await page.waitForSelector('.sheet');
 await shot('a7-sheet-empty');
 
@@ -86,7 +86,7 @@ await shot('b5-counters');
 await go('#/build', '.pick-slot');
 await shot('b6-build', false);
 await go('#/teams', '.tabs');
-await page.click('.tabs .tab:nth-child(4)');
+await page.click('.head-cog');
 await page.waitForSelector('.sheet');
 await shot('b7-sheet');
 await page.emulateMediaFeatures([

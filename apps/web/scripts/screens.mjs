@@ -153,6 +153,27 @@ await page.click('.page-head > .chips:not(.league-cups) .chip:nth-child(3)');
 await new Promise((r) => setTimeout(r, 300));
 await shot('09-counters-own', false);
 
+console.log('your meta');
+await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.set-card', { timeout: 60_000 });
+await page.waitForSelector('.faced-row');
+await shot('20-your-meta', false);
+
+console.log('log a battle');
+await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.result-row');
+await page.$$eval('.recent-token', (els) => {
+  els[0]?.click();
+  els[1]?.click();
+});
+await new Promise((r) => setTimeout(r, 300));
+await shot('21-log-battle', false);
+
+console.log('new set');
+await page.goto(`${base}/#/meta/new`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.opp-slot');
+await shot('22-new-set', false);
+
 console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-slot');

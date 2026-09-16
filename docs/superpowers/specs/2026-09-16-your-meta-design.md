@@ -1,6 +1,6 @@
 # Your meta: log the opponents you face and let them weigh the advice
 
-Date: 2026-09-16. Status: approved 2026-09-16, plan in progress.
+Date: 2026-09-16. Status: approved 2026-09-16, implemented per docs/superpowers/plans/2026-09-16-your-meta.md.
 
 ## Why
 
@@ -264,10 +264,9 @@ Top to bottom:
    season list is stale: "The season list may be out of date. Start fresh?" with the button.
 2. The open set, if any: team tokens, five slots showing logged battles (W, L, or tanked, plus
    opponent tokens), "Log a battle", "End set". Without an open set: "New set".
-3. Most faced this season: species rows with sprite, name, faced count, record. Tapping a row
-   opens the Counters view filtered to that species (existing screen, existing links to
-   owned and can-build). Display controls (sort by faced or by worst record) live in a cog
-   popover on this screen, per the placement rule.
+3. Most faced this season: species rows with sprite, name, faced count, record. Rows are not
+   links in v1; Counters has no per-species filter yet. Parked. Display controls (sort by
+   faced or by worst record) live in a cog popover on this screen, per the placement rule.
 4. Your teams this season: team rows with record. Tapping opens the Build screen with that team
    picked, so the analysis is one tap away.
 5. Earlier seasons, collapsed by default, one section per bucket with the same two lists.

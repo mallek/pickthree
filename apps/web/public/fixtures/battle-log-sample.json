@@ -1,0 +1,126 @@
+{
+  "app": "pick3",
+  "kind": "battle-log",
+  "version": 1,
+  "exportedAt": "2026-09-16T00:00:00.000Z",
+  "sets": [
+    {
+      "id": "sample-set-1",
+      "league": "great",
+      "startedAt": "2026-09-14T18:00:00.000Z",
+      "team": { "species": ["tinkaton", "azumarill", "corsola_galarian"] },
+      "closed": true,
+      "battles": [
+        {
+          "id": "sample-1-1",
+          "at": "2026-09-14T18:04:00.000Z",
+          "opponents": ["tinkaton", "clodsire", "feraligatr"],
+          "result": "win",
+          "tanked": false
+        },
+        {
+          "id": "sample-1-2",
+          "at": "2026-09-14T18:09:00.000Z",
+          "opponents": ["dragonite_shadow", "azumarill"],
+          "result": "loss",
+          "tanked": false
+        },
+        {
+          "id": "sample-1-3",
+          "at": "2026-09-14T18:14:00.000Z",
+          "opponents": [],
+          "result": null,
+          "tanked": true
+        },
+        {
+          "id": "sample-1-4",
+          "at": "2026-09-14T18:19:00.000Z",
+          "opponents": ["tinkaton", "dragonite_shadow"],
+          "result": "loss",
+          "tanked": false
+        },
+        {
+          "id": "sample-1-5",
+          "at": "2026-09-14T18:24:00.000Z",
+          "opponents": ["corsola_galarian", "clodsire", "tinkaton"],
+          "result": "win",
+          "tanked": false
+        }
+      ]
+    },
+    {
+      "id": "sample-set-2",
+      "league": "great",
+      "startedAt": "2026-09-15T19:00:00.000Z",
+      "team": { "species": ["tinkaton", "azumarill", "corsola_galarian"] },
+      "closed": true,
+      "battles": [
+        {
+          "id": "sample-2-1",
+          "at": "2026-09-15T19:04:00.000Z",
+          "opponents": ["dragonite_shadow"],
+          "result": "loss",
+          "tanked": false
+        },
+        {
+          "id": "sample-2-2",
+          "at": "2026-09-15T19:09:00.000Z",
+          "opponents": ["azumarill", "tinkaton"],
+          "result": "win",
+          "tanked": false
+        },
+        {
+          "id": "sample-2-3",
+          "at": "2026-09-15T19:14:00.000Z",
+          "opponents": ["feraligatr", "clodsire"],
+          "result": "win",
+          "tanked": false
+        },
+        {
+          "id": "sample-2-4",
+          "at": "2026-09-15T19:19:00.000Z",
+          "opponents": ["tinkaton"],
+          "result": "loss",
+          "tanked": false
+        },
+        {
+          "id": "sample-2-5",
+          "at": "2026-09-15T19:24:00.000Z",
+          "opponents": ["azumarill", "dragonite_shadow", "corsola_galarian"],
+          "result": "win",
+          "tanked": false
+        }
+      ]
+    },
+    {
+      "id": "sample-set-3",
+      "league": "great",
+      "startedAt": "2026-09-16T07:00:00.000Z",
+      "team": { "species": ["feraligatr", "morpeko_full_belly", "stunfisk_galarian"] },
+      "closed": false,
+      "battles": [
+        {
+          "id": "sample-3-1",
+          "at": "2026-09-16T07:04:00.000Z",
+          "opponents": ["tinkaton", "azumarill"],
+          "result": "win",
+          "tanked": false
+        },
+        {
+          "id": "sample-3-2",
+          "at": "2026-09-16T07:09:00.000Z",
+          "opponents": ["clodsire"],
+          "result": "loss",
+          "tanked": false
+        },
+        {
+          "id": "sample-3-3",
+          "at": "2026-09-16T07:14:00.000Z",
+          "opponents": [],
+          "result": null,
+          "tanked": true
+        }
+      ]
+    }
+  ]
+}
