@@ -679,7 +679,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       dispatch({ type: 'counters-done', counters });
     } catch (e) {
       recordError('counters', e);
-      dispatch({ type: 'counters-done', counters: null });
+      dispatch({
+        type: 'counters-done',
+        counters: { entries: [], facing: 'Counters could not be computed', blended: false, battles: 0 },
+      });
     }
   }, []);
 
@@ -909,14 +912,18 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [serialized, applySets],
   );
 
-  const forget = useCallback(async () => {
-    await storage.forget();
-    // The 'forget' reducer case resets sets to [] the same way 'league-start' does; keep the
-    // ref in lockstep so a set started right after forgetting does not resurrect deleted data.
-    setsRef.current = [];
-    dispatch({ type: 'forget' });
-    window.location.hash = '#/';
-  }, []);
+  const forget = useCallback(
+    () =>
+      serialized(async () => {
+        await storage.forget();
+        // The 'forget' reducer case resets sets to [] the same way 'league-start' does; keep the
+        // ref in lockstep so a set started right after forgetting does not resurrect deleted data.
+        setsRef.current = [];
+        dispatch({ type: 'forget' });
+        window.location.hash = '#/';
+      }),
+    [serialized],
+  );
 
   const actions = useMemo<Actions>(
     () => ({

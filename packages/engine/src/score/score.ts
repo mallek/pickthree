@@ -173,8 +173,10 @@ export function scoreTeam(
   const consistency = wins === 0 ? 0 : (held / wins) * 100;
 
   // Safety: the switch should not have hard losses; nobody should be exposed to the top of the meta.
+  // Safety and consistency are matrix-only per the spec, unlike coverage, so appended outsiders
+  // (beyond view.opponents) never count toward hard losses here.
   const sw = t.slots[1];
-  const hardLosses = sw.results.filter((r) => r.rating < 300).length;
+  const hardLosses = sw.results.slice(0, view.opponents.length).filter((r) => r.rating < 300).length;
   const topUncovered = view.opponents.slice(0, 10).filter((id) => !covered.has(id)).length;
   const safety = Math.max(0, 100 - hardLosses * 20 - topUncovered * 10);
 

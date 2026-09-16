@@ -59,6 +59,8 @@ export function opponentSpec(m: MetaEntry, role: Role): SimPokemonSpec {
 }
 
 const memo = new Map<string, SlotResult[]>();
+/** The opponent list the memo was built against, so a new one evicts the old entries. */
+let memoOpponents = '';
 
 function slotKey(c: Candidate, role: Role, meta: MetaEntry[]): string {
   const opp = meta.map((m) => m.speciesId).join(',');
@@ -108,6 +110,13 @@ export function simulateFinalists(
   onProgress?: (done: number, total: number) => void,
 ): TeamSim[] {
   void index;
+  // One opponent list at a time keeps the memo bounded in a long-lived worker: a new league or
+  // meta group evicts the previous one's entries instead of accumulating them forever.
+  const key = meta.map((m) => m.speciesId).join(',');
+  if (key !== memoOpponents) {
+    memo.clear();
+    memoOpponents = key;
+  }
   const out: TeamSim[] = [];
   drafts.forEach((d, i) => {
     const slots = d.slots.map((c, s) => simulateSlot(c, d.roles[s] as Role, sim, meta, opts)) as [

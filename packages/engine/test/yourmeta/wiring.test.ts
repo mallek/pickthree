@@ -81,6 +81,13 @@ describe.skipIf(!ready)('your meta wiring', () => {
       }
       const all = [...team.score.coveredOpponents, ...team.score.uncoveredOpponents];
       expect(all).toContain(outsider);
+      // Safety is matrix-only: the outsider appended past the meta group must not move it.
+      const hardLosses = team.slots[1].sim.results
+        .slice(0, data.meta.length)
+        .filter((r) => r.rating < 300).length;
+      expect(team.score.factors.safety).toBe(
+        Math.max(0, 100 - hardLosses * 20 - team.score.topUncovered * 10),
+      );
     }
   });
 

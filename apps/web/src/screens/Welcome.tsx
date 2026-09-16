@@ -35,14 +35,59 @@ export function Welcome() {
     };
   }, []);
 
-  const loadSample = async (): Promise<void> => {
+  // Moves every battle `at` and set `startedAt` forward so the newest battle lands a minute ago,
+  // keeping the sample inside whatever season is current instead of expiring against the calendar.
+  const shiftLogToNow = (text: string): string => {
+    try {
+      const data = JSON.parse(text) as {
+        sets?: Array<{ startedAt?: string; battles?: Array<{ at?: string }> }>;
+      };
+      const sets = Array.isArray(data.sets) ? data.sets : [];
+      let newest = -Infinity;
+      for (const set of sets) {
+        for (const battle of set.battles ?? []) {
+          const t = typeof battle.at === 'string' ? Date.parse(battle.at) : NaN;
+          if (!Number.isNaN(t) && t > newest) {
+            newest = t;
+          }
+        }
+      }
+      if (newest === -Infinity) {
+        return text;
+      }
+      const shift = Date.now() - 60_000 - newest;
+      for (const set of sets) {
+        if (typeof set.startedAt === 'string') {
+          const t = Date.parse(set.startedAt);
+          if (!Number.isNaN(t)) {
+            set.startedAt = new Date(t + shift).toISOString();
+          }
+        }
+        for (const battle of set.battles ?? []) {
+          if (typeof battle.at === 'string') {
+            const t = Date.parse(battle.at);
+            if (!Number.isNaN(t)) {
+              battle.at = new Date(t + shift).toISOString();
+            }
+          }
+        }
+      }
+      return JSON.stringify(data);
+    } catch {
+      return text;
+    }
+  };
+
+  const loadSample = async (withLog: boolean): Promise<void> => {
     const res = await fetch('/fixtures/pokegenie-sample.csv');
     const content = await res.text();
-    const log = await fetch('/fixtures/battle-log-sample.json')
-      .then((r) => r.text())
-      .catch(() => null);
-    if (log) {
-      await importLog(log).catch(() => undefined);
+    if (withLog) {
+      const log = await fetch('/fixtures/battle-log-sample.json')
+        .then((r) => r.text())
+        .catch(() => null);
+      if (log) {
+        await importLog(shiftLogToNow(log)).catch(() => undefined);
+      }
     }
     await importCsv(content, 'sample collection');
   };
@@ -51,7 +96,7 @@ export function Welcome() {
     // #/?sample=1 imports the synthetic sample straight away (used for demos and screenshots).
     const q = new URLSearchParams(window.location.hash.split('?')[1] ?? window.location.search);
     if (q.get('sample') === '1' && boot === 'ready' && !importing) {
-      void loadSample();
+      void loadSample(true);
     }
   }, [boot]);
 
@@ -182,7 +227,7 @@ export function Welcome() {
             type="button"
             className="btn-ghost"
             disabled={importing || boot !== 'ready'}
-            onClick={() => void loadSample()}
+            onClick={() => void loadSample(false)}
           >
             No export handy? Try a sample collection &rsaquo;
           </button>

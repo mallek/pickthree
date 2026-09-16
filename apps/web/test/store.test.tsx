@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, render, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetDbForTests, storage } from '../src/storage/db.ts';
 import {
   AppProvider,
@@ -156,6 +156,45 @@ describe('battle log actions', () => {
     };
     expect(cOpts.yourMeta.battles).toHaveLength(1);
     expect(latest!.state.counters?.facing).toContain('PvPoke weights only');
+  });
+
+  it('loadCounters recovers from a host error with a non-null empty result and does not retry', async () => {
+    // A collection saved before boot is what makes the provider willing to run counters.
+    await storage.saveCollection({
+      specimens: [],
+      report: {
+        scansRead: 0,
+        recognized: 0,
+        duplicatesMerged: 0,
+        missingIvs: { count: 0, names: [] },
+        unrecognized: [],
+        rowProblems: [],
+        layout: emptyLayoutValue(),
+        newestScan: null,
+      },
+      importedAt: '2026-09-16T00:00:00Z',
+      fileName: null,
+    });
+    // recordError's device summary reads matchMedia, which jsdom does not implement; this is the
+    // first test in this file to actually exercise a failure path.
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+    const host = await mount(
+      fakeHost({
+        counters: vi.fn(async () => {
+          throw new Error('boom');
+        }),
+      }),
+    );
+    await waitFor(() => expect(latest?.state.collection).not.toBeNull());
+    await act(async () => {
+      await latest!.actions.loadCounters();
+    });
+    expect(latest!.state.counters).not.toBeNull();
+    expect(latest!.state.counters?.entries).toEqual([]);
+    expect(latest!.state.counters?.battles).toBe(0);
+    expect((host.counters as unknown as { mock: { calls: unknown[][] } }).mock.calls).toHaveLength(
+      1,
+    );
   });
 
   it('exports and imports the log', async () => {

@@ -31,7 +31,9 @@ export interface BlendInput {
 /**
  * weight_i = (1 - a) * prior_i + a * observed_i, where prior is PvPoke's 1 / sqrt(rank)
  * normalised over the set, observed is the sighting share over the set, and a is blendShare.
- * Weights sum to 1 (as long as at least one species has a sighting or a prior).
+ * Weights sum to 1 when the log has a say (a > 0) and at least one species in the set was
+ * sighted; with a > 0 and no sightings in the set they sum to (1 - a) instead. Consumers
+ * normalise, so scoring is unaffected.
  */
 export function blendWeights(
   input: BlendInput,
