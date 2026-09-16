@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { ImportReport, Specimen } from '@pickthree/engine';
+import type { BattleSet, ImportReport, Specimen } from '@pickthree/engine';
 
 export interface StoredCollection {
   key: 'current';
@@ -27,6 +27,13 @@ export interface Settings {
   sprites?: boolean;
   /** Anonymous error reports to the counter worker. Absent in older saves means on. */
   errorReports?: boolean;
+  /** Battle log settings. Absent in older saves means the blend is on and nothing is fresh. */
+  yourMeta?: {
+    /** Weight Teams, Counters and Build by the log once it has enough battles. Default true. */
+    blend?: boolean;
+    /** League id to ISO time: battles before it belong to earlier seasons. */
+    freshFrom?: Record<string, string>;
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -48,20 +55,34 @@ export const DEFAULT_SETTINGS: Settings = {
 interface PickThreeDb extends DBSchema {
   collection: { key: 'current'; value: StoredCollection };
   settings: { key: 'current'; value: Settings };
+  battles: { key: string; value: BattleSet; indexes: { 'by-league': string } };
 }
+
+export const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<PickThreeDb>> | null = null;
 
 function db(): Promise<IDBPDatabase<PickThreeDb>> {
   if (!dbPromise) {
-    dbPromise = openDB<PickThreeDb>('pickthree', 1, {
-      upgrade(d) {
-        d.createObjectStore('collection', { keyPath: 'key' });
-        d.createObjectStore('settings', { keyPath: 'key' });
+    dbPromise = openDB<PickThreeDb>('pickthree', DB_VERSION, {
+      upgrade(d, oldVersion) {
+        if (oldVersion < 1) {
+          d.createObjectStore('collection', { keyPath: 'key' });
+          d.createObjectStore('settings', { keyPath: 'key' });
+        }
+        if (oldVersion < 2) {
+          const battles = d.createObjectStore('battles', { keyPath: 'id' });
+          battles.createIndex('by-league', 'league');
+        }
       },
     });
   }
   return dbPromise;
+}
+
+/** Tests swap the IndexedDB factory between cases; drop the cached connection with it. */
+export function resetDbForTests(): void {
+  dbPromise = null;
 }
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -92,11 +113,54 @@ export const storage = {
       await (await db()).put('settings', { ...s, key: 'current' });
     }, undefined);
   },
+  /** Every set for one league, oldest first. */
+  loadSets(league: string): Promise<BattleSet[]> {
+    return safe(async () => {
+      const all = await (await db()).getAllFromIndex('battles', 'by-league', league);
+      return all.sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+    }, []);
+  },
+  saveSet(set: BattleSet): Promise<void> {
+    return safe(async () => {
+      await (await db()).put('battles', set);
+    }, undefined);
+  },
+  loadAllSets(): Promise<BattleSet[]> {
+    return safe(async () => (await db()).getAll('battles'), []);
+  },
+  /** Adds sets whose id is unknown; existing sets are never touched. */
+  importSets(sets: BattleSet[]): Promise<{ added: number; skipped: number }> {
+    return safe(
+      async () => {
+        const d = await db();
+        const tx = d.transaction('battles', 'readwrite');
+        let added = 0;
+        let skipped = 0;
+        for (const s of sets) {
+          if (await tx.store.get(s.id)) {
+            skipped += 1;
+          } else {
+            await tx.store.add(s);
+            added += 1;
+          }
+        }
+        await tx.done;
+        return { added, skipped };
+      },
+      { added: 0, skipped: 0 },
+    );
+  },
+  clearSets(): Promise<void> {
+    return safe(async () => {
+      await (await db()).clear('battles');
+    }, undefined);
+  },
   async forget(): Promise<void> {
     await safe(async () => {
       const d = await db();
       await d.clear('collection');
       await d.clear('settings');
+      await d.clear('battles');
     }, undefined);
   },
 };
