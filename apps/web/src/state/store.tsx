@@ -428,6 +428,21 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const hostRef = useRef<WorkerHost | null>(host ?? null);
   const stateRef = useRef(state);
   stateRef.current = state;
+  /** The latest known sets for the league in play, updated in lockstep with the 'sets' dispatch. */
+  const setsRef = useRef<BattleSet[]>([]);
+  /** Serializes the log-mutating actions so two in-flight calls never race the same DB read. */
+  const logChain = useRef<Promise<unknown>>(Promise.resolve());
+
+  const applySets = useCallback((sets: BattleSet[]) => {
+    setsRef.current = sets;
+    dispatch({ type: 'sets', sets });
+  }, []);
+
+  const serialized = useCallback(<T,>(fn: () => Promise<T>): Promise<T> => {
+    const p = logChain.current.then(fn, fn);
+    logChain.current = p.catch(() => undefined);
+    return p;
+  }, []);
 
   useEffect(() => {
     if (!hostRef.current) {
@@ -500,10 +515,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     h.league = id;
     let cancelled = false;
+    setsRef.current = [];
     dispatch({ type: 'league-start' });
     void storage.loadSets(id).then((sets) => {
       if (!cancelled) {
-        dispatch({ type: 'sets', sets });
+        applySets(sets);
       }
     });
     h.leagueInfo(id)
@@ -800,105 +816,104 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [updateSettings],
   );
 
-  const persistSets = useCallback(async (sets: BattleSet[]) => {
-    for (const set of sets) {
-      await storage.saveSet(set);
-    }
-    const league = stateRef.current.settings.league ?? 'great';
-    const loaded = await storage.loadSets(league);
-    // Mirror the 'sets' reducer case synchronously: startSet -> logBattle -> logBattle can be
-    // awaited back to back before React re-renders, and the next call needs the fresh set list,
-    // not whatever stateRef held when this render last committed.
-    stateRef.current = {
-      ...stateRef.current,
-      sets: loaded,
-      setsLoaded: true,
-      logVersion: stateRef.current.logVersion + 1,
-      counters: null,
-    };
-    dispatch({ type: 'sets', sets: loaded });
-  }, []);
+  const persistSets = useCallback(
+    async (sets: BattleSet[]) => {
+      for (const set of sets) {
+        await storage.saveSet(set);
+      }
+      const league = stateRef.current.settings.league ?? 'great';
+      applySets(await storage.loadSets(league));
+    },
+    [applySets],
+  );
 
   const startSet = useCallback(
-    async (team: TeamRef) => {
-      const league = stateRef.current.settings.league ?? 'great';
-      const open = stateRef.current.sets
-        .filter((s) => !s.closed)
-        .map((s) => ({ ...s, closed: true }));
-      const set: BattleSet = {
-        id: newId(),
-        league,
-        startedAt: new Date().toISOString(),
-        team,
-        battles: [],
-        closed: false,
-      };
-      await persistSets([...open, set]);
-    },
-    [persistSets],
+    (team: TeamRef) =>
+      serialized(async () => {
+        const league = stateRef.current.settings.league ?? 'great';
+        const open = setsRef.current
+          .filter((s) => !s.closed)
+          .map((s) => ({ ...s, closed: true }));
+        const set: BattleSet = {
+          id: newId(),
+          league,
+          startedAt: new Date().toISOString(),
+          team,
+          battles: [],
+          closed: false,
+        };
+        await persistSets([...open, set]);
+      }),
+    [persistSets, serialized],
   );
 
   const logBattle = useCallback(
-    async (input: { opponents: string[]; result: 'win' | 'loss' | null; tanked: boolean }) => {
-      const open = stateRef.current.sets.find((s) => !s.closed);
-      if (!open) {
-        throw new Error('Start a set before logging a battle.');
-      }
-      const battle: LoggedBattle = {
-        id: newId(),
-        at: new Date().toISOString(),
-        opponents: input.opponents
-          .filter((id, i, arr) => id !== '' && arr.indexOf(id) === i)
-          .slice(0, 3),
-        result: input.tanked ? null : input.result,
-        tanked: input.tanked,
-      };
-      const battles = [...open.battles, battle];
-      await persistSets([{ ...open, battles, closed: battles.length >= SET_SIZE }]);
-    },
-    [persistSets],
+    (input: { opponents: string[]; result: 'win' | 'loss' | null; tanked: boolean }) =>
+      serialized(async () => {
+        const open = setsRef.current.find((s) => !s.closed);
+        if (!open) {
+          throw new Error('Start a set before logging a battle.');
+        }
+        const battle: LoggedBattle = {
+          id: newId(),
+          at: new Date().toISOString(),
+          opponents: input.opponents
+            .filter((id, i, arr) => id !== '' && arr.indexOf(id) === i)
+            .slice(0, 3),
+          result: input.tanked ? null : input.result,
+          tanked: input.tanked,
+        };
+        const battles = [...open.battles, battle];
+        await persistSets([{ ...open, battles, closed: battles.length >= SET_SIZE }]);
+      }),
+    [persistSets, serialized],
   );
 
-  const endSet = useCallback(async () => {
-    const open = stateRef.current.sets.find((s) => !s.closed);
-    if (open) {
-      await persistSets([{ ...open, closed: true }]);
-    }
-  }, [persistSets]);
+  const endSet = useCallback(
+    () =>
+      serialized(async () => {
+        const open = setsRef.current.find((s) => !s.closed);
+        if (open) {
+          await persistSets([{ ...open, closed: true }]);
+        }
+      }),
+    [persistSets, serialized],
+  );
 
   const startFresh = useCallback(() => {
-    const league = stateRef.current.settings.league ?? 'great';
-    updateSettings((cur) => ({
-      ...cur,
-      yourMeta: {
-        ...cur.yourMeta,
-        freshFrom: { ...cur.yourMeta?.freshFrom, [league]: new Date().toISOString() },
-      },
-    }));
-    // The window moved, so weighted results are stale even though no set changed.
-    dispatch({ type: 'sets', sets: stateRef.current.sets });
-  }, [updateSettings]);
+    void serialized(async () => {
+      const league = stateRef.current.settings.league ?? 'great';
+      updateSettings((cur) => ({
+        ...cur,
+        yourMeta: {
+          ...cur.yourMeta,
+          freshFrom: { ...cur.yourMeta?.freshFrom, [league]: new Date().toISOString() },
+        },
+      }));
+      // The window moved, so weighted results are stale even though no set changed.
+      applySets(setsRef.current);
+    });
+  }, [serialized, updateSettings, applySets]);
 
   const exportLog = useCallback(async () => serializeLog(await storage.loadAllSets()), []);
 
-  const importLog = useCallback(async (text: string) => {
-    const sets = parseLogFile(text);
-    const r = await storage.importSets(sets);
-    const league = stateRef.current.settings.league ?? 'great';
-    const loaded = await storage.loadSets(league);
-    stateRef.current = {
-      ...stateRef.current,
-      sets: loaded,
-      setsLoaded: true,
-      logVersion: stateRef.current.logVersion + 1,
-      counters: null,
-    };
-    dispatch({ type: 'sets', sets: loaded });
-    return r;
-  }, []);
+  const importLog = useCallback(
+    (text: string) =>
+      serialized(async () => {
+        const sets = parseLogFile(text);
+        const r = await storage.importSets(sets);
+        const league = stateRef.current.settings.league ?? 'great';
+        applySets(await storage.loadSets(league));
+        return r;
+      }),
+    [serialized, applySets],
+  );
 
   const forget = useCallback(async () => {
     await storage.forget();
+    // The 'forget' reducer case resets sets to [] the same way 'league-start' does; keep the
+    // ref in lockstep so a set started right after forgetting does not resurrect deleted data.
+    setsRef.current = [];
     dispatch({ type: 'forget' });
     window.location.hash = '#/';
   }, []);

@@ -88,6 +88,21 @@ describe('battle log actions', () => {
     expect((await storage.loadSets('great'))[0]?.closed).toBe(true);
   });
 
+  it('serializes two logBattle calls fired without awaiting between them', async () => {
+    await mount();
+    await act(async () => {
+      await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+    });
+    await act(async () => {
+      await Promise.all([
+        latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false }),
+        latest!.actions.logBattle({ opponents: ['tinkaton'], result: 'loss', tanked: false }),
+      ]);
+    });
+    expect(latest!.state.sets[0]?.battles).toHaveLength(2);
+    expect((await storage.loadSets('great'))[0]?.battles).toHaveLength(2);
+  });
+
   it('endSet closes a partial set and startFresh marks the league', async () => {
     await mount();
     await act(async () => {
