@@ -16,7 +16,7 @@ a{color:#9184d9;text-underline-offset:3px}a:hover{color:#b5abfc}
 [data-theme="dark"]{--bg:#161826;--surface:#232532;--surface2:#2c2e3d;--text:#e9e9ed;--muted:#9397ab;--faint:#75798c;--divider:rgba(233,233,237,.16);--accent:#9184d9;--accent-text:#d2cefd;--accent-tint:#2b2741;--accent-tint2:#423a6a;--warn:#d9b384;--warn-tint:#3a3224;--shadow-md:0 0 0 1px #595d6c,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #9397ab,0 16px 40px rgba(0,0,0,.65);--overlay:rgba(9,10,16,.6)}
 [data-theme="light"]{--bg:#f3f5fe;--surface:#fbfbfe;--surface2:#e4e7f5;--text:#292b31;--muted:#595d6c;--faint:#75798c;--divider:rgba(41,43,49,.14);--accent:#796cbf;--accent-text:#5d5294;--accent-tint:#e7e5fe;--accent-tint2:#d2cefd;--warn:#8a6a2c;--warn-tint:#f5ead4;--shadow-md:0 0 0 1px #cfd3e5,0 6px 18px rgba(41,43,49,.12);--shadow-lg:0 0 0 1px #b2b6ca,0 16px 40px rgba(41,43,49,.18);--overlay:rgba(41,43,49,.35)}
 .pt-screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font-family:"Inter",system-ui,sans-serif;font-size:15px;line-height:1.45}
-.pt-scroll{flex:1;overflow-y:auto;scrollbar-width:none}.pt-scroll::-webkit-scrollbar{display:none}
+.pt-scroll{flex:1;overflow-y:auto;scrollbar-width:none}.pt-scroll>*{flex-shrink:0}.pt-scroll::-webkit-scrollbar{display:none}
 .pt-tap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
 .pt-tap:active{filter:brightness(1.15)}
 .pt-in{animation:ptIn .22s ease-out}
@@ -34,8 +34,15 @@ input[type=range]{accent-color:var(--accent)}
     </div>
   </div>
   <div style="width:100%;max-width:760px;display:flex;gap:6px;flex-wrap:wrap">
-    <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="7">
+    <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="10">
       <button class="pt-tap" onClick="{{ j.go }}" style="min-height:32px;padding:0 10px;border-radius:7px;border:1px solid {{ j.border }};background:{{ j.bg }};color:{{ j.color }};font:500 12px Inter,system-ui,sans-serif;cursor:pointer">{{ j.label }}</button>
+    </sc-for>
+  </div>
+  <div style="width:100%;max-width:760px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#9397ab">
+    <sc-for list="{{ variantGroups }}" as="g" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:4px"><span style="margin-right:4px">{{ g.label }}</span>
+        <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="2"><button class="pt-tap" onClick="{{ o.go }}" style="min-height:28px;padding:0 9px;border-radius:6px;border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }};font:500 11px Inter,system-ui,sans-serif;cursor:pointer">{{ o.label }}</button></sc-for>
+      </div>
     </sc-for>
   </div>
   <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w390 }}" height="{{ h844 }}" dark="{{ isDark }}" hint-size="390px,844px">
@@ -109,7 +116,7 @@ input[type=range]{accent-color:var(--accent)}
       <sc-if value="{{ isTeams }}" hint-placeholder-val="{{ false }}">
       <div class="pt-screen pt-in" data-screen-label="Teams">
         <div style="padding:60px 20px 10px;display:flex;flex-direction:column;gap:12px;background:var(--bg);border-bottom:1px solid var(--divider);z-index:2">
-          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Your teams</h2><span style="font-size:12px;color:var(--muted)">{{ teamCount }} from 331 Pokemon</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Your teams</h2><span style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--muted)">{{ teamCount }} from 331 Pokemon</span><button class="pt-tap" onClick="{{ openSheet }}" aria-label="Settings" style="width:44px;height:44px;margin-right:-12px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button></span></div>
           <div style="display:inline-flex;border:1px solid var(--divider);border-radius:8px;overflow:hidden;align-self:flex-start">
             <span style="padding:7px 14px;font-size:13px;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);min-height:36px;display:flex;align-items:center;white-space:nowrap">Great League</span>
             <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Ultra <span style="font-size:10px;opacity:.8">soon</span></span>
@@ -153,7 +160,7 @@ input[type=range]{accent-color:var(--accent)}
       <div class="pt-screen pt-in" data-screen-label="Team detail">
         <div style="padding:54px 12px 8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
           <button class="pt-tap" onClick="{{ goTeams }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px">‹ Teams</button>
-          <span style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center"><span style="font-weight:500;font-size:15px">{{ team.headLine }}</span><span style="font-size:11px;color:var(--muted)">{{ team.subLine }}</span></span><span style="width:70px"></span>
+          <span style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center"><span style="font-weight:500;font-size:15px">{{ team.headLine }}</span><span style="font-size:11px;color:var(--muted)">{{ team.subLine }}</span></span><button class="pt-tap" onClick="{{ openSheet }}" aria-label="Settings" style="width:44px;height:44px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button>
         </div>
         <div class="pt-scroll" style="padding:16px 20px 110px;display:flex;flex-direction:column;gap:24px">
           <div style="display:flex;flex-direction:column;gap:12px">
@@ -244,6 +251,7 @@ input[type=range]{accent-color:var(--accent)}
                 <div><span style="color:var(--text)">Shields</span> · 1 shield each. A shield blocks one charged move.</div>
                 <div><span style="color:var(--text)">Opponent meta</span> · PvPoke Great League top 48, 10 Sep 2026</div>
                 <div><span style="color:var(--text)">IVs</span> · Your exact specimens vs. opponents at their best IVs</div>
+                <div><span style="color:var(--text)">Your log</span> · {{ logLine }}</div>
                 <div style="display:flex;flex-direction:column;gap:6px"><span style="color:var(--text)">Matchup grid</span>
                   <div style="display:grid;grid-template-columns:76px repeat(4,1fr);gap:3px;font-size:11px">
                     <span></span>
@@ -266,7 +274,7 @@ input[type=range]{accent-color:var(--accent)}
       <sc-if value="{{ isCollection }}" hint-placeholder-val="{{ false }}">
       <div class="pt-screen pt-in" data-screen-label="Collection">
         <div style="padding:60px 20px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--divider)">
-          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Collection</h2><span style="font-size:12px;color:var(--muted)">{{ rowCount }} shown</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Collection</h2><span style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--muted)">{{ rowCount }} shown</span><button class="pt-tap" onClick="{{ openSheet }}" aria-label="Settings" style="width:44px;height:44px;margin-right:-12px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button></span></div>
           <input value="{{ query }}" onChange="{{ setQuery }}" placeholder="Search your Pokemon" style="width:100%;min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);color:var(--text);font:400 15px Inter,system-ui,sans-serif;outline:none;box-sizing:border-box">
           <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 4px">
             <sc-for list="{{ verdictChips }}" as="c" hint-placeholder-count="6">
@@ -297,7 +305,7 @@ input[type=range]{accent-color:var(--accent)}
       <div class="pt-screen pt-in" data-screen-label="Specimen detail">
         <div style="padding:54px 12px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
           <button class="pt-tap" onClick="{{ goCollection }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">‹ Collection</button>
-          <span style="flex:1;text-align:center;font-weight:500;font-size:15px">{{ spec.displayName }}</span><span style="width:96px"></span>
+          <span style="flex:1;text-align:center;font-weight:500;font-size:15px">{{ spec.displayName }}</span><button class="pt-tap" onClick="{{ openSheet }}" aria-label="Settings" style="width:44px;height:44px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button>
         </div>
         <div class="pt-scroll" style="padding:20px 20px 120px;display:flex;flex-direction:column;gap:22px">
           <div style="display:grid;grid-template-columns:64px 1fr;gap:16px;align-items:center">
@@ -354,11 +362,244 @@ input[type=range]{accent-color:var(--accent)}
       </div>
       </sc-if>
 
+      <!-- 8 · Your meta -->
+      <sc-if value="{{ isMeta }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Your meta">
+        <div style="padding:60px 20px 10px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--divider)">
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em">Your meta</h2><button class="pt-tap" onClick="{{ openSheet }}" aria-label="Settings" style="width:44px;height:44px;margin-right:-12px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button></div>
+          <div style="display:inline-flex;border:1px solid var(--divider);border-radius:8px;overflow:hidden;align-self:flex-start">
+            <span style="padding:7px 14px;font-size:13px;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);min-height:36px;display:flex;align-items:center;white-space:nowrap">Great League</span>
+            <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Ultra <span style="font-size:10px;opacity:.8">soon</span></span>
+            <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Master <span style="font-size:10px;opacity:.8">soon</span></span>
+          </div>
+        </div>
+        <div class="pt-scroll" style="padding:14px 20px 110px;display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-if value="{{ metaWarn }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--warn-tint)"><span style="flex:1;font-size:13px;color:var(--warn);text-wrap:pretty">The season list may be out of date.</span><button class="pt-tap" onClick="{{ startFresh }}" style="min-height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--warn);background:transparent;color:var(--warn);font:500 13px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap">Start fresh</button></div>
+            </sc-if>
+            <p style="margin:0;font-size:14px;color:var(--muted);text-wrap:pretty">{{ statusText }}</p>
+            <sc-if value="{{ statusProgress }}" hint-placeholder-val="{{ false }}"><div style="height:3px;border-radius:2px;background:var(--surface2);overflow:hidden"><div style="height:100%;width:{{ progressPct }};background:var(--accent);border-radius:2px"></div></div></sc-if>
+            <sc-if value="{{ showExplainer }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--accent-tint)"><p style="margin:0;flex:1;font-size:13px;color:var(--text);text-wrap:pretty">Once you log 15 battles, Teams and Counters weigh opponents by how often you actually face them. Your log never leaves this phone.</p><button class="pt-tap" onClick="{{ dismissExplainer }}" aria-label="Dismiss" style="width:32px;height:32px;margin:-6px -8px 0 0;border:0;background:transparent;color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer">x</button></div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ hasSet }}" hint-placeholder-val="{{ true }}">
+            <div style="background:var(--surface);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-md)">
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:17px;font-weight:500">{{ setTitle }}</span><span style="font-size:12px;color:var(--muted)">{{ setStarted }}</span></div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <sc-for list="{{ setTeam }}" as="p" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center"><span style="width:44px;height:44px;border-radius:50%;background:{{ p.bg }};box-shadow:{{ p.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:16px;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ p.initial }}</span><span style="font-size:12px;font-weight:500;line-height:1.2;text-wrap:balance">{{ p.name }}</span></div></sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;border-top:1px solid var(--divider);padding-top:12px">
+                <sc-for list="{{ setSlots }}" as="b" hint-placeholder-count="5">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-height:50px">
+                    <sc-if value="{{ b.filled }}" hint-placeholder-val="{{ false }}">
+                      <span style="min-width:30px;height:28px;padding:0 6px;box-sizing:border-box;border-radius:8px;background:{{ b.badgeBg }};color:{{ b.badgeColor }};border:1px solid {{ b.badgeBorder }};display:grid;place-items:center;font-size:{{ b.badgeSize }}px;font-weight:500;white-space:nowrap">{{ b.letter }}</span>
+                      <div style="display:flex;justify-content:center;padding-left:4px"><sc-for list="{{ b.opps }}" as="o" hint-placeholder-count="3"><span title="{{ o.name }}" style="width:14px;height:14px;border-radius:50%;background:{{ o.bg }};border:1.5px solid var(--surface);margin-left:-4px;display:block;opacity:{{ b.oppOpacity }}"></span></sc-for></div>
+                    </sc-if>
+                    <sc-if value="{{ b.empty }}" hint-placeholder-val="{{ true }}"><span style="width:30px;height:28px;border-radius:8px;border:1px dashed var(--divider);display:block;box-sizing:border-box"></span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <button class="pt-tap" onClick="{{ goLog }}" style="min-height:48px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Log a battle</button>
+                <button class="pt-tap" onClick="{{ endSet }}" style="min-height:48px;border-radius:12px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">End set</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSet }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div><div style="font-size:15px;font-weight:500">No open set</div><div style="font-size:13px;color:var(--muted);text-wrap:pretty">A set is five ranked battles with one team. Start one to log them as you play.</div></div>
+              <button class="pt-tap" onClick="{{ goNewSet }}" style="min-height:48px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">New set</button>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="display:flex;align-items:center;justify-content:space-between;position:relative;margin-bottom:6px">
+              <h3 style="margin:0;font-size:17px;font-weight:500">Most faced this season</h3>
+              <button class="pt-tap" onClick="{{ toggleSortPop }}" style="min-height:36px;padding:0 4px 0 10px;border-radius:8px;border:0;background:transparent;color:var(--muted);font:500 12px Inter,system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px">{{ facedSortLabel }}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button>
+              <sc-if value="{{ sortPop }}" hint-placeholder-val="{{ false }}">
+                <div class="pt-in" style="position:absolute;right:0;top:100%;margin-top:2px;background:var(--surface);border-radius:10px;box-shadow:var(--shadow-lg);padding:4px;z-index:3;display:flex;flex-direction:column;min-width:160px">
+                  <button class="pt-tap" onClick="{{ setSortFaced }}" style="min-height:40px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:{{ sortFacedColor }};font:500 14px Inter,system-ui,sans-serif;cursor:pointer;text-align:left">Most faced</button>
+                  <button class="pt-tap" onClick="{{ setSortRecord }}" style="min-height:40px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:{{ sortRecordColor }};font:500 14px Inter,system-ui,sans-serif;cursor:pointer;text-align:left">Worst record</button>
+                </div>
+              </sc-if>
+            </div>
+            <sc-for list="{{ facedRows }}" as="r" hint-placeholder-count="6">
+              <div class="pt-tap" onClick="{{ r.open }}" style="position:relative;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;min-height:52px;padding:6px 8px;margin:0 -8px;border-radius:10px;cursor:pointer;overflow:hidden">
+                <span style="position:absolute;left:0;top:0;bottom:0;width:{{ r.pct }};background:var(--accent-tint);opacity:.55;border-radius:10px"></span>
+                <span style="position:relative;width:36px;height:36px;border-radius:50%;background:{{ r.bg }};box-shadow:{{ r.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:600;font-size:14px;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ r.initial }}</span>
+                <div style="position:relative;min-width:0"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:14px;font-weight:500">{{ r.name }}</span><sc-if value="{{ r.offList }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--warn-tint);color:var(--warn);white-space:nowrap">not in PvPoke's list</span></sc-if></div><div style="font-size:12px;color:var(--muted)">{{ r.facedLabel }}</div></div>
+                <span style="position:relative;display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">{{ r.record }}</span><span style="color:var(--faint)">›</span></span>
+              </div>
+            </sc-for>
+            <span style="font-size:11px;color:var(--muted);margin-top:6px;text-wrap:pretty">Record is your wins-losses against that Pokemon. Not in PvPoke's list means only your log knows you face it. Tap a row for counters.</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h3 style="margin:0;font-size:17px;font-weight:500">Your teams this season</h3>
+            <sc-for list="{{ seasonTeams }}" as="t" hint-placeholder-count="2">
+              <div class="pt-tap" onClick="{{ t.open }}" style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;background:var(--surface);border-radius:12px;cursor:pointer">
+                <div style="display:flex;padding-left:8px"><sc-for list="{{ t.toks }}" as="p" hint-placeholder-count="3"><span title="{{ p.name }}" style="width:32px;height:32px;border-radius:50%;background:{{ p.bg }};border:2px solid var(--surface);margin-left:-8px;display:block"></span></sc-for></div>
+                <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;line-height:1.3">{{ t.names }}</div><div style="font-size:12px;color:var(--muted)">{{ t.battles }}</div></div>
+                <span style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">{{ t.record }}</span><span style="font-size:12px;color:var(--accent)">Build ›</span></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;overflow:hidden">
+            <button class="pt-tap" onClick="{{ toggleEarlier }}" style="width:100%;min-height:48px;padding:0 14px;border:0;background:transparent;color:var(--text);font:500 14px Inter,system-ui,sans-serif;cursor:pointer;display:flex;justify-content:space-between;align-items:center"><span>Earlier seasons</span><span style="color:var(--faint);transform:rotate({{ earlierChev }}deg);transition:transform .2s">⌄</span></button>
+            <sc-if value="{{ earlierOpen }}" hint-placeholder-val="{{ false }}">
+              <div class="pt-in" style="padding:0 14px 14px;display:flex;flex-direction:column;gap:14px">
+                <sc-for list="{{ earlier }}" as="se" hint-placeholder-count="1">
+                  <div style="display:flex;flex-direction:column;gap:10px">
+                    <div style="font-size:13px;color:var(--muted);border-top:1px solid var(--divider);padding-top:10px">{{ se.label }}</div>
+                    <div style="display:flex;flex-direction:column;gap:2px">
+                      <span style="font-size:11px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase">Most faced</span>
+                      <sc-for list="{{ se.faced }}" as="r" hint-placeholder-count="3">
+                        <div class="pt-tap" onClick="{{ r.open }}" style="display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;min-height:36px;cursor:pointer"><span style="width:24px;height:24px;border-radius:50%;background:{{ r.bg }};display:block"></span><span style="font-size:13px">{{ r.name }} <span style="color:var(--muted)">{{ r.facedLabel }}</span></span><span style="font-size:13px;font-variant-numeric:tabular-nums">{{ r.record }}</span></div>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:2px">
+                      <span style="font-size:11px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase">Teams</span>
+                      <sc-for list="{{ se.teams }}" as="t" hint-placeholder-count="2">
+                        <div class="pt-tap" onClick="{{ t.open }}" style="display:flex;align-items:center;gap:10px;min-height:36px;cursor:pointer"><div style="display:flex;padding-left:6px"><sc-for list="{{ t.toks }}" as="p" hint-placeholder-count="3"><span style="width:24px;height:24px;border-radius:50%;background:{{ p.bg }};border:2px solid var(--surface);margin-left:-6px;display:block"></span></sc-for></div><span style="flex:1;font-size:13px;color:var(--muted)">{{ t.battles }}</span><span style="font-size:13px;font-variant-numeric:tabular-nums">{{ t.record }}</span></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 9 · New set -->
+      <sc-if value="{{ isNewSet }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="New set">
+        <div style="padding:54px 12px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goMeta }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Cancel</button>
+          <span style="flex:1;text-align:center;font-weight:500;font-size:15px">Pick your team</span><span style="width:64px"></span>
+        </div>
+        <div class="pt-scroll" style="padding:16px 20px 120px;display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h3 style="margin:0;font-size:15px;font-weight:500;color:var(--muted)">Recent teams</h3>
+            <sc-for list="{{ recentTeamRows }}" as="t" hint-placeholder-count="2">
+              <div class="pt-tap" onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;background:var(--surface);border-radius:12px;cursor:pointer">
+                <div style="display:flex;padding-left:8px"><sc-for list="{{ t.toks }}" as="p" hint-placeholder-count="3"><span style="width:30px;height:30px;border-radius:50%;background:{{ p.bg }};border:2px solid var(--surface);margin-left:-8px;display:block"></span></sc-for></div>
+                <span style="flex:1;font-size:13px;font-weight:500;line-height:1.3">{{ t.names }}</span><span style="color:var(--faint)">›</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h3 style="margin:0;font-size:15px;font-weight:500;color:var(--muted)">From pick3</h3>
+            <sc-for list="{{ pick3Rows }}" as="t" hint-placeholder-count="3">
+              <div class="pt-tap" onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;background:var(--surface);border-radius:12px;cursor:pointer">
+                <div style="display:flex;padding-left:8px"><sc-for list="{{ t.toks }}" as="p" hint-placeholder-count="3"><span style="width:30px;height:30px;border-radius:50%;background:{{ p.bg }};border:2px solid var(--surface);margin-left:-8px;display:block"></span></sc-for></div>
+                <span style="flex:1;font-size:13px;font-weight:500;line-height:1.3">{{ t.names }}</span>
+                <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;white-space:nowrap;background:{{ t.fitBg }};color:{{ t.fitColor }};border:1px solid {{ t.fitBorder }}">{{ t.fit }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <h3 style="margin:0;font-size:15px;font-weight:500;color:var(--muted)">Pick three</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <sc-for list="{{ pickSlotViews }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+                  <sc-if value="{{ p.filled }}" hint-placeholder-val="{{ false }}"><button class="pt-tap" onClick="{{ p.clear }}" aria-label="Clear" style="width:56px;height:56px;border-radius:50%;border:0;padding:0;background:{{ p.bg }};box-shadow:{{ p.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font:600 18px Inter,system-ui,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer">{{ p.initial }}</button><span style="font-size:12px;font-weight:500;line-height:1.2">{{ p.name }}</span></sc-if>
+                  <sc-if value="{{ p.empty }}" hint-placeholder-val="{{ true }}"><span style="width:56px;height:56px;border-radius:50%;border:1px dashed var(--faint);display:grid;place-items:center;color:var(--faint);font-size:16px;box-sizing:border-box">{{ p.n }}</span><span style="font-size:12px;color:var(--faint)">Empty</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <input value="{{ pickQuery }}" onChange="{{ setPickQuery }}" placeholder="Search any Pokemon" style="width:100%;min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);color:var(--text);font:400 15px Inter,system-ui,sans-serif;outline:none;box-sizing:border-box">
+            <sc-if value="{{ hasPickResults }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ pickResults }}" as="r" hint-placeholder-count="2">
+                  <div class="pt-tap" onClick="{{ r.pick }}" style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:center;min-height:48px;border-bottom:1px solid var(--divider);cursor:pointer"><span style="width:32px;height:32px;border-radius:50%;background:{{ r.bg }};box-shadow:{{ r.ring }};display:block"></span><span style="font-size:14px">{{ r.name }} <span style="color:var(--muted);font-size:12px">{{ r.sub }}</span></span></div>
+                </sc-for>
+                <sc-if value="{{ hasPickOthers }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;padding:10px 0 4px">Other Pokemon</span></sc-if>
+                <sc-for list="{{ pickOthers }}" as="r" hint-placeholder-count="2">
+                  <div class="pt-tap" onClick="{{ r.pick }}" style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:center;min-height:48px;border-bottom:1px solid var(--divider);cursor:pointer"><span style="width:32px;height:32px;border-radius:50%;background:{{ r.bg }};box-shadow:{{ r.ring }};display:block"></span><span style="font-size:14px;color:var(--muted)">{{ r.name }}</span></div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 44px;background:linear-gradient(to top,var(--bg) 70%,transparent)">
+          <button class="pt-tap" onClick="{{ startSet }}" style="width:100%;min-height:52px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer;opacity:{{ startOpacity }}">Start set</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- 10 · Log a battle -->
+      <sc-if value="{{ isLogBattle }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Log a battle">
+        <div style="padding:54px 12px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goMeta }}" aria-label="Close" style="width:44px;height:44px;border:0;background:transparent;color:var(--accent);font:400 22px Inter,system-ui,sans-serif;cursor:pointer">x</button>
+          <span style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center"><span style="font-weight:500;font-size:15px">Log a battle</span><span style="font-size:11px;color:var(--muted)">{{ logSubtitle }}</span></span><span style="width:44px"></span>
+        </div>
+        <sc-if value="{{ notSetDone }}" hint-placeholder-val="{{ true }}">
+          <div class="pt-scroll" style="padding:18px 20px 150px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <sc-for list="{{ oppSlots }}" as="o" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+                  <sc-if value="{{ o.filled }}" hint-placeholder-val="{{ false }}"><button class="pt-tap" onClick="{{ o.clear }}" aria-label="Clear" style="width:72px;height:72px;border-radius:50%;border:0;padding:0;background:{{ o.bg }};box-shadow:{{ o.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font:600 24px Inter,system-ui,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer">{{ o.initial }}</button><span style="font-size:12px;font-weight:500;line-height:1.2;text-wrap:balance">{{ o.name }}</span></sc-if>
+                  <sc-if value="{{ o.empty }}" hint-placeholder-val="{{ true }}"><span style="width:72px;height:72px;border-radius:50%;border:1.5px dashed var(--faint);display:grid;place-items:center;color:var(--faint);font-size:20px;box-sizing:border-box">{{ o.n }}</span><span style="font-size:12px;color:var(--faint)">Opponent {{ o.n }}</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <p style="margin:-8px 0 0;text-align:center;font-size:12px;color:var(--muted);text-wrap:pretty">Add the opponents you saw. One or two is fine.</p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:12px;color:var(--muted)">Recent</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px 4px">
+                <sc-for list="{{ recentTokens }}" as="r" hint-placeholder-count="20">
+                  <button class="pt-tap" onClick="{{ r.pick }}" style="width:62px;border:0;background:transparent;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--text)"><span style="position:relative;width:36px;height:36px;border-radius:50%;background:{{ r.bg }};box-shadow:{{ r.ring }};display:grid;place-items:center;color:rgba(255,255,255,.92);font:600 13px Inter,system-ui,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.4)">{{ r.initial }}<sc-if value="{{ r.shadow }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;background:var(--warn);border:2px solid var(--bg)"></span></sc-if></span><span style="font-size:10px;line-height:1.1;text-align:center;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.short }}</span></button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <input value="{{ logQuery }}" onChange="{{ setLogQuery }}" placeholder="Search any Pokemon" style="width:100%;min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);color:var(--text);font:400 15px Inter,system-ui,sans-serif;outline:none;box-sizing:border-box">
+              <sc-for list="{{ logResults }}" as="r" hint-placeholder-count="0">
+                <div class="pt-tap" onClick="{{ r.pick }}" style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:center;min-height:48px;border-bottom:1px solid var(--divider);cursor:pointer"><span style="width:32px;height:32px;border-radius:50%;background:{{ r.bg }};box-shadow:{{ r.ring }};display:block"></span><span style="font-size:14px;display:flex;align-items:center;gap:6px">{{ r.name }}<sc-if value="{{ r.shadow }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)">Shadow</span></sc-if></span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 44px;background:linear-gradient(to top,var(--bg) 75%,transparent);display:flex;flex-direction:column;gap:8px">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <button class="pt-tap" onClick="{{ saveWin }}" style="min-height:52px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer">Win</button>
+              <button class="pt-tap" onClick="{{ saveLoss }}" style="min-height:52px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer">Loss</button>
+              <button class="pt-tap" onClick="{{ saveTanked }}" style="min-height:52px;border-radius:12px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer">Tanked</button>
+            </div>
+            <sc-if value="{{ showTankedNote }}" hint-placeholder-val="{{ true }}"><p style="margin:0;text-align:center;font-size:12px;color:var(--muted);text-wrap:pretty">Tanked means they quit or threw. It stays in the set but counts for nothing.</p></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ setDone }}" hint-placeholder-val="{{ false }}">
+          <div class="pt-in" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 32px 60px;text-align:center">
+            <div style="display:flex;gap:6px"><sc-for list="{{ setSlots }}" as="b" hint-placeholder-count="5"><span style="min-width:30px;height:28px;padding:0 6px;box-sizing:border-box;border-radius:8px;background:{{ b.badgeBg }};color:{{ b.badgeColor }};border:1px solid {{ b.badgeBorder }};display:grid;place-items:center;font-size:{{ b.badgeSize }}px;font-weight:500">{{ b.letter }}</span></sc-for></div>
+            <div style="font-size:24px;font-weight:500;letter-spacing:-.015em">{{ setDoneLine }}</div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+              <button class="pt-tap" onClick="{{ newSetSameTeam }}" style="min-height:52px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 16px Inter,system-ui,sans-serif;cursor:pointer">New set, same team</button>
+              <button class="pt-tap" onClick="{{ goMeta }}" style="min-height:48px;border-radius:12px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Back to Your meta</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <!-- Existing-screen stand-in (Counters, Build) -->
+      <sc-if value="{{ isStub }}" hint-placeholder-val="{{ false }}">
+      <div class="pt-screen pt-in" data-screen-label="Existing screen">
+        <div style="padding:54px 12px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--divider)">
+          <button class="pt-tap" onClick="{{ goMeta }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">‹ Your meta</button>
+          <span style="flex:1;text-align:center;font-weight:500;font-size:15px">{{ stubTitle }}</span><button class="pt-tap" onClick="{{ openSheet }}" aria-label="Settings" style="width:44px;height:44px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.8;stroke-linecap:round"><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg></button>
+        </div>
+        <div style="padding:24px 20px;display:flex;flex-direction:column;gap:6px"><div style="font-size:15px;font-weight:500">{{ stubLine }}</div><div style="font-size:13px;color:var(--muted);text-wrap:pretty">The existing {{ stubTitle }} screen opens here. It is unchanged in this brief apart from the settings cog.</div></div>
+      </div>
+      </sc-if>
+
       <!-- Tab bar -->
       <sc-if value="{{ showTabs }}" hint-placeholder-val="{{ false }}">
-        <div style="position:absolute;left:0;right:0;bottom:0;height:84px;padding:6px 8px 26px;box-sizing:border-box;display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-top:1px solid var(--divider);color:var(--text);font-family:Inter,system-ui,sans-serif;z-index:5">
-          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
-            <button class="pt-tap" onClick="{{ t.go }}" style="min-height:48px;border:0;background:transparent;color:{{ t.color }};font:500 12px Inter,system-ui,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><span style="width:20px;height:20px;border-radius:{{ t.shape }};border:2px solid currentColor;display:block;background:{{ t.fill }}"></span>{{ t.label }}</button>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:84px;padding:6px 4px 26px;box-sizing:border-box;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--divider);color:var(--text);font-family:Inter,system-ui,sans-serif;z-index:5">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <button class="pt-tap" onClick="{{ t.go }}" style="min-height:48px;border:0;background:transparent;color:{{ t.color }};font:500 11px Inter,system-ui,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="{{ t.d }}"></path></svg>{{ t.label }}</button>
           </sc-for>
         </div>
       </sc-if>
@@ -366,9 +607,9 @@ input[type=range]{accent-color:var(--accent)}
       <!-- 7 · Filters and settings sheet -->
       <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
         <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:var(--overlay);z-index:10"></div>
-        <div data-screen-label="Filters and settings" style="position:absolute;left:0;right:0;bottom:0;max-height:78%;display:flex;flex-direction:column;background:var(--surface);color:var(--text);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg);z-index:11;font-family:Inter,system-ui,sans-serif;animation:ptSheet .28s cubic-bezier(.2,.8,.2,1)">
+        <div data-screen-label="Settings" style="position:absolute;left:0;right:0;bottom:0;max-height:78%;display:flex;flex-direction:column;background:var(--surface);color:var(--text);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg);z-index:11;font-family:Inter,system-ui,sans-serif;animation:ptSheet .28s cubic-bezier(.2,.8,.2,1)">
           <div style="display:flex;justify-content:center;padding:10px 0 4px"><span style="width:36px;height:4px;border-radius:2px;background:var(--faint);display:block"></span></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px"><h3 style="margin:0;font-size:19px;font-weight:500">Filters and settings</h3><button class="pt-tap" onClick="{{ closeSheet }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Done</button></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px"><h3 style="margin:0;font-size:19px;font-weight:500">Settings</h3><button class="pt-tap" onClick="{{ closeSheet }}" style="min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font:500 15px Inter,system-ui,sans-serif;cursor:pointer">Done</button></div>
           <div class="pt-scroll" style="padding:0 20px 40px;display:flex;flex-direction:column;gap:20px">
             <div style="display:flex;flex-direction:column">
               <sc-for list="{{ sheetToggles }}" as="t" hint-placeholder-count="4">
@@ -392,6 +633,46 @@ input[type=range]{accent-color:var(--accent)}
                 </sc-for>
               </div>
             </div>
+            <div style="display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--divider);padding-top:14px">
+              <span style="font-size:15px">League</span>
+              <div style="display:inline-flex;border:1px solid var(--divider);border-radius:8px;overflow:hidden;align-self:flex-start">
+                <span style="padding:7px 14px;font-size:13px;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);min-height:36px;display:flex;align-items:center;white-space:nowrap">Great League</span>
+                <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Ultra <span style="font-size:10px;opacity:.8">soon</span></span>
+                <span style="padding:7px 12px;font-size:13px;color:var(--faint);border-left:1px solid var(--divider);display:flex;align-items:center;gap:5px;white-space:nowrap">Master <span style="font-size:10px;opacity:.8">soon</span></span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;border-top:1px solid var(--divider);padding-top:14px">
+              <span style="font-size:15px;font-weight:500;margin-bottom:4px">Your meta</span>
+              <div class="pt-tap" onClick="{{ toggleUseLog }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:8px 0;cursor:pointer">
+                <div><div style="font-size:15px">Use your log</div><div style="font-size:12px;color:var(--muted);text-wrap:pretty">Weights Teams, Counters and Build by what you actually face. Kicks in at 15 battles.</div></div>
+                <span style="width:44px;height:26px;border-radius:13px;background:{{ useLogTrackBg }};border:1px solid {{ useLogTrackBorder }};position:relative;flex:none;transition:background .2s"><span style="position:absolute;top:2px;left:{{ useLogKnobLeft }}px;width:20px;height:20px;border-radius:50%;background:{{ useLogKnobBg }};transition:left .2s"></span></span>
+              </div>
+              <div class="pt-tap" onClick="{{ askFresh }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:8px 0;border-top:1px solid var(--divider);cursor:pointer">
+                <div><div style="font-size:15px">Start fresh in Great League</div><div style="font-size:12px;color:var(--muted);text-wrap:pretty">Moves battles before now to Earlier seasons. Nothing is deleted.</div></div>
+                <span style="color:var(--faint);flex:none">›</span>
+              </div>
+              <sc-if value="{{ confirmFresh }}" hint-placeholder-val="{{ false }}">
+                <div class="pt-in" style="padding:12px;border-radius:10px;background:var(--surface2);display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
+                  <span style="font-size:13px;text-wrap:pretty">Move all 42 battles before now to Earlier seasons? Teams and Counters go back to PvPoke weights until you log 15 more.</span>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <button class="pt-tap" onClick="{{ doFresh }}" style="min-height:44px;border-radius:10px;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent-text);font:500 14px Inter,system-ui,sans-serif;cursor:pointer">Start fresh</button>
+                    <button class="pt-tap" onClick="{{ cancelFresh }}" style="min-height:44px;border-radius:10px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 14px Inter,system-ui,sans-serif;cursor:pointer">Cancel</button>
+                  </div>
+                </div>
+              </sc-if>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--divider);padding-top:12px">
+                <button class="pt-tap" onClick="{{ noop }}" style="min-height:44px;border-radius:10px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 14px Inter,system-ui,sans-serif;cursor:pointer">Export log</button>
+                <button class="pt-tap" onClick="{{ noop }}" style="min-height:44px;border-radius:10px;border:1px solid var(--divider);background:transparent;color:var(--text);font:500 14px Inter,system-ui,sans-serif;cursor:pointer">Import log</button>
+              </div>
+              <span style="font-size:12px;color:var(--muted);margin-top:8px;text-wrap:pretty">A file on this phone. Your log never leaves it unless you share the file.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--divider);padding-top:14px">
+              <span style="font-size:15px">Appearance</span>
+              <div style="display:inline-flex;border:1px solid var(--divider);border-radius:8px;overflow:hidden;align-self:flex-start">
+                <button class="pt-tap" onClick="{{ setDark }}" style="padding:0 16px;min-height:36px;border:0;background:transparent;font:400 13px Inter,system-ui,sans-serif;color:{{ darkColor }};box-shadow:{{ darkShadow }};cursor:pointer">Dark</button>
+                <button class="pt-tap" onClick="{{ setLight }}" style="padding:0 16px;min-height:36px;border:0;border-left:1px solid var(--divider);background:transparent;font:400 13px Inter,system-ui,sans-serif;color:{{ lightColor }};box-shadow:{{ lightShadow }};cursor:pointer">Light</button>
+              </div>
+            </div>
             <div style="border-top:1px solid var(--divider);padding-top:14px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px"><span>Game data from PvPoke, updated 10 Sep 2026</span><span>Your collection stays on this phone. Last import: today.</span></div>
           </div>
         </div>
@@ -404,7 +685,22 @@ input[type=range]{accent-color:var(--accent)}
 class Component extends DCLogic {
   state = { screen:'welcome', theme:'dark', data:null, openRows:{}, detailId:'t1', specId:'c1', assumptionsOpen:false,
     sheet:false, filters:{noXL:false,noShadow:false,noETM:false,budget:false}, budgetCap:250000, excluded:[],
-    query:'', verdictFilter:'All', sort:'verdict', tab:'teams' };
+    query:'', verdictFilter:'All', sort:'verdict', tab:'teams',
+    logState:'active', explainerDismissed:false, warnStale:false, set:this.logData().defaultSet, facedSort:'faced', sortPop:false, earlierOpen:false,
+    opp:['Tinkaton','Shadow Dragonite',null], logQuery:'dra', tankedSeen:false, setDone:false, pickSlots:[null,null,null], pickQuery:'', confirmFresh:false, stubTitle:'Counters', stubFor:'' };
+  logData(){
+    if(this._log) return this._log;
+    return this._log={
+      extra:{Tinkaton:['fairy','steel'],'Galarian Corsola':['ghost'],Dragonite:['dragon','flying'],'Shadow Dragonite':['dragon','flying'],Dragonair:['dragon'],Morpeko:['electric','dark'],Mandibuzz:['dark','flying'],Dunsparce:['normal'],Altaria:['dragon','flying'],Jumpluff:['grass','flying'],Marowak:['ground']},
+      faced:[['Tinkaton',14,9,5],['Azumarill',11,4,7],['Shadow Dragonite',9,2,7,true],['Galarian Corsola',8,6,2],['Clodsire',7,5,2],['Feraligatr',6,3,3]],
+      teams:[[['Tinkaton','Azumarill','Galarian Corsola'],12,8,4],[['Morpeko','Feraligatr','Galarian Stunfisk'],9,5,4]],
+      earlier:[{name:'Forever Forward',battles:31,faced:[['Medicham',9,5,4],['Skarmory',7,3,4],['Lickitung',6,4,2]],teams:[[['Azumarill','Medicham','Shadow Sableye'],19,11,8],[['Talonflame','Lickitung','Galarian Stunfisk'],12,6,6]]}],
+      recent:['Tinkaton','Azumarill','Shadow Dragonite','Galarian Corsola','Clodsire','Feraligatr','Morpeko','Medicham','Skarmory','Talonflame','Cresselia','Lickitung','Corviknight','Annihilape','Altaria','Registeel','Lanturn','Venusaur','Mandibuzz','Dunsparce'],
+      defaultSet:{n:7,started:'Today 6:40 pm',team:['Tinkaton','Azumarill','Galarian Corsola'],battles:[{r:'W',opp:['Azumarill','Clodsire','Tinkaton']},{r:'L',opp:['Shadow Dragonite','Feraligatr']},{r:'T',opp:['Medicham']}]}
+    };
+  }
+  typesOf(name){ const d=this.state.data, L=this.logData(); if(d&&d.META[name]) return d.META[name].types; const c=d&&d.COLLECTION.find(x=>(x.shadow?'Shadow '+x.name:x.name)===name||x.name===name); if(c) return c.types; return L.extra[name]||['normal']; }
+  allNames(){ const d=this.state.data, L=this.logData(); return [...new Set([...(d?d.COLLECTION.map(c=>c.shadow?'Shadow '+c.name:c.name):[]),...(d?Object.keys(d.META):[]),...Object.keys(L.extra)])]; }
   componentDidMount(){ import('./pickthree-data.js').then(d=>this.setState({data:d})); }
   tokenBg(types){
     const C=(this.state.data||{}).TYPE_COLORS||{}; const a=C[types[0]]||'#888', b=C[types[1]]||a;
@@ -413,11 +709,17 @@ class Component extends DCLogic {
     return style==='ring' ? a : `linear-gradient(135deg, ${a} 50%, ${b} 50%)`;
   }
   ring(types){ const C=(this.state.data||{}).TYPE_COLORS||{}; const style=this.props.tokenStyle??'split'; return (style==='ring'&&types[1]) ? `0 0 0 3px ${C[types[1]]}` : 'none'; }
-  go(screen, extra={}){ this.setState({screen, sheet:false, ...extra}); }
+  go(screen, extra={}){ this.setState({screen, sheet:false, sortPop:false, confirmFresh:false, ...extra}); }
   renderVals(){
     const s=this.state, d=s.data, theme=this.props.theme??s.theme;
-    const jumpDefs=[['welcome','1 Welcome'],['report','2 Import report'],['teams','3 Teams'],['detail','4 Team detail'],['collection','5 Collection'],['specimen','6 Specimen'],['sheet','7 Filters sheet']];
-    const jumps=jumpDefs.map(([id,label])=>{const on=id==='sheet'?s.sheet:(s.screen===id&&!s.sheet);return{label,go:()=>id==='sheet'?this.setState({sheet:true,screen:s.screen==='welcome'||s.screen==='report'?'teams':s.screen}):this.go(id),border:on?'#9184d9':'#3f424d',bg:on?'#2b2741':'transparent',color:on?'#d2cefd':'#b2b6ca'}});
+    const jumpDefs=[['welcome','1 Welcome'],['report','2 Import report'],['teams','3 Teams'],['detail','4 Team detail'],['collection','5 Collection'],['specimen','6 Specimen'],['sheet','7 Settings sheet'],['meta','8 Your meta'],['newset','9 New set'],['logbattle','10 Log a battle']];
+    const jumps=jumpDefs.map(([id,label])=>{const on=id==='sheet'?s.sheet:(s.screen===id&&!s.sheet);return{label,go:()=>id==='sheet'?this.setState({sheet:true,screen:s.screen==='welcome'||s.screen==='report'?'teams':s.screen}):this.go(id,id==='logbattle'?{setDone:false}:{}),border:on?'#9184d9':'#3f424d',bg:on?'#2b2741':'transparent',color:on?'#d2cefd':'#b2b6ca'}});
+    const L=this.logData();
+    const opt=(label,on,go)=>({label,go,border:on?'#9184d9':'#3f424d',bg:on?'#2b2741':'transparent',color:on?'#d2cefd':'#b2b6ca'});
+    const variantGroups=[
+      {label:'Log state',opts:[['active','42 battles'],['progress','13 of 15'],['off','Off']].map(([v,l])=>opt(l,s.logState===v,()=>this.setState({logState:v})))},
+      {label:'Current set',opts:[opt('Open',!!s.set,()=>this.setState({set:L.defaultSet,setDone:false})),opt('None',!s.set,()=>this.setState({set:null,setDone:false}))]},
+      {label:'Season warning',opts:[opt('Off',!s.warnStale,()=>this.setState({warnStale:false})),opt('On',s.warnStale,()=>this.setState({warnStale:true}))]}];
     const reportDefs=[
       ['412','Scans read',null,null,[]],['331','Pokemon recognized','Ready to rank for Great League',null,[]],
       ['4','Duplicates merged','Same Pokemon scanned twice','Kept the newest scan of each. Nothing to do.',['Azumarill','Medicham','Skarmory','Lickitung']],
@@ -426,10 +728,11 @@ class Component extends DCLogic {
     const reportRows=reportDefs.map(([n,label,sub,fix,mons],i)=>{const problem=!!fix;const open=!!s.openRows[i];return{n,label,sub,fix,open,cursor:problem?'pointer':'default',chev:open?180:0,numColor:problem?'var(--warn)':'var(--text)',toggle:()=>problem&&this.setState({openRows:{...s.openRows,[i]:!open}}),mons:mons.map(name=>({name,bg:this.tokenBg((d&&d.META[name]&&d.META[name].types)||(d&&d.COLLECTION.find(c=>c.name===name)||{types:['normal']}).types)}))}});
     const steps=[{n:'1',t:'Export from Poke Genie',d:'Scan your Pokemon, then Export → CSV.'},{n:'2',t:'Upload it here',d:'Or paste the text. It stays on your phone.'},{n:'3',t:'Get your teams',d:'Three Pokemon, in order, with moves and cost.'}];
     return { theme, isDark:theme==='dark', themeLabel:theme==='dark'?'Switch to light':'Switch to dark', w390:390, h844:844,
-      toggleTheme:()=>this.setState({theme:theme==='dark'?'light':'dark'}), jumps, steps, reportRows,
+      toggleTheme:()=>this.setState({theme:theme==='dark'?'light':'dark'}), jumps, variantGroups, steps, reportRows, openSheet:()=>this.setState({sheet:true,sortPop:false}),
+      logLine:s.logState==='active'?"Weighted by your log: 42 battles this season, 3 opponents outside PvPoke's list simulated.":s.logState==='progress'?'PvPoke weights only (13 of 15 battles logged).':'PvPoke weights only (your log is switched off).',
       isWelcome:s.screen==='welcome', isReport:s.screen==='report',
       goReport:()=>this.go('report'), goTeams:()=>this.go('teams',{tab:'teams'}), noop:e=>e.preventDefault(),
-      ...this.teamVals(), ...this.collectionVals(), ...this.sheetVals() };
+      ...this.teamVals(), ...this.collectionVals(), ...this.sheetVals(), ...this.metaVals() };
   }
   mon(p){ return { ...p, bg:this.tokenBg(p.types), ring:this.ring(p.types), initial:p.name.replace(/^(Shadow|Galarian) /,'')[0] }; }
   metaTok(name){ const d=this.state.data; const m=(d&&d.META[name])||{types:['normal']}; return {name, bg:this.tokenBg(m.types)}; }
@@ -449,6 +752,7 @@ class Component extends DCLogic {
     const chips=[{label:style==='Any'?'Team style: Any':style==='ABB'?'Team style: ABB line':'Team style: Balanced',toggle:()=>this.setState({teamStyle:styles[(styles.indexOf(style)+1)%3]}),border:style!=='Any'?'var(--accent)':'var(--divider)',bg:style!=='Any'?'var(--accent-tint)':'transparent',color:style!=='Any'?'var(--accent-text)':'var(--text)'}];
     chipDefs.forEach(([k,label])=>{const on=f[k];chips.push({label,toggle:()=>this.setState({filters:{...f,[k]:!on}}),border:on?'var(--accent)':'var(--divider)',bg:on?'var(--accent-tint)':'transparent',color:on?'var(--accent-text)':'var(--text)'})});
     chips.push({label:s.excluded.length?`Exclude Pokemon · ${s.excluded.length}`:'Exclude Pokemon',toggle:()=>this.setState({sheet:true}),border:'var(--divider)',bg:'transparent',color:'var(--text)'});
+    chips.push({label:s.logState==='active'?'Your log: 42 battles':s.logState==='progress'?'Your log: 13 of 15':'Your log: off',toggle:()=>this.go('meta'),border:'var(--divider)',bg:'transparent',color:s.logState==='off'?'var(--muted)':'var(--accent-text)'});
     const raw=d.TEAMS.find(t=>t.id===s.detailId)||d.TEAMS[0];
     const orders=['First','Second','Third'];
     const team={ ...raw, why:raw.why, slots:raw.slots.map((p,i)=>({ ...this.mon(p), order:orders[i], flagLine:p.flags.join(' · '), altBg:this.tokenBg(p.alt.types), altLine:p.alt.line,
@@ -499,14 +803,74 @@ class Component extends DCLogic {
   }
   sheetVals(){
     const s=this.state, f=s.filters;
-    const showTabs=['teams','detail','collection','specimen'].includes(s.screen);
-    const tabDefs=[['teams','Teams','6px',()=>this.go('teams',{tab:'teams'}),['teams','detail'].includes(s.screen)],['collection','Collection','50%',()=>this.go('collection',{tab:'collection'}),['collection','specimen'].includes(s.screen)],['settings','Filters','2px',()=>this.setState({sheet:true}),s.sheet]];
-    const tabs=tabDefs.map(([id,label,shape,go,on])=>({label,shape,go,color:on?'var(--accent)':'var(--muted)',fill:on?'currentColor':'transparent'}));
+    const showTabs=['teams','detail','collection','specimen','meta','stub'].includes(s.screen);
+    const isCounters=s.screen==='stub'&&s.stubTitle==='Counters';
+    const tabDefs=[
+      ['Teams','M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM6.5 13a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM17.5 13a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z',()=>this.go('teams',{tab:'teams'}),['teams','detail'].includes(s.screen)],
+      ['Counters','M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6zM9 12l2 2 4-4',()=>this.go('stub',{stubTitle:'Counters',stubFor:''}),isCounters],
+      ['Collection','M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM3 12h6.5M14.5 12H21M12 9.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z',()=>this.go('collection',{tab:'collection'}),['collection','specimen'].includes(s.screen)],
+      ['Your meta','M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM9 8h6M9 12h6M9 16h4',()=>this.go('meta'),['meta','newset','logbattle'].includes(s.screen)||(s.screen==='stub'&&!isCounters)]];
+    const tabs=tabDefs.map(([label,d,go,on])=>({label,d,go,color:on?'var(--accent)':'var(--muted)'}));
+    const useLog=s.logState!=='off';
+    const theme=this.props.theme??s.theme;
     const defs=[['noXL','No XL','Skip Pokemon that need XL Candy (levels above 40)'],['noShadow','No Shadows','Skip Shadow Pokemon'],['noETM','No Elite TM','Skip moves that need an Elite TM'],['budget','Budget builds','Hide teams above your Stardust budget']];
     const sheetToggles=defs.map(([k,label,sub])=>{const on=f[k];return{label,sub,toggle:()=>this.setState({filters:{...f,[k]:!on}}),trackBg:on?'var(--accent)':'var(--surface2)',trackBorder:on?'var(--accent)':'var(--divider)',knobLeft:on?20:2,knobBg:on?'var(--bg)':'var(--faint)'}});
     const excludedChips=s.excluded.map(name=>{const d=s.data;const c=d&&d.COLLECTION.find(x=>x.name===name.replace('Shadow ',''));return{name,bg:this.tokenBg(c?c.types:['normal']),remove:()=>this.setState({excluded:s.excluded.filter(n=>n!==name)})}});
     return { showTabs, tabs, sheetOpen:s.sheet, closeSheet:()=>this.setState({sheet:false}), sheetToggles, budgetCap:s.budgetCap, budgetLabel:s.budgetCap.toLocaleString('en-US'),
-      setBudget:e=>this.setState({budgetCap:+e.target.value}), excludedChips, noExcluded:s.excluded.length===0 };
+      setBudget:e=>this.setState({budgetCap:+e.target.value}), excludedChips, noExcluded:s.excluded.length===0,
+      toggleUseLog:()=>this.setState({logState:useLog?'off':'active'}), useLogTrackBg:useLog?'var(--accent)':'var(--surface2)', useLogTrackBorder:useLog?'var(--accent)':'var(--divider)', useLogKnobLeft:useLog?20:2, useLogKnobBg:useLog?'var(--bg)':'var(--faint)',
+      confirmFresh:s.confirmFresh, askFresh:()=>this.setState({confirmFresh:true}), cancelFresh:()=>this.setState({confirmFresh:false}), doFresh:()=>this.setState({confirmFresh:false,warnStale:false,logState:'progress',explainerDismissed:false}),
+      setDark:()=>this.setState({theme:'dark'}), setLight:()=>this.setState({theme:'light'}), darkColor:theme==='dark'?'var(--accent)':'var(--muted)', darkShadow:theme==='dark'?'inset 0 0 0 1px var(--accent)':'none', lightColor:theme==='light'?'var(--accent)':'var(--muted)', lightShadow:theme==='light'?'inset 0 0 0 1px var(--accent)':'none' };
+  }
+  metaVals(){
+    const s=this.state, d=s.data, L=this.logData();
+    const tok=name=>{const t=this.typesOf(name);return{name,short:name.replace('Shadow ','S. ').replace('Galarian ','G. '),bg:this.tokenBg(t),ring:this.ring(t),initial:name.replace(/^(Shadow|Galarian) /,'')[0],shadow:name.startsWith('Shadow ')}};
+    const ls=s.logState;
+    const statusText=ls==='active'?'Weighting Teams and Counters by 42 battles this season.':ls==='progress'?'13 of 15 battles until your log weights Teams and Counters.':'Your log is switched off in Settings.';
+    const sortRec=(a,b)=>s.facedSort==='record'?(a[2]/(a[2]+a[3]))-(b[2]/(b[2]+b[3])):b[1]-a[1];
+    const facedRow=max=>([name,n,w,l,off])=>({...tok(name),facedLabel:'faced '+n,record:w+'-'+l,pct:Math.round(n/max*100)+'%',offList:!!off,open:()=>this.go('stub',{stubTitle:'Counters',stubFor:name})});
+    const facedRows=[...L.faced].sort(sortRec).map(facedRow(14));
+    const teamRow=([team,n,w,l])=>({toks:team.map(tok),names:team.join(', '),battles:n+' battles',record:w+'-'+l,open:()=>this.go('stub',{stubTitle:'Build',stubFor:team.join(', ')})});
+    const seasonTeams=L.teams.map(teamRow);
+    const earlier=L.earlier.map(se=>({label:se.name+', '+se.battles+' battles',faced:se.faced.map(facedRow(9)),teams:se.teams.map(teamRow)}));
+    const set=s.set, hasSet=!!set;
+    const badge=r=>r==='W'?{letter:'W',badgeBg:'var(--accent-tint2)',badgeColor:'var(--text)',badgeBorder:'var(--accent-tint2)',badgeSize:13,oppOpacity:1}:r==='L'?{letter:'L',badgeBg:'var(--surface2)',badgeColor:'var(--text)',badgeBorder:'var(--surface2)',badgeSize:13,oppOpacity:1}:{letter:'tanked',badgeBg:'transparent',badgeColor:'var(--faint)',badgeBorder:'var(--divider)',badgeSize:10,oppOpacity:.45};
+    const setSlots=[0,1,2,3,4].map(i=>{const b=set&&set.battles[i];if(!b)return{filled:false,empty:true,opps:[]};return{filled:true,empty:false,...badge(b.r),opps:b.opp.map(tok)}});
+    const rec=set?set.battles.reduce((a,b)=>{if(b.r==='W')a.w++;if(b.r==='L')a.l++;return a},{w:0,l:0}):{w:0,l:0};
+    const battleNo=set?Math.min(set.battles.length+1,5):1;
+    const opp=s.opp;
+    const fill=name=>{const i=opp.findIndex(x=>!x);if(i<0)return;const n=[...opp];n[i]=name;this.setState({opp:n,logQuery:''})};
+    const oppSlots=[0,1,2].map(i=>opp[i]?{filled:true,empty:false,...tok(opp[i]),n:String(i+1),clear:()=>{const n=[...opp];n[i]=null;this.setState({opp:n})}}:{filled:false,empty:true,n:String(i+1),name:''});
+    const recentTokens=L.recent.map(n=>({...tok(n),pick:()=>fill(n)}));
+    const q=s.logQuery.trim().toLowerCase();
+    const logResults=q?this.allNames().filter(n=>n.toLowerCase().includes(q)).slice(0,6).map(n=>({...tok(n),pick:()=>fill(n)})):[];
+    const save=r=>{if(!set)return;const battles=[...set.battles,{r,opp:opp.filter(Boolean)}];const done=battles.length>=5;this.setState({set:{...set,battles},opp:[null,null,null],logQuery:'',setDone:done,tankedSeen:s.tankedSeen||r==='T',screen:done?'logbattle':'meta'})};
+    const ps=s.pickSlots, pq=s.pickQuery.trim().toLowerCase();
+    const pickFill=name=>{const i=ps.findIndex(x=>!x);if(i<0)return;const n=[...ps];n[i]=name;this.setState({pickSlots:n,pickQuery:''})};
+    const pickSlotViews=[0,1,2].map(i=>ps[i]?{filled:true,empty:false,...tok(ps[i]),clear:()=>{const n=[...ps];n[i]=null;this.setState({pickSlots:n})}}:{filled:false,empty:true,n:String(i+1)});
+    const owned=d?d.COLLECTION.map(c=>({name:c.shadow?'Shadow '+c.name:c.name,cp:c.cp})):[];
+    const pickResults=pq?owned.filter(o=>o.name.toLowerCase().includes(pq)).map(o=>({...tok(o.name),sub:'CP '+o.cp,pick:()=>pickFill(o.name)})):[];
+    const ownedNames=new Set(owned.map(o=>o.name));
+    const pickOthers=pq?this.allNames().filter(n=>!ownedNames.has(n)&&n.toLowerCase().includes(pq)).slice(0,5).map(n=>({...tok(n),pick:()=>pickFill(n)})):[];
+    const recentTeamRows=L.teams.map(([team])=>({toks:team.map(tok),names:team.join(', '),pick:()=>this.setState({pickSlots:[...team]})}));
+    const pick3Rows=d?d.TEAMS.slice(0,3).map(t=>({toks:t.slots.map(p=>tok(p.name)),names:t.slots.map(p=>p.name).join(', '),fit:t.fit+' fit',...this.fitStyle(t.fit),pick:()=>this.setState({pickSlots:t.slots.map(p=>p.name)})})):[];
+    const canStart=ps.every(Boolean);
+    const startSet=()=>{if(!canStart)return;this.setState({set:{n:(set?set.n:6)+1,started:'Just now',team:[...ps],battles:[]},pickSlots:[null,null,null],pickQuery:'',setDone:false,screen:'meta'})};
+    return { isMeta:s.screen==='meta', isNewSet:s.screen==='newset', isLogBattle:s.screen==='logbattle', isStub:s.screen==='stub', stubTitle:s.stubTitle, stubLine:s.stubFor?(s.stubTitle==='Counters'?'Counters for '+s.stubFor:'Build with '+s.stubFor):s.stubTitle,
+      goMeta:()=>this.go('meta',{setDone:false}), goNewSet:()=>this.go('newset'), goLog:()=>this.go('logbattle',{setDone:false}),
+      statusText, statusProgress:ls==='progress', progressPct:'87%', showExplainer:ls==='active'&&!s.explainerDismissed, dismissExplainer:()=>this.setState({explainerDismissed:true}),
+      metaWarn:s.warnStale, startFresh:()=>this.setState({sheet:true,confirmFresh:true}),
+      hasSet, noSet:!hasSet, setTitle:set?'Set '+set.n:'', setStarted:set?'Started '+set.started:'', setTeam:set?set.team.map(tok):[], setSlots, endSet:()=>this.setState({set:null}),
+      facedRows, facedSortLabel:s.facedSort==='record'?'Worst record':'Most faced', sortPop:s.sortPop, toggleSortPop:()=>this.setState({sortPop:!s.sortPop}),
+      setSortFaced:()=>this.setState({facedSort:'faced',sortPop:false}), setSortRecord:()=>this.setState({facedSort:'record',sortPop:false}),
+      sortFacedColor:s.facedSort==='faced'?'var(--accent)':'var(--text)', sortRecordColor:s.facedSort==='record'?'var(--accent)':'var(--text)',
+      seasonTeams, earlier, earlierOpen:s.earlierOpen, earlierChev:s.earlierOpen?180:0, toggleEarlier:()=>this.setState({earlierOpen:!s.earlierOpen}),
+      logSubtitle:set?'Set '+set.n+', battle '+battleNo+' of 5':'No open set', notSetDone:!s.setDone, setDone:s.setDone, setDoneLine:set?'Set '+set.n+' done, '+rec.w+'-'+rec.l+'.':'',
+      oppSlots, recentTokens, logQuery:s.logQuery, setLogQuery:e=>this.setState({logQuery:e.target.value}), logResults,
+      saveWin:()=>save('W'), saveLoss:()=>save('L'), saveTanked:()=>save('T'), showTankedNote:!s.tankedSeen,
+      newSetSameTeam:()=>this.setState({set:{n:set.n+1,started:'Just now',team:set.team,battles:[]},setDone:false,screen:'meta'}),
+      recentTeamRows, pick3Rows, pickSlotViews, pickQuery:s.pickQuery, setPickQuery:e=>this.setState({pickQuery:e.target.value}), pickResults, pickOthers, hasPickResults:pickResults.length>0||pickOthers.length>0, hasPickOthers:pickOthers.length>0,
+      startSet, startOpacity:canStart?1:.45 };
   }
 }
 </script>
