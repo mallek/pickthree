@@ -26,7 +26,10 @@ The app loads `/data/*` at runtime, so run `npm run data:build` before `dev`. `#
 "Try a sample collection" link) imports `apps/web/public/fixtures/pokegenie-sample.csv`.
 
 Deploy: pushing to `main` runs `.github/workflows/pages.yml`, which builds the data and the app and
-publishes to GitHub Pages at pick3.gg (DNS at Dynadot: apex A/AAAA to GitHub Pages, www CNAME to mallek.github.io). The old pick3.demome.com is a redirect site in mallek/pick3-redirect.
+publishes to GitHub Pages at pick3.gg. The domain is registered at Dynadot with nameservers pointed at
+Cloudflare; the zone there holds the records (apex A/AAAA to GitHub Pages, www CNAME to
+mallek.github.io, all DNS-only so GitHub issues the certificate). The old pick3.demome.com is a
+redirect site in mallek/pick3-redirect.
 
 ## PWA
 
