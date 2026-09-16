@@ -9,7 +9,7 @@ import {
   type VerdictLabel,
 } from '@pickthree/engine';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { initialOf, metaTags, speciesDisplayName, typeColor, typeLabel } from './format.ts';
+import { initialOf, metaTags, shortName, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
@@ -24,6 +24,15 @@ export function useName(): (id: string) => string {
   return (id: string) => {
     const s = sp(id);
     return speciesDisplayName(id, s ? ({ speciesName: s.name } as never) : undefined);
+  };
+}
+
+/** "Shadow Dragonite" -> "S. Dragonite", for tight spaces like the recent-battles row. */
+export function useShortName(): (id: string) => string {
+  const sp = useSpecies();
+  return (id: string) => {
+    const s = sp(id);
+    return shortName(id, s ? ({ speciesName: s.name } as never) : undefined);
   };
 }
 
@@ -86,6 +95,25 @@ export function useScrollMemory(key: string, ready: boolean): void {
 export function useMetaRank(): (id: string) => MetaRank | undefined {
   const { leagueInfo } = useAppState();
   return (id: string) => leagueInfo?.metaRanks[id];
+}
+
+/** Species ids whose display name contains the query, league-legal ones first, capped.
+ * `allSpecies` excludes megas but includes shadow ids, so "dra" lists Dragonite, Shadow
+ * Dragonite and Dragonair. */
+export function useSpeciesSearch(query: string, limit = 12): string[] {
+  const s = useAppState();
+  const name = useName();
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    return [];
+  }
+  const legal = new Set(s.leagueInfo?.analyzable ?? []);
+  const all = s.data?.allSpecies ?? [];
+  const hits = all.filter((id) => name(id).toLowerCase().includes(q));
+  hits.sort(
+    (a, b) => Number(legal.has(b)) - Number(legal.has(a)) || name(a).localeCompare(name(b)),
+  );
+  return hits.slice(0, limit);
 }
 
 /** "#18 overall" and "#5 closer" pills for a species, nothing outside the top 50. */
