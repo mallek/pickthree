@@ -34,3 +34,4 @@ export * from './scan/scanList.js';
 export * from './recommend.js';
 export * from './analyze.js';
 export * from './host/ComputeHost.js';
+export * from './yourmeta/index.js';
