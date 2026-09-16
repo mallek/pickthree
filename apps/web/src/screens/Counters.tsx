@@ -44,7 +44,7 @@ export function Counters() {
     );
   }
 
-  let rows: CounterEntry[] = s.counters ?? [];
+  let rows: CounterEntry[] = s.counters?.entries ?? [];
   if (own === 'have') {
     rows = rows.filter((c) => c.owned === 'have');
   }

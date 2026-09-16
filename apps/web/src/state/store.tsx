@@ -1,19 +1,24 @@
-import type {
-  CounterEntry,
-  ImportReport,
-  Layout,
-  League,
-  ManualInput,
-  ManualResult,
-  MovePool,
-  ProgressEvent,
-  Recommendation,
-  RecommendOptions,
-  ScanList,
-  Specimen,
-  TeamAnalysis,
-  TeamPick,
-  Verdict,
+import {
+  SET_SIZE,
+  type BattleSet,
+  type CountersResult,
+  type ImportReport,
+  type Layout,
+  type League,
+  type LoggedBattle,
+  type ManualInput,
+  type ManualResult,
+  type MovePool,
+  type ProgressEvent,
+  type Recommendation,
+  type RecommendOptions,
+  type ScanList,
+  type Season,
+  type Specimen,
+  type TeamAnalysis,
+  type TeamPick,
+  type TeamRef,
+  type Verdict,
 } from '@pickthree/engine';
 import {
   createContext,
@@ -32,6 +37,8 @@ import { recordError, setErrorReportsEnabled } from '../diag.ts';
 import { describeLayoutLine, emptyLayoutValue } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
+import { parseLogFile, serializeLog } from '../storage/logFile.ts';
+import { newId, yourMetaFrom } from './yourMeta.ts';
 
 /**
  * A layout the resolver was unsure about, or one it had to work out from values while a header
@@ -58,7 +65,10 @@ export type Route =
   | { screen: 'counters' }
   | { screen: 'build' }
   | { screen: 'custom' }
-  | { screen: 'add' };
+  | { screen: 'add' }
+  | { screen: 'meta' }
+  | { screen: 'meta-new' }
+  | { screen: 'meta-log' };
 
 export interface DataInfo {
   pvpokeCommit: string;
@@ -68,6 +78,7 @@ export interface DataInfo {
   leagues: League[];
   /** Released, non-mega species for adding by hand. */
   allSpecies: string[];
+  seasons: Season[];
 }
 
 export interface AppState {
@@ -92,7 +103,7 @@ export interface AppState {
   verdictsLoading: boolean;
   /** Set when the last verdict run failed; the screens stop retrying until the collection changes. */
   verdictsError: string | null;
-  counters: CounterEntry[] | null;
+  counters: CountersResult | null;
   countersLoading: boolean;
   scanList: ScanList | null;
   /** Hand-built team: the three picks, how to order them, and the last analysis. */
@@ -103,6 +114,11 @@ export interface AppState {
   analyzeError: string | null;
   /** Filters snapshot the current recommendation was computed with. */
   recommendedWith: string | null;
+  /** Battle log sets for the league in play, oldest first. */
+  sets: BattleSet[];
+  setsLoaded: boolean;
+  /** Bumps on every log change so cached results know they are stale. */
+  logVersion: number;
 }
 
 type Action =
@@ -126,14 +142,15 @@ type Action =
   | { type: 'verdicts-error'; message: string }
   | { type: 'verdicts-partial'; verdicts: Record<string, Verdict> }
   | { type: 'counters-start' }
-  | { type: 'counters-done'; counters: CounterEntry[] | null }
+  | { type: 'counters-done'; counters: CountersResult | null }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
   | { type: 'order-mode'; mode: 'best' | 'given' }
   | { type: 'analyze-start' }
   | { type: 'analyze-done'; analysis: TeamAnalysis }
   | { type: 'analyze-error'; message: string }
-  | { type: 'forget' };
+  | { type: 'forget' }
+  | { type: 'sets'; sets: BattleSet[] };
 
 const initial: AppState = {
   boot: 'loading',
@@ -164,6 +181,9 @@ const initial: AppState = {
   analyzing: false,
   analyzeError: null,
   recommendedWith: null,
+  sets: [],
+  setsLoaded: false,
+  logVersion: 0,
 };
 
 function reducer(s: AppState, a: Action): AppState {
@@ -184,6 +204,8 @@ function reducer(s: AppState, a: Action): AppState {
         counters: null,
         scanList: null,
         analysis: null,
+        sets: [],
+        setsLoaded: false,
       };
     case 'league-done':
       return { ...s, leagueLoading: false, leagueInfo: a.info };
@@ -261,7 +283,11 @@ function reducer(s: AppState, a: Action): AppState {
         data: s.data,
         settingsLoaded: true,
         route: { screen: 'welcome' },
+        logVersion: s.logVersion + 1,
       };
+    case 'sets':
+      // Anything weighted by the log is stale now; Teams re-runs through filterKey.
+      return { ...s, sets: a.sets, setsLoaded: true, logVersion: s.logVersion + 1, counters: null };
     default:
       return s;
   }
@@ -288,6 +314,15 @@ export function parseHash(hash: string): Route {
   if (a === 'add') {
     return { screen: 'add' };
   }
+  if (a === 'meta') {
+    if (b === 'new') {
+      return { screen: 'meta-new' };
+    }
+    if (b === 'log') {
+      return { screen: 'meta-log' };
+    }
+    return { screen: 'meta' };
+  }
   return { screen: 'welcome' };
 }
 
@@ -313,6 +348,12 @@ export function hashFor(r: Route): string {
       return '#/build/team';
     case 'add':
       return '#/add';
+    case 'meta':
+      return '#/meta';
+    case 'meta-new':
+      return '#/meta/new';
+    case 'meta-log':
+      return '#/meta/log';
     default:
       return '#/';
   }
@@ -330,8 +371,12 @@ export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
   };
 }
 
-export function filterKey(settings: Settings): string {
-  return JSON.stringify({ league: settings.league ?? 'great', ...optionsFrom(settings) });
+export function filterKey(settings: Settings, logVersion = 0): string {
+  return JSON.stringify({
+    league: settings.league ?? 'great',
+    logVersion,
+    ...optionsFrom(settings),
+  });
 }
 
 interface Actions {
@@ -359,6 +404,20 @@ interface Actions {
   setLeague(id: string): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
+  /** Open a set of five with this team in the league in play. Closes any open set first. */
+  startSet(team: TeamRef): Promise<void>;
+  logBattle(input: {
+    opponents: string[];
+    result: 'win' | 'loss' | null;
+    tanked: boolean;
+  }): Promise<void>;
+  endSet(): Promise<void>;
+  /** Battles before now move to earlier seasons for the league in play. Nothing is deleted. */
+  startFresh(): void;
+  /** The whole log (every league) as the export file text. */
+  exportLog(): Promise<string>;
+  /** Adds sets from an export file. Throws the file parser's sentence on a bad file. */
+  importLog(text: string): Promise<{ added: number; skipped: number }>;
 }
 
 const StateCtx = createContext<AppState | null>(null);
@@ -400,6 +459,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
               species: r.species,
               leagues: r.leagues,
               allSpecies: r.allSpecies,
+              seasons: r.seasons,
             },
           });
         }
@@ -441,6 +501,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     h.league = id;
     let cancelled = false;
     dispatch({ type: 'league-start' });
+    void storage.loadSets(id).then((sets) => {
+      if (!cancelled) {
+        dispatch({ type: 'sets', sets });
+      }
+    });
     h.leagueInfo(id)
       .then((info) => {
         if (!cancelled) {
@@ -530,18 +595,23 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [navigate],
   );
 
+  const yourMeta = useCallback(() => {
+    const s = stateRef.current;
+    return yourMetaFrom(s.sets, s.data?.seasons ?? [], s.settings, s.settings.league ?? 'great');
+  }, []);
+
   const runRecommend = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
     if (!s.collection || s.recommending || !s.leagueInfo) {
       return;
     }
-    const key = filterKey(s.settings);
+    const key = filterKey(s.settings, s.logVersion);
     dispatch({ type: 'rec-start', key });
     try {
       const recommendation = await h.recommend(
         s.collection.specimens,
-        optionsFrom(s.settings),
+        { ...optionsFrom(s.settings), yourMeta: yourMeta() },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
       );
       dispatch({ type: 'rec-done', recommendation });
@@ -589,11 +659,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     dispatch({ type: 'counters-start' });
     try {
-      const counters = await h.counters(s.collection.specimens, {});
+      const counters = await h.counters(s.collection.specimens, { yourMeta: yourMeta() });
       dispatch({ type: 'counters-done', counters });
     } catch (e) {
       recordError('counters', e);
-      dispatch({ type: 'counters-done', counters: [] });
+      dispatch({ type: 'counters-done', counters: null });
     }
   }, []);
 
@@ -635,6 +705,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         s.collection?.specimens ?? [],
         {
           order: s.orderMode,
+          yourMeta: yourMeta(),
           ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
         },
@@ -729,6 +800,103 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [updateSettings],
   );
 
+  const persistSets = useCallback(async (sets: BattleSet[]) => {
+    for (const set of sets) {
+      await storage.saveSet(set);
+    }
+    const league = stateRef.current.settings.league ?? 'great';
+    const loaded = await storage.loadSets(league);
+    // Mirror the 'sets' reducer case synchronously: startSet -> logBattle -> logBattle can be
+    // awaited back to back before React re-renders, and the next call needs the fresh set list,
+    // not whatever stateRef held when this render last committed.
+    stateRef.current = {
+      ...stateRef.current,
+      sets: loaded,
+      setsLoaded: true,
+      logVersion: stateRef.current.logVersion + 1,
+      counters: null,
+    };
+    dispatch({ type: 'sets', sets: loaded });
+  }, []);
+
+  const startSet = useCallback(
+    async (team: TeamRef) => {
+      const league = stateRef.current.settings.league ?? 'great';
+      const open = stateRef.current.sets
+        .filter((s) => !s.closed)
+        .map((s) => ({ ...s, closed: true }));
+      const set: BattleSet = {
+        id: newId(),
+        league,
+        startedAt: new Date().toISOString(),
+        team,
+        battles: [],
+        closed: false,
+      };
+      await persistSets([...open, set]);
+    },
+    [persistSets],
+  );
+
+  const logBattle = useCallback(
+    async (input: { opponents: string[]; result: 'win' | 'loss' | null; tanked: boolean }) => {
+      const open = stateRef.current.sets.find((s) => !s.closed);
+      if (!open) {
+        throw new Error('Start a set before logging a battle.');
+      }
+      const battle: LoggedBattle = {
+        id: newId(),
+        at: new Date().toISOString(),
+        opponents: input.opponents
+          .filter((id, i, arr) => id !== '' && arr.indexOf(id) === i)
+          .slice(0, 3),
+        result: input.tanked ? null : input.result,
+        tanked: input.tanked,
+      };
+      const battles = [...open.battles, battle];
+      await persistSets([{ ...open, battles, closed: battles.length >= SET_SIZE }]);
+    },
+    [persistSets],
+  );
+
+  const endSet = useCallback(async () => {
+    const open = stateRef.current.sets.find((s) => !s.closed);
+    if (open) {
+      await persistSets([{ ...open, closed: true }]);
+    }
+  }, [persistSets]);
+
+  const startFresh = useCallback(() => {
+    const league = stateRef.current.settings.league ?? 'great';
+    updateSettings((cur) => ({
+      ...cur,
+      yourMeta: {
+        ...cur.yourMeta,
+        freshFrom: { ...cur.yourMeta?.freshFrom, [league]: new Date().toISOString() },
+      },
+    }));
+    // The window moved, so weighted results are stale even though no set changed.
+    dispatch({ type: 'sets', sets: stateRef.current.sets });
+  }, [updateSettings]);
+
+  const exportLog = useCallback(async () => serializeLog(await storage.loadAllSets()), []);
+
+  const importLog = useCallback(async (text: string) => {
+    const sets = parseLogFile(text);
+    const r = await storage.importSets(sets);
+    const league = stateRef.current.settings.league ?? 'great';
+    const loaded = await storage.loadSets(league);
+    stateRef.current = {
+      ...stateRef.current,
+      sets: loaded,
+      setsLoaded: true,
+      logVersion: stateRef.current.logVersion + 1,
+      counters: null,
+    };
+    dispatch({ type: 'sets', sets: loaded });
+    return r;
+  }, []);
+
   const forget = useCallback(async () => {
     await storage.forget();
     dispatch({ type: 'forget' });
@@ -756,6 +924,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setLeague,
       toggleExcluded,
       forget,
+      startSet,
+      logBattle,
+      endSet,
+      startFresh,
+      exportLog,
+      importLog,
     }),
     [
       navigate,
@@ -775,6 +949,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setLeague,
       toggleExcluded,
       forget,
+      startSet,
+      logBattle,
+      endSet,
+      startFresh,
+      exportLog,
+      importLog,
     ],
   );
 
