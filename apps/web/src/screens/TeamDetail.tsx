@@ -452,6 +452,9 @@ export function TeamDetail({ id }: { id: string }) {
                 {a.pvpokeDate}
               </div>
               <div>
+                <b>Opponent weights</b> · {a.facing}
+              </div>
+              <div>
                 <b>IVs</b> · {a.ivs}
               </div>
               <div>

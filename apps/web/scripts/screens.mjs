@@ -199,10 +199,10 @@ await new Promise((r) => setTimeout(r, 600));
 console.log(`  manual add landed at ${page.url()}`);
 await shot('17-added', false);
 
-console.log('filters sheet');
+console.log('settings sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.tabs');
-await page.$eval('.tabs .tab:nth-child(4)', (el) => el.click());
+await page.waitForSelector('.head-cog');
+await page.click('.head-cog');
 await page.waitForSelector('.sheet');
 await new Promise((r) => setTimeout(r, 400));
 await shot('06-sheet', false);

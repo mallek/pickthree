@@ -1,15 +1,18 @@
-import type {
-  MetaRank,
-  MoveChoice,
-  MoveEffect,
-  PokemonType,
-  Structure,
-  VerdictLabel,
+import {
+  countedBattles,
+  DEFAULT_PROFILE_OPTIONS,
+  type MetaRank,
+  type MoveChoice,
+  type MoveEffect,
+  type PokemonType,
+  type Structure,
+  type VerdictLabel,
 } from '@pickthree/engine';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { initialOf, metaTags, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
-import { useAppState } from './state/store.tsx';
+import { useActions, useAppState } from './state/store.tsx';
+import { yourMetaFrom } from './state/yourMeta.ts';
 
 export function useSpecies(): (id: string) => SpeciesLite | undefined {
   const { data } = useAppState();
@@ -428,16 +431,41 @@ export function Progress({ stage, done, total }: { stage: string; done: number; 
   );
 }
 
+/** Counted battles (not tanked, this season, after any fresh mark) for the league in play. */
+export function useLogCount(): number {
+  const s = useAppState();
+  const m = yourMetaFrom(s.sets, s.data?.seasons ?? [], s.settings, s.settings.league ?? 'great');
+  return countedBattles(m.battles, DEFAULT_PROFILE_OPTIONS.window).length;
+}
+
+const COG_PATH =
+  'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z';
+
+/** The settings cog every screen header carries. Opens the sheet. */
+export function HeadCog() {
+  const { openSheet } = useActions();
+  return (
+    <button type="button" className="cog head-cog" aria-label="Settings" onClick={openSheet}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" />
+        <path d={COG_PATH} />
+      </svg>
+    </button>
+  );
+}
+
 export function Header({
   title,
   sub,
   onBack,
   backLabel,
+  cog = true,
 }: {
   title: string;
   sub?: string;
   onBack?: () => void;
   backLabel?: string;
+  cog?: boolean;
 }) {
   return (
     <header className="hdr">
@@ -452,7 +480,7 @@ export function Header({
         <span>{title}</span>
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
-      <span className="back-spacer" />
+      {cog ? <HeadCog /> : <span className="back-spacer" />}
     </header>
   );
 }

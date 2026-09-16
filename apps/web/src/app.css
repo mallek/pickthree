@@ -2057,3 +2057,12 @@ input[type='range'] {
   align-self: flex-start;
   padding-left: 0;
 }
+.head-cog {
+  height: 36px;
+  width: 36px;
+  border-radius: 50%;
+  position: relative;
+}
+.hdr .head-cog {
+  justify-self: end;
+}

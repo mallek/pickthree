@@ -3,10 +3,12 @@ import { useEffect } from 'react';
 import {
   Chip,
   FitTag,
+  HeadCog,
   PokemonToken,
   Progress,
   RoleLabel,
   StructureTag,
+  useLogCount,
   useName,
   NoCollection,
 } from '../components.tsx';
@@ -66,7 +68,8 @@ export function Teams() {
   const s = useAppState();
   const { navigate, runRecommend, updateSettings, openSheet } = useActions();
   const f = s.settings.filters;
-  const key = filterKey(s.settings);
+  const logCount = useLogCount();
+  const key = filterKey(s.settings, s.logVersion);
   const stale = s.recommendedWith !== key;
 
   useEffect(() => {
@@ -118,7 +121,10 @@ export function Teams() {
       <div className="page-head">
         <div className="between">
           <h2>Your teams</h2>
-          <span className="meta">{s.collection.report.recognized} Pokémon</span>
+          <span className="row">
+            <span className="meta">{s.collection.report.recognized} Pokémon</span>
+            <HeadCog />
+          </span>
         </div>
         <LeagueSwitcher />
         <div className="chips">
@@ -141,6 +147,9 @@ export function Teams() {
             {s.settings.excludedSpecimenIds.length > 0
               ? `Exclude Pokémon · ${s.settings.excludedSpecimenIds.length}`
               : 'Exclude Pokémon'}
+          </Chip>
+          <Chip on={logCount >= 15} onClick={() => navigate({ screen: 'meta' })}>
+            {logCount >= 15 ? `Your log: ${logCount} battles` : `Your log: ${logCount} of 15`}
           </Chip>
         </div>
       </div>

@@ -1,14 +1,68 @@
-import { PokemonToken, useName } from '../components.tsx';
+import { useRef, useState } from 'react';
+import { PokemonToken, useLogCount, useName } from '../components.tsx';
 import { dateLabel, num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
 import { Diagnostics } from '../components/Diagnostics.tsx';
-import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
 
 export function Sheet() {
   const s = useAppState();
-  const { closeSheet, updateSettings, toggleExcluded, forget, navigate } = useActions();
+  const {
+    closeSheet,
+    updateSettings,
+    toggleExcluded,
+    forget,
+    navigate,
+    startFresh,
+    exportLog,
+    importLog,
+  } = useActions();
   const name = useName();
+  const league = useLeague();
+  const logCount = useLogCount();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [logNote, setLogNote] = useState<string | null>(null);
+
+  const doExport = async (): Promise<void> => {
+    const text = await exportLog();
+    const name = `pick3-battle-log-${new Date().toISOString().slice(0, 10)}.json`;
+    const file = new File([text], name, { type: 'application/json' });
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], title: 'pick3 battle log' });
+        return;
+      } catch {
+        // The share sheet was dismissed or refused; fall through to a download.
+      }
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+    setLogNote(`Saved ${name}.`);
+  };
+
+  const doImport = async (file: File | null): Promise<void> => {
+    if (!file) {
+      return;
+    }
+    try {
+      const r = await importLog(await file.text());
+      setLogNote(
+        `Added ${r.added} ${r.added === 1 ? 'set' : 'sets'}, skipped ${r.skipped} already here.`,
+      );
+    } catch (e) {
+      setLogNote(e instanceof Error ? e.message : 'Could not read that file.');
+    } finally {
+      if (fileRef.current) {
+        fileRef.current.value = '';
+      }
+    }
+  };
   const f = s.settings.filters;
   const toggle = (k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'): void =>
     updateSettings((cur) => ({ ...cur, filters: { ...cur.filters, [k]: !cur.filters[k] } }));
@@ -25,12 +79,12 @@ export function Sheet() {
   return (
     <>
       <div className="overlay" onClick={closeSheet} aria-hidden="true" />
-      <div className="sheet" role="dialog" aria-label="Filters and settings">
+      <div className="sheet" role="dialog" aria-label="Settings">
         <div className="grabber">
           <span />
         </div>
         <div className="between" style={{ padding: '4px 20px 8px' }}>
-          <h3 style={{ fontSize: 19 }}>Filters and settings</h3>
+          <h3 style={{ fontSize: 19 }}>Settings</h3>
           <button type="button" className="btn-ghost" onClick={closeSheet}>
             Done
           </button>
@@ -116,6 +170,63 @@ export function Sheet() {
             <LeagueSwitcher />
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
+            <span>Your meta</span>
+            <button
+              type="button"
+              className="toggle"
+              onClick={() =>
+                updateSettings((cur) => ({
+                  ...cur,
+                  yourMeta: { ...cur.yourMeta, blend: !(cur.yourMeta?.blend !== false) },
+                }))
+              }
+              aria-pressed={s.settings.yourMeta?.blend !== false}
+            >
+              <span>
+                <span style={{ display: 'block', fontSize: 15 }}>Use your log</span>
+                <span className="meta">
+                  Weights Teams, Counters and Build by what you actually face. Kicks in at 15
+                  battles. {logCount} logged this season.
+                </span>
+              </span>
+              <span className={`switch${s.settings.yourMeta?.blend !== false ? ' on' : ''}`} />
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Start fresh in ${league.title}? Battles before now move to Earlier seasons. Nothing is deleted.`,
+                  )
+                ) {
+                  startFresh();
+                }
+              }}
+            >
+              Start fresh in {league.title}
+            </button>
+            <div className="btn-pair">
+              <button type="button" className="btn btn-secondary" onClick={() => void doExport()}>
+                Export log
+              </button>
+              <label className="btn btn-secondary" style={{ textAlign: 'center' }}>
+                Import log
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/json,.json"
+                  style={{ display: 'none' }}
+                  onChange={(e) => void doImport(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </div>
+            {logNote ? <span className="meta">{logNote}</span> : null}
+            <span className="meta">
+              A file on this phone. Your log never leaves it unless you share the file.
+            </span>
+          </div>
+          <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Appearance</span>
             <div className="seg">
               {themes.map((t) => (
@@ -190,12 +301,16 @@ export function Sheet() {
               className="btn btn-secondary"
               style={{ color: 'var(--warn)', borderColor: 'var(--warn-tint)' }}
               onClick={() => {
-                if (window.confirm('Forget this collection and your settings on this device?')) {
+                if (
+                  window.confirm(
+                    'Forget this collection, your battle log and your settings on this device?',
+                  )
+                ) {
                   void forget();
                 }
               }}
             >
-              Forget my collection
+              Forget my collection and log
             </button>
           ) : null}
         </div>

@@ -2,6 +2,7 @@ import type { CounterEntry, CounterMatchup } from '@pickthree/engine';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Chip,
+  HeadCog,
   MetaTags,
   PokemonToken,
   Progress,
@@ -66,13 +67,21 @@ export function Counters() {
       <div className="page-head">
         <div className="between">
           <h2>Counters</h2>
-          <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
+          <span className="row">
+            <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
+            <HeadCog />
+          </span>
         </div>
         <LeagueSwitcher compact />
         <p className="meta" style={{ margin: 0 }}>
           Who beats the current {league.title} meta, weighted by how often you meet each opponent.
           Under the radar means strong against the meta but ranked lower than that suggests.
         </p>
+        {s.counters ? (
+          <p className="meta" style={{ margin: 0 }}>
+            {s.counters.facing}.
+          </p>
+        ) : null}
         <div className="chips">
           <Chip on={own === 'all'} onClick={() => setOwn('all')}>
             All

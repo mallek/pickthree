@@ -3,12 +3,15 @@ import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
 import { Collection } from './screens/Collection.tsx';
 import { Counters } from './screens/Counters.tsx';
+import { LogBattle } from './screens/LogBattle.tsx';
+import { NewSet } from './screens/NewSet.tsx';
 import { Report } from './screens/Report.tsx';
 import { Sheet } from './screens/Sheet.tsx';
 import { SpecimenScreen } from './screens/Specimen.tsx';
 import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
+import { YourMeta } from './screens/YourMeta.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
 
@@ -33,19 +36,17 @@ const ICONS = {
       <circle cx="12" cy="12" r="2.6" />
     </svg>
   ),
-  filters: (
+  meta: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" />
-      <circle className="f" cx="9" cy="7" r="2" />
-      <circle className="f" cx="15" cy="12" r="2" />
-      <circle className="f" cx="7" cy="17" r="2" />
+      <rect className="f" x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
     </svg>
   ),
 };
 
 function TabBar() {
   const { route, sheetOpen } = useAppState();
-  const { navigate, openSheet } = useActions();
+  const { navigate } = useActions();
   const onTeams =
     route.screen === 'teams' ||
     route.screen === 'team' ||
@@ -53,6 +54,8 @@ function TabBar() {
     route.screen === 'custom';
   const onCollection =
     route.screen === 'collection' || route.screen === 'specimen' || route.screen === 'add';
+  const onMeta =
+    route.screen === 'meta' || route.screen === 'meta-new' || route.screen === 'meta-log';
   return (
     <nav className="tabs" aria-label="Sections">
       <button
@@ -79,9 +82,13 @@ function TabBar() {
         {ICONS.collection}
         Collection
       </button>
-      <button type="button" className={`tab${sheetOpen ? ' on' : ''}`} onClick={openSheet}>
-        {ICONS.filters}
-        Filters
+      <button
+        type="button"
+        className={`tab${onMeta && !sheetOpen ? ' on' : ''}`}
+        onClick={() => navigate({ screen: 'meta' })}
+      >
+        {ICONS.meta}
+        Your meta
       </button>
     </nav>
   );
@@ -109,6 +116,12 @@ function renderScreen(r: Route) {
       return <TeamDetail id="custom" />;
     case 'add':
       return <AddPokemon />;
+    case 'meta':
+      return <YourMeta />;
+    case 'meta-new':
+      return <NewSet />;
+    case 'meta-log':
+      return <LogBattle />;
     default:
       return <Welcome />;
   }
@@ -123,7 +136,7 @@ export function App() {
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [routeKey]);
-  const showTabs = r.screen !== 'welcome' && r.screen !== 'report' && r.screen !== 'add';
+  const showTabs = !['welcome', 'report', 'add', 'meta-new', 'meta-log'].includes(r.screen);
   const screen = renderScreen(r);
   return (
     <div className="app">

@@ -2,6 +2,7 @@ import type { Specimen, VerdictLabel } from '@pickthree/engine';
 import { useEffect, useMemo } from 'react';
 import {
   Chip,
+  HeadCog,
   HundoTag,
   MetaTags,
   PokemonToken,
@@ -220,6 +221,7 @@ export function Collection() {
             >
               + Add
             </button>
+            <HeadCog />
           </span>
         </div>
         <LeagueSwitcher compact />
