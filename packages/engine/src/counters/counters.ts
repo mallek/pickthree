@@ -9,6 +9,8 @@ import { GameDataIndex } from '../gamedata/index.js';
 import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js';
 import type { MatchupMatrix, RankingCategory, RankingEntry } from '../gamedata/types.js';
 import { MatrixView } from '../search/matrixView.js';
+import { buildFacingProfile, facingLine } from '../yourmeta/profile.js';
+import type { YourMetaInput } from '../yourmeta/types.js';
 
 export interface CounterMatchup {
   opponent: string;
@@ -41,6 +43,16 @@ export interface CountersOptions {
   /** How many of the best anti-meta species to return. */
   limit: number;
   buildOptions: BuildOptions;
+  yourMeta?: YourMetaInput;
+}
+
+export interface CountersResult {
+  entries: CounterEntry[];
+  /** The assumptions sentence about opponent weights. */
+  facing: string;
+  blended: boolean;
+  /** Counted battles behind the weights. */
+  battles: number;
 }
 
 export const DEFAULT_COUNTERS_OPTIONS: CountersOptions = {
@@ -56,13 +68,17 @@ interface OpponentGroup {
 }
 
 /** Meta opponents grouped by species; PvPoke lists a few twice with different movesets. */
-export function opponentGroups(view: MatrixView, ranks: Map<string, MetaRank>): OpponentGroup[] {
+export function opponentGroups(
+  view: MatrixView,
+  ranks: Map<string, MetaRank>,
+  weights?: Map<string, number>,
+): OpponentGroup[] {
   const byId = new Map<string, OpponentGroup>();
   view.opponents.forEach((id, col) => {
     let g = byId.get(id);
     if (!g) {
       const rank = ranks.get(id)?.overall ?? null;
-      g = { speciesId: id, columns: [], weight: facingWeight(rank), rank };
+      g = { speciesId: id, columns: [], weight: weights?.get(id) ?? facingWeight(rank), rank };
       byId.set(id, g);
     }
     g.columns.push(col);
@@ -132,11 +148,18 @@ export function metaCounters(
   specimens: Specimen[],
   index: GameDataIndex,
   options: Partial<CountersOptions> = {},
-): CounterEntry[] {
+): CountersResult {
   const opts: CountersOptions = { ...DEFAULT_COUNTERS_OPTIONS, ...options };
   const view = new MatrixView(data.matrix);
   const ranks = metaRanks(data.rankings);
-  const groups = opponentGroups(view, ranks);
+  const profile = buildFacingProfile({
+    battles: opts.yourMeta?.battles ?? [],
+    opponents: view.opponents,
+    ranks,
+    rankings: data.rankings.overall,
+    blend: opts.yourMeta?.blend ?? true,
+  });
+  const groups = opponentGroups(view, ranks, profile.engaged ? profile.weights : undefined);
   const byRank = [...groups].sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
   const owned = ownedBuilds(specimens, index, opts.buildOptions);
 
@@ -180,5 +203,10 @@ export function metaCounters(
       ownedStageOffset: b?.stageOffset ?? null,
     });
   });
-  return out;
+  return {
+    entries: out,
+    facing: facingLine(profile, 'counters'),
+    blended: profile.engaged,
+    battles: profile.battles,
+  };
 }

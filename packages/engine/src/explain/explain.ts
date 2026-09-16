@@ -328,9 +328,9 @@ export function explainTeam(
       : 'Each Pokémon covers a different slice of the meta, so no single opponent breaks the team.';
 
   const roleWhy: Record<Role, string> = {
-    lead: `Your opener. Wins the first shield exchange against ${lead.wins} of ${view.opponents.length} meta Pokémon.`,
-    switch: `Comes in when your lead loses. Beats ${sw.wins} of ${view.opponents.length} with a shield each, so switching is rarely a gamble.`,
-    closer: `Finishes the battle once shields are gone. Wins ${closer.wins} of ${view.opponents.length} with no shields.`,
+    lead: `Your opener. Wins the first shield exchange against ${lead.wins} of ${lead.results.length} meta Pokémon.`,
+    switch: `Comes in when your lead loses. Beats ${sw.wins} of ${sw.results.length} with a shield each, so switching is rarely a gamble.`,
+    closer: `Finishes the battle once shields are gone. Wins ${closer.wins} of ${closer.results.length} with no shields.`,
   };
 
   const alternatives = alternativesFor(t, pool, view, index);

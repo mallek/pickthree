@@ -8,7 +8,7 @@ import {
 } from './builds/eligibility.js';
 import { simOptionsFor, type League } from './gamedata/league.js';
 import { rankingsById } from './builds/moves.js';
-import { facingWeight, metaRanks, type MetaRank } from './gamedata/metaRank.js';
+import { metaRanks, type MetaRank } from './gamedata/metaRank.js';
 import type { Specimen } from './collection/specimen.js';
 import { explainTeam, type Explanation } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
@@ -25,6 +25,8 @@ import {
 import { scoreTeam, type TeamScore } from './score/score.js';
 import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
 import { specimenVerdict, type Verdict } from './verdicts/worth.js';
+import { buildFacingProfile, facingLine, type FacingProfile } from './yourmeta/profile.js';
+import type { YourMetaInput } from './yourmeta/types.js';
 
 export interface StaticData {
   species: Species[];
@@ -44,6 +46,8 @@ export interface RecommendOptions extends BuildOptions {
   excludedSpecimenIds: string[];
   /** How many teams to return. */
   results: number;
+  /** The player's battle log for this league and season, and the blend switch. */
+  yourMeta?: YourMetaInput;
 }
 
 export const DEFAULT_RECOMMEND_OPTIONS: RecommendOptions = {
@@ -64,6 +68,7 @@ export interface Assumptions {
   ivs: string;
   metaName: string;
   metaSize: number;
+  facing: string;
   pvpokeCommit: string;
   pvpokeDate: string;
   gamemasterTimestamp: string;
@@ -112,7 +117,11 @@ export interface EngineDeps {
   simOptions?: SimOptions;
 }
 
-export function assumptionsFor(data: StaticData, opts: BuildOptions): Assumptions {
+export function assumptionsFor(
+  data: StaticData,
+  opts: BuildOptions,
+  profile?: FacingProfile,
+): Assumptions {
   return {
     league: data.league.id,
     leagueTitle: data.league.title,
@@ -126,11 +135,27 @@ export function assumptionsFor(data: StaticData, opts: BuildOptions): Assumption
     ivs: 'Your exact specimens versus opponents at PvPoke default IVs',
     metaName: `PvPoke ${data.league.title} meta group`,
     metaSize: data.meta.length,
+    facing: profile ? facingLine(profile) : 'PvPoke weights only',
     pvpokeCommit: data.manifest.pvpokeCommit,
     pvpokeDate: data.manifest.pvpokeDate,
     gamemasterTimestamp: data.manifest.gamemasterTimestamp,
     dataBuiltAt: data.manifest.builtAt,
   };
+}
+
+/** The facing profile for a run: PvPoke weights unless the log is present and engaged. */
+export function profileFor(
+  data: StaticData,
+  view: MatrixView,
+  yourMeta: YourMetaInput | undefined,
+): FacingProfile {
+  return buildFacingProfile({
+    battles: yourMeta?.battles ?? [],
+    opponents: view.opponents,
+    ranks: metaRanks(data.rankings),
+    rankings: data.rankings.overall,
+    blend: yourMeta?.blend ?? true,
+  });
 }
 
 /** A simulated, scored team with its explanation attached. */
@@ -203,16 +228,17 @@ export function recommend(
     (d, t) => progress('trios', d, t),
   );
 
-  const sims = simulateFinalists(drafts, deps.sim, deps.data.meta, index, simOptions, (d, t) =>
+  const profile = profileFor(deps.data, view, opts.yourMeta);
+  const opponents = [...deps.data.meta, ...profile.outsiders];
+  const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),
   );
 
   progress('score', 0, sims.length);
   const ranks = metaRanks(deps.data.rankings);
-  const facing = new Map(
-    view.opponents.map((id) => [id, facingWeight(ranks.get(id)?.overall ?? null)] as const),
-  );
-  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing) }));
+  const facing = new Map([...profile.weights, ...profile.outsiderWeights]);
+  const extra = profile.outsiders.map((o) => o.speciesId);
+  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra) }));
   scored2.sort((a, b) => b.score.total - a.score.total);
   const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
@@ -223,7 +249,7 @@ export function recommend(
 
   return {
     teams,
-    assumptions: assumptionsFor(deps.data, opts),
+    assumptions: assumptionsFor(deps.data, opts, profile),
     stats: {
       specimens: specimens.length,
       eligibleBuilds: builds.length,

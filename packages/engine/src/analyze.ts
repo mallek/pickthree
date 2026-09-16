@@ -11,12 +11,13 @@ import type { Specimen } from './collection/specimen.js';
 import type { RawScan } from './csv/parse.js';
 import { fullName } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
-import { facingWeight, metaRanks } from './gamedata/metaRank.js';
+import { metaRanks } from './gamedata/metaRank.js';
 import { cpFor } from './math/cp.js';
 import { allSpreads } from './math/ivrank.js';
 import {
   assumptionsFor,
   DEFAULT_RECOMMEND_OPTIONS,
+  profileFor,
   teamFrom,
   type Assumptions,
   type EngineDeps,
@@ -35,6 +36,7 @@ import {
 } from './search/trios.js';
 import { scoreTeam, type Fit } from './score/score.js';
 import { bestBuild } from './verdicts/worth.js';
+import type { YourMetaInput } from './yourmeta/types.js';
 
 /** One member of a hand-built team. */
 export interface TeamPick {
@@ -51,6 +53,7 @@ export interface TeamPick {
 export interface AnalyzeOptions extends BuildOptions {
   /** given: run the picks as lead, safe switch, closer. best: try all six orders, keep the best. */
   order: 'given' | 'best';
+  yourMeta?: YourMetaInput;
 }
 
 export const DEFAULT_ANALYZE_OPTIONS: AnalyzeOptions = {
@@ -222,15 +225,16 @@ export function analyzeTeam(
   const orderings = opts.order === 'given' ? [ALL_ORDERINGS[0]!] : ALL_ORDERINGS;
   const drafts = orderings.map((o) => evaluateTrio(prepared, view, DEFAULT_TRIO_OPTIONS, [o]));
 
-  const sims = simulateFinalists(drafts, deps.sim, deps.data.meta, index, simOptions, (d, t) =>
+  const profile = profileFor(deps.data, view, opts.yourMeta);
+  const opponents = [...deps.data.meta, ...profile.outsiders];
+  const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),
   );
   progress('score', 0, sims.length);
   const ranks = metaRanks(deps.data.rankings);
-  const facing = new Map(
-    view.opponents.map((id) => [id, facingWeight(ranks.get(id)?.overall ?? null)] as const),
-  );
-  const scored = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing) }));
+  const facing = new Map([...profile.weights, ...profile.outsiderWeights]);
+  const extra = profile.outsiders.map((o) => o.speciesId);
+  const scored = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra) }));
   scored.sort((a, b) => b.score.total - a.score.total);
   const best = scored[0];
   if (!best) {
@@ -254,7 +258,7 @@ export function analyzeTeam(
     orders,
     hypothetical: resolved.filter((r) => r.hypothetical).map((r) => r.build.speciesId),
     chosenMoves: resolved.filter((_, i) => picks[i]?.moves).map((r) => r.build.speciesId),
-    assumptions: assumptionsFor(deps.data, opts),
+    assumptions: assumptionsFor(deps.data, opts, profile),
     ms: Date.now() - started,
   };
 }

@@ -19,7 +19,7 @@ describe.skipIf(!haveStaticData())('meta counters', () => {
   const data = loadStaticData();
   const index = new GameDataIndex(data.species, data.moves);
   const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
-  const counters = metaCounters(data, specimens, index, { limit: 40 });
+  const counters = metaCounters(data, specimens, index, { limit: 40 }).entries;
 
   it('ranks by anti-meta score, best first', () => {
     expect(counters).toHaveLength(40);

@@ -128,6 +128,8 @@ export function scoreTeam(
   view: MatrixView,
   /** Per-opponent weight, how often you meet it. Unweighted when absent. */
   facing?: Map<string, number>,
+  /** Opponents simulated on top of the matrix columns (your most-faced outsiders). */
+  extraOpponents: string[] = [],
 ): TeamScore {
   const covered = new Set<string>();
   for (const s of t.slots) {
@@ -137,10 +139,11 @@ export function scoreTeam(
       }
     }
   }
+  const opponentIds = [...view.opponents, ...extraOpponents];
   const weightOf = (id: string): number => facing?.get(id) ?? 1;
   let got = 0;
   let facingTotal = 0;
-  for (const id of view.opponents) {
+  for (const id of opponentIds) {
     facingTotal += weightOf(id);
     if (covered.has(id)) {
       got += weightOf(id);
@@ -155,6 +158,9 @@ export function scoreTeam(
   let wins = 0;
   for (const s of t.slots) {
     s.results.forEach((r, o) => {
+      if (o >= view.opponents.length) {
+        return;
+      }
       if (r.win) {
         wins += 1;
         const row = s.candidate.matrixRow;
@@ -206,8 +212,8 @@ export function scoreTeam(
     fit: fitFor(battleScore(coverage, consistency, safety)),
     difficulty: d.difficulty,
     difficultyWhy: d.why,
-    coveredOpponents: view.opponents.filter((id) => covered.has(id)),
-    uncoveredOpponents: view.opponents.filter((id) => !covered.has(id)),
+    coveredOpponents: opponentIds.filter((id) => covered.has(id)),
+    uncoveredOpponents: opponentIds.filter((id) => !covered.has(id)),
   };
 }
 

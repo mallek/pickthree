@@ -69,7 +69,7 @@ export function scanList(
   for (const c of metaCounters(data, [], index, {
     limit: opts.countersTop,
     ...(options.buildOptions ? { buildOptions: options.buildOptions } : {}),
-  })) {
+  }).entries) {
     if (!picked.has(c.speciesId)) {
       picked.add(c.speciesId);
       counters += 1;

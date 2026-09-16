@@ -3,7 +3,7 @@ import type { MovePool } from '../builds/moves.js';
 import type { ImportReport, Specimen } from '../collection/specimen.js';
 import type { Recommendation, RecommendOptions } from '../recommend.js';
 import type { Verdict } from '../verdicts/worth.js';
-import type { CounterEntry, CountersOptions } from '../counters/counters.js';
+import type { CountersOptions, CountersResult } from '../counters/counters.js';
 import type { ScanList, ScanListOptions } from '../scan/scanList.js';
 import type { AnalyzeOptions, TeamAnalysis, TeamPick } from '../analyze.js';
 import type { ManualInput, ManualResult } from '../collection/manual.js';
@@ -31,7 +31,7 @@ export interface ComputeHost {
     options: Partial<BuildOptions>,
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<Record<string, Verdict>>;
-  counters(specimens: Specimen[], options: Partial<CountersOptions>): Promise<CounterEntry[]>;
+  counters(specimens: Specimen[], options: Partial<CountersOptions>): Promise<CountersResult>;
   scanList(options: Partial<ScanListOptions>): Promise<ScanList>;
   analyze(
     picks: [TeamPick, TeamPick, TeamPick],

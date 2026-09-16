@@ -60,8 +60,9 @@ export function opponentSpec(m: MetaEntry, role: Role): SimPokemonSpec {
 
 const memo = new Map<string, SlotResult[]>();
 
-function slotKey(c: Candidate, role: Role): string {
-  return `${c.build.specimenId}|${c.build.speciesId}|${c.build.level}|${c.moveset.fast.moveId}|${c.moveset.charged.map((m) => m.moveId).join('+')}|${role}`;
+function slotKey(c: Candidate, role: Role, meta: MetaEntry[]): string {
+  const opp = meta.map((m) => m.speciesId).join(',');
+  return `${c.build.specimenId}|${c.build.speciesId}|${c.build.level}|${c.moveset.fast.moveId}|${c.moveset.charged.map((m) => m.moveId).join('+')}|${role}|${opp}`;
 }
 
 export function simulateSlot(
@@ -71,7 +72,7 @@ export function simulateSlot(
   meta: MetaEntry[],
   opts: SimOptions,
 ): SlotSim {
-  const key = slotKey(c, role);
+  const key = slotKey(c, role, meta);
   let results = memo.get(key);
   if (!results) {
     const me = candidateSpec(c, role);
@@ -83,7 +84,7 @@ export function simulateSlot(
   }
   let winsWithShield: number | null = null;
   if (role === 'closer') {
-    const shieldedKey = slotKey(c, 'closer-shielded' as Role);
+    const shieldedKey = slotKey(c, 'closer-shielded' as Role, meta);
     let shielded = memo.get(shieldedKey);
     if (!shielded) {
       const me = { ...candidateSpec(c, role), shields: 1 };
