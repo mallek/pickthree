@@ -2,8 +2,8 @@ import type {
   AnalyzeOptions,
   BuildOptions,
   ComputeHost,
-  CounterEntry,
   CountersOptions,
+  CountersResult,
   ImportReport,
   Layout,
   ManualInput,
@@ -164,7 +164,7 @@ export class WorkerHost implements ComputeHost {
     specimens: Specimen[],
     options: Partial<CountersOptions>,
     league = this.league,
-  ): Promise<CounterEntry[]> {
+  ): Promise<CountersResult> {
     const r = await this.send({ kind: 'counters', league, specimens, options });
     if (r.kind !== 'counters') {
       throw new Error('unexpected reply');

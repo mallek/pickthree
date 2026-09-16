@@ -24,6 +24,7 @@ import {
   type MetaEntry,
   type Move,
   type RankingEntry,
+  type Season,
   type Species,
 } from '@pickthree/engine';
 import { PvPokeSimulator, type PvPokeRuntime } from '@pickthree/sim-pvpoke/browser';
@@ -48,6 +49,7 @@ interface Env {
   leagues: League[];
   sim: BattleSimulator;
   index: GameDataIndex;
+  seasons: Season[];
 }
 
 interface LeagueBundle {
@@ -72,12 +74,13 @@ type BootStep = (step: string, done: number) => void;
 
 async function boot(step: BootStep): Promise<Env> {
   step('fetching game data', 0);
-  const [species, moves, manifest, leagues, gamemaster] = await Promise.all([
+  const [species, moves, manifest, leagues, gamemaster, seasons] = await Promise.all([
     json<Species[]>('/data/pokemon.json'),
     json<Move[]>('/data/moves.json'),
     json<DataManifest>('/data/data-manifest.json'),
     json<League[]>('/data/leagues.json'),
     json<unknown>('/data/gamemaster.json'),
+    json<Season[]>('/data/seasons.json').catch(() => [] as Season[]),
   ]);
   // The vendored PvPoke bundle reads the game master from this global when its shimmed ajax
   // callback is flushed (see packages/sim-pvpoke/src/globals-shim.js).
@@ -101,7 +104,7 @@ async function boot(step: BootStep): Promise<Env> {
   const sim = new PvPokeSimulator(runtime);
   const index = new GameDataIndex(species, moves);
   step('ready', 4);
-  return { species, moves, manifest, leagues, sim, index };
+  return { species, moves, manifest, leagues, sim, index, seasons };
 }
 
 function ensureReady(step: BootStep): Promise<Env> {
@@ -187,6 +190,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
           allSpecies: env.species
             .filter((sp) => sp.released && !sp.tags.includes('mega'))
             .map((sp) => sp.speciesId),
+          seasons: env.seasons,
         },
       });
       return;

@@ -19,8 +19,8 @@ export interface LeagueInfo {
 import type {
   AnalyzeOptions,
   BuildOptions,
-  CounterEntry,
   CountersOptions,
+  CountersResult,
   ImportReport,
   League,
   ManualInput,
@@ -32,6 +32,7 @@ import type {
   RecommendOptions,
   ScanList,
   ScanListOptions,
+  Season,
   Specimen,
   TeamAnalysis,
   TeamPick,
@@ -98,12 +99,14 @@ export type WorkerResult =
       leagues: League[];
       /** Released, non-mega species ids for adding a Pokémon by hand. */
       allSpecies: string[];
+      /** Go Battle League seasons, oldest first. Empty when the data build predates the list. */
+      seasons: Season[];
     }
   | { kind: 'league'; info: LeagueInfo }
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }
   | { kind: 'recommend'; recommendation: Recommendation }
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }
-  | { kind: 'counters'; counters: CounterEntry[] }
+  | { kind: 'counters'; counters: CountersResult }
   | { kind: 'scanlist'; scanList: ScanList }
   | { kind: 'movepool'; pool: MovePool }
   | { kind: 'analyze'; analysis: TeamAnalysis }
