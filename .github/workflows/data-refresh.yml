@@ -57,7 +57,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           title="Season list needs the next season"
-          existing=$(gh issue list --label seasons --state open --search "$title" --json number --jq '.[0].number')
+          existing=$(gh issue list --label seasons --state open --search "$title" --json number --jq '.[0].number // empty')
           body="packages/data/seasons.json has no season starting in the last 90 days. Add the next Go Battle League season (name and start time) and the app stops warning players that the list may be out of date."
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "Still stale as of $(date -u +%F)."
