@@ -66,24 +66,24 @@ it empty. One record per set, keyed by set id, with an index on league id.
 
 ```ts
 interface BattleSet {
-  id: string;            // uuid
-  league: string;        // league id, e.g. 'great'
-  startedAt: string;     // ISO time
+  id: string; // uuid
+  league: string; // league id, e.g. 'great'
+  startedAt: string; // ISO time
   team: TeamRef;
   battles: LoggedBattle[];
-  closed: boolean;       // five battles logged or "End set" tapped
+  closed: boolean; // five battles logged or "End set" tapped
 }
 
 interface TeamRef {
-  species: [string, string, string];        // PvPoke species ids
-  specimenIds?: [string, string, string];   // when picked from a pick3 team
+  species: [string, string, string]; // PvPoke species ids
+  specimenIds?: [string, string, string]; // when picked from a pick3 team
 }
 
 interface LoggedBattle {
-  id: string;            // uuid
-  at: string;            // ISO time
-  opponents: string[];   // 0 to 3 PvPoke species ids; shadows are their own id
-  result: 'win' | 'loss' | null;   // null only when tanked
+  id: string; // uuid
+  at: string; // ISO time
+  opponents: string[]; // 0 to 3 PvPoke species ids; shadows are their own id
+  result: 'win' | 'loss' | null; // null only when tanked
   tanked: boolean;
 }
 ```
@@ -160,21 +160,21 @@ app and the worker both call it; nothing else in the engine knows about IndexedD
 
 ```ts
 interface ProfileInput {
-  battles: LoggedBattle[];       // already windowed to the season for one league
-  opponents: string[];           // matrix columns, in matrix order (may repeat a species)
-  ranks: Map<string, number | null>;   // species id -> PvPoke overall rank
-  rankings: RankingEntry[];      // for outsider movesets and legality
-  blend: boolean;                // the switch
+  battles: LoggedBattle[]; // already windowed to the season for one league
+  opponents: string[]; // matrix columns, in matrix order (may repeat a species)
+  ranks: Map<string, number | null>; // species id -> PvPoke overall rank
+  rankings: RankingEntry[]; // for outsider movesets and legality
+  blend: boolean; // the switch
   options?: { minBattles: 15; window: 150; halfLife: 30; maxOutsiders: 8; minSightings: 2 };
 }
 
 interface FacingProfile {
-  weights: Map<string, number>;  // per matrix column id
-  outsiders: MetaEntry[];        // speciesId, fastMove, chargedMoves from rankings
+  weights: Map<string, number>; // per matrix column id
+  outsiders: MetaEntry[]; // speciesId, fastMove, chargedMoves from rankings
   outsiderWeights: Map<string, number>;
-  battles: number;               // non-tanked battles in the window
-  sightings: number;             // total opponent slots filled
-  engaged: boolean;              // the blend changed anything
+  battles: number; // non-tanked battles in the window
+  sightings: number; // total opponent slots filled
+  engaged: boolean; // the blend changed anything
   reason: 'engaged' | 'off' | 'too-few';
 }
 ```
