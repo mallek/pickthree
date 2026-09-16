@@ -39,7 +39,7 @@ describe.skipIf(!haveStaticData())('scan list', () => {
       expect(nums.has(259)).toBe(true);
     }
     expect(nums.size).toBe(list.dexCount);
-    expect(list.sources.overall).toBe(100);
+    expect(list.sources.overall).toBe(60);
     expect(list.sources.preEvolutions).toBeGreaterThan(0);
     expect(list.speciesCount).toBe(
       list.sources.overall + list.sources.counters + list.sources.preEvolutions,

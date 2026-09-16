@@ -13,8 +13,8 @@ export interface ScanListOptions {
 }
 
 export const DEFAULT_SCAN_LIST_OPTIONS: ScanListOptions = {
-  overallTop: 100,
-  countersTop: 60,
+  overallTop: 60,
+  countersTop: 40,
   cpCap: 1500,
 };
 

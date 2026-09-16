@@ -1,18 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { Progress } from '../components.tsx';
 import { ScanListPanel } from '../components/ScanListPanel.tsx';
+import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { fetchCount } from '../counter.ts';
 import { num } from '../format.ts';
 import { arrivedFromShare, clearShareMarker, takeSharedCsv } from '../share.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function Welcome() {
-  const { importing, importError, boot, bootError, collection, scanList } = useAppState();
+  const { importing, importError, boot, bootError, collection, scanList, leagueInfo } =
+    useAppState();
   const { importCsv, navigate, loadScanList } = useActions();
   const fileRef = useRef<HTMLInputElement>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState('');
   const [count, setCount] = useState<number | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+
+  useEffect(() => {
+    if (scanOpen && boot === 'ready' && leagueInfo && !scanList) {
+      void loadScanList();
+    }
+  }, [scanOpen, boot, leagueInfo, scanList, loadScanList]);
 
   useEffect(() => {
     let alive = true;
@@ -126,10 +135,11 @@ export function Welcome() {
             three IVs and works out the rest from the values, whatever the columns are called.
           </p>
         </details>
-        <details onToggle={(e) => (e.currentTarget.open ? void loadScanList() : undefined)}>
+        <details onToggle={(e) => setScanOpen(e.currentTarget.open)}>
           <summary className="small" style={{ color: 'var(--accent-text)', cursor: 'pointer' }}>
             3,000 Pokémon? What to scan first
           </summary>
+          <LeagueSwitcher compact />
           <ScanListPanel list={scanList} ready={boot === 'ready'} />
         </details>
         {importError ? <div className="error">{importError}</div> : null}
