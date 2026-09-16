@@ -37,10 +37,7 @@ export function LogBattle() {
   const recent = useMemo(() => recentOpponents(s.sets, fallback, RECENT_LIMIT), [s.sets, fallback]);
 
   const add = (id: string): void => {
-    if (slots.length >= 3 || slots.includes(id)) {
-      return;
-    }
-    setSlots([...slots, id]);
+    setSlots((cur) => (cur.length >= 3 || cur.includes(id) ? cur : [...cur, id]));
     setQuery('');
   };
 
@@ -112,7 +109,9 @@ export function LogBattle() {
                 type="button"
                 className={`opp-slot${id ? ' filled' : ''}`}
                 key={i}
-                onClick={() => (id ? setSlots(slots.filter((x) => x !== id)) : undefined)}
+                onClick={() =>
+                  id ? setSlots((cur) => cur.filter((x) => x !== id)) : undefined
+                }
                 aria-label={id ? `Clear ${name(id)}` : `Opponent ${i + 1}`}
               >
                 {id ? (

@@ -78,13 +78,15 @@ export function NewSet() {
   }, [query, s.collection, name]);
 
   const fill = (speciesId: string, specimenId?: string): void => {
-    const i = slots.findIndex((x) => x === null);
-    if (i === -1 || slots.includes(speciesId)) {
-      return;
-    }
-    const next = [...slots];
-    next[i] = specimenId ? `${speciesId}|${specimenId}` : speciesId;
-    setSlots(next);
+    setSlots((cur) => {
+      const i = cur.findIndex((x) => x === null);
+      if (i === -1 || cur.some((x) => x !== null && parts(x)[0] === speciesId)) {
+        return cur;
+      }
+      const next = [...cur];
+      next[i] = specimenId ? `${speciesId}|${specimenId}` : speciesId;
+      return next;
+    });
     setQuery('');
   };
   const parts = (v: string): [string, string | undefined] => {
@@ -146,7 +148,7 @@ export function NewSet() {
                 type="button"
                 className={`opp-slot${v ? ' filled' : ''}`}
                 key={i}
-                onClick={() => setSlots(slots.map((x, j) => (j === i ? null : x)))}
+                onClick={() => setSlots((cur) => cur.map((x, j) => (j === i ? null : x)))}
                 aria-label={v ? `Clear ${name(parts(v)[0])}` : `Slot ${i + 1}`}
               >
                 {v ? (

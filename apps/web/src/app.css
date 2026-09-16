@@ -2134,7 +2134,7 @@ input[type='range'] {
   background: var(--accent-tint);
   z-index: 0;
 }
-.faced-row > * {
+.faced-row > :not(.faced-bar) {
   position: relative;
   z-index: 1;
 }

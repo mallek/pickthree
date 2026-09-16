@@ -114,4 +114,45 @@ describe('New set and Log a battle', () => {
     expect(sets[0]?.closed).toBe(true);
     expect(sets[1]?.team.species).toEqual(['tinkaton', 'azumarill', 'clodsire']);
   });
+
+  it('keeps both taps when two recent tokens are clicked back to back', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'registeel'] },
+      battles: [
+        {
+          id: 'b1',
+          at: '2026-09-15T10:05:00Z',
+          opponents: ['medicham'],
+          result: 'win',
+          tanked: false,
+        },
+        {
+          id: 'b2',
+          at: '2026-09-15T10:10:00Z',
+          opponents: ['clodsire'],
+          result: 'loss',
+          tanked: false,
+        },
+      ],
+      closed: false,
+    });
+    render(
+      <AppProvider host={fakeHost()}>
+        <LogBattle />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('Set 1, battle 3 of 5')).toBeInTheDocument());
+    // Two taps in the same tick, no await between them: both must land, not just the second.
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Clodsire' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Clear Clodsire' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Clear Medicham' })).toBeInTheDocument();
+    });
+  });
 });
