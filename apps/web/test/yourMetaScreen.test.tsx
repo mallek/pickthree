@@ -1,0 +1,77 @@
+import 'fake-indexeddb/auto';
+import { IDBFactory } from 'fake-indexeddb';
+import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { YourMeta } from '../src/screens/YourMeta.tsx';
+import { AppProvider } from '../src/state/store.tsx';
+import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { fakeHost } from './fakeHost.ts';
+
+describe('Your meta screen', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+  });
+
+  it('shows the countdown, the open set, most faced and team records', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: [
+        {
+          id: 'b1',
+          at: '2026-09-15T10:05:00Z',
+          opponents: ['medicham', 'dragonite_shadow'],
+          result: 'win',
+          tanked: false,
+        },
+        {
+          id: 'b2',
+          at: '2026-09-15T10:10:00Z',
+          opponents: ['medicham'],
+          result: 'loss',
+          tanked: false,
+        },
+        { id: 'b3', at: '2026-09-15T10:15:00Z', opponents: [], result: null, tanked: true },
+      ],
+      closed: false,
+    });
+    render(
+      <AppProvider host={fakeHost()}>
+        <YourMeta />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(screen.getByText(/2 of 15 battles until/)).toBeInTheDocument());
+    expect(screen.getByText('Set 1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Log a battle' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'End set' })).toBeInTheDocument();
+    expect(screen.getByText('tanked')).toBeInTheDocument();
+    const medicham = screen.getByText('Medicham').closest('.faced-row');
+    expect(medicham).toHaveTextContent('faced 2');
+    expect(medicham).toHaveTextContent('1-1');
+    // The fake league's meta group is three species, so both logged opponents are outsiders.
+    expect(screen.getAllByText(/not in PvPoke's list/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/2 battles/).length).toBeGreaterThan(0);
+    expect(screen.getByText('1-1', { selector: '.team-row b' })).toBeInTheDocument();
+  });
+
+  it('offers a new set when nothing is open', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <YourMeta />
+      </AppProvider>,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'New set' })).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/0 of 15 battles until/)).toBeInTheDocument();
+    expect(screen.getByText('No open set')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'A set is five ranked battles with one team. Start one to log them as you play.',
+      ),
+    ).toBeInTheDocument();
+  });
+});

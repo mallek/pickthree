@@ -2066,3 +2066,88 @@ input[type='range'] {
 .hdr .head-cog {
   justify-self: end;
 }
+.log-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--divider);
+  overflow: hidden;
+}
+.log-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.card-x {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.set-slots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.set-slot {
+  min-height: 52px;
+  border: 1px dashed var(--divider);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.set-slot.filled {
+  border-style: solid;
+  color: var(--text);
+}
+.set-slot.tanked {
+  opacity: 0.55;
+  font-size: 11px;
+}
+.faced-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.faced-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent-tint);
+  z-index: 0;
+}
+.faced-row > * {
+  position: relative;
+  z-index: 1;
+}
+.team-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
