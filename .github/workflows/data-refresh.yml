@@ -6,6 +6,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -42,3 +43,25 @@ jobs:
             packages/data/pvpoke.lock.json
             packages/sim-pvpoke/vendor/**
             packages/sim-pvpoke/LICENSE-pvpoke
+      - name: Season list check
+        id: seasons
+        run: |
+          if npm -w @pickthree/data run seasons:check; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Ask for the next season
+        if: steps.seasons.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Season list needs the next season"
+          existing=$(gh issue list --label seasons --state open --search "$title" --json number --jq '.[0].number')
+          body="packages/data/seasons.json has no season starting in the last 90 days. Add the next Go Battle League season (name and start time) and the app stops warning players that the list may be out of date."
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Still stale as of $(date -u +%F)."
+          else
+            gh label create seasons --description "Go Battle League season list" --color 5319e7 || true
+            gh issue create --title "$title" --label seasons --body "$body"
+          fi

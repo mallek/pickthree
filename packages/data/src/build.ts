@@ -11,6 +11,7 @@ import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { readRawGameMaster } from './build-gamedata.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
 import { GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
+import { readSeasons, SEASONS_PATH } from './seasons.js';
 
 async function main(): Promise<void> {
   await ensurePvPokeCheckout();
@@ -46,6 +47,8 @@ async function main(): Promise<void> {
     }
   }
   fs.writeFileSync(path.join(OUTPUT_DIR, 'leagues.json'), JSON.stringify(leagues));
+  readSeasons(); // validates before we ship it
+  fs.copyFileSync(SEASONS_PATH, path.join(OUTPUT_DIR, 'seasons.json'));
   const meta = { length: leagues[0]?.metaSize ?? 0 };
   writeBundle(path.join(OUTPUT_DIR, 'vendor', 'pvpoke-sim.js'));
   // The vendored simulator reads PvPoke's own game master format, so ship it alongside.
