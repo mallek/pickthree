@@ -26,6 +26,7 @@ import type {
   ManualInput,
   ManualResult,
   MetaRank,
+  MovePool,
   PokemonType,
   Recommendation,
   RecommendOptions,
@@ -66,6 +67,15 @@ export type WorkerRequest =
   | { id: number; kind: 'scanlist'; league: string; options: Partial<ScanListOptions> }
   | {
       id: number;
+      kind: 'movepool';
+      league: string;
+      speciesId: string;
+      fastId: string | null;
+      current: { fast: string | null; charged: string[] };
+      options: { allowEliteTm?: boolean | undefined };
+    }
+  | {
+      id: number;
       kind: 'analyze';
       league: string;
       picks: [TeamPick, TeamPick, TeamPick];
@@ -95,5 +105,6 @@ export type WorkerResult =
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }
   | { kind: 'counters'; counters: CounterEntry[] }
   | { kind: 'scanlist'; scanList: ScanList }
+  | { kind: 'movepool'; pool: MovePool }
   | { kind: 'analyze'; analysis: TeamAnalysis }
   | { kind: 'manual'; result: ManualResult };

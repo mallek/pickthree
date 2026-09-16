@@ -7,7 +7,9 @@ import {
   manualSpecimen,
   metaCounters,
   metaRanks,
+  movePool,
   parseCollectionCsv,
+  rankingsById,
   recommend,
   scanList,
   toSpecimens,
@@ -245,6 +247,18 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         ...msg.options,
       });
       post({ id: msg.id, kind: 'result', result: { kind: 'scanlist', scanList: list } });
+      return;
+    }
+    if (msg.kind === 'movepool') {
+      const pool = movePool(
+        msg.speciesId,
+        msg.fastId,
+        rankingsById(data.rankings.overall),
+        msg.current,
+        { allowEliteTm: msg.options.allowEliteTm ?? true },
+        env.index,
+      );
+      post({ id: msg.id, kind: 'result', result: { kind: 'movepool', pool } });
       return;
     }
     if (msg.kind === 'analyze') {

@@ -157,12 +157,20 @@ console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-slot');
 for (let i = 0; i < 3; i++) {
-  await page.click(`.pick-slot:nth-of-type(${i + 1})`);
+  await page.$$eval('.pick-slot:not(.pick-moves)', (slots, n) => slots[n].click(), i);
   await page.waitForSelector('.picker-list .spec-row:not([disabled])', { timeout: 120_000 });
   await page.$$eval('.picker-list .spec-row:not([disabled])', (rows, n) => rows[n].click(), i * 2);
   await new Promise((r) => setTimeout(r, 200));
 }
 await shot('13-build', false);
+// Swap one move on the first slot: the picker lists the legal pool with the recommendation
+// ticked; tapping an unticked charged move bumps the one picked first.
+await page.waitForSelector('.pick-moves b', { timeout: 60_000 });
+await page.click('.pick-moves');
+await page.waitForSelector('.move-opt[role="checkbox"]', { timeout: 60_000 });
+await page.$$eval('.move-opt[role="checkbox"]:not(.on)', (rows) => rows[0]?.click());
+await new Promise((r) => setTimeout(r, 300));
+await shot('13b-build-moves', false);
 await page.click('.scroll > .btn');
 await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
 const analyzeError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
@@ -170,6 +178,10 @@ if (analyzeError) {
   throw new Error(`analyze failed: ${analyzeError}`);
 }
 console.log(`  custom team analyzed at ${Date.now() - t0} ms`);
+const chosenNote = await page.$eval('.custom-note', (e) => e.textContent).catch(() => '');
+if (!chosenNote || !chosenNote.includes('ran the moves you chose')) {
+  throw new Error('custom team did not report the hand-picked moves');
+}
 await shot('14-custom-team');
 
 console.log('add a pokemon by hand');

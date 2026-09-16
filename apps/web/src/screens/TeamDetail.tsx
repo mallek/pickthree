@@ -68,6 +68,7 @@ export function TeamDetail({ id }: { id: string }) {
   const tried = custom ? (s.analysis?.orders ?? []) : [];
   const best = custom ? (s.recommendation?.teams[0] ?? null) : null;
   const hypothetical = custom ? (s.analysis?.hypothetical ?? []) : [];
+  const chosenMoves = custom ? (s.analysis?.chosenMoves ?? []) : [];
 
   return (
     <div className="screen">
@@ -118,6 +119,12 @@ export function TeamDetail({ id }: { id: string }) {
                 {hypothetical.map((h) => name(h)).join(', ')}{' '}
                 {hypothetical.length === 1 ? 'is' : 'are'} not in your collection, so the numbers
                 assume a top-10% IV spread rather than a perfect one.
+              </span>
+            ) : null}
+            {chosenMoves.length > 0 ? (
+              <span className="small muted">
+                {chosenMoves.map((h) => name(h)).join(', ')} ran the moves you chose, not the
+                recommended set.
               </span>
             ) : null}
           </div>

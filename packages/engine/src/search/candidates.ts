@@ -1,6 +1,12 @@
 import { buildCost, type Cost } from '../builds/cost.js';
 import type { Build, BuildOptions } from '../builds/eligibility.js';
-import { recommendMoveset, rankingsById, type Moveset } from '../builds/moves.js';
+import {
+  movesetFrom,
+  recommendMoveset,
+  rankingsById,
+  type MoveIds,
+  type Moveset,
+} from '../builds/moves.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import type { RankingCategory, RankingEntry } from '../gamedata/types.js';
 import type { MatrixView } from './matrixView.js';
@@ -35,7 +41,7 @@ export function candidateFor(
   rankings: Rankings,
   view: MatrixView,
   index: GameDataIndex,
-  opts: { allowEliteTm: boolean },
+  opts: { allowEliteTm: boolean; moves?: MoveIds | undefined },
 ): Candidate {
   const row = view.rowOf(build.speciesId);
   if (row === null) {
@@ -44,13 +50,17 @@ export function candidateFor(
     );
   }
   const overall = rankingsById(rankings.overall);
-  const moveset = recommendMoveset(
-    build.speciesId,
-    overall,
-    build.specimen.currentMoves,
-    { allowEliteTm: opts.allowEliteTm },
-    index,
-  );
+  // Hand-picked moves win over the recommendation; the badges and cost still compare against
+  // what the Pokemon actually has.
+  const moveset = opts.moves
+    ? movesetFrom(build.speciesId, opts.moves, build.specimen.currentMoves, index)
+    : recommendMoveset(
+        build.speciesId,
+        overall,
+        build.specimen.currentMoves,
+        { allowEliteTm: opts.allowEliteTm },
+        index,
+      );
   const cost = buildCost(build, moveset, index);
   const roleScores: RoleScores = {
     leads: scoreOf(rankingsById(rankings.leads), build.speciesId),

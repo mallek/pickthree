@@ -5,6 +5,7 @@ import type {
   League,
   ManualInput,
   ManualResult,
+  MovePool,
   ProgressEvent,
   Recommendation,
   RecommendOptions,
@@ -346,6 +347,12 @@ interface Actions {
   setPick(slot: number, pick: TeamPick | null): void;
   setOrderMode(mode: 'best' | 'given'): void;
   analyze(): Promise<void>;
+  /** Legal moves for one team member, with the recommendation, in the league in play. */
+  movePool(
+    speciesId: string,
+    fastId: string | null,
+    current: { fast: string | null; charged: string[] },
+  ): Promise<MovePool>;
   addManual(input: ManualInput): Promise<ManualResult>;
   removeSpecimen(id: string): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
@@ -641,6 +648,21 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, [navigate]);
 
+  const movePool = useCallback(
+    (
+      speciesId: string,
+      fastId: string | null,
+      current: { fast: string | null; charged: string[] },
+    ) => {
+      const h = hostRef.current as WorkerHost;
+      const base = optionsFrom(stateRef.current.settings);
+      return h.movePool(speciesId, fastId, current, {
+        ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
+      });
+    },
+    [],
+  );
+
   const EMPTY_REPORT: ImportReport = {
     scansRead: 0,
     recognized: 0,
@@ -727,6 +749,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setPick,
       setOrderMode,
       analyze,
+      movePool,
       addManual,
       removeSpecimen,
       updateSettings,
@@ -745,6 +768,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setPick,
       setOrderMode,
       analyze,
+      movePool,
       addManual,
       removeSpecimen,
       updateSettings,

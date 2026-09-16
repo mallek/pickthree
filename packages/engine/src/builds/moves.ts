@@ -83,8 +83,14 @@ export function moveEffects(move: Move): MoveEffect[] {
 export interface Moveset {
   fast: MoveChoice;
   charged: MoveChoice[];
-  source: 'rankings' | 'fallback';
+  source: 'rankings' | 'fallback' | 'chosen';
   eliteTmCount: number;
+}
+
+/** Move ids a trainer picked by hand: one fast, one or two charged. */
+export interface MoveIds {
+  fast: string;
+  charged: string[];
 }
 
 export const LEGACY_SHADOW_MOVES = new Set(['RETURN', 'FRUSTRATION']);
@@ -196,6 +202,76 @@ export function recommendMoveset(
   );
   const eliteTmCount = [fast, ...charged].filter((m) => m.tm === 'elite').length;
   return { fast, charged, source, eliteTmCount };
+}
+
+function mustLearn(species: Species, moveId: string, pool: string[], index: GameDataIndex): Move {
+  const move = index.move(moveId);
+  if (!move || !pool.includes(moveId)) {
+    throw new Error(`${species.speciesName} cannot learn ${move?.name ?? moveId}.`);
+  }
+  return move;
+}
+
+/**
+ * The moveset a trainer chose by hand. Every move must be in the species' pool from the game
+ * master (elite and legacy moves included); badges and counts come out the same as a recommended
+ * moveset so the cost line and the UI need no special case.
+ */
+export function movesetFrom(
+  speciesId: string,
+  ids: MoveIds,
+  current: { fast: string | null; charged: string[] },
+  index: GameDataIndex,
+): Moveset {
+  const species = index.mustSpecies(speciesId);
+  if (ids.charged.length === 0) {
+    throw new Error(`Pick at least one charged move for ${species.speciesName}.`);
+  }
+  if (ids.charged.length > 2) {
+    throw new Error(`Pick at most two charged moves for ${species.speciesName}.`);
+  }
+  const fastMove = mustLearn(species, ids.fast, species.fastMoves, index);
+  const chargedMoves = [...new Set(ids.charged)].map((id) =>
+    mustLearn(species, id, species.chargedMoves, index),
+  );
+  const fast = choice(fastMove, species, current, null, index);
+  const charged = chargedMoves.map((m) => choice(m, species, current, fastMove, index));
+  const eliteTmCount = [fast, ...charged].filter((m) => m.tm === 'elite').length;
+  return { fast, charged, source: 'chosen', eliteTmCount };
+}
+
+export interface MovePool {
+  fast: MoveChoice[];
+  /** Counts figured against the fast move the caller is running. */
+  charged: MoveChoice[];
+  recommended: MoveIds;
+}
+
+/** Every move the species can run, for a picker, plus what PickThree would recommend. */
+export function movePool(
+  speciesId: string,
+  fastId: string | null,
+  rankings: Map<string, RankingEntry>,
+  current: { fast: string | null; charged: string[] },
+  opts: { allowEliteTm: boolean },
+  index: GameDataIndex,
+): MovePool {
+  const species = index.mustSpecies(speciesId);
+  const rec = recommendMoveset(speciesId, rankings, current, opts, index);
+  const fastMove = mustLearn(species, fastId ?? rec.fast.moveId, species.fastMoves, index);
+  const fast = species.fastMoves
+    .map((id) => index.move(id))
+    .filter((m): m is Move => m !== undefined)
+    .map((m) => choice(m, species, current, null, index));
+  const charged = species.chargedMoves
+    .map((id) => index.move(id))
+    .filter((m): m is Move => m !== undefined)
+    .map((m) => choice(m, species, current, fastMove, index));
+  return {
+    fast,
+    charged,
+    recommended: { fast: rec.fast.moveId, charged: rec.charged.map((c) => c.moveId) },
+  };
 }
 
 export function rankingsById(entries: RankingEntry[]): Map<string, RankingEntry> {

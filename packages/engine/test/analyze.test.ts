@@ -74,6 +74,38 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
     expect(r.team.slots[2]!.role).toBe('closer');
   });
 
+  it('runs a pick with the moves the trainer chose', () => {
+    const picks: [TeamPick, TeamPick, TeamPick] = [
+      { kind: 'species', id: 'swampert', moves: { fast: 'WATER_GUN', charged: ['SURF'] } },
+      { kind: 'specimen', id: a!.id },
+      { kind: 'specimen', id: b!.id },
+    ];
+    const r = analyzeTeam(picks, specimens, { order: 'given' }, deps);
+    const lead = r.team.slots[0]!.candidate;
+    expect(lead.build.speciesId).toBe('swampert');
+    expect(lead.moveset.source).toBe('chosen');
+    expect(lead.moveset.fast.moveId).toBe('WATER_GUN');
+    expect(lead.moveset.charged.map((c) => c.moveId)).toEqual(['SURF']);
+    expect(r.chosenMoves).toEqual(['swampert']);
+    // The other two ran the recommendation.
+    expect(r.team.slots[1]!.candidate.moveset.source).not.toBe('chosen');
+  });
+
+  it('refuses a move the species cannot learn', () => {
+    expect(() =>
+      analyzeTeam(
+        [
+          { kind: 'species', id: 'swampert', moves: { fast: 'COUNTER', charged: ['SURF'] } },
+          { kind: 'specimen', id: a!.id },
+          { kind: 'specimen', id: b!.id },
+        ],
+        specimens,
+        {},
+        deps,
+      ),
+    ).toThrow(/Swampert cannot learn Counter/);
+  });
+
   it('refuses duplicate picks and impossible ones', () => {
     expect(() =>
       analyzeTeam(

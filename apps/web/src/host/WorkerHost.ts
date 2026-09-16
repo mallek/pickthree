@@ -8,6 +8,7 @@ import type {
   Layout,
   ManualInput,
   ManualResult,
+  MovePool,
   ProgressEvent,
   Recommendation,
   RecommendOptions,
@@ -191,6 +192,20 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.analysis;
+  }
+
+  async movePool(
+    speciesId: string,
+    fastId: string | null,
+    current: { fast: string | null; charged: string[] },
+    options: { allowEliteTm?: boolean | undefined } = {},
+    league = this.league,
+  ): Promise<MovePool> {
+    const r = await this.send({ kind: 'movepool', league, speciesId, fastId, current, options });
+    if (r.kind !== 'movepool') {
+      throw new Error('unexpected reply');
+    }
+    return r.pool;
   }
 
   async manual(input: ManualInput): Promise<ManualResult> {

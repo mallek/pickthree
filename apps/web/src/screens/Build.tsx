@@ -1,5 +1,5 @@
-import type { Specimen, TeamPick, VerdictLabel } from '@pickthree/engine';
-import { useEffect, useMemo, useState } from 'react';
+import type { MoveIds, MovePool, Specimen, TeamPick, VerdictLabel } from '@pickthree/engine';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Chip,
   Header,
@@ -14,6 +14,7 @@ import {
 } from '../components.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { MovePicker } from '../components/MovePicker.tsx';
 import { rankLabel } from './Collection.tsx';
 
 const SLOT_LABELS = ['Lead', 'Safe Switch', 'Closer'] as const;
@@ -28,13 +29,18 @@ const ORDER: Record<VerdictLabel, number> = {
 /** Hand-pick three Pokémon, from the collection or any species at top-10% IVs, and analyze them. */
 export function Build() {
   const s = useAppState();
-  const { navigate, setPick, setOrderMode, analyze, loadVerdicts } = useActions();
+  const { navigate, setPick, setOrderMode, analyze, loadVerdicts, movePool } = useActions();
   const name = useName();
   const species = useSpecies();
   const metaRank = useMetaRank();
   const [slot, setSlot] = useState<number | null>(null);
   const [source, setSource] = useState<'mine' | 'any'>(s.collection ? 'mine' : 'any');
   const [query, setQuery] = useState('');
+  /** Which slot has its move picker open. */
+  const [movesSlot, setMovesSlot] = useState<number | null>(null);
+  /** Move pools by league, species, scanned moves and fast move, fetched once each. */
+  const [pools, setPools] = useState<Record<string, MovePool>>({});
+  const poolsAsked = useRef(new Set<string>());
 
   useEffect(() => {
     if (
@@ -126,6 +132,71 @@ export function Build() {
     };
   };
 
+  type Target = { speciesId: string; current: { fast: string | null; charged: string[] } };
+  /** The species a pick runs as and the moves that Pokemon has, for the move pool. */
+  const pickTarget = (p: TeamPick | null): Target | null => {
+    if (!p) {
+      return null;
+    }
+    if (p.kind === 'species') {
+      return { speciesId: p.id, current: { fast: null, charged: [] } };
+    }
+    const sp = s.collection?.specimens.find((x) => x.id === p.id);
+    if (!sp) {
+      return null;
+    }
+    const stage = s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId;
+    return { speciesId: stage, current: sp.currentMoves };
+  };
+  const league = s.settings.league ?? 'great';
+  const poolKey = (t: Target, fastId: string | null): string =>
+    `${league}|${t.speciesId}|${t.current.fast ?? ''}|${t.current.charged.join('+')}|${fastId ?? ''}`;
+  const poolFor = (p: TeamPick | null): MovePool | null => {
+    const t = pickTarget(p);
+    return t ? (pools[poolKey(t, p?.moves?.fast ?? null)] ?? null) : null;
+  };
+
+  // Fetch the pool each filled slot needs: the recommendation names the default moves line, and
+  // the charged counts depend on the fast move in play.
+  const wanted = s.picks
+    .map((p) => {
+      const t = pickTarget(p);
+      return t
+        ? { t, key: poolKey(t, p?.moves?.fast ?? null), fastId: p?.moves?.fast ?? null }
+        : null;
+    })
+    .filter((w) => w !== null);
+  const wantedKeys = wanted.map((w) => w.key).join('\n');
+  useEffect(() => {
+    if (s.boot !== 'ready' || !s.leagueInfo) {
+      return;
+    }
+    for (const w of wanted) {
+      if (pools[w.key] || poolsAsked.current.has(w.key)) {
+        continue;
+      }
+      poolsAsked.current.add(w.key);
+      movePool(w.t.speciesId, w.fastId, w.t.current)
+        .then((pool) => setPools((prev) => ({ ...prev, [w.key]: pool })))
+        .catch(() => poolsAsked.current.delete(w.key));
+    }
+    // wanted is derived from the same state wantedKeys summarises.
+  }, [wantedKeys, s.boot, s.leagueInfo, pools, movePool]);
+
+  const movesLine = (p: TeamPick, pool: MovePool | null): string => {
+    if (!pool) {
+      return 'Recommended moves';
+    }
+    const ids = p.moves ?? pool.recommended;
+    const all = [...pool.fast, ...pool.charged];
+    const label = (id: string): string => all.find((m) => m.moveId === id)?.name ?? id;
+    return [label(ids.fast), ...ids.charged.map(label)].join(', ');
+  };
+
+  const setMoves = (i: number, p: TeamPick, next: MoveIds): void => {
+    setPick(i, { ...p, moves: next });
+  };
+
   const ready = s.picks.every(Boolean) && s.boot === 'ready' && !s.analyzing;
 
   return (
@@ -142,36 +213,69 @@ export function Build() {
           {s.picks.map((p, i) => {
             const info = pickLabel(p);
             const open = slot === i;
+            const pool = poolFor(p);
+            const movesOpen = movesSlot === i && p !== null;
             return (
-              <button
-                type="button"
-                key={SLOT_LABELS[i]}
-                className={`pick-slot${open ? ' open' : ''}`}
-                onClick={() => setSlot(open ? null : i)}
-              >
-                <span className="pick-role">
-                  {s.orderMode === 'best' ? `Pokémon ${i + 1}` : SLOT_LABELS[i]}
-                </span>
-                {info ? (
-                  <span className="pick-body">
-                    <PokemonToken speciesId={info.speciesId} size={40} />
-                    <span style={{ minWidth: 0 }}>
-                      <span className="spec-name">
-                        {info.title}
-                        {info.speciesId ? (
-                          <TypeChips types={species(info.speciesId)?.types ?? []} small />
-                        ) : null}
-                      </span>
-                      <span className="meta" style={{ display: 'block' }}>
-                        {info.sub}
-                      </span>
-                    </span>
-                    <span className="pick-change">Change</span>
+              <div className="stack" style={{ gap: 6 }} key={SLOT_LABELS[i]}>
+                <button
+                  type="button"
+                  className={`pick-slot${open ? ' open' : ''}`}
+                  onClick={() => {
+                    setSlot(open ? null : i);
+                    setMovesSlot(null);
+                  }}
+                >
+                  <span className="pick-role">
+                    {s.orderMode === 'best' ? `Pokémon ${i + 1}` : SLOT_LABELS[i]}
                   </span>
-                ) : (
-                  <span className="pick-empty">Tap to choose</span>
-                )}
-              </button>
+                  {info ? (
+                    <span className="pick-body">
+                      <PokemonToken speciesId={info.speciesId} size={40} />
+                      <span style={{ minWidth: 0 }}>
+                        <span className="spec-name">
+                          {info.title}
+                          {info.speciesId ? (
+                            <TypeChips types={species(info.speciesId)?.types ?? []} small />
+                          ) : null}
+                        </span>
+                        <span className="meta" style={{ display: 'block' }}>
+                          {info.sub}
+                        </span>
+                      </span>
+                      <span className="pick-change">Change</span>
+                    </span>
+                  ) : (
+                    <span className="pick-empty">Tap to choose</span>
+                  )}
+                </button>
+                {p && info?.speciesId ? (
+                  <button
+                    type="button"
+                    className={`pick-slot pick-moves${movesOpen ? ' open' : ''}`}
+                    onClick={() => {
+                      setMovesSlot(movesOpen ? null : i);
+                      setSlot(null);
+                    }}
+                  >
+                    <span>{p.moves ? 'Your moves' : 'Moves'}</span>
+                    <b>{movesLine(p, pool)}</b>
+                    <span className="pick-change">{movesOpen ? 'Done' : 'Change'}</span>
+                  </button>
+                ) : null}
+                {movesOpen && p ? (
+                  <div className="picker card">
+                    {pool ? (
+                      <MovePicker
+                        pool={pool}
+                        value={p.moves ?? pool.recommended}
+                        onChange={(next) => setMoves(i, p, next)}
+                      />
+                    ) : (
+                      <Progress stage="moves" done={0} total={0} />
+                    )}
+                  </div>
+                ) : null}
+              </div>
             );
           })}
         </div>
@@ -291,7 +395,8 @@ export function Build() {
         <p className="meta faint" style={{ margin: 0 }}>
           Pokémon picked by species run at a top-10% IV spread, the kind you would realistically
           find, not the perfect one. Your own run with their real IVs at the level pick3 would build
-          them to.
+          them to. Each runs its recommended moves unless you change them here, and changes last
+          only for this team.
         </p>
       </div>
     </div>

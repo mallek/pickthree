@@ -6,7 +6,7 @@ import {
   type BuildOptions,
 } from './builds/eligibility.js';
 import { simOptionsFor } from './gamedata/league.js';
-import { rankingsById } from './builds/moves.js';
+import { rankingsById, type MoveIds } from './builds/moves.js';
 import type { Specimen } from './collection/specimen.js';
 import type { RawScan } from './csv/parse.js';
 import { fullName } from './explain/explain.js';
@@ -44,6 +44,8 @@ export interface TeamPick {
   id: string;
   /** For a specimen, which evolution stage to run. Defaults to the stage PvPoke rates highest. */
   asSpeciesId?: string;
+  /** Moves to run instead of the recommendation. Must be in the species' pool. */
+  moves?: MoveIds;
 }
 
 export interface AnalyzeOptions extends BuildOptions {
@@ -71,6 +73,8 @@ export interface TeamAnalysis {
   orders: OrderTried[];
   /** Species run at top-10% IVs because they were picked by species, not from the collection. */
   hypothetical: string[];
+  /** Species that ran moves the trainer chose instead of the recommendation. */
+  chosenMoves: string[];
   assumptions: Assumptions;
   ms: number;
 }
@@ -192,8 +196,11 @@ export function analyzeTeam(
   progress('eligibility', 3, 3);
 
   progress('candidates', 0, 1);
-  const cands = resolved.map((r) =>
-    candidateFor(r.build, deps.data.rankings, view, index, { allowEliteTm: opts.allowEliteTm }),
+  const cands = resolved.map((r, i) =>
+    candidateFor(r.build, deps.data.rankings, view, index, {
+      allowEliteTm: opts.allowEliteTm,
+      moves: picks[i]?.moves,
+    }),
   ) as [Candidate, Candidate, Candidate];
   // Alternatives come from the whole collection, like a recommended team.
   let pool: Candidate[] = [];
@@ -246,6 +253,7 @@ export function analyzeTeam(
     team,
     orders,
     hypothetical: resolved.filter((r) => r.hypothetical).map((r) => r.build.speciesId),
+    chosenMoves: resolved.filter((_, i) => picks[i]?.moves).map((r) => r.build.speciesId),
     assumptions: assumptionsFor(deps.data, opts),
     ms: Date.now() - started,
   };

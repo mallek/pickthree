@@ -1,4 +1,5 @@
 import type { BuildOptions } from '../builds/eligibility.js';
+import type { MovePool } from '../builds/moves.js';
 import type { ImportReport, Specimen } from '../collection/specimen.js';
 import type { Recommendation, RecommendOptions } from '../recommend.js';
 import type { Verdict } from '../verdicts/worth.js';
@@ -39,4 +40,10 @@ export interface ComputeHost {
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<TeamAnalysis>;
   manual(input: ManualInput): Promise<ManualResult>;
+  /** Every move a species can run, for the hand-built team's move picker. */
+  movePool(
+    speciesId: string,
+    fastId: string | null,
+    current: { fast: string | null; charged: string[] },
+  ): Promise<MovePool>;
 }
