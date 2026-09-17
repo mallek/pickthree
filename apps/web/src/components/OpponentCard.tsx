@@ -3,11 +3,11 @@ import type { CSSProperties } from 'react';
 import { PokemonToken, TypeChips, useName, useShortName, useSpecies } from '../components.tsx';
 import { typeColor } from '../format.ts';
 
-/** One word each; "Depends" means the shield grid decides it. */
+/** One word each, read from the equal-shield pairs; "Mixed" means look at the grid. */
 const VERDICT: Record<FaceoffMember['verdict'], string> = {
   wins: 'Wins',
   loses: 'Loses',
-  shields: 'Depends',
+  shields: 'Mixed',
 };
 
 /** The type-effectiveness badge: 4x, 2x, 1x for neutral, 1/2, 1/4. Plain ASCII on purpose. */
@@ -40,16 +40,35 @@ function Eff({ cell }: { cell: FaceoffCell }) {
   );
 }
 
-/** Nine squares: your shields down (0, 1, 2), theirs across. Colour is win or loss, depth is margin. */
+/**
+ * Nine cells with a W or L each: your shields 0, 1, 2 down the side, theirs across the top.
+ * Colour depth is the margin, so a near-coin-flip looks paler than a blowout.
+ */
 function ShieldGrid({ grid }: { grid: number[] }) {
   return (
     <span className="fo-grid" aria-hidden="true">
-      {grid.map((r, i) => (
-        <i
-          key={i}
-          className={r > 500 ? 'w' : 'l'}
-          style={{ opacity: 0.35 + (Math.abs(r - 500) / 500) * 0.65 }}
-        />
+      <i className="fo-ax corner" />
+      {[0, 1, 2].map((n) => (
+        <i className="fo-ax" key={`t${n}`}>
+          {n}
+        </i>
+      ))}
+      {[0, 1, 2].map((mine) => (
+        <span className="fo-grid-row" key={mine}>
+          <i className="fo-ax">{mine}</i>
+          {[0, 1, 2].map((theirs) => {
+            const r = grid[mine * 3 + theirs] ?? 500;
+            return (
+              <i
+                key={theirs}
+                className={r > 500 ? 'w' : 'l'}
+                style={{ opacity: 0.45 + (Math.abs(r - 500) / 500) * 0.55 }}
+              >
+                {r > 500 ? 'W' : 'L'}
+              </i>
+            );
+          })}
+        </span>
       ))}
     </span>
   );
@@ -96,6 +115,7 @@ export function OpponentCard({ opponent, data }: { opponent: string; data: Faceo
               ))}
               <th scope="col" className="fo-shields-head">
                 shields
+                <span className="fo-count">you down, them across</span>
               </th>
             </tr>
           </thead>
@@ -112,8 +132,8 @@ export function OpponentCard({ opponent, data }: { opponent: string; data: Faceo
                   </td>
                 ))}
                 <td className="fo-shields">
-                  <ShieldGrid grid={mem.grid} />
                   <span className={`fo-verdict ${mem.verdict}`}>{VERDICT[mem.verdict]}</span>
+                  <ShieldGrid grid={mem.grid} />
                 </td>
               </tr>
             ))}
@@ -124,8 +144,8 @@ export function OpponentCard({ opponent, data }: { opponent: string; data: Faceo
       )}
       {data ? (
         <span className="meta">
-          Their likely moves, with fast moves to reach each. Grid: your shields down, theirs across.{' '}
-          {anyReal ? 'Your IVs' : 'PvPoke IVs'}
+          Their likely moves, with fast moves to reach each. Wins and Loses need all three
+          equal-shield fights; Mixed means read the grid. {anyReal ? 'Your IVs' : 'PvPoke IVs'}
           {data.ranked ? '' : '; PvPoke does not rank it, so its moves are a guess'}.
         </span>
       ) : null}

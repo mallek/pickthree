@@ -142,6 +142,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
         ],
         grid: [600, 600, 600, 400, 400, 400, 500, 500, 500],
         wins: 3,
+        evenWins: 1,
         verdict: 'shields',
       })),
       best: 0,

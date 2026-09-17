@@ -53,7 +53,9 @@ describe.skipIf(!ready)('faceoff: one opponent against the set team', () => {
         expect(rating).toBeLessThanOrEqual(1000);
       }
       expect(m.wins).toBe(m.grid.filter((x) => x > 500).length);
-      expect(m.verdict).toBe(m.wins === 9 ? 'wins' : m.wins === 0 ? 'loses' : 'shields');
+      const even = [0, 4, 8].filter((k) => m.grid[k]! > 500).length;
+      expect(m.evenWins).toBe(even);
+      expect(m.verdict).toBe(even === 3 ? 'wins' : even === 0 ? 'loses' : 'shields');
     }
     // Medicham's fighting moves: Water/Fairy Azumarill resists them; Fairy/Steel Tinkaton
     // resists with one type and is weak with the other, so they land neutral.
@@ -64,7 +66,7 @@ describe.skipIf(!ready)('faceoff: one opponent against the set team', () => {
     expect(r.best).not.toBeNull();
     const best = r.members[r.best as number]!;
     for (const m of r.members) {
-      expect(best.wins).toBeGreaterThanOrEqual(m.wins);
+      expect(best.evenWins).toBeGreaterThanOrEqual(m.evenWins);
     }
   });
 

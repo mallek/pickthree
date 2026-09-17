@@ -22,9 +22,11 @@ should I shield, and which of my three should be in front.
      to reach it). Rows: the three members of the set's team. Each cell is a type-effectiveness
      badge for that move against that member: super effective, neutral, or resisted, double
      marked when both types stack. That is the "should I shield" cue.
-  3. At the end of each row: a 3 by 3 shield grid (your shields down, theirs across) coloured
-     by simulated battle rating, and a one-word verdict: Wins, Loses, or Shields decide. The
-     best answer among your three is highlighted.
+  3. At the end of each row: a one-word verdict read from the equal-shield fights (0-0, 1-1,
+     2-2, the head-to-head PvPoke rates): Wins when all three are won, Loses when none, Mixed
+     otherwise. Under it a labelled 3 by 3 grid (your shields down, theirs across) with a W or
+     L per cell, colour depth by margin, so "would one shield flip this" is readable. The best
+     answer among your three is highlighted.
 - **Simulated on the device** through the engine's BattleSimulator: three members times nine
   shield combinations, 27 battles, well under a tenth of a second. When the set's team came
   from the collection, your members run their real IVs and level; otherwise PvPoke defaults.

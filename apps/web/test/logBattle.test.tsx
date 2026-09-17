@@ -72,7 +72,7 @@ describe('New set and Log a battle', () => {
     // The in-battle card opens for the opponent just added: their moves across the top.
     await waitFor(() => expect(screen.getByText('Ice Punch')).toBeInTheDocument());
     expect(screen.getByText('in 7')).toBeInTheDocument();
-    expect(screen.getAllByText('Depends')).toHaveLength(3);
+    expect(screen.getAllByText('Mixed')).toHaveLength(3);
     expect(screen.getByRole('button', { name: 'Remove Medicham' })).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Win' }));

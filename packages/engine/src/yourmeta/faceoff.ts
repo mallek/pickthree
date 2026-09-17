@@ -44,6 +44,9 @@ export interface FaceoffMember {
   grid: number[];
   /** Shield pairs won, 0 to 9. */
   wins: number;
+  /** Equal-shield pairs won (0-0, 1-1, 2-2), 0 to 3: the head-to-head the verdict reads. */
+  evenWins: number;
+  /** wins and loses need all three equal-shield pairs; anything split is shields. */
   verdict: FaceoffVerdict;
 }
 
@@ -151,6 +154,7 @@ export function faceoff(
       }
     }
     const wins = grid.filter((r) => r > 500).length;
+    const evenWins = SHIELD_COUNTS.filter((n) => (grid[n * 3 + n] as number) > 500).length;
     return {
       speciesId,
       specimenId: build ? specimenId : null,
@@ -160,7 +164,8 @@ export function faceoff(
       cells,
       grid,
       wins,
-      verdict: wins === grid.length ? 'wins' : wins === 0 ? 'loses' : 'shields',
+      evenWins,
+      verdict: evenWins === SHIELD_COUNTS.length ? 'wins' : evenWins === 0 ? 'loses' : 'shields',
     };
   });
 
@@ -168,7 +173,12 @@ export function faceoff(
   let best: number | null = null;
   members.forEach((m, i) => {
     const b = best === null ? null : members[best];
-    if (!b || m.wins > b.wins || (m.wins === b.wins && mean(m.grid) > mean(b.grid))) {
+    if (
+      !b ||
+      m.evenWins > b.evenWins ||
+      (m.evenWins === b.evenWins &&
+        (m.wins > b.wins || (m.wins === b.wins && mean(m.grid) > mean(b.grid))))
+    ) {
       best = i;
     }
   });

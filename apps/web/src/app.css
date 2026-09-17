@@ -2347,7 +2347,7 @@ input[type='range'] {
 }
 .fo-table .fo-shields-head,
 .fo-table .fo-shields {
-  width: 92px;
+  width: 74px;
 }
 .fo-move {
   display: table-cell;
@@ -2421,18 +2421,35 @@ input[type='range'] {
 .fo-shields {
   white-space: nowrap;
 }
+.fo-shields .fo-verdict {
+  display: block;
+  margin-bottom: 3px;
+}
 .fo-grid {
   display: inline-grid;
-  grid-template-columns: repeat(3, 9px);
+  grid-template-columns: 10px repeat(3, 14px);
   gap: 2px;
   vertical-align: middle;
-  margin-right: 6px;
+}
+.fo-grid-row {
+  display: contents;
 }
 .fo-grid i {
-  display: block;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+}
+.fo-grid i.fo-ax {
+  width: 10px;
+  color: var(--faint);
+  font-weight: 500;
+  background: transparent;
 }
 .fo-grid i.w {
   background: var(--win);
