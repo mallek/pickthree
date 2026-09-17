@@ -69,6 +69,7 @@ export function TeamDetail({ id }: { id: string }) {
   const best = custom ? (s.recommendation?.teams[0] ?? null) : null;
   const hypothetical = custom ? (s.analysis?.hypothetical ?? []) : [];
   const chosenMoves = custom ? (s.analysis?.chosenMoves ?? []) : [];
+  const unranked = custom ? (s.analysis?.unranked ?? []) : [];
 
   return (
     <div className="screen">
@@ -125,6 +126,14 @@ export function TeamDetail({ id }: { id: string }) {
               <span className="small muted">
                 {chosenMoves.map((h) => name(h)).join(', ')} ran the moves you chose, not the
                 recommended set.
+              </span>
+            ) : null}
+            {unranked.length > 0 ? (
+              <span className="small muted">
+                PvPoke does not rank {unranked.map((h) => name(h)).join(', ')} in{' '}
+                {a?.leagueTitle ?? 'this league'}, so pick3 simulated{' '}
+                {unranked.length === 1 ? 'it' : 'them'} against the meta on this phone. No rank
+                badges; where it plays comes from those battles alone.
               </span>
             ) : null}
           </div>

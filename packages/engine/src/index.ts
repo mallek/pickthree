@@ -7,6 +7,7 @@ export * from './gamedata/forms.js';
 export * from './gamedata/league.js';
 export * from './gamedata/league.js';
 export * from './sim/BattleSimulator.js';
+export * from './sim/matrixSim.js';
 export * from './tables/cpm.js';
 export * from './tables/powerup.js';
 export * from './tables/secondMove.js';

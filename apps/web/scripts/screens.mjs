@@ -272,6 +272,29 @@ if (!chosenNote || !chosenNote.includes('ran the moves you chose')) {
 }
 await shot('14-custom-team');
 
+console.log('build with a species PvPoke does not rank');
+await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.slot-x');
+await page.click('.slot-x');
+await page.click('.search', { clickCount: 3 });
+await page.type('.search', 'magikarp');
+await page.waitForSelector('.recent-token', { timeout: 15_000 });
+await page.click('.recent-token');
+await page.waitForFunction(() => document.querySelectorAll('.opp-slot.filled').length >= 3);
+const tUnranked = Date.now();
+await page.click('.scroll > .btn');
+await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
+const unrankedError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
+if (unrankedError) {
+  throw new Error(`analyze with an unranked pick failed: ${unrankedError}`);
+}
+console.log(`  unranked pick analyzed in ${Date.now() - tUnranked} ms`);
+const unrankedNote = await page.$eval('.custom-note', (e) => e.textContent).catch(() => '');
+if (!unrankedNote.includes('does not rank Magikarp')) {
+  throw new Error(`custom team did not report the simulated pick: ${unrankedNote}`);
+}
+await shot('14b-custom-unranked');
+
 console.log('add a pokemon by hand');
 await page.goto(`${base}/#/add`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.search');

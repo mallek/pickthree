@@ -6,12 +6,10 @@ import {
 } from '../builds/eligibility.js';
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
-import { simOptionsFor, type League } from '../gamedata/league.js';
 import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js';
 import type { MatchupMatrix, RankingCategory, RankingEntry } from '../gamedata/types.js';
-import { matrixIndex } from '../gamedata/types.js';
 import { MatrixView } from '../search/matrixView.js';
-import type { BattleSimulator } from '../sim/BattleSimulator.js';
+import { simulateMatrix, type MatrixSimDeps } from '../sim/matrixSim.js';
 import { buildFacingProfile, facingLine } from '../yourmeta/profile.js';
 import type { YourMetaInput } from '../yourmeta/types.js';
 
@@ -69,11 +67,7 @@ export interface CountersResult {
 }
 
 /** What the outsider path needs: the simulator and league the matrix was built with. */
-export interface CountersLive {
-  sim: BattleSimulator;
-  league: League;
-  onProgress?: (done: number, total: number) => void;
-}
+export type CountersLive = MatrixSimDeps;
 
 /** Ranked species simulated against an outsider; nobody builds the Magikarp that beats Snorlax. */
 export const SIMULATED_CANDIDATES = 300;
@@ -172,51 +166,11 @@ function simulateColumn(data: CountersData, vs: string, live: CountersLive): Mat
     return null;
   }
   const src = data.matrix;
-  const candidates = src.candidates.filter((id) => id !== vs).slice(0, SIMULATED_CANDIDATES);
-  const opponentMoveset = entry.moveset.slice(0, 3);
-  const column: MatchupMatrix = {
-    league: src.league,
-    cp: src.cp,
-    scenarios: src.scenarios,
-    candidates,
-    opponents: [vs],
-    candidateMovesets: Object.fromEntries(
-      candidates.map((id) => [id, src.candidateMovesets[id] ?? []]),
-    ),
-    opponentMovesets: { [vs]: opponentMoveset },
-    ratings: new Array<number>(candidates.length * src.scenarios.length).fill(0),
-  };
-  const simOptions = simOptionsFor(live.league);
-  const total = column.ratings.length;
-  let done = 0;
-  candidates.forEach((id, ci) => {
-    const moveset = column.candidateMovesets[id] ?? [];
-    src.scenarios.forEach((s, si) => {
-      const r = live.sim.simulate(
-        {
-          speciesId: id,
-          fastMove: moveset[0] ?? '',
-          chargedMoves: moveset.slice(1),
-          shields: s.shields[0],
-          startEnergyTurns: s.energy[0],
-        },
-        {
-          speciesId: vs,
-          fastMove: opponentMoveset[0] ?? '',
-          chargedMoves: opponentMoveset.slice(1),
-          shields: s.shields[1],
-          startEnergyTurns: s.energy[1],
-        },
-        simOptions,
-      );
-      column.ratings[matrixIndex(column, ci, 0, si)] = r.rating;
-      done += 1;
-      if (live.onProgress && (done % 30 === 0 || done === total)) {
-        live.onProgress(done, total);
-      }
-    });
-  });
-  return column;
+  const candidates = src.candidates
+    .filter((id) => id !== vs)
+    .slice(0, SIMULATED_CANDIDATES)
+    .map((id) => ({ speciesId: id, moveset: src.candidateMovesets[id] ?? [] }));
+  return simulateMatrix(src, candidates, [{ speciesId: vs, moveset: entry.moveset }], live);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { movePool, movesetFrom, rankingsById } from '../../src/builds/moves.js';
+import { movePool, movesetFrom, rankingsById, recommendMoveset } from '../../src/builds/moves.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { haveStaticData, loadStaticData } from '../fixtures.js';
 
@@ -80,5 +80,37 @@ describe.skipIf(!haveStaticData())('hand-picked movesets', () => {
     expect(ice?.countFromFast).toBe(
       Math.ceil(index.mustMove('ICE_BEAM').energy / index.mustMove('BUBBLE').energyGain),
     );
+  });
+});
+
+describe.skipIf(!haveStaticData())('fallback moveset for an unranked species', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const overall = rankingsById(data.rankings.overall);
+
+  it('picks the strongest legal pair by move stats, not the first in the pool', () => {
+    const sp = index.mustSpecies('magikarp');
+    expect(overall.has('magikarp')).toBe(false);
+    const m = recommendMoveset(
+      'magikarp',
+      overall,
+      { fast: null, charged: [] },
+      { allowEliteTm: true },
+      index,
+    );
+    expect(m.source).toBe('fallback');
+    expect(sp.fastMoves).toContain(m.fast.moveId);
+    for (const c of m.charged) {
+      expect(sp.chargedMoves).toContain(c.moveId);
+    }
+    // Every other legal fast move scores no higher on damage plus energy per turn.
+    const fastScore = (id: string): number => {
+      const mv = index.mustMove(id);
+      const stab = sp.types.includes(mv.type) ? 1.2 : 1;
+      return (mv.power * stab + mv.energyGain) / Math.max(1, mv.turns);
+    };
+    for (const id of sp.fastMoves) {
+      expect(fastScore(id)).toBeLessThanOrEqual(fastScore(m.fast.moveId) + 1e-9);
+    }
   });
 });

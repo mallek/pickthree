@@ -6,7 +6,7 @@ import {
   type BuildOptions,
 } from './builds/eligibility.js';
 import { simOptionsFor } from './gamedata/league.js';
-import { rankingsById, type MoveIds } from './builds/moves.js';
+import { movesetFrom, rankingsById, recommendMoveset, type MoveIds } from './builds/moves.js';
 import type { Specimen } from './collection/specimen.js';
 import type { RawScan } from './csv/parse.js';
 import { fullName } from './explain/explain.js';
@@ -27,6 +27,7 @@ import {
 import { candidateFor, candidatePool, type Candidate } from './search/candidates.js';
 import { simulateFinalists } from './search/finalists.js';
 import { MatrixView } from './search/matrixView.js';
+import { withSimulatedRows, type MatrixFighter } from './sim/matrixSim.js';
 import {
   ALL_ORDERINGS,
   DEFAULT_TRIO_OPTIONS,
@@ -78,6 +79,11 @@ export interface TeamAnalysis {
   hypothetical: string[];
   /** Species that ran moves the trainer chose instead of the recommendation. */
   chosenMoves: string[];
+  /**
+   * Species PvPoke does not rank in this league. They have no matrix row, so each was simulated
+   * against the meta group on the device before the analysis ran; their role scores are zero.
+   */
+  unranked: string[];
   assumptions: Assumptions;
   ms: number;
 }
@@ -175,7 +181,7 @@ export function analyzeTeam(
   };
   const simOptions = deps.simOptions ?? simOptionsFor(deps.data.league);
   const index = new GameDataIndex(deps.data.species, deps.data.moves);
-  const view = new MatrixView(deps.data.matrix);
+  let view = new MatrixView(deps.data.matrix);
   const progress: ProgressFn = onProgress ?? (() => {});
   const overall = rankingsById(deps.data.rankings.overall);
 
@@ -197,6 +203,40 @@ export function analyzeTeam(
     throw new Error('Pick three different Pokémon.');
   }
   progress('eligibility', 3, 3);
+
+  // A pick PvPoke does not rank has no matrix row. Simulate one against the meta group with
+  // the moveset it will actually run, and the rest of the analysis reads it like any other.
+  const missing: MatrixFighter[] = [];
+  resolved.forEach((r, i) => {
+    if (view.rowOf(r.build.speciesId) !== null) {
+      return;
+    }
+    const chosen = picks[i]?.moves;
+    const m = chosen
+      ? movesetFrom(r.build.speciesId, chosen, r.build.specimen.currentMoves, index)
+      : recommendMoveset(
+          r.build.speciesId,
+          overall,
+          r.build.specimen.currentMoves,
+          { allowEliteTm: opts.allowEliteTm },
+          index,
+        );
+    missing.push({
+      speciesId: r.build.speciesId,
+      moveset: [m.fast.moveId, ...m.charged.map((c) => c.moveId)],
+    });
+  });
+  if (missing.length > 0) {
+    const cells = missing.length * deps.data.meta.length * deps.data.matrix.scenarios.length;
+    progress('simulate-picks', 0, cells);
+    view = new MatrixView(
+      withSimulatedRows(deps.data.matrix, missing, {
+        sim: deps.sim,
+        league: deps.data.league,
+        onProgress: (d, t) => progress('simulate-picks', d, t),
+      }),
+    );
+  }
 
   progress('candidates', 0, 1);
   const cands = resolved.map((r, i) =>
@@ -258,6 +298,7 @@ export function analyzeTeam(
     orders,
     hypothetical: resolved.filter((r) => r.hypothetical).map((r) => r.build.speciesId),
     chosenMoves: resolved.filter((_, i) => picks[i]?.moves).map((r) => r.build.speciesId),
+    unranked: missing.map((m) => m.speciesId),
     assumptions: assumptionsFor(deps.data, opts, profile),
     ms: Date.now() - started,
   };

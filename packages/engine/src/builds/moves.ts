@@ -168,8 +168,18 @@ export function recommendMoveset(
     chargedIds = [...new Set([...recCharged, ...usageCharged])];
     source = 'rankings';
   } else {
-    fastIds = [...species.fastMoves];
-    chargedIds = [...species.chargedMoves];
+    // No ranking to lean on: the strongest legal pair by move stats, same-type moves favoured.
+    const stab = (m: Move): number => (species.types.includes(m.type) ? 1.2 : 1);
+    const fastValue = (id: string): number => {
+      const m = index.move(id);
+      return m ? (m.power * stab(m) + m.energyGain) / Math.max(1, m.turns) : -1;
+    };
+    const chargedValue = (id: string): number => {
+      const m = index.move(id);
+      return m ? (m.power * stab(m)) / Math.max(1, m.energy) : -1;
+    };
+    fastIds = [...species.fastMoves].sort((a, b) => fastValue(b) - fastValue(a));
+    chargedIds = [...species.chargedMoves].sort((a, b) => chargedValue(b) - chargedValue(a));
     source = 'fallback';
   }
   // Pools can miss moves the ranking mentions (data drift); keep only real moves.
