@@ -136,8 +136,9 @@ export function NewSet() {
   const quickPicks = query.trim() === '' && slots.every((x) => x === null);
 
   const go = async (team: TeamRef): Promise<void> => {
-    await startSet(team);
-    navigate({ screen: 'meta' });
+    if (await startSet(team)) {
+      navigate({ screen: 'meta' });
+    }
   };
 
   const startPicked = (): void => {

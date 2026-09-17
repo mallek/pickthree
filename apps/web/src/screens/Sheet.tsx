@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { PokemonToken, useLogCount, useName } from '../components.tsx';
+import { PokemonToken, Seg, useLogCount, useName } from '../components.tsx';
 import { dateLabel, num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
@@ -228,23 +228,14 @@ export function Sheet() {
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Appearance</span>
-            <div className="seg">
-              {themes.map((t) => (
-                <span
-                  key={t}
-                  className={s.settings.theme === t ? 'on' : ''}
-                  onClick={() => updateSettings({ theme: t })}
-                  role="button"
-                  tabIndex={0}
-                  style={{
-                    cursor: 'pointer',
-                    color: s.settings.theme === t ? undefined : 'var(--text)',
-                  }}
-                >
-                  {t === 'system' ? 'System' : t === 'dark' ? 'Dark' : 'Light'}
-                </span>
-              ))}
-            </div>
+            <Seg
+              value={s.settings.theme}
+              onChange={(theme) => updateSettings({ theme })}
+              options={themes.map((t) => ({
+                value: t,
+                label: t === 'system' ? 'System' : t === 'dark' ? 'Dark' : 'Light',
+              }))}
+            />
             <button
               type="button"
               className="toggle"

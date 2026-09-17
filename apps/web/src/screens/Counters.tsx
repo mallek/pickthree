@@ -24,18 +24,15 @@ export function Counters() {
   const species = useSpecies();
   const [own, setOwn] = useState<Own>('all');
   const [radar, setRadar] = useState(false);
+  /** Species to score against instead of the whole meta, from the Your meta most-faced rows. */
+  const vs = s.route.screen === 'counters' ? (s.route.vs ?? null) : null;
+  const stale = s.counters === null || s.countersVs !== vs;
 
   useEffect(() => {
-    if (
-      s.boot === 'ready' &&
-      s.leagueInfo &&
-      s.collection &&
-      s.counters === null &&
-      !s.countersLoading
-    ) {
-      void loadCounters();
+    if (s.boot === 'ready' && s.leagueInfo && s.collection && stale && !s.countersLoading) {
+      void loadCounters(vs);
     }
-  }, [s.boot, s.leagueInfo, s.collection, s.counters, s.countersLoading, loadCounters]);
+  }, [s.boot, s.leagueInfo, s.collection, stale, s.countersLoading, loadCounters, vs]);
 
   if (!s.collection) {
     return (
@@ -45,7 +42,8 @@ export function Counters() {
     );
   }
 
-  let rows: CounterEntry[] = s.counters?.entries ?? [];
+  const counters = stale ? null : s.counters;
+  let rows: CounterEntry[] = counters?.entries ?? [];
   if (own === 'have') {
     rows = rows.filter((c) => c.owned === 'have');
   }
@@ -66,20 +64,30 @@ export function Counters() {
     <div className="screen">
       <div className="page-head">
         <div className="between">
-          <h2>Counters</h2>
+          <h2>{vs ? `Who beats ${name(vs)}` : 'Counters'}</h2>
           <span className="row">
-            <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
+            {vs ? null : (
+              <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
+            )}
             <HeadCog />
           </span>
         </div>
         <LeagueSwitcher compact />
-        <p className="meta" style={{ margin: 0 }}>
-          Who beats the current {league.title} meta, weighted by how often you meet each opponent.
-          Under the radar means strong against the meta but ranked lower than that suggests.
-        </p>
-        {s.counters ? (
+        {vs ? (
           <p className="meta" style={{ margin: 0 }}>
-            {s.counters.facing}.
+            Every ranked {league.title} species that wins at least one of the three shield scenarios
+            against {name(vs)}, best first.{' '}
+            <a href={hashFor({ screen: 'counters' })}>Back to the whole meta</a>
+          </p>
+        ) : (
+          <p className="meta" style={{ margin: 0 }}>
+            Who beats the current {league.title} meta, weighted by how often you meet each opponent.
+            Under the radar means strong against the meta but ranked lower than that suggests.
+          </p>
+        )}
+        {counters ? (
+          <p className="meta" style={{ margin: 0 }}>
+            {counters.facing}.
           </p>
         ) : null}
         <div className="chips">
@@ -98,7 +106,7 @@ export function Counters() {
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
-        {s.countersLoading && !s.counters ? <Progress stage="counters" done={0} total={0} /> : null}
+        {s.countersLoading && !counters ? <Progress stage="counters" done={0} total={0} /> : null}
         {rows.map((c) => {
           const href = c.ownedSpecimenId
             ? hashFor({ screen: 'specimen', id: c.ownedSpecimenId })
@@ -113,7 +121,8 @@ export function Counters() {
                   <TypeChips types={species(c.speciesId)?.types ?? ['normal', 'none']} small />
                 </span>
                 <span className="meta" style={{ display: 'block' }}>
-                  #{c.antiRank} vs meta · {c.overallRank ? `#${c.overallRank} overall` : 'unranked'}
+                  {vs ? `#${c.antiRank} vs ${name(vs)}` : `#${c.antiRank} vs meta`} ·{' '}
+                  {c.overallRank ? `#${c.overallRank} overall` : 'unranked'}
                 </span>
                 <MetaTags speciesId={c.speciesId} />
                 {c.beats.length > 0 ? (
@@ -134,7 +143,7 @@ export function Counters() {
               </span>
               <span className="anti">
                 <b>{Math.round(c.antiMeta)}%</b>
-                <small>of meta</small>
+                <small>{vs ? 'of fights' : 'of meta'}</small>
               </span>
             </>
           );
@@ -157,9 +166,11 @@ export function Counters() {
             </button>
           );
         })}
-        {s.counters && rows.length === 0 ? (
+        {counters && rows.length === 0 ? (
           <p className="muted" style={{ padding: '32px 12px', textAlign: 'center' }}>
-            Nothing here yet. Try another filter.
+            {counters.vs && !counters.vs.inMeta
+              ? `${name(counters.vs.speciesId)} is not in PvPoke's meta list for ${league.title}, so pick3 has no matchups for it yet.`
+              : 'Nothing here yet. Try another filter.'}
           </p>
         ) : null}
       </div>

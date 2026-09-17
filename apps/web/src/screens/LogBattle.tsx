@@ -64,8 +64,10 @@ export function LogBattle() {
       setDone({ wins, losses, index, team: open.team });
     }
     try {
-      await logBattle({ opponents: slots, result, tanked: result === null });
-      if (!closes) {
+      const saved = await logBattle({ opponents: slots, result, tanked: result === null });
+      if (!saved) {
+        setDone(null);
+      } else if (!closes) {
         navigate({ screen: 'meta' });
       }
     } finally {

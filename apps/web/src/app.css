@@ -427,21 +427,28 @@ a {
   overflow: hidden;
   align-self: flex-start;
 }
-.seg span {
+.seg > * {
   padding: 7px 12px;
   font-size: 13px;
   display: flex;
   align-items: center;
   gap: 5px;
   white-space: nowrap;
-  color: var(--faint);
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }
-.seg span + span {
+.seg > * + * {
   border-left: 1px solid var(--divider);
 }
-.seg .on {
+.seg > .on {
   color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
+}
+.seg > :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .seg small {
   font-size: 10px;
@@ -1315,6 +1322,9 @@ textarea.paste {
   max-width: calc(100vw - 32px);
   white-space: nowrap;
 }
+.notice-toast {
+  background: var(--warn-tint);
+}
 .update-toast button {
   border: 0;
   border-radius: 999px;
@@ -2150,12 +2160,17 @@ input[type='range'] {
 .faced-row {
   position: relative;
   display: grid;
-  grid-template-columns: 36px 1fr auto;
+  grid-template-columns: 36px 1fr auto auto;
   gap: 10px;
   align-items: center;
   padding: 6px 8px;
   border-radius: var(--r-md);
   overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+}
+.faced-row .chev {
+  color: var(--faint);
 }
 .faced-bar {
   position: absolute;

@@ -120,10 +120,9 @@ export const storage = {
       return all.sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
     }, []);
   },
-  saveSet(set: BattleSet): Promise<void> {
-    return safe(async () => {
-      await (await db()).put('battles', set);
-    }, undefined);
+  /** Throws when the write fails: a lost battle must reach the player, unlike a lost setting. */
+  async saveSet(set: BattleSet): Promise<void> {
+    await (await db()).put('battles', set);
   },
   loadAllSets(): Promise<BattleSet[]> {
     return safe(async () => (await db()).getAll('battles'), []);

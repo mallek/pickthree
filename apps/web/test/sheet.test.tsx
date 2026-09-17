@@ -43,4 +43,22 @@ describe('Settings sheet, Your meta section', () => {
     expect(screen.getByRole('button', { name: 'Export log' })).toBeInTheDocument();
     expect(screen.getByText('Import log')).toBeInTheDocument();
   });
+
+  it('switches the theme with real buttons that report their state', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+        <Sheet />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(latest?.state.boot).toBe('ready'));
+    const dark = screen.getByRole('button', { name: 'Dark' });
+    expect(screen.getByRole('button', { name: 'System' })).toHaveAttribute('aria-pressed', 'true');
+    expect(dark).toHaveAttribute('aria-pressed', 'false');
+    await act(async () => {
+      fireEvent.click(dark);
+    });
+    expect(latest?.state.settings.theme).toBe('dark');
+    expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
+  });
 });

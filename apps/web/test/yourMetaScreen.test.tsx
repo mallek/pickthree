@@ -51,6 +51,14 @@ describe('Your meta screen', () => {
     const medicham = screen.getByText('Medicham').closest('.faced-row');
     expect(medicham).toHaveTextContent('faced 2');
     expect(medicham).toHaveTextContent('1-1');
+    // Each most-faced row opens Counters scored against that species.
+    expect(medicham).toHaveAttribute('href', '#/counters?vs=medicham');
+    expect(screen.getByRole('link', { name: 'Who beats Medicham' })).toBeInTheDocument();
+    // The sort control is real buttons, so the keyboard can reach it.
+    expect(screen.getByRole('button', { name: 'Worst record' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     // The fake league's meta group is three species, so both logged opponents are outsiders.
     expect(screen.getAllByText(/not in PvPoke's list/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/2 battles/).length).toBeGreaterThan(0);

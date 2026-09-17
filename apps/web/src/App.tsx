@@ -13,6 +13,7 @@ import { Teams } from './screens/Teams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
 import { YourMeta } from './screens/YourMeta.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
+import { NoticeToast } from './components/NoticeToast.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
 
 const ICONS = {
@@ -144,6 +145,7 @@ export function App() {
       {showTabs ? <TabBar /> : null}
       {s.sheetOpen ? <Sheet /> : null}
       <UpdateToast />
+      <NoticeToast />
     </div>
   );
 }

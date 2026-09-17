@@ -44,6 +44,11 @@ export interface CountersOptions {
   limit: number;
   buildOptions: BuildOptions;
   yourMeta?: YourMetaInput;
+  /**
+   * Score against this one opponent instead of the whole meta. The log does not apply: the
+   * question is "who beats X", not "who beats what I face".
+   */
+  vs?: string;
 }
 
 export interface CountersResult {
@@ -53,6 +58,8 @@ export interface CountersResult {
   blended: boolean;
   /** Counted battles behind the weights. */
   battles: number;
+  /** Set when scored against one opponent. inMeta false means the matrix has no column for it. */
+  vs?: { speciesId: string; inMeta: boolean };
 }
 
 export const DEFAULT_COUNTERS_OPTIONS: CountersOptions = {
@@ -153,22 +160,37 @@ export function metaCounters(
   const view = new MatrixView(data.matrix);
   const ranks = metaRanks(data.rankings);
   const profile = buildFacingProfile({
-    battles: opts.yourMeta?.battles ?? [],
+    battles: opts.vs ? [] : (opts.yourMeta?.battles ?? []),
     opponents: view.opponents,
     ranks,
     rankings: data.rankings.overall,
-    blend: opts.yourMeta?.blend ?? true,
+    blend: opts.vs ? false : (opts.yourMeta?.blend ?? true),
   });
   const groups = opponentGroups(view, ranks, profile.engaged ? profile.weights : undefined);
   const byRank = [...groups].sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
+  const target = opts.vs ? groups.find((g) => g.speciesId === opts.vs) : undefined;
+  if (opts.vs && !target) {
+    return {
+      entries: [],
+      facing: "Not in PvPoke's list for this league, so there are no matchups to score",
+      blended: false,
+      battles: 0,
+      vs: { speciesId: opts.vs, inMeta: false },
+    };
+  }
   const owned = ownedBuilds(specimens, index, opts.buildOptions);
 
-  const scored = data.matrix.candidates.map((speciesId, row) => ({
-    speciesId,
-    row,
-    antiMeta: antiMetaScore(view, row, groups),
-  }));
-  scored.sort((a, b) => b.antiMeta - a.antiMeta);
+  // Against one opponent the score is the plain win share; the rest of the meta only feeds
+  // the beats and losesTo lines. Species that never win are left out.
+  const scored = data.matrix.candidates
+    .map((speciesId, row) => ({
+      speciesId,
+      row,
+      antiMeta: target ? winShare(view, row, target) * 100 : antiMetaScore(view, row, groups),
+    }))
+    .filter((s) => !target || (s.antiMeta > 0 && s.speciesId !== target.speciesId));
+  const rankOf = (id: string): number => ranks.get(id)?.overall ?? 9999;
+  scored.sort((a, b) => b.antiMeta - a.antiMeta || rankOf(a.speciesId) - rankOf(b.speciesId));
 
   const out: CounterEntry[] = [];
   scored.slice(0, opts.limit).forEach((s, i) => {
@@ -203,6 +225,15 @@ export function metaCounters(
       ownedStageOffset: b?.stageOffset ?? null,
     });
   });
+  if (target) {
+    return {
+      entries: out,
+      facing: "Scored against one opponent at PvPoke's movesets; your log does not apply here",
+      blended: false,
+      battles: 0,
+      vs: { speciesId: target.speciesId, inMeta: true },
+    };
+  }
   return {
     entries: out,
     facing: facingLine(profile, 'counters'),

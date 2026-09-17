@@ -159,6 +159,19 @@ await page.waitForSelector('.set-card', { timeout: 60_000 });
 await page.waitForSelector('.faced-row');
 await shot('20-your-meta', false);
 
+console.log('who beats one opponent');
+const facedHref = await page.$eval('.faced-row', (a) => a.getAttribute('href'));
+if (!facedHref || !facedHref.startsWith('#/counters?vs=')) {
+  throw new Error(`most-faced row does not link to Counters: ${facedHref}`);
+}
+await page.goto(`${base}/${facedHref}`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.counter-row, .scroll > p.muted', { timeout: 120_000 });
+const vsTitle = await page.$eval('.page-head h2', (h) => h.textContent);
+if (!vsTitle || !vsTitle.startsWith('Who beats ')) {
+  throw new Error(`counters vs view has the wrong title: ${vsTitle}`);
+}
+await shot('23-counters-vs', false);
+
 console.log('log a battle');
 await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.result-row');
@@ -231,9 +244,10 @@ console.log('add a pokemon by hand');
 await page.goto(`${base}/#/add`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.search');
 await page.type('.search', 'swampert');
-await page.waitForSelector('.picker-list .spec-row');
+await page.waitForSelector('.recent-row .recent-token');
 await shot('15-add-search', false);
-await page.click('.picker-list .spec-row');
+await page.click('.recent-row .recent-token');
+await page.waitForSelector('.pick-slot');
 await page.type('.field input[placeholder]', '1497');
 await shot('16-add-form', false);
 await page.click('.scroll > .btn');

@@ -73,3 +73,54 @@ describe.skipIf(!haveStaticData())('meta counters', () => {
     }
   });
 });
+
+describe.skipIf(!haveStaticData())('counters against one opponent', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
+  const target = data.matrix.opponents[0]!;
+
+  it('scores every candidate by its win share against that species only', () => {
+    const r = metaCounters(data, specimens, index, { limit: 40, vs: target });
+    expect(r.vs).toEqual({ speciesId: target, inMeta: true });
+    expect(r.blended).toBe(false);
+    expect(r.entries.length).toBeGreaterThan(0);
+    expect(r.entries.length).toBeLessThanOrEqual(40);
+    r.entries.forEach((c, i) => {
+      expect(c.antiRank).toBe(i + 1);
+      expect(c.speciesId).not.toBe(target);
+      expect(c.antiMeta).toBeGreaterThan(0);
+      expect(c.antiMeta).toBeLessThanOrEqual(100);
+      if (i > 0) {
+        expect(c.antiMeta).toBeLessThanOrEqual(r.entries[i - 1]!.antiMeta);
+      }
+    });
+    // Anything listed beats the target in every scenario it is scored 100 for.
+    const top = r.entries[0]!;
+    expect(top.antiMeta).toBe(100);
+    expect(r.facing).toMatch(/one opponent/);
+  });
+
+  it('says so when the species is not in the meta group', () => {
+    const r = metaCounters(data, specimens, index, { limit: 40, vs: 'not-a-species' });
+    expect(r.vs).toEqual({ speciesId: 'not-a-species', inMeta: false });
+    expect(r.entries).toEqual([]);
+  });
+
+  it('ignores the log while scoring against one opponent', () => {
+    const battles = Array.from({ length: 20 }, (_, i) => ({
+      id: `b${i}`,
+      at: new Date().toISOString(),
+      opponents: [target],
+      result: 'loss' as const,
+      tanked: false,
+    }));
+    const r = metaCounters(data, specimens, index, {
+      limit: 10,
+      vs: target,
+      yourMeta: { battles, blend: true },
+    });
+    expect(r.blended).toBe(false);
+    expect(r.battles).toBe(0);
+  });
+});

@@ -1,16 +1,15 @@
 import type { ManualResult } from '@pickthree/engine';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Header,
   MetaTags,
   PokemonToken,
   TypeChips,
-  useMetaRank,
   useName,
+  useShortName,
   useSpecies,
+  useSpeciesSearch,
 } from '../components.tsx';
-import { matchesQuery, parseQuery } from '../search.ts';
-import { familyContext, speciesRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 /** Type a Pokémon in by hand: species, IVs from the appraisal screen, and the CP on its card. */
@@ -18,8 +17,8 @@ export function AddPokemon() {
   const s = useAppState();
   const { navigate, addManual } = useActions();
   const name = useName();
+  const short = useShortName();
   const species = useSpecies();
-  const metaRank = useMetaRank();
   const [query, setQuery] = useState('');
   const [speciesId, setSpeciesId] = useState<string | null>(null);
   const [atk, setAtk] = useState('15');
@@ -31,19 +30,8 @@ export function AddPokemon() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
-  const q = query.trim().toLowerCase();
-  const parsed = useMemo(() => parseQuery(query), [query]);
-  const matches = useMemo(() => {
-    const ids = s.data?.allSpecies ?? [];
-    if (parsed.length === 0) {
-      return [];
-    }
-    const ctx = familyContext(ids, name, species);
-    return ids
-      .filter((id) => matchesQuery(parsed, speciesRecord(id, name(id), species(id)), ctx))
-      .sort((a, b) => (metaRank(a)?.overall ?? 9999) - (metaRank(b)?.overall ?? 9999))
-      .slice(0, 12);
-  }, [s.data, parsed, name, species, metaRank]);
+  const searching = query.trim().length > 0;
+  const matches = useSpeciesSearch(query, 30);
 
   const iv = (v: string): number => Number.parseInt(v, 10);
   const ready =
@@ -107,6 +95,41 @@ export function AddPokemon() {
       <div className="scroll" style={{ gap: 16 }}>
         <div className="stack" style={{ gap: 8 }}>
           <b>Which Pokémon</b>
+          <input
+            className="search"
+            placeholder="Search any Pokemon, e.g. shadow swampert"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            inputMode="search"
+            autoFocus={speciesId === null}
+          />
+          {searching ? (
+            <>
+              <span className="meta">Matches</span>
+              <div className="recent-row matches">
+                {matches.map((id) => (
+                  <button
+                    type="button"
+                    className="recent-token"
+                    key={id}
+                    onClick={() => {
+                      setSpeciesId(id);
+                      setQuery('');
+                    }}
+                    aria-label={name(id)}
+                  >
+                    <PokemonToken speciesId={id} size={36} />
+                    <span>{short(id)}</span>
+                  </button>
+                ))}
+              </div>
+              {matches.length === 0 ? (
+                <p className="muted small" style={{ margin: 0 }}>
+                  Nothing matches. Try "shadow" plus the name, or a type like "water".
+                </p>
+              ) : null}
+            </>
+          ) : null}
           {speciesId ? (
             <button
               type="button"
@@ -128,46 +151,7 @@ export function AddPokemon() {
                 <span className="pick-change">Change</span>
               </span>
             </button>
-          ) : (
-            <>
-              <input
-                className="search"
-                placeholder="Search by name, e.g. Shadow Swampert"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                inputMode="search"
-                autoFocus
-              />
-              <div className="picker-list">
-                {matches.map((id) => (
-                  <button
-                    type="button"
-                    className="spec-row"
-                    key={id}
-                    onClick={() => {
-                      setSpeciesId(id);
-                      setQuery('');
-                    }}
-                  >
-                    <PokemonToken speciesId={id} size={40} />
-                    <span style={{ minWidth: 0 }}>
-                      <span className="spec-name">
-                        {name(id)}
-                        <TypeChips types={species(id)?.types ?? []} small />
-                      </span>
-                      <MetaTags speciesId={id} />
-                    </span>
-                    <span />
-                  </button>
-                ))}
-                {q && matches.length === 0 ? (
-                  <p className="muted small" style={{ padding: '12px 0' }}>
-                    Nothing matches. Shadows are listed as "Shadow" plus the name.
-                  </p>
-                ) : null}
-              </div>
-            </>
-          )}
+          ) : null}
         </div>
 
         <div className="stack" style={{ gap: 8 }}>

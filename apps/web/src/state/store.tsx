@@ -63,7 +63,7 @@ export type Route =
   | { screen: 'team'; id: string }
   | { screen: 'collection' }
   | { screen: 'specimen'; id: string }
-  | { screen: 'counters' }
+  | { screen: 'counters'; vs?: string }
   | { screen: 'build' }
   | { screen: 'custom' }
   | { screen: 'add' }
@@ -108,6 +108,10 @@ export interface AppState {
   verdictsError: string | null;
   counters: CountersResult | null;
   countersLoading: boolean;
+  /** Species the current counters were scored against, null for the whole meta. */
+  countersVs: string | null;
+  /** One-line message for the floating toast, such as a failed save. */
+  notice: string | null;
   scanList: ScanList | null;
   /** Hand-built team: the three picks, how to order them, and the last analysis. */
   picks: [TeamPick | null, TeamPick | null, TeamPick | null];
@@ -144,8 +148,9 @@ type Action =
   | { type: 'verdicts-done'; verdicts: Record<string, Verdict> }
   | { type: 'verdicts-error'; message: string }
   | { type: 'verdicts-partial'; verdicts: Record<string, Verdict> }
-  | { type: 'counters-start' }
+  | { type: 'counters-start'; vs: string | null }
   | { type: 'counters-done'; counters: CountersResult | null }
+  | { type: 'notice'; message: string | null }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
   | { type: 'order-mode'; mode: 'best' | 'given' }
@@ -177,6 +182,8 @@ const initial: AppState = {
   verdictsError: null,
   counters: null,
   countersLoading: false,
+  countersVs: null,
+  notice: null,
   scanList: null,
   picks: [null, null, null],
   orderMode: 'best',
@@ -252,9 +259,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'rec-error':
       return { ...s, recommending: false, recommendError: a.message, progress: null };
     case 'counters-start':
-      return { ...s, countersLoading: true };
+      return { ...s, countersLoading: true, countersVs: a.vs };
     case 'counters-done':
       return { ...s, countersLoading: false, counters: a.counters };
+    case 'notice':
+      return { ...s, notice: a.message };
     case 'scanlist':
       return { ...s, scanList: a.scanList };
     case 'pick': {
@@ -297,7 +306,8 @@ function reducer(s: AppState, a: Action): AppState {
 }
 
 export function parseHash(hash: string): Route {
-  const parts = hash.replace(/^#\/?/, '').split('?')[0]!.split('/').filter(Boolean);
+  const [path, query] = hash.replace(/^#\/?/, '').split('?');
+  const parts = path!.split('/').filter(Boolean);
   const [a, b] = parts;
   if (a === 'report') {
     return { screen: 'report' };
@@ -309,7 +319,8 @@ export function parseHash(hash: string): Route {
     return b ? { screen: 'specimen', id: decodeURIComponent(b) } : { screen: 'collection' };
   }
   if (a === 'counters') {
-    return { screen: 'counters' };
+    const vs = new URLSearchParams(query ?? '').get('vs');
+    return vs ? { screen: 'counters', vs } : { screen: 'counters' };
   }
   if (a === 'build') {
     return b === 'team' ? { screen: 'custom' } : { screen: 'build' };
@@ -344,7 +355,7 @@ export function hashFor(r: Route): string {
     case 'specimen':
       return `#/collection/${encodeURIComponent(r.id)}`;
     case 'counters':
-      return '#/counters';
+      return r.vs ? `#/counters?vs=${encodeURIComponent(r.vs)}` : '#/counters';
     case 'build':
       return '#/build';
     case 'custom':
@@ -390,7 +401,8 @@ interface Actions {
   importCsv(text: string, fileName: string | null): Promise<boolean>;
   runRecommend(): Promise<void>;
   loadVerdicts(): Promise<void>;
-  loadCounters(): Promise<void>;
+  /** Scores against the whole meta, or against one species when vs is given. */
+  loadCounters(vs?: string | null): Promise<void>;
   loadScanList(): Promise<void>;
   setPick(slot: number, pick: TeamPick | null): void;
   setOrderMode(mode: 'best' | 'given'): void;
@@ -407,14 +419,19 @@ interface Actions {
   setLeague(id: string): void;
   toggleExcluded(specimenId: string): void;
   forget(): Promise<void>;
-  /** Open a set of five with this team in the league in play. Closes any open set first. */
-  startSet(team: TeamRef): Promise<void>;
+  /**
+   * Open a set of five with this team in the league in play. Closes any open set first.
+   * The log actions resolve false, after raising a notice, when the phone refused the write.
+   */
+  startSet(team: TeamRef): Promise<boolean>;
   logBattle(input: {
     opponents: string[];
     result: 'win' | 'loss' | null;
     tanked: boolean;
-  }): Promise<void>;
-  endSet(): Promise<void>;
+  }): Promise<boolean>;
+  endSet(): Promise<boolean>;
+  /** Show (or clear with null) the floating one-line notice. */
+  notify(message: string | null): void;
   /** Battles before now move to earlier seasons for the league in play. Nothing is deleted. */
   startFresh(): void;
   /** The whole log (every league) as the export file text. */
@@ -671,15 +688,18 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
-  const loadCounters = useCallback(async () => {
+  const loadCounters = useCallback(async (vs: string | null = null) => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
     if (!s.collection || s.countersLoading || !s.leagueInfo) {
       return;
     }
-    dispatch({ type: 'counters-start' });
+    dispatch({ type: 'counters-start', vs });
     try {
-      const counters = await h.counters(s.collection.specimens, { yourMeta: yourMeta() });
+      const counters = await h.counters(s.collection.specimens, {
+        yourMeta: yourMeta(),
+        ...(vs ? { vs } : {}),
+      });
       dispatch({ type: 'counters-done', counters });
     } catch (e) {
       recordError('counters', e);
@@ -828,15 +848,27 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [updateSettings],
   );
 
+  const notify = useCallback((message: string | null) => {
+    dispatch({ type: 'notice', message });
+  }, []);
+
+  /** Writes the sets and reloads the league. False, with a toast, when the phone refused. */
   const persistSets = useCallback(
-    async (sets: BattleSet[]) => {
-      for (const set of sets) {
-        await storage.saveSet(set);
+    async (sets: BattleSet[]): Promise<boolean> => {
+      try {
+        for (const set of sets) {
+          await storage.saveSet(set);
+        }
+      } catch (e) {
+        recordError('battle-log', e);
+        notify('Could not save that battle. Storage on this phone may be full or blocked.');
+        return false;
       }
       const league = stateRef.current.settings.league ?? 'great';
       applySets(await storage.loadSets(league));
+      return true;
     },
-    [applySets],
+    [applySets, notify],
   );
 
   const startSet = useCallback(
@@ -852,7 +884,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           battles: [],
           closed: false,
         };
-        await persistSets([...open, set]);
+        return persistSets([...open, set]);
       }),
     [persistSets, serialized],
   );
@@ -874,7 +906,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           tanked: input.tanked,
         };
         const battles = [...open.battles, battle];
-        await persistSets([{ ...open, battles, closed: battles.length >= SET_SIZE }]);
+        return persistSets([{ ...open, battles, closed: battles.length >= SET_SIZE }]);
       }),
     [persistSets, serialized],
   );
@@ -883,9 +915,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     () =>
       serialized(async () => {
         const open = setsRef.current.find((s) => !s.closed);
-        if (open) {
-          await persistSets([{ ...open, closed: true }]);
-        }
+        return open ? persistSets([{ ...open, closed: true }]) : true;
       }),
     [persistSets, serialized],
   );
@@ -956,6 +986,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       startSet,
       logBattle,
       endSet,
+      notify,
       startFresh,
       exportLog,
       importLog,
@@ -981,6 +1012,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       startSet,
       logBattle,
       endSet,
+      notify,
       startFresh,
       exportLog,
       importLog,

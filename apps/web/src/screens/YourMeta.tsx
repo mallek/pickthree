@@ -9,10 +9,10 @@ import {
   type TeamRecord,
 } from '@pickthree/engine';
 import { useMemo, useState } from 'react';
-import { HeadCog, PokemonToken, useLogCount, useName, useSticky } from '../components.tsx';
+import { HeadCog, PokemonToken, Seg, useLogCount, useName, useSticky } from '../components.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { dateLabel } from '../format.ts';
-import { useActions, useAppState } from '../state/store.tsx';
+import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
 type Sort = 'faced' | 'losses';
 
@@ -86,7 +86,12 @@ function SpeciesRows({ rows, meta }: { rows: SpeciesRecord[]; meta: string[] }) 
   return (
     <div className="stack" style={{ gap: 4 }}>
       {rows.map((r) => (
-        <div className="faced-row" key={r.speciesId}>
+        <a
+          className="faced-row"
+          key={r.speciesId}
+          href={hashFor({ screen: 'counters', vs: r.speciesId })}
+          aria-label={`Who beats ${name(r.speciesId)}`}
+        >
           <span className="faced-bar" style={{ width: `${(r.faced / max) * 100}%` }} />
           <PokemonToken speciesId={r.speciesId} size={36} />
           <span style={{ minWidth: 0 }}>
@@ -106,7 +111,8 @@ function SpeciesRows({ rows, meta }: { rows: SpeciesRecord[]; meta: string[] }) 
             </span>
           </span>
           <b>{record(r.wins, r.losses)}</b>
-        </div>
+          <span className="chev">&rsaquo;</span>
+        </a>
       ))}
     </div>
   );
@@ -257,24 +263,14 @@ export function YourMeta() {
         {stats.openSet ? <SetCard set={stats.openSet} index={openIndex} /> : <NoOpenSet />}
         <div className="between">
           <span className="meta">{stats.current.label}</span>
-          <span className="seg">
-            <span
-              className={sort === 'faced' ? 'on' : ''}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSort('faced')}
-            >
-              Most faced
-            </span>
-            <span
-              className={sort === 'losses' ? 'on' : ''}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSort('losses')}
-            >
-              Worst record
-            </span>
-          </span>
+          <Seg
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: 'faced', label: 'Most faced' },
+              { value: 'losses', label: 'Worst record' },
+            ]}
+          />
         </div>
         <Bucket stats={stats.current} meta={meta} sort={sort} />
         {stats.earlier.length > 0 ? (
