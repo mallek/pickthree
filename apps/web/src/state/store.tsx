@@ -9,6 +9,7 @@ import {
   type ManualInput,
   type ManualResult,
   type MovePool,
+  type PokemonType,
   type ProgressEvent,
   type Recommendation,
   type RecommendOptions,
@@ -79,6 +80,8 @@ export interface DataInfo {
   /** Released, non-mega species for adding by hand. */
   allSpecies: string[];
   seasons: Season[];
+  /** Move id to display name and type, for the `@word` search term. */
+  moves: Record<string, { name: string; type: PokemonType }>;
 }
 
 export interface AppState {
@@ -475,6 +478,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
               leagues: r.leagues,
               allSpecies: r.allSpecies,
               seasons: r.seasons,
+              moves: r.moves,
             },
           });
         }
@@ -681,7 +685,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       recordError('counters', e);
       dispatch({
         type: 'counters-done',
-        counters: { entries: [], facing: 'Counters could not be computed', blended: false, battles: 0 },
+        counters: {
+          entries: [],
+          facing: 'Counters could not be computed',
+          blended: false,
+          battles: 0,
+        },
       });
     }
   }, []);
@@ -834,9 +843,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     (team: TeamRef) =>
       serialized(async () => {
         const league = stateRef.current.settings.league ?? 'great';
-        const open = setsRef.current
-          .filter((s) => !s.closed)
-          .map((s) => ({ ...s, closed: true }));
+        const open = setsRef.current.filter((s) => !s.closed).map((s) => ({ ...s, closed: true }));
         const set: BattleSet = {
           id: newId(),
           league,

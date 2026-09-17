@@ -2,6 +2,7 @@ import type { Layout } from '@pickthree/engine';
 export interface SpeciesLite {
   name: string;
   types: [PokemonType, PokemonType | 'none'];
+  familyId: string | null;
 }
 
 /** What the UI needs about the league in play, computed in the worker. */
@@ -101,6 +102,8 @@ export type WorkerResult =
       allSpecies: string[];
       /** Go Battle League seasons, oldest first. Empty when the data build predates the list. */
       seasons: Season[];
+      /** Move id to display name and type, for the `@word` search term. */
+      moves: Record<string, { name: string; type: PokemonType }>;
     }
   | { kind: 'league'; info: LeagueInfo }
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }

@@ -9,7 +9,8 @@ import {
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
-import { matchesSpeciesQuery } from '../search.ts';
+import { matchesQuery, parseQuery } from '../search.ts';
+import { specimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 function TeamPick({
@@ -77,19 +78,19 @@ export function NewSet() {
   }, [s.recommendation, s.analysis]);
 
   const mine = useMemo(() => {
-    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (words.length === 0 || !s.collection) {
+    const parsed = parseQuery(query);
+    if (parsed.length === 0 || !s.collection) {
       return [];
     }
+    const moves = s.data?.moves;
     const seen = new Set<string>();
     return s.collection.specimens
-      .filter((sp) => {
-        const types = (species(sp.speciesId)?.types ?? []).filter((t) => t !== 'none');
-        return matchesSpeciesQuery(words, name(sp.speciesId), types);
-      })
+      .filter((sp) =>
+        matchesQuery(parsed, specimenRecord(sp, name(sp.speciesId), species(sp.speciesId), moves)),
+      )
       .filter((sp) => (seen.has(sp.speciesId) ? false : seen.add(sp.speciesId)))
       .slice(0, 30);
-  }, [query, s.collection, name, species]);
+  }, [query, s.collection, s.data, name, species]);
 
   /** Collection matches first, then the rest of the species search, for the Pick three grid. */
   const picks = useMemo(() => {
@@ -103,12 +104,14 @@ export function NewSet() {
       specimenId: sp.id as string | undefined,
       mine: true,
     }));
-    const others = hits.filter((id) => !mineIds.has(id)).map((id) => ({
-      key: id,
-      speciesId: id,
-      specimenId: undefined as string | undefined,
-      mine: false,
-    }));
+    const others = hits
+      .filter((id) => !mineIds.has(id))
+      .map((id) => ({
+        key: id,
+        speciesId: id,
+        specimenId: undefined as string | undefined,
+        mine: false,
+      }));
     return [...fromMine, ...others];
   }, [query, mine, hits]);
 

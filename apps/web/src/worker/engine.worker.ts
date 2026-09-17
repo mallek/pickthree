@@ -183,7 +183,11 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
           species: Object.fromEntries(
             env.species.map((sp) => [
               sp.speciesId,
-              { name: displayName(sp.speciesId, env.index), types: sp.types },
+              {
+                name: displayName(sp.speciesId, env.index),
+                types: sp.types,
+                familyId: sp.familyId,
+              },
             ]),
           ),
           leagues: env.leagues,
@@ -191,6 +195,9 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
             .filter((sp) => sp.released && !sp.tags.includes('mega'))
             .map((sp) => sp.speciesId),
           seasons: env.seasons,
+          moves: Object.fromEntries(
+            env.moves.map((m) => [m.moveId, { name: m.name, type: m.type }]),
+          ),
         },
       });
       return;

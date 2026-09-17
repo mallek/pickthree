@@ -11,11 +11,14 @@ import {
   useMetaRank,
   useName,
   useScrollMemory,
+  useSpecies,
   useSticky,
   NoCollection,
 } from '../components.tsx';
 import { metaTags } from '../format.ts';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { matchesQuery, parseQuery } from '../search.ts';
+import { specimenRecord } from '../searchRecords.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
 /** Quick pills: short labels so all four fit without scrolling. Ineligible rows hide by default. */
@@ -60,6 +63,7 @@ export function Collection() {
   const s = useAppState();
   const { navigate, loadVerdicts } = useActions();
   const name = useName();
+  const species = useSpecies();
   const metaRank = useMetaRank();
   const [query, setQuery] = useSticky('collection.query', '');
   // Verdict pills are a multi-select; nothing picked means everything.
@@ -101,7 +105,8 @@ export function Collection() {
     if (!s.collection) {
       return [];
     }
-    const q = query.trim().toLowerCase();
+    const parsed = parseQuery(query);
+    const moves = s.data?.moves;
     const newest = s.collection.report.newestScan ?? '';
     const cutoff = newest ? new Date(newest.replace(' ', 'T')).getTime() - 14 * 86_400_000 : 0;
     // Meta rank follows the stage the verdict is about, so a Swinub row ranks as Mamoswine.
@@ -110,8 +115,10 @@ export function Collection() {
     const metaOf = (sp: Specimen): number => metaRank(metaSpecies(sp))?.overall ?? 9999;
     let list = s.collection.specimens.filter((sp) => {
       const v = s.verdicts[sp.id];
-      const nm = name(sp.speciesId).toLowerCase();
-      if (q && !nm.includes(q)) {
+      if (
+        parsed.length > 0 &&
+        !matchesQuery(parsed, specimenRecord(sp, name(sp.speciesId), species(sp.speciesId), moves))
+      ) {
         return false;
       }
       if (verdicts.length > 0 && (!v || !verdicts.includes(v.label))) {
@@ -155,6 +162,7 @@ export function Collection() {
   }, [
     s.collection,
     s.verdicts,
+    s.data,
     query,
     verdicts,
     showIneligible,
@@ -163,6 +171,7 @@ export function Collection() {
     metaOnly,
     sort,
     name,
+    species,
     metaRank,
   ]);
 

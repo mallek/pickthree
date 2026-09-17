@@ -9,6 +9,8 @@ import {
   useName,
   useSpecies,
 } from '../components.tsx';
+import { matchesQuery, parseQuery } from '../search.ts';
+import { familyContext, speciesRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 /** Type a Pokémon in by hand: species, IVs from the appraisal screen, and the CP on its card. */
@@ -30,16 +32,18 @@ export function AddPokemon() {
   const [note, setNote] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
+  const parsed = useMemo(() => parseQuery(query), [query]);
   const matches = useMemo(() => {
     const ids = s.data?.allSpecies ?? [];
-    if (!q) {
+    if (parsed.length === 0) {
       return [];
     }
+    const ctx = familyContext(ids, name, species);
     return ids
-      .filter((id) => name(id).toLowerCase().includes(q))
+      .filter((id) => matchesQuery(parsed, speciesRecord(id, name(id), species(id)), ctx))
       .sort((a, b) => (metaRank(a)?.overall ?? 9999) - (metaRank(b)?.overall ?? 9999))
       .slice(0, 12);
-  }, [s.data, q, name, metaRank]);
+  }, [s.data, parsed, name, species, metaRank]);
 
   const iv = (v: string): number => Number.parseInt(v, 10);
   const ready =

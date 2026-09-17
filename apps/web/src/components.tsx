@@ -8,10 +8,18 @@ import {
   type Structure,
   type VerdictLabel,
 } from '@pickthree/engine';
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { initialOf, metaTags, shortName, speciesDisplayName, typeColor, typeLabel } from './format.ts';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  initialOf,
+  metaTags,
+  shortName,
+  speciesDisplayName,
+  typeColor,
+  typeLabel,
+} from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
-import { matchesSpeciesQuery } from './search.ts';
+import { matchesQuery, parseQuery } from './search.ts';
+import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
 
@@ -98,24 +106,23 @@ export function useMetaRank(): (id: string) => MetaRank | undefined {
   return (id: string) => leagueInfo?.metaRanks[id];
 }
 
-/** Species ids matching every word of the query, by name or by type, league-legal ones first,
- * capped. `allSpecies` excludes megas but includes shadow ids, so "dra" lists Dragonite, Shadow
- * Dragonite and Dragonair. Each word can match a name substring or a type prefix, so "fire ch"
- * narrows to Charizard and "elec" lists every Electric type. */
+/** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
+ * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
+ * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair. */
 export function useSpeciesSearch(query: string, limit = 30): string[] {
   const s = useAppState();
   const name = useName();
   const species = useSpecies();
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length === 0) {
+  const parsed = useMemo(() => parseQuery(query), [query]);
+  if (parsed.length === 0) {
     return [];
   }
   const legal = new Set(s.leagueInfo?.analyzable ?? []);
   const all = s.data?.allSpecies ?? [];
-  const hits = all.filter((id) => {
-    const types = (species(id)?.types ?? []).filter((t) => t !== 'none');
-    return matchesSpeciesQuery(words, name(id), types);
-  });
+  const ctx = familyContext(all, name, species);
+  const hits = all.filter((id) =>
+    matchesQuery(parsed, speciesRecord(id, name(id), species(id)), ctx),
+  );
   // Most likely first: league-legal species by meta rank, then legal but unranked by name,
   // then everything else by name.
   const ranks = s.leagueInfo?.metaRanks ?? {};

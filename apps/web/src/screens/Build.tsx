@@ -7,8 +7,11 @@ import {
   Progress,
   useName,
   useShortName,
+  useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
+import { matchesQuery, parseQuery } from '../search.ts';
+import { specimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { MovePicker } from '../components/MovePicker.tsx';
@@ -28,6 +31,7 @@ export function Build() {
   const { navigate, setPick, setOrderMode, analyze, loadVerdicts, movePool } = useActions();
   const name = useName();
   const short = useShortName();
+  const species = useSpecies();
   const [query, setQuery] = useState('');
   /** Which slot has its move sheet open. */
   const [movesSlot, setMovesSlot] = useState<number | null>(null);
@@ -56,13 +60,14 @@ export function Build() {
     loadVerdicts,
   ]);
 
-  const q = query.trim().toLowerCase();
+  const parsed = useMemo(() => parseQuery(query), [query]);
   const hits = useSpeciesSearch(query, 30);
 
   const mine = useMemo(() => {
-    if (!q || !s.collection) {
+    if (parsed.length === 0 || !s.collection) {
       return [];
     }
+    const moves = s.data?.moves;
     const rankOf = (sp: Specimen): number => s.verdicts[sp.id]?.build?.ivRank.rank ?? 99_999;
     const seen = new Set<string>();
     return s.collection.specimens
@@ -72,9 +77,10 @@ export function Build() {
           return false;
         }
         const stage = v?.build?.speciesId ?? sp.speciesId;
-        return (
-          name(sp.speciesId).toLowerCase().includes(q) || name(stage).toLowerCase().includes(q)
-        );
+        // A search term about the owned species or the stage it builds as, either one narrows.
+        const own = specimenRecord(sp, name(sp.speciesId), species(sp.speciesId), moves);
+        const staged = specimenRecord(sp, name(stage), species(stage), moves);
+        return matchesQuery(parsed, own) || matchesQuery(parsed, staged);
       })
       .sort((a, b) => {
         const oa = s.verdicts[a.id] ? ORDER[s.verdicts[a.id]!.label] : 9;
@@ -90,7 +96,7 @@ export function Build() {
         return true;
       })
       .slice(0, 30);
-  }, [s.collection, s.verdicts, q, name]);
+  }, [s.collection, s.verdicts, s.data, parsed, name, species]);
 
   /** Collection matches first, then the rest of the species search, for the search grid. */
   const picksGrid = useMemo(() => {
@@ -269,8 +275,7 @@ export function Build() {
             ) : null}
             {!s.collection ? (
               <p className="small muted" style={{ margin: 0 }}>
-                No collection imported. Import a Poke Genie export to include your own Pokemon
-                here.
+                No collection imported. Import a Poke Genie export to include your own Pokemon here.
               </p>
             ) : null}
             {s.collection && Object.keys(s.verdicts).length === 0 ? (
