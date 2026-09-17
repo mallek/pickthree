@@ -63,6 +63,16 @@ export function Counters() {
   return (
     <div className="screen">
       <div className="page-head">
+        {vs ? (
+          <button
+            type="button"
+            className="back"
+            style={{ marginBottom: -6 }}
+            onClick={() => navigate({ screen: 'meta' })}
+          >
+            &lsaquo; Your meta
+          </button>
+        ) : null}
         <div className="between">
           <h2>{vs ? `Who beats ${name(vs)}` : 'Counters'}</h2>
           <span className="row">
