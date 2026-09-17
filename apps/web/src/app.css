@@ -2201,6 +2201,10 @@ input[type='range'] {
   align-content: start;
   padding-bottom: 2px;
 }
+/* Tokens with a second caption line ("yours") need taller rows to show three of them. */
+.recent-row.matches.tall {
+  max-height: 270px;
+}
 .recent-token {
   display: flex;
   flex-direction: column;

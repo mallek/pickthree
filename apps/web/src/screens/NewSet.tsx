@@ -129,6 +129,8 @@ export function NewSet() {
     return [sp as string, id];
   };
   const ready = slots.every((x) => x !== null);
+  /** Whole-team shortcuts only make sense before a search or a pick has started. */
+  const quickPicks = query.trim() === '' && slots.every((x) => x === null);
 
   const go = async (team: TeamRef): Promise<void> => {
     await startSet(team);
@@ -154,7 +156,63 @@ export function NewSet() {
         cog={false}
       />
       <div className="scroll" style={{ gap: 18, paddingBottom: 96 }}>
-        {fromPick3.length > 0 ? (
+        <input
+          className="search"
+          placeholder="Search any Pokemon"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query.trim() ? (
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="meta">Matches</span>
+            <div className="recent-row matches tall">
+              {picks.map((p) => (
+                <button
+                  type="button"
+                  className="recent-token"
+                  key={p.key}
+                  onClick={() => fill(p.speciesId, p.specimenId)}
+                  aria-label={name(p.speciesId)}
+                >
+                  <PokemonToken speciesId={p.speciesId} size={36} />
+                  <span>{short(p.speciesId)}</span>
+                  {p.mine ? <span className="tag">yours</span> : null}
+                </button>
+              ))}
+            </div>
+            {picks.length === 0 ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                Nothing matches.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="opp-slots">
+          {slots.map((v, i) => (
+            <button
+              type="button"
+              className={`opp-slot${v ? ' filled' : ''}`}
+              key={i}
+              onClick={() => setSlots((cur) => cur.map((x, j) => (j === i ? null : x)))}
+              aria-label={v ? `Clear ${name(parts(v)[0])}` : `Slot ${i + 1}`}
+            >
+              {v ? (
+                <>
+                  <PokemonToken speciesId={parts(v)[0]} size={56} />
+                  <span className="small">{name(parts(v)[0])}</span>
+                </>
+              ) : (
+                <>
+                  <span className="opp-slot-empty" style={{ width: 56, height: 56 }}>
+                    {i + 1}
+                  </span>
+                  <span className="small muted">Empty</span>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+        {quickPicks && fromPick3.length > 0 ? (
           <div className="stack" style={{ gap: 6 }}>
             <b>From pick3</b>
             {fromPick3.map((t, i) => (
@@ -167,66 +225,7 @@ export function NewSet() {
             ))}
           </div>
         ) : null}
-        <div className="stack" style={{ gap: 8 }}>
-          <b>Pick three</b>
-          {query.trim() ? (
-            <div className="stack" style={{ gap: 8 }}>
-              <span className="meta">Matches</span>
-              <div className="recent-row matches">
-                {picks.map((p) => (
-                  <button
-                    type="button"
-                    className="recent-token"
-                    key={p.key}
-                    onClick={() => fill(p.speciesId, p.specimenId)}
-                    aria-label={name(p.speciesId)}
-                  >
-                    <PokemonToken speciesId={p.speciesId} size={36} />
-                    <span>{short(p.speciesId)}</span>
-                    {p.mine ? <span className="tag">yours</span> : null}
-                  </button>
-                ))}
-              </div>
-              {picks.length === 0 ? (
-                <p className="muted small" style={{ margin: 0 }}>
-                  Nothing matches.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          <input
-            className="search"
-            placeholder="Search any Pokemon"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <div className="opp-slots">
-            {slots.map((v, i) => (
-              <button
-                type="button"
-                className={`opp-slot${v ? ' filled' : ''}`}
-                key={i}
-                onClick={() => setSlots((cur) => cur.map((x, j) => (j === i ? null : x)))}
-                aria-label={v ? `Clear ${name(parts(v)[0])}` : `Slot ${i + 1}`}
-              >
-                {v ? (
-                  <>
-                    <PokemonToken speciesId={parts(v)[0]} size={56} />
-                    <span className="small">{name(parts(v)[0])}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="opp-slot-empty" style={{ width: 56, height: 56 }}>
-                      {i + 1}
-                    </span>
-                    <span className="small muted">Empty</span>
-                  </>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-        {recent.length > 0 ? (
+        {quickPicks && recent.length > 0 ? (
           <div className="stack" style={{ gap: 6 }}>
             <b>Recent teams</b>
             {recent.map((t) => (
