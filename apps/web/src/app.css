@@ -19,6 +19,12 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
+/* iOS zooms into any text field under 16px and can leave the viewport wider on the way out. */
+input:not([type='range']),
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
 button {
   font: inherit;
   color: inherit;
@@ -1034,7 +1040,8 @@ textarea.paste {
   border: 1px solid var(--divider);
   background: var(--surface);
   color: var(--text);
-  font: 400 15px var(--font);
+  /* 16px or larger: iOS zooms the page when a focused input's text is smaller. */
+  font: 400 16px var(--font);
   outline: none;
 }
 .search:focus {
