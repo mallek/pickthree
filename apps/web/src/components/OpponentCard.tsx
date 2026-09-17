@@ -98,7 +98,7 @@ export function OpponentCard({ opponent, data }: { opponent: string; data: Faceo
               {data.moves.map((m) => (
                 <th scope="col" key={m.moveId} className="fo-move">
                   <span
-                    className="fo-move-name"
+                    className={`fo-move-name${m.name.length > 9 && !m.name.includes(' ') ? ' long' : ''}`}
                     style={
                       {
                         '--c': typeColor(m.type),
@@ -123,7 +123,7 @@ export function OpponentCard({ opponent, data }: { opponent: string; data: Faceo
             {data.members.map((mem, i) => (
               <tr key={`${mem.speciesId}-${i}`} className={data.best === i ? 'best' : ''}>
                 <th scope="row" className="fo-member">
-                  <PokemonToken speciesId={mem.speciesId} size={24} showInitial={false} />
+                  <PokemonToken speciesId={mem.speciesId} size={34} showInitial={false} />
                   <span>{short(mem.speciesId)}</span>
                 </th>
                 {mem.cells.map((c, j) => (

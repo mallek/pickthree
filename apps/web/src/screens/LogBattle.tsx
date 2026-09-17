@@ -155,6 +155,18 @@ export function LogBattle() {
         onBack={() => navigate({ screen: 'meta' })}
         backLabel="Close"
         cog={false}
+        extra={
+          open ? (
+            <div className="team-strip" aria-label="Your team">
+              {open.team.species.map((id) => (
+                <span className="team-strip-member" key={id}>
+                  <PokemonToken speciesId={id} size={30} showInitial={false} />
+                  <span>{short(id)}</span>
+                </span>
+              ))}
+            </div>
+          ) : null
+        }
       />
       <div className="scroll" style={{ gap: 14, paddingBottom: 140 }}>
         <div className="stack" style={{ gap: 8 }}>

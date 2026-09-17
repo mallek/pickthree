@@ -540,12 +540,15 @@ export function Header({
   onBack,
   backLabel,
   cog = true,
+  extra,
 }: {
   title: string;
   sub?: string;
   onBack?: () => void;
   backLabel?: string;
   cog?: boolean;
+  /** A row under the title that scrolls with the header, such as the set's team. */
+  extra?: ReactNode;
 }) {
   return (
     <header className="hdr">
@@ -561,6 +564,7 @@ export function Header({
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
       {cog ? <HeadCog /> : <span className="back-spacer" />}
+      {extra ? <div className="hdr-extra">{extra}</div> : null}
     </header>
   );
 }

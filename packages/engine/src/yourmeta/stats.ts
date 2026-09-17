@@ -45,7 +45,8 @@ export interface StatsInput {
   now?: Date;
 }
 
-export const RECENT_LIMIT = 20;
+/** Three rows of five on the Log a battle grid; the grid scrolls only while searching. */
+export const RECENT_LIMIT = 15;
 
 function seasonStats(bucket: SeasonBucket): SeasonStats {
   const species = new Map<string, SpeciesRecord>();
