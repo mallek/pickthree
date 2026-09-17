@@ -83,6 +83,15 @@ await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.choice-card');
 await shot('18-empty-state', false);
 
+console.log('counters without a collection');
+await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.counter-row', { timeout: 120_000 });
+const emptyChips = await page.$$eval('.chips .chip', (els) => els.map((e) => e.textContent));
+if (emptyChips.includes('You own')) {
+  throw new Error('counters without a collection still offers the You own filter');
+}
+await shot('18b-counters-no-collection', false);
+
 console.log('import sample');
 await page.goto(`${base}/?sample=1#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.kicker', { timeout: 90_000 });

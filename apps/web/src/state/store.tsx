@@ -704,13 +704,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const loadCounters = useCallback(async (vs: string | null = null) => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
-    if (!s.collection || s.countersLoading || !s.leagueInfo) {
+    if (s.countersLoading || !s.leagueInfo) {
       return;
     }
     dispatch({ type: 'counters-start', vs });
     try {
+      // No collection just means nothing gets an owned mark.
       const counters = await h.counters(
-        s.collection.specimens,
+        s.collection?.specimens ?? [],
         { yourMeta: yourMeta(), ...(vs ? { vs } : {}) },
         (p) => dispatch({ type: 'counters-progress', progress: p }),
       );

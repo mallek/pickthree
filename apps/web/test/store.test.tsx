@@ -202,6 +202,18 @@ describe('battle log actions', () => {
     expect(latest!.state.counters?.facing).toContain('PvPoke weights only');
   });
 
+  it('loadCounters runs without a collection, with no specimens to mark', async () => {
+    const host = await mount();
+    await act(async () => {
+      await latest!.actions.loadCounters();
+    });
+    expect(latest!.state.collection).toBeNull();
+    expect(latest!.state.counters).not.toBeNull();
+    const calls = (host.counters as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.[0]).toEqual([]);
+  });
+
   it('loadCounters recovers from a host error with a non-null empty result and does not retry', async () => {
     // A collection saved before boot is what makes the provider willing to run counters.
     await storage.saveCollection({

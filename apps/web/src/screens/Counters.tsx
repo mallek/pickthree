@@ -9,7 +9,6 @@ import {
   TypeChips,
   useName,
   useSpecies,
-  NoCollection,
 } from '../components.tsx';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
@@ -28,19 +27,12 @@ export function Counters() {
   const vs = s.route.screen === 'counters' ? (s.route.vs ?? null) : null;
   const stale = s.counters === null || s.countersVs !== vs;
 
+  // The collection only marks what you own; the meta itself needs no import.
   useEffect(() => {
-    if (s.boot === 'ready' && s.leagueInfo && s.collection && stale && !s.countersLoading) {
+    if (s.boot === 'ready' && s.leagueInfo && stale && !s.countersLoading) {
       void loadCounters(vs);
     }
-  }, [s.boot, s.leagueInfo, s.collection, stale, s.countersLoading, loadCounters, vs]);
-
-  if (!s.collection) {
-    return (
-      <div className="screen">
-        <NoCollection navigate={navigate} />
-      </div>
-    );
-  }
+  }, [s.boot, s.leagueInfo, stale, s.countersLoading, loadCounters, vs]);
 
   const counters = stale ? null : s.counters;
   let rows: CounterEntry[] = counters?.entries ?? [];
@@ -102,16 +94,26 @@ export function Counters() {
             {counters.facing}.
           </p>
         ) : null}
+        {s.collection ? null : (
+          <p className="meta" style={{ margin: 0 }}>
+            <a href={hashFor({ screen: 'welcome' })}>Import your collection</a> and pick3 marks the
+            ones you own or can build.
+          </p>
+        )}
         <div className="chips">
           <Chip on={own === 'all'} onClick={() => setOwn('all')}>
             All
           </Chip>
-          <Chip on={own === 'have'} onClick={() => setOwn('have')}>
-            You own
-          </Chip>
-          <Chip on={own === 'build'} onClick={() => setOwn('build')}>
-            Own or can build
-          </Chip>
+          {s.collection ? (
+            <>
+              <Chip on={own === 'have'} onClick={() => setOwn('have')}>
+                You own
+              </Chip>
+              <Chip on={own === 'build'} onClick={() => setOwn('build')}>
+                Own or can build
+              </Chip>
+            </>
+          ) : null}
           <Chip on={radar} onClick={() => setRadar((x) => !x)}>
             Under the radar
           </Chip>
