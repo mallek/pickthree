@@ -179,7 +179,7 @@ export function Counters() {
         {counters && rows.length === 0 ? (
           <p className="muted" style={{ padding: '32px 12px', textAlign: 'center' }}>
             {counters.vs && !counters.vs.inMeta
-              ? `${name(counters.vs.speciesId)} is not in PvPoke's meta list for ${league.title}, so pick3 has no matchups for it yet.`
+              ? `${name(counters.vs.speciesId)} is outside PvPoke's ${league.title} meta ${s.leagueInfo?.metaSize ?? ''} Pokemon, so pick3 has no matchups for it yet.`
               : 'Nothing here yet. Try another filter.'}
           </p>
         ) : null}

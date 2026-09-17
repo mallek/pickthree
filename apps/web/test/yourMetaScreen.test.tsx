@@ -60,7 +60,7 @@ describe('Your meta screen', () => {
       'false',
     );
     // The fake league's meta group is three species, so both logged opponents are outsiders.
-    expect(screen.getAllByText(/not in PvPoke's list/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/outside the meta 3/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/2 battles/).length).toBeGreaterThan(0);
     expect(screen.getByText('1-1', { selector: '.team-row b' })).toBeInTheDocument();
   });

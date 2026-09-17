@@ -102,7 +102,7 @@ function SpeciesRows({ rows, meta }: { rows: SpeciesRecord[]; meta: string[] }) 
                   className="verdict"
                   style={{ background: 'var(--warn-tint)', color: 'var(--warn)' }}
                 >
-                  not in PvPoke&apos;s list
+                  outside the meta {meta.length}
                 </span>
               )}
             </span>
