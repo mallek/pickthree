@@ -117,4 +117,5 @@ Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/p
 - PvPoke rankings are an input, not truth. Every result carries its assumptions.
 - The collection never leaves the device. The only outbound calls are the anonymous hit counter and opt-out error reports, both free of collection data. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
 - The battle log never leaves the device either. Export and import are files the player handles.
+- Screens with a text input put the input at the top, its results directly under it, the slots those results fill under that, and optional shortcuts last (hidden while searching or picking). Results are a compact token grid in a fixed-height box that scrolls on its own. The phone keyboard covers everything below the input.
 - Stage explicit paths when committing. Never `git add -A`.
