@@ -17,6 +17,8 @@ export function speciesRecord(id: string, name: string, lite: SpeciesLite | unde
     types: typesOf(lite),
     familyId: lite?.familyId ?? null,
     ...(lite ? { dex: lite.dex } : {}),
+    // The `shadow` flag term must work on species lists too (opponents on Log a battle).
+    shadow: id.endsWith('_shadow'),
   };
 }
 

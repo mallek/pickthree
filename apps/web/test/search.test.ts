@@ -222,3 +222,15 @@ describe('dex numbers', () => {
     expect(matchesQuery(parseQuery('cp150'), { ...mewtwo, cp: 151 })).toBe(false);
   });
 });
+
+describe('species records', () => {
+  it('carry the shadow flag from the id so "shadow" works on opponent lists', async () => {
+    const { speciesRecord } = await import('../src/searchRecords.ts');
+    const lite = { name: 'Dragonite (Shadow)', types: ['dragon', 'flying'] as const, familyId: 'dragonite', dex: 149 };
+    const shadow = speciesRecord('dragonite_shadow', 'Shadow Dragonite', lite as never);
+    const plain = speciesRecord('dragonite', 'Dragonite', { ...lite, name: 'Dragonite' } as never);
+    expect(matchesQuery(parseQuery('shadow'), shadow)).toBe(true);
+    expect(matchesQuery(parseQuery('shadow'), plain)).toBe(false);
+    expect(matchesQuery(parseQuery('!shadow'), plain)).toBe(true);
+  });
+});
