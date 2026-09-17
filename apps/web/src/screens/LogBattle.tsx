@@ -20,7 +20,7 @@ export function LogBattle() {
     index: number;
     team: TeamRef;
   } | null>(null);
-  const hits = useSpeciesSearch(query);
+  const hits = useSpeciesSearch(query, 30);
 
   useEffect(() => {
     if (s.setsLoaded && !open && !done) {
@@ -35,6 +35,15 @@ export function LogBattle() {
     );
   }, [s.leagueInfo]);
   const recent = useMemo(() => recentOpponents(s.sets, fallback, RECENT_LIMIT), [s.sets, fallback]);
+  const searching = query.trim().length > 0;
+  const gridIds = useMemo(() => {
+    if (!searching) {
+      return recent;
+    }
+    const recentSet = new Set(recent);
+    return [...hits.filter((id) => recentSet.has(id)), ...hits.filter((id) => !recentSet.has(id))];
+  }, [searching, hits, recent]);
+  const atCap = searching && hits.length >= 30;
 
   const add = (id: string): void => {
     setSlots((cur) => (cur.length >= 3 || cur.includes(id) ? cur : [...cur, id]));
@@ -101,6 +110,42 @@ export function LogBattle() {
         cog={false}
       />
       <div className="scroll" style={{ gap: 14, paddingBottom: 140 }}>
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="meta">{searching ? 'Matches' : 'Recent'}</span>
+          <div className="recent-row">
+            {gridIds.map((id) => (
+              <button
+                type="button"
+                className={`recent-token${slots.includes(id) ? ' on' : ''}`}
+                key={id}
+                onClick={() => add(id)}
+                aria-label={name(id)}
+              >
+                <PokemonToken speciesId={id} size={36} />
+                <span>{short(id)}</span>
+              </button>
+            ))}
+          </div>
+          {searching && gridIds.length === 0 ? (
+            <p className="muted small" style={{ margin: 0 }}>
+              Nothing matches.
+            </p>
+          ) : null}
+          {atCap ? (
+            <p className="muted small" style={{ margin: 0 }}>
+              Keep typing to narrow it down.
+            </p>
+          ) : null}
+        </div>
+        <input
+          className="search"
+          placeholder="Search any Pokemon"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <p className="meta" style={{ margin: 0, textAlign: 'center' }}>
+          Add the opponents you saw. One or two is fine.
+        </p>
         <div className="opp-slots">
           {[0, 1, 2].map((i) => {
             const id = slots[i];
@@ -131,44 +176,6 @@ export function LogBattle() {
             );
           })}
         </div>
-        <p className="meta" style={{ margin: 0, textAlign: 'center' }}>
-          Add the opponents you saw. One or two is fine.
-        </p>
-        <div className="stack" style={{ gap: 8 }}>
-          <span className="meta">Recent</span>
-          <div className="recent-row">
-            {recent.map((id) => (
-              <button
-                type="button"
-                className={`recent-token${slots.includes(id) ? ' on' : ''}`}
-                key={id}
-                onClick={() => add(id)}
-                aria-label={name(id)}
-              >
-                <PokemonToken speciesId={id} size={36} />
-                <span>{short(id)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <input
-          className="search"
-          placeholder="Search any Pokemon"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {query.trim() ? (
-          <div className="picker-list">
-            {hits.map((id) => (
-              <button type="button" className="spec-row" key={id} onClick={() => add(id)}>
-                <PokemonToken speciesId={id} size={40} />
-                <span className="spec-name">{name(id)}</span>
-                <span />
-              </button>
-            ))}
-            {hits.length === 0 ? <p className="muted small">Nothing matches.</p> : null}
-          </div>
-        ) : null}
       </div>
       <div className="result-bar">
         <div className="result-row">

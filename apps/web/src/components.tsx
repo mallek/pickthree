@@ -11,6 +11,7 @@ import {
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { initialOf, metaTags, shortName, speciesDisplayName, typeColor, typeLabel } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
+import { matchesSpeciesQuery } from './search.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
 
@@ -97,19 +98,24 @@ export function useMetaRank(): (id: string) => MetaRank | undefined {
   return (id: string) => leagueInfo?.metaRanks[id];
 }
 
-/** Species ids whose display name contains the query, league-legal ones first, capped.
- * `allSpecies` excludes megas but includes shadow ids, so "dra" lists Dragonite, Shadow
- * Dragonite and Dragonair. */
-export function useSpeciesSearch(query: string, limit = 12): string[] {
+/** Species ids matching every word of the query, by name or by type, league-legal ones first,
+ * capped. `allSpecies` excludes megas but includes shadow ids, so "dra" lists Dragonite, Shadow
+ * Dragonite and Dragonair. Each word can match a name substring or a type prefix, so "fire ch"
+ * narrows to Charizard and "elec" lists every Electric type. */
+export function useSpeciesSearch(query: string, limit = 30): string[] {
   const s = useAppState();
   const name = useName();
-  const q = query.trim().toLowerCase();
-  if (!q) {
+  const species = useSpecies();
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) {
     return [];
   }
   const legal = new Set(s.leagueInfo?.analyzable ?? []);
   const all = s.data?.allSpecies ?? [];
-  const hits = all.filter((id) => name(id).toLowerCase().includes(q));
+  const hits = all.filter((id) => {
+    const types = (species(id)?.types ?? []).filter((t) => t !== 'none');
+    return matchesSpeciesQuery(words, name(id), types);
+  });
   hits.sort(
     (a, b) => Number(legal.has(b)) - Number(legal.has(a)) || name(a).localeCompare(name(b)),
   );

@@ -1,6 +1,15 @@
 import { teamKey, type TeamRef } from '@pickthree/engine';
 import { useMemo, useState, type ReactNode } from 'react';
-import { FitTag, Header, PokemonToken, useName, useSpeciesSearch } from '../components.tsx';
+import {
+  FitTag,
+  Header,
+  PokemonToken,
+  useName,
+  useShortName,
+  useSpecies,
+  useSpeciesSearch,
+} from '../components.tsx';
+import { matchesSpeciesQuery } from '../search.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 function TeamPick({
@@ -32,9 +41,11 @@ export function NewSet() {
   const s = useAppState();
   const { navigate, startSet } = useActions();
   const name = useName();
+  const short = useShortName();
+  const species = useSpecies();
   const [slots, setSlots] = useState<(string | null)[]>([null, null, null]);
   const [query, setQuery] = useState('');
-  const hits = useSpeciesSearch(query);
+  const hits = useSpeciesSearch(query, 30);
 
   const recent = useMemo(() => {
     const seen = new Set<string>();
@@ -66,16 +77,40 @@ export function NewSet() {
   }, [s.recommendation, s.analysis]);
 
   const mine = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q || !s.collection) {
+    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0 || !s.collection) {
       return [];
     }
     const seen = new Set<string>();
     return s.collection.specimens
-      .filter((sp) => name(sp.speciesId).toLowerCase().includes(q))
+      .filter((sp) => {
+        const types = (species(sp.speciesId)?.types ?? []).filter((t) => t !== 'none');
+        return matchesSpeciesQuery(words, name(sp.speciesId), types);
+      })
       .filter((sp) => (seen.has(sp.speciesId) ? false : seen.add(sp.speciesId)))
-      .slice(0, 6);
-  }, [query, s.collection, name]);
+      .slice(0, 30);
+  }, [query, s.collection, name, species]);
+
+  /** Collection matches first, then the rest of the species search, for the Pick three grid. */
+  const picks = useMemo(() => {
+    if (!query.trim()) {
+      return [];
+    }
+    const mineIds = new Set(mine.map((sp) => sp.speciesId));
+    const fromMine = mine.map((sp) => ({
+      key: sp.id,
+      speciesId: sp.speciesId,
+      specimenId: sp.id as string | undefined,
+      mine: true,
+    }));
+    const others = hits.filter((id) => !mineIds.has(id)).map((id) => ({
+      key: id,
+      speciesId: id,
+      specimenId: undefined as string | undefined,
+      mine: false,
+    }));
+    return [...fromMine, ...others];
+  }, [query, mine, hits]);
 
   const fill = (speciesId: string, specimenId?: string): void => {
     setSlots((cur) => {
@@ -142,6 +177,37 @@ export function NewSet() {
         ) : null}
         <div className="stack" style={{ gap: 8 }}>
           <b>Pick three</b>
+          {query.trim() ? (
+            <div className="stack" style={{ gap: 8 }}>
+              <span className="meta">Matches</span>
+              <div className="recent-row">
+                {picks.map((p) => (
+                  <button
+                    type="button"
+                    className="recent-token"
+                    key={p.key}
+                    onClick={() => fill(p.speciesId, p.specimenId)}
+                    aria-label={name(p.speciesId)}
+                  >
+                    <PokemonToken speciesId={p.speciesId} size={36} />
+                    <span>{short(p.speciesId)}</span>
+                    {p.mine ? <span className="tag">yours</span> : null}
+                  </button>
+                ))}
+              </div>
+              {picks.length === 0 ? (
+                <p className="muted small" style={{ margin: 0 }}>
+                  Nothing matches.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <input
+            className="search"
+            placeholder="Search any Pokemon"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
           <div className="opp-slots">
             {slots.map((v, i) => (
               <button
@@ -167,42 +233,6 @@ export function NewSet() {
               </button>
             ))}
           </div>
-          <input
-            className="search"
-            placeholder="Search any Pokemon"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {query.trim() ? (
-            <div className="picker-list">
-              {mine.map((sp) => (
-                <button
-                  type="button"
-                  className="spec-row"
-                  key={sp.id}
-                  onClick={() => fill(sp.speciesId, sp.id)}
-                >
-                  <PokemonToken speciesId={sp.speciesId} size={40} />
-                  <span style={{ minWidth: 0 }}>
-                    <span className="spec-name">{name(sp.speciesId)}</span>
-                    <span className="meta" style={{ display: 'block' }}>
-                      CP {sp.cp} · yours
-                    </span>
-                  </span>
-                  <span />
-                </button>
-              ))}
-              {hits
-                .filter((id) => !mine.some((sp) => sp.speciesId === id))
-                .map((id) => (
-                  <button type="button" className="spec-row" key={id} onClick={() => fill(id)}>
-                    <PokemonToken speciesId={id} size={40} />
-                    <span className="spec-name">{name(id)}</span>
-                    <span className="meta small">other Pokemon</span>
-                  </button>
-                ))}
-            </div>
-          ) : null}
         </div>
       </div>
       <div className="new-set-foot">

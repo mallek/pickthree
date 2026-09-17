@@ -2218,6 +2218,10 @@ input[type='range'] {
   border-color: var(--accent);
   background: var(--accent-tint);
 }
+.recent-token .tag {
+  color: var(--muted);
+  font-size: 9px;
+}
 .result-bar {
   position: fixed;
   left: 0;

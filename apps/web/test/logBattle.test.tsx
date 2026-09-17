@@ -26,10 +26,15 @@ describe('New set and Log a battle', () => {
     );
     const start = screen.getByRole('button', { name: 'Start set' });
     expect(start).toBeDisabled();
-    for (const q of ['tink', 'azu', 'clod']) {
+    const picks: [string, string][] = [
+      ['tink', 'Tinkaton'],
+      ['azu', 'Azumarill'],
+      ['clod', 'Clodsire'],
+    ];
+    for (const [q, fullName] of picks) {
       fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), { target: { value: q } });
-      // The list rows end in "other Pokemon"; the slot buttons are labelled "Clear ...".
-      fireEvent.click(screen.getByRole('button', { name: /other Pokemon/ }));
+      // Grid tokens are labelled with the full name; the slot buttons are labelled "Clear ...".
+      fireEvent.click(screen.getByRole('button', { name: fullName }));
     }
     expect(start).toBeEnabled();
     await act(async () => {
@@ -154,5 +159,44 @@ describe('New set and Log a battle', () => {
       expect(screen.getByRole('button', { name: 'Clear Clodsire' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Clear Medicham' })).toBeInTheDocument();
     });
+  });
+
+  it('narrows the grid by type and then by type plus name', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: [],
+      closed: false,
+    });
+    render(
+      <AppProvider host={fakeHost()}>
+        <LogBattle />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('Set 1, battle 1 of 5')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), {
+      target: { value: 'fairy' },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Tinkaton' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Azumarill' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Clodsire' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), {
+      target: { value: 'fairy tin' },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Tinkaton' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tinkaton' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Clear Tinkaton' })).toBeInTheDocument(),
+    );
   });
 });
