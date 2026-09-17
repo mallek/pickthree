@@ -176,22 +176,44 @@ await shot('22-new-set', false);
 
 console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.pick-slot');
-for (let i = 0; i < 3; i++) {
-  await page.$$eval('.pick-slot:not(.pick-moves)', (slots, n) => slots[n].click(), i);
-  await page.waitForSelector('.picker-list .spec-row:not([disabled])', { timeout: 120_000 });
-  await page.$$eval('.picker-list .spec-row:not([disabled])', (rows, n) => rows[n].click(), i * 2);
-  await new Promise((r) => setTimeout(r, 200));
+await page.waitForSelector('.search');
+const buildQueries = [
+  ['swampert', 'quagsire'],
+  ['azu', 'azumarill'],
+  ['tink', 'tinkaton'],
+];
+for (let i = 0; i < buildQueries.length; i++) {
+  let picked = false;
+  for (const q of buildQueries[i]) {
+    await page.click('.search', { clickCount: 3 });
+    await page.type('.search', q);
+    try {
+      await page.waitForSelector('.recent-token', { timeout: 15_000 });
+    } catch {
+      continue;
+    }
+    await page.click('.recent-token');
+    picked = true;
+    break;
+  }
+  if (!picked) {
+    throw new Error(`build a team: no matches for any of ${buildQueries[i].join(', ')}`);
+  }
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('.opp-slot.filled').length >= n,
+    {},
+    i + 1,
+  );
 }
 await shot('13-build', false);
-// Swap one move on the first slot: the picker lists the legal pool with the recommendation
+// Swap one move on the first slot: the sheet lists the legal pool with the recommendation
 // ticked; tapping an unticked charged move bumps the one picked first.
-await page.waitForSelector('.pick-moves b', { timeout: 60_000 });
-await page.click('.pick-moves');
+await page.click('.opp-slot.filled');
 await page.waitForSelector('.move-opt[role="checkbox"]', { timeout: 60_000 });
 await page.$$eval('.move-opt[role="checkbox"]:not(.on)', (rows) => rows[0]?.click());
 await new Promise((r) => setTimeout(r, 300));
 await shot('13b-build-moves', false);
+await page.click('.sheet .btn-ghost');
 await page.click('.scroll > .btn');
 await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
 const analyzeError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
