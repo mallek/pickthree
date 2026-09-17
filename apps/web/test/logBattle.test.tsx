@@ -214,5 +214,8 @@ describe('New set and Log a battle', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Remove Tinkaton' })).toBeInTheDocument(),
     );
+    // A pick made from a search hands focus back to the search for the next opponent.
+    expect(screen.getByPlaceholderText('Search any Pokemon')).toHaveFocus();
+    expect(screen.getByPlaceholderText('Search any Pokemon')).toHaveValue('');
   });
 });

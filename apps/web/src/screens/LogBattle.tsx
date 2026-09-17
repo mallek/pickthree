@@ -26,6 +26,7 @@ export function LogBattle() {
   const [card, setCard] = useState<{ opponent: string; data: Faceoff | null } | null>(null);
   /** Cards already simulated this visit, so switching between the three slots is instant. */
   const cards = useRef(new Map<string, Faceoff>());
+  const searchRef = useRef<HTMLInputElement>(null);
   /** Set before the fifth battle is saved, so the redirect below never fires mid-save. */
   const [done, setDone] = useState<{
     wins: number;
@@ -61,7 +62,14 @@ export function LogBattle() {
   const add = (id: string): void => {
     setSlots((cur) => (cur.length >= 3 || cur.includes(id) ? cur : [...cur, id]));
     setSelected(id);
+    // Back to the search so the next opponent is a few keystrokes away. On a touch screen the
+    // keyboard would cover the card, so only when a search was already under way.
+    const typing = query.trim().length > 0;
+    const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
     setQuery('');
+    if (typing || fine) {
+      searchRef.current?.focus();
+    }
   };
   const remove = (id: string): void => {
     setSlots((cur) => cur.filter((x) => x !== id));
@@ -197,6 +205,7 @@ export function LogBattle() {
           ) : null}
         </div>
         <input
+          ref={searchRef}
           className="search"
           placeholder="Search any Pokemon"
           value={query}
