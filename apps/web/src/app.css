@@ -1198,6 +1198,9 @@ textarea.paste {
   bottom: 0;
   margin: 0 auto;
   max-width: 560px;
+  /* border-box so the home-indicator inset is counted once; installed on iPhone the bar was
+     twice as tall as it should be, with the tabs pinned to its top. */
+  box-sizing: border-box;
   height: calc(64px + env(safe-area-inset-bottom, 0px));
   padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
   display: grid;
