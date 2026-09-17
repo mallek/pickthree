@@ -137,6 +137,18 @@ await page.click('.assump-head');
 await new Promise((r) => setTimeout(r, 300));
 await shot('03-team-detail');
 
+console.log('take to battle');
+// The sample log has an open set with another team, so the confirm dialog appears.
+page.once('dialog', (d) => void d.accept());
+await page.click('.scroll > .btn');
+await page.waitForFunction(() => document.location.hash === '#/meta/log', { timeout: 30_000 });
+await page.waitForSelector('.team-strip', { timeout: 30_000 });
+const strip = await page.$eval('.team-strip', (e) => e.textContent ?? '');
+if (!strip.trim()) {
+  throw new Error('take to battle: empty team strip on Log a battle');
+}
+console.log(`  battling with ${strip.trim()}`);
+
 console.log('collection');
 await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.verdict', { timeout: 120_000 });

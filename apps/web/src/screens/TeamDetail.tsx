@@ -1,3 +1,4 @@
+import { teamKey, type TeamRef } from '@pickthree/engine';
 import { useState } from 'react';
 import {
   GLOSSARY,
@@ -22,7 +23,7 @@ const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const
 
 export function TeamDetail({ id }: { id: string }) {
   const s = useAppState();
-  const { navigate } = useActions();
+  const { navigate, startSet } = useActions();
   const name = useName();
   const [open, setOpen] = useState(false);
   const [allOpps, setAllOpps] = useState(false);
@@ -71,6 +72,34 @@ export function TeamDetail({ id }: { id: string }) {
   const chosenMoves = custom ? (s.analysis?.chosenMoves ?? []) : [];
   const unranked = custom ? (s.analysis?.unranked ?? []) : [];
 
+  /** Make this the team Your meta logs against, then go straight to Log a battle. */
+  const takeToBattle = async (): Promise<void> => {
+    const species = team.slots.map((x) => x.candidate.build.speciesId) as [string, string, string];
+    const specimenIds = team.slots.map((x) => x.candidate.build.specimenId) as [
+      string,
+      string,
+      string,
+    ];
+    const ref: TeamRef = { species, specimenIds };
+    const open = s.sets.find((x) => !x.closed);
+    if (open && teamKey(open.team.species) === teamKey(species)) {
+      navigate({ screen: 'meta-log' });
+      return;
+    }
+    if (open) {
+      const played = open.battles.length;
+      const ok = window.confirm(
+        `You have an open set with ${open.team.species.map(name).join(', ')} (${played} of 5 logged). End it and battle with this team instead?`,
+      );
+      if (!ok) {
+        return;
+      }
+    }
+    if (await startSet(ref)) {
+      navigate({ screen: 'meta-log' });
+    }
+  };
+
   return (
     <div className="screen">
       <Header
@@ -80,6 +109,9 @@ export function TeamDetail({ id }: { id: string }) {
         backLabel={backLabel}
       />
       <div className="scroll" style={{ gap: 24 }}>
+        <button type="button" className="btn" onClick={() => void takeToBattle()}>
+          Take to battle
+        </button>
         {custom ? (
           <div className="card custom-note" style={{ gap: 6 }}>
             <div className="rating-row">
