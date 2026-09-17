@@ -69,7 +69,11 @@ describe('New set and Log a battle', () => {
     await waitFor(() => expect(screen.getByText('Set 1, battle 2 of 5')).toBeInTheDocument());
     // Medicham was faced; it leads the recent row.
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
-    expect(screen.getAllByText('Medicham')).toHaveLength(2);
+    // The in-battle card opens for the opponent just added: their moves across the top.
+    await waitFor(() => expect(screen.getByText('Ice Punch')).toBeInTheDocument());
+    expect(screen.getByText('in 7')).toBeInTheDocument();
+    expect(screen.getAllByText('Depends')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: 'Remove Medicham' })).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Win' }));
     });
@@ -156,9 +160,21 @@ describe('New set and Log a battle', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Clear Clodsire' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Clear Medicham' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Remove Clodsire' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Remove Medicham' })).toBeInTheDocument();
     });
+    // Tapping a filled slot switches the card; the x removes it.
+    fireEvent.click(screen.getByRole('button', { name: 'Clodsire in battle' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Clodsire in battle' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Clodsire' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Remove Clodsire' })).not.toBeInTheDocument(),
+    );
   });
 
   it('narrows the grid by type and then by type plus name', async () => {
@@ -196,7 +212,7 @@ describe('New set and Log a battle', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Tinkaton' }));
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Clear Tinkaton' })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Remove Tinkaton' })).toBeInTheDocument(),
     );
   });
 });

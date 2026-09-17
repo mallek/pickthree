@@ -200,6 +200,9 @@ export function Collection() {
     return [...byKey.values()];
   }, [rows, grouped, s.verdicts]);
 
+  // Every hook runs before the empty-state return, so the hook order never changes between
+  // renders of one mounted screen.
+  useScrollMemory('collection.scroll', groups.length > 0 && !s.verdictsLoading);
   if (!s.collection) {
     return (
       <div className="screen">
@@ -211,7 +214,6 @@ export function Collection() {
   const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
   const filtersOn = [showIneligible, shadowsOnly, recentOnly, metaOnly].filter(Boolean).length;
   const settingsOn = filtersOn > 0 || !grouped;
-  useScrollMemory('collection.scroll', groups.length > 0 && !s.verdictsLoading);
   return (
     <div className="screen">
       <div className="page-head flow">

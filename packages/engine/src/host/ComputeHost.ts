@@ -7,6 +7,8 @@ import type { CountersOptions, CountersResult } from '../counters/counters.js';
 import type { ScanList, ScanListOptions } from '../scan/scanList.js';
 import type { AnalyzeOptions, TeamAnalysis, TeamPick } from '../analyze.js';
 import type { ManualInput, ManualResult } from '../collection/manual.js';
+import type { Faceoff } from '../yourmeta/faceoff.js';
+import type { TeamRef } from '../yourmeta/types.js';
 
 export interface ProgressEvent {
   stage: string;
@@ -45,6 +47,13 @@ export interface ComputeHost {
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<TeamAnalysis>;
   manual(input: ManualInput): Promise<ManualResult>;
+  /** The in-battle card: one opponent against the set's team, simulated on the device. */
+  faceoff(
+    team: TeamRef,
+    specimens: Specimen[],
+    opponent: string,
+    options: Partial<BuildOptions>,
+  ): Promise<Faceoff>;
   /** Every move a species can run, for the hand-built team's move picker. */
   movePool(
     speciesId: string,

@@ -77,8 +77,8 @@ describe('yourMetaStats', () => {
     ]);
   });
 
-  it('lists recent opponents across all seasons, newest first, tanked included', () => {
-    expect(stats.recent).toEqual(['dragonite_shadow', 'furret', 'medicham', 'skarmory']);
+  it('lists recent opponents across all seasons, newest first, tanked included, then the meta', () => {
+    expect(stats.recent).toEqual(['dragonite_shadow', 'furret', 'medicham', 'skarmory', 'a', 'b']);
   });
 
   it('reports the open set for the league', () => {
@@ -111,6 +111,18 @@ describe('yourMetaStats', () => {
 describe('recentOpponents', () => {
   it('falls back to the given list when the log is empty', () => {
     expect(recentOpponents([], ['tinkaton', 'azumarill'], 20)).toEqual(['tinkaton', 'azumarill']);
+  });
+  it('pads a short log with the given list, skipping what is already there', () => {
+    const one = set('o', ['a', 'b', 'c'], [b('2026-09-10T10:00:00Z', ['azumarill'], 'win')]);
+    expect(recentOpponents([one], ['tinkaton', 'azumarill', 'clodsire'], 20)).toEqual([
+      'azumarill',
+      'tinkaton',
+      'clodsire',
+    ]);
+    expect(recentOpponents([one], ['tinkaton', 'azumarill', 'clodsire'], 2)).toEqual([
+      'azumarill',
+      'tinkaton',
+    ]);
   });
   it('caps the list', () => {
     const many = set(

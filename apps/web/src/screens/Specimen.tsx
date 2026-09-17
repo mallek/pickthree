@@ -56,6 +56,8 @@ export function SpecimenScreen({ id }: { id: string }) {
     loadVerdicts,
   ]);
 
+  // Hooks stay above the empty-state return so their order never changes while mounted.
+  const metaRank = useMetaRank();
   if (!sp) {
     return (
       <div className="screen">
@@ -71,7 +73,6 @@ export function SpecimenScreen({ id }: { id: string }) {
     );
   }
   const v = s.verdicts[sp.id];
-  const metaRank = useMetaRank();
   const display = name(sp.speciesId);
   const types = species(sp.speciesId)?.types ?? ['normal', 'none'];
   const excluded = s.settings.excludedSpecimenIds.includes(sp.id);

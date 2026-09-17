@@ -20,6 +20,8 @@ export interface LeagueInfo {
 }
 
 import type {
+  TeamRef,
+  Faceoff,
   AnalyzeOptions,
   BuildOptions,
   CountersOptions,
@@ -85,6 +87,15 @@ export type WorkerRequest =
       picks: [TeamPick, TeamPick, TeamPick];
       specimens: Specimen[];
       options: Partial<AnalyzeOptions>;
+    }
+  | {
+      id: number;
+      kind: 'faceoff';
+      league: string;
+      team: TeamRef;
+      specimens: Specimen[];
+      opponent: string;
+      options: Partial<BuildOptions>;
     };
 
 export type WorkerResponse =
@@ -115,4 +126,5 @@ export type WorkerResult =
   | { kind: 'scanlist'; scanList: ScanList }
   | { kind: 'movepool'; pool: MovePool }
   | { kind: 'analyze'; analysis: TeamAnalysis }
-  | { kind: 'manual'; result: ManualResult };
+  | { kind: 'manual'; result: ManualResult }
+  | { kind: 'faceoff'; faceoff: Faceoff };

@@ -1,11 +1,19 @@
-import { RECENT_LIMIT, SET_SIZE, recentOpponents, type TeamRef } from '@pickthree/engine';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  RECENT_LIMIT,
+  SET_SIZE,
+  recentOpponents,
+  teamKey,
+  type Faceoff,
+  type TeamRef,
+} from '@pickthree/engine';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Header, PokemonToken, useName, useShortName, useSpeciesSearch } from '../components.tsx';
+import { OpponentCard } from '../components/OpponentCard.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function LogBattle() {
   const s = useAppState();
-  const { navigate, logBattle, startSet } = useActions();
+  const { navigate, logBattle, startSet, faceoff } = useActions();
   const name = useName();
   const short = useShortName();
   const open = s.sets.find((x) => !x.closed) ?? null;
@@ -13,6 +21,11 @@ export function LogBattle() {
   const [slots, setSlots] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
+  /** The opponent whose in-battle card is open: the last one added, or a tapped slot. */
+  const [selected, setSelected] = useState<string | null>(null);
+  const [card, setCard] = useState<{ opponent: string; data: Faceoff | null } | null>(null);
+  /** Cards already simulated this visit, so switching between the three slots is instant. */
+  const cards = useRef(new Map<string, Faceoff>());
   /** Set before the fifth battle is saved, so the redirect below never fires mid-save. */
   const [done, setDone] = useState<{
     wins: number;
@@ -47,8 +60,40 @@ export function LogBattle() {
 
   const add = (id: string): void => {
     setSlots((cur) => (cur.length >= 3 || cur.includes(id) ? cur : [...cur, id]));
+    setSelected(id);
     setQuery('');
   };
+  const remove = (id: string): void => {
+    setSlots((cur) => cur.filter((x) => x !== id));
+    setSelected((cur) => (cur === id ? null : cur));
+  };
+
+  const teamId = open ? `${open.league}|${teamKey(open.team.species)}` : '';
+  useEffect(() => {
+    if (!open || !selected) {
+      setCard(null);
+      return;
+    }
+    const key = `${teamId}|${selected}`;
+    const hit = cards.current.get(key);
+    if (hit) {
+      setCard({ opponent: selected, data: hit });
+      return;
+    }
+    let live = true;
+    setCard({ opponent: selected, data: null });
+    void faceoff(open.team, selected).then((data) => {
+      if (data) {
+        cards.current.set(key, data);
+      }
+      if (live) {
+        setCard({ opponent: selected, data });
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [open, teamId, selected, faceoff]);
 
   const save = async (result: 'win' | 'loss' | null): Promise<void> => {
     if (!open || saving) {
@@ -114,7 +159,7 @@ export function LogBattle() {
       <div className="scroll" style={{ gap: 14, paddingBottom: 140 }}>
         <div className="stack" style={{ gap: 8 }}>
           <span className="meta">{searching ? 'Matches' : 'Recent'}</span>
-          <div className={`recent-row${searching ? ' matches' : ''}`}>
+          <div className="recent-row matches">
             {gridIds.map((id) => (
               <button
                 type="button"
@@ -152,32 +197,43 @@ export function LogBattle() {
           {[0, 1, 2].map((i) => {
             const id = slots[i];
             return (
-              <button
-                type="button"
-                className={`opp-slot${id ? ' filled' : ''}`}
-                key={i}
-                onClick={() =>
-                  id ? setSlots((cur) => cur.filter((x) => x !== id)) : undefined
-                }
-                aria-label={id ? `Clear ${name(id)}` : `Opponent ${i + 1}`}
-              >
+              <div className="slot-wrap" key={i}>
+                <button
+                  type="button"
+                  className={`opp-slot${id ? ' filled' : ''}${id && id === selected ? ' selected' : ''}`}
+                  onClick={() => (id ? setSelected(id) : undefined)}
+                  aria-label={id ? `${name(id)} in battle` : `Opponent ${i + 1}`}
+                  aria-pressed={id ? id === selected : undefined}
+                >
+                  {id ? (
+                    <>
+                      <PokemonToken speciesId={id} size={72} />
+                      <span className="small">{name(id)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="opp-slot-empty" style={{ width: 72, height: 72 }}>
+                        {i + 1}
+                      </span>
+                      <span className="small muted">Opponent {i + 1}</span>
+                    </>
+                  )}
+                </button>
                 {id ? (
-                  <>
-                    <PokemonToken speciesId={id} size={72} />
-                    <span className="small">{name(id)}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="opp-slot-empty" style={{ width: 72, height: 72 }}>
-                      {i + 1}
-                    </span>
-                    <span className="small muted">Opponent {i + 1}</span>
-                  </>
-                )}
-              </button>
+                  <button
+                    type="button"
+                    className="slot-x"
+                    aria-label={`Remove ${name(id)}`}
+                    onClick={() => remove(id)}
+                  >
+                    &times;
+                  </button>
+                ) : null}
+              </div>
             );
           })}
         </div>
+        {card ? <OpponentCard opponent={card.opponent} data={card.data} /> : null}
       </div>
       <div className="result-bar">
         <div className="result-row">

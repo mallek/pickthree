@@ -2,6 +2,7 @@ import {
   SET_SIZE,
   type BattleSet,
   type CountersResult,
+  type Faceoff,
   type ImportReport,
   type Layout,
   type League,
@@ -427,6 +428,8 @@ interface Actions {
     current: { fast: string | null; charged: string[] },
   ): Promise<MovePool>;
   addManual(input: ManualInput): Promise<ManualResult>;
+  /** The in-battle card for one opponent against the set's team. Null when it could not run. */
+  faceoff(team: TeamRef, opponent: string): Promise<Faceoff | null>;
   removeSpecimen(id: string): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   setLeague(id: string): void;
@@ -782,6 +785,19 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, [navigate]);
 
+  const faceoff = useCallback(async (team: TeamRef, opponent: string): Promise<Faceoff | null> => {
+    const h = hostRef.current as WorkerHost;
+    const s = stateRef.current;
+    const ids = new Set(team.specimenIds ?? []);
+    const specimens = (s.collection?.specimens ?? []).filter((sp) => ids.has(sp.id));
+    try {
+      return await h.faceoff(team, specimens, opponent, optionsFrom(s.settings));
+    } catch (e) {
+      recordError('faceoff', e);
+      return null;
+    }
+  }, []);
+
   const movePool = useCallback(
     (
       speciesId: string,
@@ -992,6 +1008,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setOrderMode,
       analyze,
       movePool,
+      faceoff,
       addManual,
       removeSpecimen,
       updateSettings,
@@ -1018,6 +1035,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setOrderMode,
       analyze,
       movePool,
+      faceoff,
       addManual,
       removeSpecimen,
       updateSettings,

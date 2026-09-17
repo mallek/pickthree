@@ -1,4 +1,6 @@
 import type {
+  TeamRef,
+  Faceoff,
   AnalyzeOptions,
   BuildOptions,
   ComputeHost,
@@ -207,6 +209,20 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.pool;
+  }
+
+  async faceoff(
+    team: TeamRef,
+    specimens: Specimen[],
+    opponent: string,
+    options: Partial<BuildOptions> = {},
+    league = this.league,
+  ): Promise<Faceoff> {
+    const r = await this.send({ kind: 'faceoff', league, team, specimens, opponent, options });
+    if (r.kind !== 'faceoff') {
+      throw new Error('unexpected reply');
+    }
+    return r.faceoff;
   }
 
   async manual(input: ManualInput): Promise<ManualResult> {

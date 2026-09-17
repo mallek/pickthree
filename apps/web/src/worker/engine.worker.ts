@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import {
   analyzeTeam,
+  faceoff,
   buildOptionsFor,
   displayName,
   GameDataIndex,
@@ -276,6 +277,11 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         env.index,
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'movepool', pool } });
+      return;
+    }
+    if (msg.kind === 'faceoff') {
+      const result = faceoff(data, msg.team, msg.specimens, msg.opponent, env.sim, msg.options);
+      post({ id: msg.id, kind: 'result', result: { kind: 'faceoff', faceoff: result } });
       return;
     }
     if (msg.kind === 'analyze') {

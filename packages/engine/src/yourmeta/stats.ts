@@ -30,7 +30,7 @@ export interface SeasonStats {
 export interface YourMetaStats {
   current: SeasonStats;
   earlier: SeasonStats[];
-  /** Distinct species faced, newest first, or the fallback when the log is empty. */
+  /** Distinct species faced, newest first, padded with the fallback up to the limit. */
   recent: string[];
   openSet: BattleSet | null;
 }
@@ -40,7 +40,7 @@ export interface StatsInput {
   sets: BattleSet[];
   seasons: Season[];
   freshFrom: string | null;
-  /** Shown as "recent" before anything is logged: the meta group by rank. */
+  /** Pads the recent list: the meta group by rank, so a full grid is always one tap away. */
   fallback: string[];
   now?: Date;
 }
@@ -116,7 +116,18 @@ export function recentOpponents(sets: BattleSet[], fallback: string[], limit: nu
       }
     }
   }
-  return out.length === 0 ? fallback.slice(0, limit) : out;
+  // Pad with the most common meta species not already listed, so the grid is always full and
+  // the next opponent is more likely to be one tap away.
+  for (const id of fallback) {
+    if (out.length >= limit) {
+      break;
+    }
+    if (!seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
 }
 
 export function yourMetaStats(input: StatsInput): YourMetaStats {

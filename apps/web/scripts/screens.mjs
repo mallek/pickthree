@@ -203,7 +203,7 @@ const simNote = await page.$$eval('.page-head p.meta', (ps) =>
 );
 if (!simNote.includes('simulated on this device')) {
   const diag = await page.evaluate(() => ({
-    url: location.href,
+    url: document.location.href,
     h2: document.querySelector('.page-head h2')?.textContent,
     first: document.querySelector('.counter-row')?.textContent?.slice(0, 120),
     rows: document.querySelectorAll('.counter-row').length,
@@ -220,6 +220,11 @@ await page.$$eval('.recent-token', (els) => {
   els[0]?.click();
   els[1]?.click();
 });
+await page.waitForSelector('.faceoff .fo-table', { timeout: 60_000 });
+const cardVerdicts = await page.$$eval('.fo-verdict', (els) => els.length);
+if (cardVerdicts !== 3) {
+  throw new Error(`in-battle card shows ${cardVerdicts} verdicts, expected 3`);
+}
 await new Promise((r) => setTimeout(r, 300));
 await shot('21-log-battle', false);
 

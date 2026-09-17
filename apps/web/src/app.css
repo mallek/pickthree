@@ -2309,6 +2309,152 @@ input[type='range'] {
   background: var(--bg);
   border-top: 1px solid var(--divider);
 }
+.opp-slot.selected .token {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--accent);
+}
+
+/* in-battle card */
+.faceoff {
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fo-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+}
+.fo-table th,
+.fo-table td {
+  padding: 4px 2px;
+  text-align: center;
+  vertical-align: middle;
+}
+.fo-table thead th {
+  font-weight: 500;
+  color: var(--muted);
+  vertical-align: bottom;
+}
+.fo-table th:first-child {
+  width: 52px;
+  text-align: left;
+}
+.fo-table .fo-shields-head,
+.fo-table .fo-shields {
+  width: 92px;
+}
+.fo-move {
+  display: table-cell;
+}
+.fo-move-name {
+  display: block;
+  padding: 2px 3px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--c) 22%, transparent);
+  color: var(--t, var(--text));
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  /* Wrap between words only; a move name split mid-word is unreadable at a glance. */
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+}
+.fo-count {
+  display: block;
+  font-size: 10px;
+  color: var(--faint);
+  margin-top: 2px;
+}
+.fo-member {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 1.15;
+  min-width: 0;
+}
+.fo-member span {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+.fo-table tbody tr {
+  border-top: 1px solid var(--divider);
+}
+.fo-table tbody tr.best th,
+.fo-table tbody tr.best .fo-verdict {
+  color: var(--accent-text);
+}
+.fo-eff {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--faint);
+}
+.fo-eff.super {
+  background: var(--hit-tint);
+  color: var(--hit);
+}
+.fo-eff.super.strong {
+  box-shadow: inset 0 0 0 1.5px var(--hit);
+}
+.fo-eff.resisted {
+  background: var(--surface2);
+  color: var(--muted);
+}
+.fo-eff.resisted.strong {
+  color: var(--text);
+}
+.fo-shields {
+  white-space: nowrap;
+}
+.fo-grid {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 9px);
+  gap: 2px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.fo-grid i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+.fo-grid i.w {
+  background: var(--win);
+}
+.fo-grid i.l {
+  background: var(--loss);
+}
+.fo-verdict {
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.fo-verdict.wins {
+  color: var(--win);
+}
+.fo-verdict.loses {
+  color: var(--loss);
+}
+.fo-verdict.shields {
+  color: var(--warn);
+}
 .result-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

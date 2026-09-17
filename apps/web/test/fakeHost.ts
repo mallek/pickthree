@@ -37,9 +37,19 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
       manifest: { pvpokeCommit: 'abc', pvpokeDate: '2026-09-10', builtAt: '2026-09-14T00:00:00Z' },
       species: {
         tinkaton: { name: 'Tinkaton', types: ['fairy', 'steel'], familyId: 'tinkaton', dex: 959 },
-        azumarill: { name: 'Azumarill', types: ['water', 'fairy'], familyId: 'azumarill', dex: 184 },
+        azumarill: {
+          name: 'Azumarill',
+          types: ['water', 'fairy'],
+          familyId: 'azumarill',
+          dex: 184,
+        },
         clodsire: { name: 'Clodsire', types: ['poison', 'ground'], familyId: 'clodsire', dex: 980 },
-        medicham: { name: 'Medicham', types: ['fighting', 'psychic'], familyId: 'medicham', dex: 308 },
+        medicham: {
+          name: 'Medicham',
+          types: ['fighting', 'psychic'],
+          familyId: 'medicham',
+          dex: 308,
+        },
         dragonite_shadow: {
           name: 'Dragonite (Shadow)',
           types: ['dragon', 'flying'],
@@ -101,6 +111,43 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
     analyze: vi.fn(),
     movePool: vi.fn(),
     manual: vi.fn(),
+    faceoff: vi.fn(async (team: { species: string[] }, _s: unknown, opponent: string) => ({
+      opponent,
+      ranked: true,
+      moves: [
+        {
+          moveId: 'COUNTER',
+          name: 'Counter',
+          type: 'fighting',
+          countFromFast: null,
+          recommended: true,
+        },
+        {
+          moveId: 'ICE_PUNCH',
+          name: 'Ice Punch',
+          type: 'ice',
+          countFromFast: 7,
+          recommended: true,
+        },
+      ],
+      members: team.species.map((speciesId) => ({
+        speciesId,
+        specimenId: null,
+        realIvs: false,
+        fast: 'FAST',
+        charged: ['CHARGED'],
+        cells: [
+          { efficacy: 'resisted', multiplier: 0.625 },
+          { efficacy: 'neutral', multiplier: 1 },
+        ],
+        grid: [600, 600, 600, 400, 400, 400, 500, 500, 500],
+        wins: 3,
+        verdict: 'shields',
+      })),
+      best: 0,
+      battles: 27,
+      ms: 1,
+    })),
     ...overrides,
   };
   return host as unknown as WorkerHost;

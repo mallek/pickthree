@@ -25,6 +25,9 @@ export function TeamDetail({ id }: { id: string }) {
   const { navigate } = useActions();
   const name = useName();
   const [open, setOpen] = useState(false);
+  const [allOpps, setAllOpps] = useState(false);
+  const [openSafe, setOpenSafe] = useState<Set<number>>(() => new Set());
+  const metaRank = useMetaRank();
   const custom = id === 'custom';
   const team = custom ? s.analysis?.team : s.recommendation?.teams.find((t) => t.id === id);
   const backRoute: Route = custom ? { screen: 'build' } : { screen: 'teams' };
@@ -49,9 +52,6 @@ export function TeamDetail({ id }: { id: string }) {
   const orders = ['First', 'Second', 'Third'];
   const lead = team.slots[0];
   const back = team.slots.slice(1);
-  const [allOpps, setAllOpps] = useState(false);
-  const [openSafe, setOpenSafe] = useState<Set<number>>(() => new Set());
-  const metaRank = useMetaRank();
   // Meta group, one row per species (PvPoke lists a few twice), most common first.
   const seenOpp = new Set<string>();
   const opps = (s.leagueInfo?.meta ?? [])
