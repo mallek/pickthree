@@ -2368,6 +2368,10 @@ input[type='range'] {
   width: 54px;
   text-align: center;
 }
+/* The verdict sits above the grid, so the row's visual centre is lower than its box centre. */
+.fo-table tbody th:first-child {
+  padding-top: 16px;
+}
 .fo-table .fo-shields-head,
 .fo-table .fo-shields {
   width: 70px;
