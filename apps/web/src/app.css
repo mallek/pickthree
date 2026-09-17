@@ -10,6 +10,12 @@ body,
 #root {
   height: 100%;
 }
+html,
+body {
+  /* Rigid left to right: iOS Safari otherwise lets the page pan sideways by a few pixels. */
+  overflow-x: hidden;
+  max-width: 100%;
+}
 body {
   margin: 0;
   background: var(--bg);
