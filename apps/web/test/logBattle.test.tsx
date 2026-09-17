@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LogBattle } from '../src/screens/LogBattle.tsx';
 import { NewSet } from '../src/screens/NewSet.tsx';
 import { AppProvider } from '../src/state/store.tsx';
@@ -9,10 +9,14 @@ import { resetDbForTests, storage } from '../src/storage/db.ts';
 import { fakeHost } from './fakeHost.ts';
 
 describe('New set and Log a battle', () => {
+  const matchMedia = window.matchMedia;
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
     resetDbForTests();
     window.location.hash = '';
+  });
+  afterEach(() => {
+    window.matchMedia = matchMedia;
   });
 
   it('starts a set from three picked species', async () => {
@@ -67,8 +71,13 @@ describe('New set and Log a battle', () => {
       </AppProvider>,
     );
     await waitFor(() => expect(screen.getByText('1 logged with this team')).toBeInTheDocument());
+    // The recent grid shows only while the search is in use.
+    expect(screen.queryByRole('button', { name: 'Medicham' })).not.toBeInTheDocument();
+    fireEvent.focus(screen.getByPlaceholderText('Search any Pokemon'));
     // Medicham was faced; it leads the recent row.
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
+    // A pick folds the grid away, leaving the slot and the card.
+    expect(screen.queryByRole('button', { name: 'Medicham' })).not.toBeInTheDocument();
     // The in-battle card opens for the opponent just added: their moves across the top.
     await waitFor(() => expect(screen.getByText('Ice Punch')).toBeInTheDocument());
     expect(screen.getByText('in 7')).toBeInTheDocument();
@@ -87,7 +96,7 @@ describe('New set and Log a battle', () => {
       });
     });
     // Stays here for the next battle, slots cleared, count up by one.
-    expect(screen.getByText('2 logged with this team')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('2 logged with this team')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: 'Remove Medicham' })).not.toBeInTheDocument();
   });
 
@@ -124,7 +133,7 @@ describe('New set and Log a battle', () => {
     expect(sets[0]?.battles[4]?.tanked).toBe(true);
   });
 
-  it('keeps both taps when two recent tokens are clicked back to back', async () => {
+  it('keeps both picks made one after the other from the recent grid', async () => {
     await storage.saveSet({
       id: 's1',
       league: 'great',
@@ -154,11 +163,13 @@ describe('New set and Log a battle', () => {
       </AppProvider>,
     );
     await waitFor(() => expect(screen.getByText('2 logged with this team')).toBeInTheDocument());
-    // Two taps in the same tick, no await between them: both must land, not just the second.
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Clodsire' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
-    });
+    const search = screen.getByPlaceholderText('Search any Pokemon');
+    fireEvent.focus(search);
+    fireEvent.click(screen.getByRole('button', { name: 'Clodsire' }));
+    // The grid folded; tapping the search brings it back for the second pick.
+    expect(screen.queryByRole('button', { name: 'Medicham' })).not.toBeInTheDocument();
+    fireEvent.focus(search);
+    fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Remove Clodsire' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Remove Medicham' })).toBeInTheDocument();
@@ -210,12 +221,32 @@ describe('New set and Log a battle', () => {
       expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
     });
 
+    // A desktop (fine pointer) keeps the cursor in the search for the next opponent.
+    window.matchMedia = vi
+      .fn()
+      .mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
     fireEvent.click(screen.getByRole('button', { name: 'Tinkaton' }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Remove Tinkaton' })).toBeInTheDocument(),
     );
-    // A pick made from a search hands focus back to the search for the next opponent.
     expect(screen.getByPlaceholderText('Search any Pokemon')).toHaveFocus();
     expect(screen.getByPlaceholderText('Search any Pokemon')).toHaveValue('');
+    // The grid folded away with the pick; typing brings the matches back.
+    expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), {
+      target: { value: 'azu' },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Azumarill' })).toBeInTheDocument(),
+    );
+    // A touch screen drops focus instead, so the keyboard does not cover the card.
+    window.matchMedia = vi
+      .fn()
+      .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+    fireEvent.click(screen.getByRole('button', { name: 'Azumarill' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument(),
+    );
+    expect(screen.getByPlaceholderText('Search any Pokemon')).not.toHaveFocus();
   });
 });

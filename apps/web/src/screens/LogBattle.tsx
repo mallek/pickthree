@@ -19,6 +19,9 @@ export function LogBattle() {
   /** Cards already simulated this visit, so switching between the three slots is instant. */
   const cards = useRef(new Map<string, Faceoff>());
   const searchRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  /** Set by a pick: the grid stays hidden until the search is typed in or tapped again. */
+  const [picked, setPicked] = useState(false);
   const hits = useSpeciesSearch(query, 30);
 
   useEffect(() => {
@@ -53,18 +56,24 @@ export function LogBattle() {
     return [...hits.filter((id) => recentSet.has(id)), ...hits.filter((id) => !recentSet.has(id))];
   }, [searching, hits, recent]);
   const atCap = searching && hits.length >= 30;
+  /** Recent or matches show while the search is in use; a pick folds them away. */
+  const showGrid = searching || (focused && !picked);
 
   const add = (id: string): void => {
     setSlots((cur) => (cur.length >= 3 || cur.includes(id) ? cur : [...cur, id]));
     setSelected(id);
-    // Back to the search so the next opponent is a few keystrokes away. On a touch screen the
-    // keyboard would cover the card, so only when a search was already under way.
-    const typing = query.trim().length > 0;
-    const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
     setQuery('');
-    if (typing || fine) {
+    // The grid folds away, leaving the slots and the card. On a desktop the cursor stays in
+    // the search so the next opponent is a few keystrokes away; on a touch screen the keyboard
+    // drops so the card is in view.
+    const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
+    if (fine) {
       searchRef.current?.focus();
+    } else {
+      searchRef.current?.blur();
     }
+    // After the focus call: a fresh focus event clears the flag, and the pick must win.
+    setPicked(true);
   };
   const remove = (id: string): void => {
     setSlots((cur) => cur.filter((x) => x !== id));
@@ -137,40 +146,49 @@ export function LogBattle() {
         }
       />
       <div className="scroll" style={{ gap: 14, paddingBottom: 140 }}>
-        <div className="stack" style={{ gap: 8 }}>
-          <span className="meta">{searching ? 'Matches' : 'Recent'}</span>
-          <div className="recent-row matches">
-            {gridIds.map((id) => (
-              <button
-                type="button"
-                className={`recent-token${slots.includes(id) ? ' on' : ''}`}
-                key={id}
-                onClick={() => add(id)}
-                aria-label={name(id)}
-              >
-                <PokemonToken speciesId={id} size={36} />
-                <span>{short(id)}</span>
-              </button>
-            ))}
-          </div>
-          {searching && gridIds.length === 0 ? (
-            <p className="muted small" style={{ margin: 0 }}>
-              Nothing matches.
-            </p>
-          ) : null}
-          {atCap ? (
-            <p className="muted small" style={{ margin: 0 }}>
-              Keep typing to narrow it down.
-            </p>
-          ) : null}
-        </div>
         <input
           ref={searchRef}
           className="search"
           placeholder="Search any Pokemon"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            setFocused(true);
+            setPicked(false);
+          }}
+          onBlur={() => setFocused(false)}
         />
+        {showGrid ? (
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="meta">{searching ? 'Matches' : 'Recent'}</span>
+            <div className="recent-row matches">
+              {gridIds.map((id) => (
+                <button
+                  type="button"
+                  className={`recent-token${slots.includes(id) ? ' on' : ''}`}
+                  key={id}
+                  // Keep the search focused through the tap so the grid is still there to click.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => add(id)}
+                  aria-label={name(id)}
+                >
+                  <PokemonToken speciesId={id} size={36} />
+                  <span>{short(id)}</span>
+                </button>
+              ))}
+            </div>
+            {searching && gridIds.length === 0 ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                Nothing matches.
+              </p>
+            ) : null}
+            {atCap ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                Keep typing to narrow it down.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <p className="meta" style={{ margin: 0, textAlign: 'center' }}>
           Add the opponents you saw. One or two is fine.
         </p>
