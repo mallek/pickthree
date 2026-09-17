@@ -1,3 +1,4 @@
+import { facingWeight } from '../gamedata/metaRank.js';
 import { bucketBySeason, type SeasonBucket } from './season.js';
 import { teamKey, type BattleSet, type LoggedBattle, type Season, type TeamRef } from './types.js';
 
@@ -98,37 +99,59 @@ function seasonStats(bucket: SeasonBucket): SeasonStats {
   };
 }
 
-export function recentOpponents(sets: BattleSet[], fallback: string[], limit: number): string[] {
+/** A rank 1 meta species is worth this many fresh sightings on the recent grid. */
+export const RECENT_PRIOR_SCALE = 5;
+/** A sighting counts half as much after this many later battles. */
+export const RECENT_HALF_LIFE = 40;
+
+/**
+ * The opponents most worth one tap on Log a battle, best first: PvPoke's facing weight for the
+ * species' rank (scaled so rank 1 equals five sightings, rank 9 two, rank 25 one, unranked
+ * nothing) plus your own sightings, each fading with a half-life of RECENT_HALF_LIFE battles.
+ * One sighting of something off-meta does not push a top-15 meta species out; two or three
+ * recent ones do, and a rank 1 species needs five to be displaced.
+ *
+ * `fallback` is the meta group by rank; `ranks` gives overall ranks for anything ranked, and
+ * a species missing from it takes its position in `fallback`, or counts as unranked.
+ */
+export function recentOpponents(
+  sets: BattleSet[],
+  fallback: string[],
+  limit: number,
+  ranks?: Record<string, number | null>,
+): string[] {
   const all: LoggedBattle[] = [];
   for (const s of sets) {
     all.push(...s.battles);
   }
   all.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const b of all) {
-    for (const id of b.opponents) {
-      if (!seen.has(id)) {
-        seen.add(id);
-        out.push(id);
-        if (out.length >= limit) {
-          return out;
-        }
-      }
+  const rankOf = (id: string): number | null => {
+    const r = ranks?.[id];
+    if (typeof r === 'number') {
+      return r;
     }
-  }
-  // Pad with the most common meta species not already listed, so the grid is always full and
-  // the next opponent is more likely to be one tap away.
+    const i = fallback.indexOf(id);
+    return i >= 0 ? i + 1 : null;
+  };
+  const score = new Map<string, number>();
   for (const id of fallback) {
-    if (out.length >= limit) {
-      break;
-    }
-    if (!seen.has(id)) {
-      seen.add(id);
-      out.push(id);
-    }
+    const rank = rankOf(id);
+    score.set(id, rank === null ? 0 : RECENT_PRIOR_SCALE * facingWeight(rank));
   }
-  return out;
+  all.forEach((b, age) => {
+    const w = Math.pow(0.5, age / RECENT_HALF_LIFE);
+    for (const id of b.opponents) {
+      if (!score.has(id)) {
+        const rank = rankOf(id);
+        score.set(id, rank === null ? 0 : RECENT_PRIOR_SCALE * facingWeight(rank));
+      }
+      score.set(id, (score.get(id) as number) + w);
+    }
+  });
+  return [...score.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([id]) => id);
 }
 
 export function yourMetaStats(input: StatsInput): YourMetaStats {

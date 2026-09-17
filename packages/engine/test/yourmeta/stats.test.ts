@@ -77,8 +77,13 @@ describe('yourMetaStats', () => {
     ]);
   });
 
-  it('lists recent opponents across all seasons, newest first, tanked included, then the meta', () => {
-    expect(stats.recent).toEqual(['dragonite_shadow', 'furret', 'medicham', 'skarmory', 'a', 'b']);
+  it('scores recent opponents: meta rank first, then sightings across all seasons, tanked included', () => {
+    // a and b are the meta by rank (worth 5 and 3.5); Shadow Dragonite and Medicham were seen
+    // twice each (Dragonite more recently), the rest once.
+    expect(stats.recent.slice(0, 4)).toEqual(['a', 'b', 'dragonite_shadow', 'medicham']);
+    expect(new Set(stats.recent)).toEqual(
+      new Set(['a', 'b', 'medicham', 'dragonite_shadow', 'furret', 'skarmory']),
+    );
   });
 
   it('reports the open set for the league', () => {
@@ -112,17 +117,77 @@ describe('recentOpponents', () => {
   it('falls back to the given list when the log is empty', () => {
     expect(recentOpponents([], ['tinkaton', 'azumarill'], 20)).toEqual(['tinkaton', 'azumarill']);
   });
-  it('pads a short log with the given list, skipping what is already there', () => {
-    const one = set('o', ['a', 'b', 'c'], [b('2026-09-10T10:00:00Z', ['azumarill'], 'win')]);
+  it('one sighting lifts a meta species but does not pass the rank 1 entry', () => {
+    const one = set('o', ['a', 'b', 'c'], [b('2026-09-10T10:00:00Z', ['clodsire'], 'win')]);
+    // Priors 5, 3.5, 2.9; Clodsire's sighting adds 1 and lifts it past Azumarill only.
     expect(recentOpponents([one], ['tinkaton', 'azumarill', 'clodsire'], 20)).toEqual([
+      'tinkaton',
+      'clodsire',
       'azumarill',
+    ]);
+    expect(recentOpponents([one], ['tinkaton', 'azumarill', 'clodsire'], 2)).toEqual([
       'tinkaton',
       'clodsire',
     ]);
-    expect(recentOpponents([one], ['tinkaton', 'azumarill', 'clodsire'], 2)).toEqual([
-      'azumarill',
-      'tinkaton',
-    ]);
+  });
+
+  it('a single off-meta sighting does not push a top-15 meta species out; repeats do', () => {
+    const meta = Array.from({ length: 20 }, (_, i) => `m${i + 1}`);
+    const once = set('o', ['a', 'b', 'c'], [b('2026-09-10T10:00:00Z', ['stray'], 'win')]);
+    expect(recentOpponents([once], meta, 15)).toEqual(meta.slice(0, 15));
+    const twice = set(
+      't',
+      ['a', 'b', 'c'],
+      [b('2026-09-10T10:00:00Z', ['stray'], 'win'), b('2026-09-10T10:05:00Z', ['stray'], 'loss')],
+    );
+    const list = recentOpponents([twice], meta, 15);
+    expect(list).toContain('stray');
+    expect(list).not.toContain('m15');
+    // Three sightings outrank everything but the top two (5 and 3.5).
+    const thrice = set(
+      'h',
+      ['a', 'b', 'c'],
+      [
+        b('2026-09-10T10:00:00Z', ['stray'], 'win'),
+        b('2026-09-10T10:05:00Z', ['stray'], 'loss'),
+        b('2026-09-10T10:10:00Z', ['stray'], 'win'),
+      ],
+    );
+    expect(recentOpponents([thrice], meta, 15).indexOf('stray')).toBe(2);
+  });
+
+  it('sightings fade with the battles after them', () => {
+    const filler = Array.from({ length: 200 }, (_, i) =>
+      b(
+        `2026-09-11T${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z`,
+        ['filler'],
+        'win',
+      ),
+    );
+    const s1 = set(
+      's',
+      ['a', 'b', 'c'],
+      [
+        b('2026-09-10T10:00:00Z', ['old'], 'win'),
+        b('2026-09-10T10:01:00Z', ['old'], 'win'),
+        b('2026-09-10T10:02:00Z', ['old'], 'win'),
+        ...filler,
+        b('2026-09-12T10:00:00Z', ['fresh'], 'win'),
+      ],
+    );
+    const list = recentOpponents([s1], [], 10);
+    expect(list.indexOf('fresh')).toBeLessThan(list.indexOf('old'));
+  });
+
+  it('uses overall ranks when given, so a ranked species outside the meta group has a prior', () => {
+    const one = set('o', ['a', 'b', 'c'], [b('2026-09-10T10:00:00Z', ['skarmory'], 'win')]);
+    const withRanks = recentOpponents([one], ['tinkaton', 'azumarill'], 3, {
+      tinkaton: 1,
+      azumarill: 2,
+      skarmory: 3,
+    });
+    // Skarmory: rank 3 prior 2.9 plus one sighting beats Azumarill's 3.5.
+    expect(withRanks).toEqual(['tinkaton', 'skarmory', 'azumarill']);
   });
   it('caps the list', () => {
     const many = set(

@@ -33,7 +33,17 @@ export function LogBattle() {
       (a, b) => (ranks[a]?.overall ?? 999) - (ranks[b]?.overall ?? 999),
     );
   }, [s.leagueInfo]);
-  const recent = useMemo(() => recentOpponents(s.sets, fallback, RECENT_LIMIT), [s.sets, fallback]);
+  const ranks = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(s.leagueInfo?.metaRanks ?? {}).map(([id, r]) => [id, r.overall]),
+      ),
+    [s.leagueInfo],
+  );
+  const recent = useMemo(
+    () => recentOpponents(s.sets, fallback, RECENT_LIMIT, ranks),
+    [s.sets, fallback, ranks],
+  );
   const searching = query.trim().length > 0;
   const gridIds = useMemo(() => {
     if (!searching) {
