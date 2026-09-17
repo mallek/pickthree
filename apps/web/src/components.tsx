@@ -190,9 +190,10 @@ export function PokemonToken({
   const b = types[1] === 'none' ? a : typeColor(types[1]);
   const background = types[1] === 'none' ? a : `linear-gradient(135deg, ${a} 50%, ${b} 50%)`;
   const picture = spritesOn && !broken;
+  const shadow = speciesId.endsWith('_shadow');
   return (
     <span
-      className={`token${picture ? ' has-sprite' : ''}`}
+      className={`token${picture ? ' has-sprite' : ''}${shadow ? ' is-shadow' : ''}`}
       title={title ?? name}
       aria-label={name}
       style={{ width: size, height: size, background, fontSize: Math.round(size * 0.36) }}
