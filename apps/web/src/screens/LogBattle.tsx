@@ -1,11 +1,4 @@
-import {
-  RECENT_LIMIT,
-  SET_SIZE,
-  recentOpponents,
-  teamKey,
-  type Faceoff,
-  type TeamRef,
-} from '@pickthree/engine';
+import { RECENT_LIMIT, recentOpponents, teamKey, type Faceoff } from '@pickthree/engine';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Header, PokemonToken, useName, useShortName, useSpeciesSearch } from '../components.tsx';
 import { OpponentCard } from '../components/OpponentCard.tsx';
@@ -13,11 +6,10 @@ import { useActions, useAppState } from '../state/store.tsx';
 
 export function LogBattle() {
   const s = useAppState();
-  const { navigate, logBattle, startSet, faceoff } = useActions();
+  const { navigate, logBattle, faceoff } = useActions();
   const name = useName();
   const short = useShortName();
   const open = s.sets.find((x) => !x.closed) ?? null;
-  const index = open ? s.sets.indexOf(open) + 1 : 0;
   const [slots, setSlots] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
@@ -27,20 +19,13 @@ export function LogBattle() {
   /** Cards already simulated this visit, so switching between the three slots is instant. */
   const cards = useRef(new Map<string, Faceoff>());
   const searchRef = useRef<HTMLInputElement>(null);
-  /** Set before the fifth battle is saved, so the redirect below never fires mid-save. */
-  const [done, setDone] = useState<{
-    wins: number;
-    losses: number;
-    index: number;
-    team: TeamRef;
-  } | null>(null);
   const hits = useSpeciesSearch(query, 30);
 
   useEffect(() => {
-    if (s.setsLoaded && !open && !done) {
+    if (s.setsLoaded && !open) {
       navigate({ screen: 'meta-new' });
     }
-  }, [s.setsLoaded, open, done, navigate]);
+  }, [s.setsLoaded, open, navigate]);
 
   const fallback = useMemo(() => {
     const ranks = s.leagueInfo?.metaRanks ?? {};
@@ -103,63 +88,28 @@ export function LogBattle() {
     };
   }, [open, teamId, selected, faceoff]);
 
+  /** Saves and clears the slots, staying here: the next battle is seconds away. */
   const save = async (result: 'win' | 'loss' | null): Promise<void> => {
     if (!open || saving) {
       return;
     }
     setSaving(true);
-    const closes = open.battles.length + 1 >= SET_SIZE;
-    if (closes) {
-      const wins =
-        open.battles.filter((b) => b.result === 'win').length + (result === 'win' ? 1 : 0);
-      const losses =
-        open.battles.filter((b) => b.result === 'loss').length + (result === 'loss' ? 1 : 0);
-      setDone({ wins, losses, index, team: open.team });
-    }
     try {
-      const saved = await logBattle({ opponents: slots, result, tanked: result === null });
-      if (!saved) {
-        setDone(null);
-      } else if (!closes) {
-        navigate({ screen: 'meta' });
+      if (await logBattle({ opponents: slots, result, tanked: result === null })) {
+        setSlots([]);
+        setSelected(null);
+        setQuery('');
       }
     } finally {
       setSaving(false);
     }
   };
 
-  if (done) {
-    return (
-      <div className="screen">
-        <Header title="Set done" cog={false} />
-        <div className="scroll set-done" style={{ gap: 22 }}>
-          <p className="set-done-line">
-            Set {done.index} done, {done.wins}-{done.losses}.
-          </p>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void startSet(done.team).then(() => navigate({ screen: 'meta' }))}
-          >
-            New set, same team
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => navigate({ screen: 'meta' })}
-          >
-            Back to Your meta
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="screen">
       <Header
         title="Log a battle"
-        sub={open ? `Set ${index}, battle ${open.battles.length + 1} of ${SET_SIZE}` : ''}
+        sub={open ? `${open.battles.length} logged with this team` : ''}
         onBack={() => navigate({ screen: 'meta' })}
         backLabel="Close"
         cog={false}
@@ -274,7 +224,7 @@ export function LogBattle() {
           </button>
         </div>
         <p className="meta" style={{ margin: 0, textAlign: 'center' }}>
-          Tanked means they quit or threw. It stays in the set but counts for nothing.
+          Tanked means they quit or threw. It stays in the log but counts for nothing.
         </p>
       </div>
     </div>

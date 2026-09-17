@@ -1,6 +1,5 @@
 import {
   DEFAULT_PROFILE_OPTIONS,
-  SET_SIZE,
   seasonListStale,
   yourMetaStats,
   type BattleSet,
@@ -20,15 +19,41 @@ function record(wins: number, losses: number): string {
   return `${wins}-${losses}`;
 }
 
-function SetCard({ set, index }: { set: BattleSet; index: number }) {
-  const { navigate, endSet } = useActions();
+/** The last few results with this team, newest last, as one chip each. */
+function ResultStrip({ battles }: { battles: BattleSet['battles'] }) {
+  const recent = battles.slice(-10);
+  if (recent.length === 0) {
+    return <span className="small muted">No battles logged yet.</span>;
+  }
+  return (
+    <span className="result-strip" aria-label="Recent results">
+      {recent.map((b) => (
+        <span
+          className={`result-chip ${b.tanked ? 'tanked' : b.result === 'win' ? 'win' : 'loss'}`}
+          key={b.id}
+          title={b.tanked ? 'Tanked' : b.result === 'win' ? 'Win' : 'Loss'}
+        >
+          {b.tanked ? 'T' : b.result === 'win' ? 'W' : 'L'}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function CurrentTeam({ set }: { set: BattleSet }) {
+  const { navigate } = useActions();
   const name = useName();
-  const slots = Array.from({ length: SET_SIZE }, (_, i) => set.battles[i] ?? null);
+  const counted = set.battles.filter((b) => !b.tanked);
+  const wins = counted.filter((b) => b.result === 'win').length;
   return (
     <div className="card set-card">
       <div className="between">
-        <b>Set {index}</b>
-        <span className="meta">{dateLabel(set.startedAt)}</span>
+        <b>Current team</b>
+        <span className="meta">
+          {counted.length === 0
+            ? `since ${dateLabel(set.startedAt)}`
+            : `${wins}-${counted.length - wins} since ${dateLabel(set.startedAt)}`}
+        </span>
       </div>
       <div className="row" style={{ gap: 10 }}>
         {set.team.species.map((id) => (
@@ -38,40 +63,33 @@ function SetCard({ set, index }: { set: BattleSet; index: number }) {
           </span>
         ))}
       </div>
-      <div className="set-slots">
-        {slots.map((b, i) => (
-          <span className={`set-slot${b ? ' filled' : ''}${b?.tanked ? ' tanked' : ''}`} key={i}>
-            <b>{b ? (b.tanked ? 'tanked' : b.result === 'win' ? 'W' : 'L') : i + 1}</b>
-            <span className="row" style={{ gap: 2 }}>
-              {b?.opponents.map((id) => (
-                <PokemonToken speciesId={id} size={16} showInitial={false} key={id} />
-              ))}
-            </span>
-          </span>
-        ))}
-      </div>
+      <ResultStrip battles={set.battles} />
       <div className="btn-pair">
         <button type="button" className="btn" onClick={() => navigate({ screen: 'meta-log' })}>
           Log a battle
         </button>
-        <button type="button" className="btn btn-ghost" onClick={() => void endSet()}>
-          End set
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => navigate({ screen: 'meta-new' })}
+        >
+          Change team
         </button>
       </div>
     </div>
   );
 }
 
-function NoOpenSet() {
+function NoTeam() {
   const { navigate } = useActions();
   return (
     <div className="card set-card" style={{ gap: 10 }}>
-      <b>No open set</b>
+      <b>No team picked</b>
       <span className="small muted">
-        A set is five ranked battles with one team. Start one to log them as you play.
+        Pick the three you are running and log battles as you play.
       </span>
       <button type="button" className="btn" onClick={() => navigate({ screen: 'meta-new' })}>
-        New set
+        Pick your team
       </button>
     </div>
   );
@@ -200,7 +218,6 @@ export function YourMeta() {
   const [sort, setSort] = useSticky<Sort>('meta.sort', 'faced');
   const [explained, setExplained] = useSticky('meta.explained', false);
   const [earlierOpen, setEarlierOpen] = useState(false);
-  const openIndex = stats.openSet ? s.sets.indexOf(stats.openSet) + 1 : 0;
 
   return (
     <div className="screen">
@@ -260,7 +277,7 @@ export function YourMeta() {
             </span>
           </div>
         ) : null}
-        {stats.openSet ? <SetCard set={stats.openSet} index={openIndex} /> : <NoOpenSet />}
+        {stats.openSet ? <CurrentTeam set={stats.openSet} /> : <NoTeam />}
         <div className="between">
           <span className="meta">{stats.current.label}</span>
           <Seg

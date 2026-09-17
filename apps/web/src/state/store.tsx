@@ -1,5 +1,4 @@
 import {
-  SET_SIZE,
   type BattleSet,
   type CountersResult,
   type Faceoff,
@@ -937,7 +936,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           tanked: input.tanked,
         };
         const battles = [...open.battles, battle];
-        return persistSets([{ ...open, battles, closed: battles.length >= SET_SIZE }]);
+        // Battles accumulate under the current team; only picking another team closes a set.
+        return persistSets([{ ...open, battles }]);
       }),
     [persistSets, serialized],
   );

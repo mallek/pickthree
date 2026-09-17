@@ -66,7 +66,7 @@ describe('battle log actions', () => {
     latest = null;
   });
 
-  it('starts a set, logs battles, closes at five, and bumps the log version', async () => {
+  it('starts a set, logs battles past five, and bumps the log version', async () => {
     await mount();
     const v0 = latest!.state.logVersion;
     await act(async () => {
@@ -90,8 +90,9 @@ describe('battle log actions', () => {
       }
     });
     expect(latest!.state.sets[0]?.battles).toHaveLength(5);
-    expect(latest!.state.sets[0]?.closed).toBe(true);
-    expect((await storage.loadSets('great'))[0]?.closed).toBe(true);
+    // Five is the game's set size, not a boundary here: only picking another team closes it.
+    expect(latest!.state.sets[0]?.closed).toBe(false);
+    expect((await storage.loadSets('great'))[0]?.closed).toBe(false);
   });
 
   it('raises a notice and resolves false when the phone refuses the write', async () => {

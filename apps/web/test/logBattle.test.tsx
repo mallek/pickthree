@@ -66,7 +66,7 @@ describe('New set and Log a battle', () => {
         <LogBattle />
       </AppProvider>,
     );
-    await waitFor(() => expect(screen.getByText('Set 1, battle 2 of 5')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('1 logged with this team')).toBeInTheDocument());
     // Medicham was faced; it leads the recent row.
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
     // The in-battle card opens for the opponent just added: their moves across the top.
@@ -86,10 +86,12 @@ describe('New set and Log a battle', () => {
         tanked: false,
       });
     });
-    expect(window.location.hash).toBe('#/meta');
+    // Stays here for the next battle, slots cleared, count up by one.
+    expect(screen.getByText('2 logged with this team')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove Medicham' })).not.toBeInTheDocument();
   });
 
-  it('closes the set on the fifth battle and offers a new set with the same team', async () => {
+  it('never closes a set: the fifth battle logs like any other', async () => {
     const four = Array.from({ length: 4 }, (_, i) => ({
       id: `b${i}`,
       at: `2026-09-15T10:0${i}:00Z`,
@@ -110,18 +112,16 @@ describe('New set and Log a battle', () => {
         <LogBattle />
       </AppProvider>,
     );
-    await waitFor(() => expect(screen.getByText('Set 1, battle 5 of 5')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('4 logged with this team')).toBeInTheDocument());
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Tanked' }));
     });
-    await waitFor(() => expect(screen.getByText('Set 1 done, 4-0.')).toBeInTheDocument());
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'New set, same team' }));
-    });
-    await waitFor(async () => expect(await storage.loadSets('great')).toHaveLength(2));
+    await waitFor(() => expect(screen.getByText('5 logged with this team')).toBeInTheDocument());
     const sets = await storage.loadSets('great');
-    expect(sets[0]?.closed).toBe(true);
-    expect(sets[1]?.team.species).toEqual(['tinkaton', 'azumarill', 'clodsire']);
+    expect(sets).toHaveLength(1);
+    expect(sets[0]?.closed).toBe(false);
+    expect(sets[0]?.battles).toHaveLength(5);
+    expect(sets[0]?.battles[4]?.tanked).toBe(true);
   });
 
   it('keeps both taps when two recent tokens are clicked back to back', async () => {
@@ -153,7 +153,7 @@ describe('New set and Log a battle', () => {
         <LogBattle />
       </AppProvider>,
     );
-    await waitFor(() => expect(screen.getByText('Set 1, battle 3 of 5')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('2 logged with this team')).toBeInTheDocument());
     // Two taps in the same tick, no await between them: both must land, not just the second.
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Clodsire' }));
@@ -191,7 +191,7 @@ describe('New set and Log a battle', () => {
         <LogBattle />
       </AppProvider>,
     );
-    await waitFor(() => expect(screen.getByText('Set 1, battle 1 of 5')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('0 logged with this team')).toBeInTheDocument());
 
     fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), {
       target: { value: 'fairy' },

@@ -89,7 +89,7 @@ export function TeamDetail({ id }: { id: string }) {
     if (open) {
       const played = open.battles.length;
       const ok = window.confirm(
-        `You have an open set with ${open.team.species.map(name).join(', ')} (${played} of 5 logged). End it and battle with this team instead?`,
+        `You are running ${open.team.species.map(name).join(', ')} (${played} logged). Switch to this team?`,
       );
       if (!ok) {
         return;

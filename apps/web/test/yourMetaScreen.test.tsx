@@ -44,10 +44,11 @@ describe('Your meta screen', () => {
       </AppProvider>,
     );
     await waitFor(() => expect(screen.getByText(/2 of 15 battles until/)).toBeInTheDocument());
-    expect(screen.getByText('Set 1')).toBeInTheDocument();
+    expect(screen.getByText('Current team')).toBeInTheDocument();
+    expect(screen.getByText(/1-1 since/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Log a battle' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'End set' })).toBeInTheDocument();
-    expect(screen.getByText('tanked')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Change team' })).toBeInTheDocument();
+    expect(screen.getByTitle('Tanked')).toHaveTextContent('T');
     const medicham = screen.getByText('Medicham').closest('.faced-row');
     expect(medicham).toHaveTextContent('faced 2');
     expect(medicham).toHaveTextContent('1-1');
@@ -72,14 +73,9 @@ describe('Your meta screen', () => {
       </AppProvider>,
     );
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'New set' })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Pick your team' })).toBeInTheDocument(),
     );
     expect(screen.getByText(/0 of 15 battles until/)).toBeInTheDocument();
-    expect(screen.getByText('No open set')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'A set is five ranked battles with one team. Start one to log them as you play.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('No team picked')).toBeInTheDocument();
   });
 });

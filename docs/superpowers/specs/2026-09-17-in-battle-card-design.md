@@ -34,6 +34,17 @@ should I shield, and which of my three should be in front.
 - **Results cache per opponent** for the life of the screen, so switching between the three
   slots is instant.
 
+## Follow-up the same day: no set ceremony
+
+Sets of five were overhead: some sets go unlogged, and a session is often picked up two
+battles in. A battle now never closes a set; battles accumulate under the current team until
+another team is picked (New set, or Take to battle from a team). The five-count, End set, the
+Set done screen and "New set, same team" are gone. Log a battle stays on screen after a save
+with the slots cleared, and its header counts battles logged with the team. Your meta shows a
+Current team card with the last ten results as W, L and T chips. The stored shape (a set is a
+team plus its battles) and the export file are unchanged, so old logs still load; the
+per-team records already roll up across sets by team.
+
 ## Out of scope
 
 - Energy or HP tracking through the battle.
