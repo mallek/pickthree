@@ -163,9 +163,10 @@ export class WorkerHost implements ComputeHost {
   async counters(
     specimens: Specimen[],
     options: Partial<CountersOptions>,
+    onProgress?: (e: ProgressEvent) => void,
     league = this.league,
   ): Promise<CountersResult> {
-    const r = await this.send({ kind: 'counters', league, specimens, options });
+    const r = await this.send({ kind: 'counters', league, specimens, options }, onProgress);
     if (r.kind !== 'counters') {
       throw new Error('unexpected reply');
     }

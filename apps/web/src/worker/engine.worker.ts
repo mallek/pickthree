@@ -248,6 +248,11 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         msg.specimens,
         env.index,
         { buildOptions: buildOptionsFor(data.league), ...msg.options },
+        {
+          sim: env.sim,
+          league: data.league,
+          onProgress: (done, total) => progress('counters-sim', done, total),
+        },
       );
       post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
       return;

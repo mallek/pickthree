@@ -110,6 +110,8 @@ export interface AppState {
   countersLoading: boolean;
   /** Species the current counters were scored against, null for the whole meta. */
   countersVs: string | null;
+  /** Simulation progress while an outsider is scored on device. */
+  countersProgress: ProgressEvent | null;
   /** One-line message for the floating toast, such as a failed save. */
   notice: string | null;
   scanList: ScanList | null;
@@ -149,6 +151,7 @@ type Action =
   | { type: 'verdicts-error'; message: string }
   | { type: 'verdicts-partial'; verdicts: Record<string, Verdict> }
   | { type: 'counters-start'; vs: string | null }
+  | { type: 'counters-progress'; progress: ProgressEvent }
   | { type: 'counters-done'; counters: CountersResult | null }
   | { type: 'notice'; message: string | null }
   | { type: 'scanlist'; scanList: ScanList }
@@ -183,6 +186,7 @@ const initial: AppState = {
   counters: null,
   countersLoading: false,
   countersVs: null,
+  countersProgress: null,
   notice: null,
   scanList: null,
   picks: [null, null, null],
@@ -259,9 +263,18 @@ function reducer(s: AppState, a: Action): AppState {
     case 'rec-error':
       return { ...s, recommending: false, recommendError: a.message, progress: null };
     case 'counters-start':
-      return { ...s, countersLoading: true, countersVs: a.vs };
+      // Drop the previous result: with a different target it would render under the new title.
+      return {
+        ...s,
+        countersLoading: true,
+        countersVs: a.vs,
+        counters: null,
+        countersProgress: null,
+      };
+    case 'counters-progress':
+      return { ...s, countersProgress: a.progress };
     case 'counters-done':
-      return { ...s, countersLoading: false, counters: a.counters };
+      return { ...s, countersLoading: false, counters: a.counters, countersProgress: null };
     case 'notice':
       return { ...s, notice: a.message };
     case 'scanlist':
@@ -696,10 +709,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     dispatch({ type: 'counters-start', vs });
     try {
-      const counters = await h.counters(s.collection.specimens, {
-        yourMeta: yourMeta(),
-        ...(vs ? { vs } : {}),
-      });
+      const counters = await h.counters(
+        s.collection.specimens,
+        { yourMeta: yourMeta(), ...(vs ? { vs } : {}) },
+        (p) => dispatch({ type: 'counters-progress', progress: p }),
+      );
       dispatch({ type: 'counters-done', counters });
     } catch (e) {
       recordError('counters', e);

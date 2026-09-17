@@ -6,9 +6,12 @@ import {
 } from '../builds/eligibility.js';
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
+import { simOptionsFor, type League } from '../gamedata/league.js';
 import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js';
 import type { MatchupMatrix, RankingCategory, RankingEntry } from '../gamedata/types.js';
+import { matrixIndex } from '../gamedata/types.js';
 import { MatrixView } from '../search/matrixView.js';
+import type { BattleSimulator } from '../sim/BattleSimulator.js';
 import { buildFacingProfile, facingLine } from '../yourmeta/profile.js';
 import type { YourMetaInput } from '../yourmeta/types.js';
 
@@ -58,9 +61,22 @@ export interface CountersResult {
   blended: boolean;
   /** Counted battles behind the weights. */
   battles: number;
-  /** Set when scored against one opponent. inMeta false means the matrix has no column for it. */
-  vs?: { speciesId: string; inMeta: boolean };
+  /**
+   * Set when scored against one opponent. inMeta false means the matrix has no column for it;
+   * simulated is how many ranked species were then run through the simulator instead.
+   */
+  vs?: { speciesId: string; inMeta: boolean; simulated?: number };
 }
+
+/** What the outsider path needs: the simulator and league the matrix was built with. */
+export interface CountersLive {
+  sim: BattleSimulator;
+  league: League;
+  onProgress?: (done: number, total: number) => void;
+}
+
+/** Ranked species simulated against an outsider; nobody builds the Magikarp that beats Snorlax. */
+export const SIMULATED_CANDIDATES = 300;
 
 export const DEFAULT_COUNTERS_OPTIONS: CountersOptions = {
   limit: 80,
@@ -146,6 +162,64 @@ export interface CountersData {
 }
 
 /**
+ * The matrix column the data build would have written for `vs`, had it been in the meta group:
+ * the top ranked species against it at its ranking moveset, in the matrix's shield scenarios.
+ * Null when the species has no ranking entry to take a moveset from.
+ */
+function simulateColumn(data: CountersData, vs: string, live: CountersLive): MatchupMatrix | null {
+  const entry = data.rankings.overall.find((e) => e.speciesId === vs);
+  if (!entry || entry.moveset.length < 2) {
+    return null;
+  }
+  const src = data.matrix;
+  const candidates = src.candidates.filter((id) => id !== vs).slice(0, SIMULATED_CANDIDATES);
+  const opponentMoveset = entry.moveset.slice(0, 3);
+  const column: MatchupMatrix = {
+    league: src.league,
+    cp: src.cp,
+    scenarios: src.scenarios,
+    candidates,
+    opponents: [vs],
+    candidateMovesets: Object.fromEntries(
+      candidates.map((id) => [id, src.candidateMovesets[id] ?? []]),
+    ),
+    opponentMovesets: { [vs]: opponentMoveset },
+    ratings: new Array<number>(candidates.length * src.scenarios.length).fill(0),
+  };
+  const simOptions = simOptionsFor(live.league);
+  const total = column.ratings.length;
+  let done = 0;
+  candidates.forEach((id, ci) => {
+    const moveset = column.candidateMovesets[id] ?? [];
+    src.scenarios.forEach((s, si) => {
+      const r = live.sim.simulate(
+        {
+          speciesId: id,
+          fastMove: moveset[0] ?? '',
+          chargedMoves: moveset.slice(1),
+          shields: s.shields[0],
+          startEnergyTurns: s.energy[0],
+        },
+        {
+          speciesId: vs,
+          fastMove: opponentMoveset[0] ?? '',
+          chargedMoves: opponentMoveset.slice(1),
+          shields: s.shields[1],
+          startEnergyTurns: s.energy[1],
+        },
+        simOptions,
+      );
+      column.ratings[matrixIndex(column, ci, 0, si)] = r.rating;
+      done += 1;
+      if (live.onProgress && (done % 30 === 0 || done === total)) {
+        live.onProgress(done, total);
+      }
+    });
+  });
+  return column;
+}
+
+/**
  * Every ranked species scored by how much of the current meta it beats, weighted by how often
  * you meet each opponent. The gap between that and PvPoke's overall rank points at the picks
  * that punish today's meta without being obvious.
@@ -155,6 +229,7 @@ export function metaCounters(
   specimens: Specimen[],
   index: GameDataIndex,
   options: Partial<CountersOptions> = {},
+  live?: CountersLive,
 ): CountersResult {
   const opts: CountersOptions = { ...DEFAULT_COUNTERS_OPTIONS, ...options };
   const view = new MatrixView(data.matrix);
@@ -168,25 +243,40 @@ export function metaCounters(
   });
   const groups = opponentGroups(view, ranks, profile.engaged ? profile.weights : undefined);
   const byRank = [...groups].sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
-  const target = opts.vs ? groups.find((g) => g.speciesId === opts.vs) : undefined;
+  let target = opts.vs ? groups.find((g) => g.speciesId === opts.vs) : undefined;
+  /** For an outsider: a one-column matrix from the simulator, read through its own view. */
+  let targetView = view;
+  let simulated: number | undefined;
   if (opts.vs && !target) {
-    return {
-      entries: [],
-      facing: "Not in PvPoke's list for this league, so there are no matchups to score",
-      blended: false,
-      battles: 0,
-      vs: { speciesId: opts.vs, inMeta: false },
-    };
+    const column = live ? simulateColumn(data, opts.vs, live) : null;
+    if (!column) {
+      return {
+        entries: [],
+        facing: "Not in PvPoke's list for this league, so there are no matchups to score",
+        blended: false,
+        battles: 0,
+        vs: { speciesId: opts.vs, inMeta: false },
+      };
+    }
+    targetView = new MatrixView(column);
+    target = opponentGroups(targetView, ranks)[0];
+    simulated = column.candidates.length;
   }
   const owned = ownedBuilds(specimens, index, opts.buildOptions);
 
   // Against one opponent the score is the plain win share; the rest of the meta only feeds
   // the beats and losesTo lines. Species that never win are left out.
+  const targetRow = (speciesId: string, row: number): number =>
+    targetView === view ? row : (targetView.rowOf(speciesId) ?? -1);
   const scored = data.matrix.candidates
     .map((speciesId, row) => ({
       speciesId,
       row,
-      antiMeta: target ? winShare(view, row, target) * 100 : antiMetaScore(view, row, groups),
+      antiMeta: target
+        ? targetRow(speciesId, row) < 0
+          ? 0
+          : winShare(targetView, targetRow(speciesId, row), target) * 100
+        : antiMetaScore(view, row, groups),
     }))
     .filter((s) => !target || (s.antiMeta > 0 && s.speciesId !== target.speciesId));
   const rankOf = (id: string): number => ranks.get(id)?.overall ?? 9999;
@@ -225,6 +315,15 @@ export function metaCounters(
       ownedStageOffset: b?.stageOffset ?? null,
     });
   });
+  if (target && simulated !== undefined) {
+    return {
+      entries: out,
+      facing: `Outside PvPoke's meta group, so the top ${simulated} ranked species were simulated on this device at PvPoke's movesets; your log does not apply here`,
+      blended: false,
+      battles: 0,
+      vs: { speciesId: target.speciesId, inMeta: false, simulated },
+    };
+  }
   if (target) {
     return {
       entries: out,

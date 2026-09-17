@@ -85,8 +85,10 @@ export function Counters() {
         <LeagueSwitcher compact />
         {vs ? (
           <p className="meta" style={{ margin: 0 }}>
-            Every ranked {league.title} species that wins at least one of the three shield scenarios
-            against {name(vs)}, best first.{' '}
+            {counters?.vs?.simulated
+              ? `The top ${counters.vs.simulated} ranked ${league.title} species`
+              : `Every ranked ${league.title} species`}{' '}
+            that wins at least one of the three shield scenarios against {name(vs)}, best first.{' '}
             <a href={hashFor({ screen: 'counters' })}>Back to the whole meta</a>
           </p>
         ) : (
@@ -116,7 +118,17 @@ export function Counters() {
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
-        {s.countersLoading && !counters ? <Progress stage="counters" done={0} total={0} /> : null}
+        {s.countersLoading && !counters ? (
+          s.countersProgress ? (
+            <Progress
+              stage={s.countersProgress.stage}
+              done={s.countersProgress.done}
+              total={s.countersProgress.total}
+            />
+          ) : (
+            <Progress stage="counters" done={0} total={0} />
+          )
+        ) : null}
         {rows.map((c) => {
           const href = c.ownedSpecimenId
             ? hashFor({ screen: 'specimen', id: c.ownedSpecimenId })
@@ -179,7 +191,7 @@ export function Counters() {
         {counters && rows.length === 0 ? (
           <p className="muted" style={{ padding: '32px 12px', textAlign: 'center' }}>
             {counters.vs && !counters.vs.inMeta
-              ? `${name(counters.vs.speciesId)} is outside PvPoke's ${league.title} meta ${s.leagueInfo?.metaSize ?? ''} Pokemon, so pick3 has no matchups for it yet.`
+              ? `PvPoke does not rank ${name(counters.vs.speciesId)} in ${league.title}, so pick3 has no moveset to simulate it with.`
               : 'Nothing here yet. Try another filter.'}
           </p>
         ) : null}

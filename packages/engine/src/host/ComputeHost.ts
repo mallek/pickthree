@@ -31,7 +31,12 @@ export interface ComputeHost {
     options: Partial<BuildOptions>,
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<Record<string, Verdict>>;
-  counters(specimens: Specimen[], options: Partial<CountersOptions>): Promise<CountersResult>;
+  /** Progress only arrives when an outsider is simulated (options.vs outside the meta group). */
+  counters(
+    specimens: Specimen[],
+    options: Partial<CountersOptions>,
+    onProgress?: (e: ProgressEvent) => void,
+  ): Promise<CountersResult>;
   scanList(options: Partial<ScanListOptions>): Promise<ScanList>;
   analyze(
     picks: [TeamPick, TeamPick, TeamPick],

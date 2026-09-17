@@ -111,3 +111,61 @@ describe.skipIf(!ready)('your meta wiring', () => {
     );
   });
 });
+
+describe.skipIf(!ready)('who beats an outsider, simulated on device', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
+  const sim = new PvPokeSimulator(loadPvPokeInNode(JSON.parse(fs.readFileSync(gmPath, 'utf8'))));
+  const outsider = pickOutsider(data);
+
+  it('simulates the top ranked species against the outsider and scores them like the matrix', () => {
+    const calls: [number, number][] = [];
+    const r = metaCounters(
+      data,
+      specimens,
+      index,
+      { limit: 20, vs: outsider },
+      { sim, league: data.league, onProgress: (d, t) => calls.push([d, t]) },
+    );
+    expect(r.vs).toEqual({ speciesId: outsider, inMeta: false, simulated: 300 });
+    expect(r.facing).toMatch(/simulated on this device/);
+    expect(r.entries.length).toBeGreaterThan(0);
+    expect(r.entries.length).toBeLessThanOrEqual(20);
+    r.entries.forEach((c, i) => {
+      expect(c.antiRank).toBe(i + 1);
+      expect(c.speciesId).not.toBe(outsider);
+      expect(c.antiMeta).toBeGreaterThan(0);
+      if (i > 0) {
+        expect(c.antiMeta).toBeLessThanOrEqual(r.entries[i - 1]!.antiMeta);
+      }
+      // Only the top 300 by overall rank were simulated.
+      expect(c.overallRank).not.toBeNull();
+      expect(c.overallRank!).toBeLessThanOrEqual(300);
+      // beats and losesTo still describe the real meta.
+      for (const m of c.beats) {
+        expect(data.matrix.opponents).toContain(m.opponent);
+      }
+    });
+    // Progress reached the end: 300 species times three scenarios.
+    expect(calls.at(-1)).toEqual([900, 900]);
+  });
+
+  it('still says no matchups when there is no simulator', () => {
+    const r = metaCounters(data, specimens, index, { limit: 20, vs: outsider });
+    expect(r.vs).toEqual({ speciesId: outsider, inMeta: false });
+    expect(r.entries).toEqual([]);
+  });
+
+  it('says so for a species with no ranking entry even with a simulator', () => {
+    const r = metaCounters(
+      data,
+      specimens,
+      index,
+      { limit: 20, vs: 'not-a-species' },
+      { sim, league: data.league },
+    );
+    expect(r.vs).toEqual({ speciesId: 'not-a-species', inMeta: false });
+    expect(r.entries).toEqual([]);
+  });
+});

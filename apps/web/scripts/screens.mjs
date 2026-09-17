@@ -177,6 +177,33 @@ if (!page.url().endsWith('#/meta')) {
   throw new Error(`back from the who-beats view landed at ${page.url()}`);
 }
 
+console.log('who beats an outsider (simulated on device)');
+const outsiderHref = await page.$$eval('.faced-row', (rows) => {
+  const r = rows.find((el) => el.textContent?.includes('outside the meta'));
+  return r ? r.getAttribute('href') : null;
+});
+if (!outsiderHref) {
+  throw new Error('the sample log has no most-faced outsider to simulate');
+}
+const tSim = Date.now();
+await page.goto(`${base}/${outsiderHref}`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.counter-row', { timeout: 120_000 });
+console.log(`  outsider simulated at ${Date.now() - tSim} ms`);
+const simNote = await page.$$eval('.page-head p.meta', (ps) =>
+  ps.map((p) => p.textContent).join(' '),
+);
+if (!simNote.includes('simulated on this device')) {
+  const diag = await page.evaluate(() => ({
+    url: location.href,
+    h2: document.querySelector('.page-head h2')?.textContent,
+    first: document.querySelector('.counter-row')?.textContent?.slice(0, 120),
+    rows: document.querySelectorAll('.counter-row').length,
+  }));
+  console.log(JSON.stringify(diag));
+  throw new Error(`outsider view did not report the simulation: ${simNote}`);
+}
+await shot('24-counters-vs-outsider', false);
+
 console.log('log a battle');
 await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.result-row');
