@@ -187,6 +187,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
                 name: displayName(sp.speciesId, env.index),
                 types: sp.types,
                 familyId: sp.familyId,
+                dex: sp.dex,
               },
             ]),
           ),

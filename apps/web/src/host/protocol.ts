@@ -3,6 +3,8 @@ export interface SpeciesLite {
   name: string;
   types: [PokemonType, PokemonType | 'none'];
   familyId: string | null;
+  /** Pokedex number. */
+  dex: number;
 }
 
 /** What the UI needs about the league in play, computed in the worker. */

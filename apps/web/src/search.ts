@@ -25,6 +25,8 @@
 export interface Searchable {
   name: string;
   types: readonly string[];
+  /** Pokedex number; a bare number or range in the query matches it, as in Pokemon GO. */
+  dex?: number;
   familyId?: string | null;
   cp?: number;
   hp?: number;
@@ -50,6 +52,7 @@ interface NumRange {
 
 type Term =
   | { kind: 'word'; value: string }
+  | { kind: 'dex'; range: NumRange }
   | { kind: 'cp'; range: NumRange }
   | { kind: 'hp'; range: NumRange }
   | { kind: 'stars'; value: 0 | 1 | 2 | 3 | 4 }
@@ -66,7 +69,7 @@ interface Alt {
  * non-matching (negated) alternative. */
 export type ParsedQuery = Alt[][];
 
-function parseNumRange(prefix: 'cp' | 'hp', body: string): NumRange | null {
+function parseNumRange(prefix: 'cp' | 'hp' | '', body: string): NumRange | null {
   if (!body.startsWith(prefix)) {
     return null;
   }
@@ -112,6 +115,11 @@ function parseTerm(body: string): Term {
   const hp = parseNumRange('hp', body);
   if (hp) {
     return { kind: 'hp', range: hp };
+  }
+  // A bare number or range is a Pokedex number, as in the game: "150", "1-151", "800-".
+  const dex = parseNumRange('', body);
+  if (dex) {
+    return { kind: 'dex', range: dex };
   }
   return { kind: 'word', value: body };
 }
@@ -187,6 +195,8 @@ function matchTerm(term: Term, record: Searchable, ctx: SearchContext): boolean 
       }
       return record.types.some((t) => t.toLowerCase().startsWith(term.value));
     }
+    case 'dex':
+      return record.dex !== undefined && inRange(record.dex, term.range);
     case 'cp':
       return record.cp !== undefined && inRange(record.cp, term.range);
     case 'hp':

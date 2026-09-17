@@ -200,3 +200,25 @@ describe('starsOf', () => {
     expect(starsOf(0)).toBe(0);
   });
 });
+
+describe('dex numbers', () => {
+  const mewtwo = { name: 'Mewtwo', types: ['psychic'], dex: 150 };
+  const noDex = { name: 'Mewtwo', types: ['psychic'] };
+  it('a bare number matches the Pokedex number exactly', () => {
+    expect(matchesQuery(parseQuery('150'), mewtwo)).toBe(true);
+    expect(matchesQuery(parseQuery('15'), mewtwo)).toBe(false);
+  });
+  it('ranges are inclusive and open ended forms work', () => {
+    expect(matchesQuery(parseQuery('1-151'), mewtwo)).toBe(true);
+    expect(matchesQuery(parseQuery('151-'), mewtwo)).toBe(false);
+    expect(matchesQuery(parseQuery('-150'), mewtwo)).toBe(true);
+    expect(matchesQuery(parseQuery('100-'), mewtwo)).toBe(true);
+  });
+  it('a record without a dex number never matches a number term', () => {
+    expect(matchesQuery(parseQuery('150'), noDex)).toBe(false);
+  });
+  it('cp and hp still win over the bare number form', () => {
+    expect(matchesQuery(parseQuery('cp150'), { ...mewtwo, cp: 150 })).toBe(true);
+    expect(matchesQuery(parseQuery('cp150'), { ...mewtwo, cp: 151 })).toBe(false);
+  });
+});

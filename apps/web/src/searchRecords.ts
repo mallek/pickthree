@@ -12,7 +12,12 @@ function typesOf(lite: SpeciesLite | undefined): PokemonType[] {
 /** A species-list row: just name, types and family, for boxes that search species rather than
  * owned Pokemon (Add a Pokemon, the species side of Build's search grid). */
 export function speciesRecord(id: string, name: string, lite: SpeciesLite | undefined): Searchable {
-  return { name, types: typesOf(lite), familyId: lite?.familyId ?? null };
+  return {
+    name,
+    types: typesOf(lite),
+    familyId: lite?.familyId ?? null,
+    ...(lite ? { dex: lite.dex } : {}),
+  };
 }
 
 /** A row for one owned Pokemon: its own name/types/family plus everything a search term can ask
@@ -35,6 +40,7 @@ export function specimenRecord(
     name,
     types: typesOf(lite),
     familyId: sp.familyId,
+    ...(lite ? { dex: lite.dex } : {}),
     cp: sp.cp,
     hp: sp.hp,
     ...(sp.ivs ? { ivTotal: sp.ivs.atk + sp.ivs.def + sp.ivs.sta } : {}),
