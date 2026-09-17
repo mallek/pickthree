@@ -11,7 +11,7 @@ import {
   useSpeciesSearch,
 } from '../components.tsx';
 import { matchesQuery, parseQuery } from '../search.ts';
-import { specimenRecord } from '../searchRecords.ts';
+import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { MovePicker } from '../components/MovePicker.tsx';
@@ -77,10 +77,17 @@ export function Build() {
           return false;
         }
         const stage = v?.build?.speciesId ?? sp.speciesId;
-        // A search term about the owned species or the stage it builds as, either one narrows.
-        const own = specimenRecord(sp, name(sp.speciesId), species(sp.speciesId), moves);
-        const staged = specimenRecord(sp, name(stage), species(stage), moves);
-        return matchesQuery(parsed, own) || matchesQuery(parsed, staged);
+        // One merged record (both names, union of both types), not an OR of two matches, so a
+        // negated term correctly excludes a specimen whose stage differs from its owned species.
+        const record = stagedSpecimenRecord(
+          sp,
+          name(sp.speciesId),
+          species(sp.speciesId),
+          name(stage),
+          species(stage),
+          moves,
+        );
+        return matchesQuery(parsed, record);
       })
       .sort((a, b) => {
         const oa = s.verdicts[a.id] ? ORDER[s.verdicts[a.id]!.label] : 9;

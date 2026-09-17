@@ -129,13 +129,19 @@ function parseAlt(piece: string): Alt | null {
 }
 
 /** Parses a search query into AND groups of OR alternatives. Empty or whitespace-only text
- * parses to no groups, which matches everything. */
+ * parses to no groups, which matches everything. Whitespace around `,` `|` `;` `:` and `&` is
+ * collapsed before tokenising, so "fire, water" and "fire ,water" both OR (not one AND'd against
+ * the other by the whitespace-means-AND rule). */
 export function parseQuery(text: string): ParsedQuery {
   const groups: Alt[][] = [];
-  for (const chunk of text.toLowerCase().split('&')) {
+  const normalized = text
+    .toLowerCase()
+    .replace(/\s*[,|;:]\s*/g, ',')
+    .replace(/\s*&\s*/g, '&');
+  for (const chunk of normalized.split('&')) {
     for (const word of chunk.trim().split(/\s+/).filter(Boolean)) {
       const alts = word
-        .split(/[,|;:]/)
+        .split(',')
         .map(parseAlt)
         .filter((a): a is Alt => a !== null);
       if (alts.length > 0) {
@@ -190,7 +196,8 @@ function matchTerm(term: Term, record: Searchable, ctx: SearchContext): boolean 
     case 'flag':
       return record[term.flag] === true;
     case 'move': {
-      if (!record.moves) {
+      // A bare "@" with nothing after it is not a wildcard: it matches nothing, not everything.
+      if (term.value === '' || !record.moves) {
         return false;
       }
       return record.moves.some(
@@ -199,6 +206,10 @@ function matchTerm(term: Term, record: Searchable, ctx: SearchContext): boolean 
       );
     }
     case 'family': {
+      // Same for a bare "+": no word to resolve to a family, so it matches nothing.
+      if (term.value === '') {
+        return false;
+      }
       const familyId = ctx.familyOf(term.value);
       if (familyId === null) {
         return false;

@@ -153,6 +153,38 @@ describe('parseQuery / matchesQuery', () => {
     expect(matchesQuery(parseQuery('FIRE'), charizard)).toBe(true);
     expect(matchesQuery(parseQuery('Char'), { name: 'CHARIZARD', types: ['fire'] })).toBe(true);
   });
+
+  it('OR delimited by a comma with surrounding whitespace still ORs, not ANDs', () => {
+    expect(matchesQuery(parseQuery('fire, water'), charizard)).toBe(true);
+    expect(matchesQuery(parseQuery('fire, water'), { name: 'Squirtle', types: ['water'] })).toBe(
+      true,
+    );
+    expect(matchesQuery(parseQuery('fire ,water'), charizard)).toBe(true);
+    expect(matchesQuery(parseQuery('fire ,water'), { name: 'Squirtle', types: ['water'] })).toBe(
+      true,
+    );
+    // Neither form ANDs "fire" against "water": a Grass type matches neither.
+    expect(matchesQuery(parseQuery('fire, water'), { name: 'Oddish', types: ['grass'] })).toBe(
+      false,
+    );
+  });
+
+  it('a bare @ with nothing after it matches nothing', () => {
+    expect(matchesQuery(parseQuery('@'), withMudShot)).toBe(false);
+  });
+
+  it('a bare + with nothing after it matches nothing', () => {
+    const marill = specimen({ name: 'Marill', familyId: 'azumarill' });
+    expect(matchesQuery(parseQuery('+'), marill, marillCtx)).toBe(false);
+  });
+
+  it('a merged staged/owned record: negation excludes on either name or either types', () => {
+    const swinubAsMamoswine: Searchable = { name: 'Mamoswine Swinub', types: ['ice', 'ground'] };
+    expect(matchesQuery(parseQuery('!mamoswine'), swinubAsMamoswine)).toBe(false);
+    expect(matchesQuery(parseQuery('!ground'), swinubAsMamoswine)).toBe(false);
+    expect(matchesQuery(parseQuery('swinub'), swinubAsMamoswine)).toBe(true);
+    expect(matchesQuery(parseQuery('ground'), swinubAsMamoswine)).toBe(true);
+  });
 });
 
 describe('starsOf', () => {

@@ -45,6 +45,30 @@ export function specimenRecord(
   };
 }
 
+/** A row for one owned Pokemon that builds as a different stage than it is scanned as (e.g. a
+ * Swinub that ranks as Mamoswine): one merged `Searchable`, not two matched with OR, so a
+ * negated term correctly excludes the specimen when either identity trips it (`!mamoswine`
+ * excludes an owned Swinub building as Mamoswine; `!fire` excludes it when only the stage is
+ * Fire). The name is both names together when they differ (a bare word matches either), and the
+ * types are the union of both species' types. CP/HP/flags/moves describe the owned Pokemon and
+ * do not change between the two identities. */
+export function stagedSpecimenRecord(
+  sp: Specimen,
+  ownName: string,
+  ownLite: SpeciesLite | undefined,
+  stageName: string,
+  stageLite: SpeciesLite | undefined,
+  moves: Record<string, { name: string; type: PokemonType }> | undefined,
+): Searchable {
+  const base = specimenRecord(sp, stageName, stageLite, moves);
+  if (stageName === ownName) {
+    return base;
+  }
+  const ownTypes = typesOf(ownLite);
+  const types = [...new Set([...base.types, ...ownTypes])];
+  return { ...base, name: `${stageName} ${ownName}`, types };
+}
+
 /** Resolves `+word` to the familyId of the first species (in `allSpecies` order) whose display
  * name contains the word. */
 export function familyContext(
