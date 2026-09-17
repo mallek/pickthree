@@ -154,14 +154,6 @@ export function NewSet() {
         cog={false}
       />
       <div className="scroll" style={{ gap: 18, paddingBottom: 96 }}>
-        {recent.length > 0 ? (
-          <div className="stack" style={{ gap: 6 }}>
-            <b>Recent teams</b>
-            {recent.map((t) => (
-              <TeamPick team={t} key={teamKey(t.species)} onPick={() => void go(t)} />
-            ))}
-          </div>
-        ) : null}
         {fromPick3.length > 0 ? (
           <div className="stack" style={{ gap: 6 }}>
             <b>From pick3</b>
@@ -234,6 +226,14 @@ export function NewSet() {
             ))}
           </div>
         </div>
+        {recent.length > 0 ? (
+          <div className="stack" style={{ gap: 6 }}>
+            <b>Recent teams</b>
+            {recent.map((t) => (
+              <TeamPick team={t} key={teamKey(t.species)} onPick={() => void go(t)} />
+            ))}
+          </div>
+        ) : null}
       </div>
       <div className="new-set-foot">
         <button type="button" className="btn" disabled={!ready} onClick={startPicked}>
