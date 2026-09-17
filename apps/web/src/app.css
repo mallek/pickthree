@@ -76,6 +76,17 @@ a {
      scroll container on iOS and move the fixed tab bar when installed. */
   overflow-x: clip;
 }
+/* On a wide screen the app is a phone-width column: tint the space around it and draw a
+   hairline pillar on each side. The fixed bars share the column width, so they sit inside. */
+@media (min-width: 600px) {
+  body {
+    background: var(--bg-outside);
+  }
+  .app {
+    background: var(--bg);
+    box-shadow: 0 0 0 1px var(--divider);
+  }
+}
 .screen {
   flex: 1;
   display: flex;
