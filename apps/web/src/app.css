@@ -10,12 +10,6 @@ body,
 #root {
   height: 100%;
 }
-html,
-body {
-  /* Rigid left to right: iOS Safari otherwise lets the page pan sideways by a few pixels. */
-  overflow-x: hidden;
-  max-width: 100%;
-}
 body {
   margin: 0;
   background: var(--bg);
@@ -72,6 +66,9 @@ a {
   display: flex;
   flex-direction: column;
   position: relative;
+  /* Rigid left to right: clip stray overflow here rather than on body, which would make body a
+     scroll container on iOS and move the fixed tab bar when installed. */
+  overflow-x: clip;
 }
 .screen {
   flex: 1;
@@ -1198,9 +1195,6 @@ textarea.paste {
   bottom: 0;
   margin: 0 auto;
   max-width: 560px;
-  /* border-box so the home-indicator inset is counted once; installed on iPhone the bar was
-     twice as tall as it should be, with the tabs pinned to its top. */
-  box-sizing: border-box;
   height: calc(64px + env(safe-area-inset-bottom, 0px));
   padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
   display: grid;
