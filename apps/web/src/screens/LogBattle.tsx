@@ -112,7 +112,7 @@ export function LogBattle() {
       <div className="scroll" style={{ gap: 14, paddingBottom: 140 }}>
         <div className="stack" style={{ gap: 8 }}>
           <span className="meta">{searching ? 'Matches' : 'Recent'}</span>
-          <div className="recent-row">
+          <div className={`recent-row${searching ? ' matches' : ''}`}>
             {gridIds.map((id) => (
               <button
                 type="button"

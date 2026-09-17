@@ -116,8 +116,15 @@ export function useSpeciesSearch(query: string, limit = 30): string[] {
     const types = (species(id)?.types ?? []).filter((t) => t !== 'none');
     return matchesSpeciesQuery(words, name(id), types);
   });
+  // Most likely first: league-legal species by meta rank, then legal but unranked by name,
+  // then everything else by name.
+  const ranks = s.leagueInfo?.metaRanks ?? {};
+  const rankOf = (id: string): number => ranks[id]?.overall ?? Number.MAX_SAFE_INTEGER;
   hits.sort(
-    (a, b) => Number(legal.has(b)) - Number(legal.has(a)) || name(a).localeCompare(name(b)),
+    (a, b) =>
+      Number(legal.has(b)) - Number(legal.has(a)) ||
+      rankOf(a) - rankOf(b) ||
+      name(a).localeCompare(name(b)),
   );
   return hits.slice(0, limit);
 }

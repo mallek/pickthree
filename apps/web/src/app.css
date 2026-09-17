@@ -2193,6 +2193,14 @@ input[type='range'] {
   grid-template-columns: repeat(5, 1fr);
   gap: 10px 4px;
 }
+/* Search matches: three rows tall, scrolls inside so the best match stays in view above the box. */
+.recent-row.matches {
+  max-height: 222px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  align-content: start;
+  padding-bottom: 2px;
+}
 .recent-token {
   display: flex;
   flex-direction: column;

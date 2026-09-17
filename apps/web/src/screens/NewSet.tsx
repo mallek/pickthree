@@ -180,7 +180,7 @@ export function NewSet() {
           {query.trim() ? (
             <div className="stack" style={{ gap: 8 }}>
               <span className="meta">Matches</span>
-              <div className="recent-row">
+              <div className="recent-row matches">
                 {picks.map((p) => (
                   <button
                     type="button"
