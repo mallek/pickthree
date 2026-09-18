@@ -8,7 +8,7 @@ import {
   type Structure,
   type VerdictLabel,
 } from '@pickthree/engine';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { initialOf, metaTags, shortName, speciesDisplayName } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
@@ -17,7 +17,7 @@ import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
 import { TypeChip, typeColor } from '@pickthree/ui';
 
-export { Term, TypeChip } from '@pickthree/ui';
+export { Chip, Seg, Term, TypeChip } from '@pickthree/ui';
 
 export function useSpecies(): (id: string) => SpeciesLite | undefined {
   const { data } = useAppState();
@@ -125,35 +125,6 @@ export function ShareButton({ onClick, label = 'Share' }: { onClick: () => void;
         <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
       </svg>
     </button>
-  );
-}
-
-/** Segmented control: real buttons, so Enter and Space activate them like a tap. */
-export function Seg<T extends string>({
-  value,
-  options,
-  onChange,
-  style,
-}: {
-  value: T;
-  options: { value: T; label: ReactNode }[];
-  onChange: (v: T) => void;
-  style?: CSSProperties;
-}) {
-  return (
-    <span className="seg" role="group" style={style}>
-      {options.map((o) => (
-        <button
-          type="button"
-          key={o.value}
-          className={o.value === value ? 'on' : ''}
-          aria-pressed={o.value === value}
-          onClick={() => onChange(o.value)}
-        >
-          {o.label}
-        </button>
-      ))}
-    </span>
   );
 }
 
@@ -501,22 +472,6 @@ export function VerdictChip({ label }: { label: VerdictLabel }) {
     'Needs rescan': 'v-rescan',
   };
   return <span className={`verdict ${cls[label]}`}>{label}</span>;
-}
-
-export function Chip({
-  on,
-  onClick,
-  children,
-}: {
-  on?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button type="button" className={`chip${on ? ' on' : ''}`} onClick={onClick}>
-      {children}
-    </button>
-  );
 }
 
 export const GLOSSARY: Record<string, string> = {

@@ -10,14 +10,24 @@
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
-import { typeColor } from '@pickthree/ui';
-import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { Chevron, typeColor } from '@pickthree/ui';
+import { useState, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
 import type { ThemeChoice } from './theme.js';
 
-export { LEAGUE_COLORS, LeagueShield, LeagueSwitcher, Term, TypeChip, TypeChips, typeColor } from '@pickthree/ui';
+export {
+  Chevron,
+  LEAGUE_COLORS,
+  LeagueShield,
+  LeagueSwitcher,
+  Select,
+  Term,
+  TypeChip,
+  TypeChips,
+  typeColor,
+} from '@pickthree/ui';
 
 /** The coloured disc behind a species' sprite, split diagonally between its two types (or one
  * type twice, for a single-typed species). The sprite art overflows the disc by 6px on purpose,
@@ -360,32 +370,6 @@ export function SitePill({ href, name }: { href: string; name: string }) {
   );
 }
 
-/** The one arrow-like mark in this project: nothing here uses an arrow or chevron character. */
-const CHEVRON_TURN: Record<'right' | 'left' | 'down', CSSProperties | undefined> = {
-  right: undefined,
-  left: { transform: 'scaleX(-1)' },
-  down: { transform: 'rotate(90deg)' },
-};
-
-export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' | 'down' }) {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={CHEVRON_TURN[dir]}
-    >
-      <path d="M9 6l6 6-6 6" />
-    </svg>
-  );
-}
-
 /** The appearance control's glyph. This project's rendered text is strict 7-bit ASCII, so the
  * design's moon/sun characters are drawn, not spelled, in the same stroke style as Chevron.
  * System gets a half-filled circle (the familiar contrast/"auto" symbol) rather than a monitor
@@ -444,50 +428,6 @@ export function ThemeIcon({ choice }: { choice: ThemeChoice }) {
       <circle cx="12" cy="12" r="9" />
       <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" />
     </svg>
-  );
-}
-
-interface ChoiceOption<T extends string> {
-  value: T;
-  label: string;
-}
-
-interface ChoiceProps<T extends string> {
-  options: ChoiceOption<T>[];
-  value: T;
-  onChange: (v: T) => void;
-  label: string;
-}
-
-/** A labelled native select, the filter control for the window and the rank band. The label
- * is visible, not just aria, so a reader knows what "This season" is a choice of before opening
- * it. The chevron is drawn here rather than the platform's own so both fields match on every
- * browser. */
-export function Select<T extends string>({ options, value, onChange, label }: ChoiceProps<T>) {
-  const id = useId();
-  return (
-    <label className="field" htmlFor={id}>
-      <span className="field-l">{label}</span>
-      <span className="select-wrap">
-        <select
-          id={id}
-          value={value}
-          onChange={(e) => {
-            const next = options.find((o) => o.value === e.target.value);
-            if (next) {
-              onChange(next.value);
-            }
-          }}
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <Chevron dir="down" />
-      </span>
-    </label>
   );
 }
 

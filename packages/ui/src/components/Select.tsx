@@ -1,0 +1,47 @@
+import { useId } from 'react';
+import { Chevron } from './Chevron.tsx';
+
+interface ChoiceOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+/** A labelled native select. The label is visible, not just aria, so a reader knows what the
+ * field is a choice of before opening it. */
+export function Select<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: ChoiceOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+  label: string;
+}) {
+  const id = useId();
+  return (
+    <label className="field" htmlFor={id}>
+      <span className="field-l">{label}</span>
+      <span className="select-wrap">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => {
+            const next = options.find((o) => o.value === e.target.value);
+            if (next) {
+              onChange(next.value);
+            }
+          }}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <Chevron dir="down" />
+      </span>
+    </label>
+  );
+}
