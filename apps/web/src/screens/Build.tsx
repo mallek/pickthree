@@ -52,9 +52,8 @@ export function Build() {
   const species = useSpecies();
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
-  const [focused, setFocused] = useState(false);
-  /** Set by a pick: the grid stays hidden until the search is typed in or tapped again. */
-  const [picked, setPicked] = useState(false);
+  /** The empty slot being filled: the search and its grid show only while one is open. */
+  const [target, setTarget] = useState<number | null>(null);
   /** Which slot has its move sheet open. */
   const [movesSlot, setMovesSlot] = useState<number | null>(null);
   /** Move pools by league, species, scanned moves and fast move, fetched once each. */
@@ -85,8 +84,6 @@ export function Build() {
   const parsed = useMemo(() => parseQuery(query), [query]);
   const hits = useSpeciesSearch(query, 30);
   const searching = query.trim().length > 0;
-  /** Suggestions or matches show while the search is in use; a pick folds them away. */
-  const showGrid = searching || (focused && !picked);
 
   /** The stage a specimen would be built to, which is the species it plays as. */
   const stageOf = (sp: Specimen): string => s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId;
@@ -203,23 +200,25 @@ export function Build() {
   }, [s.sets, fallback, ranks, s.collection, s.verdicts]);
   const grid = searching ? picksGrid : suggested;
 
-  const fillFirst = (pick: TeamPick): void => {
-    const i = s.picks.findIndex((p) => p === null);
-    if (i === -1) {
+  /** Open the search for one empty slot. */
+  const openSlot = (i: number): void => {
+    setQuery('');
+    setTarget(i);
+  };
+  /** The pick lands in the slot that opened the search, and the search folds away. */
+  const fill = (pick: TeamPick): void => {
+    if (target === null) {
       return;
     }
-    setPick(i, pick);
+    setPick(target, pick);
     setQuery('');
-    // The grid folds away, leaving the cards. On a desktop the cursor stays in the search for
-    // the next one; on a touch screen the keyboard drops so the cards are in view.
-    const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
-    if (fine) {
-      searchRef.current?.focus();
-    } else {
-      searchRef.current?.blur();
-    }
-    setPicked(true);
+    setTarget(null);
   };
+  useEffect(() => {
+    if (target !== null) {
+      searchRef.current?.focus();
+    }
+  }, [target]);
 
   const specimenOf = (p: TeamPick | null): Specimen | null =>
     p?.kind === 'specimen' ? (s.collection?.specimens.find((x) => x.id === p.id) ?? null) : null;
@@ -409,28 +408,29 @@ export function Build() {
   return (
     <div className="screen">
       <Header
-        title="Build a Team"
-        sub="Same breakdown your recommended teams get, for three you choose."
+        title="Build Your Team"
         onBack={() => navigate({ screen: 'teams' })}
         backLabel="Teams"
       />
       <div className="scroll" style={{ gap: 16 }}>
         <LeagueSwitcher compact />
-        <input
-          ref={searchRef}
-          className="search"
-          placeholder="Search any Pokemon"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => {
-            setFocused(true);
-            setPicked(false);
-          }}
-          onBlur={() => setFocused(false)}
-          inputMode="search"
-        />
-        {showGrid ? (
+        {target !== null ? (
           <div className="stack" style={{ gap: 8 }}>
+            <input
+              ref={searchRef}
+              className="search"
+              placeholder={`Search any Pokemon for ${SLOT_LABELS[target]}`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              // Tapping away closes the search; grid taps keep focus so they still land.
+              onBlur={() => setTarget(null)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setTarget(null);
+                }
+              }}
+              inputMode="search"
+            />
             <span className="meta">{searching ? 'Matches' : 'Suggested'}</span>
             <div className="recent-row matches tall">
               {grid.map((p) => (
@@ -438,9 +438,8 @@ export function Build() {
                   type="button"
                   className="recent-token"
                   key={p.key}
-                  // Keep the search focused through the tap so the grid is still there to click.
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => fillFirst(p.pick)}
+                  onClick={() => fill(p.pick)}
                   aria-label={name(p.speciesId)}
                 >
                   <PokemonToken speciesId={p.speciesId} size={36} />
@@ -468,7 +467,7 @@ export function Build() {
         <div className="pick-cards">
           {s.picks.map((p, i) => {
             const info = pickInfo(p);
-            const role = s.orderMode === 'best' ? `Pokemon ${i + 1}` : SLOT_LABELS[i];
+            const role = SLOT_LABELS[i];
             const dragStyle: CSSProperties | undefined =
               drag && drag.from === i
                 ? { transform: `translateY(${drag.dy}px)`, zIndex: 3, position: 'relative' }
@@ -477,9 +476,18 @@ export function Build() {
             if (!p || !info) {
               return (
                 <div
-                  className={`pick-card empty${overClass}`}
+                  className={`pick-card empty${overClass}${target === i ? ' open' : ''}`}
                   key={SLOT_LABELS[i]}
+                  role="button"
+                  tabIndex={0}
                   aria-label={`${role}, empty`}
+                  onClick={() => openSlot(i)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openSlot(i);
+                    }
+                  }}
                   ref={(el) => {
                     cardRefs.current[i] = el;
                   }}
@@ -489,7 +497,7 @@ export function Build() {
                   </span>
                   <span className="pick-card-body">
                     <span className="pick-role">{role}</span>
-                    <span className="small muted">Empty. Tap the search to add one.</span>
+                    <span className="small muted">Tap to pick a Pokemon.</span>
                   </span>
                 </div>
               );
@@ -522,25 +530,19 @@ export function Build() {
                       <b className="pick-name">{info.title}</b>
                       <TypeChips types={types} small />
                     </span>
-                    <span className="pick-kv">
-                      <span className="pick-k">Moves</span>
-                      {moveChips(p, poolFor(p))}
-                    </span>
-                    <span className="pick-kv">
-                      <span className="pick-k">{sp ? 'Yours' : 'IVs'}</span>
-                      <span className="pick-v">
-                        {sp ? (
-                          <>
-                            <b>{ivLine(sp.ivs)}</b>
-                            {build ? ` · top ${topPct(build.ivRank)}%` : ''} · Lv {sp.level.max}
-                            {build && build.stageOffset > 0 ? (
-                              <span className="muted"> · from your {name(sp.speciesId)}</span>
-                            ) : null}
-                          </>
-                        ) : (
-                          <span className="muted">Not yours; top-10% spread assumed</span>
-                        )}
-                      </span>
+                    {moveChips(p, poolFor(p))}
+                    <span className="pick-v">
+                      {sp ? (
+                        <>
+                          <b>{ivLine(sp.ivs)}</b>
+                          {build ? ` · top ${topPct(build.ivRank)}%` : ''} · Lv {sp.level.max}
+                          {build && build.stageOffset > 0 ? (
+                            <span className="muted"> · from your {name(sp.speciesId)}</span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="muted">Not yours; top-10% IVs assumed</span>
+                      )}
                     </span>
                   </span>
                 </button>

@@ -1425,6 +1425,8 @@ textarea.paste {
   overflow: hidden;
 }
 .pick-card.filled {
+  /* One left column width for every card, so the three line up whatever the role pill says. */
+  grid-template-columns: 100px 1fr;
   /* A wash of the first type's colour from the left, fading into the card. */
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--c1) 18%, transparent), transparent 46%),
@@ -1434,9 +1436,20 @@ textarea.paste {
 .pick-card.empty {
   background: transparent;
   border: 1px dashed var(--divider);
-  cursor: default;
+  cursor: pointer;
   padding-right: 12px;
   min-height: 72px;
+}
+.pick-card.empty.open {
+  border-color: var(--accent);
+  border-style: solid;
+}
+.pick-card.empty:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.pick-v {
+  font-size: 13px;
 }
 .pick-token {
   display: flex;
@@ -1469,19 +1482,6 @@ textarea.paste {
 .pick-name {
   font-size: 17px;
   font-weight: 600;
-}
-.pick-kv {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  gap: 8px;
-  align-items: center;
-  font-size: 13px;
-}
-.pick-k {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--faint);
 }
 .pick-v b {
   font-weight: 600;

@@ -263,7 +263,7 @@ await shot('22-new-set', false);
 
 console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.search');
+await page.waitForSelector('.pick-card');
 // Earlier steps may have left picks in Build; start from empty slots.
 while (await page.$('.pick-x')) {
   await page.click('.pick-x');
@@ -277,6 +277,11 @@ const buildQueries = [
 for (let i = 0; i < buildQueries.length; i++) {
   let picked = false;
   for (const q of buildQueries[i]) {
+    // The search opens from the empty slot it will fill.
+    if (!(await page.$('.search'))) {
+      await page.click('.pick-card.empty');
+      await page.waitForSelector('.search');
+    }
     await page.click('.search', { clickCount: 3 });
     await page.type('.search', q);
     try {
@@ -348,7 +353,8 @@ console.log('build with a species PvPoke does not rank');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-x');
 await page.click('.pick-x');
-await page.click('.search', { clickCount: 3 });
+await page.click('.pick-card.empty');
+await page.waitForSelector('.search');
 await page.type('.search', 'magikarp');
 await page.waitForSelector('.recent-token', { timeout: 15_000 });
 await page.click('.recent-token');

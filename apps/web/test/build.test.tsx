@@ -20,11 +20,12 @@ describe('Build a team', () => {
         <Build />
       </AppProvider>,
     );
+    // The search lives behind the empty slot: tap Lead to open it, aimed at that slot.
     await waitFor(() =>
-      expect(screen.getByPlaceholderText('Search any Pokemon')).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument(),
     );
-
-    fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Lead, empty' }));
+    fireEvent.change(await screen.findByPlaceholderText('Search any Pokemon for Lead'), {
       target: { value: 'tink' },
     });
     await waitFor(() =>
@@ -36,6 +37,9 @@ describe('Build a team', () => {
       expect(screen.getByRole('button', { name: 'Remove Tinkaton' })).toBeInTheDocument(),
     );
     expect(screen.getByRole('button', { name: 'Tinkaton moves' })).toBeInTheDocument();
+    // The search folds away with the pick; the next empty slot is Safe Switch.
+    expect(screen.queryByPlaceholderText(/Search any Pokemon/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Safe Switch, empty' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Tinkaton' }));
     await waitFor(() =>
@@ -49,11 +53,12 @@ describe('Build a team', () => {
         <Build />
       </AppProvider>,
     );
+    // The search lives behind the empty slot: tap Lead to open it, aimed at that slot.
     await waitFor(() =>
-      expect(screen.getByPlaceholderText('Search any Pokemon')).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument(),
     );
-
-    fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Lead, empty' }));
+    fireEvent.change(await screen.findByPlaceholderText('Search any Pokemon for Lead'), {
       target: { value: 'tink' },
     });
     await waitFor(() =>
