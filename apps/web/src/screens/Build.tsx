@@ -20,13 +20,12 @@ import {
   Header,
   PokemonToken,
   Progress,
-  TypeChips,
   useName,
   useShortName,
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
-import { ivLine, topPct, typeColor } from '../format.ts';
+import { ivLine, topPct, typeColor, typeLabel } from '../format.ts';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -301,11 +300,11 @@ export function Build() {
     }
     const ids = p.moves ?? pool.recommended;
     const all = [...pool.fast, ...pool.charged];
-    const chip = (id: string) => {
+    const chip = (id: string, kind: 'fast' | 'charged') => {
       const m = all.find((x) => x.moveId === id);
       return (
         <span
-          className="move-chip"
+          className={`move-chip ${kind}`}
           key={id}
           style={
             m
@@ -317,10 +316,12 @@ export function Build() {
         </span>
       );
     };
+    // Fast move outlined, a thin divider, then the charged moves filled: the shape says which is which.
     return (
       <span className="move-chips">
-        {chip(ids.fast)}
-        {ids.charged.map(chip)}
+        {chip(ids.fast, 'fast')}
+        <span className="move-sep" aria-hidden="true" />
+        <span className="move-group">{ids.charged.map((id) => chip(id, 'charged'))}</span>
         {p.moves ? <span className="tag">changed</span> : null}
       </span>
     );
@@ -528,7 +529,15 @@ export function Build() {
                   <span className="pick-card-body">
                     <span className="pick-head">
                       <b className="pick-name">{info.title}</b>
-                      <TypeChips types={types} small />
+                      <span className="pick-types">
+                        {types
+                          .filter((t) => t !== 'none')
+                          .map((t) => (
+                            <span key={t} style={{ color: `var(--type-${t}-ink)` }}>
+                              {typeLabel(t)}
+                            </span>
+                          ))}
+                      </span>
                     </span>
                     {moveChips(p, poolFor(p))}
                     <span className="pick-v">

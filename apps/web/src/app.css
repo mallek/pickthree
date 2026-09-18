@@ -1474,14 +1474,22 @@ textarea.paste {
   min-width: 0;
 }
 .pick-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: block;
+  line-height: 1.25;
 }
 .pick-name {
   font-size: 17px;
   font-weight: 600;
+}
+/* Types as small coloured words after the name, never a chip that could pass for a move. */
+.pick-types {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  vertical-align: 2px;
 }
 .pick-v b {
   font-weight: 600;
@@ -1533,8 +1541,22 @@ textarea.paste {
 .move-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
+}
+.move-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.move-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--divider);
+}
+.move-chip.fast {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--faint)) 60%, transparent);
 }
 .move-chip {
   padding: 1px 7px;
