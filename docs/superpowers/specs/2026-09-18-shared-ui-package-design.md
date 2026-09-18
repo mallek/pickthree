@@ -273,7 +273,9 @@ a pinned devDependency and a threshold is a reasonable follow-up and is out of s
 
 **Expected changes that are not bugs.** When meta adopts pick3's values, `--muted`, `--text` and
 `--surface2` shift by a hair, and the light and dark warn both change. The meta screenshots will
-differ. That is the drift being corrected.
+differ. That is the drift being corrected. **Travis approved meta's visual change up front and
+reviews it at deploy, not mid-migration**, so steps 3 through 6 need no sign-off gate for the
+meta screenshots moving. A pick3 screenshot moving is still a regression until proven otherwise.
 
 **One guard is in scope.** The token renames in step 3 are a find-and-replace with no type
 safety behind them, and an undefined CSS custom property fails silently at runtime. A small node
