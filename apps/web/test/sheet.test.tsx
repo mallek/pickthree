@@ -44,6 +44,22 @@ describe('Settings sheet, Your meta section', () => {
     expect(screen.getByText('Import log')).toBeInTheDocument();
   });
 
+  it('links to the community meta site with a one-line explanation', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+        <Sheet />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(latest?.state.boot).toBe('ready'));
+    expect(
+      screen.getByRole('link', { name: 'Open meta.pick3.gg' }),
+    ).toHaveAttribute('href', 'https://meta.pick3.gg');
+    expect(
+      screen.getByText(/most-faced Pokémon and teams, built from shared battle logs/),
+    ).toBeInTheDocument();
+  });
+
   it('switches the theme with real buttons that report their state', async () => {
     render(
       <AppProvider host={fakeHost()}>

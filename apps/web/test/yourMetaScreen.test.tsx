@@ -77,7 +77,7 @@ describe('Your meta screen', () => {
     ).toHaveAttribute('href', 'https://meta.pick3.gg');
   });
 
-  it('carries the meta.pick3.gg pill in its page head, next to the cog', async () => {
+  it('carries the meta.pick3.gg icon button in its page head, next to the cog', async () => {
     render(
       <AppProvider host={fakeHost()}>
         <YourMeta />

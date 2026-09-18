@@ -4,6 +4,7 @@ import {
   Chip,
   HeadCog,
   HundoTag,
+  MetaButton,
   MetaTags,
   PokemonToken,
   Progress,
@@ -232,6 +233,7 @@ export function Collection() {
             >
               + Add
             </button>
+            <MetaButton />
             <HeadCog />
           </span>
         </div>

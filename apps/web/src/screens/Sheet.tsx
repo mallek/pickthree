@@ -258,6 +258,17 @@ export function Sheet() {
               ]}
               style={{ flexWrap: 'wrap' }}
             />
+            <a
+              className="btn btn-secondary"
+              href="https://meta.pick3.gg"
+              style={{ textAlign: 'center' }}
+            >
+              Open meta.pick3.gg
+            </a>
+            <span className="meta">
+              See the community's most-faced Pokémon and teams, built from shared battle logs like
+              yours.
+            </span>
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Appearance</span>
