@@ -26,7 +26,7 @@ const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const
 
 export function TeamDetail({ id }: { id: string }) {
   const s = useAppState();
-  const { navigate, startSet, notify } = useActions();
+  const { navigate, startSet, notify, setPick } = useActions();
   const name = useName();
   const [open, setOpen] = useState(false);
   const [allOpps, setAllOpps] = useState(false);
@@ -74,6 +74,24 @@ export function TeamDetail({ id }: { id: string }) {
   const hypothetical = custom ? (s.analysis?.hypothetical ?? []) : [];
   const chosenMoves = custom ? (s.analysis?.chosenMoves ?? []) : [];
   const unranked = custom ? (s.analysis?.unranked ?? []) : [];
+
+  /**
+   * Back is the edit path: Build with these three loaded, ready to swap one and analyze again.
+   * A hand-built team is already Build's picks; a recommended one is loaded from its builds.
+   */
+  const editInBuild = (): void => {
+    if (!custom) {
+      team.slots.forEach((slot, i) => {
+        const b = slot.candidate.build;
+        if (s.collection?.specimens.some((x) => x.id === b.specimenId)) {
+          setPick(i, { kind: 'specimen', id: b.specimenId, asSpeciesId: b.speciesId });
+        } else {
+          setPick(i, { kind: 'species', id: b.speciesId });
+        }
+      });
+    }
+    navigate({ screen: 'build' });
+  };
 
   /** A link to this team, species and moves only, for the share sheet or the clipboard. */
   const share = async (): Promise<void> => {
@@ -128,8 +146,8 @@ export function TeamDetail({ id }: { id: string }) {
     <div className="screen">
       <Header
         title="Team Analysis"
-        onBack={() => navigate(backRoute)}
-        backLabel={backLabel}
+        onBack={editInBuild}
+        backLabel="Build"
         action={<ShareButton onClick={() => void share()} label="Share this team" />}
       />
       <div className="scroll" style={{ gap: 24 }}>

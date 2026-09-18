@@ -137,6 +137,18 @@ await page.click('.assump-head');
 await new Promise((r) => setTimeout(r, 300));
 await shot('03-team-detail');
 
+console.log('edit in build');
+// Back from a recommended team loads it into Build for edits.
+await page.click('.hdr .back');
+await page.waitForFunction(
+  () =>
+    document.location.hash === '#/build' &&
+    document.querySelectorAll('.opp-slot.filled').length === 3,
+  { timeout: 30_000 },
+);
+await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.take-to-battle', { timeout: 60_000 });
+
 console.log('take to battle');
 // The sample log has an open set with another team, so the confirm dialog appears.
 page.once('dialog', (d) => void d.accept());
@@ -252,6 +264,11 @@ await shot('22-new-set', false);
 console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.search');
+// Earlier steps may have left picks in Build; start from empty slots.
+while (await page.$('.slot-x')) {
+  await page.click('.slot-x');
+  await new Promise((r) => setTimeout(r, 100));
+}
 const buildQueries = [
   ['swampert', 'quagsire'],
   ['azu', 'azumarill'],
