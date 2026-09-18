@@ -4,7 +4,7 @@ import { App } from '../src/App.js';
 import { BUCKET_MS } from '../src/api.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
-import { count, pct, plural } from '../src/format.js';
+import { battles as battlesText, count, pct } from '../src/format.js';
 import { RANKED_SHARE, SMALL_MIN } from '../src/rank.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
@@ -50,11 +50,14 @@ describe('Overview, with almost no data', () => {
     expect(within(section).getByText('1 more was faced once.')).toBeInTheDocument();
     expect(within(section).queryByText(/%/)).toBeNull();
     // Fix round 3 ("FIX 5"): "at least twice" used to be typed out; it now reads SMALL_MIN so
-    // the copy cannot drift from the actual cut this section applies.
+    // the copy cannot drift from the actual cut this section applies. Fix round 4: "2 times" (the
+    // literal interpolation) read clumsily, so the sentence itself was reworded; this still reads
+    // the constant rather than a typed-out number, so a future change to SMALL_MIN cannot leave
+    // the copy behind.
     expect(
       within(section).getByText(
         new RegExp(
-          `Every Pokemon faced at least ${count(SMALL_MIN)} ${plural(SMALL_MIN, 'time', 'times')}`,
+          `Faced ${count(SMALL_MIN)} or more times in the ${battlesText(meta.battles)} shared so far`,
         ),
       ),
     ).toBeInTheDocument();
@@ -72,6 +75,10 @@ describe('Overview, with almost no data', () => {
   it('says so when nothing at all has been shared', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByText('No battles shared in this window yet.')).toBeInTheDocument();
+    // Fix round 4: the "faced N or more times" rule used to print unconditionally, right above
+    // this line, describing a set ("these 0 battles") that the very next sentence says is empty.
+    // With nothing measured, the rule has nothing to say and must not render at all.
+    expect(screen.queryByText(/or more times/)).toBeNull();
   });
 });
 
