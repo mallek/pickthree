@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleRow } from '../src/battles.js';
-import { MOVESET_MIN, bandRows, movesetsBySpecies, summarize } from '../src/meta.js';
+import { MOVESET_MIN, bandRows, isoWeek, movesetsBySpecies, speciesDetail, summarize } from '../src/meta.js';
 
 const NOW = new Date('2026-09-18T12:00:00.000Z');
 
@@ -141,5 +141,97 @@ describe('movesetsBySpecies', () => {
     const sets = movesetsBySpecies(rows).get('azumarill')!;
     expect(sets[0]).toEqual({ fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], battles: 2 });
     expect(sets[1]!.battles).toBe(1);
+  });
+});
+
+function detail(rows: BattleRow[], over: Partial<Parameters<typeof speciesDetail>[0]> = {}) {
+  return speciesDetail({
+    league: 'great',
+    speciesId: 'medicham',
+    ...WINDOW,
+    band: 'all',
+    rows,
+    now: NOW,
+    ...over,
+  });
+}
+
+describe('isoWeek', () => {
+  it('labels a date with its ISO week', () => {
+    expect(isoWeek('2026-09-17T10:00:00.000Z')).toBe('2026-W38');
+    expect(isoWeek('2026-01-01T00:00:00.000Z')).toBe('2026-W01');
+  });
+});
+
+describe('speciesDetail', () => {
+  it('reports the record facing it and the record running it', () => {
+    const d = detail([
+      row(),
+      row({ result: 'loss' }),
+      row({ team: ['medicham', 'lanturn', 'registeel'], opponents: ['azumarill'] }),
+    ]);
+    expect(d.sightings).toBe(2);
+    expect(d.wins).toBe(1);
+    expect(d.losses).toBe(1);
+    expect(d.runs).toBe(1);
+    expect(d.runWins).toBe(1);
+  });
+
+  it('buckets by ISO week, oldest first, with the window total beside it', () => {
+    const d = detail([
+      row({ at: '2026-09-10T10:00:00.000Z' }),
+      row({ at: '2026-09-17T10:00:00.000Z', opponents: ['lanturn'] }),
+      row({ at: '2026-09-17T11:00:00.000Z' }),
+    ]);
+    expect(d.weekly).toEqual([
+      { week: '2026-W37', battles: 1, sightings: 1 },
+      { week: '2026-W38', battles: 2, sightings: 1 },
+    ]);
+  });
+
+  it('breaks the record down by band whatever the filter is', () => {
+    const d = detail([row({ band: 'ace' }), row({ band: 'legend', result: 'loss' })], {
+      band: 'ace',
+    });
+    expect(d.sightings).toBe(1);
+    expect(d.bands).toEqual([
+      { band: 'below', sightings: 0, wins: 0, losses: 0 },
+      { band: 'ace', sightings: 1, wins: 1, losses: 0 },
+      { band: 'veteran', sightings: 0, wins: 0, losses: 0 },
+      { band: 'expert', sightings: 0, wins: 0, losses: 0 },
+      { band: 'legend', sightings: 1, wins: 0, losses: 1 },
+      { band: 'unknown', sightings: 0, wins: 0, losses: 0 },
+    ]);
+  });
+
+  it('counts who else was seen in the same battles, never itself', () => {
+    const d = detail([
+      row({ opponents: ['medicham', 'lanturn'] }),
+      row({ opponents: ['medicham', 'lanturn'] }),
+      row({ opponents: ['medicham', 'registeel'] }),
+    ]);
+    expect(d.alongside).toEqual([
+      { speciesId: 'lanturn', battles: 2 },
+      { speciesId: 'registeel', battles: 1 },
+    ]);
+  });
+
+  it('reports the sets reporters ran it with, most common first', () => {
+    const moves: BattleRow['moves'] = [
+      { fast: 'COUNTER', charged: ['ICE_PUNCH', 'PSYCHIC'] },
+      null,
+      null,
+    ];
+    const d = detail([row({ team: ['medicham', 'a', 'b'], moves })]);
+    expect(d.movesets).toEqual([
+      { fast: 'COUNTER', charged: ['ICE_PUNCH', 'PSYCHIC'], battles: 1 },
+    ]);
+  });
+
+  it('answers with empty series for a species nobody saw', () => {
+    const d = detail([row()], { speciesId: 'nosepass' });
+    expect(d.sightings).toBe(0);
+    expect(d.alongside).toEqual([]);
+    expect(d.movesets).toEqual([]);
   });
 });

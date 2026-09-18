@@ -212,3 +212,126 @@ export function summarize(opts: {
     generatedAt: now.toISOString(),
   };
 }
+
+export interface SpeciesDetailV1 {
+  league: string;
+  speciesId: string;
+  since: string;
+  until: string;
+  band: string;
+  sightings: number;
+  wins: number;
+  losses: number;
+  runs: number;
+  runWins: number;
+  runLosses: number;
+  /** Oldest week first. `battles` is the window total that week, `sightings` this species'. */
+  weekly: { week: string; battles: number; sightings: number }[];
+  /** Every band, whatever the filter, so the reader sees what they filtered away. */
+  bands: { band: string; sightings: number; wins: number; losses: number }[];
+  /** Other opponents seen in the same battles, most common first, at most 8. */
+  alongside: { speciesId: string; battles: number }[];
+  /** Sets reporters ran it with when it was on their own team. */
+  movesets: MovesetStats[];
+  generatedAt: string;
+}
+
+/** The most other opponents one species page lists. */
+const ALONGSIDE_LIMIT = 8;
+
+/** ISO week label, e.g. "2026-W38". */
+export function isoWeek(at: string): string {
+  const d = new Date(at);
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  // ISO weeks run Monday to Sunday and belong to the year holding their Thursday.
+  const day = t.getUTCDay() === 0 ? 7 : t.getUTCDay();
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = Date.UTC(t.getUTCFullYear(), 0, 1);
+  const week = Math.ceil(((t.getTime() - yearStart) / 86_400_000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+export function speciesDetail(opts: {
+  league: string;
+  speciesId: string;
+  since: string;
+  until: string;
+  band: string;
+  /** Every row in the window, all bands. */
+  rows: readonly BattleRow[];
+  now: Date;
+}): SpeciesDetailV1 {
+  const { league, speciesId, since, until, band, rows, now } = opts;
+  const counted = bandRows(rows, band).filter((r) => !r.tanked);
+  const mine = speciesStats(counted).get(speciesId) ?? {
+    speciesId,
+    sightings: 0,
+    wins: 0,
+    losses: 0,
+    runs: 0,
+    runWins: 0,
+    runLosses: 0,
+  };
+
+  const weeks = new Map<string, { week: string; battles: number; sightings: number }>();
+  for (const r of counted) {
+    const week = isoWeek(r.at);
+    const w = weeks.get(week) ?? { week, battles: 0, sightings: 0 };
+    w.battles += 1;
+    if (r.opponents.includes(speciesId)) {
+      w.sightings += 1;
+    }
+    weeks.set(week, w);
+  }
+
+  const everyBand = [...BANDS, 'unknown'];
+  // Not `as const`: these tallies get mutated below, so the map's values must stay writable.
+  const byBand = new Map(
+    everyBand.map(
+      (b): [string, { band: string; sightings: number; wins: number; losses: number }] => [
+        b,
+        { band: b, sightings: 0, wins: 0, losses: 0 },
+      ],
+    ),
+  );
+  const alongside = new Map<string, number>();
+  for (const r of rows) {
+    if (r.tanked || !r.opponents.includes(speciesId)) {
+      continue;
+    }
+    const slot = byBand.get(r.band ?? 'unknown');
+    if (slot) {
+      slot.sightings += 1;
+      slot.wins += r.result === 'win' ? 1 : 0;
+      slot.losses += r.result === 'loss' ? 1 : 0;
+    }
+  }
+  for (const r of counted) {
+    if (!r.opponents.includes(speciesId)) {
+      continue;
+    }
+    for (const other of new Set(r.opponents)) {
+      if (other !== speciesId) {
+        alongside.set(other, (alongside.get(other) ?? 0) + 1);
+      }
+    }
+  }
+
+  return {
+    league,
+    // `mine.speciesId` is always this same value: speciesStats keys its map by speciesId, so a
+    // hit carries it back unchanged, and the fallback above sets it from this same parameter.
+    since,
+    until,
+    band,
+    ...mine,
+    weekly: [...weeks.values()].sort((a, b) => a.week.localeCompare(b.week)),
+    bands: everyBand.map((b) => byBand.get(b)!),
+    alongside: [...alongside.entries()]
+      .map(([id, battles]) => ({ speciesId: id, battles }))
+      .sort((a, b) => b.battles - a.battles || a.speciesId.localeCompare(b.speciesId))
+      .slice(0, ALONGSIDE_LIMIT),
+    movesets: movesetsBySpecies(counted).get(speciesId) ?? [],
+    generatedAt: now.toISOString(),
+  };
+}
