@@ -13,7 +13,7 @@ import type { ReactNode } from 'react';
 import type { MetaSummaryV1, TeamStats } from '../api.js';
 import { ConfidenceDot, Chevron, SpriteStack } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { battles as battlesText } from '../format.js';
+import { battles as battlesText, count } from '../format.js';
 import { teamLink, type LinkMember } from '../links.js';
 import type { Query, WindowKey } from '../route.js';
 import { marginSentence, winRate } from '../stats.js';
@@ -50,6 +50,15 @@ function TeamRow({
   const label = species.map((s) => s.short).join(' + ');
   const rate = winRate(team.wins, team.losses);
   const decided = team.wins + team.losses;
+  // The badge and the margin are honestly about decided battles (marginSentence's contract), but
+  // team.battles is the number a reader wants for popularity. Printing only one of them lets the
+  // two disagree silently, e.g. "300 battles" next to a "some" dot under a legend that calls 300
+  // "many": the reader has no way to tell that the badge is counting something narrower. Naming
+  // the decided count whenever it differs is what keeps the two numbers legible together.
+  const countLine =
+    decided < team.battles
+      ? `${battlesText(team.battles)}, ${count(decided)} decided`
+      : battlesText(team.battles);
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -57,7 +66,7 @@ function TeamRow({
         <span className="name">{label}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="fine">{battlesText(team.battles)}</span>
+        <span className="fine">{countLine}</span>
         <span>{rate === null ? 'no result yet' : `${Math.round(rate * 100)}%`}</span>
         <ConfidenceDot n={decided} />
       </div>
@@ -106,7 +115,9 @@ export function Teams(p: {
         <p className="sub">
           {leagueTitle} - {windowLabel} - teams reporters ran themselves
         </p>
-        <p className="fine">Confidence: few under 30, some 30 to 300, many 300 or more</p>
+        <p className="fine">
+          Confidence: few under 30, some 30 to 300, many 300 or more, counted on decided battles.
+        </p>
         {teams.length === 0 ? (
           <>
             <p className="sub">No teams shared in this window yet.</p>

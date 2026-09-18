@@ -69,3 +69,47 @@ describe('Teams', () => {
     expect(await screen.findByText('No teams shared in this window yet.')).toBeInTheDocument();
   });
 });
+
+// Fix round 1: the row printed team.battles, the badge and margin were computed from
+// wins + losses, and nothing on screen said the two could differ. A team with mostly undecided
+// battles (tanked, or still in progress) showed a "some" or "few" dot next to a battle count the
+// legend's own thresholds would call "many", with no way for a reader to tell why. This fixture
+// (300 battles, only 40 decided) is the one case the two fixtures above cannot exercise, since
+// decided equals battles in both of them.
+describe('Teams, decided battles differ from the total', () => {
+  const decidedTeams = [
+    {
+      species: ['medicham', 'lanturn', 'registeel'] as [string, string, string],
+      battles: 300,
+      wins: 25,
+      losses: 15,
+      moves: [null, null, null],
+    },
+  ];
+
+  it('discloses the decided count and grades the badge and margin on it, not the total', async () => {
+    render(
+      <App
+        deps={{
+          fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams: decidedTeams } }),
+          now,
+        }}
+      />,
+    );
+    expect(await screen.findByText('300 battles, 40 decided')).toBeInTheDocument();
+    expect(screen.getByText('some')).toBeInTheDocument();
+    expect(screen.getByText('Could be anywhere from 47% to 79%')).toBeInTheDocument();
+  });
+});
+
+describe('Teams, when the api is down', () => {
+  it('says so without blanking the screen', async () => {
+    render(<App deps={{ fetcher: stubFetch({ metaStatus: 500 }), now }} />);
+    expect(
+      await screen.findByText('Could not load the shared teams. Try again in a moment.'),
+    ).toBeInTheDocument();
+    // The api failure only empties the teams content; the app shell around it (header, tabs)
+    // still renders, so the reader is never left looking at a blank page.
+    expect(screen.getByRole('link', { name: 'Teams' })).toBeInTheDocument();
+  });
+});
