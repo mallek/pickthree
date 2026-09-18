@@ -2,6 +2,7 @@
  * What the site is allowed to claim about a number. Everything here exists so that a small sample
  * is shown with its smallness attached rather than dressed up as a fact.
  */
+import { battles as battlesText } from './format.js';
 
 export type Confidence = 'few' | 'some' | 'many';
 
@@ -57,7 +58,7 @@ export function marginSentence(rate: number, n: number): string {
   if (n >= SOME) {
     return `Could be anywhere from ${low}% to ${high}%`;
   }
-  return `Only ${n} battles, could easily be ${low}% or ${high}%`;
+  return `Only ${battlesText(n)}, could easily be ${low}% or ${high}%`;
 }
 
 /**

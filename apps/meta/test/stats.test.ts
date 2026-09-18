@@ -60,6 +60,10 @@ describe('marginSentence', () => {
     // At n = 300 the range gives way to a single margin, matching the "many" confidence tier.
     expect(marginSentence(0.5, 300)).toBe('Real win rate likely within +/-6 pts');
   });
+
+  it('reads the singular correctly at n = 1, not "1 battles"', () => {
+    expect(marginSentence(0.5, 1)).toBe('Only 1 battle, could easily be 0% or 100%');
+  });
 });
 
 describe('trendPoints', () => {

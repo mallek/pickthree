@@ -13,7 +13,7 @@ import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
 import { Bar, Chevron, Sparkline, Sprite, Tag, TypeTags } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { battles as battlesText, count, pct } from '../format.js';
+import { battles as battlesText, count, pct, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
 import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
 import type { Query, View } from '../route.js';
@@ -193,7 +193,8 @@ function RecordCard({
         <>
           <div className="stat-n">{Math.round(rate * 100)}%</div>
           <p className="sub">
-            {count(detail.wins)} wins, {count(detail.losses)} losses
+            {count(detail.wins)} {plural(detail.wins, 'win', 'wins')}, {count(detail.losses)}{' '}
+            {plural(detail.losses, 'loss', 'losses')}
           </p>
           <p className="fine">{marginSentence(rate, decided)}</p>
           {rate < 0.5 ? (
@@ -244,7 +245,9 @@ function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
           const rate = winRate(b.wins, b.losses);
           return (
             <div key={b.band} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <span>{bandLabel(b.band)}</span>
                 <span>
                   {rate !== null ? `${Math.round(rate * 100)}%` : '-'}{' '}
@@ -309,8 +312,8 @@ function AlongsideCard({
         </div>
       )}
       <p className="sub">
-        Share of the battles where you faced it and also saw this one. Reporters note up to
-        three opponents, so this is not the whole enemy team.
+        Share of the battles where you faced it and also saw this one. Reporters note up to three
+        opponents, so this is not the whole enemy team.
       </p>
     </section>
   );
@@ -320,9 +323,7 @@ function AlongsideCard({
  * looks the species up in the `Baseline.byId` map App.tsx already loads, and the whole card is
  * left out (not rendered empty) when PvPoke does not curate this species. */
 function PvPokeCard({ entry, data }: { entry: BaselineSpecies; data: StaticData }) {
-  const names = [entry.fastMove, ...entry.chargedMoves].map(
-    (id) => data.moves.get(id)?.name ?? id,
-  );
+  const names = [entry.fastMove, ...entry.chargedMoves].map((id) => data.moves.get(id)?.name ?? id);
   return (
     <section>
       <h2>PvPoke&apos;s set</h2>
@@ -401,7 +402,7 @@ export function Species(p: {
     const rankNum = rankAmong(m, speciesId, d.sightings);
     headerText = `#${rankNum} most faced - in ${pct(share)}% of ${battlesText(m.battles)}`;
   } else {
-    headerText = `Faced ${count(d.sightings)} times in ${battlesText(m.battles)}`;
+    headerText = `Faced ${count(d.sightings)} ${plural(d.sightings, 'time', 'times')} in ${battlesText(m.battles)}`;
   }
 
   const baselineEntry = baseline.data?.byId.get(speciesId) ?? null;

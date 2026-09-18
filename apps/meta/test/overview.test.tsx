@@ -155,6 +155,37 @@ describe('Overview filters', () => {
   });
 });
 
+// Fix round 2: n = 1 is not an edge case here, it is the likely state for the first weeks this
+// site is live (one contributor, a handful of battles). Every hand-spliced noun and verb that
+// used to read "1 devices have" or "1 battles have" is exercised at n = 1 below.
+describe('Overview, the day-one state (n = 1)', () => {
+  it('agrees the noun and the verb with a single shared battle', async () => {
+    const meta = { battles: 1, devices: 1, species: [sp('medicham', 1, 1, 0)] };
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByText('Too few battles to trust yet.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Only 1 Great League battle has been shared in this window. The ranked list below is ' +
+          "PvPoke's meta group, not measured play. What we have measured is under it, with its " +
+          'counts.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/1 device is contributing to this view so far/)).toBeInTheDocument();
+  });
+
+  it('reads "1 device has shared" and "one player\'s matchmaking", not "1 devices have"', async () => {
+    const meta = { battles: 400, devices: 1, species: [sp('medicham', 20, 10, 8)] };
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(
+      await screen.findByText(
+        "Only 1 device has shared battles in this window, so this is one player's matchmaking " +
+          "rather than what everyone is facing. The ranked list below is PvPoke's meta group, " +
+          'not measured play. What we have measured is under it, with its counts.',
+      ),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('Overview, request cost', () => {
   it('never asks for a species detail: nothing on this page has an id to look up', async () => {
     const fetcher = vi.fn(stubFetch({}));

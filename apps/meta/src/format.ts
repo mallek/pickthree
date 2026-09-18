@@ -57,6 +57,14 @@ export function battles(n: number): string {
   return `${count(n)} ${battleWord(n)}`;
 }
 
+/** Picks the singular or plural wording for a count. The count itself is formatted by the
+ * caller. General-purpose: `battleWord()` above is the "battles" special case kept for call
+ * sites that already had it; new sentences (a noun, a verb, anything that inflects on 1) use
+ * this instead of writing another one-off helper. */
+export function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}
+
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;

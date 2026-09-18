@@ -13,7 +13,7 @@ import type { MetaSummaryV1 } from '../api.js';
 import type { Baseline } from '../baseline.js';
 import { Bar, Note, Sprite, StatCard, TypeTags } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { ago, battleWord, battles as battlesText, count, pct } from '../format.js';
+import { ago, battleWord, battles as battlesText, count, pct, plural } from '../format.js';
 import { PICK3 } from '../links.js';
 import { rank, type BaselineRow, type MeasuredRow, type Ranking } from '../rank.js';
 import type { BandKey, Query, View } from '../route.js';
@@ -65,17 +65,26 @@ function tailLine(tail: number): string {
  * not how many. */
 function bannerBody(ranking: Ranking, leagueTitle: string, band: BandKey): string {
   if (ranking.holdback === 'devices') {
+    const n = ranking.devices;
+    // At n = 1 this is not "a few players' matchmaking", a phrase that promises more than one
+    // player; it is one player's, plainly. This is the likely day-one state, not an edge case.
+    const whose = n === 1 ? "one player's matchmaking" : "a few players' matchmaking";
     return (
-      `Only ${count(ranking.devices)} devices have shared battles in this window, so this is a ` +
-      "few players' matchmaking rather than what everyone is facing. The ranked list below is " +
-      "PvPoke's meta group, not measured play. What we have measured is under it, with its counts."
+      `Only ${count(n)} ${plural(n, 'device', 'devices')} ${plural(n, 'has', 'have')} shared ` +
+      `battles in this window, so this is ${whose} rather than what everyone is facing. The ` +
+      "ranked list below is PvPoke's meta group, not measured play. What we have measured is " +
+      'under it, with its counts.'
     );
   }
   const bandSuffix = band === 'all' ? '' : ` from ${BAND_LABELS[band]} players`;
+  // battles < MEASURED_MIN gates this branch, and MEASURED_MIN is well above 1, but the very
+  // first battle a league ever sees passes through here on day one, so the verb has to agree
+  // with a singular count just as much as the noun does.
   return (
     `Only ${count(ranking.battles)} ${leagueTitle} ${battleWord(ranking.battles)}${bandSuffix} ` +
-    "have been shared in this window. The ranked list below is PvPoke's meta group, not " +
-    "measured play. What we have measured is under it, with its counts."
+    `${plural(ranking.battles, 'has', 'have')} been shared in this window. The ranked list ` +
+    "below is PvPoke's meta group, not measured play. What we have measured is under it, with " +
+    'its counts.'
   );
 }
 
@@ -156,7 +165,8 @@ export function Contribute({ devices }: { devices: number }) {
       <b>Help fill this in</b>
       <p className="sub">
         Every battle logged in pick3 is shared here automatically, and you can switch it off in
-        Settings. {count(devices)} devices are contributing to this view so far.
+        Settings. {count(devices)} {plural(devices, 'device is', 'devices are')} contributing to
+        this view so far.
       </p>
       <a className="btn btn-primary" href={`${PICK3}/#/meta/log`}>
         Log battles in pick3
@@ -284,7 +294,8 @@ export function Overview(p: {
     <section>
       <h2>Most faced</h2>
       <p className="sub">
-        Measured from {battlesText(ranking.battles)} shared by {count(ranking.devices)} devices.
+        Measured from {battlesText(ranking.battles)} shared by {count(ranking.devices)}{' '}
+        {plural(ranking.devices, 'device', 'devices')}.
       </p>
       <p className="sub">{explainerText(ranking, query.band)}</p>
       <div className="fine" style={{ display: 'flex', justifyContent: 'space-between' }}>

@@ -74,8 +74,9 @@ describe('Species', () => {
 
   it('warns on a thin rank band and says nothing false about an empty one', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    const card = (await screen.findByRole('heading', { name: 'Record against it, by rank' }))
-      .closest('section')!;
+    const card = (
+      await screen.findByRole('heading', { name: 'Record against it, by rank' })
+    ).closest('section')!;
     // Correction 3: the thin-band warning names the band with the fewest battles among those
     // with at least one (below 90, ace 60, legend 34: legend is fewest), and only because that
     // count, 34, is itself under 100. The brief's looser "smallest band under 100" wording was
@@ -142,5 +143,20 @@ describe('Species', () => {
     render(<App deps={{ fetcher: stubFetch({ species: flat, meta }), now }} />);
     expect(await screen.findByText(/about the same as the first week/)).toBeInTheDocument();
     expect(screen.queryByText(/even pts/)).toBeNull();
+  });
+
+  // Fix round 2: a single win or loss is not a hypothetical on a site this new, and neither is
+  // facing a species exactly once before the league clears the measured threshold.
+  it('reads a single win and a single loss correctly, not "1 wins, 1 losses"', async () => {
+    const oneEach = { ...species, wins: 1, losses: 1 };
+    render(<App deps={{ fetcher: stubFetch({ species: oneEach, meta }), now }} />);
+    expect(await screen.findByText('1 win, 1 loss')).toBeInTheDocument();
+  });
+
+  it('reads "Faced 1 time", not "Faced 1 times", when the league is not measured yet', async () => {
+    const oneSighting = { ...species, sightings: 1 };
+    const thin = { battles: 7, devices: 2 };
+    render(<App deps={{ fetcher: stubFetch({ species: oneSighting, meta: thin }), now }} />);
+    expect(await screen.findByText('Faced 1 time in 7 battles')).toBeInTheDocument();
   });
 });
