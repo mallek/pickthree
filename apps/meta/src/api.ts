@@ -74,6 +74,7 @@ export interface ApiWindow {
 export const BUCKET_MS = 600_000;
 const DAY_MS = 86_400_000;
 
+/** Rounds up to the next ten minute boundary. An exact boundary stays where it is. */
 function bucketUp(now: Date): number {
   return Math.ceil(now.getTime() / BUCKET_MS) * BUCKET_MS;
 }

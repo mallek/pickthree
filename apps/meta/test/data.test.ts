@@ -50,6 +50,14 @@ describe('speciesOf', () => {
       dex: 0,
     });
   });
+
+  it('never returns a blank or whitespace-only name for a degenerate id', async () => {
+    const data = await loadStatic(fetcher);
+    const empty = speciesOf(data, '');
+    expect(empty.name.trim().length).toBeGreaterThan(0);
+    const underscores = speciesOf(data, '___');
+    expect(underscores.name.trim().length).toBeGreaterThan(0);
+  });
 });
 
 describe('seasonAt', () => {

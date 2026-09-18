@@ -35,6 +35,12 @@ describe('resolveWindow', () => {
     expect(w.since).toBe('2026-08-19T12:10:00.000Z');
     expect(w.label).toBe('30 days');
   });
+
+  it('leaves until unchanged when now is already on a ten minute boundary', () => {
+    const exact = new Date('2026-09-18T12:10:00.000Z');
+    const w = resolveWindow('7', seasons, exact);
+    expect(w.until).toBe('2026-09-18T12:10:00.000Z');
+  });
 });
 
 describe('urls', () => {

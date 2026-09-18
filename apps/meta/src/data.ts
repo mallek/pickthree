@@ -98,10 +98,15 @@ export function speciesOf(data: StaticData, id: string): SpeciesLite {
   if (known) {
     return known;
   }
-  const name = id
+  const guess = id
     .split('_')
     .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
     .join(' ');
+  // Title-casing a degenerate id (empty, or all underscores) yields nothing a reader can see.
+  let name = guess;
+  if (name.trim().length === 0) {
+    name = id.length > 0 ? id : 'Unknown';
+  }
   return { id, name, short: name, dex: 0, types: [], shadow: id.endsWith('_shadow') };
 }
 
