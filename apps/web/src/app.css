@@ -2147,6 +2147,15 @@ input[type='range'] {
   align-items: center;
   justify-content: center;
 }
+.link-btn {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+}
 /* Last results with the current team, one chip each. */
 .result-strip {
   display: flex;

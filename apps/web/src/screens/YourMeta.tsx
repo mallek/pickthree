@@ -11,6 +11,8 @@ import { useMemo, useState } from 'react';
 import { HeadCog, PokemonToken, Seg, useLogCount, useName, useSticky } from '../components.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { dateLabel } from '../format.ts';
+import { shareLink } from '../share.ts';
+import { teamLink } from '../teamLink.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
 type Sort = 'faced' | 'losses';
@@ -41,8 +43,20 @@ function ResultStrip({ battles }: { battles: BattleSet['battles'] }) {
 }
 
 function CurrentTeam({ set }: { set: BattleSet }) {
-  const { navigate } = useActions();
+  const { navigate, notify } = useActions();
   const name = useName();
+  const share = async (): Promise<void> => {
+    const url = teamLink(
+      set.league,
+      set.team.species.map((speciesId) => ({ speciesId })),
+    );
+    const r = await shareLink(url, `pick3 team: ${set.team.species.map(name).join(', ')}`);
+    if (r === 'copied') {
+      notify('Link copied. Paste it anywhere; it opens this team in pick3.');
+    } else if (r === 'failed') {
+      notify(`Could not copy the link. It is ${url}`);
+    }
+  };
   const counted = set.battles.filter((b) => !b.tanked);
   const wins = counted.filter((b) => b.result === 'win').length;
   return (
@@ -76,6 +90,9 @@ function CurrentTeam({ set }: { set: BattleSet }) {
           Change team
         </button>
       </div>
+      <button type="button" className="link-btn" onClick={() => void share()}>
+        Share this team
+      </button>
     </div>
   );
 }

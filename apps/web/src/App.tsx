@@ -4,6 +4,7 @@ import { Build } from './screens/Build.tsx';
 import { Collection } from './screens/Collection.tsx';
 import { Counters } from './screens/Counters.tsx';
 import { LogBattle } from './screens/LogBattle.tsx';
+import { SharedTeam } from './screens/SharedTeam.tsx';
 import { NewSet } from './screens/NewSet.tsx';
 import { Report } from './screens/Report.tsx';
 import { Sheet } from './screens/Sheet.tsx';
@@ -123,6 +124,8 @@ function renderScreen(r: Route) {
       return <NewSet />;
     case 'meta-log':
       return <LogBattle />;
+    case 'shared':
+      return <SharedTeam league={r.league} members={r.members} />;
     default:
       return <Welcome />;
   }
@@ -137,7 +140,9 @@ export function App() {
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [routeKey]);
-  const showTabs = !['welcome', 'report', 'add', 'meta-new', 'meta-log'].includes(r.screen);
+  const showTabs = !['welcome', 'report', 'add', 'meta-new', 'meta-log', 'shared'].includes(
+    r.screen,
+  );
   const screen = renderScreen(r);
   return (
     <div className="app">

@@ -140,7 +140,7 @@ await shot('03-team-detail');
 console.log('take to battle');
 // The sample log has an open set with another team, so the confirm dialog appears.
 page.once('dialog', (d) => void d.accept());
-await page.click('.scroll > .btn');
+await page.click('.scroll > .btn-pair > .btn');
 await page.waitForFunction(() => document.location.hash === '#/meta/log', { timeout: 30_000 });
 await page.waitForSelector('.team-strip', { timeout: 30_000 });
 const strip = await page.$eval('.team-strip', (e) => e.textContent ?? '');
@@ -324,6 +324,26 @@ if (!unrankedNote.includes('does not rank Magikarp')) {
   throw new Error(`custom team did not report the simulated pick: ${unrankedNote}`);
 }
 await shot('14b-custom-unranked');
+
+console.log('shared team link');
+await page.goto(`${base}/#/t/great/azumarill.BUBBLE.ICE_BEAM.PLAY_ROUGH+tinkaton+clodsire`, {
+  waitUntil: 'networkidle0',
+});
+await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
+const sharedError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
+if (sharedError) {
+  throw new Error(`shared team failed: ${sharedError}`);
+}
+const sharedNote = await page.$$eval('.custom-note', (els) =>
+  els.map((e) => e.textContent).join(' '),
+);
+if (!sharedNote.includes('Opened from a link')) {
+  throw new Error(`shared team did not say it was shared: ${sharedNote}`);
+}
+if (!page.url().endsWith('#/build/team')) {
+  throw new Error(`shared team landed at ${page.url()}`);
+}
+await shot('14c-shared-team', false);
 
 console.log('add a pokemon by hand');
 await page.goto(`${base}/#/add`, { waitUntil: 'networkidle0' });

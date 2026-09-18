@@ -47,6 +47,16 @@ describe('routes', () => {
     expect(hashFor({ screen: 'meta-new' })).toBe('#/meta/new');
     expect(hashFor({ screen: 'meta-log' })).toBe('#/meta/log');
   });
+  it('parses and prints a team link route', () => {
+    const members = 'azumarill.BUBBLE.ICE_BEAM.PLAY_ROUGH+tinkaton+clodsire';
+    expect(parseHash(`#/t/great/${members}`)).toEqual({
+      screen: 'shared',
+      league: 'great',
+      members,
+    });
+    expect(hashFor({ screen: 'shared', league: 'great', members })).toBe(`#/t/great/${members}`);
+    expect(parseHash('#/t/great')).toEqual({ screen: 'build' });
+  });
   it('parses and prints the Counters route with a species to score against', () => {
     expect(parseHash('#/counters')).toEqual({ screen: 'counters' });
     expect(parseHash('#/counters?vs=medicham')).toEqual({ screen: 'counters', vs: 'medicham' });

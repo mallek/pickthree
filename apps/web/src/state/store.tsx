@@ -69,7 +69,9 @@ export type Route =
   | { screen: 'add' }
   | { screen: 'meta' }
   | { screen: 'meta-new' }
-  | { screen: 'meta-log' };
+  | { screen: 'meta-log' }
+  /** A team link: league id and the raw member list, parsed by the landing screen. */
+  | { screen: 'shared'; league: string; members: string };
 
 export interface DataInfo {
   pvpokeCommit: string;
@@ -114,6 +116,8 @@ export interface AppState {
   countersProgress: ProgressEvent | null;
   /** One-line message for the floating toast, such as a failed save. */
   notice: string | null;
+  /** True while Build holds a team that arrived by link, until a pick is changed by hand. */
+  sharedTeam: boolean;
   scanList: ScanList | null;
   /** Hand-built team: the three picks, how to order them, and the last analysis. */
   picks: [TeamPick | null, TeamPick | null, TeamPick | null];
@@ -156,6 +160,7 @@ type Action =
   | { type: 'notice'; message: string | null }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
+  | { type: 'picks'; picks: [TeamPick, TeamPick, TeamPick]; shared: boolean }
   | { type: 'order-mode'; mode: 'best' | 'given' }
   | { type: 'analyze-start' }
   | { type: 'analyze-done'; analysis: TeamAnalysis }
@@ -188,6 +193,7 @@ const initial: AppState = {
   countersVs: null,
   countersProgress: null,
   notice: null,
+  sharedTeam: false,
   scanList: null,
   picks: [null, null, null],
   orderMode: 'best',
@@ -282,8 +288,10 @@ function reducer(s: AppState, a: Action): AppState {
     case 'pick': {
       const picks = [...s.picks] as AppState['picks'];
       picks[a.slot] = a.pick;
-      return { ...s, picks, analyzeError: null };
+      return { ...s, picks, analyzeError: null, sharedTeam: false };
     }
+    case 'picks':
+      return { ...s, picks: a.picks, analyzeError: null, sharedTeam: a.shared };
     case 'order-mode':
       return { ...s, orderMode: a.mode };
     case 'analyze-start':
@@ -341,6 +349,16 @@ export function parseHash(hash: string): Route {
   if (a === 'add') {
     return { screen: 'add' };
   }
+  if (a === 't') {
+    const [, league, members] = parts;
+    return league && members
+      ? {
+          screen: 'shared',
+          league: decodeURIComponent(league),
+          members: decodeURIComponent(members),
+        }
+      : { screen: 'build' };
+  }
   if (a === 'meta') {
     if (b === 'new') {
       return { screen: 'meta-new' };
@@ -381,6 +399,8 @@ export function hashFor(r: Route): string {
       return '#/meta/new';
     case 'meta-log':
       return '#/meta/log';
+    case 'shared':
+      return `#/t/${r.league}/${r.members}`;
     default:
       return '#/';
   }
@@ -418,6 +438,8 @@ interface Actions {
   loadCounters(vs?: string | null): Promise<void>;
   loadScanList(): Promise<void>;
   setPick(slot: number, pick: TeamPick | null): void;
+  /** Replace all three picks at once, marking them as arrived by link when shared is true. */
+  setPicks(picks: [TeamPick, TeamPick, TeamPick], shared: boolean): void;
   setOrderMode(mode: 'best' | 'given'): void;
   analyze(): Promise<void>;
   /** Legal moves for one team member, with the recommendation, in the league in play. */
@@ -749,6 +771,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
+  const setPicks = useCallback((picks: [TeamPick, TeamPick, TeamPick], shared: boolean) => {
+    dispatch({ type: 'picks', picks, shared });
+  }, []);
+
   const setPick = useCallback((slot: number, pick: TeamPick | null) => {
     dispatch({ type: 'pick', slot, pick });
   }, []);
@@ -1005,6 +1031,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       loadCounters,
       loadScanList,
       setPick,
+      setPicks,
       setOrderMode,
       analyze,
       movePool,
@@ -1032,6 +1059,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       loadCounters,
       loadScanList,
       setPick,
+      setPicks,
       setOrderMode,
       analyze,
       movePool,

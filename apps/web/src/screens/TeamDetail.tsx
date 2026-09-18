@@ -17,13 +17,15 @@ import {
   useName,
 } from '../components.tsx';
 import { costLine, fitWhy, ivLine, num, topPct } from '../format.ts';
+import { shareLink } from '../share.ts';
 import { useActions, useAppState, type Route } from '../state/store.tsx';
+import { picksFromTeam, teamLink } from '../teamLink.ts';
 
 const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const;
 
 export function TeamDetail({ id }: { id: string }) {
   const s = useAppState();
-  const { navigate, startSet } = useActions();
+  const { navigate, startSet, notify } = useActions();
   const name = useName();
   const [open, setOpen] = useState(false);
   const [allOpps, setAllOpps] = useState(false);
@@ -72,6 +74,27 @@ export function TeamDetail({ id }: { id: string }) {
   const chosenMoves = custom ? (s.analysis?.chosenMoves ?? []) : [];
   const unranked = custom ? (s.analysis?.unranked ?? []) : [];
 
+  /** A link to this team, species and moves only, for the share sheet or the clipboard. */
+  const share = async (): Promise<void> => {
+    const url = teamLink(
+      s.settings.league ?? 'great',
+      picksFromTeam(
+        team.slots.map((x) => ({
+          speciesId: x.candidate.build.speciesId,
+          fast: x.candidate.moveset.fast.moveId,
+          charged: x.candidate.moveset.charged.map((m) => m.moveId),
+        })),
+      ),
+    );
+    const title = `pick3 team: ${team.slots.map((x) => name(x.candidate.build.speciesId)).join(', ')}`;
+    const r = await shareLink(url, title);
+    if (r === 'copied') {
+      notify('Link copied. Paste it anywhere; it opens this team in pick3.');
+    } else if (r === 'failed') {
+      notify(`Could not copy the link. It is ${url}`);
+    }
+  };
+
   /** Make this the team Your meta logs against, then go straight to Log a battle. */
   const takeToBattle = async (): Promise<void> => {
     const species = team.slots.map((x) => x.candidate.build.speciesId) as [string, string, string];
@@ -109,9 +132,23 @@ export function TeamDetail({ id }: { id: string }) {
         backLabel={backLabel}
       />
       <div className="scroll" style={{ gap: 24 }}>
-        <button type="button" className="btn" onClick={() => void takeToBattle()}>
-          Take to battle
-        </button>
+        <div className="btn-pair">
+          <button type="button" className="btn" onClick={() => void takeToBattle()}>
+            Take to battle
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => void share()}>
+            Share
+          </button>
+        </div>
+        {custom && s.sharedTeam ? (
+          <div className="card custom-note" style={{ gap: 6 }}>
+            <b>Shared team</b>
+            <span className="small muted">
+              Opened from a link, so the numbers assume a top-10% IV spread for each. Own one of
+              them? Open Build and swap yours in for exact numbers.
+            </span>
+          </div>
+        ) : null}
         {custom ? (
           <div className="card custom-note" style={{ gap: 6 }}>
             <div className="rating-row">

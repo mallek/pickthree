@@ -25,6 +25,35 @@ export async function takeSharedCsv(): Promise<{ text: string; name: string | nu
   }
 }
 
+/**
+ * Hands a link to the phone's share sheet when there is one, else copies it. Resolves to what
+ * happened so the caller can say so; 'cancelled' when the sheet was dismissed.
+ */
+export async function shareLink(
+  url: string,
+  title: string,
+): Promise<'shared' | 'copied' | 'cancelled' | 'failed'> {
+  const nav = navigator as Navigator & {
+    share?: (d: { url: string; title: string }) => Promise<void>;
+  };
+  if (typeof nav.share === 'function') {
+    try {
+      await nav.share({ url, title });
+      return 'shared';
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        return 'cancelled';
+      }
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    return 'copied';
+  } catch {
+    return 'failed';
+  }
+}
+
 /** Drop the share marker from the address bar so a reload does not look like a new share. */
 export function clearShareMarker(): void {
   const url = new URL(window.location.href);
