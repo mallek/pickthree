@@ -18,7 +18,10 @@ beforeEach(() => {
 describe('App', () => {
   it('lands on the first league and names the site', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByText('meta')).toBeInTheDocument();
+    // G: the wordmark reads "meta." then the pick3 lockup image then ".gg", not one plain "meta"
+    // text node any more.
+    expect(await screen.findByText('meta.')).toBeInTheDocument();
+    expect(screen.getByText('.gg')).toBeInTheDocument();
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
@@ -27,6 +30,14 @@ describe('App', () => {
     expect(
       await screen.findByRole('link', { name: 'pick3, the team builder' }),
     ).toHaveAttribute('href', 'https://pick3.gg');
+  });
+
+  // A1: the appearance toggle used to live in a centred title row of its own; it is drawn as
+  // pick3's own head-cog and sits in the brand row now, next to the pick3 pill.
+  it('draws the appearance toggle as a round head-cog like pick3 in the brand row', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    const button = await screen.findByRole('button', { name: /appearance/i });
+    expect(button).toHaveClass('head-cog');
   });
 
   it('switches league through the segmented control and puts it in the url', async () => {
@@ -43,6 +54,10 @@ describe('App', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/about'));
   });
 
+  // A5: the rank band went back to a radiogroup of real buttons (this time a scrolling chip row,
+  // apps/web's own `.chips` pattern, rather than the wrapping `.pills` the window filter uses),
+  // replacing the native <select> commit 4841011 introduced. The band control changing shape does
+  // not change what matters here: it still keeps its own choice in the url and reads it back.
   it('keeps the filters in the url and reads them back', async () => {
     window.history.replaceState(null, '', '/great?w=7&band=legend');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
@@ -50,7 +65,10 @@ describe('App', () => {
       'aria-checked',
       'true',
     );
-    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('legend');
+    expect(await screen.findByRole('radio', { name: 'Legend' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
   });
 
   it('answers the back button', async () => {
@@ -141,11 +159,13 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    // Task 11 replaced the teams placeholder ("Teams in ultra") with the real screen, whose
-    // sub-line names the league and window instead.
-    expect(await screen.findByText(/Ultra League - 7 days/)).toBeInTheDocument();
+    // A1 dropped the centred title row (which used to name the league and window in its own
+    // sub-line) in favour of the switcher and filter chips saying so directly: the "Ultra" and
+    // "7 days" checks above and below already cover that, and Teams' own left-aligned heading
+    // is what is left to identify the screen itself.
+    expect(await screen.findByRole('heading', { name: 'Most run teams' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '7 days' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
+    expect(screen.getByRole('radio', { name: 'Ace' })).toHaveAttribute('aria-checked', 'true');
     expect(window.location.pathname).toBe('/ultra/teams');
     expect(window.location.search).toBe('?w=7&band=ace');
   });
@@ -170,7 +190,7 @@ describe('App, filter history', () => {
     const replaceSpy = vi.spyOn(window.history, 'replaceState');
     await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
+    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
     await waitFor(() => expect(window.location.search).toContain('band=ace'));
     expect(pushSpy).not.toHaveBeenCalled();
     expect(replaceSpy).toHaveBeenCalledTimes(2);
@@ -183,7 +203,7 @@ describe('App, filter history', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
     await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
+    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
     await waitFor(() => expect(window.location.search).toContain('band=ace'));
     // Neither filter click pushed a history entry, so a single real navigation still undoes in
     // a single back press, landing on the page with its filters (not on an intermediate filter

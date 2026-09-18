@@ -10,9 +10,9 @@ import {
 import { useMemo, useState } from 'react';
 import {
   HeadCog,
+  MetaButton,
   PokemonToken,
   Seg,
-  SitePill,
   useLogCount,
   useName,
   useSticky,
@@ -250,7 +250,7 @@ export function YourMeta() {
         <div className="between">
           <h2>Your Meta</h2>
           <span className="row">
-            <SitePill />
+            <MetaButton />
             <HeadCog />
           </span>
         </div>

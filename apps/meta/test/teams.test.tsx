@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
@@ -37,30 +38,39 @@ const teams = [
 ];
 
 describe('Teams', () => {
-  it('lists teams with their win rate and how much to trust it', async () => {
+  it('lists teams in pick3\'s card layout: three names under their tokens, no truncated join line', async () => {
     render(
       <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
     );
-    expect(await screen.findByText('Azumarill + Clodsire + Tinkaton')).toBeInTheDocument();
+    // C1: the "A + B + C" line is gone; each member's name lives under its own token instead.
+    expect(await screen.findByText('Azumarill')).toBeInTheDocument();
+    expect(screen.getByText('Clodsire')).toBeInTheDocument();
+    expect(screen.getByText('Tinkaton')).toBeInTheDocument();
+    expect(screen.queryByText('Azumarill + Clodsire + Tinkaton')).toBeNull();
     expect(screen.getByText('1,240 battles')).toBeInTheDocument();
     expect(screen.getByText('54%')).toBeInTheDocument();
-    expect(screen.getByText('Real win rate likely within +/-3 pts')).toBeInTheDocument();
   });
 
-  it('warns loudly on a small team sample', async () => {
+  it('gives every card a confidence tag, but only spells out the margin on a "few" sample', async () => {
     render(
       <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
     );
-    expect(
-      await screen.findByText('Only 21 battles, could easily be 40% or 84%'),
-    ).toBeInTheDocument();
+    // Team 1 (1,240 decided battles) is "many": the tag still shows the bucket, but C3 says the
+    // margin sentence is noise once the sample is this big, so it must not render.
+    expect(await screen.findByText('many')).toBeInTheDocument();
+    expect(screen.queryByText('Real win rate likely within +/-3 pts')).toBeNull();
+    // Team 2 (21 decided battles) is "few": the loud, full sentence still has to survive.
     expect(screen.getByText('few')).toBeInTheDocument();
+    expect(screen.getByText('Only 21 battles, could easily be 40% or 84%')).toBeInTheDocument();
   });
 
   it('deep links into pick3 with the movesets it knows and without the ones it does not', async () => {
     render(
       <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
     );
+    // C2: the card itself is the link now, so its accessible name carries the whole card's text,
+    // not just the foot affordance; the regex only needs "Open in pick3" to appear somewhere in
+    // it, which it still does since the foot text is unchanged.
     const links = await screen.findAllByRole('link', { name: /Open in pick3/ });
     expect(links[0]).toHaveAttribute(
       'href',
@@ -70,6 +80,10 @@ describe('Teams', () => {
       'href',
       'https://pick3.gg/#/t/great/lanturn+medicham+registeel',
     );
+    // Exactly one focusable element per card: no <a> nests inside the card's own <a>.
+    for (const link of links) {
+      expect(link.querySelector('a')).toBeNull();
+    }
   });
 
   it('says so when no team has been shared', async () => {
@@ -79,13 +93,21 @@ describe('Teams', () => {
 
   // Fix round 3 ("FIX 5"): the confidence legend used to spell out 30 and 300 as literals,
   // which could drift from stats.ts's SOME and MANY without anything catching it.
-  it('states the confidence legend from the real thresholds', async () => {
+  //
+  // A3: the legend moved behind a tap (Term) instead of standing above the list as its own line,
+  // so this now opens it first, the same way a reader would.
+  it('states the confidence legend from the real thresholds, once opened', async () => {
     render(
       <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
     );
+    const opener = await screen.findByRole('button', { name: 'What few, some and many mean' });
     expect(
-      await screen.findByText(
-        `Confidence: few under ${count(SOME)}, some ${count(SOME)} to ${count(MANY)}, many ${count(MANY)} or more, counted on decided battles.`,
+      screen.queryByText(new RegExp(`some is ${count(SOME)} to ${count(MANY)}`)),
+    ).toBeNull();
+    await userEvent.click(opener);
+    expect(
+      screen.getByText(
+        `Few is under ${count(SOME)} decided battles, some is ${count(SOME)} to ${count(MANY)}, many is ${count(MANY)} or more.`,
       ),
     ).toBeInTheDocument();
   });
@@ -108,7 +130,7 @@ describe('Teams, decided battles differ from the total', () => {
     },
   ];
 
-  it('discloses the decided count and grades the badge and margin on it, not the total', async () => {
+  it('discloses the decided count and grades the badge on it, not the total, with no margin noise at "some"', async () => {
     render(
       <App
         deps={{
@@ -119,7 +141,9 @@ describe('Teams, decided battles differ from the total', () => {
     );
     expect(await screen.findByText('300 battles, 40 decided')).toBeInTheDocument();
     expect(screen.getByText('some')).toBeInTheDocument();
-    expect(screen.getByText('Could be anywhere from 47% to 79%')).toBeInTheDocument();
+    // C3: "some" is not "few". The margin sentence only belongs on a few-battle card; here it
+    // would just repeat what the tag already says.
+    expect(screen.queryByText('Could be anywhere from 47% to 79%')).toBeNull();
   });
 });
 

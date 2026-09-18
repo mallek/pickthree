@@ -19,6 +19,27 @@
   --bar: #3a3d52;
   --warn: #f2c46b;
   --glow: rgba(111, 207, 151, 0.2);
+
+  /* A2: type chip text, byte-identical to pick3's own dark-theme ink tokens
+     (apps/web/src/design/tokens.css), so the two sites' type chips read as the same control. */
+  --type-normal-ink: #aead83;
+  --type-fire-ink: #f19551;
+  --type-water-ink: #88aaf4;
+  --type-electric-ink: #f7d02c;
+  --type-grass-ink: #7ac74c;
+  --type-ice-ink: #96d9d6;
+  --type-fighting-ink: #e89491;
+  --type-poison-ink: #d694d5;
+  --type-ground-ink: #e2bf65;
+  --type-flying-ink: #b49df4;
+  --type-psychic-ink: #fb86aa;
+  --type-bug-ink: #a6b91a;
+  --type-rock-ink: #c2ab3a;
+  --type-ghost-ink: #b4a3ca;
+  --type-dragon-ink: #b79afd;
+  --type-dark-ink: #bea696;
+  --type-steel-ink: #b7b7ce;
+  --type-fairy-ink: #dc98ba;
 }
 
 :root[data-theme='light'] {
@@ -36,6 +57,26 @@
   --bar: #dcdcea;
   --warn: #b5842a;
   --glow: rgba(47, 158, 95, 0.2);
+
+  /* A2: type chip text on the light card, pick3's own 5:1 light-theme ink tokens. */
+  --type-normal-ink: #6f6e48;
+  --type-fire-ink: #af530e;
+  --type-water-ink: #2262ea;
+  --type-electric-ink: #806805;
+  --type-grass-ink: #447826;
+  --type-ice-ink: #2b7874;
+  --type-fighting-ink: #c22e28;
+  --type-poison-ink: #a33ea1;
+  --type-ground-ink: #866719;
+  --type-flying-ink: #744aec;
+  --type-psychic-ink: #d60847;
+  --type-bug-ink: #667110;
+  --type-rock-ink: #7b6d24;
+  --type-ghost-ink: #735797;
+  --type-dragon-ink: #6f35fc;
+  --type-dark-ink: #705746;
+  --type-steel-ink: #686898;
+  --type-fairy-ink: #b73e7a;
 }
 
 @media (prefers-color-scheme: light) {
@@ -54,6 +95,25 @@
     --bar: #dcdcea;
     --warn: #b5842a;
     --glow: rgba(47, 158, 95, 0.2);
+
+    --type-normal-ink: #6f6e48;
+    --type-fire-ink: #af530e;
+    --type-water-ink: #2262ea;
+    --type-electric-ink: #806805;
+    --type-grass-ink: #447826;
+    --type-ice-ink: #2b7874;
+    --type-fighting-ink: #c22e28;
+    --type-poison-ink: #a33ea1;
+    --type-ground-ink: #866719;
+    --type-flying-ink: #744aec;
+    --type-psychic-ink: #d60847;
+    --type-bug-ink: #667110;
+    --type-rock-ink: #7b6d24;
+    --type-ghost-ink: #735797;
+    --type-dragon-ink: #6f35fc;
+    --type-dark-ink: #705746;
+    --type-steel-ink: #686898;
+    --type-fairy-ink: #b73e7a;
   }
 }
 

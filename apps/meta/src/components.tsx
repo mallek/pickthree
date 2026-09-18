@@ -8,10 +8,10 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
-import { confidence } from './stats.js';
+import { confidence, trendLabel } from './stats.js';
 import type { ThemeChoice } from './theme.js';
 
 const TYPES: readonly string[] = [
@@ -41,19 +41,13 @@ export function typeColor(type: string): string {
   return TYPES.includes(type) ? `var(--type-${type})` : 'var(--muted)';
 }
 
-/** From the design export: the types whose colour is dark enough that only white text reads on
- * it. Every other type gets the app's near-black ink. Deliberate, not a guess. Private: `Tag`
- * below is the one place that reads it. */
-const WHITE_TEXT = new Set([
-  'water',
-  'ghost',
-  'dragon',
-  'fighting',
-  'psychic',
-  'dark',
-  'poison',
-  'steel',
-]);
+/** A type's chip text colour, the same fallback rule as `typeColor` above but reading the `-ink`
+ * token instead of the fill: an unrecognised type gets a readable neutral tag rather than an
+ * unset CSS variable (there is no `--quantum-ink` to fall through to). Private: `TypeChip` below
+ * is the one place that reads it. */
+function typeInk(type: string): string {
+  return TYPES.includes(type) ? `var(--type-${type}-ink)` : 'var(--muted)';
+}
 
 function capitalize(s: string): string {
   return s.length === 0 ? s : s.slice(0, 1).toUpperCase() + s.slice(1);
@@ -109,53 +103,39 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
   );
 }
 
-/** A short overlapping row of sprites, such as a team's three members. One accessible name for
- * the group rather than three alt texts running together; the individual images are hidden from
- * assistive tech so they are not announced twice. */
-export function SpriteStack({ species, size }: { species: SpeciesLite[]; size?: number }) {
-  const label = species.map((s) => s.name).join(', ');
-  return (
-    <span role="img" aria-label={label}>
-      {species.map((s, i) => (
-        <span
-          key={`${s.id}-${i}`}
-          aria-hidden="true"
-          style={{
-            display: 'inline-block',
-            marginRight: i < species.length - 1 ? -6 : 0,
-          }}
-        >
-          <Sprite species={s} {...(size === undefined ? {} : { size })} />
-        </span>
-      ))}
-    </span>
-  );
-}
-
-/** One coloured pill: background from the type's paint, foreground chosen so the label always
- * reads against it. `type` picks the colour; `label` is the text, which need not be the type's
- * own name (Species.tsx uses this for a move, tinted by the move's type, labelled with the
- * move's name). The only place the two foreground hex literals and the white-text type list
- * exist, so `TypeTags` and a move tag can never disagree on which types get which ink. */
-export function Tag({ type, label }: { type: string; label: string }) {
+/**
+ * A2: the one way a type is shown anywhere on this site, pick3's own chip shape and colour rule
+ * ported byte-for-byte (apps/web/src/components.tsx's `TypeChip`/`TypeChips`): Title Case text
+ * on a light wash of the type's colour, using `.tchip`/`.tchip-sm` (app.css). Species.tsx's move
+ * lines used to render through a separate solid, uppercase `Tag`/`.type-tag` pill; D3 moved them
+ * onto this component instead (`MoveLine`'s `TypeChip type={move.type} small`, matching pick3's
+ * Build cards byte for byte), which left `Tag` with no caller anywhere in this app, so FIX 5
+ * removed it (and `.type-tag`, and the white-text type list only it read) rather than carry a
+ * second, unused way to draw a type. `type` is a plain string, not a closed union like pick3's
+ * `PokemonType`, since this site reads types off the static data file rather than the engine;
+ * `typeColor`/`typeInk`'s fallback is what keeps a bad value from ever landing on an undefined
+ * CSS variable.
+ */
+export function TypeChip({ type, small }: { type: string; small?: boolean | undefined }) {
   return (
     <span
-      className="type-tag"
-      style={{ background: typeColor(type), color: WHITE_TEXT.has(type) ? '#fff' : '#161826' }}
+      className={`tchip${small ? ' tchip-sm' : ''}`}
+      style={{ '--c': typeColor(type), '--t': typeInk(type) } as CSSProperties}
     >
-      {label}
+      {capitalize(type)}
     </span>
   );
 }
 
-/** One tag per type, plain-worded and coloured. */
-export function TypeTags({ types }: { types: string[] }) {
+/** One chip per type, wrapped in pick3's `.tchips` row so they wrap together rather than one at
+ * a time. */
+export function TypeChips({ types, small }: { types: string[]; small?: boolean | undefined }) {
   return (
-    <>
+    <span className="tchips">
       {types.map((t) => (
-        <Tag key={t} type={t} label={capitalize(t)} />
+        <TypeChip key={t} type={t} small={small} />
       ))}
-    </>
+    </span>
   );
 }
 
@@ -190,28 +170,72 @@ export function Bar({
   );
 }
 
+/**
+ * A4/B1: the small coloured tag that follows a name when a trend was earned, "+15" or "-9",
+ * green for a rising share and red for a falling one. The caller passes points only once it has
+ * already checked `trend !== null` (a null trend is "we cannot say", not a zero one, and must
+ * render nothing); this component adds its own second guard for `trendLabel`'s "even" case, a
+ * real but sub-whole-point move, since a zero-looking tag colored green or red would claim a
+ * direction the rounded number no longer shows.
+ */
+export function TrendTag({ points }: { points: number }) {
+  const label = trendLabel(points);
+  if (label === 'even') {
+    return null;
+  }
+  return <span className={`trend-tag ${points > 0 ? 'up' : 'down'}`}>{label}</span>;
+}
+
+const SPARK_VIEW_W = 140;
 const SPARK_X0 = 4;
 const SPARK_X1 = 136;
 const SPARK_Y0 = 36;
 const SPARK_Y1 = 4;
 
-/** A trend line with no axes, no labels: the numbers it depicts are always printed beside it,
- * so it is aria-hidden. A single point has no line to draw, so it renders an empty svg rather
- * than a broken one.
+/** Short form of the worker's own week key ("2026-W36" -> "W36", `isoWeek` in
+ * workers/counter/src/meta.ts), the only shape a tick is ever handed. A key that does not carry
+ * "-W" still renders, uncut, so a future key format cannot blank a tick rather than shortening it. */
+function weekTick(week: string): string {
+  const i = week.indexOf('-W');
+  return i === -1 ? week : week.slice(i + 1);
+}
+
+/**
+ * D1: a filled area over a baseline, week ticks along the bottom, and the latest point labelled
+ * on the chart itself. Chosen over small weekly bars because the series is a share, a genuinely
+ * continuous read from week to week (the whole reason `WeeklyCard`'s all-or-nothing gate exists,
+ * see Species.tsx), and an area keeps that continuity on screen instead of drawing each week as
+ * its own disconnected column.
  *
- * `preserveAspectRatio="none"` on both returns makes the drawing stretch to fill whatever box
- * it is given rather than the default `xMidYMid meet`, which centres a 140x40 drawing inside a
- * wide card and leaves empty space either side (it only looked right in the design export
- * because that card was about as narrow as the viewBox is wide). Stretching scales the stroke
- * non-uniformly too, so the polyline pins its own width with `vectorEffect="non-scaling-stroke"`
- * rather than smearing into a band. A circular end-point marker cannot survive that same
- * non-uniform scale without becoming an ellipse, so there is no marker here; the value it would
- * have marked is already printed as text under the chart by every caller. */
-export function Sparkline({ values }: { values: number[] }) {
+ * `preserveAspectRatio="none"` makes the drawing stretch to fill whatever box it is given rather
+ * than the default `xMidYMid meet`, which centres a 140x40 drawing inside a wide card and leaves
+ * empty space either side. Stretching scales the stroke non-uniformly too, so the polyline pins
+ * its own width with `vectorEffect="non-scaling-stroke"` rather than smearing into a band. That
+ * same non-uniform scale would turn a circular marker into an ellipse and squeeze or stretch SVG
+ * `<text>` glyphs depending on how wide the card happens to be, so the latest-point dot, its
+ * label and the week ticks are all plain HTML laid over the chart rather than SVG content: `left`
+ * as a percentage of the card's own width lines up with the stretched drawing, and `top` as the
+ * SVG's own pixel value lines up too, because only the width is stretched, never the height.
+ *
+ * A single point has no line to draw, so it renders an empty svg rather than a broken one. */
+export function Sparkline({
+  values,
+  weekLabels,
+  latestLabel,
+}: {
+  values: number[];
+  /** One id per value, the worker's own week key, printed as a small tick under its point.
+   * Omitted, or mismatched in length with `values`, leaves the chart with no tick row rather
+   * than a misaligned one. */
+  weekLabels?: string[];
+  /** D1: the latest point's own reading, drawn on the chart next to its dot instead of a
+   * caller's separate line of text below it. Omitted draws no dot and no label. */
+  latestLabel?: string;
+}) {
   if (values.length < 2) {
     return (
       <svg
-        viewBox="0 0 140 40"
+        viewBox={`0 0 ${SPARK_VIEW_W} 40`}
         width="100%"
         height={40}
         preserveAspectRatio="none"
@@ -231,24 +255,63 @@ export function Sparkline({ values }: { values: number[] }) {
         : SPARK_Y0 + ((v - min) / (max - min)) * (SPARK_Y1 - SPARK_Y0);
     return { x, y };
   });
+  const last = points[points.length - 1]!;
+  const lastLeftPct = (last.x / SPARK_VIEW_W) * 100;
+  const linePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+  // The fill closes the line down to the baseline and back, so the chart reads as a filled trend
+  // rather than a bare line floating with nothing under it; the line itself is drawn again on top
+  // so its stroke stays crisp over the fill instead of being part of the filled shape's outline.
+  const areaPoints = `${SPARK_X0},${SPARK_Y0} ${linePoints} ${SPARK_X1},${SPARK_Y0}`;
+  const ticks = weekLabels && weekLabels.length === values.length ? weekLabels : null;
   return (
-    <svg
-      viewBox="0 0 140 40"
-      width="100%"
-      height={40}
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <polyline
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        points={points.map((p) => `${p.x},${p.y}`).join(' ')}
-      />
-    </svg>
+    <div style={{ position: 'relative' }}>
+      <svg
+        viewBox={`0 0 ${SPARK_VIEW_W} 40`}
+        width="100%"
+        height={40}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <polygon points={areaPoints} fill="var(--accent)" fillOpacity={0.15} stroke="none" />
+        <line
+          x1={SPARK_X0}
+          y1={SPARK_Y0}
+          x2={SPARK_X1}
+          y2={SPARK_Y0}
+          stroke="var(--border)"
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+        />
+        <polyline
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+          points={linePoints}
+        />
+      </svg>
+      {latestLabel ? (
+        <>
+          <span
+            className="spark-dot"
+            aria-hidden="true"
+            style={{ left: `${lastLeftPct}%`, top: last.y }}
+          />
+          <span className="spark-label" style={{ left: `${lastLeftPct}%`, top: last.y }}>
+            {latestLabel}
+          </span>
+        </>
+      ) : null}
+      {ticks ? (
+        <div className="spark-ticks">
+          {ticks.map((w) => (
+            <span key={w}>{weekTick(w)}</span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -302,17 +365,14 @@ export function Note({
   );
 }
 
-/** How much a sample is worth trusting, said in a word, not just a colour: colour alone is not
- * an accessible way to carry meaning. The dot itself is a fixed, non-per-item colour (one of
- * exactly three tones), so it is a CSS class and modifier rather than an inline style. */
-export function ConfidenceDot({ n }: { n: number }) {
+/** C3: how much a sample is worth trusting, said in a word inside a small pick3-style tag
+ * (`.tag`, ported from apps/web/src/app.css) next to a win rate, replacing the former dot-plus-
+ * word (`ConfidenceDot`). The tag's own tone (one of exactly three fixed ones, so a CSS modifier
+ * rather than an inline colour) still is not the only carrier of the meaning: the word itself is
+ * the tag's text content, not a separate aria-label, so colour alone never has to carry it. */
+export function ConfidenceTag({ n }: { n: number }) {
   const c = confidence(n);
-  return (
-    <span>
-      <span className={`conf-dot conf-${c}`} aria-hidden="true" />
-      {c}
-    </span>
-  );
+  return <span className={`tag tag-${c}`}>{c}</span>;
 }
 
 /** The sticky per-screen header: a back link (or spacer, so the title stays centred) on the
@@ -353,18 +413,24 @@ export function Header({
   );
 }
 
-/** The pill naming the sister site, pick3.gg: same shape, same mark and the same placement logic
- * as pick3's own header pill (apps/web/src/components.tsx's `SitePill`), so the two headers rhyme,
- * but drawn from this app's own tokens rather than importing pick3's palette. `label` is the
- * visible text ("pick3"); `name` is the link's full accessible name ("pick3, the team builder"),
- * since a bare "pick3" read aloud says nothing about where the link goes. The mark carries its own
- * `alt=""`/`aria-hidden`, and the visible label is hidden from assistive tech too so the name is
- * never announced twice. */
-export function SitePill({ href, label, name }: { href: string; label: string; name: string }) {
+/** The pill naming the sister site, pick3.gg: same shape and the same placement logic as pick3's
+ * own header pill (apps/web/src/components.tsx's `SitePill`), so the two headers rhyme, but drawn
+ * from this app's own tokens rather than importing pick3's palette. `name` is the link's full
+ * accessible name ("pick3, the team builder"), since the icon alone says nothing about where the
+ * link goes to a screen reader.
+ *
+ * G: the icon is pick3's own lockup (apps/web/public/lockup.svg / lockup-light.svg) now, not the
+ * bare "3" mark plus a plain "pick3" text label this pill used to carry: the lockup already draws
+ * the word "pick3", so a second, plain-text copy of it right next to that drawing would just
+ * repeat itself on screen. Both colourways render; `.site-pill-lockup`'s `.only-dark` /
+ * `.only-light` pair (app.css) shows the one that matches the active theme. Both images are
+ * hidden from assistive tech, same as the old mark was, so the one accessible name lives on
+ * `aria-label` and is never announced twice. */
+export function SitePill({ href, name }: { href: string; name: string }) {
   return (
     <a className="site-pill" href={href} aria-label={name}>
-      <img className="site-pill-mark" src="/mark.svg" alt="" aria-hidden="true" />
-      <span aria-hidden="true">{label}</span>
+      <img className="only-dark site-pill-lockup" src="/lockup.svg" alt="" aria-hidden="true" />
+      <img className="only-light site-pill-lockup" src="/lockup-light.svg" alt="" aria-hidden="true" />
     </a>
   );
 }
@@ -493,6 +559,37 @@ function ChoiceGroup<T extends string>({
 /** The wrapping row of pills, e.g. a rank-band filter with more options than fit one row. */
 export function Pills<T extends string>(p: ChoiceProps<T>) {
   return <ChoiceGroup className="pills" {...p} />;
+}
+
+/** A5: a horizontally scrolling row, pick3's own `.chips` shape (apps/web/src/app.css), for a
+ * choice with too many options to fit one line at phone width without wrapping (the rank band:
+ * All ranks, Below Ace, Ace, Veteran, Expert, Legend). Built on the same `ChoiceGroup` as `Pills`
+ * above (still a real radiogroup of real buttons, one aria-checked at a time) so the two controls
+ * share every behaviour and differ only in how the row overflows. */
+export function Chips<T extends string>(p: ChoiceProps<T>) {
+  return <ChoiceGroup className="chips" {...p} />;
+}
+
+/** A3: a tap-to-reveal note, ported from pick3's own `Term` (apps/web/src/components.tsx):
+ * `term` is the short label always on screen, `children` the fuller explanation shown only once
+ * tapped. Teams uses this for the confidence key (few/some/many's exact thresholds) so the list
+ * itself is not preceded by a standing line of numbers that only matters to a reader who does not
+ * already trust the badge on each card. */
+export function Term({ term, children }: { term: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="term-wrap">
+      <button
+        type="button"
+        className="term"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        {term}
+      </button>
+      {open ? <span className="term-tip">{children}</span> : null}
+    </span>
+  );
 }
 
 /** Game colours for the three open leagues, kept byte-identical to pick3's own

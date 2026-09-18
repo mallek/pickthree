@@ -5,7 +5,7 @@
  */
 import type { MetaSummaryV1, SpeciesStats } from './api.js';
 import type { Baseline, BaselineSpecies } from './baseline.js';
-import { type Confidence, confidence, trendPoints, winRate } from './stats.js';
+import { type Confidence, confidence, trendPoints } from './stats.js';
 
 /**
  * Counted battles needed before the ranked list is the measured one. Below this a handful of
@@ -18,8 +18,8 @@ export const MEASURED_MIN = 300;
  * that a single reporter's odd matchup would otherwise read as part of the meta.
  *
  * This is a listing cut, not a trust cut: at MEASURED_MIN battles a species can clear 0.5% share
- * on as few as 2 sightings. That is why a row's own confidence and winRate are computed from its
- * own decided battles below, never inferred from the fact that it made the measured list at all.
+ * on as few as 2 sightings. That is why a row's own confidence is computed from its own decided
+ * battles below, never inferred from the fact that it made the measured list at all.
  */
 export const RANKED_SHARE = 0.005;
 /**
@@ -27,12 +27,6 @@ export const RANKED_SHARE = 0.005;
  * one report and proves nothing about repetition; two is the first point worth printing at all.
  */
 export const SMALL_MIN = 2;
-/**
- * A win rate is withheld below this many of the row's own decided battles: 1-1 is not "50%".
- * Deliberately the same number as stats.js's 'few'/'some' split, so a row that is allowed to show
- * a rate is, by definition, never at 'few' confidence. Keep the two together if either changes.
- */
-export const WIN_RATE_MIN = 30;
 /**
  * Devices needed, alongside MEASURED_MIN battles, before the list is measured. 300 battles from
  * one device is one person's matchmaking queue, not what players face: whether the data
@@ -49,7 +43,6 @@ export interface MeasuredRow {
   share: number | null;
   wins: number;
   losses: number;
-  winRate: number | null;
   /** wins + losses. The right number to hand marginSentence, which wants decided battles, not sightings. */
   decided: number;
   /** How much the row's own record can be trusted, from its decided battles, not the window's. */
@@ -139,9 +132,6 @@ export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
       share: measuredEnough ? (meta.battles > 0 ? s.sightings / meta.battles : 0) : null,
       wins: s.wins,
       losses: s.losses,
-      // A rate needs enough decided battles to mean anything. Below that the row shows its raw
-      // win-loss count and no percentage: 1-1 is not "50%".
-      winRate: decided >= WIN_RATE_MIN ? winRate(s.wins, s.losses) : null,
       decided,
       confidence: confidence(decided),
       trend: prev

@@ -95,9 +95,22 @@ describe('trendPoints', () => {
 });
 
 describe('trendLabel', () => {
-  it('reads as a signed number, in ASCII, with a word for no change', () => {
-    expect(trendLabel(3.34)).toBe('+3.3');
-    expect(trendLabel(-1.21)).toBe('-1.2');
+  it('reads as a signed whole number, in ASCII, with a word for no change', () => {
+    // A4: whole numbers everywhere, so this rounds rather than keeping stats.ts's old one-decimal
+    // form; 3.34 and -1.21 both round to a single digit here, which is why round numbers are used
+    // in the sub-whole-point case just below to actually exercise the rounding, not coincide with it.
+    expect(trendLabel(3.34)).toBe('+3');
+    expect(trendLabel(-1.21)).toBe('-1');
     expect(trendLabel(0.04)).toBe('even');
+  });
+
+  it('names a real but sub-whole-point move "even" rather than printing "+0"', () => {
+    expect(trendLabel(0.4)).toBe('even');
+    expect(trendLabel(-0.4)).toBe('even');
+  });
+
+  it('rounds half a point up to the next whole number either side of zero', () => {
+    expect(trendLabel(0.5)).toBe('+1');
+    expect(trendLabel(-0.5)).toBe('-1');
   });
 });

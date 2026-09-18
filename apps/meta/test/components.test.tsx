@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
   Bar,
-  ConfidenceDot,
+  Chips,
+  ConfidenceTag,
   LEAGUE_COLORS,
   LeagueShield,
   LeagueSwitcher,
@@ -11,8 +12,10 @@ import {
   SitePill,
   Sparkline,
   Sprite,
-  SpriteStack,
-  TypeTags,
+  Term,
+  TrendTag,
+  TypeChip,
+  TypeChips,
   typeColor,
 } from '../src/components.js';
 import type { SpeciesLite } from '../src/data.js';
@@ -44,12 +47,19 @@ describe('typeColor', () => {
 
 describe('SitePill', () => {
   it('links out with an accessible name that says where it goes', () => {
-    render(<SitePill href="https://pick3.gg" label="pick3" name="pick3, the team builder" />);
+    const { container } = render(
+      <SitePill href="https://pick3.gg" name="pick3, the team builder" />,
+    );
     const link = screen.getByRole('link', { name: 'pick3, the team builder' });
     expect(link).toHaveAttribute('href', 'https://pick3.gg');
-    // The visible label and the mark are both hidden from assistive tech: the aria-label above
-    // is the one source of the accessible name, so it is never announced twice.
-    expect(screen.getByText('pick3')).toHaveAttribute('aria-hidden', 'true');
+    // The pick3 lockup already draws the word "pick3", so there is no separate text label to
+    // duplicate it; both colourways are hidden from assistive tech, and aria-label above is the
+    // one source of the accessible name.
+    const images = container.querySelectorAll('img');
+    expect(images).toHaveLength(2);
+    for (const img of images) {
+      expect(img).toHaveAttribute('aria-hidden', 'true');
+    }
   });
 });
 
@@ -118,20 +128,56 @@ describe('Sprite', () => {
   });
 });
 
-describe('SpriteStack', () => {
-  it('gives the group one accessible name and hides the individual sprites from it', () => {
-    render(<SpriteStack species={[azumarill, clodsire]} />);
-    expect(screen.getByRole('img', { name: 'Azumarill, Clodsire' })).toBeInTheDocument();
-    expect(screen.queryByRole('img', { name: 'Azumarill' })).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Clodsire' })).toBeNull();
+describe('TypeChip', () => {
+  it('names the type in Title Case, in pick3\'s chip shape, coloured from its type tokens', () => {
+    const { container } = render(<TypeChip type="water" />);
+    const chip = screen.getByText('Water');
+    expect(chip).toHaveClass('tchip');
+    expect(chip).not.toHaveClass('tchip-sm');
+    expect((chip as HTMLElement).style.getPropertyValue('--c')).toBe('var(--type-water)');
+    expect((chip as HTMLElement).style.getPropertyValue('--t')).toBe('var(--type-water-ink)');
+    expect(container.querySelector('.tchip')?.textContent).toBe('Water');
+  });
+
+  it('falls back to the neutral tokens for an unrecognised type rather than an unset variable', () => {
+    render(<TypeChip type="quantum" />);
+    const chip = screen.getByText('Quantum');
+    expect((chip as HTMLElement).style.getPropertyValue('--c')).toBe('var(--muted)');
+    expect((chip as HTMLElement).style.getPropertyValue('--t')).toBe('var(--muted)');
+  });
+
+  it('adds the small modifier when asked', () => {
+    render(<TypeChip type="water" small />);
+    expect(screen.getByText('Water')).toHaveClass('tchip-sm');
   });
 });
 
-describe('TypeTags', () => {
-  it('names every type in plain words', () => {
-    render(<TypeTags types={['water', 'fairy']} />);
+describe('TypeChips', () => {
+  it('names every type in Title Case, wrapped in one tchips row', () => {
+    const { container } = render(<TypeChips types={['water', 'fairy']} />);
     expect(screen.getByText('Water')).toBeInTheDocument();
     expect(screen.getByText('Fairy')).toBeInTheDocument();
+    expect(container.querySelectorAll('.tchips')).toHaveLength(1);
+    expect(container.querySelectorAll('.tchip')).toHaveLength(2);
+  });
+});
+
+describe('TrendTag', () => {
+  it('reads a rising share as a small green-toned "up" tag', () => {
+    render(<TrendTag points={3.34} />);
+    const tag = screen.getByText('+3');
+    expect(tag).toHaveClass('trend-tag', 'up');
+  });
+
+  it('reads a falling share as a small red-toned "down" tag', () => {
+    render(<TrendTag points={-1.21} />);
+    const tag = screen.getByText('-1');
+    expect(tag).toHaveClass('trend-tag', 'down');
+  });
+
+  it('renders nothing for a real but sub-whole-point move, rather than a zero-looking tag', () => {
+    const { container } = render(<TrendTag points={0.04} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
 
@@ -211,10 +257,11 @@ describe('Sparkline', () => {
   });
 });
 
-describe('ConfidenceDot', () => {
-  it('says how much to trust a sample in words, not just colour', () => {
-    render(<ConfidenceDot n={12} />);
-    expect(screen.getByText('few')).toBeInTheDocument();
+describe('ConfidenceTag', () => {
+  it('says how much to trust a sample in words, in a small pick3-style tag', () => {
+    render(<ConfidenceTag n={12} />);
+    const tag = screen.getByText('few');
+    expect(tag).toHaveClass('tag', 'tag-few');
   });
 });
 
@@ -267,5 +314,39 @@ describe('Pills', () => {
     );
     await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
     expect(onChange).toHaveBeenCalledWith('ace');
+  });
+});
+
+// A5: same radiogroup contract as Pills, a different (scrolling) container class.
+describe('Chips', () => {
+  it('is a radiogroup of real buttons, same as Pills', async () => {
+    const onChange = vi.fn();
+    render(
+      <Chips
+        label="Rank band"
+        value="all"
+        onChange={onChange}
+        options={[
+          { value: 'all', label: 'All ranks' },
+          { value: 'ace', label: 'Ace' },
+        ]}
+      />,
+    );
+    const group = screen.getByRole('radiogroup', { name: 'Rank band' });
+    expect(group).toHaveClass('chips');
+    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    expect(onChange).toHaveBeenCalledWith('ace');
+  });
+});
+
+describe('Term', () => {
+  it('reveals its body only once tapped', async () => {
+    render(<Term term="What this means">The fuller explanation.</Term>);
+    expect(screen.queryByText('The fuller explanation.')).toBeNull();
+    const opener = screen.getByRole('button', { name: 'What this means' });
+    expect(opener).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(opener);
+    expect(screen.getByText('The fuller explanation.')).toBeInTheDocument();
+    expect(opener).toHaveAttribute('aria-expanded', 'true');
   });
 });

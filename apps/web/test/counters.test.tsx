@@ -50,7 +50,7 @@ describe('Counters screen, league from a link', () => {
       .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
   });
 
-  it('carries the meta.pick3.gg pill in its page head, next to the cog', async () => {
+  it('carries the meta.pick3.gg icon button in its page head, next to the cog', async () => {
     const host = await twoLeagueHost();
     render(
       <AppProvider host={host}>

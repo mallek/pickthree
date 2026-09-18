@@ -333,6 +333,11 @@ for (const run of RUNS) {
     await assertAscii(page, label);
     const file = path.join(outDir, `${run.name}-${name}.png`);
     await page.screenshot({ path: file, fullPage: true });
+    // A viewport capture alongside the full-page one: what a reader actually meets above the
+    // fold at phone width, the header row included, rather than a tall image that scrolls the
+    // header out of frame by the time anyone looks at it.
+    const viewportFile = path.join(outDir, `${run.name}-${name}-viewport.png`);
+    await page.screenshot({ path: viewportFile, fullPage: false });
     console.log(`    ${run.name}-${name}.png (${Date.now() - t0} ms)`);
 
     // The overview page (both plain and with the window/band query set) is where the

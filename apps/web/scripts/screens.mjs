@@ -428,8 +428,10 @@ await shot('17-added', false);
 
 console.log('settings sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.head-cog');
-await page.click('.head-cog');
+// Teams now carries two `.head-cog` buttons (the meta link, then the settings cog); `.cog` picks
+// the settings one specifically.
+await page.waitForSelector('.cog.head-cog');
+await page.click('.cog.head-cog');
 await page.waitForSelector('.sheet');
 await new Promise((r) => setTimeout(r, 400));
 await shot('06-sheet', false);

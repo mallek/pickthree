@@ -3,10 +3,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   Chip,
   HeadCog,
+  MetaButton,
   MetaTags,
   PokemonToken,
   Progress,
-  SitePill,
   TypeChips,
   useName,
   useSpecies,
@@ -86,7 +86,7 @@ export function Counters() {
             {vs ? null : (
               <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
             )}
-            <SitePill />
+            <MetaButton />
             <HeadCog />
           </span>
         </div>

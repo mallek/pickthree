@@ -11,9 +11,9 @@
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
-import { Bar, Sparkline, Sprite, Tag, TypeTags } from '../components.js';
+import { Bar, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { battles as battlesText, count, pct, plural } from '../format.js';
+import { battles as battlesText, count, pctFloor, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
 import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
 import type { Query, View } from '../route.js';
@@ -99,26 +99,34 @@ function aggregateMoves(
     .sort((a, b) => b.battles - a.battles || a.moveId.localeCompare(b.moveId));
 }
 
-/** A move name tinted by its type, using the same `Tag` (and so the same foreground rule) as a
- * Pokemon's own `TypeTags`. A move id with no entry in the static move file still renders,
- * under its raw id, rather than going blank. */
-function MoveTag({ moveId, data }: { moveId: string; data: StaticData }) {
+/** D3: one line per move, pick3's own shape from Build's cards (`.pick-move`/`.pick-move-k`,
+ * `moveLines` in apps/web/src/screens/Build.tsx): an F or C marker, the move's name, its type
+ * chip, and this card's own addition at the end of the line, the share of battles a set with this
+ * move was run in (pick3's version has no share to show, since it is picking a build, not
+ * reporting one). A move id with no entry in the static move file still renders under its raw id,
+ * rather than going blank. */
+function MoveLine({
+  moveId,
+  kind,
+  battles,
+  runs,
+  data,
+}: {
+  moveId: string;
+  kind: 'F' | 'C';
+  battles: number;
+  runs: number;
+  data: StaticData;
+}) {
   const move = data.moves.get(moveId);
-  const name = move?.name ?? moveId;
-  const type = move?.type ?? '';
-  return <Tag type={type} label={name} />;
-}
-
-function MoveShareRow({ share, runs, data }: { share: MoveShare; runs: number; data: StaticData }) {
-  const sharePct = runs > 0 ? (share.battles / runs) * 100 : 0;
+  const sharePct = runs > 0 ? (battles / runs) * 100 : 0;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <MoveTag moveId={share.moveId} data={data} />
-        <span className="fine">{Math.round(sharePct)}%</span>
-      </div>
-      <Bar pct={sharePct} label={`${share.moveId} share`} />
-    </div>
+    <span className="pick-move">
+      <i className="pick-move-k">{kind}</i>
+      <span className="pick-move-name">{move?.name ?? moveId}</span>
+      {move ? <TypeChip type={move.type} small /> : null}
+      <span className="fine pick-move-share">{Math.round(sharePct)}%</span>
+    </span>
   );
 }
 
@@ -140,17 +148,28 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
     <section>
       <h2>Moves reporters ran</h2>
       <p className="sub">Run by reporters in {battlesText(detail.runs)}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="pick-moves">
         {fastShares.map((s) => (
-          <MoveShareRow key={`fast-${s.moveId}`} share={s} runs={detail.runs} data={data} />
+          <MoveLine
+            key={`fast-${s.moveId}`}
+            moveId={s.moveId}
+            kind="F"
+            battles={s.battles}
+            runs={detail.runs}
+            data={data}
+          />
         ))}
         {chargedShares.map((s) => (
-          <MoveShareRow key={`charged-${s.moveId}`} share={s} runs={detail.runs} data={data} />
+          <MoveLine
+            key={`charged-${s.moveId}`}
+            moveId={s.moveId}
+            kind="C"
+            battles={s.battles}
+            runs={detail.runs}
+            data={data}
+          />
         ))}
       </div>
-      <p className="fine">
-        Most Pokemon carry two charged moves, so those shares add up to about 200%.
-      </p>
     </section>
   );
 }
@@ -215,10 +234,14 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
   return (
     <section>
       <h2>Faced, week by week</h2>
-      <Sparkline values={shares} />
-      <p className="sub">
-        {pct(latestShare)}% latest{changeText ? `, ${changeText}` : ''}
-      </p>
+      {/* D1: the latest reading is labelled on the chart itself now, not in a line of text
+       * below it; the trend clause (when there is one to state) is the only text left here. */}
+      <Sparkline
+        values={shares}
+        weekLabels={weekly.map((w) => w.week)}
+        latestLabel={`${pctFloor(latestShare)} latest`}
+      />
+      {changeText ? <p className="sub">{changeText}</p> : null}
     </section>
   );
 }
@@ -252,8 +275,10 @@ function RecordCard({
           ) : null}
         </>
       )}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <a className="btn btn-primary" href={countersLink(league, speciesId)}>
+      {/* D4: pick3's own outlined pair (.btn-pair, both .btn.btn-secondary): neither link is
+       * more "primary" than the other, they are two different destinations on pick3. */}
+      <div className="btn-pair">
+        <a className="btn btn-secondary" href={countersLink(league, speciesId)}>
           Who beats it
         </a>
         <a className="btn btn-secondary" href={`${PICK3}/#/build`}>
@@ -276,19 +301,17 @@ function thinBands(bands: SpeciesDetailV1['bands']): SpeciesDetailV1['bands'] {
     .sort((a, b) => b.sightings - a.sightings || a.band.localeCompare(b.band));
 }
 
-/** One band reads as its own short sentence; several read as one sentence naming all of them,
- * each with its own count (the spec's "always on screen with their counts, however small" rule
- * applies as much to a caveat as to the row it is about). */
+/** D2: one short muted line, replacing the old sentence that named every thin band and its own
+ * count (each band's own count is already on screen in the row above it; naming them again here
+ * was the "too much prose above the data" this handoff is about). The gate is unchanged, only the
+ * words are shorter: no caveat at all once every band clears `THIN_BAND_MAX`. The threshold stays
+ * interpolated, the same discipline About.tsx uses for its own thresholds, so this sentence can
+ * never say a number the code does not actually enforce. */
 function thinBandCaveat(thin: SpeciesDetailV1['bands']): string | null {
   if (thin.length === 0) {
     return null;
   }
-  if (thin.length === 1) {
-    const b = thin[0]!;
-    return `${bandLabel(b.band)} is ${battlesText(b.sightings)}, treat it as a hint, not a fact.`;
-  }
-  const named = thin.map((b) => `${bandLabel(b.band)} (${battlesText(b.sightings)})`);
-  return `${joinAnd(named)} are all under ${count(THIN_BAND_MAX)} battles, treat them as hints, not facts.`;
+  return `Under ${count(THIN_BAND_MAX)} battles per band: hints, not facts.`;
 }
 
 function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
@@ -430,7 +453,7 @@ export function Species(p: {
   const headerTop = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <Sprite species={species} size={64} />
-      <TypeTags types={species.types} />
+      <TypeChips types={species.types} />
     </div>
   );
 
@@ -462,7 +485,7 @@ export function Species(p: {
   } else if (measuredEnough) {
     const share = m.battles > 0 ? d.sightings / m.battles : 0;
     const rankNum = rankAmong(m, speciesId, d.sightings);
-    headerText = `#${rankNum} most faced - in ${pct(share)}% of ${battlesText(m.battles)}`;
+    headerText = `#${rankNum} most faced - in ${pctFloor(share)} of ${battlesText(m.battles)}`;
   } else {
     headerText = `Faced ${count(d.sightings)} ${plural(d.sightings, 'time', 'times')} in ${battlesText(m.battles)}`;
   }

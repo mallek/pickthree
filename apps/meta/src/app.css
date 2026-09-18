@@ -200,14 +200,13 @@ a {
   flex: none;
 }
 
-/* One filter row (docs/design/meta/meta.pick3.gg.dc.html, screen 1a): the window pills at their
-   natural width on the left, the rank band select pushed to the far right. `.pills` still wraps
-   internally on a narrow screen (its own flex-wrap below); this row does not need to, since the
-   select is a single fixed-size control rather than a set that could itself overflow. */
+/* A5: the window pills, at their own natural width, on their own row. The rank band used to
+   share this row as a select pushed to the far right; it is a second row of its own now (the
+   `.chips` row just below), so this row no longer needs `justify-content` to split two controls
+   apart, only to hold the one. */
 .filter-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 
@@ -249,51 +248,49 @@ a {
   color: var(--text);
 }
 
-/* The rank-band control: a native <select>, not a custom menu, so a phone gets its own picker
-   for free, with keyboard support and no menu code here, and six wrapped pills collapse into
-   one target. A select ignores an author `background` on some platforms until its native
-   appearance is turned off first, so that is explicit rather than assumed to just work. */
-.select-wrap {
-  position: relative;
-  display: inline-flex;
+/* A5: the rank band, ported from pick3's own scrolling `.chips` row (apps/web/src/app.css)
+   rather than the wrapping `.pills` above: six options do not fit one line at phone width, and
+   wrapping them would need the same row-gap-vs-hit-area treatment `.pills` already carries for a
+   shorter list, for no benefit over letting the row scroll sideways instead. The horizontal
+   overflow lives on this row alone, never on `html` or `body` (that would drag the fixed tab bar
+   sideways on iOS), and `.app`'s own `overflow-x: clip` still contains it if a chip's focus ring
+   or hit-area ever nudged the row a pixel past its own edge. */
+.chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Bleeds to .app's own 16px side padding, the same trick pick3's .chips uses for its 20px, so
+     the row's edge chips sit flush with everything above and below them instead of stopping
+     short, and the cut-off chip past the fold is the visual cue that the row keeps going. */
+  margin: 0 -16px;
+  padding: 0 16px 6px;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* Painted height is 40px directly (not the 30px-plus-hit-area trick `.pills` uses): a chip on
+   this row has no neighbour above or below it to protect from an overlapping touch target, since
+   the row never wraps, so there is nothing an invisible `::after` overhang would need to clear. */
+.chips > * {
   flex: none;
-}
-
-.band-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
   min-height: 40px;
-  padding: 0 30px 0 14px;
+  padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
 }
 
-.band-select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* A CSS-drawn chevron, not the design mock's own glyph: this site's rendered text is strict
-   7-bit ASCII, and a <select> cannot reliably host a ::after of its own across browsers, so the
-   arrow lives on the wrapping span instead. `pointer-events: none` keeps it from ever catching a
-   tap that was meant for the control underneath it. */
-.select-wrap::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 13px;
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid var(--muted);
-  border-bottom: 1.5px solid var(--muted);
-  transform: translateY(-65%) rotate(45deg);
-  pointer-events: none;
+.chips > .on {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 /* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
@@ -368,36 +365,56 @@ a {
   border: 1px solid var(--border);
 }
 
-/* Icon buttons: the design's 34px circle stays exactly that size. The touch target is a
-   transparent pseudo-element extended 3px on every side, reaching the 40px floor without
-   changing anything that paints. */
-.icon-btn {
+/* D4: the "Who beats it" / "Build a team" pair, ported from pick3's own .btn-pair
+   (apps/web/src/app.css): a two-column grid so both buttons split the row evenly, used with two
+   .btn.btn-secondary children so neither reads as more filled, more primary, than the other. */
+.btn-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* The header's one icon button, ported from pick3's own .head-cog (apps/web/src/app.css) so it
+   matches exactly: a 36px bordered circle in the muted ink, not a filled control. pick3's own
+   version paints at 36px with no touch-target extension of its own; this site's own floor is 40px
+   everywhere else, so a -2px inset (36 + 2 + 2 = 40) closes that gap here without changing what
+   paints. A1 moved this app's only appearance toggle into the brand row wearing this class in
+   place of the plainer .icon-btn it used to be (nothing else used that class, so it is gone). */
+.head-cog {
   position: relative;
-  width: 34px;
-  height: 34px;
-  padding: 3px;
+  height: 36px;
+  width: 36px;
   border-radius: 50%;
+  border: 1px solid var(--border);
   background: var(--surface);
-  border: 0;
+  color: var(--muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
+  flex: none;
 }
 
-.icon-btn::after {
+.head-cog svg {
+  width: 20px;
+  height: 20px;
+}
+
+.head-cog::after {
   content: '';
   position: absolute;
-  inset: -3px;
+  inset: -2px;
 }
 
-/* Rows and tokens */
+/* Rows and tokens. B1: token and padding sized to match pick3's own .counter-row rhythm
+   (apps/web/src/app.css: 44px token, 12px vertical padding); the leading rank number is a column
+   pick3's row does not need (pick3 does not rank a fixed top N), so it stays as this site's own
+   addition rather than something pick3's rhythm dictates. */
 .row {
   display: grid;
-  grid-template-columns: 22px 40px 1fr auto;
-  gap: 10px;
+  grid-template-columns: 22px 44px 1fr auto;
+  gap: 12px;
   align-items: center;
-  padding: 8px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
   min-width: 0;
 }
@@ -426,13 +443,35 @@ a.row {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 
-.type-tag {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 1px 6px;
+/* A2: pick3's own type chip, ported byte-for-byte from apps/web/src/app.css (.tchips/.tchip/
+   .tchip-sm) so the two sites' type chips are the same control: Title Case text on a light wash
+   of the type's colour. This used to sit beside a separate solid, uppercase .type-tag pill for a
+   move's own type; D3 moved that onto this chip too, which left .type-tag with no caller, so
+   FIX 5 removed it rather than carry a second, unused way to draw a type. */
+.tchips {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  vertical-align: middle;
+}
+.tchip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
   border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--t);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  line-height: 1.3;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.tchip-sm {
+  padding: 0 5px;
+  font-size: 10px;
 }
 
 .bar {
@@ -455,25 +494,63 @@ a.row {
   font-weight: 800;
 }
 
-/* ConfidenceDot: exactly three fixed tones, so modifiers rather than an inline colour. */
-.conf-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 4px;
+/* C3: the confidence badge, ConfidenceTag's small pill next to a win rate, pick3's own `.tag`
+   shape (apps/web/src/app.css). pick3 styles `.tag` only inside the parent that uses it
+   (`.pick-moves .tag`, `.recent-token .tag`); this is the same convention, one shape reused by
+   three fixed-tone modifiers rather than an inline colour, same three tones the dot it replaces
+   used. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.conf-dot.conf-few {
-  background: var(--muted);
+.tag-few {
+  background: var(--surface2);
+  color: var(--muted);
 }
 
-.conf-dot.conf-some {
-  background: var(--warn);
+.tag-some {
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+  color: var(--warn);
 }
 
-.conf-dot.conf-many {
-  background: var(--up);
+.tag-many {
+  background: color-mix(in srgb, var(--up) 16%, transparent);
+  color: var(--up);
+}
+
+/* A3: the tap-to-reveal note (`Term`), ported from pick3's own `.term-wrap`/`.term`/`.term-tip`
+   (apps/web/src/app.css). pick3's tip background is its own `--accent-tint`; this site has no
+   such token (see the `.league-switcher` comment above for the same substitution), so `--surface2`
+   stands in for it here too. */
+.term-wrap {
+  position: relative;
+  display: inline;
+}
+
+.term {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted var(--accent);
+  text-underline-offset: 3px;
+}
+
+.term-tip {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 12px;
 }
 
 .bar > span {
@@ -487,6 +564,181 @@ a.row {
   background: var(--muted);
 }
 
+/* C1/C2: the team card, ported from pick3's own .team-card/.slots3/.slot/.slot-name/.cost-line/
+   .team-details (apps/web/src/app.css) so a shared team reads the same shape on both sites.
+   pick3's own card is a div (it only loads local state on tap); this one is a real <a> straight
+   to the pick3 deep link, since tapping it here means leaving the site. The foot affordance
+   stays plain text rather than a second <a>, so a link never nests inside this outer one and
+   there is exactly one focusable element per card. */
+.team-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.team-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .team-card:hover {
+    background: var(--surface2);
+  }
+}
+
+.slots3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.slot-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.cost-line {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.team-details {
+  color: var(--accent);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small
+   (apps/web/src/app.css): the share (or, below the measured threshold, the sighting count) as
+   the big number, the record as a small muted line under it. */
+.row-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.row-figure b {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+}
+.row-figure small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, like ConfidenceTag's
+   `.tag-*` modifiers above: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a neutral
+   or zero one, so there is no third modifier here. */
+.trend-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  vertical-align: middle;
+  flex: none;
+}
+.trend-tag.up {
+  color: var(--up);
+  background: color-mix(in srgb, var(--up) 16%, transparent);
+}
+.trend-tag.down {
+  color: var(--down);
+  background: color-mix(in srgb, var(--down) 16%, transparent);
+}
+
+/* D1: the sparkline's latest-point dot and label, and its week-tick row. Plain HTML rather than
+   SVG, and positioned by percentage/pixel rather than drawn in the chart's own stretched
+   coordinate space, so neither is warped the way a circle or SVG text would be (see the comment
+   on Sparkline in components.tsx for why). */
+.spark-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.spark-label {
+  position: absolute;
+  transform: translate(calc(-100% - 8px), -50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.spark-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* D3: movesets shown as pick3's Build cards show them, ported from apps/web/src/app.css's own
+   .pick-moves/.pick-move/.pick-move-k/.pick-move-name byte for byte, apart from the share number
+   this card appends at the end of each line (pick3's own version has no share to show). */
+.pick-moves {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pick-move {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  min-width: 0;
+}
+.pick-move-k {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  width: 12px;
+  text-align: center;
+  flex: none;
+}
+.pick-move-name {
+  min-width: 0;
+  line-height: 1.2;
+}
+.pick-move-share {
+  margin-left: auto;
+  flex: none;
+}
+
 /* Names truncate rather than wrap. The grid/flex parent needs min-width: 0 or this fails
    silently. */
 .name {
@@ -496,12 +748,14 @@ a.row {
   min-width: 0;
 }
 
-/* Brand row: the wordmark, the pick3 mark and a link back to the main app. Shown on the three
-   tab-root screens (Overview, Teams, About), each reached straight from the bottom tab bar.
-   Species is a drill-down from Overview rather than a tab of its own, so its sticky header's
-   back link fills this row's "how do I leave this page" job instead, and the wordmark is
-   dropped there rather than duplicating it. Not sticky itself: only the page header below it is,
-   so the two never have to share row 0. */
+/* Brand row: the wordmark, the pick3 pill and (A1) the appearance toggle, grouped with the pill
+   in .brand-actions so this row still has exactly two flex children (the wordmark and the
+   actions) despite carrying three controls worth of content. Shown on the three tab-root screens
+   (Overview, Teams, About), each reached straight from the bottom tab bar. Species is a
+   drill-down from Overview rather than a tab of its own, so its sticky header's back link (and
+   its own copy of the appearance toggle, Header's `action`) fills this row's job instead, and the
+   wordmark is dropped there rather than duplicating it. Not sticky itself: only the page header,
+   switcher and filters below it are, so the two never have to share row 0. */
 .brand {
   display: flex;
   align-items: center;
@@ -510,32 +764,68 @@ a.row {
   gap: 8px;
 }
 
-.wordmark {
-  display: inline-flex;
+.brand-actions {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+/* G: deliberately plain inline flow, not a flex container. pick3's own hero-lockup metrics trick
+   (the .hero-lockup rule below) leans on `vertical-align`, which a flex item ignores outright;
+   only ordinary inline layout, the same context pick3's own h1 hero puts it in
+   (apps/web/src/screens/Welcome.tsx), makes that baseline math do anything at all. */
+.wordmark {
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.2px;
   text-decoration: none;
-  /* The link's own colour (the base `a` rule above) is the accent; without this the "meta" span,
+  /* The link's own colour (the base `a` rule above) is the accent; without this the "meta." span,
      which sets no colour of its own, would inherit that accent instead of body ink. */
   color: var(--text);
 }
 
-.wordmark-mark {
-  width: 22px;
-  height: 22px;
-  display: block;
-  /* .wordmark used to space every flex child with `gap`, which put the same 6px between the
-     mark and "meta" as between "meta" and ".pick3.gg", so the brand name itself read with a
-     stray space in the middle ("meta .pick3.gg"). Only the mark should be set apart from the
-     name, so that gap moved here, off the two text spans it never should have touched. */
-  margin-right: 6px;
+/* Only the ".gg" span is muted; "meta." stays the body ink and the pick3 lockup between them
+   carries its own fixed colour (baked into the two SVGs, one per theme). */
+.wordmark-muted {
+  color: var(--muted);
 }
 
-/* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
-.wordmark-accent {
-  color: var(--accent);
+/* Ported byte for byte from apps/web/src/app.css's own .hero-lockup: the Inter 700 metrics that
+   put the SVG's baseline on the wordmark's text baseline and its cap height on the wordmark's cap
+   height. Do not retune these numbers here; if the pick3 wordmark ever needs different metrics,
+   that change belongs in pick3's own rule first, this one after. */
+.hero-lockup {
+  height: 1.135em;
+  width: auto;
+  vertical-align: -0.325em;
+  margin-left: 0.02em;
+}
+.only-light.hero-lockup {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark.hero-lockup {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light.hero-lockup {
+    display: inline;
+  }
+}
+:root[data-theme='light'] .only-dark.hero-lockup {
+  display: none;
+}
+:root[data-theme='light'] .only-light.hero-lockup {
+  display: inline;
+}
+:root[data-theme='dark'] .only-dark.hero-lockup {
+  display: inline;
+}
+:root[data-theme='dark'] .only-light.hero-lockup {
+  display: none;
+}
+.only-dark.hero-lockup {
+  display: inline;
 }
 
 /* The pill naming the sister site, pick3.gg. Same shape as pick3's own header pill
@@ -557,9 +847,40 @@ a.row {
   flex: none;
 }
 
-.site-pill-mark {
-  width: 16px;
+/* G: the pill's icon is pick3's own lockup now, not the bare "3" mark, so the pill spells out
+   "pick3" the way pick3 itself does. Sized to the pill's own text height rather than forced into
+   the old mark's 16x16 square, which would have squashed the lockup's wider aspect ratio. Same
+   dark/light toggle mechanism as .hero-lockup above, kept as its own block (rather than folded
+   into that one) because the two live at different sizes in different layout contexts. */
+.site-pill-lockup {
   height: 16px;
+  width: auto;
+  display: block;
+}
+.only-light.site-pill-lockup {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark.site-pill-lockup {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light.site-pill-lockup {
+    display: block;
+  }
+}
+:root[data-theme='light'] .only-dark.site-pill-lockup {
+  display: none;
+}
+:root[data-theme='light'] .only-light.site-pill-lockup {
+  display: block;
+}
+:root[data-theme='dark'] .only-dark.site-pill-lockup {
+  display: block;
+}
+:root[data-theme='dark'] .only-light.site-pill-lockup {
+  display: none;
+}
+.only-dark.site-pill-lockup {
   display: block;
 }
 
@@ -613,7 +934,7 @@ a.row {
   min-width: 44px;
 }
 
-/* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .icon-btn::after's
+/* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .head-cog::after's
    all-sides inset only ever meets the 8px gap between buttons on the same row, which is enough
    clearance for a 3px inset on each side. */
 .hdr-actions {
@@ -629,6 +950,7 @@ button,
 select,
 .league-switcher button,
 .pills > *,
+.chips > *,
 .row {
   -webkit-tap-highlight-color: transparent;
 }
@@ -636,6 +958,7 @@ select,
 a:focus-visible,
 button:focus-visible,
 .pills > *:focus-visible,
+.chips > *:focus-visible,
 .row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -643,6 +966,7 @@ button:focus-visible,
 
 @media (hover: hover) {
   .pills > *:hover,
+  .chips > *:hover,
   .row:hover {
     background: var(--surface2);
   }
