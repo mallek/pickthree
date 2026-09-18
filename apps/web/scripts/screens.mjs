@@ -127,7 +127,7 @@ await page.waitForFunction(
 );
 
 console.log('team detail');
-const teamHref = await page.$eval('.team-card', (a) => a.getAttribute('href'));
+const teamHref = await page.$eval('.team-card .team-details', (a) => a.getAttribute('href'));
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.assump', { timeout: 60_000 }).catch(async () => {
   const text = await page.$eval('.screen', (e) => e.textContent.slice(0, 200));

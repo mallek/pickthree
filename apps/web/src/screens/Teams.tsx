@@ -24,12 +24,25 @@ export function TeamCard({
 }: {
   team: TeamRecommendation;
   first: boolean;
+  /** The team's analysis page, behind the small link at the foot of the card. */
   href: string;
-  onOpen?: () => void;
+  /** Tapping the card: load the team into Build for edits. */
+  onOpen: () => void;
 }) {
   const name = useName();
   return (
-    <a className={`team-card${first ? ' first' : ''}`} href={href} onClick={onOpen}>
+    <div
+      className={`team-card${first ? ' first' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+    >
       <div className="between">
         <span className="row">
           <FitTag fit={team.score.fit} />
@@ -58,15 +71,25 @@ export function TeamCard({
       <p style={{ fontSize: 14 }}>{team.explanation.why}</p>
       <div className="cost-line">
         <span>{costLine(team.cost)}</span>
-        <b>Details &rsaquo;</b>
+        <a className="team-details" href={href} onClick={(e) => e.stopPropagation()}>
+          Analysis &rsaquo;
+        </a>
       </div>
-    </a>
+    </div>
   );
 }
 
 export function Teams() {
   const s = useAppState();
-  const { navigate, runRecommend, updateSettings, openSheet } = useActions();
+  const { navigate, runRecommend, updateSettings, openSheet, setPick } = useActions();
+  /** Tapping a team loads it into Build as your specimens at the recommended stage. */
+  const editInBuild = (t: TeamRecommendation): void => {
+    t.slots.forEach((slot, i) => {
+      const b = slot.candidate.build;
+      setPick(i, { kind: 'specimen', id: b.specimenId, asSpeciesId: b.speciesId });
+    });
+    navigate({ screen: 'build' });
+  };
   const f = s.settings.filters;
   const logCount = useLogCount();
   const key = filterKey(s.settings, s.logVersion);
@@ -176,6 +199,7 @@ export function Teams() {
             team={t}
             first={i === 0}
             href={hashFor({ screen: 'team', id: t.id })}
+            onOpen={() => editInBuild(t)}
           />
         ))}
         {s.recommendation ? (
