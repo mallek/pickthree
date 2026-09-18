@@ -330,16 +330,23 @@ export function Overview(p: {
     </section>
   );
 
+  // Nothing measured yet: the rule below describes what qualifies a row for this list, which is
+  // meaningless to state about a set that has nothing in it (worse, it used to print "these 0
+  // battles" right above a line saying no battles have been shared at all). Only the empty-state
+  // sentence needs to show.
+  const hasSeenAny = ranking.measured.length > 0 || ranking.tail > 0;
   const seenSection = (
     <section>
       <h2>What we have seen</h2>
-      <p className="sub">
-        Every Pokemon faced at least {count(SMALL_MIN)} {plural(SMALL_MIN, 'time', 'times')} in
-        these {battlesText(ranking.battles)}.
-      </p>
-      {ranking.measured.length === 0 && ranking.tail === 0 ? (
-        <p className="sub">No battles shared in this window yet.</p>
+      {hasSeenAny ? (
+        <p className="sub">
+          Faced {count(SMALL_MIN)} or more times in the {battlesText(ranking.battles)} shared so
+          far.
+        </p>
       ) : (
+        <p className="sub">No battles shared in this window yet.</p>
+      )}
+      {hasSeenAny ? (
         <>
           {ranking.measured.map((row) => (
             <MeasuredRowView
@@ -354,7 +361,7 @@ export function Overview(p: {
           ))}
           {ranking.tail > 0 ? <p className="fine">{tailLine(ranking.tail)}</p> : null}
         </>
-      )}
+      ) : null}
     </section>
   );
 

@@ -49,7 +49,9 @@ const meta = { battles: 1000, devices: 120 };
 describe('Species', () => {
   it('names it, its types and how often it turned up', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    expect(await screen.findByRole('heading', { name: 'Azumarill' })).toBeInTheDocument();
+    // The species name is App.tsx's sticky header title now (a plain span, matching apps/web's
+    // own Header, not a heading), so this checks the text rather than a heading role.
+    expect(await screen.findByText('Azumarill')).toBeInTheDocument();
     expect(screen.getByText('Water')).toBeInTheDocument();
     expect(screen.getByText(/in 18.4% of 1,000 battles/)).toBeInTheDocument();
   });
@@ -183,7 +185,7 @@ describe('Species', () => {
 
   it('renders something useful for a species nobody has faced', async () => {
     render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
-    expect(await screen.findByRole('heading', { name: 'Azumarill' })).toBeInTheDocument();
+    expect(await screen.findByText('Azumarill')).toBeInTheDocument();
     expect(screen.getByText('No shared battles mention it in this window.')).toBeInTheDocument();
     expect(
       screen.getByText('Nobody who shares battles has run it in this window.'),

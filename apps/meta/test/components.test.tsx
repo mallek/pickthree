@@ -4,8 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   Bar,
   ConfidenceDot,
+  LEAGUE_COLORS,
+  LeagueShield,
+  LeagueSwitcher,
   Pills,
-  Segmented,
+  SitePill,
   Sparkline,
   Sprite,
   SpriteStack,
@@ -36,6 +39,17 @@ describe('typeColor', () => {
   it('maps a type to its token and an unknown type to the neutral one', () => {
     expect(typeColor('water')).toBe('var(--type-water)');
     expect(typeColor('quantum')).toBe('var(--muted)');
+  });
+});
+
+describe('SitePill', () => {
+  it('links out with an accessible name that says where it goes', () => {
+    render(<SitePill href="https://pick3.gg" label="pick3" name="pick3, the team builder" />);
+    const link = screen.getByRole('link', { name: 'pick3, the team builder' });
+    expect(link).toHaveAttribute('href', 'https://pick3.gg');
+    // The visible label and the mark are both hidden from assistive tech: the aria-label above
+    // is the one source of the accessible name, so it is never announced twice.
+    expect(screen.getByText('pick3')).toHaveAttribute('aria-hidden', 'true');
   });
 });
 
@@ -204,11 +218,22 @@ describe('ConfidenceDot', () => {
   });
 });
 
-describe('Segmented', () => {
-  it('marks the chosen option and reports a change', async () => {
+describe('LeagueShield', () => {
+  it('paints each open league in the game’s own colour, and anything else neutral', () => {
+    expect(LEAGUE_COLORS['great']).toBe('#3F7DE8');
+    expect(LEAGUE_COLORS['ultra']).toBe('#F2B01E');
+    expect(LEAGUE_COLORS['master']).toBe('#B03DBE');
+    const { container } = render(<LeagueShield id="premier" />);
+    const path = container.querySelector('path');
+    expect(path).toHaveAttribute('fill', '#8E9AAF');
+  });
+});
+
+describe('LeagueSwitcher', () => {
+  it('marks the chosen option, reports a change, and carries a shield per segment', async () => {
     const onChange = vi.fn();
     render(
-      <Segmented
+      <LeagueSwitcher
         label="League"
         value="great"
         onChange={onChange}
@@ -218,6 +243,8 @@ describe('Segmented', () => {
         ]}
       />,
     );
+    const group = screen.getByRole('radiogroup', { name: 'League' });
+    expect(group.querySelectorAll('.league-shield')).toHaveLength(2);
     expect(screen.getByRole('radio', { name: 'Great' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(screen.getByRole('radio', { name: 'Ultra' }));
     expect(onChange).toHaveBeenCalledWith('ultra');

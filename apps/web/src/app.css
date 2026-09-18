@@ -1309,6 +1309,7 @@ textarea.paste {
   background: var(--accent-tint);
   color: var(--text);
   font: inherit;
+  text-decoration: none;
 }
 .action-row > span:first-child {
   display: flex;
@@ -1647,6 +1648,29 @@ textarea.paste {
 .hdr-actions {
   justify-self: end;
   gap: 4px;
+}
+
+/* The pill naming the sister site, meta.pick3.gg: on the four tab-root screens' page-head row,
+   before the cog (Teams.tsx, Counters.tsx, Collection.tsx, YourMeta.tsx), where there is room for
+   its visible label. Same shape as meta's own header pill (apps/meta/src/app.css's .site-pill),
+   drawn from this app's own tokens; the glyph is pick3's own ink, not meta's violet (see
+   components.tsx's MetaGlyph for why). At least 40px in its short dimension for a comfortable
+   tap target. */
+.site-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--divider);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  flex: none;
 }
 
 /* matchup grid, opponents as rows */

@@ -6,6 +6,7 @@ import {
   MetaTags,
   PokemonToken,
   Progress,
+  SitePill,
   TypeChips,
   useName,
   useSpecies,
@@ -85,6 +86,7 @@ export function Counters() {
             {vs ? null : (
               <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
             )}
+            <SitePill />
             <HeadCog />
           </span>
         </div>

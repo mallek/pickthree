@@ -276,18 +276,27 @@ export function Note({
   children: ReactNode;
 }) {
   const warnNoTitle = tone === 'warn' && !title;
+  // The badge and the title read as one line, so they share a row of their own rather than
+  // becoming two stacked flex items once .card lays its children out in a column: without this
+  // wrapper, .card's own gap would land between the badge and the title it is decorating rather
+  // than between that line and the body text below it.
+  const badgeAndTitle = tone === 'warn' || title;
   return (
     <div
       className="card note"
       role={warnNoTitle ? 'note' : undefined}
       aria-label={warnNoTitle ? 'Warning' : undefined}
     >
-      {tone === 'warn' ? (
-        <span className="note-badge" aria-hidden="true">
-          !
-        </span>
+      {badgeAndTitle ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {tone === 'warn' ? (
+            <span className="note-badge" aria-hidden="true">
+              !
+            </span>
+          ) : null}
+          {title ? <b>{title}</b> : null}
+        </div>
       ) : null}
-      {title ? <b>{title}</b> : null}
       {children}
     </div>
   );
@@ -303,6 +312,60 @@ export function ConfidenceDot({ n }: { n: number }) {
       <span className={`conf-dot conf-${c}`} aria-hidden="true" />
       {c}
     </span>
+  );
+}
+
+/** The sticky per-screen header: a back link (or spacer, so the title stays centred) on the
+ * left, the title and an optional subtitle in the middle, and a right-hand slot for this app's
+ * one recurring action, the appearance toggle. Modelled on apps/web's own Header
+ * (apps/web/src/components.tsx), including that the title is a plain span rather than a heading:
+ * each screen's own `<h2>`s still carry the real heading structure, this is chrome around them.
+ * `backHref` is a real link (not a button with an onClick) so the back target stays openable in
+ * a new tab, same as every other link on this site. */
+export function Header({
+  title,
+  sub,
+  backHref,
+  backLabel,
+  action,
+}: {
+  title: string;
+  sub?: string;
+  backHref?: string;
+  backLabel?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <header className="hdr">
+      {backHref ? (
+        <a className="back" href={backHref}>
+          <Chevron dir="left" /> {backLabel ?? 'Back'}
+        </a>
+      ) : (
+        <span className="back-spacer" />
+      )}
+      <span className="hdr-title">
+        <span>{title}</span>
+        {sub ? <span className="hdr-sub">{sub}</span> : null}
+      </span>
+      {action ? <span className="hdr-actions">{action}</span> : <span className="back-spacer" />}
+    </header>
+  );
+}
+
+/** The pill naming the sister site, pick3.gg: same shape, same mark and the same placement logic
+ * as pick3's own header pill (apps/web/src/components.tsx's `SitePill`), so the two headers rhyme,
+ * but drawn from this app's own tokens rather than importing pick3's palette. `label` is the
+ * visible text ("pick3"); `name` is the link's full accessible name ("pick3, the team builder"),
+ * since a bare "pick3" read aloud says nothing about where the link goes. The mark carries its own
+ * `alt=""`/`aria-hidden`, and the visible label is hidden from assistive tech too so the name is
+ * never announced twice. */
+export function SitePill({ href, label, name }: { href: string; label: string; name: string }) {
+  return (
+    <a className="site-pill" href={href} aria-label={name}>
+      <img className="site-pill-mark" src="/mark.svg" alt="" aria-hidden="true" />
+      <span aria-hidden="true">{label}</span>
+    </a>
   );
 }
 
@@ -399,8 +462,9 @@ interface ChoiceProps<T extends string> {
   label: string;
 }
 
-/** `Segmented` and `Pills` share this: a radiogroup of real buttons, one aria-checked at a
- * time, differing only in which class paints the enclosed switch versus the wrapping pill row. */
+/** `Pills` and `LeagueSwitcher` both render a radiogroup of real buttons, one aria-checked at a
+ * time; `Pills` is the shared body, `LeagueSwitcher` below draws its own markup instead of
+ * reusing it because a league segment also carries a shield icon `Pills` has no room for. */
 function ChoiceGroup<T extends string>({
   className,
   options,
@@ -426,12 +490,65 @@ function ChoiceGroup<T extends string>({
   );
 }
 
-/** The enclosed three-up switcher, e.g. Great/Ultra/Master. */
-export function Segmented<T extends string>(p: ChoiceProps<T>) {
-  return <ChoiceGroup className="seg" {...p} />;
-}
-
 /** The wrapping row of pills, e.g. a rank-band filter with more options than fit one row. */
 export function Pills<T extends string>(p: ChoiceProps<T>) {
   return <ChoiceGroup className="pills" {...p} />;
+}
+
+/** Game colours for the three open leagues, kept byte-identical to pick3's own
+ * apps/web/src/components/LeagueSwitcher.tsx: these are the game's own league colours, brand
+ * rather than this site's theme, so they are not swapped for anything in `tokens.css`. */
+export const LEAGUE_COLORS: Record<string, string> = {
+  great: '#3F7DE8',
+  ultra: '#F2B01E',
+  master: '#B03DBE',
+};
+
+/** The shield mark pick3 draws for a league, ported geometry-for-geometry from pick3's own
+ * `LeagueShield` so the two sites' league controls read as the same control. `id` doubles as a
+ * `LEAGUE_COLORS` key; anything else (there is no cup switcher on this site today) falls back to
+ * the neutral shield rather than an undefined fill. */
+export function LeagueShield({ id, size = 16 }: { id: string; size?: number }) {
+  const color = LEAGUE_COLORS[id] ?? '#8E9AAF';
+  return (
+    <svg
+      className="league-shield"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" fill={color} />
+      <path d="M12 6.2l4.4 1.9v3.4c0 3-1.9 5.5-4.4 6.9V6.2z" fill="rgba(255,255,255,0.28)" />
+    </svg>
+  );
+}
+
+/** The league toggle: a full-width radiogroup with the game's own shield colours, replacing the
+ * generic `Segmented` control (the enclosed pill switch) this site used before porting pick3's
+ * purpose-built one. Each option's `value` is a league id, which is also the `LeagueShield` /
+ * `LEAGUE_COLORS` key that picks its colour. */
+export function LeagueSwitcher<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: ChoiceProps<T>) {
+  return (
+    <div className="league-switcher" role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={o.value === value}
+          className={o.value === value ? 'on' : undefined}
+          onClick={() => onChange(o.value)}
+        >
+          <LeagueShield id={o.value} />
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
 }

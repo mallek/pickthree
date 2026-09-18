@@ -8,7 +8,15 @@ import {
   type TeamRecord,
 } from '@pickthree/engine';
 import { useMemo, useState } from 'react';
-import { HeadCog, PokemonToken, Seg, useLogCount, useName, useSticky } from '../components.tsx';
+import {
+  HeadCog,
+  PokemonToken,
+  Seg,
+  SitePill,
+  useLogCount,
+  useName,
+  useSticky,
+} from '../components.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { dateLabel } from '../format.ts';
 import { shareLink } from '../share.ts';
@@ -241,7 +249,10 @@ export function YourMeta() {
       <div className="page-head">
         <div className="between">
           <h2>Your Meta</h2>
-          <HeadCog />
+          <span className="row">
+            <SitePill />
+            <HeadCog />
+          </span>
         </div>
         <LeagueSwitcher compact />
         <p className="log-status meta" style={{ margin: 0 }}>
@@ -295,6 +306,16 @@ export function YourMeta() {
           </div>
         ) : null}
         {stats.openSet ? <CurrentTeam set={stats.openSet} /> : <NoTeam />}
+        <a className="action-row" href="https://meta.pick3.gg">
+          <span>
+            <b>See what everyone else is facing</b>
+            <span className="small muted">
+              meta.pick3.gg turns shared battle logs like this one into the community's most-faced
+              Pokemon and teams, by league and rank.
+            </span>
+          </span>
+          <span className="chev">&rsaquo;</span>
+        </a>
         <div className="between">
           <span className="meta">{stats.current.label}</span>
           <Seg

@@ -22,6 +22,13 @@ describe('App', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
+  it('carries a pill to pick3 in the brand row', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByRole('link', { name: 'pick3, the team builder' }),
+    ).toHaveAttribute('href', 'https://pick3.gg');
+  });
+
   it('switches league through the segmented control and puts it in the url', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await userEvent.click(await screen.findByRole('radio', { name: 'Ultra' }));
@@ -43,7 +50,7 @@ describe('App', () => {
       'aria-checked',
       'true',
     );
-    expect(screen.getByRole('radio', { name: 'Legend' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('legend');
   });
 
   it('answers the back button', async () => {
@@ -117,8 +124,10 @@ describe('App, deep links', () => {
     );
     // Task 12 replaced the species placeholder ("registeel in master") with the real screen.
     // Registeel has no shared battles and is not in the stub baseline for any league, so its
-    // page is just the header and the no-data line.
-    expect(await screen.findByRole('heading', { name: 'Registeel' })).toBeInTheDocument();
+    // page is just the header and the no-data line. The species name is App.tsx's sticky header
+    // title now (a plain span, matching apps/web's own Header, not a heading), so this checks
+    // the text rather than a heading role.
+    expect(await screen.findByText('Registeel')).toBeInTheDocument();
     expect(
       screen.getByText('No shared battles mention it in this window.'),
     ).toBeInTheDocument();
@@ -136,7 +145,7 @@ describe('App, deep links', () => {
     // sub-line names the league and window instead.
     expect(await screen.findByText(/Ultra League - 7 days/)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '7 days' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: 'Ace' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
     expect(window.location.pathname).toBe('/ultra/teams');
     expect(window.location.search).toBe('?w=7&band=ace');
   });
@@ -161,7 +170,7 @@ describe('App, filter history', () => {
     const replaceSpy = vi.spyOn(window.history, 'replaceState');
     await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
     await waitFor(() => expect(window.location.search).toContain('band=ace'));
     expect(pushSpy).not.toHaveBeenCalled();
     expect(replaceSpy).toHaveBeenCalledTimes(2);
@@ -174,7 +183,7 @@ describe('App, filter history', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
     await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
     await waitFor(() => expect(window.location.search).toContain('band=ace'));
     // Neither filter click pushed a history entry, so a single real navigation still undoes in
     // a single back press, landing on the page with its filters (not on an intermediate filter

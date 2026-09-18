@@ -294,6 +294,55 @@ export function Mark({ height = 22 }: { height?: number }) {
   );
 }
 
+const META = 'https://meta.pick3.gg';
+
+/** Three ascending bars, suggesting rankings: the glyph for the `SitePill` below. Not the pick3
+ * mark. On pick3's own header the pick3 mark means "home", so wearing it on a link that leaves
+ * would read backwards; a destination badge should depict the destination, not the app it sits
+ * in. Drawn in `currentColor` at the same stroke weight as this app's other line icons
+ * (ShareButton, HeadCog: 1.8, round caps and joins), so it takes pick3's own ink rather than
+ * meta's violet and looks native here. */
+function MetaGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 18v-4" />
+      <path d="M12 18V10" />
+      <path d="M18 18V6" />
+    </svg>
+  );
+}
+
+/** The pill naming the sister site, meta.pick3.gg: same shape, size and placement logic as meta's
+ * own header pill (apps/meta/src/components.tsx's `SitePill`), so the two headers rhyme through
+ * shape and placement, not through a shared glyph (see `MetaGlyph`). Sits on three of the four
+ * tab-root screens' page-head row, before the cog, where there is room for a visible label
+ * (Teams, Counters, Your Meta). Collection's row already carries a count and a "+ Add" button and
+ * has no room to spare at 390px, so it does not carry this pill; the switcher is reachable from
+ * the other three screens and Your Meta's own contextual link. It does not live in the shared
+ * `Header` used by the back-button screens, which are already tight.
+ *
+ * The visible label is "meta"; the accessible name is the fuller "meta, the community meta",
+ * since a bare "meta" read aloud names nothing. The glyph carries its own aria-hidden and the
+ * label is hidden from assistive tech too, so aria-label is the one source of the name. */
+export function SitePill() {
+  return (
+    <a className="site-pill" href={META} aria-label="meta, the community meta">
+      <MetaGlyph />
+      <span aria-hidden="true">meta</span>
+    </a>
+  );
+}
+
 /** The one way a type is shown anywhere in the app: a small chip in the type's color. */
 export function TypeChip({ type, small }: { type: PokemonType; small?: boolean | undefined }) {
   return (

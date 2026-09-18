@@ -7,6 +7,7 @@ import {
   PokemonToken,
   Progress,
   RoleLabel,
+  SitePill,
   StructureTag,
   useLogCount,
   useName,
@@ -146,6 +147,7 @@ export function Teams() {
           <h2>Your Teams</h2>
           <span className="row">
             <span className="meta">{s.collection.report.recognized} Pokémon</span>
+            <SitePill />
             <HeadCog />
           </span>
         </div>

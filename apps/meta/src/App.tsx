@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.js';
 import type { Baseline } from './baseline.js';
-import type { StaticData } from './data.js';
+import { speciesOf, type StaticData } from './data.js';
 import { PICK3 } from './links.js';
 import {
   BANDS,
@@ -21,7 +21,7 @@ import {
   type WindowKey,
 } from './route.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
-import { Pills, Segmented, ThemeIcon } from './components.js';
+import { Header, LeagueSwitcher, Pills, SitePill, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
 import { Overview } from './screens/Overview.js';
 import { Species } from './screens/Species.js';
@@ -75,6 +75,89 @@ function isPlainClick(e: MouseEvent): boolean {
 function splitHref(href: string): { pathname: string; search: string } {
   const [pathname, search] = href.split('?');
   return { pathname: pathname ?? '/', search: search ? `?${search}` : '' };
+}
+
+/** Bottom tab bar icons, drawn in apps/web's own stroke style (apps/web/src/App.tsx's ICONS):
+ * 22px, stroke-width 1.8, round caps and joins, no fill except the one dot that needs it.
+ * Pokemon reuses pick3's own "Collection" shape, a pokeball (ring, two side strokes, a centre
+ * dot): both screens are a list of Pokemon. Teams reuses pick3's own "Teams" shape (three
+ * circles) for the same reason, a team of three. About has no equivalent in pick3's tab bar, so
+ * it is drawn fresh: an info glyph, a ring with a stem and a dot. */
+const TAB_ICONS = {
+  pokemon: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3.5 12h5M15.5 12h5" />
+      <circle cx="12" cy="12" r="2.6" />
+    </svg>
+  ),
+  teams: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="8" cy="9" r="3.2" />
+      <circle cx="16" cy="9" r="3.2" />
+      <circle cx="12" cy="15.5" r="3.2" />
+    </svg>
+  ),
+  about: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+};
+
+type NavProps = (
+  nextView: View,
+  nextQuery: Query,
+) => { href: string; onClick: (e: MouseEvent<HTMLAnchorElement>) => void };
+
+/** The site's primary navigation, pinned to the bottom of the viewport (App.tsx's own `.tabs`,
+ * not apps/web's: this site routes on real paths, so every tab is a real `<a href>`, not a
+ * button). Species has no tab of its own; it counts toward Pokemon, the tab it drills down from,
+ * so every screen always has exactly one current tab to mark with `aria-current`. */
+function TabBar({
+  view,
+  activeLeague,
+  query,
+  navProps,
+}: {
+  view: View;
+  activeLeague: string;
+  query: Query;
+  navProps: NavProps;
+}): ReactNode {
+  const onPokemon = view.name === 'overview' || view.name === 'species';
+  const onTeams = view.name === 'teams';
+  const onAbout = view.name === 'about';
+  return (
+    <nav className="tabs" aria-label="Sections">
+      <a
+        className={onPokemon ? 'on' : undefined}
+        aria-current={onPokemon ? 'page' : undefined}
+        {...navProps({ name: 'overview', league: activeLeague }, query)}
+      >
+        {TAB_ICONS.pokemon}
+        Pokemon
+      </a>
+      <a
+        className={onTeams ? 'on' : undefined}
+        aria-current={onTeams ? 'page' : undefined}
+        {...navProps({ name: 'teams', league: activeLeague }, query)}
+      >
+        {TAB_ICONS.teams}
+        Teams
+      </a>
+      <a
+        className={onAbout ? 'on' : undefined}
+        aria-current={onAbout ? 'page' : undefined}
+        {...navProps({ name: 'about' }, query)}
+      >
+        {TAB_ICONS.about}
+        About
+      </a>
+    </nav>
+  );
 }
 
 /** Placeholder content for a view whose real screen has not landed yet (Tasks 11 to 13), or the
@@ -231,26 +314,33 @@ export function App(props?: { deps?: Deps }): ReactNode {
   const speciesId = view.name === 'species' ? view.speciesId : '';
   const detail = useSpeciesDetail(activeLeague, speciesId, w, query.band, deps);
 
-  const header = (
-    <header className="hdr sticky">
+  const themeButton = (
+    <button
+      type="button"
+      className="icon-btn"
+      aria-label={appearanceLabel(theme)}
+      onClick={() => setTheme((t) => nextTheme(t))}
+    >
+      <ThemeIcon choice={theme} />
+    </button>
+  );
+
+  // Shown on the three tab-root screens (Overview, Teams, About), each reached straight from the
+  // bottom tab bar. Species is a drill-down from Overview rather than a tab of its own, so its
+  // sticky header's back link takes over this row's job instead ("how do I leave this page"),
+  // and the wordmark is dropped there rather than duplicating it. Not sticky itself: only the
+  // page header below it is, so the two never have to share row 0 of the sticky stack.
+  const brandRow = (
+    <header className="brand">
       <a
         className="wordmark"
         {...navProps({ name: 'overview', league: activeLeague }, DEFAULT_QUERY)}
       >
+        <img className="wordmark-mark" src="/mark.svg" alt="" aria-hidden="true" />
         <span>meta</span>
         <span className="wordmark-accent">.pick3.gg</span>
       </a>
-      <div className="hdr-actions">
-        <a href={PICK3}>pick3</a>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={appearanceLabel(theme)}
-          onClick={() => setTheme((t) => nextTheme(t))}
-        >
-          <ThemeIcon choice={theme} />
-        </button>
-      </div>
+      <SitePill href={PICK3} label="pick3" name="pick3, the team builder" />
     </header>
   );
 
@@ -258,72 +348,105 @@ export function App(props?: { deps?: Deps }): ReactNode {
   if (staticData.state === 'loading') {
     content = (
       <div className="app">
-        {header}
+        {brandRow}
         <p className="sub">Loading</p>
       </div>
     );
   } else if (staticData.state === 'error' || !staticData.data) {
     content = (
       <div className="app">
+        {brandRow}
         <p>Could not load the site data. Try again in a moment.</p>
       </div>
     );
   } else {
     const leagues = staticData.data.leagues;
+    const leagueInfo = leagues.find((l) => l.id === activeLeague) ?? null;
+    const leagueTitle = leagueInfo?.title ?? activeLeague;
+    const leagueShort = leagueInfo?.short ?? activeLeague;
     const showFilters = view.name === 'overview' || view.name === 'teams';
     // About is league-agnostic: withLeague is a no-op there, so showing the switcher would be a
     // control that does nothing when clicked.
     const showLeagueSwitch = view.name !== 'about';
+    const showBrand = view.name !== 'species';
+
+    let pageHeader: ReactNode;
+    if (view.name === 'about') {
+      pageHeader = <Header title="About the data" action={themeButton} />;
+    } else if (view.name === 'teams') {
+      pageHeader = (
+        <Header
+          title="Most run teams"
+          sub={`${leagueTitle} - ${WINDOW_LABELS[query.w]} - teams reporters ran themselves`}
+          action={themeButton}
+        />
+      );
+    } else if (view.name === 'species') {
+      pageHeader = (
+        <Header
+          title={speciesOf(staticData.data, view.speciesId).name}
+          sub={leagueTitle}
+          backHref={hrefFor({ name: 'overview', league: activeLeague }, query)}
+          backLabel={leagueShort}
+          action={themeButton}
+        />
+      );
+    } else {
+      pageHeader = (
+        <Header
+          title={leagueTitle}
+          sub={`${WINDOW_LABELS[query.w]} - ${BAND_LABELS[query.band]}`}
+          action={themeButton}
+        />
+      );
+    }
+
     content = (
       <div className="app">
-        {header}
+        {showBrand ? brandRow : null}
+        {pageHeader}
         {showLeagueSwitch ? (
-          <Segmented
+          <LeagueSwitcher
             label="League"
             value={activeLeague}
             onChange={(id) => go(withLeague(view, id), query)}
             options={leagues.map((l) => ({ value: l.id, label: l.short }))}
           />
         ) : null}
-        <nav className="tabs" aria-label="Sections">
-          <a
-            className={view.name === 'overview' ? 'on' : undefined}
-            {...navProps({ name: 'overview', league: activeLeague }, query)}
-          >
-            Pokemon
-          </a>
-          <a
-            className={view.name === 'teams' ? 'on' : undefined}
-            {...navProps({ name: 'teams', league: activeLeague }, query)}
-          >
-            Teams
-          </a>
-          <a
-            className={view.name === 'about' ? 'on' : undefined}
-            {...navProps({ name: 'about' }, query)}
-          >
-            About
-          </a>
-        </nav>
         {showFilters ? (
-          <>
+          // One row, matching the design export (docs/design/meta/meta.pick3.gg.dc.html,
+          // screen 1a): the window pills on the left, the rank band collapsed into a single
+          // compact control on the right. The header's own subtitle already names both filters
+          // ("This season - All ranks"), so a second, taller row of captions and six wrapped
+          // band pills was restating it at the cost of most of the first screen; the select's
+          // own label is enough to tell the two controls apart without a caption over each.
+          <div className="filter-row">
             <Pills
               label="Window"
               value={query.w}
               onChange={(wk) => refine({ ...query, w: wk })}
               options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
             />
-            <Pills
-              label="Rank band"
-              value={query.band}
-              onChange={(b) => refine({ ...query, band: b })}
-              options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
-            />
-          </>
+            <span className="select-wrap">
+              <select
+                className="band-select"
+                aria-label="Rank band"
+                value={query.band}
+                onChange={(e) => refine({ ...query, band: e.target.value as BandKey })}
+              >
+                {BANDS.map((k) => (
+                  <option key={k} value={k}>
+                    {BAND_LABELS[k]}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </div>
         ) : null}
         {renderView(view, activeLeague, query, staticData.data, meta, baseline, detail, now, (v) =>
           hrefFor(v, query),
         )}
+        <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>
     );
   }

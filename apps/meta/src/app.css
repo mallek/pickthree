@@ -19,14 +19,17 @@ body {
 .app {
   max-width: 430px;
   margin-inline: auto;
-  padding: 14px 16px 40px;
+  /* The bottom tab bar is fixed and sits on top of the page, so the scrollable content needs at
+     least its full height clear underneath it, safe-area inset included, or the last thing on
+     every screen (the About page's footer is the tallest case) hides behind it. */
+  padding: 14px 16px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
   overflow-x: clip;
 }
 
 @media (min-width: 900px) {
   .app {
     max-width: 1280px;
-    padding: 24px 32px 40px;
+    padding: 24px 32px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
     display: grid;
     grid-template-columns: 1fr 340px;
     gap: 28px;
@@ -80,10 +83,25 @@ a {
 }
 
 /* Surfaces */
+/* The "no padding" complaint was never the padding number: .card already had 14px of it. What
+   it lacked was `gap`, so a card's children (a heading, a list, a paragraph) stacked with zero
+   space between them and read as flush against each other, padding included. `gap: 12px` fixes
+   that; 16px padding reads better than 14px at this site's text sizes while we are in here. */
 .card {
   background: var(--surface);
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A child's own default browser margin (a <p>'s, mainly) used to be the only thing standing in
+   for the gap above; left in place it would now add on top of that gap instead of replacing it.
+   Zeroed here, scoped to cards only, so nothing outside a card (which still leans on a
+   paragraph's own margin for its rhythm) loses spacing it was never given explicitly. */
+.card > * {
+  margin: 0;
 }
 
 .stat {
@@ -117,43 +135,80 @@ a {
 }
 
 /* Controls: every one is a real <button> or <a> */
-/* Fixed 3-column grid with exactly 3 options (WindowKey has 3 values): it never wraps to a
-   second row, so the .seg > *::after vertical inset below has no wrapped-row neighbour to
-   overlap. */
-.seg {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  background: var(--surface);
-  border-radius: 999px;
-  padding: 4px;
+
+/* League toggle: ported from pick3's own .league-switcher (apps/web/src/app.css) so the one
+   control that picks a league reads the same on both sites, geometry and all. pick3's tokens
+   have no equivalent here, so they are mapped onto this site's own: --divider -> --border,
+   and --accent-tint (the "on" segment's tinted background) -> --surface2, the token this site's
+   own .pills > .on already uses for the same job. --faint (pick3's dimmed idle-segment ink, a
+   step below --muted) has no counterpart here either, so the idle segment falls back to
+   --muted, same as everywhere else on this site that needs a quieter label than body text. */
+.league-switcher {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.seg > * {
+.league-switcher button {
+  flex: 1;
   position: relative;
-  text-align: center;
-  padding: 9px 0;
-  border-radius: 999px;
+  padding: 8px 6px;
   font-size: 13px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
   color: var(--muted);
   border: 0;
   background: transparent;
-  font-family: inherit;
+  font: inherit;
+  font-weight: 500;
 }
 
-/* Painted height measures 35px; the touch target extends to 41px, clear of the 40px floor.
-   Vertical only, so options packed edge to edge in the grid never overlap sideways. */
-.seg > *::after {
+.league-switcher button + button {
+  border-left: 1px solid var(--border);
+}
+
+.league-switcher button.on {
+  color: var(--text);
+  background: var(--surface2);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* Painted height measures 32px (16px shield + 8px top/bottom padding); the touch target extends
+   to 40px, the site's own floor. Vertical only: the three segments already tile edge to edge, so
+   a sideways extension would just overlap the divider between them for no gain. */
+.league-switcher button::after {
   content: '';
   position: absolute;
-  inset: -3px 0;
+  inset: -4px 0;
 }
 
-.seg > .on {
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: 700;
+/* The focus ring would otherwise get clipped: .league-switcher's rounded corners are cut by
+   `overflow: hidden`, so an outward ring on an edge segment is invisible along that outer edge.
+   Drawing it inward, the same fix .seg used before this control replaced it, keeps it visible on
+   every segment, edge ones included. */
+.league-switcher button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.league-shield {
+  flex: none;
+}
+
+/* One filter row (docs/design/meta/meta.pick3.gg.dc.html, screen 1a): the window pills at their
+   natural width on the left, the rank band select pushed to the far right. `.pills` still wraps
+   internally on a narrow screen (its own flex-wrap below); this row does not need to, since the
+   select is a single fixed-size control rather than a set that could itself overflow. */
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .pills {
@@ -165,15 +220,18 @@ a {
   row-gap: 12px;
 }
 
+/* A visible border even when idle, ported from pick3's own .chip: without it a pill has only a
+   faint surface tint to say it is a control at all, which is what read as a plain button rather
+   than a filter. */
 .pills > * {
   position: relative;
   padding: 7px 12px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   background: var(--surface);
   color: var(--muted);
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
 }
 
 /* Painted height measures 30px; the touch target extends to 40px. Vertical only, so pills
@@ -191,58 +249,98 @@ a {
   color: var(--text);
 }
 
+/* The rank-band control: a native <select>, not a custom menu, so a phone gets its own picker
+   for free, with keyboard support and no menu code here, and six wrapped pills collapse into
+   one target. A select ignores an author `background` on some platforms until its native
+   appearance is turned off first, so that is explicit rather than assumed to just work. */
+.select-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.band-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-height: 40px;
+  padding: 0 30px 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.band-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A CSS-drawn chevron, not the design mock's own glyph: this site's rendered text is strict
+   7-bit ASCII, and a <select> cannot reliably host a ::after of its own across browsers, so the
+   arrow lives on the wrapping span instead. `pointer-events: none` keeps it from ever catching a
+   tap that was meant for the control underneath it. */
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
+   two sites read as one product on a phone. Real <a href> elements, not buttons: this site
+   routes on real paths, not a hash, and a tab has to stay openable in a new tab. */
 .tabs {
-  display: flex;
-  gap: 18px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 430px;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 5;
 }
 
 .tabs > a {
-  position: relative;
-  font-size: 13px;
-  font-weight: 600;
+  min-height: 48px;
   color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
   text-decoration: none;
-  padding-bottom: 6px;
-  border-bottom: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 .tabs > a.on {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: var(--accent);
 }
 
-/* Below 900px the tabs collapse into a seg-style enclosed row instead of an underlined row.
-   Fixed 3-column grid with exactly 3 tabs (overview, teams, about): it never wraps, so the
-   .tabs > a::after vertical inset below has no wrapped-row neighbour to overlap. */
-@media (max-width: 899px) {
-  .tabs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    background: var(--surface);
-    border-radius: 999px;
-    padding: 4px;
-  }
-
-  .tabs > a {
-    text-align: center;
-    padding: 9px 0;
-    border-radius: 999px;
-    border-bottom: 0;
-  }
-
-  .tabs > a.on {
-    background: var(--accent);
-    color: var(--on-accent);
-    font-weight: 700;
-  }
-
-  /* Same compact metrics as .seg, so the same 35px painted height and 41px touch target apply. */
-  .tabs > a::after {
-    content: '';
-    position: absolute;
-    inset: -3px 0;
-  }
+.tabs > a svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
 }
 
 .btn {
@@ -355,7 +453,6 @@ a.row {
   background: var(--warn);
   color: var(--on-accent);
   font-weight: 800;
-  margin-right: 8px;
 }
 
 /* ConfidenceDot: exactly three fixed tones, so modifiers rather than an inline colour. */
@@ -399,8 +496,13 @@ a.row {
   min-width: 0;
 }
 
-/* Header */
-.hdr {
+/* Brand row: the wordmark, the pick3 mark and a link back to the main app. Shown on the three
+   tab-root screens (Overview, Teams, About), each reached straight from the bottom tab bar.
+   Species is a drill-down from Overview rather than a tab of its own, so its sticky header's
+   back link fills this row's "how do I leave this page" job instead, and the wordmark is
+   dropped there rather than duplicating it. Not sticky itself: only the page header below it is,
+   so the two never have to share row 0. */
+.brand {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -408,14 +510,9 @@ a.row {
   gap: 8px;
 }
 
-.hdr.sticky {
-  position: sticky;
-  top: 0;
-  background: var(--bg);
-  z-index: 3;
-}
-
 .wordmark {
+  display: inline-flex;
+  align-items: center;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.2px;
@@ -425,15 +522,102 @@ a.row {
   color: var(--text);
 }
 
+.wordmark-mark {
+  width: 22px;
+  height: 22px;
+  display: block;
+  /* .wordmark used to space every flex child with `gap`, which put the same 6px between the
+     mark and "meta" as between "meta" and ".pick3.gg", so the brand name itself read with a
+     stray space in the middle ("meta .pick3.gg"). Only the mark should be set apart from the
+     name, so that gap moved here, off the two text spans it never should have touched. */
+  margin-right: 6px;
+}
+
 /* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
 .wordmark-accent {
   color: var(--accent);
+}
+
+/* The pill naming the sister site, pick3.gg. Same shape as pick3's own header pill
+   (apps/web/src/app.css's .site-pill), drawn from this app's own tokens. */
+.site-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  flex: none;
+}
+
+.site-pill-mark {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Page header: sticky, matching apps/web's own .hdr geometry (apps/web/src/app.css) so the two
+   sites read as one product. z-index 3 keeps it under the bottom tab bar's z-index 5. */
+.hdr {
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px;
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(0, auto) minmax(72px, 1fr);
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 3;
+}
+
+.hdr-title {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 0;
+}
+
+.hdr-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.back {
+  justify-self: start;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--accent);
+  font-weight: 600;
+  padding: 0 4px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+}
+
+.back-spacer {
+  min-width: 44px;
 }
 
 /* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .icon-btn::after's
    all-sides inset only ever meets the 8px gap between buttons on the same row, which is enough
    clearance for a 3px inset on each side. */
 .hdr-actions {
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -442,7 +626,8 @@ a.row {
 /* States */
 a,
 button,
-.seg > *,
+select,
+.league-switcher button,
 .pills > *,
 .row {
   -webkit-tap-highlight-color: transparent;
@@ -450,7 +635,6 @@ button,
 
 a:focus-visible,
 button:focus-visible,
-.seg > *:focus-visible,
 .pills > *:focus-visible,
 .row:focus-visible {
   outline: 2px solid var(--accent);

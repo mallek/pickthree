@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
-import { Bar, Chevron, Sparkline, Sprite, Tag, TypeTags } from '../components.js';
+import { Bar, Sparkline, Sprite, Tag, TypeTags } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pct, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
@@ -424,35 +424,19 @@ export function Species(p: {
 }): ReactNode {
   const { league, speciesId, data, detail, meta, baseline, href } = p;
   const species = speciesOf(data, speciesId);
-  const leagueInfo = data.leagues.find((l) => l.id === league) ?? null;
-  const leagueTitle = leagueInfo?.title ?? league;
 
-  const backLink = (
-    <a
-      className="fine"
-      // A back link is secondary navigation, not a call to action: muted, like the design's own
-      // back row, not the base link accent (the Chevron reads the same colour via currentColor).
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--muted)' }}
-      href={href({ name: 'overview', league })}
-    >
-      <Chevron dir="left" /> Back to {leagueTitle}
-    </a>
-  );
-
+  // The species name itself is App.tsx's sticky header title now, not a heading printed here, so
+  // this row is just the visual identity (sprite and types) that title sits above.
   const headerTop = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <Sprite species={species} size={64} />
-      <div>
-        <h1>{species.name}</h1>
-        <TypeTags types={species.types} />
-      </div>
+      <TypeTags types={species.types} />
     </div>
   );
 
   if (detail.state === 'error' || meta.state === 'error') {
     return (
       <main>
-        {backLink}
         {headerTop}
         <p className="sub">Could not load this Pokemon&apos;s record. Try again in a moment.</p>
       </main>
@@ -462,7 +446,6 @@ export function Species(p: {
   if (!detail.data || !meta.data) {
     return (
       <main>
-        {backLink}
         {headerTop}
         <p className="sub">Loading</p>
       </main>
@@ -488,7 +471,6 @@ export function Species(p: {
 
   return (
     <main>
-      {backLink}
       {headerTop}
       <p className="sub">{headerText}</p>
       {d.sightings === 0 ? (
