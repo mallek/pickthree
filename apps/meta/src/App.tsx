@@ -22,6 +22,7 @@ import {
 } from './route.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
 import { Pills, Segmented } from './components.js';
+import { About } from './screens/About.js';
 import { Overview } from './screens/Overview.js';
 import { Species } from './screens/Species.js';
 import { Teams } from './screens/Teams.js';
@@ -78,12 +79,7 @@ function renderView(
   href: (v: View) => string,
 ): ReactNode {
   if (view.name === 'about') {
-    // Task 13 replaces this with the real about page.
-    return (
-      <main>
-        <p className="sub">About meta.pick3.gg. Task 13 replaces this placeholder.</p>
-      </main>
-    );
+    return <About baseline={baseline} />;
   }
   if (view.name === 'teams') {
     return <Teams league={league} query={query} data={data} meta={meta} now={now} />;
