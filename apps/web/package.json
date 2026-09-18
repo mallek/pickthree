@@ -12,6 +12,7 @@
   "dependencies": {
     "@pickthree/engine": "0.0.0",
     "@pickthree/sim-pvpoke": "0.0.0",
+    "@pickthree/ui": "0.0.0",
     "idb": "8.0.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"

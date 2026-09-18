@@ -24,6 +24,8 @@
     "test/**/*.ts",
     "test/**/*.tsx",
     "../../packages/engine/src/**/*.ts",
-    "../../packages/sim-pvpoke/src/**/*.ts"
+    "../../packages/sim-pvpoke/src/**/*.ts",
+    "../../packages/ui/src/**/*.ts",
+    "../../packages/ui/src/**/*.tsx"
   ]
 }
