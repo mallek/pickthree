@@ -1,0 +1,118 @@
+/**
+ * The one decision this site turns on: is there enough measured play to lead with, or is PvPoke's
+ * curated list still the honest thing to put first? Both lists always come back. The measured one
+ * is never suppressed for being small, and the PvPoke one is never described as measured.
+ */
+import type { MetaSummaryV1 } from './api.js';
+import type { Baseline } from './baseline.js';
+import { trendPoints, winRate } from './stats.js';
+
+/**
+ * Counted battles needed before the ranked list is the measured one. Below this a handful of
+ * shared logs is not enough to say what a league actually faces, so PvPoke's curated group leads
+ * instead.
+ */
+export const MEASURED_MIN = 300;
+/**
+ * When measured, a species is ranked only once it is faced this often (0.5% of battles). Below
+ * that a single reporter's odd matchup would otherwise read as part of the meta.
+ */
+export const RANKED_SHARE = 0.005;
+/**
+ * When not measured, a species is listed once it has been faced this many times. One sighting is
+ * one report and proves nothing about repetition; two is the first point worth printing at all.
+ */
+export const SMALL_MIN = 2;
+
+export interface MeasuredRow {
+  speciesId: string;
+  rank: number;
+  sightings: number;
+  /** Share of counted battles, 0 to 1. */
+  share: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  /** Percentage points, or null when a trend is not earned. */
+  trend: number | null;
+  /** 0 to 100, relative to the most faced species in the list. */
+  barPct: number;
+}
+
+export interface BaselineRow {
+  speciesId: string;
+  rank: number;
+  score: number | null;
+  rating: number | null;
+  fastMove: string;
+  chargedMoves: string[];
+  barPct: number;
+}
+
+export interface Ranking {
+  /** Which list leads the page. */
+  source: 'measured' | 'baseline';
+  battles: number;
+  devices: number;
+  /** Always present, however small. Ordered by sightings (the worker sorts species that way). */
+  measured: MeasuredRow[];
+  /** Species faced exactly once, counted rather than listed, when not measured. */
+  tail: number;
+  /** Always present. PvPoke's curated list, ordered by its own score. */
+  baseline: BaselineRow[];
+  pvpokeDate: string;
+}
+
+export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
+  const measuredEnough = meta.battles >= MEASURED_MIN;
+  const prev = meta.previous;
+  const prevById = new Map((prev?.species ?? []).map((s) => [s.speciesId, s.sightings]));
+
+  const kept = meta.species.filter((s) =>
+    measuredEnough
+      ? meta.battles > 0 && s.sightings / meta.battles >= RANKED_SHARE
+      : s.sightings >= SMALL_MIN,
+  );
+  const top = kept[0]?.sightings ?? 0;
+
+  const measured: MeasuredRow[] = kept.map((s, i) => ({
+    speciesId: s.speciesId,
+    rank: i + 1,
+    sightings: s.sightings,
+    share: meta.battles > 0 ? s.sightings / meta.battles : 0,
+    wins: s.wins,
+    losses: s.losses,
+    winRate: winRate(s.wins, s.losses),
+    trend: prev
+      ? trendPoints(s.sightings, meta.battles, prevById.get(s.speciesId) ?? 0, prev.battles)
+      : null,
+    barPct: top > 0 ? Math.round((s.sightings / top) * 100) : 0,
+  }));
+
+  // Below the measured threshold, a species faced exactly once is real but too thin to name; it
+  // is folded into a single tail count rather than dropped silently.
+  const tail = measuredEnough ? 0 : meta.species.filter((s) => s.sightings < SMALL_MIN).length;
+
+  const bestScore = baseline.species[0]?.score ?? null;
+  const baselineRows: BaselineRow[] = baseline.species.map((s, i) => ({
+    speciesId: s.speciesId,
+    rank: i + 1,
+    score: s.score,
+    rating: s.rating,
+    fastMove: s.fastMove,
+    chargedMoves: s.chargedMoves,
+    barPct: bestScore && bestScore > 0 && s.score !== null ? Math.round((s.score / bestScore) * 100) : 0,
+  }));
+
+  return {
+    // The baseline is never the answer just because it exists; it leads only while measured
+    // play is too thin to trust, and the measured list is returned either way.
+    source: measuredEnough ? 'measured' : 'baseline',
+    battles: meta.battles,
+    devices: meta.devices,
+    measured,
+    tail,
+    baseline: baselineRows,
+    pvpokeDate: baseline.pvpokeDate,
+  };
+}
