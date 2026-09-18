@@ -16,7 +16,6 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import {
-  Chip,
   Header,
   PokemonToken,
   Progress,
@@ -46,8 +45,10 @@ const ORDER: Record<VerdictLabel, number> = {
 /** Hand-pick three Pokémon, from the collection or any species at top-10% IVs, and analyze them. */
 export function Build() {
   const s = useAppState();
-  const { navigate, setPick, setPicks, setOrderMode, analyze, loadVerdicts, movePool } =
-    useActions();
+  const { navigate, setPick, setPicks, findOrder, analyze, loadVerdicts, movePool } = useActions();
+  /** True after pick3 ordered the cards, until a drag or a pick changes them. */
+  const [orderedByPick3, setOrderedByPick3] = useState(false);
+  const [finding, setFinding] = useState(false);
   const name = useName();
   const short = useShortName();
   const species = useSpecies();
@@ -214,6 +215,7 @@ export function Build() {
     setPick(target, pick);
     setQuery('');
     setTarget(null);
+    setOrderedByPick3(false);
   };
   useEffect(() => {
     if (target !== null) {
@@ -390,8 +392,17 @@ export function Build() {
       next.splice(st.from, 1);
       next.splice(to, 0, moved);
       setPicks(next, false);
-      // A hand-made order is an order worth keeping.
-      setOrderMode('given');
+      setOrderedByPick3(false);
+    }
+  };
+  const findBest = async (): Promise<void> => {
+    setFinding(true);
+    try {
+      if (await findOrder()) {
+        setOrderedByPick3(true);
+      }
+    } finally {
+      setFinding(false);
     }
   };
 
@@ -577,24 +588,32 @@ export function Build() {
           })}
         </div>
 
-        <div className="chips">
-          <Chip on={s.orderMode === 'best'} onClick={() => setOrderMode('best')}>
-            Let pick3 pick the order
-          </Chip>
-          <Chip on={s.orderMode === 'given'} onClick={() => setOrderMode('given')}>
-            Keep my order
-          </Chip>
+        <div className="order-row">
+          <button
+            type="button"
+            className="btn btn-ghost"
+            disabled={!ready}
+            onClick={() => void findBest()}
+          >
+            {finding ? 'Finding the best order...' : 'Find the best order'}
+          </button>
+          <span className="meta">
+            {orderedByPick3
+              ? 'Ordered by pick3. Drag a card to change it.'
+              : 'pick3 tries all six orders and moves the cards. Or drag them yourself.'}
+          </span>
         </div>
         {s.analyzeError ? <div className="error">{s.analyzeError}</div> : null}
         {s.analyzing && s.progress ? (
           <Progress stage={s.progress.stage} done={s.progress.done} total={s.progress.total} />
         ) : null}
         <button type="button" className="btn" disabled={!ready} onClick={() => void analyze()}>
-          {s.analyzing ? 'Analyzing...' : 'Analyze this team'}
+          {s.analyzing && !finding ? 'Analyzing...' : 'Analyze this team'}
         </button>
         <p className="meta faint" style={{ margin: 0 }}>
-          Tap a card to change its moves; changes last only for this team. Your own Pokemon run with
-          their real IVs at the level pick3 would build them to.
+          The cards run in the order shown. Tap a card to change its moves; changes last only for
+          this team. Your own Pokemon run with their real IVs at the level pick3 would build them
+          to.
         </p>
       </div>
       {movesSlot !== null && sheetPick && sheetInfo ? (

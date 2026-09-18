@@ -12,6 +12,7 @@ import {
   filterKey,
 } from '../src/state/store.tsx';
 import type { AppState } from '../src/state/store.tsx';
+import type { TeamAnalysis } from '@pickthree/engine';
 import { DEFAULT_SETTINGS } from '../src/storage/db.ts';
 import { emptyLayoutValue } from '../src/format.ts';
 import { fakeHost } from './fakeHost.ts';
@@ -211,6 +212,45 @@ describe('battle log actions', () => {
     };
     expect(cOpts.yourMeta.battles).toHaveLength(1);
     expect(latest!.state.counters?.facing).toContain('PvPoke weights only');
+  });
+
+  it('findOrder puts the picks in the order the analysis chose and keeps the analysis', async () => {
+    const analysis = {
+      team: {
+        slots: [
+          { candidate: { build: { specimenId: 'species:clodsire', speciesId: 'clodsire' } } },
+          { candidate: { build: { specimenId: 'species:tinkaton', speciesId: 'tinkaton' } } },
+          { candidate: { build: { specimenId: 'species:azumarill', speciesId: 'azumarill' } } },
+        ],
+      },
+      orders: [],
+      hypothetical: [],
+      chosenMoves: [],
+      unranked: [],
+      ms: 1,
+    } as unknown as TeamAnalysis;
+    const analyze = vi.fn(async () => analysis);
+    await mount(fakeHost({ analyze }));
+    await act(async () => {
+      latest!.actions.setPicks(
+        [
+          { kind: 'species', id: 'tinkaton' },
+          { kind: 'species', id: 'azumarill' },
+          { kind: 'species', id: 'clodsire' },
+        ],
+        false,
+      );
+    });
+    let ok = false;
+    await act(async () => {
+      ok = await latest!.actions.findOrder();
+    });
+    expect(ok).toBe(true);
+    expect((analyze.mock.calls[0] as unknown[])[2]).toMatchObject({ order: 'best' });
+    expect(latest!.state.picks.map((p) => p?.id)).toEqual(['clodsire', 'tinkaton', 'azumarill']);
+    expect(latest!.state.analysis).toBe(analysis);
+    // It stays on Build: no navigation happened.
+    expect(window.location.hash).not.toBe('#/build/team');
   });
 
   it('loadCounters runs without a collection, with no specimens to mark', async () => {

@@ -121,7 +121,6 @@ export interface AppState {
   scanList: ScanList | null;
   /** Hand-built team: the three picks, how to order them, and the last analysis. */
   picks: [TeamPick | null, TeamPick | null, TeamPick | null];
-  orderMode: 'best' | 'given';
   analysis: TeamAnalysis | null;
   analyzing: boolean;
   analyzeError: string | null;
@@ -161,7 +160,6 @@ type Action =
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
   | { type: 'picks'; picks: AppState['picks']; shared: boolean }
-  | { type: 'order-mode'; mode: 'best' | 'given' }
   | { type: 'analyze-start' }
   | { type: 'analyze-done'; analysis: TeamAnalysis }
   | { type: 'analyze-error'; message: string }
@@ -196,7 +194,6 @@ const initial: AppState = {
   sharedTeam: false,
   scanList: null,
   picks: [null, null, null],
-  orderMode: 'best',
   analysis: null,
   analyzing: false,
   analyzeError: null,
@@ -292,8 +289,6 @@ function reducer(s: AppState, a: Action): AppState {
     }
     case 'picks':
       return { ...s, picks: a.picks, analyzeError: null, sharedTeam: a.shared };
-    case 'order-mode':
-      return { ...s, orderMode: a.mode };
     case 'analyze-start':
       return { ...s, analyzing: true, analyzeError: null, progress: null };
     case 'analyze-done':
@@ -440,7 +435,11 @@ interface Actions {
   setPick(slot: number, pick: TeamPick | null): void;
   /** Replace all three slots at once, marking them as arrived by link when shared is true. */
   setPicks(picks: AppState['picks'], shared: boolean): void;
-  setOrderMode(mode: 'best' | 'given'): void;
+  /**
+   * Try all six orders for the three picks and put the cards in the strongest one. The
+   * analysis it ran is kept, so Analyze right after is quick to compare against.
+   */
+  findOrder(): Promise<boolean>;
   analyze(): Promise<void>;
   /** Legal moves for one team member, with the recommendation, in the league in play. */
   movePool(
@@ -778,8 +777,49 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   const setPick = useCallback((slot: number, pick: TeamPick | null) => {
     dispatch({ type: 'pick', slot, pick });
   }, []);
-  const setOrderMode = useCallback((mode: 'best' | 'given') => {
-    dispatch({ type: 'order-mode', mode });
+  const findOrder = useCallback(async (): Promise<boolean> => {
+    const h = hostRef.current as WorkerHost;
+    const s = stateRef.current;
+    const picks = s.picks;
+    if (s.analyzing || !picks[0] || !picks[1] || !picks[2] || !s.leagueInfo) {
+      return false;
+    }
+    dispatch({ type: 'analyze-start' });
+    try {
+      const base = optionsFrom(s.settings);
+      const analysis = await h.analyze(
+        [picks[0], picks[1], picks[2]],
+        s.collection?.specimens ?? [],
+        {
+          order: 'best',
+          yourMeta: yourMeta(),
+          ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
+          ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
+        },
+        (p) => dispatch({ type: 'rec-progress', progress: p }),
+      );
+      // Put the picks in the order the analysis chose: a specimen pick matches by specimen id,
+      // a species pick by species (the three are always different species).
+      const remaining: (TeamPick | null)[] = [picks[0], picks[1], picks[2]];
+      const ordered = analysis.team.slots.map((slot) => {
+        const b = slot.candidate.build;
+        let i = remaining.findIndex(
+          (p) => p !== null && (p.kind === 'specimen' ? p.id === b.specimenId : p.id === b.speciesId),
+        );
+        if (i < 0) {
+          i = remaining.findIndex((p) => p !== null);
+        }
+        const [p] = remaining.splice(i, 1);
+        return p ?? null;
+      }) as AppState['picks'];
+      dispatch({ type: 'picks', picks: ordered, shared: s.sharedTeam });
+      dispatch({ type: 'analyze-done', analysis });
+      return true;
+    } catch (e) {
+      recordError('order', e);
+      dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
+      return false;
+    }
   }, []);
   const analyze = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
@@ -795,7 +835,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         [picks[0], picks[1], picks[2]],
         s.collection?.specimens ?? [],
         {
-          order: s.orderMode,
+          // The cards' order is the order: what you see is what gets scored.
+          order: 'given',
           yourMeta: yourMeta(),
           ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
@@ -1032,7 +1073,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       loadScanList,
       setPick,
       setPicks,
-      setOrderMode,
+      findOrder,
       analyze,
       movePool,
       faceoff,
@@ -1060,7 +1101,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       loadScanList,
       setPick,
       setPicks,
-      setOrderMode,
+      findOrder,
       analyze,
       movePool,
       faceoff,

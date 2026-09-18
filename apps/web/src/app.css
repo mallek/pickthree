@@ -1492,6 +1492,15 @@ textarea.paste {
 .pick-v b {
   font-weight: 600;
 }
+.order-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.order-row .btn-ghost {
+  align-self: flex-start;
+  border: 1px solid var(--divider);
+}
 /* One line per move: F or C, the name, its type. */
 .pick-moves {
   display: flex;
