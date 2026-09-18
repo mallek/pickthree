@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
+import { count } from '../src/format.js';
+import { MANY, SOME } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -36,7 +38,9 @@ const teams = [
 
 describe('Teams', () => {
   it('lists teams with their win rate and how much to trust it', async () => {
-    render(<App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />);
+    render(
+      <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
+    );
     expect(await screen.findByText('Azumarill + Clodsire + Tinkaton')).toBeInTheDocument();
     expect(screen.getByText('1,240 battles')).toBeInTheDocument();
     expect(screen.getByText('54%')).toBeInTheDocument();
@@ -44,7 +48,9 @@ describe('Teams', () => {
   });
 
   it('warns loudly on a small team sample', async () => {
-    render(<App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />);
+    render(
+      <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
+    );
     expect(
       await screen.findByText('Only 21 battles, could easily be 40% or 84%'),
     ).toBeInTheDocument();
@@ -52,7 +58,9 @@ describe('Teams', () => {
   });
 
   it('deep links into pick3 with the movesets it knows and without the ones it does not', async () => {
-    render(<App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />);
+    render(
+      <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
+    );
     const links = await screen.findAllByRole('link', { name: /Open in pick3/ });
     expect(links[0]).toHaveAttribute(
       'href',
@@ -67,6 +75,19 @@ describe('Teams', () => {
   it('says so when no team has been shared', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByText('No teams shared in this window yet.')).toBeInTheDocument();
+  });
+
+  // Fix round 3 ("FIX 5"): the confidence legend used to spell out 30 and 300 as literals,
+  // which could drift from stats.ts's SOME and MANY without anything catching it.
+  it('states the confidence legend from the real thresholds', async () => {
+    render(
+      <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
+    );
+    expect(
+      await screen.findByText(
+        `Confidence: few under ${count(SOME)}, some ${count(SOME)} to ${count(MANY)}, many ${count(MANY)} or more, counted on decided battles.`,
+      ),
+    ).toBeInTheDocument();
   });
 });
 

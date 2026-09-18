@@ -1,8 +1,11 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App.js';
+import { BUCKET_MS } from '../src/api.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
+import { count, pct, plural } from '../src/format.js';
+import { RANKED_SHARE, SMALL_MIN } from '../src/rank.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -46,6 +49,15 @@ describe('Overview, with almost no data', () => {
     expect(within(section).queryByText('Registeel')).toBeNull();
     expect(within(section).getByText('1 more was faced once.')).toBeInTheDocument();
     expect(within(section).queryByText(/%/)).toBeNull();
+    // Fix round 3 ("FIX 5"): "at least twice" used to be typed out; it now reads SMALL_MIN so
+    // the copy cannot drift from the actual cut this section applies.
+    expect(
+      within(section).getByText(
+        new RegExp(
+          `Every Pokemon faced at least ${count(SMALL_MIN)} ${plural(SMALL_MIN, 'time', 'times')}`,
+        ),
+      ),
+    ).toBeInTheDocument();
   });
 
   it('invites the reader to contribute, naming how many devices already do', async () => {
@@ -131,6 +143,22 @@ describe('Overview, with enough data', () => {
     const section = heading.closest('section')!;
     const row = within(section).getByRole('link', { name: /Azumarill/ });
     expect(row).toHaveAttribute('href', '/great/p/azumarill');
+  });
+
+  // Fix round 3 ("FIX 5"): these two fine-print lines used to spell out 0.5% and 10 minutes as
+  // literals, which could drift from RANKED_SHARE and BUCKET_MS without anything ever catching
+  // it. Reading the same constants the page interpolates, rather than typing the digits again,
+  // is what about.test.tsx already does for the About page's own thresholds.
+  it('states the ranking cut and the refresh interval from the real constants', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(
+      await screen.findByText(
+        new RegExp(`Only Pokemon faced in at least ${pct(RANKED_SHARE)}% of battles are ranked`),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`Updated every ${count(BUCKET_MS / 60_000)} minutes`)),
+    ).toBeInTheDocument();
   });
 });
 

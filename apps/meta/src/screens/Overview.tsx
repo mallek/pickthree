@@ -9,13 +9,20 @@
  * small.
  */
 import type { ReactNode } from 'react';
-import type { MetaSummaryV1 } from '../api.js';
+import { BUCKET_MS, type MetaSummaryV1 } from '../api.js';
 import type { Baseline } from '../baseline.js';
 import { Bar, Note, Sprite, StatCard, TypeTags } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { ago, battleWord, battles as battlesText, count, pct, plural } from '../format.js';
 import { PICK3 } from '../links.js';
-import { rank, type BaselineRow, type MeasuredRow, type Ranking } from '../rank.js';
+import {
+  RANKED_SHARE,
+  SMALL_MIN,
+  rank,
+  type BaselineRow,
+  type MeasuredRow,
+  type Ranking,
+} from '../rank.js';
 import type { BandKey, Query, View } from '../route.js';
 import { trendLabel } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
@@ -313,8 +320,12 @@ export function Overview(p: {
           href={href}
         />
       ))}
-      <p className="fine">Only Pokemon faced in at least 0.5% of battles are ranked.</p>
-      <p className="fine">Updated every 10 minutes from battles shared by pick3 players.</p>
+      <p className="fine">
+        Only Pokemon faced in at least {pct(RANKED_SHARE)}% of battles are ranked.
+      </p>
+      <p className="fine">
+        Updated every {count(BUCKET_MS / 60_000)} minutes from battles shared by pick3 players.
+      </p>
     </section>
   );
 
@@ -322,7 +333,8 @@ export function Overview(p: {
     <section>
       <h2>What we have seen</h2>
       <p className="sub">
-        Every Pokemon faced at least twice in these {battlesText(ranking.battles)}.
+        Every Pokemon faced at least {count(SMALL_MIN)} {plural(SMALL_MIN, 'time', 'times')} in
+        these {battlesText(ranking.battles)}.
       </p>
       {ranking.measured.length === 0 && ranking.tail === 0 ? (
         <p className="sub">No battles shared in this window yet.</p>

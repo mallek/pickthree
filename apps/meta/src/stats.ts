@@ -6,10 +6,21 @@ import { battles as battlesText } from './format.js';
 
 export type Confidence = 'few' | 'some' | 'many';
 
-/** Below this many counted battles a number is little more than a guess. */
-const SOME = 30;
-/** At this many counted battles, and above, a number carries real weight. */
-const MANY = 300;
+/** Below this many counted battles a number is little more than a guess. Exported so a screen
+ * that states this boundary in prose (Teams.tsx's confidence legend) interpolates it instead of
+ * retyping the digit, the same rule About.tsx follows for its own thresholds. */
+export const SOME = 30;
+/** At this many counted battles, and above, a number carries real weight. Exported for the same
+ * reason as `SOME`. */
+export const MANY = 300;
+
+/** A week needs this many counted battles before its share is worth printing. Deliberately the
+ * same boundary as confidence's few/some split, so the two never drift apart: a week too thin to
+ * call "some" confidence is too thin to chart a share for either. */
+export const SHARE_MIN = SOME;
+
+/** A rank band's own record reads as a hint, not a fact, below this many battles. */
+export const THIN_BAND_MAX = 100;
 
 /** few under 30 battles, some 30 to 299, many 300 and up. */
 export function confidence(n: number): Confidence {

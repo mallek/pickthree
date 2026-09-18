@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleRow } from '../src/battles.js';
-import { MOVESET_MIN, bandRows, isoWeek, movesetsBySpecies, speciesDetail, summarize } from '../src/meta.js';
+import {
+  MOVESET_MIN,
+  bandRows,
+  isoWeek,
+  movesetsBySpecies,
+  speciesDetail,
+  summarize,
+} from '../src/meta.js';
 
 const NOW = new Date('2026-09-18T12:00:00.000Z');
 
@@ -65,6 +72,13 @@ describe('summarize', () => {
   it('counts a device once however many battles it sends', () => {
     const s = run([row(), row({ device: 'd1' }), row({ device: 'd2' })]);
     expect(s.devices).toBe(2);
+  });
+
+  it('does not count a device whose only rows are tanked', () => {
+    // A device that only ever tanked has shared nothing usable, and must not inflate the count
+    // gating MEASURED_MIN_DEVICES or the "shared by N devices" line on the site.
+    const s = run([row({ device: 'd1' }), row({ device: 'd2', tanked: true, result: null })]);
+    expect(s.devices).toBe(1);
   });
 
   it('counts every band even when filtered to one', () => {
@@ -137,7 +151,11 @@ describe('movesetsBySpecies', () => {
       null,
     ];
     const b: BattleRow['moves'] = [{ fast: 'BUBBLE', charged: ['HYDRO_PUMP'] }, null, null];
-    const rows = [row({ team: ['azumarill', 'x', 'y'], moves: a }), row({ team: ['azumarill', 'x', 'y'], moves: a }), row({ team: ['azumarill', 'x', 'y'], moves: b })];
+    const rows = [
+      row({ team: ['azumarill', 'x', 'y'], moves: a }),
+      row({ team: ['azumarill', 'x', 'y'], moves: a }),
+      row({ team: ['azumarill', 'x', 'y'], moves: b }),
+    ];
     const sets = movesetsBySpecies(rows).get('azumarill')!;
     expect(sets[0]).toEqual({ fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], battles: 2 });
     expect(sets[1]!.battles).toBe(1);

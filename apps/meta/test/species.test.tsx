@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
+import { THIN_BAND_MAX } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -72,22 +73,92 @@ describe('Species', () => {
     );
   });
 
-  it('warns on a thin rank band and says nothing false about an empty one', async () => {
+  it('warns on every thin band, not just the thinnest, and says nothing false about an empty one', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
     const card = (
       await screen.findByRole('heading', { name: 'Record against it, by rank' })
     ).closest('section')!;
-    // Correction 3: the thin-band warning names the band with the fewest battles among those
-    // with at least one (below 90, ace 60, legend 34: legend is fewest), and only because that
-    // count, 34, is itself under 100. The brief's looser "smallest band under 100" wording was
-    // ambiguous with three bands under 100 in this fixture; this is the precise rule it meant.
-    expect(within(card).getByText(/Legend is 34 battles, treat it as a hint/)).toBeInTheDocument();
+    // Fix round 3 ("FIX 3"): the old rule named only the single thinnest band, which under-warned
+    // a 90-battle band standing right next to a 3-battle one. All three bands with battles here
+    // (below 90, ace 60, legend 34) are under THIN_BAND_MAX, so all three are named, most
+    // battles first, each with its own count.
+    expect(
+      within(card).getByText(
+        new RegExp(
+          `Below Ace \\(90 battles\\), Ace \\(60 battles\\) and Legend \\(34 battles\\) are all ` +
+            `under ${THIN_BAND_MAX} battles`,
+        ),
+      ),
+    ).toBeInTheDocument();
     expect(within(card).getAllByText('no battles')).toHaveLength(3);
+  });
+
+  it('still reads as one short sentence when only a single band is thin', async () => {
+    const oneThin = {
+      ...species,
+      bands: [
+        { band: 'below', sightings: 200, wins: 100, losses: 100 },
+        { band: 'ace', sightings: 150, wins: 80, losses: 70 },
+        { band: 'veteran', sightings: 0, wins: 0, losses: 0 },
+        { band: 'expert', sightings: 0, wins: 0, losses: 0 },
+        { band: 'legend', sightings: 34, wins: 10, losses: 24 },
+        { band: 'unknown', sightings: 0, wins: 0, losses: 0 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: oneThin, meta }), now }} />);
+    const card = (
+      await screen.findByRole('heading', { name: 'Record against it, by rank' })
+    ).closest('section')!;
+    expect(
+      within(card).getByText('Legend is 34 battles, treat it as a hint, not a fact.'),
+    ).toBeInTheDocument();
+  });
+
+  it('names a tie: two bands thin by the same count are both named', async () => {
+    const tie = {
+      ...species,
+      bands: [
+        { band: 'below', sightings: 1, wins: 1, losses: 0 },
+        { band: 'ace', sightings: 1, wins: 0, losses: 1 },
+        { band: 'veteran', sightings: 0, wins: 0, losses: 0 },
+        { band: 'expert', sightings: 0, wins: 0, losses: 0 },
+        { band: 'legend', sightings: 0, wins: 0, losses: 0 },
+        { band: 'unknown', sightings: 0, wins: 0, losses: 0 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: tie, meta }), now }} />);
+    const card = (
+      await screen.findByRole('heading', { name: 'Record against it, by rank' })
+    ).closest('section')!;
+    // Old rule (a strict `<` comparison over the minimum) named only the first of a tie. Both
+    // are named now, and correctly in the singular: "1 battle", not "1 battles". Tied on
+    // sightings, the tiebreak is the band id, so "ace" sorts before "below".
+    expect(
+      within(card).getByText(/Ace \(1 battle\) and Below Ace \(1 battle\) are all under/),
+    ).toBeInTheDocument();
   });
 
   it('says what "seen next to" actually measures', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
     expect(await screen.findByText(/Reporters note up to three opponents/)).toBeInTheDocument();
+  });
+
+  // Fix round 3 ("FIX 2"): a bare "100%" from a pairing seen twice violated the spec's "always
+  // on screen with their counts, however small" rule. The count now sits next to every
+  // percentage.
+  it('puts the battle count next to the alongside percentage', async () => {
+    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
+    const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest('section')!;
+    // tinkaton: 57 of azumarill's 184 sightings is 30.978...%, which rounds to 31%.
+    expect(within(card).getByText('31% - 57 battles')).toBeInTheDocument();
+  });
+
+  it('shows a count instead of a share when the league is not measured yet', async () => {
+    const thin = { battles: 50, devices: 2 };
+    render(<App deps={{ fetcher: stubFetch({ species, meta: thin }), now }} />);
+    const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest('section')!;
+    expect(within(card).getByText('57 battles')).toBeInTheDocument();
+    expect(within(card).queryByText(/%/)).toBeNull();
   });
 
   it('aggregates movesets into one bar per move and warns that charged shares double up', async () => {
@@ -132,7 +203,13 @@ describe('Species', () => {
     expect(screen.queryByText(/1 battles\b/)).toBeNull();
   });
 
-  it('says "about the same" instead of "even pts" when the week is unchanged', async () => {
+  // Fix round 3 ("FIX 1a"): a literal tie between two well-attested weeks is exactly what
+  // trendPoints treats as "nothing to say" (its 95% band never excludes a difference of zero),
+  // so the card now shows no change clause at all here rather than round 2's "about the same as
+  // the first week" text, which claimed a fact (no movement) the statistic does not actually
+  // assert. See the fixture below this one for the case where trendLabel's own "even" wording
+  // still applies: a real, statistically significant difference that happens to round near zero.
+  it('shows no change clause when the two weeks are an exact tie', async () => {
     const flat = {
       ...species,
       weekly: [
@@ -141,8 +218,32 @@ describe('Species', () => {
       ],
     };
     render(<App deps={{ fetcher: stubFetch({ species: flat, meta }), now }} />);
-    expect(await screen.findByText(/about the same as the first week/)).toBeInTheDocument();
-    expect(screen.queryByText(/even pts/)).toBeNull();
+    expect(await screen.findByText('20.0% latest')).toBeInTheDocument();
+    expect(screen.queryByText(/pts since the first week/)).toBeNull();
+    expect(screen.queryByText(/about the same/)).toBeNull();
+    expect(screen.queryByText(/even/)).toBeNull();
+  });
+
+  // Fix round 3 ("FIX 1"). Task 12's tests missed this because every fixture week had 500
+  // battles: a species faced once in a two-battle week and not at all in a three-battle week
+  // used to render "0% latest, -50.0 pts since the first week", a trend and a share the data
+  // cannot support. Neither a percentage nor a sparkline should appear; the raw counts should.
+  it('does not chart a share from battle-starved weeks, and shows the counts instead', async () => {
+    const thin = {
+      ...species,
+      sightings: 1,
+      weekly: [
+        { week: '2026-W36', battles: 2, sightings: 1 },
+        { week: '2026-W37', battles: 3, sightings: 0 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: thin, meta }), now }} />);
+    const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
+      'section',
+    )!;
+    expect(within(card).getByText('Faced 1 time in 5 battles over 2 weeks')).toBeInTheDocument();
+    expect(within(card).queryByText(/%/)).toBeNull();
+    expect(within(card).queryByText(/pts since the first week/)).toBeNull();
   });
 
   // Fix round 2: a single win or loss is not a hypothetical on a site this new, and neither is

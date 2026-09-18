@@ -205,7 +205,10 @@ export function summarize(opts: {
 
   const inBand = bandRows(rows, band);
   const counted = inBand.filter((r) => !r.tanked);
-  const devices = new Set(inBand.map((r) => r.device));
+  // Over `counted`, not `inBand`: a device that only ever tanked has shared nothing usable, so it
+  // must not count toward MEASURED_MIN_DEVICES or the "shared by N devices" line, the same reason
+  // tanked rows are excluded from every other tally below.
+  const devices = new Set(counted.map((r) => r.device));
   const sets = movesetsBySpecies(counted);
 
   const teams = new Map<string, TeamStats>();

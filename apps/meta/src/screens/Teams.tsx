@@ -16,7 +16,7 @@ import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count } from '../format.js';
 import { teamLink, type LinkMember } from '../links.js';
 import type { Query, WindowKey } from '../route.js';
-import { marginSentence, winRate } from '../stats.js';
+import { MANY, SOME, marginSentence, winRate } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 import { Contribute } from './Overview.js';
 
@@ -37,15 +37,7 @@ function membersOf(team: TeamStats): LinkMember[] {
   });
 }
 
-function TeamRow({
-  team,
-  data,
-  league,
-}: {
-  team: TeamStats;
-  data: StaticData;
-  league: string;
-}) {
+function TeamRow({ team, data, league }: { team: TeamStats; data: StaticData; league: string }) {
   const species = team.species.map((id) => speciesOf(data, id));
   const label = species.map((s) => s.short).join(' + ');
   const rate = winRate(team.wins, team.losses);
@@ -116,7 +108,8 @@ export function Teams(p: {
           {leagueTitle} - {windowLabel} - teams reporters ran themselves
         </p>
         <p className="fine">
-          Confidence: few under 30, some 30 to 300, many 300 or more, counted on decided battles.
+          Confidence: few under {count(SOME)}, some {count(SOME)} to {count(MANY)}, many{' '}
+          {count(MANY)} or more, counted on decided battles.
         </p>
         {teams.length === 0 ? (
           <>
@@ -129,9 +122,7 @@ export function Teams(p: {
               <TeamRow key={team.species.join('+')} team={team} data={data} league={league} />
             ))}
             <p className="fine">Win rate is the reporters&apos; own result with this team.</p>
-            <p className="fine">
-              Small samples swing a lot; the badge says how much to trust it.
-            </p>
+            <p className="fine">Small samples swing a lot; the badge says how much to trust it.</p>
           </>
         )}
       </section>

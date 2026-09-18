@@ -17,7 +17,14 @@ import { battles as battlesText, count, pct, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
 import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
 import type { Query, View } from '../route.js';
-import { marginSentence, trendLabel, winRate } from '../stats.js';
+import {
+  marginSentence,
+  SHARE_MIN,
+  THIN_BAND_MAX,
+  trendLabel,
+  trendPoints,
+  winRate,
+} from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
 /** Same bands as elsewhere, plus 'unknown': the worker emits that band for a reporter it could
@@ -148,26 +155,61 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
   );
 }
 
+/**
+ * Fix round 3 ("FIX 1"): this card used to compute a share and a point change from any two
+ * weeks at all, with no floor, so a species faced once in a two-battle week and not at all in a
+ * three-battle week rendered "0% latest, -50.0 pts since the first week": a trend the data
+ * cannot support, one tap away from the About page's own promise that a trend needs at least
+ * `TREND_MIN` counted battles in both compared windows. Task 12's tests missed it because every
+ * fixture week happened to have 500 battles.
+ *
+ * Two independent floors now apply. A week's SHARE is not printed at all below `SHARE_MIN`
+ * battles that week (false precision: "0%" from two battles is not a share); when fewer than
+ * two weeks clear that floor, the card falls back to the raw counts instead of a chart. The
+ * week-over-week CHANGE goes through `trendPoints`, the same statistical gate the League
+ * overview and the About page's own promise both use (`TREND_MIN` counted battles on both
+ * sides, and the difference has to clear its own 95% band); `null` means the data cannot say,
+ * which the card must not silently render as "no change".
+ */
 function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
   if (weekly.length < 2) {
     return null;
   }
-  const shares = weekly.map((w) => (w.battles > 0 ? w.sightings / w.battles : 0));
-  const first = shares[0]!;
-  const latest = shares[shares.length - 1]!;
-  const changePoints = (latest - first) * 100;
-  const label = trendLabel(changePoints);
-  // trendLabel returns the word "even" precisely so a caller does not print a number next to
-  // it; appending "pts" to that word read as nonsense ("even pts"), so this is worded as its
-  // own sentence instead of the number's unit.
-  const changeText =
-    label === 'even' ? 'about the same as the first week' : `${label} pts since the first week`;
+  const chartable = weekly.filter((w) => w.battles >= SHARE_MIN);
+  if (chartable.length < 2) {
+    const sightings = weekly.reduce((sum, w) => sum + w.sightings, 0);
+    const battles = weekly.reduce((sum, w) => sum + w.battles, 0);
+    return (
+      <section>
+        <h2>Faced, week by week</h2>
+        <p className="sub">
+          Faced {count(sightings)} {plural(sightings, 'time', 'times')} in {battlesText(battles)}{' '}
+          over {count(weekly.length)} {plural(weekly.length, 'week', 'weeks')}
+        </p>
+        <p className="fine">Too few battles in some weeks to chart a share yet.</p>
+      </section>
+    );
+  }
+  const shares = chartable.map((w) => w.sightings / w.battles);
+  const first = chartable[0]!;
+  const latest = chartable[chartable.length - 1]!;
+  const latestShare = shares[shares.length - 1]!;
+  const change = trendPoints(latest.sightings, latest.battles, first.sightings, first.battles);
+  let changeText: string | null = null;
+  if (change !== null) {
+    const label = trendLabel(change);
+    // trendLabel returns the word "even" precisely so a caller does not print a number next to
+    // it; appending "pts" to that word reads as nonsense ("even pts"), so that case gets its own
+    // sentence instead of the number's unit.
+    changeText =
+      label === 'even' ? 'about the same as the first week' : `${label} pts since the first week`;
+  }
   return (
     <section>
       <h2>Faced, week by week</h2>
       <Sparkline values={shares} />
       <p className="sub">
-        {pct(latest)}% latest, {changeText}
+        {pct(latestShare)}% latest{changeText ? `, ${changeText}` : ''}
       </p>
     </section>
   );
@@ -214,18 +256,36 @@ function RecordCard({
   );
 }
 
-/**
- * Correction 3 (task-12-report.md): "the smallest band with battles under 100" is ambiguous
- * when several bands are under 100, so this is defined precisely as the band with the fewest
- * battles among those with at least one, warned on only when that count is itself under 100.
- */
+/** Every band under `THIN_BAND_MAX` that has at least one battle, most battles first (so a
+ * multi-band caveat reads best-attested band to worst-attested, matching how a reader scans the
+ * rows above it). Correction 3 (task-12-report.md) originally read this as "the single
+ * thinnest band", which under-warned: two bands tied at one sighting named only the first, and
+ * a 90-battle band next to a 3-battle band got no caveat at all. Fix round 3 ("FIX 3") widens it
+ * to every band that clears the bar, not just the minimum. */
+function thinBands(bands: SpeciesDetailV1['bands']): SpeciesDetailV1['bands'] {
+  return bands
+    .filter((b) => b.sightings > 0 && b.sightings < THIN_BAND_MAX)
+    .sort((a, b) => b.sightings - a.sightings || a.band.localeCompare(b.band));
+}
+
+/** One band reads as its own short sentence; several read as one sentence naming all of them,
+ * each with its own count (the spec's "always on screen with their counts, however small" rule
+ * applies as much to a caveat as to the row it is about). */
+function thinBandCaveat(thin: SpeciesDetailV1['bands']): string | null {
+  if (thin.length === 0) {
+    return null;
+  }
+  if (thin.length === 1) {
+    const b = thin[0]!;
+    return `${bandLabel(b.band)} is ${battlesText(b.sightings)}, treat it as a hint, not a fact.`;
+  }
+  const named = thin.map((b) => `${bandLabel(b.band)} (${battlesText(b.sightings)})`);
+  return `${joinAnd(named)} are all under ${count(THIN_BAND_MAX)} battles, treat them as hints, not facts.`;
+}
+
 function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
-  const withBattles = bands.filter((b) => b.sightings > 0);
-  const thin =
-    withBattles.length > 0
-      ? withBattles.reduce((min, b) => (b.sightings < min.sightings ? b : min))
-      : null;
-  const warnThin = thin !== null && thin.sightings < 100;
+  const thin = thinBands(bands);
+  const caveat = thinBandCaveat(thin);
   return (
     <section>
       <h2>Record against it, by rank</h2>
@@ -259,11 +319,7 @@ function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
           );
         })}
       </div>
-      {warnThin && thin ? (
-        <p className="fine">
-          {bandLabel(thin.band)} is {battlesText(thin.sightings)}, treat it as a hint, not a fact.
-        </p>
-      ) : null}
+      {caveat ? <p className="fine">{caveat}</p> : null}
     </section>
   );
 }
@@ -271,12 +327,17 @@ function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
 function AlongsideCard({
   alongside,
   sightings,
+  measuredEnough,
   data,
   league,
   href,
 }: {
   alongside: SpeciesDetailV1['alongside'];
   sightings: number;
+  /** Same gate as the header ("#R most faced" vs "Faced S times"): below it a share is not a
+   * share, it is two small counts pretending to be one, so this card shows the raw count
+   * instead, the same rule Overview.tsx's own rows already follow. */
+  measuredEnough: boolean;
   data: StaticData;
   league: string;
   href: (view: View) => string;
@@ -310,7 +371,10 @@ function AlongsideCard({
                 <span className="fine" style={{ color: 'var(--muted)' }}>
                   {other.short}
                 </span>
-                <span className="fine">{Math.round(share)}%</span>
+                <span className="fine">
+                  {measuredEnough ? `${Math.round(share)}% - ` : ''}
+                  {battlesText(a.battles)}
+                </span>
               </a>
             );
           })}
@@ -429,6 +493,7 @@ export function Species(p: {
           <AlongsideCard
             alongside={d.alongside}
             sightings={d.sightings}
+            measuredEnough={measuredEnough}
             data={data}
             league={league}
             href={href}
