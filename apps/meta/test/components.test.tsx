@@ -44,12 +44,19 @@ describe('typeColor', () => {
 
 describe('SitePill', () => {
   it('links out with an accessible name that says where it goes', () => {
-    render(<SitePill href="https://pick3.gg" label="pick3" name="pick3, the team builder" />);
+    const { container } = render(
+      <SitePill href="https://pick3.gg" name="pick3, the team builder" />,
+    );
     const link = screen.getByRole('link', { name: 'pick3, the team builder' });
     expect(link).toHaveAttribute('href', 'https://pick3.gg');
-    // The visible label and the mark are both hidden from assistive tech: the aria-label above
-    // is the one source of the accessible name, so it is never announced twice.
-    expect(screen.getByText('pick3')).toHaveAttribute('aria-hidden', 'true');
+    // The pick3 lockup already draws the word "pick3", so there is no separate text label to
+    // duplicate it; both colourways are hidden from assistive tech, and aria-label above is the
+    // one source of the accessible name.
+    const images = container.querySelectorAll('img');
+    expect(images).toHaveLength(2);
+    for (const img of images) {
+      expect(img).toHaveAttribute('aria-hidden', 'true');
+    }
   });
 });
 

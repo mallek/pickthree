@@ -353,18 +353,24 @@ export function Header({
   );
 }
 
-/** The pill naming the sister site, pick3.gg: same shape, same mark and the same placement logic
- * as pick3's own header pill (apps/web/src/components.tsx's `SitePill`), so the two headers rhyme,
- * but drawn from this app's own tokens rather than importing pick3's palette. `label` is the
- * visible text ("pick3"); `name` is the link's full accessible name ("pick3, the team builder"),
- * since a bare "pick3" read aloud says nothing about where the link goes. The mark carries its own
- * `alt=""`/`aria-hidden`, and the visible label is hidden from assistive tech too so the name is
- * never announced twice. */
-export function SitePill({ href, label, name }: { href: string; label: string; name: string }) {
+/** The pill naming the sister site, pick3.gg: same shape and the same placement logic as pick3's
+ * own header pill (apps/web/src/components.tsx's `SitePill`), so the two headers rhyme, but drawn
+ * from this app's own tokens rather than importing pick3's palette. `name` is the link's full
+ * accessible name ("pick3, the team builder"), since the icon alone says nothing about where the
+ * link goes to a screen reader.
+ *
+ * G: the icon is pick3's own lockup (apps/web/public/lockup.svg / lockup-light.svg) now, not the
+ * bare "3" mark plus a plain "pick3" text label this pill used to carry: the lockup already draws
+ * the word "pick3", so a second, plain-text copy of it right next to that drawing would just
+ * repeat itself on screen. Both colourways render; `.site-pill-lockup`'s `.only-dark` /
+ * `.only-light` pair (app.css) shows the one that matches the active theme. Both images are
+ * hidden from assistive tech, same as the old mark was, so the one accessible name lives on
+ * `aria-label` and is never announced twice. */
+export function SitePill({ href, name }: { href: string; name: string }) {
   return (
     <a className="site-pill" href={href} aria-label={name}>
-      <img className="site-pill-mark" src="/mark.svg" alt="" aria-hidden="true" />
-      <span aria-hidden="true">{label}</span>
+      <img className="only-dark site-pill-lockup" src="/lockup.svg" alt="" aria-hidden="true" />
+      <img className="only-light site-pill-lockup" src="/lockup-light.svg" alt="" aria-hidden="true" />
     </a>
   );
 }

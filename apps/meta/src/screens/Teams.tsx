@@ -96,6 +96,10 @@ export function Teams(p: {
   return (
     <main>
       <section>
+        {/* A1: this used to be App.tsx's centred page title; the switcher and filter chips above
+            already say which league and window, so this is a plain left-aligned heading now,
+            the same job pick3's own screens give a bare `h2`. */}
+        <h2>Most run teams</h2>
         <p className="fine">
           Confidence: few under {count(SOME)}, some {count(SOME)} to {count(MANY)}, many{' '}
           {count(MANY)} or more, counted on decided battles.

@@ -18,7 +18,10 @@ beforeEach(() => {
 describe('App', () => {
   it('lands on the first league and names the site', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByText('meta')).toBeInTheDocument();
+    // G: the wordmark reads "meta." then the pick3 lockup image then ".gg", not one plain "meta"
+    // text node any more.
+    expect(await screen.findByText('meta.')).toBeInTheDocument();
+    expect(screen.getByText('.gg')).toBeInTheDocument();
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
@@ -27,6 +30,14 @@ describe('App', () => {
     expect(
       await screen.findByRole('link', { name: 'pick3, the team builder' }),
     ).toHaveAttribute('href', 'https://pick3.gg');
+  });
+
+  // A1: the appearance toggle used to live in a centred title row of its own; it is drawn as
+  // pick3's own head-cog and sits in the brand row now, next to the pick3 pill.
+  it('draws the appearance toggle as a round head-cog like pick3 in the brand row', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    const button = await screen.findByRole('button', { name: /appearance/i });
+    expect(button).toHaveClass('head-cog');
   });
 
   it('switches league through the segmented control and puts it in the url', async () => {
@@ -141,9 +152,11 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    // Task 11 replaced the teams placeholder ("Teams in ultra") with the real screen, whose
-    // sub-line names the league and window instead.
-    expect(await screen.findByText(/Ultra League - 7 days/)).toBeInTheDocument();
+    // A1 dropped the centred title row (which used to name the league and window in its own
+    // sub-line) in favour of the switcher and filter chips saying so directly: the "Ultra" and
+    // "7 days" checks above and below already cover that, and Teams' own left-aligned heading
+    // is what is left to identify the screen itself.
+    expect(await screen.findByRole('heading', { name: 'Most run teams' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '7 days' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
     expect(window.location.pathname).toBe('/ultra/teams');

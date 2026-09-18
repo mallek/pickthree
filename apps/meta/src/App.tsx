@@ -314,10 +314,14 @@ export function App(props?: { deps?: Deps }): ReactNode {
   const speciesId = view.name === 'species' ? view.speciesId : '';
   const detail = useSpeciesDetail(activeLeague, speciesId, w, query.band, deps);
 
+  // A1: pick3's tab roots carry the settings cog in their one header row, not a row of its own,
+  // so the appearance toggle now sits in the brand row too (see brandRow below), drawn as pick3's
+  // own .head-cog rather than this app's plainer .icon-btn (which nothing else used once this
+  // moved, so it is gone from app.css).
   const themeButton = (
     <button
       type="button"
-      className="icon-btn"
+      className="head-cog"
       aria-label={appearanceLabel(theme)}
       onClick={() => setTheme((t) => nextTheme(t))}
     >
@@ -329,18 +333,30 @@ export function App(props?: { deps?: Deps }): ReactNode {
   // bottom tab bar. Species is a drill-down from Overview rather than a tab of its own, so its
   // sticky header's back link takes over this row's job instead ("how do I leave this page"),
   // and the wordmark is dropped there rather than duplicating it. Not sticky itself: only the
-  // page header below it is, so the two never have to share row 0 of the sticky stack.
+  // filters/switcher below it are, so the two never have to share row 0 of the sticky stack.
+  //
+  // G: the wordmark is now built from pick3's own lockup rather than this app's own bare "3"
+  // mark, so the two sites read as one brand: "meta." in this app's own ink, pick3's outlined
+  // "pick3" lockup sized to the surrounding text's cap height (the .hero-lockup metrics trick,
+  // ported byte for byte from apps/web/src/app.css so the baseline math is not re-derived here),
+  // then ".gg" in the muted colour. Both lockup colourways are always in the DOM; .only-dark/
+  // .only-light (ported the same way) pick the one that matches the active theme, system or
+  // explicit, exactly as apps/web/src/screens/Welcome.tsx already does for its own hero.
   const brandRow = (
     <header className="brand">
       <a
         className="wordmark"
         {...navProps({ name: 'overview', league: activeLeague }, DEFAULT_QUERY)}
       >
-        <img className="wordmark-mark" src="/mark.svg" alt="" aria-hidden="true" />
-        <span>meta</span>
-        <span className="wordmark-accent">.pick3.gg</span>
+        <span>meta.</span>
+        <img className="only-dark hero-lockup" src="/lockup.svg" alt="" aria-hidden="true" />
+        <img className="only-light hero-lockup" src="/lockup-light.svg" alt="" aria-hidden="true" />
+        <span className="wordmark-muted">.gg</span>
       </a>
-      <SitePill href={PICK3} label="pick3" name="pick3, the team builder" />
+      <span className="brand-actions">
+        <SitePill href={PICK3} name="pick3, the team builder" />
+        {themeButton}
+      </span>
     </header>
   );
 
@@ -362,7 +378,6 @@ export function App(props?: { deps?: Deps }): ReactNode {
   } else {
     const leagues = staticData.data.leagues;
     const leagueInfo = leagues.find((l) => l.id === activeLeague) ?? null;
-    const leagueTitle = leagueInfo?.title ?? activeLeague;
     const leagueShort = leagueInfo?.short ?? activeLeague;
     const showFilters = view.name === 'overview' || view.name === 'teams';
     // About is league-agnostic: withLeague is a no-op there, so showing the switcher would be a
@@ -370,36 +385,21 @@ export function App(props?: { deps?: Deps }): ReactNode {
     const showLeagueSwitch = view.name !== 'about';
     const showBrand = view.name !== 'species';
 
-    let pageHeader: ReactNode;
-    if (view.name === 'about') {
-      pageHeader = <Header title="About the data" action={themeButton} />;
-    } else if (view.name === 'teams') {
-      pageHeader = (
-        <Header
-          title="Most run teams"
-          sub={`${leagueTitle} - ${WINDOW_LABELS[query.w]} - teams reporters ran themselves`}
-          action={themeButton}
-        />
-      );
-    } else if (view.name === 'species') {
-      pageHeader = (
+    // A1: Overview, Teams and About are tab roots now told apart by the brand row above them,
+    // the league switcher and the filter chips below them, and (for Teams and About) an `h2`
+    // inside the screen's own body (Teams.tsx's "Most run teams", About.tsx's section headings),
+    // not by a second, centred title row here. Species is still a drill-in with a back link, so
+    // it keeps the one place that row belongs: its title is just the species name, since the
+    // league it belongs to is already named by the switcher rendered under this header.
+    const pageHeader: ReactNode =
+      view.name === 'species' ? (
         <Header
           title={speciesOf(staticData.data, view.speciesId).name}
-          sub={leagueTitle}
           backHref={hrefFor({ name: 'overview', league: activeLeague }, query)}
           backLabel={leagueShort}
           action={themeButton}
         />
-      );
-    } else {
-      pageHeader = (
-        <Header
-          title={leagueTitle}
-          sub={`${WINDOW_LABELS[query.w]} - ${BAND_LABELS[query.band]}`}
-          action={themeButton}
-        />
-      );
-    }
+      ) : null;
 
     content = (
       <div className="app">
@@ -416,9 +416,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
         {showFilters ? (
           // One row, matching the design export (docs/design/meta/meta.pick3.gg.dc.html,
           // screen 1a): the window pills on the left, the rank band collapsed into a single
-          // compact control on the right. The header's own subtitle already names both filters
-          // ("This season - All ranks"), so a second, taller row of captions and six wrapped
-          // band pills was restating it at the cost of most of the first screen; the select's
+          // compact control on the right. A second, taller row of captions and six wrapped band
+          // pills would restate what these two controls already say for themselves; the select's
           // own label is enough to tell the two controls apart without a caption over each.
           <div className="filter-row">
             <Pills

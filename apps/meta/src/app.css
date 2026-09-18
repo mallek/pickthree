@@ -368,27 +368,35 @@ a {
   border: 1px solid var(--border);
 }
 
-/* Icon buttons: the design's 34px circle stays exactly that size. The touch target is a
-   transparent pseudo-element extended 3px on every side, reaching the 40px floor without
-   changing anything that paints. */
-.icon-btn {
+/* The header's one icon button, ported from pick3's own .head-cog (apps/web/src/app.css) so it
+   matches exactly: a 36px bordered circle in the muted ink, not a filled control. pick3's own
+   version paints at 36px with no touch-target extension of its own; this site's own floor is 40px
+   everywhere else, so a -2px inset (36 + 2 + 2 = 40) closes that gap here without changing what
+   paints. A1 moved this app's only appearance toggle into the brand row wearing this class in
+   place of the plainer .icon-btn it used to be (nothing else used that class, so it is gone). */
+.head-cog {
   position: relative;
-  width: 34px;
-  height: 34px;
-  padding: 3px;
+  height: 36px;
+  width: 36px;
   border-radius: 50%;
+  border: 1px solid var(--border);
   background: var(--surface);
-  border: 0;
+  color: var(--muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
+  flex: none;
 }
 
-.icon-btn::after {
+.head-cog svg {
+  width: 20px;
+  height: 20px;
+}
+
+.head-cog::after {
   content: '';
   position: absolute;
-  inset: -3px;
+  inset: -2px;
 }
 
 /* Rows and tokens */
@@ -496,12 +504,14 @@ a.row {
   min-width: 0;
 }
 
-/* Brand row: the wordmark, the pick3 mark and a link back to the main app. Shown on the three
-   tab-root screens (Overview, Teams, About), each reached straight from the bottom tab bar.
-   Species is a drill-down from Overview rather than a tab of its own, so its sticky header's
-   back link fills this row's "how do I leave this page" job instead, and the wordmark is
-   dropped there rather than duplicating it. Not sticky itself: only the page header below it is,
-   so the two never have to share row 0. */
+/* Brand row: the wordmark, the pick3 pill and (A1) the appearance toggle, grouped with the pill
+   in .brand-actions so this row still has exactly two flex children (the wordmark and the
+   actions) despite carrying three controls worth of content. Shown on the three tab-root screens
+   (Overview, Teams, About), each reached straight from the bottom tab bar. Species is a
+   drill-down from Overview rather than a tab of its own, so its sticky header's back link (and
+   its own copy of the appearance toggle, Header's `action`) fills this row's job instead, and the
+   wordmark is dropped there rather than duplicating it. Not sticky itself: only the page header,
+   switcher and filters below it are, so the two never have to share row 0. */
 .brand {
   display: flex;
   align-items: center;
@@ -510,32 +520,68 @@ a.row {
   gap: 8px;
 }
 
-.wordmark {
-  display: inline-flex;
+.brand-actions {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+/* G: deliberately plain inline flow, not a flex container. pick3's own hero-lockup metrics trick
+   (the .hero-lockup rule below) leans on `vertical-align`, which a flex item ignores outright;
+   only ordinary inline layout, the same context pick3's own h1 hero puts it in
+   (apps/web/src/screens/Welcome.tsx), makes that baseline math do anything at all. */
+.wordmark {
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.2px;
   text-decoration: none;
-  /* The link's own colour (the base `a` rule above) is the accent; without this the "meta" span,
+  /* The link's own colour (the base `a` rule above) is the accent; without this the "meta." span,
      which sets no colour of its own, would inherit that accent instead of body ink. */
   color: var(--text);
 }
 
-.wordmark-mark {
-  width: 22px;
-  height: 22px;
-  display: block;
-  /* .wordmark used to space every flex child with `gap`, which put the same 6px between the
-     mark and "meta" as between "meta" and ".pick3.gg", so the brand name itself read with a
-     stray space in the middle ("meta .pick3.gg"). Only the mark should be set apart from the
-     name, so that gap moved here, off the two text spans it never should have touched. */
-  margin-right: 6px;
+/* Only the ".gg" span is muted; "meta." stays the body ink and the pick3 lockup between them
+   carries its own fixed colour (baked into the two SVGs, one per theme). */
+.wordmark-muted {
+  color: var(--muted);
 }
 
-/* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
-.wordmark-accent {
-  color: var(--accent);
+/* Ported byte for byte from apps/web/src/app.css's own .hero-lockup: the Inter 700 metrics that
+   put the SVG's baseline on the wordmark's text baseline and its cap height on the wordmark's cap
+   height. Do not retune these numbers here; if the pick3 wordmark ever needs different metrics,
+   that change belongs in pick3's own rule first, this one after. */
+.hero-lockup {
+  height: 1.135em;
+  width: auto;
+  vertical-align: -0.325em;
+  margin-left: 0.02em;
+}
+.only-light.hero-lockup {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark.hero-lockup {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light.hero-lockup {
+    display: inline;
+  }
+}
+:root[data-theme='light'] .only-dark.hero-lockup {
+  display: none;
+}
+:root[data-theme='light'] .only-light.hero-lockup {
+  display: inline;
+}
+:root[data-theme='dark'] .only-dark.hero-lockup {
+  display: inline;
+}
+:root[data-theme='dark'] .only-light.hero-lockup {
+  display: none;
+}
+.only-dark.hero-lockup {
+  display: inline;
 }
 
 /* The pill naming the sister site, pick3.gg. Same shape as pick3's own header pill
@@ -557,9 +603,40 @@ a.row {
   flex: none;
 }
 
-.site-pill-mark {
-  width: 16px;
+/* G: the pill's icon is pick3's own lockup now, not the bare "3" mark, so the pill spells out
+   "pick3" the way pick3 itself does. Sized to the pill's own text height rather than forced into
+   the old mark's 16x16 square, which would have squashed the lockup's wider aspect ratio. Same
+   dark/light toggle mechanism as .hero-lockup above, kept as its own block (rather than folded
+   into that one) because the two live at different sizes in different layout contexts. */
+.site-pill-lockup {
   height: 16px;
+  width: auto;
+  display: block;
+}
+.only-light.site-pill-lockup {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark.site-pill-lockup {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light.site-pill-lockup {
+    display: block;
+  }
+}
+:root[data-theme='light'] .only-dark.site-pill-lockup {
+  display: none;
+}
+:root[data-theme='light'] .only-light.site-pill-lockup {
+  display: block;
+}
+:root[data-theme='dark'] .only-dark.site-pill-lockup {
+  display: block;
+}
+:root[data-theme='dark'] .only-light.site-pill-lockup {
+  display: none;
+}
+.only-dark.site-pill-lockup {
   display: block;
 }
 
