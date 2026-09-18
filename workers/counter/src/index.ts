@@ -26,6 +26,7 @@ import {
   type SharedMoves,
 } from './battles.js';
 import {
+  isWorkerPath,
   readParams,
   speciesDetail,
   summarize,
@@ -337,6 +338,9 @@ export default {
       if (url.pathname.startsWith('/api/v1/species/') && SPECIES.test(species)) {
         return Response.json(await meta.speciesV1(p, species), { headers: read });
       }
+      return Response.json({ error: 'not found' }, { status: 404, headers });
+    }
+    if (isWorkerPath(url.pathname)) {
       return Response.json({ error: 'not found' }, { status: 404, headers });
     }
     // Anything that is not an endpoint is the meta.pick3.gg site.

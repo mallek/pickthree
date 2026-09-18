@@ -43,6 +43,18 @@ export function readParams(url: URL): ReadParams | { error: string } {
   };
 }
 
+/**
+ * Paths this worker owns. A request to one of these with a method it does not serve gets a JSON
+ * 404, not the meta.pick3.gg page: an API path answering with HTML is worse than an honest error.
+ * Keep in step with run_worker_first in wrangler.toml.
+ */
+const WORKER_PATHS = new Set(['/hit', '/count', '/error', '/errors', '/battles', '/meta']);
+
+/** True when this worker owns the path, so an unmatched method gets a JSON 404 and not the site. */
+export function isWorkerPath(pathname: string): boolean {
+  return WORKER_PATHS.has(pathname) || pathname.startsWith('/api/');
+}
+
 export interface SpeciesStats {
   speciesId: string;
   /** Battles in which the reporter saw it on the other side. */
