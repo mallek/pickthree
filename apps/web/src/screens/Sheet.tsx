@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PokemonToken, Seg, useLogCount, useName } from '../components.tsx';
+import { fetchCount } from '../counter.ts';
 import { dateLabel, num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
@@ -263,6 +264,7 @@ export function Sheet() {
               anonymous error reports that never include your Pokémon.
               {s.collection ? ` Last import: ${dateLabel(s.collection.importedAt)}.` : ''}
             </span>
+            <TrainerCount />
             <UpdateStatus />
             <Diagnostics
               enabled={s.settings.errorReports !== false}
@@ -307,5 +309,29 @@ export function Sheet() {
         </div>
       </div>
     </>
+  );
+}
+
+/** The trainer counter, as on the welcome screen, so it is readable with a collection loaded. */
+function TrainerCount() {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    let live = true;
+    void fetchCount().then((c) => {
+      if (live) {
+        setCount(c);
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (count === null) {
+    return null;
+  }
+  return (
+    <span>
+      <b>{num(count)}</b> {count === 1 ? 'trainer has' : 'trainers have'} pick3ed so far.
+    </span>
   );
 }
