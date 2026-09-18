@@ -241,9 +241,9 @@ export function Sheet() {
                 <span style={{ display: 'block', fontSize: 15 }}>Share your battles</span>
                 <span className="meta">
                   Builds a measured meta from real ladders. Sends: league, season, time, your three
-                  species and moves, opponents seen, win or loss or tanked, rank band, a device id.
-                  Never your collection, IVs, names, or opponents&apos; moves. Off also deletes what
-                  this phone sent.
+                  species and moves when known, opponents seen, win, loss or tanked, rank band,
+                  device id and app version. Never your collection, IVs, names, or opponents&apos;
+                  moves. Off also deletes what this phone sent.
                 </span>
               </span>
               <span className={`switch${shareEnabled(s.settings) ? ' on' : ''}`} />
