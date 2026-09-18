@@ -11,7 +11,10 @@
  */
 import type { CSSProperties, ReactNode } from 'react';
 import type { Baseline } from '../baseline.js';
+import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
+import { MEASURED_MIN, MEASURED_MIN_DEVICES, WIN_RATE_MIN } from '../rank.js';
+import { TREND_MIN } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
 /** The two decorative marks below. Their meaning lives in the section heading and the text next
@@ -69,8 +72,11 @@ const LIST_STYLE: CSSProperties = {
 
 const ITEM_STYLE: CSSProperties = { display: 'flex', gap: 8, alignItems: 'flex-start' };
 
-/** Field for field, workers/counter/src/battles.ts's SharedBattle (plus SharedBatch.device,
- * which is per-batch, not per-battle, but is still a thing every shared battle carries). */
+/** Field for field, workers/counter/src/battles.ts's SharedBattle, plus three things the worker
+ * stores alongside it that are not on SharedBattle itself: SharedBatch.device (per batch, not
+ * per battle) and the two columns index.ts's MetaStore adds at ingest, `client` and `received`
+ * (index.ts's `ingest()`: `batch.client` and `new Date().toISOString()`). A reader who goes on to
+ * read that source should find nothing there this list left out. */
 const CONTAINS: readonly string[] = [
   'League and season',
   'When the battle happened',
@@ -79,10 +85,15 @@ const CONTAINS: readonly string[] = [
   'Win, loss, or tanked',
   'A self-reported rank band: Below Ace, Ace, Veteran, Expert or Legend',
   'A random device id, so contributors can be counted and a device can delete what it sent',
+  'Which app and build sent it, so a misbehaving version can be spotted',
+  'When the server received it',
 ];
 
 /** None of these appear anywhere in SharedBattle, SharedBatch, or the `battles` table schema
- * (workers/counter/src/index.ts): no IP is read from the request at any ingest route. */
+ * (workers/counter/src/index.ts): no IP is read from the request at any ingest route. The two
+ * columns CONTAINS added above, `client` and `received`, do not contradict any line here either:
+ * `client` names an app build, not a person, and `received` is a server clock reading, not
+ * anything the player supplied. */
 const NEVER: readonly string[] = [
   'Your Pokemon collection or storage',
   'IVs, levels or CP',
@@ -171,13 +182,15 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <section className="card">
         <h2>How the lists are built</h2>
         <p className="sub">
-          A league&apos;s ranked list is measured once 300 or more counted battles have been
-          shared, from 5 or more devices, for the window and rank band you are looking at. Under
-          either floor, the ranked list is PvPoke&apos;s meta group, clearly marked, and
-          everything we have measured is shown under it with its counts. Tanked battles are
-          counted separately and never touch a record. A record with fewer than 30 decided
-          battles shows its raw win-loss count instead of a percentage. A trend is only shown
-          when both windows being compared hold at least 200 battles, and only when the change is
+          A league&apos;s ranked list is measured once {count(MEASURED_MIN)} or more counted{' '}
+          {battleWord(MEASURED_MIN)} have been shared, from {count(MEASURED_MIN_DEVICES)} or more{' '}
+          {plural(MEASURED_MIN_DEVICES, 'device', 'devices')}, for the window and rank band you
+          are looking at. Under either floor, the ranked list is PvPoke&apos;s meta group,
+          clearly marked, and everything we have measured is shown under it with its counts.
+          Tanked battles are counted separately and never touch a record. A record with fewer
+          than {count(WIN_RATE_MIN)} decided {battleWord(WIN_RATE_MIN)} shows its raw win-loss
+          count instead of a percentage. A trend is only shown when both windows being compared
+          hold at least {count(TREND_MIN)} {battleWord(TREND_MIN)}, and only when the change is
           bigger than the noise in the numbers.
         </p>
       </section>

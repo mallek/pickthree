@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
+import { battleWord, count, plural } from '../src/format.js';
+import { MEASURED_MIN, MEASURED_MIN_DEVICES, WIN_RATE_MIN } from '../src/rank.js';
+import { TREND_MIN } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -24,6 +27,8 @@ describe('About', () => {
       'Win, loss, or tanked',
       'A self-reported rank band: Below Ace, Ace, Veteran, Expert or Legend',
       'A random device id, so contributors can be counted and a device can delete what it sent',
+      'Which app and build sent it, so a misbehaving version can be spotted',
+      'When the server received it',
     ]) {
       expect(await screen.findByText(line)).toBeInTheDocument();
     }
@@ -36,16 +41,36 @@ describe('About', () => {
     expect(screen.getByText('Your IP address')).toBeInTheDocument();
   });
 
-  // rank.ts's MEASURED_MIN (300 battles) and MEASURED_MIN_DEVICES (5 devices) both gate the
-  // measured list; a league can clear the battle count alone and still show PvPoke's list, so
-  // the page has to name the device floor too, not just the battle one. stats.ts's TREND_MIN
-  // (200) and rank.ts's WIN_RATE_MIN (30) are the other two thresholds this card promises.
+  // rank.ts's MEASURED_MIN and MEASURED_MIN_DEVICES both gate the measured list; a league can
+  // clear the battle count alone and still show PvPoke's list, so the page has to name the
+  // device floor too, not just the battle one. stats.ts's TREND_MIN and rank.ts's WIN_RATE_MIN
+  // are the other two thresholds this card promises. These assertions read the same constants
+  // the page interpolates, not typed-out digits: if one of the four ever changes, the page's
+  // prose changes with it and this test keeps passing, or the page falls out of sync with the
+  // constant and this test is the thing that catches it, never a pair of literals that quietly
+  // agree with each other while disagreeing with the code.
   it('explains the thresholds in the same numbers the code uses', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByText(/300 or more counted battles/)).toBeInTheDocument();
-    expect(screen.getByText(/5 or more devices/)).toBeInTheDocument();
-    expect(screen.getByText(/fewer than 30 decided battles/)).toBeInTheDocument();
-    expect(screen.getByText(/at least 200 battles/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        new RegExp(`${count(MEASURED_MIN)} or more counted ${battleWord(MEASURED_MIN)}`),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        new RegExp(
+          `${count(MEASURED_MIN_DEVICES)} or more ${plural(MEASURED_MIN_DEVICES, 'device', 'devices')}`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        new RegExp(`fewer than ${count(WIN_RATE_MIN)} decided ${battleWord(WIN_RATE_MIN)}`),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`at least ${count(TREND_MIN)} ${battleWord(TREND_MIN)}`)),
+    ).toBeInTheDocument();
   });
 
   it('does not promise an api that does not exist yet', async () => {
