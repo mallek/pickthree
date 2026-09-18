@@ -16,7 +16,9 @@ Measured on the tree at `742b233`:
 - **72 duplicated type tokens.** 18 fills plus 54 inks, repeated across three theme blocks in
   both `tokens.css` files.
 - **39 of meta's 64 CSS class names are pick3 class names, re-implemented.** `.card`, `.btn`,
-  `.row`, `.tchip`, `.term`, `.hdr`, `.token`, `.team-card`, `.slots3`, and the rest.
+  `.row`, `.tchip`, `.term`, `.hdr`, `.token`, `.team-card`, `.slots3`, and the rest. 34 are the
+  same rule written twice. Five are the same name over a different rule, which is worse; section
+  3 resolves those one at a time.
 - **Two `components.tsx` files** (699 lines web, 652 meta) both defining `TypeChip`,
   `TypeChips`, `Term`, `Header` and `LeagueSwitcher`.
 - **`Term` is character-for-character identical** in both files.
@@ -143,19 +145,70 @@ site should genuinely look different.
 
 ## Section 3: base.css
 
-The 39 shared class names move out of both stylesheets into `packages/ui/base.css`. They are
-the shape language, not page layout:
+### The rule
 
-`.app` `.back` `.back-spacer` `.brand` `.btn` `.btn-pair` `.btn-secondary` `.card` `.cost-line`
+**One class name, one meaning, across the whole repo.** A name that means one thing in pick3 and
+another in meta is worse than plain duplication: it is a false friend. Move a component between
+the apps and it renders wrong, silently. Every name is either shared with one definition, or
+renamed so it is not shared at all.
+
+The first version of this spec listed 39 shared class names. That audit compared names only, not
+rule bodies. A body diff found five names that pick3 and meta define differently, so the real
+shared count is 37 and the five are resolved individually below.
+
+### What moves
+
+These 37 move out of both stylesheets into `packages/ui/base.css`. They are the shape language,
+not page layout:
+
+`.back` `.back-spacer` `.brand` `.btn` `.btn-pair` `.btn-secondary` `.card` `.cost-line`
 `.field` `.hdr` `.hdr-actions` `.hdr-sub` `.hdr-title` `.head-cog` `.hero-lockup` `.league-shield`
 `.league-switcher` `.only-dark` `.only-light` `.pick-move` `.pick-move-k` `.pick-move-name`
-`.pick-moves` `.row` `.slot` `.slot-name` `.slots3` `.stat` `.tabs` `.tchip` `.tchips` `.tchip-sm`
+`.pick-moves` `.row` `.slot` `.slot-name` `.slots3` `.tabs` `.tchip` `.tchips` `.tchip-sm`
 `.team-card` `.team-details` `.term` `.term-tip` `.term-wrap` `.token`
 
 Where a shared class needs a local layout tweak, base owns the shared properties and the app
 overrides the rest in its own `app.css`. The known case is `.hdr`: base owns the three-column
 grid, the sticky positioning and the bottom border; meta re-adds `margin: 0 -16px`, `gap: 8px`
 and its 10px bottom padding, because meta's page has 16px gutters and pick3's does not.
+
+### The five collisions
+
+meta is the side that changes. It is not released yet, so it is the cheaper surface to move, and
+pick3's rules are the more reviewed ones.
+
+**`.btn` and `.btn-secondary`: meta converts to pick3's.** pick3's `.btn` is a full-width block
+(`width: 100%`, `min-height: 52px`, `--r-lg`, accent border on `--accent-tint`) and is itself the
+primary style. meta's is an inline pill (`999px`, 40px, weight 700) that needs `.btn-primary` or
+`.btn-secondary` layered on to mean anything. Both move to `base.css` as pick3's rules. meta has
+six call sites across three files: the two `btn btn-primary` become `btn`, the four
+`btn btn-secondary` stay as they are, and meta's `.btn-primary` rule is deleted. **This is a
+visible change to meta**: those six buttons become full-width blocks. Accepted deliberately, on
+the grounds that a button is the most visible piece of a design system and two sites that claim
+to be one product should not have two of them. `.btn-pair` is already byte-identical in both and
+needs nothing.
+
+**`.stat`: dead in meta, delete it.** meta's `StatCard` has had no caller since `742b233` dropped
+the stat tiles, and `.stat`, `.stat .stat-n` and `.stat .stat-l` are dead with it. The live rule
+is `section > .stat-n, .card > .stat-n`, which Species.tsx uses standalone and which stays. So
+this was never a collision, just leftovers. Delete `StatCard` and the three dead rules; `.stat`
+stays pick3-only and does not go into `base.css`.
+
+**`.row`: rename meta's to `.rank-row`.** This one cannot be converted. pick3's `.row` is a
+generic flex utility across 16 files; meta's two uses are the ranked-list item, which needs
+`display: grid` with a four-column template. Giving it pick3's `display: flex` would collapse the
+ranked list. Renaming reaches the same destination: `.row` then means exactly one thing in the
+repo, and pick3's rule moves to `base.css` unchanged. The rename covers seven rules in meta's
+`app.css` (`.row`, `.row:last-child`, `.row .name`, `.row > .fine`, `a.row`, and the two
+tap-highlight and focus-visible selector lists) and two call sites in `Overview.tsx`.
+
+**`.app`: rename meta's to `.page`.** Both are root containers with a fixed bottom tab bar, but
+they solve vertical rhythm differently: meta puts the gap in the container (`gap: 18px`, with a
+comment explaining why), pick3 puts it per-screen. Converting meta would mean rebuilding its page
+rhythm to adopt the weaker of the two patterns, and `.app` is a root container that no component
+ever references, so the false-friend hazard does not apply to it. Rename meta's, one rule plus
+its media query and one call site. Neither goes into `base.css`; they are genuinely different
+containers and now have different names.
 
 Everything else in both `app.css` files stays where it is.
 
@@ -178,8 +231,9 @@ an app state store.** Props only. Two consequences:
 | `TypeChip`, `TypeChips` | both | meta's version, which has the unknown-type fallback. |
 | `typeColor`, `typeInk` | both | meta's, same reason. |
 | `LEAGUE_COLORS` | both | Already declared byte-identical in meta's comment. |
-| `LeagueShield`, `LeagueSwitcher` | `apps/web/src/components/LeagueSwitcher.tsx`, meta | |
-| `SpeciesToken` | web `PokemonToken`, meta `Sprite` | New props contract, see above. |
+| `LeagueShield` | `apps/web/src/components/LeagueSwitcher.tsx`, meta | Pure, moves as-is. |
+| `LeagueSwitcher` | both | Splits. See below: pick3's is store-coupled. |
+| `SpeciesToken` | web `PokemonToken`, meta `Sprite` | New props contract, see above and below. |
 | `Chevron` | meta | web uses a left-angle-quote character; it adopts the component. |
 | `Chip` | web | Moves so meta can use it later. |
 | `Seg` | web | Moves so meta can use it later. |
@@ -206,6 +260,35 @@ toggle; pick3 uses a labelled `Seg` in its Settings sheet, so the control differ
 the underlying `theme.ts` is shared.
 
 `GLOSSARY` stays web-only because meta writes its own prose in `About.tsx`.
+
+### Four details the first version of this spec left open
+
+**`LeagueSwitcher` splits; it cannot move whole.** `apps/web/src/components/LeagueSwitcher.tsx`
+imports `League` from the engine on line 1 and `useActions, useAppState` on line 2, so it fails
+the props-only rule. The package gets a generic `LeagueSwitcher<T>` taking
+`{ options, value, onChange, label, compact?, dataLeague? }`. pick3 keeps a thin local wrapper
+that reads the store and renders it. `dataLeague` is a pass-through for the `data-league`
+attribute pick3's screenshot automation reads.
+
+**`LeagueSwitcher` keeps its accessible name.** pick3 shows the short league name ("Great") and
+announces the full title ("Great League") through a per-option `aria-label`. A single `label`
+field per option cannot carry both, and dropping one would be a regression this migration was
+never asked to make. So `ChoiceOption` gets an optional `srLabel`, rendered as
+`aria-label={o.srLabel}`. pick3 passes `{ value: l.id, label: l.short, srLabel: l.title }`; meta
+passes no `srLabel` and gets no `aria-label`, exactly its behaviour today. Visible text is
+unchanged in both apps.
+
+**`SpeciesToken` needs a no-image fallback.** The `{ name, types, src }` contract does not say
+what happens when the art fails to load. pick3 falls back to the species' initial letter at
+roughly 20 call sites; meta renders the bare coloured disc. A fourth prop, `showInitial`,
+defaulting to `false`, keeps both behaviours. The sprite's own sizing and clipping differ between
+the apps (pick3 clips at 86%, meta overflows a fixed 46px on purpose), and that is not unified:
+the component moves, the sprite CSS stays local to each app.
+
+**`theme.ts` renames its storage key.** meta's `THEME_KEY` is `meta.pick3.theme`. Moving it
+unchanged would have pick3 writing a key named after the other site. It becomes
+`pickthree.theme`. Anyone who had set a theme on meta before this lands falls back to `system`
+once, which is the documented behaviour when the key is absent.
 
 ### The header split
 
@@ -244,8 +327,11 @@ Phase 1:
 3. meta adopts the shared `tokens.css` and deletes its own. Rename `--border` to `--divider` and
    `--up`/`--down` to `--win`/`--loss` throughout `apps/meta/src/app.css`.
 4. web adopts the shared `tokens.css` and deletes its own.
-5. The 39 class blocks move to `base.css` and out of both `app.css` files, with radii inside
-   them converted to `--r-*`. meta re-adds its `.hdr` overrides.
+5. The 37 class blocks move to `base.css` and out of both `app.css` files, with radii inside
+   them converted to `--r-*`. meta re-adds its `.hdr` overrides. The five collisions are
+   resolved in the same step: meta's buttons convert to pick3's and `.btn-primary` goes, meta's
+   dead `.stat` rules and `StatCard` are deleted, meta's `.row` becomes `.rank-row` and its
+   `.app` becomes `.page`.
 6. Lockups move to Vite imports from `@pickthree/ui/brand`.
 
 Phase 2, one commit per group, with both screens jobs re-run after each:
@@ -273,9 +359,12 @@ a pinned devDependency and a threshold is a reasonable follow-up and is out of s
 
 **Expected changes that are not bugs.** When meta adopts pick3's values, `--muted`, `--text` and
 `--surface2` shift by a hair, and the light and dark warn both change. The meta screenshots will
-differ. That is the drift being corrected. **Travis approved meta's visual change up front and
-reviews it at deploy, not mid-migration**, so steps 3 through 6 need no sign-off gate for the
-meta screenshots moving. A pick3 screenshot moving is still a regression until proven otherwise.
+differ. That is the drift being corrected. meta's six buttons also become full-width blocks in
+step 5, which is a larger and fully intended change.
+
+**Travis approved meta's visual change up front and reviews it at deploy, not mid-migration**, so
+steps 3 through 6 need no sign-off gate for the meta screenshots moving. A pick3 screenshot
+moving is still a regression until proven otherwise.
 
 **One guard is in scope.** The token renames in step 3 are a find-and-replace with no type
 safety behind them, and an undefined CSS custom property fails silently at runtime. A small node
@@ -288,7 +377,8 @@ introduce, and keeps paying afterward.
 
 - `packages/ui` exists and both apps depend on it.
 - Neither app defines a type token, and `tokens.css` exists once.
-- The 39 shared class blocks exist once, in `base.css`.
+- The 37 shared class blocks exist once, in `base.css`.
+- No class name means two different things across the two apps.
 - The components in the section 4 table exist once, in `packages/ui`.
 - `check-tokens.mjs` passes and runs in CI.
 - Both apps' screenshots match their baselines except for the documented token shifts.

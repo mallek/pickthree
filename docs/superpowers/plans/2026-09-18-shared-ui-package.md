@@ -40,14 +40,15 @@ build step for the package itself (Vite in each app compiles it as source, same 
 
 ## Read this before starting: the CSS methodology
 
-Section 3 of the spec lists 39 class names as "duplicated" and says they move to `base.css`,
-citing `.hdr` as "the known case" that needs a local per-app override. Direct comparison of the
-current `apps/web/src/app.css` (2833 lines) and `apps/meta/src/app.css` (1014 lines) shows the
+The spec's first draft listed 39 class names as duplicated and said they all move to `base.css`,
+citing `.hdr` as "the known case" needing a local per-app override. Direct comparison of the
+current `apps/web/src/app.css` (2833 lines) and `apps/meta/src/app.css` (1014 lines) showed the
 truth is more textured: most of the 39 are either byte-identical already or differ only in a
 numeric value or a token name, but **five of them use the same class name for a genuinely
-different visual design**, and moving them into one shared rule would corrupt one app or the
-other. Task 5 below classifies every one of the 39 by direct diff, not by the spec's list alone.
-The three tiers used throughout Task 5:
+different visual design**. The spec has since been corrected: 37 names move, and the five
+collisions are each resolved by name, under the rule **one class name, one meaning, across the
+whole repo**. A shared name over two rules is a false friend, so none is left that way. Task 5
+below classifies every name by direct diff, not by a list alone. The three tiers:
 
 - **Tier 1, pure move.** The rule is byte-identical (or identical after the four token renames
   from Task 3). Cut from `apps/web/src/app.css`, paste into `packages/ui/base.css` unchanged,
@@ -57,13 +58,11 @@ The three tiers used throughout Task 5:
   (pick3 is the older, more-reviewed surface, matching the spec's own tie-break for tokens); each
   app's `app.css` keeps a short local rule for exactly the properties that still differ. This is
   the `.hdr` pattern from the spec, applied wherever the diff actually calls for it.
-- **Tier 3, no shared rule.** `.row`, `.app` (partially), `.stat`, `.btn` and `.btn-secondary` use
-  the same class name for different jobs in the two apps (a generic flex row vs. a specific
-  ranked-list grid row; two unrelated button shapes). `base.css` defines nothing, or only the one
-  or two properties that are truly universal; each app keeps its full current rule. This is a
-  deliberate, documented deviation from the spec's literal "all 39 move" instruction, using the
-  exact mechanism (base owns shared properties, app overrides the rest) the spec itself
-  prescribes for `.hdr`, taken to zero shared properties where the diff demands it.
+- **Tier 3, name collision.** `.row`, `.app`, `.stat`, `.btn` and `.btn-secondary` use the same
+  class name for different jobs in the two apps. Each is resolved individually rather than merged:
+  meta's buttons convert to pick3's, meta's `.stat` turns out to be dead code and is deleted, and
+  meta's `.row` and `.app` are renamed to `.rank-row` and `.page`. meta is the side that changes
+  throughout, because it is not released yet. After Task 5 no class name means two things.
 
 `.token` and `.sprite` are deferred entirely to Task 11: their real unification depends on the
 `SpeciesToken` component design decided there, so moving half of their CSS in Task 5 would just
@@ -352,7 +351,7 @@ In `apps/meta/src/app.css`, change line 1:
 Then, still in `apps/meta/src/app.css`, replace every `var(--border)` with `var(--divider)`,
 every `var(--up)` with `var(--win)`, every `var(--down)` with `var(--loss)`. There is no
 `var(--warn-tint)` usage to touch (meta has none today) and no `--on-accent` usage to touch yet
-(added in Task 5's `.btn-primary`, which stays local to meta and is out of this task's scope).
+(Task 5 deletes meta's `.btn-primary` rule outright, so it is out of this task's scope either way).
 
 Use a scoped find-and-replace (grep first to see every hit, then edit each occurrence; do not use
 a blind sed across the whole repo, which would also touch `apps/web/src/app.css`'s unrelated
@@ -504,7 +503,7 @@ git commit -m "ui: web adopts the shared tokens.css"
 
 ---
 
-## Task 5: the 39 class blocks move to base.css
+## Task 5: the 37 class blocks move to base.css, and the five collisions are resolved
 
 **Files:**
 - Modify: `packages/ui/base.css`, `apps/web/src/app.css`, `apps/meta/src/app.css`
@@ -675,7 +674,7 @@ properties (delete everything else that used to duplicate the base rule).
   `{ font-size: 12px; color: var(--muted); }` (web's `.field` has no separate label span, so the
   label styling sits on `.field` itself). meta's override: `{ min-width: 0; }`. Leave
   `.field input`/`.field input:focus` (web only) and `.field-l`/`.select-wrap`/
-  `.select-wrap select` (meta only) exactly where they are; they are not in the 39-name list.
+  `.select-wrap select` (meta only) exactly where they are; they are not in the shared list.
 
 - **`.head-cog`**: base gets meta's self-contained rule (`app.css:407-430`, token renamed):
   ```css
@@ -813,48 +812,53 @@ properties (delete everything else that used to duplicate the base rule).
   }
   ```
 
-- **`.stat`**: base gets only the one property both apps share: `{ background: var(--surface);
-  }`. The two apps' `.stat` are genuinely different tiles (web: a compact tile with a bare `<b>`
-  number at 18px/500 weight; meta: a bigger tile with `.stat-n`/`.stat-l` child classes at
-  22px/800 weight, `min-width: 0`, no `display: flex` of its own). Neither `.stat b` nor
-  `.stat-n`/`.stat-l` is in the 39-name list; leave every one of them fully local, unchanged. web
-  keeps `{ border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 2px;
-  }` locally (its current `10px` radius has no exact match on the `--r-*` scale, `r-md` is 8 and
-  `r-lg` is 12; leave it hardcoded, it is not one of the "moving blocks" the radii rule targets
-  once `.stat` is downgraded to Tier 3 in every property but `background`). meta keeps
-  `{ border-radius: 14px; padding: 14px 12px; min-width: 0; }` locally, same reasoning.
+### Tier 3: the five name collisions
 
-### Tier 3: no shared rule
+These five names are defined differently in the two apps. The spec's rule is **one class name,
+one meaning, across the whole repo**, so none of them is left as a shared name over two rules.
+meta is the side that changes: it is not released yet, and pick3's rules are the more reviewed
+ones. Three convert, two rename.
 
-Leave these entirely as they are today in each app's `app.css`. Do not add a rule for them to
-`base.css`. This deviates from the spec's literal "all 39 move" instruction; see the
-methodology note above and the final summary's spec-gap list.
+- **`.btn` and `.btn-secondary`: meta converts to pick3's, both go to base.** pick3's `.btn` is a
+  full-width block (`{ min-height: 52px; border-radius: var(--r-lg); border: 1px solid
+  var(--accent); background: var(--accent-tint); color: var(--accent-text); font-weight: 500;
+  font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 0 16px; }`) and is itself the primary style. meta's is an inline pill
+  needing `.btn-primary` or `.btn-secondary` on top. Move pick3's `.btn` and `.btn-secondary`
+  into `base.css` verbatim, delete meta's versions, and delete meta's `.btn-primary` rule
+  entirely. Then fix meta's six call sites: `About.tsx:147` and `Overview.tsx:164` are
+  `btn btn-primary` and become plain `btn`; `About.tsx:150`, `Species.tsx:281` and
+  `Species.tsx:284` are `btn btn-secondary` and are already correct. **This changes meta
+  visibly**: those buttons become full-width blocks. That is intended and approved; see the spec.
+  `.btn-pair` is byte-identical in both already and is a Tier 1 pure move, and pick3's
+  full-width buttons sit correctly inside its `1fr 1fr` grid.
 
-- **`.row`**: web uses it as a generic flex row (`{ display: flex; align-items: center; gap: 8px;
-  }`, 12 call sites across 12 files). meta uses it as a specific ranked-list grid row
-  (`{ display: grid; grid-template-columns: 22px 44px 1fr auto; gap: 12px; align-items: center;
-  padding: 12px 0; border-bottom: 1px solid var(--divider); min-width: 0; }` plus `.row .name`,
-  `.row > .fine`, `a.row`, 1 call site). Merging these would either turn every pick3 flex row
-  into a 4-column grid or strip meta's ranked-list layout entirely. Both apps' hover/focus-visible
-  treatment for `.row` (already generic, selector-shared, not part of the `.row` rule itself)
-  needs no change.
+- **`.stat`: dead in meta, delete it.** This is not a collision. meta's `StatCard`
+  (`components.tsx:319`) has had no caller since `742b233` dropped the stat tiles, so `.stat`,
+  `.stat .stat-n` and `.stat .stat-l` are all dead. Delete the `StatCard` component and those
+  three rules from `apps/meta/src/app.css`. Keep `section > .stat-n, .card > .stat-n`, which is
+  live: `Species.tsx:267` renders a bare `.stat-n` outside any tile. `.stat` and `.stat b` then
+  stay pick3-local, unchanged, and nothing about `.stat` goes into `base.css`. Verify before
+  deleting: `grep -rn "StatCard\|className=\"stat\"" apps/meta/src` should show only the
+  definition and nothing else.
 
-- **`.app`**: base gets the four properties that are actually identical in effect:
-  `{ display: flex; flex-direction: column; overflow-x: clip; margin-inline: auto; }`. Everything
-  else stays fully local: web keeps `{ min-height: 100%; max-width: 560px; position: relative;
-  }` plus its `@media (min-width: 600px)` pillar-effect block; meta keeps `{ max-width: 430px;
-  padding: 0 16px calc(64px + env(safe-area-inset-bottom, 0px) + 20px); gap: 18px; }` plus its
-  `@media (min-width: 900px)` block. (web's `margin: 0 auto` and base's `margin-inline: auto` are
-  equivalent; drop the now-redundant declaration from web's local rule.)
+- **`.row`: rename meta's to `.rank-row`, pick3's moves to base.** Converting is not possible:
+  pick3's is a generic flex utility across 16 files, meta's two uses are the ranked-list item and
+  need `display: grid` with a four-column template. Renaming reaches the same end. In
+  `apps/meta/src/app.css` rename seven places: the `.row` rule (line 436), `.row:last-child`,
+  `.row .name`, `.row > .fine`, `a.row`, the tap-highlight selector list (line 989) and the
+  `:focus-visible` selector list (line 995). In `apps/meta/src/screens/Overview.tsx` rename the
+  two `<a className="row">` call sites (lines 118 and 214). Leave `.row-figure` alone; it is a
+  different name that only looks related. Then move pick3's `.row` (`{ display: flex;
+  align-items: center; gap: 8px; }`) into `base.css` as a Tier 1 pure move.
 
-- **`.btn`, `.btn-secondary`**: web's `.btn` is a rounded-rect button (52px tall, `--r-lg`
-  radius, 1px accent border, `--accent-tint` background, `--accent-text` color, 500 weight, 16px
-  font) that IS its own primary style. meta's `.btn` is a pill (40px tall, 999px radius, no
-  border, 700 weight, 15px font) that needs `.btn-primary` (solid `--accent` background,
-  `--on-accent` text) or `.btn-secondary` (surface background, bordered) layered on top to mean
-  anything. There is no meaningful shared property between the two shapes; base.css defines
-  nothing for `.btn` or `.btn-secondary`. Leave `.btn-primary` (meta only) fully local; it is not
-  in the 39-name list.
+- **`.app`: rename meta's to `.page`, neither goes to base.** Both are root containers with a
+  fixed bottom tab bar, but they solve vertical rhythm differently: meta puts the gap in the
+  container (`gap: 18px`), pick3 puts it per-screen. Converting meta would mean rebuilding its
+  page rhythm to adopt the weaker pattern, and `.app` is a root container no component ever
+  references, so the false-friend hazard does not apply. Rename meta's `.app` rule and its
+  `@media (min-width: 900px)` block to `.page`, and the one call site in `App.tsx`. pick3's
+  `.app` stays exactly as it is in `apps/web/src/app.css`. Neither name appears in `base.css`.
 
 ### Verify and commit
 
@@ -866,18 +870,26 @@ methodology note above and the final summary's spec-gap list.
 Run: `node scripts/check-tokens.mjs && npm run lint && npm run typecheck && npm test`
 Expected: PASS.
 Build and serve both apps, run `npm run web:screens` and `npm run meta:screens`.
-Expected: web's screenshots unchanged from Task 4's (every Tier 1/2 rule preserves pick3's exact
-current values; Tier 3 leaves pick3 untouched by definition). meta's screenshots may show the
-documented token-driven shifts already seen in Task 3, plus the `.league-switcher` idle-ink
-change (`--muted` to `--faint`, a hair dimmer) and the `.term-tip`/`.pick-move-k` same change
-where visible, and the `.head-cog` touch-target growing (invisible). No layout shift anywhere. A
-pick3 screenshot moving is still a regression; check every one.
+Expected, pick3: every screenshot unchanged from Task 4's. Tier 1 and 2 preserve pick3's exact
+current values, and every Tier 3 resolution moves meta, never pick3. A pick3 screenshot moving is
+a regression; check all 28.
+
+Expected, meta: the documented token-driven shifts already seen in Task 3, plus the
+`.league-switcher` idle-ink change (`--muted` to `--faint`, a hair dimmer), the
+`.term-tip`/`.pick-move-k` same change where visible, and the `.head-cog` touch-target growing
+(invisible). **Plus one real layout change: the six buttons on About, Overview and Species become
+full-width blocks.** That is the intended button convergence. Nothing else in meta should move:
+the `.row` and `.app` renames carry identical declarations to new names, and the `.stat` deletion
+removes rules nothing rendered. If a meta screenshot shifts anywhere other than those six
+buttons, stop and find out why before committing.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add packages/ui/base.css apps/web/src/app.css apps/meta/src/app.css apps/web/src/components.tsx
-git commit -m "ui: move the 39 shared class blocks to base.css"
+git add apps/meta/src/components.tsx apps/meta/src/App.tsx apps/meta/src/screens/About.tsx
+git add apps/meta/src/screens/Overview.tsx apps/meta/src/screens/Species.tsx
+git commit -m "ui: move the 37 shared class blocks to base.css, resolve the five name collisions"
 ```
 
 ---
@@ -1278,7 +1290,12 @@ export function LeagueShield({ id, size = 16 }: { id: string; size?: number }) {
 
 interface ChoiceOption<T extends string> {
   value: T;
+  /** The visible text on the button. */
   label: string;
+  /** The accessible name, when it differs from the visible text: pick3 shows "Great" and
+   * announces "Great League". Omit it and the visible text is the accessible name, which is
+   * what meta wants. */
+  srLabel?: string;
 }
 
 /** The league toggle: a full-width radiogroup with the game's own shield colours. `dataLeague`
@@ -1312,7 +1329,7 @@ export function LeagueSwitcher<T extends string>({
           type="button"
           role="radio"
           aria-checked={o.value === value}
-          aria-label={o.label}
+          aria-label={o.srLabel}
           className={o.value === value ? 'on' : undefined}
           onClick={() => onChange(o.value)}
         >
@@ -1325,13 +1342,13 @@ export function LeagueSwitcher<T extends string>({
 }
 ```
 
-Note: `aria-label={o.label}` here is a per-option label distinct from the visible text (web
-passes the full league title, e.g. "Great League", while the visible `LeagueShield` + short name
-"Great" is what renders; meta passes the same string for both since it has no short/long
-distinction). This preserves web's current `aria-label={l.title}` behavior exactly and changes
-nothing for meta (whose current generic switcher never set a distinct `aria-label` at all, so
-gaining one that matches its own visible text is a pure accessibility improvement, not a
-regression).
+Note: `label` and `srLabel` are separate on purpose, and this is the whole point of the pair.
+pick3 renders the short league name and announces the full title, which one field cannot carry.
+pick3 passes `{ value: l.id, label: l.short, srLabel: l.title }`, so its visible text stays
+"Great" and its accessible name stays "Great League", exactly as today. meta passes no `srLabel`;
+React omits an `aria-label` whose value is `undefined`, so meta's buttons are named by their own
+visible text, exactly as today. Neither app changes behaviour. Do not collapse these into one
+field: doing so either changes pick3's visible text or drops its accessible name.
 
 - [ ] **Step 2: Export from the barrel**
 
@@ -1407,26 +1424,18 @@ export function LeagueSwitcher({ compact }: { compact?: boolean }) {
       onChange={setLeague}
       label="League"
       dataLeague={s.leagueInfo?.id ?? ''}
-      options={leagues.map((l) => ({ value: l.id, label: l.title }))}
+      options={leagues.map((l) => ({ value: l.id, label: l.short, srLabel: l.title }))}
     />
   );
 }
 ```
 
-Note the change from rendering `l.short` as the visible label to `l.title`: the package's
-`LeagueSwitcher` uses one `label` field for both the visible text and the accessible name (see
-Step 1's note), so to keep the *visible* text as the short form ("Great", not "Great League"),
-this wrapper must pass `l.short` as `label` and there is no separate slot for the long form
-inside the generic component. Re-check this against the spec's intent: the spec's props table
-does not call out this nuance. **Resolve it by using `l.short` for `label` (preserving the
-visible text exactly)**, which means the accessible name regresses from "Great League" to
-"Great" (a real, minor accessibility loss). Flag this in the final summary as a spec gap; if
-Travis wants the full accessible name preserved, `League.tsx`'s `ChoiceOption` needs a second,
-optional `srLabel` field threaded through to `aria-label`, which is a small follow-up, not done
-here to avoid speculative scope beyond what the spec specified.
+`label: l.short` is the visible text and `srLabel: l.title` is the accessible name, which is
+byte-for-byte what this component renders today: `{l.short}` as the button's text and
+`aria-label={l.title}` on the button. Nothing about pick3's league switcher changes, visibly or
+to a screen reader. Do not pass `l.title` as `label`; that would put "Great League" on screen
+where "Great" belongs.
 
-Use `l.short` for `label` in the final code (not `l.title` as drafted above); fix this before
-committing.
 
 - [ ] **Step 5: Verify**
 
@@ -2329,11 +2338,12 @@ git commit -m "ui: move test/setup.ts to packages/ui, both vitest configs point 
 
 - `packages/ui` exists and both apps depend on it. (Task 1)
 - Neither app defines a type token, and `tokens.css` exists once. (Tasks 3-4)
-- The 39 shared class blocks exist once, in `base.css` -- with the documented Tier 3 exceptions
-  (`.row`, most of `.app`, `.stat`, `.btn`, `.btn-secondary`) staying local by deliberate,
-  documented deviation. (Task 5)
+- The 37 shared class blocks exist once, in `base.css`. (Task 5)
+- No class name means two different things across the two apps: the five collisions are resolved
+  by conversion, deletion or rename, never left as one name over two rules. (Task 5)
 - The components in the spec's section 4 table exist once, in `packages/ui`. (Tasks 7-13)
 - `check-tokens.mjs` passes and runs in CI. (Task 3, verified at the end of every later task)
-- Both apps' screenshots match their baselines except for the documented token/radius/ink shifts.
-  (verified at the end of every task from Task 3 onward, against the Task 2 baseline copies)
+- Both apps' screenshots match their baselines except for the documented token/radius/ink shifts,
+  plus meta's six buttons becoming full-width blocks in Task 5. (verified at the end of every
+  task from Task 3 onward, against the Task 2 baseline copies)
 - The two headers still look different from each other. (Task 13, explicitly re-checked)
