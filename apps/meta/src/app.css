@@ -200,26 +200,15 @@ a {
   flex: none;
 }
 
-/* The window and rank-band rows: each gets a visible caption above it (App.tsx), so the two read
-   as two separate filters rather than one long, unlabelled run of pills. */
-.filters {
+/* One filter row (docs/design/meta/meta.pick3.gg.dc.html, screen 1a): the window pills at their
+   natural width on the left, the rank band select pushed to the far right. `.pills` still wraps
+   internally on a narrow screen (its own flex-wrap below); this row does not need to, since the
+   select is a single fixed-size control rather than a set that could itself overflow. */
+.filter-row {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.filter-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .pills {
@@ -258,6 +247,53 @@ a {
   background: var(--surface2);
   border-color: var(--accent);
   color: var(--text);
+}
+
+/* The rank-band control: a native <select>, not a custom menu, so a phone gets its own picker
+   for free, with keyboard support and no menu code here, and six wrapped pills collapse into
+   one target. A select ignores an author `background` on some platforms until its native
+   appearance is turned off first, so that is explicit rather than assumed to just work. */
+.select-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.band-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-height: 40px;
+  padding: 0 30px 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.band-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A CSS-drawn chevron, not the design mock's own glyph: this site's rendered text is strict
+   7-bit ASCII, and a <select> cannot reliably host a ::after of its own across browsers, so the
+   arrow lives on the wrapping span instead. `pointer-events: none` keeps it from ever catching a
+   tap that was meant for the control underneath it. */
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
 }
 
 /* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
@@ -477,7 +513,6 @@ a.row {
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.2px;
@@ -491,6 +526,11 @@ a.row {
   width: 22px;
   height: 22px;
   display: block;
+  /* .wordmark used to space every flex child with `gap`, which put the same 6px between the
+     mark and "meta" as between "meta" and ".pick3.gg", so the brand name itself read with a
+     stray space in the middle ("meta .pick3.gg"). Only the mark should be set apart from the
+     name, so that gap moved here, off the two text spans it never should have touched. */
+  margin-right: 6px;
 }
 
 /* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
@@ -586,6 +626,7 @@ a.row {
 /* States */
 a,
 button,
+select,
 .league-switcher button,
 .pills > *,
 .row {

@@ -414,30 +414,33 @@ export function App(props?: { deps?: Deps }): ReactNode {
           />
         ) : null}
         {showFilters ? (
-          <div className="filters">
-            {/* Each row gets its own visible caption, not just the radiogroup's aria-label: a
-                naked pair of pill rows with nothing between them read as one long run of
-                buttons, and "Window" versus "Rank band" is exactly the distinction a reader
-                needs to tell the two filters apart at a glance (they are one time filter and
-                one rank filter, not six equal choices). */}
-            <div className="filter-group">
-              <span className="filter-label">Window</span>
-              <Pills
-                label="Window"
-                value={query.w}
-                onChange={(wk) => refine({ ...query, w: wk })}
-                options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
-              />
-            </div>
-            <div className="filter-group">
-              <span className="filter-label">Rank band</span>
-              <Pills
-                label="Rank band"
+          // One row, matching the design export (docs/design/meta/meta.pick3.gg.dc.html,
+          // screen 1a): the window pills on the left, the rank band collapsed into a single
+          // compact control on the right. The header's own subtitle already names both filters
+          // ("This season - All ranks"), so a second, taller row of captions and six wrapped
+          // band pills was restating it at the cost of most of the first screen; the select's
+          // own label is enough to tell the two controls apart without a caption over each.
+          <div className="filter-row">
+            <Pills
+              label="Window"
+              value={query.w}
+              onChange={(wk) => refine({ ...query, w: wk })}
+              options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
+            />
+            <span className="select-wrap">
+              <select
+                className="band-select"
+                aria-label="Rank band"
                 value={query.band}
-                onChange={(b) => refine({ ...query, band: b })}
-                options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
-              />
-            </div>
+                onChange={(e) => refine({ ...query, band: e.target.value as BandKey })}
+              >
+                {BANDS.map((k) => (
+                  <option key={k} value={k}>
+                    {BAND_LABELS[k]}
+                  </option>
+                ))}
+              </select>
+            </span>
           </div>
         ) : null}
         {renderView(view, activeLeague, query, staticData.data, meta, baseline, detail, now, (v) =>

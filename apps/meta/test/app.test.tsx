@@ -50,7 +50,7 @@ describe('App', () => {
       'aria-checked',
       'true',
     );
-    expect(screen.getByRole('radio', { name: 'Legend' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('legend');
   });
 
   it('answers the back button', async () => {
@@ -145,7 +145,7 @@ describe('App, deep links', () => {
     // sub-line names the league and window instead.
     expect(await screen.findByText(/Ultra League - 7 days/)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '7 days' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: 'Ace' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
     expect(window.location.pathname).toBe('/ultra/teams');
     expect(window.location.search).toBe('?w=7&band=ace');
   });
@@ -170,7 +170,7 @@ describe('App, filter history', () => {
     const replaceSpy = vi.spyOn(window.history, 'replaceState');
     await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
     await waitFor(() => expect(window.location.search).toContain('band=ace'));
     expect(pushSpy).not.toHaveBeenCalled();
     expect(replaceSpy).toHaveBeenCalledTimes(2);
@@ -183,7 +183,7 @@ describe('App, filter history', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
     await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
     await waitFor(() => expect(window.location.search).toContain('band=ace'));
     // Neither filter click pushed a history entry, so a single real navigation still undoes in
     // a single back press, landing on the page with its filters (not on an intermediate filter
