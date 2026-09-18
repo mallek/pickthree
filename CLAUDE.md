@@ -9,10 +9,11 @@ Later specs: `docs/superpowers/specs/2026-09-14-adaptive-import-design.md` (CSV 
 
 ```
 apps/web/             Vite + React SPA, Web Worker, IndexedDB, PWA, deployed to GitHub Pages
+apps/meta/            Vite + React SPA for meta.pick3.gg, served by the counter worker
 packages/engine/      pure TypeScript recommendation engine, no DOM, most tests live here
 packages/sim-pvpoke/  vendored PvPoke battle files (pinned commit) + GameMaster shim + adapter
 packages/data/        build pipeline producing static JSON, sprites, and the matchup matrix
-workers/counter/      Cloudflare Worker + Durable Object: hit counter and anonymous error log
+workers/counter/      Cloudflare Worker + Durable Object: hit counter, anonymous error log, community meta store, and the static assets for meta.pick3.gg
 fixtures/             synthetic Poke Genie CSVs, never a real export
 docs/                 spec, plans, ADRs, design export, screenshots, setup
 ```
@@ -83,11 +84,17 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.
 - CSP is a meta tag in `index.html`. `connect-src` allows only self and the counter worker; fonts come from Google Fonts.
 
+### Meta site (`apps/meta`, meta.pick3.gg)
+
+- Two sources, kept apart: PvPoke's curated meta group (baked at build time, `scripts/bake.ts`, from the same pinned commit as `apps/web/public/data`) and measured play from shared battle logs. A league's list is measured, not PvPoke's, once it clears both `MEASURED_MIN` (300 counted battles) and `MEASURED_MIN_DEVICES` (5 devices) for the window and rank band on screen (`src/rank.ts`); under either floor the PvPoke list leads and is always labelled as PvPoke's, never as measured.
+- `workers/counter` exposes the read side at `/api/v1/meta` and `/api/v1/species/:id`, rounded to 10 minute buckets so concurrent readers share a cache entry.
+- The site and the API are the same origin in production (`workers/counter`'s `[assets]` serves `apps/meta/dist`, with `/api/*` run through the worker first); in dev, Vite proxies `/api` to the deployed worker.
+
 ### Deploy and CI
 
 - `pages.yml` builds data + web and publishes to GitHub Pages on push to main. Custom domain pick3.gg (CNAME in `apps/web/public/`).
-- `ci.yml`: lint, typecheck, data build (cached), tests, then a `screens` job that drives the built app in Chrome (`web:screens`, `share-test.mjs`, `paste-test.mjs`) and fails on console errors.
-- `counter.yml` deploys the worker with wrangler.
+- `ci.yml`: lint, typecheck, data build (cached), tests, an `apps/meta` build, then a `screens` job that drives the built web app in Chrome (`web:screens`, `share-test.mjs`, `paste-test.mjs`) and a `meta-screens` job that does the same for the meta site (`meta:screens`); both fail on console errors.
+- `counter.yml` builds `apps/meta` and deploys the worker with wrangler; the worker serves the built site as its static assets, so the build must run before the deploy.
 
 ## Commands
 
@@ -98,6 +105,8 @@ npm -w @pickthree/web run dev      # Vite dev server on :5173
 npm test                           # vitest: engine, data, sim-pvpoke, web, counter
 npm run lint && npm run typecheck
 npm run web:screens                # puppeteer screenshots of every screen (preview server on :4173)
+npm -w @pickthree/meta run dev     # Vite dev server on :5174, /api proxied to the worker
+npm run meta:screens                # puppeteer pass over the built meta site (preview on :4174)
 npm run fixtures:make              # regenerate synthetic CSVs; fixtures:derive for alternate layouts
 npx tsx packages/engine/scripts/bench.ts   # engine timing on the fixture
 ```
@@ -116,6 +125,7 @@ Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/p
 - Vendored PvPoke files under `packages/sim-pvpoke/vendor/` are verbatim. Do not edit them; fix the shim or adapter instead. Bumps go through `pvpoke.lock.json` and the golden test.
 - PvPoke rankings are an input, not truth. Every result carries its assumptions.
 - The collection never leaves the device. The outbound calls are the anonymous hit counter, opt-out error reports and opt-out battle records for the community meta, all free of collection data. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
-- The battle log is shared as anonymous records for the community meta (league, season, time, species, result, rank band, random device id) unless the player switches sharing off in Settings; never the collection, IVs, moves, specimen ids or names. Only the live site sends (never automation or a dev server). Export and import are files the player handles. Spec: `docs/superpowers/specs/2026-09-17-community-meta-capture-design.md`.
+- The battle log is shared as anonymous records for the community meta (league, season, time, species, your team's movesets when known, result, rank band, random device id) unless the player switches sharing off in Settings; never the collection, IVs, specimen ids, names or the opponents' movesets. Only the live site sends (never automation or a dev server). Export and import are files the player handles. Spec: `docs/superpowers/specs/2026-09-17-community-meta-capture-design.md`.
 - Screens with a text input put the input at the top, its results directly under it, the slots those results fill under that, and optional shortcuts last (hidden while searching or picking). Results are a compact token grid in a fixed-height box that scrolls on its own. The phone keyboard covers everything below the input.
 - Stage explicit paths when committing. Never `git add -A`.
+- meta.pick3.gg never presents PvPoke's curated list as measured play, and never hides measured numbers for being small. The threshold is 300 counted battles and 5 devices, both required (`apps/meta/src/rank.ts`).

@@ -72,7 +72,7 @@ export type Route =
   | { screen: 'team'; id: string }
   | { screen: 'collection' }
   | { screen: 'specimen'; id: string }
-  | { screen: 'counters'; vs?: string }
+  | { screen: 'counters'; vs?: string; league?: string }
   | { screen: 'build' }
   | { screen: 'custom' }
   | { screen: 'add' }
@@ -344,8 +344,18 @@ export function parseHash(hash: string): Route {
     return b ? { screen: 'specimen', id: decodeURIComponent(b) } : { screen: 'collection' };
   }
   if (a === 'counters') {
-    const vs = new URLSearchParams(query ?? '').get('vs');
-    return vs ? { screen: 'counters', vs } : { screen: 'counters' };
+    const params = new URLSearchParams(query ?? '');
+    const vs = params.get('vs');
+    // A link from meta.pick3.gg names the league; the app's own links never do.
+    const l = params.get('l');
+    const league = l !== null && /^[a-z0-9_]+$/.test(l) ? l : null;
+    if (vs && league) {
+      return { screen: 'counters', vs, league };
+    }
+    if (vs) {
+      return { screen: 'counters', vs };
+    }
+    return league ? { screen: 'counters', league } : { screen: 'counters' };
   }
   if (a === 'build') {
     return b === 'team' ? { screen: 'custom' } : { screen: 'build' };

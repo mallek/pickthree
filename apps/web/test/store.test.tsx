@@ -64,6 +64,25 @@ describe('routes', () => {
     expect(hashFor({ screen: 'counters', vs: 'medicham' })).toBe('#/counters?vs=medicham');
     expect(hashFor({ screen: 'counters' })).toBe('#/counters');
   });
+  it('reads a league out of a counters link from meta.pick3.gg', () => {
+    expect(parseHash('#/counters?vs=azumarill&l=ultra')).toEqual({
+      screen: 'counters',
+      vs: 'azumarill',
+      league: 'ultra',
+    });
+    expect(parseHash('#/counters?l=ultra')).toEqual({ screen: 'counters', league: 'ultra' });
+  });
+  it('ignores a counters league that is not an id', () => {
+    expect(parseHash('#/counters?vs=azumarill&l=Ultra%20League')).toEqual({
+      screen: 'counters',
+      vs: 'azumarill',
+    });
+  });
+  it('does not write the league back into the hash once the app is running', () => {
+    expect(hashFor({ screen: 'counters', vs: 'azumarill', league: 'ultra' })).toBe(
+      '#/counters?vs=azumarill',
+    );
+  });
   it('filterKey changes with the log version', () => {
     expect(filterKey(DEFAULT_SETTINGS, 1)).not.toBe(filterKey(DEFAULT_SETTINGS, 2));
   });

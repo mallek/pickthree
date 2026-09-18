@@ -1,9 +1,9 @@
 /**
  * Community meta sharing: every battle logged on this phone goes to the counter worker as an
  * anonymous record unless the player switches it off in Settings. What is sent, per battle:
- * league, season, time, the three species run, the opponents seen, win or loss or tanked, the
- * player's rank band, and a random device id made here. Never the collection, IVs, moves,
- * specimen ids or names.
+ * league, season, time, the three species run and their movesets when known, the opponents
+ * seen, win or loss or tanked, the player's rank band, and a random device id made here.
+ * Never the collection, IVs, specimen ids or names, and never the opponents' movesets.
  */
 import type { BattleSet, LoggedBattle, Season } from '@pickthree/engine';
 import { COUNTER_ORIGIN } from './counter.ts';

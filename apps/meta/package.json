@@ -1,0 +1,27 @@
+{
+  "name": "@pickthree/meta",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bake": "tsx scripts/bake.ts",
+    "dev": "npm run bake && vite",
+    "build": "npm run bake && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "27.4.0",
+    "vite": "8.2.2"
+  }
+}

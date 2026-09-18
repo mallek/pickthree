@@ -8,9 +8,12 @@
  *   POST /battles   stores anonymous battle records { device, client, battles } (max 200)
  *   DELETE /battles removes everything one device sent { device }
  *   GET  /meta      per-league summary: ?league=great&days=90
+ *   GET  /api/v1/meta               per-league rollup: ?league=great&since=...&until=...&band=
+ *   GET  /api/v1/species/<id>       per-species detail over the same window and band
  *
  * Nothing stored identifies a player: no IPs, no collection data, no names. The counter and
- * the error log live in one Durable Object; the battle records in another with SQLite.
+ * the error log live in one Durable Object; the battle records in another with SQLite. Anything
+ * that is not one of these routes falls through to the ASSETS binding: the meta.pick3.gg site.
  */
 import { DurableObject } from 'cloudflare:workers';
 import {
@@ -22,11 +25,20 @@ import {
   type SharedBatch,
   type SharedMoves,
 } from './battles.js';
+import {
+  isWorkerPath,
+  readParams,
+  speciesDetail,
+  summarize,
+  type MetaSummaryV1,
+  type SpeciesDetailV1,
+} from './meta.js';
 import { parseReport, type ErrorReport } from './report.js';
 
 export interface Env {
   COUNTER: DurableObjectNamespace<Counter>;
   META: DurableObjectNamespace<MetaStore>;
+  ASSETS: Fetcher;
   ALLOWED_ORIGINS: string;
   ERRORS_READ_TOKEN?: string;
 }
@@ -34,6 +46,9 @@ export interface Env {
 const MAX_ERRORS = 200;
 /** The most rows one summary reads; well past what a league sees in a season for now. */
 const SUMMARY_ROWS = 100_000;
+/** How long the edge may hold a read. The site rounds its window to match. */
+const READ_CACHE = 'public, max-age=600';
+const SPECIES = /^[a-z0-9_]+$/;
 
 export class Counter extends DurableObject<Env> {
   async get(): Promise<number> {
@@ -144,6 +159,56 @@ export class MetaStore extends DurableObject<Env> {
       band: (r['band'] as Band | null) ?? null,
     }));
     return aggregate(league, parsed);
+  }
+
+  /** Every row for a league in a half-open window, newest first, capped. */
+  private read(league: string, since: string, until: string): BattleRow[] {
+    const rows = this.ctx.storage.sql
+      .exec(
+        `SELECT device, league, season, at, team, moves, opponents, result, tanked, band
+           FROM battles WHERE league = ? AND at >= ? AND at < ? ORDER BY at DESC LIMIT ?`,
+        league,
+        since,
+        until,
+        SUMMARY_ROWS,
+      )
+      .toArray();
+    return rows.map((r) => ({
+      device: String(r['device']),
+      league: String(r['league']),
+      season: typeof r['season'] === 'number' ? r['season'] : null,
+      at: String(r['at']),
+      team: JSON.parse(String(r['team'])) as string[],
+      moves:
+        typeof r['moves'] === 'string' ? (JSON.parse(r['moves']) as (SharedMoves | null)[]) : null,
+      opponents: JSON.parse(String(r['opponents'])) as string[],
+      result: (r['result'] as 'win' | 'loss' | null) ?? null,
+      tanked: r['tanked'] === 1,
+      band: (r['band'] as Band | null) ?? null,
+    }));
+  }
+
+  summaryV1(p: { league: string; since: string; until: string; band: string }): MetaSummaryV1 {
+    const span = Date.parse(p.until) - Date.parse(p.since);
+    const prevSince = new Date(Date.parse(p.since) - span).toISOString();
+    return summarize({
+      ...p,
+      rows: this.read(p.league, p.since, p.until),
+      previousRows: this.read(p.league, prevSince, p.since),
+      now: new Date(),
+    });
+  }
+
+  speciesV1(
+    p: { league: string; since: string; until: string; band: string },
+    speciesId: string,
+  ): SpeciesDetailV1 {
+    return speciesDetail({
+      ...p,
+      speciesId,
+      rows: this.read(p.league, p.since, p.until),
+      now: new Date(),
+    });
   }
 }
 
@@ -260,6 +325,25 @@ export default {
       const since = new Date(Date.now() - days * 86_400_000).toISOString();
       return Response.json({ since, days, ...(await meta.summary(league, since)) }, { headers });
     }
-    return Response.json({ error: 'not found' }, { status: 404, headers });
+    if (request.method === 'GET' && url.pathname.startsWith('/api/v1/')) {
+      const p = readParams(url);
+      if ('error' in p) {
+        return Response.json({ error: p.error }, { status: 400, headers });
+      }
+      const read = { ...headers, 'Cache-Control': READ_CACHE };
+      if (url.pathname === '/api/v1/meta') {
+        return Response.json(await meta.summaryV1(p), { headers: read });
+      }
+      const species = url.pathname.slice('/api/v1/species/'.length);
+      if (url.pathname.startsWith('/api/v1/species/') && SPECIES.test(species)) {
+        return Response.json(await meta.speciesV1(p, species), { headers: read });
+      }
+      return Response.json({ error: 'not found' }, { status: 404, headers });
+    }
+    if (isWorkerPath(url.pathname)) {
+      return Response.json({ error: 'not found' }, { status: 404, headers });
+    }
+    // Anything that is not an endpoint is the meta.pick3.gg site.
+    return env.ASSETS.fetch(request);
   },
 } satisfies ExportedHandler<Env>;

@@ -6,6 +6,22 @@ workers_dev = true
 [vars]
 ALLOWED_ORIGINS = "https://pick3.gg,https://www.pick3.gg,http://localhost:5173,http://localhost:4173"
 
+# meta.pick3.gg is this worker's static assets. The API paths run the worker first; everything
+# else is the site, with the SPA fallback so /great/p/azumarill loads index.html.
+[assets]
+directory = "../../apps/meta/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = [
+  "/api/*",
+  "/hit",
+  "/count",
+  "/error",
+  "/errors",
+  "/battles",
+  "/meta",
+]
+
 [[durable_objects.bindings]]
 name = "COUNTER"
 class_name = "Counter"

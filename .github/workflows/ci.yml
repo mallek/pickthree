@@ -34,6 +34,7 @@ jobs:
       - run: npm run data:build
         if: steps.data.outputs.cache-hit != 'true'
       - run: npm test
+      - run: npm -w @pickthree/meta run build
   screens:
     # Drives the built app in Chrome the way a phone would: import, teams, detail, collection,
     # counters, build a team, add by hand, share target. Fails on any console error.
@@ -83,4 +84,49 @@ jobs:
         with:
           name: screenshots
           path: apps/web/screenshots/*.png
+          retention-days: 7
+  meta-screens:
+    # Same idea as the screens job above, for meta.pick3.gg: no worker behind the preview server,
+    # so the script fakes /api/v1/* itself. Fails on any console error, sideways overflow, or
+    # non-ASCII text.
+    runs-on: ubuntu-latest
+    needs: test
+    env:
+      PICKTHREE_REQUIRE_PVPOKE: '1'
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Cache PvPoke checkout
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/data/.pvpoke
+            packages/data/.cache
+          key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
+      - name: Cache built game data
+        id: data
+        uses: actions/cache@v4
+        with:
+          path: apps/web/public/data
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/seasons.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/sim-pvpoke/src/**') }}
+      - run: npm run data:fetch
+        if: steps.data.outputs.cache-hit != 'true'
+      - run: npm run data:build
+        if: steps.data.outputs.cache-hit != 'true'
+      - run: npm -w @pickthree/meta run build
+      - name: Serve the build
+        run: (cd apps/meta && npx vite preview --port 4174 --strictPort &) && sleep 3
+      - run: npm run meta:screens
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meta-screenshots
+          path: apps/meta/screenshots/*.png
           retention-days: 7
