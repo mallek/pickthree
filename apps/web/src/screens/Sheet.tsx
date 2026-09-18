@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { PokemonToken, Seg, useLogCount, useName } from '../components.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
+import { BAND_LABELS, BANDS, shareEnabled, type Band } from '../metaShare.ts';
 import { dateLabel, num } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
@@ -18,6 +19,8 @@ export function Sheet() {
     startFresh,
     exportLog,
     importLog,
+    setShareEnabled,
+    setShareBand,
   } = useActions();
   const name = useName();
   const league = useLeague();
@@ -224,9 +227,37 @@ export function Sheet() {
               </label>
             </div>
             {logNote ? <span className="meta">{logNote}</span> : null}
-            <span className="meta">
-              A file on this phone. Your log never leaves it unless you share the file.
-            </span>
+            <span className="meta">Export and import are files you handle yourself.</span>
+          </div>
+          <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
+            <span>Community Meta</span>
+            <button
+              type="button"
+              className="toggle"
+              onClick={() => void setShareEnabled(!shareEnabled(s.settings))}
+              aria-pressed={shareEnabled(s.settings)}
+            >
+              <span>
+                <span style={{ display: 'block', fontSize: 15 }}>Share your battles</span>
+                <span className="meta">
+                  Builds a measured meta from real ladders. Each battle sends: league, season, time,
+                  your three species, the opponents you saw, win or loss or tanked, your rank band,
+                  and a random device id. Never your collection, IVs, moves or names. Off also
+                  deletes what this phone sent.
+                </span>
+              </span>
+              <span className={`switch${shareEnabled(s.settings) ? ' on' : ''}`} />
+            </button>
+            <span className="meta">Your rank band, for the meta by ladder level:</span>
+            <Seg<Band | 'none'>
+              value={s.settings.share?.band ?? 'none'}
+              onChange={(v) => setShareBand(v === 'none' ? null : v)}
+              options={[
+                { value: 'none', label: 'Not set' },
+                ...BANDS.map((b) => ({ value: b, label: BAND_LABELS[b] })),
+              ]}
+              style={{ flexWrap: 'wrap' }}
+            />
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Appearance</span>
@@ -260,9 +291,10 @@ export function Sheet() {
               {s.leagueInfo?.metaSize ?? '...'} Pokémon.
             </span>
             <span>
-              Your collection stays on this phone. The only outbound requests are an anonymous tick
-              to the trainer counter when you build teams and, unless you turn it off below,
-              anonymous error reports that never include your Pokémon.
+              Your collection stays on this phone. What leaves it: an anonymous tick to the trainer
+              counter when you build teams, anonymous battle records for the community meta unless
+              you switch that off above, and, unless you turn it off below, anonymous error reports.
+              None of it includes your Pokémon.
               {s.collection ? ` Last import: ${dateLabel(s.collection.importedAt)}.` : ''}
             </span>
             <UpdateStatus />

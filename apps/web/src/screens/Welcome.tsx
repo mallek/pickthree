@@ -271,8 +271,10 @@ export function Welcome() {
           {paste ? 'Hide the paste box' : 'Paste CSV text instead'}
         </button>
         <p className="meta faint" style={{ textAlign: 'center' }}>
-          Your file is processed on your phone and never uploaded anywhere. The only things sent are
-          an anonymous tick to the counter and anonymous error reports without your Pokémon.
+          Your file is processed on your phone and never uploaded anywhere. What is sent: an
+          anonymous tick to the counter, anonymous error reports, and the battles you log, as
+          anonymous records for the community meta (off in Settings if you prefer). Never your
+          Pokémon.
         </p>
         <TrainerCounter count={count} />
       </div>

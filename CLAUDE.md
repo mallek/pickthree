@@ -115,7 +115,7 @@ Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/p
 - Never hard-code one CSV format. The importer resolves columns by meaning; new layouts come from field reports and get a fixture.
 - Vendored PvPoke files under `packages/sim-pvpoke/vendor/` are verbatim. Do not edit them; fix the shim or adapter instead. Bumps go through `pvpoke.lock.json` and the golden test.
 - PvPoke rankings are an input, not truth. Every result carries its assumptions.
-- The collection never leaves the device. The only outbound calls are the anonymous hit counter and opt-out error reports, both free of collection data. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
-- The battle log never leaves the device either. Export and import are files the player handles.
+- The collection never leaves the device. The outbound calls are the anonymous hit counter, opt-out error reports and opt-out battle records for the community meta, all free of collection data. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
+- The battle log is shared as anonymous records for the community meta (league, season, time, species, result, rank band, random device id) unless the player switches sharing off in Settings; never the collection, IVs, moves, specimen ids or names. Only the live site sends (never automation or a dev server). Export and import are files the player handles. Spec: `docs/superpowers/specs/2026-09-17-community-meta-capture-design.md`.
 - Screens with a text input put the input at the top, its results directly under it, the slots those results fill under that, and optional shortcuts last (hidden while searching or picking). Results are a compact token grid in a fixed-height box that scrolls on its own. The phone keyboard covers everything below the input.
 - Stage explicit paths when committing. Never `git add -A`.

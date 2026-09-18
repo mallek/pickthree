@@ -27,6 +27,15 @@ export interface Settings {
   sprites?: boolean;
   /** Anonymous error reports to the counter worker. Absent in older saves means on. */
   errorReports?: boolean;
+  /**
+   * Community meta sharing. Absent in older saves means on. The device id is made once, on
+   * the phone, and is the only handle the worker has for what this phone sent.
+   */
+  share?: {
+    enabled?: boolean;
+    device?: string;
+    band?: 'below' | 'ace' | 'veteran' | 'expert' | 'legend' | null;
+  };
   /** Battle log settings. Absent in older saves means the blend is on and nothing is fresh. */
   yourMeta?: {
     /** Weight Teams, Counters and Build by the log once it has enough battles. Default true. */

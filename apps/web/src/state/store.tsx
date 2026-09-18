@@ -35,6 +35,15 @@ import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { arrivedFromShare } from '../share.ts';
 import { recordError, setErrorReportsEnabled } from '../diag.ts';
+import {
+  forgetShared,
+  newDeviceId,
+  shareEligible,
+  shareEnabled,
+  syncShared,
+  unstampAll,
+  type Band,
+} from '../metaShare.ts';
 import { describeLayoutLine, emptyLayoutValue } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
@@ -468,6 +477,10 @@ interface Actions {
   endSet(): Promise<boolean>;
   /** Show (or clear with null) the floating one-line notice. */
   notify(message: string | null): void;
+  /** Community meta sharing on or off. Off also asks the worker to drop what this phone sent. */
+  setShareEnabled(on: boolean): Promise<void>;
+  /** The rank band stamped on records sent from now on. */
+  setShareBand(band: Band | null): void;
   /** Battles before now move to earlier seasons for the league in play. Nothing is deleted. */
   startFresh(): void;
   /** The whole log (every league) as the export file text. */
@@ -577,6 +590,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     void storage.loadSets(id).then((sets) => {
       if (!cancelled) {
         applySets(sets);
+        shareSync();
       }
     });
     h.leagueInfo(id)
@@ -950,6 +964,82 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     dispatch({ type: 'notice', message });
   }, []);
 
+  /**
+   * Sends unsent battles to the community meta and stamps them, when sharing is on and this is
+   * the live site. Quiet on any failure: the next change tries again. Serialized with the log
+   * mutations so it never writes over a save in flight.
+   */
+  const shareSync = useCallback(() => {
+    const s = stateRef.current;
+    if (!shareEnabled(s.settings) || !shareEligible()) {
+      return;
+    }
+    void serialized(async () => {
+      const cur = stateRef.current;
+      let device = cur.settings.share?.device;
+      if (!device) {
+        const fresh = newDeviceId();
+        device = fresh;
+        updateSettings((prev) => ({ ...prev, share: { ...prev.share, device: fresh } }));
+      }
+      const all = await storage.loadAllSets();
+      const r = await syncShared(all, {
+        device,
+        client: `pick3 ${__PICK3_BUILD__}`,
+        seasons: cur.data?.seasons ?? [],
+        band: cur.settings.share?.band ?? null,
+      });
+      if (!r) {
+        return;
+      }
+      try {
+        for (const set of r.sets) {
+          await storage.saveSet(set);
+        }
+      } catch (e) {
+        recordError('share-stamp', e);
+        return;
+      }
+      const league = cur.settings.league ?? 'great';
+      applySets(await storage.loadSets(league));
+    });
+  }, [serialized, updateSettings, applySets]);
+
+  const setShareEnabled = useCallback(
+    async (on: boolean) => {
+      updateSettings((prev) => ({ ...prev, share: { ...prev.share, enabled: on } }));
+      if (on) {
+        shareSync();
+        return;
+      }
+      const device = stateRef.current.settings.share?.device;
+      await serialized(async () => {
+        if (device) {
+          await forgetShared(device);
+        }
+        // Clear the marks, so switching back on sends everything again.
+        const all = unstampAll(await storage.loadAllSets());
+        try {
+          for (const set of all) {
+            await storage.saveSet(set);
+          }
+        } catch (e) {
+          recordError('share-unstamp', e);
+        }
+        const league = stateRef.current.settings.league ?? 'great';
+        applySets(await storage.loadSets(league));
+      });
+    },
+    [updateSettings, shareSync, serialized, applySets],
+  );
+
+  const setShareBand = useCallback(
+    (band: Band | null) => {
+      updateSettings((prev) => ({ ...prev, share: { ...prev.share, band } }));
+    },
+    [updateSettings],
+  );
+
   /** Writes the sets and reloads the league. False, with a toast, when the phone refused. */
   const persistSets = useCallback(
     async (sets: BattleSet[], what: 'that battle' | 'your team'): Promise<boolean> => {
@@ -971,9 +1061,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       }
       const league = stateRef.current.settings.league ?? 'great';
       applySets(await storage.loadSets(league));
+      shareSync();
       return true;
     },
-    [applySets, notify],
+    [applySets, notify, shareSync],
   );
 
   const startSet = useCallback(
@@ -1095,6 +1186,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       logBattle,
       endSet,
       notify,
+      setShareEnabled,
+      setShareBand,
       startFresh,
       exportLog,
       importLog,
@@ -1123,6 +1216,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       logBattle,
       endSet,
       notify,
+      setShareEnabled,
+      setShareBand,
       startFresh,
       exportLog,
       importLog,

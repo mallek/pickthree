@@ -10,6 +10,14 @@ ALLOWED_ORIGINS = "https://pick3.gg,https://www.pick3.gg,http://localhost:5173,h
 name = "COUNTER"
 class_name = "Counter"
 
+[[durable_objects.bindings]]
+name = "META"
+class_name = "MetaStore"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Counter"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["MetaStore"]

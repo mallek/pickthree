@@ -15,6 +15,8 @@ export interface LoggedBattle {
   result: 'win' | 'loss' | null;
   /** The opponent quit or threw. Kept in the set, counted nowhere. */
   tanked: boolean;
+  /** ISO time this battle was sent to the community meta; absent means not yet. */
+  sharedAt?: string;
 }
 
 export interface BattleSet {
