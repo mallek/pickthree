@@ -57,6 +57,20 @@ export function pctPrecise(fraction: number): string {
   return (fraction * 100).toFixed(1);
 }
 
+/** FIX 2 (honesty): `pct`'s whole-percent rounding turns a genuinely nonzero share under half a
+ * point into "0%", which reads as "never faced" when the truth is "faced, just rarely", the same
+ * overstatement this site exists to avoid, only pointed the other way. A share that rounds to
+ * zero but is not actually zero renders "<1%" instead. Includes its own "%" (unlike `pct`,
+ * which leaves that to the caller), since "<1%" is not `pct`'s digits with a suffix glued on.
+ * `RANKED_SHARE` already keeps every row in the ranked list above this floor, so this only
+ * matters off that list: the species page, reachable for any id via "Seen next to". */
+export function pctFloor(fraction: number): string {
+  if (fraction <= 0) {
+    return '0%';
+  }
+  return Math.round(fraction * 100) === 0 ? '<1%' : `${pct(fraction)}%`;
+}
+
 /** The noun alone, for a sentence that has to put something (a league name, an adjective)
  * between the count and the word. Prefer `battles()` when nothing sits in between. */
 export function battleWord(n: number): string {

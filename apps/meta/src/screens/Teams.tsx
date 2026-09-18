@@ -6,8 +6,10 @@
  * baseline.
  *
  * See docs/superpowers/specs/2026-09-18-meta-site-design.md, "Honesty rules": a win rate is
- * never shown without the margin sentence that says how much to trust it, and the confidence
- * badge is that same judgement of the decided battles behind the rate, not the team's raw count.
+ * never shown without its confidence tag, that same judgement of the decided battles behind the
+ * rate rather than the team's raw count (FIX 4: C3 moved the trust judgement here, out of a
+ * margin sentence that used to run under every card; the sentence itself now only appears on a
+ * 'few'-confidence card, where the tag alone is not enough to say how wide the real range is).
  */
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, TeamStats } from '../api.js';

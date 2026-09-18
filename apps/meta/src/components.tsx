@@ -49,20 +49,6 @@ function typeInk(type: string): string {
   return TYPES.includes(type) ? `var(--type-${type}-ink)` : 'var(--muted)';
 }
 
-/** From the design export: the types whose colour is dark enough that only white text reads on
- * it. Every other type gets the app's near-black ink. Deliberate, not a guess. Private: `Tag`
- * below is the one place that reads it. */
-const WHITE_TEXT = new Set([
-  'water',
-  'ghost',
-  'dragon',
-  'fighting',
-  'psychic',
-  'dark',
-  'poison',
-  'steel',
-]);
-
 function capitalize(s: string): string {
   return s.length === 0 ? s : s.slice(0, 1).toUpperCase() + s.slice(1);
 }
@@ -117,33 +103,18 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
   );
 }
 
-/** One solid, uppercase pill (`.type-tag`): background from the type's paint, foreground chosen
- * so the label always reads against it. `type` picks the colour; `label` is the text, which need
- * not be the type's own name. Species.tsx's move lines used to render through this (tinted by the
- * move's type, labelled with the move's name) until D3 moved them onto `TypeChip` below instead,
- * to match pick3's Build cards; nothing in this app currently renders through `Tag`, but it stays
- * here as the one place the two foreground hex literals and the white-text type list exist. */
-export function Tag({ type, label }: { type: string; label: string }) {
-  return (
-    <span
-      className="type-tag"
-      style={{ background: typeColor(type), color: WHITE_TEXT.has(type) ? '#fff' : '#161826' }}
-    >
-      {label}
-    </span>
-  );
-}
-
 /**
  * A2: the one way a type is shown anywhere on this site, pick3's own chip shape and colour rule
  * ported byte-for-byte (apps/web/src/components.tsx's `TypeChip`/`TypeChips`): Title Case text
- * on a light wash of the type's colour, using `.tchip`/`.tchip-sm` (app.css) rather than the
- * solid, uppercase `.type-tag` `Tag` above draws. D3 moved Species.tsx's move lines onto this
- * component too (`MoveLine`'s `TypeChip type={move.type} small`, matching pick3's Build cards
- * byte for byte), so `Tag` is now unused within this app. `type` is a plain string, not a closed
- * union like pick3's `PokemonType`, since this site reads
- * types off the static data file rather than the engine; `typeColor`/`typeInk`'s fallback is what
- * keeps a bad value from ever landing on an undefined CSS variable.
+ * on a light wash of the type's colour, using `.tchip`/`.tchip-sm` (app.css). Species.tsx's move
+ * lines used to render through a separate solid, uppercase `Tag`/`.type-tag` pill; D3 moved them
+ * onto this component instead (`MoveLine`'s `TypeChip type={move.type} small`, matching pick3's
+ * Build cards byte for byte), which left `Tag` with no caller anywhere in this app, so FIX 5
+ * removed it (and `.type-tag`, and the white-text type list only it read) rather than carry a
+ * second, unused way to draw a type. `type` is a plain string, not a closed union like pick3's
+ * `PokemonType`, since this site reads types off the static data file rather than the engine;
+ * `typeColor`/`typeInk`'s fallback is what keeps a bad value from ever landing on an undefined
+ * CSS variable.
  */
 export function TypeChip({ type, small }: { type: string; small?: boolean | undefined }) {
   return (

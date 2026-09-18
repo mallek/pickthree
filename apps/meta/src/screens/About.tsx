@@ -13,8 +13,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Baseline } from '../baseline.js';
 import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
-import { MEASURED_MIN, MEASURED_MIN_DEVICES, WIN_RATE_MIN } from '../rank.js';
-import { TREND_MIN } from '../stats.js';
+import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
+import { SOME, TREND_MIN } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
 /** The two decorative marks below. Their meaning lives in the section heading and the text next
@@ -202,11 +202,12 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           {plural(MEASURED_MIN_DEVICES, 'device', 'devices')}, for the window and rank band you
           are looking at. Under either floor, the ranked list is PvPoke&apos;s meta group,
           clearly marked, and everything we have measured is shown under it with its counts.
-          Tanked battles are counted separately and never touch a record. A record with fewer
-          than {count(WIN_RATE_MIN)} decided {battleWord(WIN_RATE_MIN)} shows its raw win-loss
-          count instead of a percentage. A trend is only shown when both windows being compared
-          hold at least {count(TREND_MIN)} {battleWord(TREND_MIN)}, and only when the change is
-          bigger than the noise in the numbers.
+          Tanked battles are counted separately and never touch a record. On that list, a record
+          is always the raw win-loss count, never a percentage. On Most run teams, a win rate is
+          always shown, with a confidence tag beside it, and below {count(SOME)} decided{' '}
+          {battleWord(SOME)} the likely range is spelled out too. A trend is only shown when both
+          windows being compared hold at least {count(TREND_MIN)} {battleWord(TREND_MIN)}, and
+          only when the change is bigger than the noise in the numbers.
         </p>
       </section>
 

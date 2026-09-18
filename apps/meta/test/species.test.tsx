@@ -61,6 +61,16 @@ describe('Species', () => {
     expect(screen.getByText(/in 18% of 1,000 battles/)).toBeInTheDocument();
   });
 
+  // FIX 2 (honesty): reachable for any id through "Seen next to", not just the ranked list, which
+  // RANKED_SHARE keeps above this floor. A species faced 2 times in 1,000 battles is 0.2%, real
+  // but not "0%": whole-percent rounding must not say it was never faced.
+  it('floors a real but sub-one-percent share at "<1%" instead of rounding it away to 0%', async () => {
+    const rare = { ...species, sightings: 2 };
+    render(<App deps={{ fetcher: stubFetch({ species: rare, meta }), now }} />);
+    expect(await screen.findByText(/in <1% of 1,000 battles/)).toBeInTheDocument();
+    expect(screen.queryByText(/in 0% of 1,000 battles/)).toBeNull();
+  });
+
   it('gives the record with its margin and explains a sub-50% number', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
     // 80 wins over 184 decided battles is 43.478...%, which Math.round(rate * 100) takes to 43

@@ -1656,8 +1656,10 @@ textarea.paste {
    needs its own color and underline reset to match `ShareButton`, which is a plain `<button
    class="head-cog">` and gets both for free from the global `button` and `:active` rules. */
 .meta-button {
-  display: inline-block;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
   color: inherit;
   text-decoration: none;
 }

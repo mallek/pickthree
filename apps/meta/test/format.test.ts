@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { ago, ascii, battleWord, battles, count, pct, pctPrecise, shortName } from '../src/format.js';
+import {
+  ago,
+  ascii,
+  battleWord,
+  battles,
+  count,
+  pct,
+  pctFloor,
+  pctPrecise,
+  shortName,
+} from '../src/format.js';
 
 describe('ascii', () => {
   it('folds accented letters so every rendered string is 7-bit', () => {
@@ -42,6 +52,14 @@ describe('numbers', () => {
     expect(pctPrecise(0.005)).toBe('0.5');
     expect(pctPrecise(0)).toBe('0.0');
     expect(pctPrecise(1)).toBe('100.0');
+  });
+
+  // FIX 2 (honesty): whole-percent rounding must not turn a real but rare share into "0%",
+  // which reads as "never faced". A genuinely zero share still reads "0%": that one is true.
+  it('floors a genuinely nonzero share under one percent at "<1%" rather than rounding to 0%', () => {
+    expect(pctFloor(0)).toBe('0%');
+    expect(pctFloor(0.001)).toBe('<1%'); // 0.1%: real, but rounds to 0
+    expect(pctFloor(0.184)).toBe('18%'); // normal case, same digits as pct's own test above
   });
 
   it('counts battles in words', () => {

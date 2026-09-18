@@ -13,7 +13,7 @@ import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
 import { Bar, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { battles as battlesText, count, pct, plural } from '../format.js';
+import { battles as battlesText, count, pctFloor, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
 import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
 import type { Query, View } from '../route.js';
@@ -239,7 +239,7 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
       <Sparkline
         values={shares}
         weekLabels={weekly.map((w) => w.week)}
-        latestLabel={`${pct(latestShare)}% latest`}
+        latestLabel={`${pctFloor(latestShare)} latest`}
       />
       {changeText ? <p className="sub">{changeText}</p> : null}
     </section>
@@ -485,7 +485,7 @@ export function Species(p: {
   } else if (measuredEnough) {
     const share = m.battles > 0 ? d.sightings / m.battles : 0;
     const rankNum = rankAmong(m, speciesId, d.sightings);
-    headerText = `#${rankNum} most faced - in ${pct(share)}% of ${battlesText(m.battles)}`;
+    headerText = `#${rankNum} most faced - in ${pctFloor(share)} of ${battlesText(m.battles)}`;
   } else {
     headerText = `Faced ${count(d.sightings)} ${plural(d.sightings, 'time', 'times')} in ${battlesText(m.battles)}`;
   }

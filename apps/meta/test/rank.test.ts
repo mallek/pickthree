@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MetaSummaryV1, SpeciesStats } from '../src/api.js';
 import type { Baseline, BaselineSpecies } from '../src/baseline.js';
-import { MEASURED_MIN, MEASURED_MIN_DEVICES, RANKED_SHARE, WIN_RATE_MIN, rank } from '../src/rank.js';
+import { MEASURED_MIN, MEASURED_MIN_DEVICES, RANKED_SHARE, rank } from '../src/rank.js';
 
 function sp(speciesId: string, sightings: number, wins = 0, losses = 0, runs = 0): SpeciesStats {
   return { speciesId, sightings, wins, losses, runs, runWins: 0, runLosses: 0 };
@@ -114,11 +114,10 @@ describe('rank, at and above the measured threshold', () => {
     expect(r.measured.map((m) => m.speciesId)).toEqual(['azumarill']);
   });
 
-  it('carries share, win rate and a bar relative to the most faced', () => {
+  it('carries share and a bar relative to the most faced', () => {
     const r = rank(big, baseline);
     const top = r.measured[0]!;
     expect(top.share).toBeCloseTo(200 / MEASURED_MIN, 5);
-    expect(top.winRate).toBeCloseTo(0.45, 5);
     expect(top.barPct).toBe(100);
   });
 
@@ -130,14 +129,6 @@ describe('rank, at and above the measured threshold', () => {
     });
     expect(rank(atCut, baseline).measured.map((m) => m.speciesId)).toEqual(['azumarill']);
     expect(5 / 1000).toBe(RANKED_SHARE);
-  });
-
-  it('shows a win rate at exactly WIN_RATE_MIN decided battles', () => {
-    const r = rank(
-      meta({ battles: 1000, devices: 40, species: [sp('shuckle', WIN_RATE_MIN, 15, 15)] }),
-      baseline,
-    );
-    expect(r.measured[0]!.winRate).toBeCloseTo(0.5, 5);
   });
 
   it('shows a trend once both windows are big enough', () => {
@@ -154,9 +145,11 @@ describe('rank, at and above the measured threshold', () => {
     expect(rank(big, baseline).baseline).toHaveLength(3);
   });
 
-  it('ranks a species that clears the share cut on too few battles to show a rate', () => {
+  it('ranks a species that clears the share cut on too few battles for real confidence', () => {
     // The regression that matters most in this file: 2 of 300 battles clears the 0.5% share
-    // cut and lands on the measured list, but 1 win and 1 loss must never read as "50%".
+    // cut and lands on the measured list, but the row must still carry 'few' confidence: the
+    // overview no longer prints a rate at all (FIX 3), but a screen that reads confidence off
+    // this row must never mistake "listed" for "trusted".
     const r = rank(
       meta({ battles: MEASURED_MIN, devices: 40, species: [sp('shuckle', 2, 1, 1)] }),
       baseline,
@@ -165,18 +158,15 @@ describe('rank, at and above the measured threshold', () => {
     expect(row.sightings).toBe(2);
     expect(row.wins).toBe(1);
     expect(row.losses).toBe(1);
-    expect(row.winRate).toBeNull();
     expect(row.confidence).toBe('few');
   });
 
-  it('shows a win rate once a row clears 30 decided battles of its own', () => {
+  it('reaches "some" confidence once a row clears 30 decided battles of its own', () => {
     const r = rank(
       meta({ battles: 1000, devices: 40, species: [sp('shuckle', 40, 20, 20)] }),
       baseline,
     );
-    const row = r.measured[0]!;
-    expect(row.winRate).toBeCloseTo(0.5, 5);
-    expect(row.confidence).toBe('some');
+    expect(r.measured[0]!.confidence).toBe('some');
   });
 
   it('reaches "many" confidence once a row clears 300 decided battles of its own', () => {

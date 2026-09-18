@@ -443,20 +443,11 @@ a.row {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 
-.type-tag {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 1px 6px;
-  border-radius: 999px;
-}
-
 /* A2: pick3's own type chip, ported byte-for-byte from apps/web/src/app.css (.tchips/.tchip/
    .tchip-sm) so the two sites' type chips are the same control: Title Case text on a light wash
-   of the type's colour, rather than .type-tag's solid uppercase pill above. D3 later moved the
-   species page's own move tags onto this chip too, so .type-tag is unused today but stays as a
-   general-purpose pill. */
+   of the type's colour. This used to sit beside a separate solid, uppercase .type-tag pill for a
+   move's own type; D3 moved that onto this chip too, which left .type-tag with no caller, so
+   FIX 5 removed it rather than carry a second, unused way to draw a type. */
 .tchips {
   display: inline-flex;
   gap: 4px;
@@ -943,7 +934,7 @@ a.row {
   min-width: 44px;
 }
 
-/* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .icon-btn::after's
+/* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .head-cog::after's
    all-sides inset only ever meets the 8px gap between buttons on the same row, which is enough
    clearance for a 3px inset on each side. */
 .hdr-actions {
