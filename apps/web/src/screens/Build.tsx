@@ -337,18 +337,6 @@ export function Build() {
     return [label(ids.fast), ...ids.charged.map(label)].join(', ');
   };
 
-  /** What the card says about the Pokemon itself: your IVs and level, or the assumption. */
-  const ownLine = (p: TeamPick): string => {
-    const sp = specimenOf(p);
-    if (!sp) {
-      return 'Not in your collection; top-10% IVs assumed';
-    }
-    const build = s.verdicts[sp.id]?.build ?? null;
-    const from = build && build.stageOffset > 0 ? ` · from your ${name(sp.speciesId)}` : '';
-    const rank = build ? ` · IV rank top ${topPct(build.ivRank)}%` : '';
-    return `${ivLine(sp.ivs)} · Level ${sp.level.max}${rank}${from}`;
-  };
-
   const setMoves = (i: number, p: TeamPick, next: MoveIds): void => {
     setPick(i, { ...p, moves: next });
   };
@@ -506,6 +494,9 @@ export function Build() {
                 </div>
               );
             }
+            const types = species(info.speciesId)?.types ?? ['normal', 'none'];
+            const sp = specimenOf(p);
+            const build = sp ? (s.verdicts[sp.id]?.build ?? null) : null;
             return (
               <div
                 className={`slot-wrap${overClass}`}
@@ -518,49 +509,72 @@ export function Build() {
                 <button
                   type="button"
                   className="pick-card filled"
+                  style={{ '--c1': typeColor(types[0]) } as CSSProperties}
                   onClick={() => setMovesSlot(movesSlot === i ? null : i)}
                   aria-label={`${info.title} moves`}
                 >
-                  <PokemonToken speciesId={info.speciesId} size={48} />
+                  <span className="pick-token">
+                    <PokemonToken speciesId={info.speciesId} size={56} />
+                    <span className="pick-role-pill">{role}</span>
+                  </span>
                   <span className="pick-card-body">
-                    <span className="pick-role">{role}</span>
-                    <span className="spec-name">
-                      {info.title}
-                      <TypeChips types={species(info.speciesId)?.types ?? []} small />
+                    <span className="pick-head">
+                      <b className="pick-name">{info.title}</b>
+                      <TypeChips types={types} small />
                     </span>
-                    <span className="meta">{ownLine(p)}</span>
-                    {moveChips(p, poolFor(p))}
+                    <span className="pick-kv">
+                      <span className="pick-k">Moves</span>
+                      {moveChips(p, poolFor(p))}
+                    </span>
+                    <span className="pick-kv">
+                      <span className="pick-k">{sp ? 'Yours' : 'IVs'}</span>
+                      <span className="pick-v">
+                        {sp ? (
+                          <>
+                            <b>{ivLine(sp.ivs)}</b>
+                            {build ? ` · top ${topPct(build.ivRank)}%` : ''} · Lv {sp.level.max}
+                            {build && build.stageOffset > 0 ? (
+                              <span className="muted"> · from your {name(sp.speciesId)}</span>
+                            ) : null}
+                          </>
+                        ) : (
+                          <span className="muted">Not yours; top-10% spread assumed</span>
+                        )}
+                      </span>
+                    </span>
                   </span>
                 </button>
-                <button
-                  type="button"
-                  className="slot-x"
-                  aria-label={`Remove ${info.title}`}
-                  onClick={() => removePick(i)}
-                >
-                  &times;
-                </button>
-                <button
-                  type="button"
-                  className="drag-grip"
-                  aria-label={`Drag ${info.title} to another slot`}
-                  onPointerDown={onGripDown(i)}
-                  onPointerMove={onGripMove}
-                  onPointerUp={onGripUp}
-                  onPointerCancel={() => {
-                    dragStart.current = null;
-                    setDrag(null);
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-                    <circle cx="5" cy="3" r="1.5" fill="currentColor" />
-                    <circle cx="11" cy="3" r="1.5" fill="currentColor" />
-                    <circle cx="5" cy="8" r="1.5" fill="currentColor" />
-                    <circle cx="11" cy="8" r="1.5" fill="currentColor" />
-                    <circle cx="5" cy="13" r="1.5" fill="currentColor" />
-                    <circle cx="11" cy="13" r="1.5" fill="currentColor" />
-                  </svg>
-                </button>
+                <span className="pick-side">
+                  <button
+                    type="button"
+                    className="pick-x"
+                    aria-label={`Remove ${info.title}`}
+                    onClick={() => removePick(i)}
+                  >
+                    &times;
+                  </button>
+                  <button
+                    type="button"
+                    className="drag-grip"
+                    aria-label={`Drag ${info.title} to another slot`}
+                    onPointerDown={onGripDown(i)}
+                    onPointerMove={onGripMove}
+                    onPointerUp={onGripUp}
+                    onPointerCancel={() => {
+                      dragStart.current = null;
+                      setDrag(null);
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                      <circle cx="5" cy="3" r="1.5" fill="currentColor" />
+                      <circle cx="11" cy="3" r="1.5" fill="currentColor" />
+                      <circle cx="5" cy="8" r="1.5" fill="currentColor" />
+                      <circle cx="11" cy="8" r="1.5" fill="currentColor" />
+                      <circle cx="5" cy="13" r="1.5" fill="currentColor" />
+                      <circle cx="11" cy="13" r="1.5" fill="currentColor" />
+                    </svg>
+                  </button>
+                </span>
               </div>
             );
           })}

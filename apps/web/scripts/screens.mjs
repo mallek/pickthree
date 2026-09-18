@@ -265,8 +265,8 @@ console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.search');
 // Earlier steps may have left picks in Build; start from empty slots.
-while (await page.$('.slot-x')) {
-  await page.click('.slot-x');
+while (await page.$('.pick-x')) {
+  await page.click('.pick-x');
   await new Promise((r) => setTimeout(r, 100));
 }
 const buildQueries = [
@@ -299,7 +299,7 @@ for (let i = 0; i < buildQueries.length; i++) {
 }
 await shot('13-build', false);
 // Drag the first card's grip onto the third slot: the order changes and becomes "Keep my order".
-const namesBefore = await page.$$eval('.pick-card.filled .spec-name', (els) =>
+const namesBefore = await page.$$eval('.pick-card.filled .pick-name', (els) =>
   els.map((e) => e.firstChild?.textContent?.trim() ?? ''),
 );
 const grips = await page.$$('.drag-grip');
@@ -311,12 +311,12 @@ await page.mouse.move(fromBox.x + fromBox.width / 2, toCard.y + toCard.height / 
 await page.mouse.up();
 await page.waitForFunction(
   (first) =>
-    document.querySelector('.pick-card.filled .spec-name')?.firstChild?.textContent?.trim() !==
+    document.querySelector('.pick-card.filled .pick-name')?.firstChild?.textContent?.trim() !==
     first,
   { timeout: 5_000 },
   namesBefore[0],
 );
-const namesAfter = await page.$$eval('.pick-card.filled .spec-name', (els) =>
+const namesAfter = await page.$$eval('.pick-card.filled .pick-name', (els) =>
   els.map((e) => e.firstChild?.textContent?.trim() ?? ''),
 );
 if (namesAfter[2] !== namesBefore[0]) {
@@ -346,8 +346,8 @@ await shot('14-custom-team');
 
 console.log('build with a species PvPoke does not rank');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.slot-x');
-await page.click('.slot-x');
+await page.waitForSelector('.pick-x');
+await page.click('.pick-x');
 await page.click('.search', { clickCount: 3 });
 await page.type('.search', 'magikarp');
 await page.waitForSelector('.recent-token', { timeout: 15_000 });

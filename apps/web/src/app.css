@@ -1411,43 +1411,111 @@ textarea.paste {
   width: 100%;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
   text-align: left;
-  padding: 12px 40px 12px 12px;
+  padding: 12px 52px 12px 12px;
   border-radius: var(--r-xl);
   background: var(--surface);
   border: 1px solid transparent;
   color: var(--text);
   font: inherit;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.pick-card.filled {
+  /* A wash of the first type's colour from the left, fading into the card. */
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--c1) 18%, transparent), transparent 46%),
+    var(--surface);
+  box-shadow: inset 3px 0 0 var(--c1);
 }
 .pick-card.empty {
   background: transparent;
   border: 1px dashed var(--divider);
   cursor: default;
   padding-right: 12px;
+  min-height: 72px;
+}
+.pick-token {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.pick-role-pill {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  white-space: nowrap;
 }
 .pick-card-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 7px;
   min-width: 0;
 }
-.move-chips {
+.pick-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.drag-grip {
+.pick-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+.pick-kv {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.pick-k {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.pick-v b {
+  font-weight: 600;
+}
+/* Remove at the top, drag grip beneath, in one column on the card's right edge. */
+.pick-side {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-left: 1px solid var(--divider);
+}
+.pick-x {
   width: 28px;
   height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--divider);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.drag-grip {
+  width: 32px;
+  flex: 1;
   border: 0;
-  border-radius: var(--r-sm);
   background: transparent;
   color: var(--faint);
   display: grid;
@@ -1461,6 +1529,12 @@ textarea.paste {
 .slot-wrap.drop-target .pick-card,
 .pick-card.empty.drop-target {
   border-color: var(--accent);
+}
+.move-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
 }
 .move-chip {
   padding: 1px 7px;
