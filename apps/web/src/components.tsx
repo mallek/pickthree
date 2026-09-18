@@ -23,6 +23,8 @@ import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
 
+export { Term } from '@pickthree/ui';
+
 export function useSpecies(): (id: string) => SpeciesLite | undefined {
   const { data } = useAppState();
   return (id: string) => data?.species[id];
@@ -527,23 +529,6 @@ export function Chip({
     <button type="button" className={`chip${on ? ' on' : ''}`} onClick={onClick}>
       {children}
     </button>
-  );
-}
-
-export function Term({ term, children }: { term: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <span className="term-wrap">
-      <button
-        type="button"
-        className="term"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        {term}
-      </button>
-      {open ? <span className="term-tip">{children}</span> : null}
-    </span>
   );
 }
 

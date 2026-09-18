@@ -16,6 +16,8 @@ import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
 import type { ThemeChoice } from './theme.js';
 
+export { Term } from '@pickthree/ui';
+
 const TYPES: readonly string[] = [
   'normal',
   'fire',
@@ -560,28 +562,6 @@ export function Select<T extends string>({ options, value, onChange, label }: Ch
         <Chevron dir="down" />
       </span>
     </label>
-  );
-}
-
-/** A3: a tap-to-reveal note, ported from pick3's own `Term` (apps/web/src/components.tsx):
- * `term` is the short label always on screen, `children` the fuller explanation shown only once
- * tapped. Teams uses this for the confidence key (few/some/many's exact thresholds) so the list
- * itself is not preceded by a standing line of numbers that only matters to a reader who does not
- * already trust the badge on each card. */
-export function Term({ term, children }: { term: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <span className="term-wrap">
-      <button
-        type="button"
-        className="term"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        {term}
-      </button>
-      {open ? <span className="term-tip">{children}</span> : null}
-    </span>
   );
 }
 

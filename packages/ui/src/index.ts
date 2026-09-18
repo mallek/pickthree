@@ -1,1 +1,1 @@
-export {};
+export { Term } from './components/Term.tsx';
