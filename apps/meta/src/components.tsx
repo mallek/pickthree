@@ -117,29 +117,6 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
   );
 }
 
-/** A short overlapping row of sprites, such as a team's three members. One accessible name for
- * the group rather than three alt texts running together; the individual images are hidden from
- * assistive tech so they are not announced twice. */
-export function SpriteStack({ species, size }: { species: SpeciesLite[]; size?: number }) {
-  const label = species.map((s) => s.name).join(', ');
-  return (
-    <span role="img" aria-label={label}>
-      {species.map((s, i) => (
-        <span
-          key={`${s.id}-${i}`}
-          aria-hidden="true"
-          style={{
-            display: 'inline-block',
-            marginRight: i < species.length - 1 ? -6 : 0,
-          }}
-        >
-          <Sprite species={s} {...(size === undefined ? {} : { size })} />
-        </span>
-      ))}
-    </span>
-  );
-}
-
 /** One solid, uppercase pill (`.type-tag`): background from the type's paint, foreground chosen
  * so the label always reads against it. `type` picks the colour; `label` is the text, which need
  * not be the type's own name (Species.tsx's `MoveTag` uses this for a move, tinted by the move's
@@ -348,17 +325,14 @@ export function Note({
   );
 }
 
-/** How much a sample is worth trusting, said in a word, not just a colour: colour alone is not
- * an accessible way to carry meaning. The dot itself is a fixed, non-per-item colour (one of
- * exactly three tones), so it is a CSS class and modifier rather than an inline style. */
-export function ConfidenceDot({ n }: { n: number }) {
+/** C3: how much a sample is worth trusting, said in a word inside a small pick3-style tag
+ * (`.tag`, ported from apps/web/src/app.css) next to a win rate, replacing the former dot-plus-
+ * word (`ConfidenceDot`). The tag's own tone (one of exactly three fixed ones, so a CSS modifier
+ * rather than an inline colour) still is not the only carrier of the meaning: the word itself is
+ * the tag's text content, not a separate aria-label, so colour alone never has to carry it. */
+export function ConfidenceTag({ n }: { n: number }) {
   const c = confidence(n);
-  return (
-    <span>
-      <span className={`conf-dot conf-${c}`} aria-hidden="true" />
-      {c}
-    </span>
-  );
+  return <span className={`tag tag-${c}`}>{c}</span>;
 }
 
 /** The sticky per-screen header: a back link (or spacer, so the title stays centred) on the

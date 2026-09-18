@@ -493,25 +493,34 @@ a.row {
   font-weight: 800;
 }
 
-/* ConfidenceDot: exactly three fixed tones, so modifiers rather than an inline colour. */
-.conf-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 4px;
+/* C3: the confidence badge, ConfidenceTag's small pill next to a win rate, pick3's own `.tag`
+   shape (apps/web/src/app.css). pick3 styles `.tag` only inside the parent that uses it
+   (`.pick-moves .tag`, `.recent-token .tag`); this is the same convention, one shape reused by
+   three fixed-tone modifiers rather than an inline colour, same three tones the dot it replaces
+   used. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.conf-dot.conf-few {
-  background: var(--muted);
+.tag-few {
+  background: var(--surface2);
+  color: var(--muted);
 }
 
-.conf-dot.conf-some {
-  background: var(--warn);
+.tag-some {
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+  color: var(--warn);
 }
 
-.conf-dot.conf-many {
-  background: var(--up);
+.tag-many {
+  background: color-mix(in srgb, var(--up) 16%, transparent);
+  color: var(--up);
 }
 
 /* A3: the tap-to-reveal note (`Term`), ported from pick3's own `.term-wrap`/`.term`/`.term-tip`
@@ -554,6 +563,74 @@ a.row {
   background: var(--muted);
 }
 
+/* C1/C2: the team card, ported from pick3's own .team-card/.slots3/.slot/.slot-name/.cost-line/
+   .team-details (apps/web/src/app.css) so a shared team reads the same shape on both sites.
+   pick3's own card is a div (it only loads local state on tap); this one is a real <a> straight
+   to the pick3 deep link, since tapping it here means leaving the site. The foot affordance
+   stays plain text rather than a second <a>, so a link never nests inside this outer one and
+   there is exactly one focusable element per card. */
+.team-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.team-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .team-card:hover {
+    background: var(--surface2);
+  }
+}
+
+.slots3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.slot-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.cost-line {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.team-details {
+  color: var(--accent);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 /* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small
    (apps/web/src/app.css): the share (or, below the measured threshold, the sighting count) as
    the big number, the record as a small muted line under it. */
@@ -575,8 +652,8 @@ a.row {
   white-space: nowrap;
 }
 
-/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, like ConfidenceDot
-   above: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a neutral
+/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, like ConfidenceTag's
+   `.tag-*` modifiers above: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a neutral
    or zero one, so there is no third modifier here. */
 .trend-tag {
   display: inline-flex;

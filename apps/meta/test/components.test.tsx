@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   Bar,
   Chips,
-  ConfidenceDot,
+  ConfidenceTag,
   LEAGUE_COLORS,
   LeagueShield,
   LeagueSwitcher,
@@ -12,7 +12,6 @@ import {
   SitePill,
   Sparkline,
   Sprite,
-  SpriteStack,
   Term,
   TrendTag,
   TypeChip,
@@ -126,15 +125,6 @@ describe('Sprite', () => {
       expect(container.querySelector('img')).not.toBeNull();
       expect(screen.getByRole('img', { name: 'Clodsire' })).toBeInTheDocument();
     });
-  });
-});
-
-describe('SpriteStack', () => {
-  it('gives the group one accessible name and hides the individual sprites from it', () => {
-    render(<SpriteStack species={[azumarill, clodsire]} />);
-    expect(screen.getByRole('img', { name: 'Azumarill, Clodsire' })).toBeInTheDocument();
-    expect(screen.queryByRole('img', { name: 'Azumarill' })).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Clodsire' })).toBeNull();
   });
 });
 
@@ -267,10 +257,11 @@ describe('Sparkline', () => {
   });
 });
 
-describe('ConfidenceDot', () => {
-  it('says how much to trust a sample in words, not just colour', () => {
-    render(<ConfidenceDot n={12} />);
-    expect(screen.getByText('few')).toBeInTheDocument();
+describe('ConfidenceTag', () => {
+  it('says how much to trust a sample in words, in a small pick3-style tag', () => {
+    render(<ConfidenceTag n={12} />);
+    const tag = screen.getByText('few');
+    expect(tag).toHaveClass('tag', 'tag-few');
   });
 });
 
