@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
   Bar,
+  Chips,
   ConfidenceDot,
   LEAGUE_COLORS,
   LeagueShield,
@@ -12,6 +13,7 @@ import {
   Sparkline,
   Sprite,
   SpriteStack,
+  Term,
   TrendTag,
   TypeChip,
   TypeChips,
@@ -321,5 +323,39 @@ describe('Pills', () => {
     );
     await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
     expect(onChange).toHaveBeenCalledWith('ace');
+  });
+});
+
+// A5: same radiogroup contract as Pills, a different (scrolling) container class.
+describe('Chips', () => {
+  it('is a radiogroup of real buttons, same as Pills', async () => {
+    const onChange = vi.fn();
+    render(
+      <Chips
+        label="Rank band"
+        value="all"
+        onChange={onChange}
+        options={[
+          { value: 'all', label: 'All ranks' },
+          { value: 'ace', label: 'Ace' },
+        ]}
+      />,
+    );
+    const group = screen.getByRole('radiogroup', { name: 'Rank band' });
+    expect(group).toHaveClass('chips');
+    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    expect(onChange).toHaveBeenCalledWith('ace');
+  });
+});
+
+describe('Term', () => {
+  it('reveals its body only once tapped', async () => {
+    render(<Term term="What this means">The fuller explanation.</Term>);
+    expect(screen.queryByText('The fuller explanation.')).toBeNull();
+    const opener = screen.getByRole('button', { name: 'What this means' });
+    expect(opener).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(opener);
+    expect(screen.getByText('The fuller explanation.')).toBeInTheDocument();
+    expect(opener).toHaveAttribute('aria-expanded', 'true');
   });
 });

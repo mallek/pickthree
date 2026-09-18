@@ -80,6 +80,20 @@ describe('Overview, with almost no data', () => {
     // With nothing measured, the rule has nothing to say and must not render at all.
     expect(screen.queryByText(/or more times/)).toBeNull();
   });
+
+  // E: "Only 0 Great League battles have been shared in this window" used to say zero battles
+  // the same way it said any other small count. Zero is not a small number here, it is none.
+  it('says none were shared yet, not "only 0", when the league has had zero', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText(
+        'No Great League battles shared in this window yet. The ranked list below is ' +
+          "PvPoke's meta group, not measured play. What we have measured is under it, with its " +
+          'counts.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Only 0/)).toBeNull();
+  });
 });
 
 // rank.ts (current code, not the brief) splits the below-threshold reason into 'battles' and
@@ -118,9 +132,10 @@ describe('Overview, with enough data', () => {
   it('leads with the measured list and says what it is measured from', async () => {
     render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
     expect(await screen.findByRole('heading', { name: 'Most faced' })).toBeInTheDocument();
-    expect(
-      screen.getByText('Measured from 1,000 battles shared by 120 devices.'),
-    ).toBeInTheDocument();
+    // A3: this used to be the first of two paragraphs of definitions above the first row; the
+    // definitions moved to About's "How to read the lists", and this one line (numbers live) is
+    // what is left.
+    expect(screen.getByText('From 1,000 battles shared by 120 devices.')).toBeInTheDocument();
   });
 
   it('shows shares, records and a trend', async () => {

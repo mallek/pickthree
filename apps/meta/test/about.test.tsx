@@ -73,6 +73,17 @@ describe('About', () => {
     ).toBeInTheDocument();
   });
 
+  // A3: these definitions used to sit above every visit to Overview's measured list; they moved
+  // here so Overview can lead with one line of live numbers instead.
+  it('defines faced, record and trend for a reader who wants to know', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText(/Faced is the share of a window's shared battles/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Record is how the reporters/)).toBeInTheDocument();
+    expect(screen.getByText(/Trend is the change in a Pokemon's share/)).toBeInTheDocument();
+  });
+
   it('does not promise an api that does not exist yet', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByText('Planned')).toBeInTheDocument();
@@ -91,6 +102,7 @@ describe('About', () => {
       'Never collected',
       'How to contribute',
       'For other apps',
+      'How to read the lists',
       'How the lists are built',
     ]) {
       expect(await screen.findByRole('heading', { name })).toBeInTheDocument();

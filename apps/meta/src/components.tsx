@@ -547,6 +547,37 @@ export function Pills<T extends string>(p: ChoiceProps<T>) {
   return <ChoiceGroup className="pills" {...p} />;
 }
 
+/** A5: a horizontally scrolling row, pick3's own `.chips` shape (apps/web/src/app.css), for a
+ * choice with too many options to fit one line at phone width without wrapping (the rank band:
+ * All ranks, Below Ace, Ace, Veteran, Expert, Legend). Built on the same `ChoiceGroup` as `Pills`
+ * above (still a real radiogroup of real buttons, one aria-checked at a time) so the two controls
+ * share every behaviour and differ only in how the row overflows. */
+export function Chips<T extends string>(p: ChoiceProps<T>) {
+  return <ChoiceGroup className="chips" {...p} />;
+}
+
+/** A3: a tap-to-reveal note, ported from pick3's own `Term` (apps/web/src/components.tsx):
+ * `term` is the short label always on screen, `children` the fuller explanation shown only once
+ * tapped. Teams uses this for the confidence key (few/some/many's exact thresholds) so the list
+ * itself is not preceded by a standing line of numbers that only matters to a reader who does not
+ * already trust the badge on each card. */
+export function Term({ term, children }: { term: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="term-wrap">
+      <button
+        type="button"
+        className="term"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        {term}
+      </button>
+      {open ? <span className="term-tip">{children}</span> : null}
+    </span>
+  );
+}
+
 /** Game colours for the three open leagues, kept byte-identical to pick3's own
  * apps/web/src/components/LeagueSwitcher.tsx: these are the game's own league colours, brand
  * rather than this site's theme, so they are not swapped for anything in `tokens.css`. */

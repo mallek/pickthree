@@ -200,14 +200,13 @@ a {
   flex: none;
 }
 
-/* One filter row (docs/design/meta/meta.pick3.gg.dc.html, screen 1a): the window pills at their
-   natural width on the left, the rank band select pushed to the far right. `.pills` still wraps
-   internally on a narrow screen (its own flex-wrap below); this row does not need to, since the
-   select is a single fixed-size control rather than a set that could itself overflow. */
+/* A5: the window pills, at their own natural width, on their own row. The rank band used to
+   share this row as a select pushed to the far right; it is a second row of its own now (the
+   `.chips` row just below), so this row no longer needs `justify-content` to split two controls
+   apart, only to hold the one. */
 .filter-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 
@@ -249,51 +248,49 @@ a {
   color: var(--text);
 }
 
-/* The rank-band control: a native <select>, not a custom menu, so a phone gets its own picker
-   for free, with keyboard support and no menu code here, and six wrapped pills collapse into
-   one target. A select ignores an author `background` on some platforms until its native
-   appearance is turned off first, so that is explicit rather than assumed to just work. */
-.select-wrap {
-  position: relative;
-  display: inline-flex;
+/* A5: the rank band, ported from pick3's own scrolling `.chips` row (apps/web/src/app.css)
+   rather than the wrapping `.pills` above: six options do not fit one line at phone width, and
+   wrapping them would need the same row-gap-vs-hit-area treatment `.pills` already carries for a
+   shorter list, for no benefit over letting the row scroll sideways instead. The horizontal
+   overflow lives on this row alone, never on `html` or `body` (that would drag the fixed tab bar
+   sideways on iOS), and `.app`'s own `overflow-x: clip` still contains it if a chip's focus ring
+   or hit-area ever nudged the row a pixel past its own edge. */
+.chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Bleeds to .app's own 16px side padding, the same trick pick3's .chips uses for its 20px, so
+     the row's edge chips sit flush with everything above and below them instead of stopping
+     short, and the cut-off chip past the fold is the visual cue that the row keeps going. */
+  margin: 0 -16px;
+  padding: 0 16px 6px;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* Painted height is 40px directly (not the 30px-plus-hit-area trick `.pills` uses): a chip on
+   this row has no neighbour above or below it to protect from an overlapping touch target, since
+   the row never wraps, so there is nothing an invisible `::after` overhang would need to clear. */
+.chips > * {
   flex: none;
-}
-
-.band-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
   min-height: 40px;
-  padding: 0 30px 0 14px;
+  padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
 }
 
-.band-select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* A CSS-drawn chevron, not the design mock's own glyph: this site's rendered text is strict
-   7-bit ASCII, and a <select> cannot reliably host a ::after of its own across browsers, so the
-   arrow lives on the wrapping span instead. `pointer-events: none` keeps it from ever catching a
-   tap that was meant for the control underneath it. */
-.select-wrap::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 13px;
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid var(--muted);
-  border-bottom: 1.5px solid var(--muted);
-  transform: translateY(-65%) rotate(45deg);
-  pointer-events: none;
+.chips > .on {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 /* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
@@ -515,6 +512,35 @@ a.row {
 
 .conf-dot.conf-many {
   background: var(--up);
+}
+
+/* A3: the tap-to-reveal note (`Term`), ported from pick3's own `.term-wrap`/`.term`/`.term-tip`
+   (apps/web/src/app.css). pick3's tip background is its own `--accent-tint`; this site has no
+   such token (see the `.league-switcher` comment above for the same substitution), so `--surface2`
+   stands in for it here too. */
+.term-wrap {
+  position: relative;
+  display: inline;
+}
+
+.term {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted var(--accent);
+  text-underline-offset: 3px;
+}
+
+.term-tip {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 12px;
 }
 
 .bar > span {
@@ -783,6 +809,7 @@ button,
 select,
 .league-switcher button,
 .pills > *,
+.chips > *,
 .row {
   -webkit-tap-highlight-color: transparent;
 }
@@ -790,6 +817,7 @@ select,
 a:focus-visible,
 button:focus-visible,
 .pills > *:focus-visible,
+.chips > *:focus-visible,
 .row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -797,6 +825,7 @@ button:focus-visible,
 
 @media (hover: hover) {
   .pills > *:hover,
+  .chips > *:hover,
   .row:hover {
     background: var(--surface2);
   }

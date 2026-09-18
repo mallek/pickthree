@@ -11,7 +11,7 @@
  */
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, TeamStats } from '../api.js';
-import { ConfidenceDot, Chevron, SpriteStack } from '../components.js';
+import { ConfidenceDot, Chevron, SpriteStack, Term } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count } from '../format.js';
 import { teamLink, type LinkMember } from '../links.js';
@@ -100,9 +100,16 @@ export function Teams(p: {
             already say which league and window, so this is a plain left-aligned heading now,
             the same job pick3's own screens give a bare `h2`. */}
         <h2>Most run teams</h2>
+        {/* A3: this was a standing line of thresholds ("few under 30, some 30 to 300, many 300
+         * or more") ahead of every card. Each card already names its own confidence in a word
+         * (ConfidenceDot); the exact cut points are reference material for a reader who wants
+         * them, not something everyone needs to read past to reach the first team, so they move
+         * behind a tap rather than staying printed above the list. */}
         <p className="fine">
-          Confidence: few under {count(SOME)}, some {count(SOME)} to {count(MANY)}, many{' '}
-          {count(MANY)} or more, counted on decided battles.
+          <Term term="What few, some and many mean">
+            Few is under {count(SOME)} decided battles, some is {count(SOME)} to {count(MANY)},
+            many is {count(MANY)} or more.
+          </Term>
         </p>
         {teams.length === 0 ? (
           <>

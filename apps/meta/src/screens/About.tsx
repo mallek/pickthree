@@ -178,6 +178,22 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         </p>
       </section>
 
+      {/* A3: Overview used to carry these three definitions as prose above its own list, on
+       * every visit, whether or not the reader had ever wondered what the words meant. They live
+       * here now, once, and Overview links nowhere to them (the words are common enough to read
+       * in place without a footnote) but a curious reader knows where the site's glossary is:
+       * this page. */}
+      <section className="card">
+        <h2>How to read the lists</h2>
+        <p className="sub">
+          Faced is the share of a window&apos;s shared battles where a Pokemon was on the other
+          side. Record is how the reporters who shared those battles did against it, or, when
+          you pick a rank band, how that band&apos;s reporters did. Trend is the change in a
+          Pokemon&apos;s share since the window before this one; it is only shown when there is
+          enough data in both windows to trust the difference (the thresholds are below).
+        </p>
+      </section>
+
       <section className="card">
         <h2>How the lists are built</h2>
         <p className="sub">

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
@@ -79,13 +80,21 @@ describe('Teams', () => {
 
   // Fix round 3 ("FIX 5"): the confidence legend used to spell out 30 and 300 as literals,
   // which could drift from stats.ts's SOME and MANY without anything catching it.
-  it('states the confidence legend from the real thresholds', async () => {
+  //
+  // A3: the legend moved behind a tap (Term) instead of standing above the list as its own line,
+  // so this now opens it first, the same way a reader would.
+  it('states the confidence legend from the real thresholds, once opened', async () => {
     render(
       <App deps={{ fetcher: stubFetch({ meta: { battles: 1500, devices: 90, teams } }), now }} />,
     );
+    const opener = await screen.findByRole('button', { name: 'What few, some and many mean' });
     expect(
-      await screen.findByText(
-        `Confidence: few under ${count(SOME)}, some ${count(SOME)} to ${count(MANY)}, many ${count(MANY)} or more, counted on decided battles.`,
+      screen.queryByText(new RegExp(`some is ${count(SOME)} to ${count(MANY)}`)),
+    ).toBeNull();
+    await userEvent.click(opener);
+    expect(
+      screen.getByText(
+        `Few is under ${count(SOME)} decided battles, some is ${count(SOME)} to ${count(MANY)}, many is ${count(MANY)} or more.`,
       ),
     ).toBeInTheDocument();
   });
