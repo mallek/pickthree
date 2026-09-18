@@ -47,18 +47,6 @@ describe('shared team link', () => {
     expect(screen.getByRole('button', { name: 'Open in Build' })).toBeInTheDocument();
   });
 
-  it('carries a pill to meta.pick3.gg in the header', async () => {
-    const analyze = vi.fn();
-    render(
-      <AppProvider host={fakeHost({ analyze })}>
-        <SharedTeam league="great" members="azumarill+tinkaton+clodsire" />
-      </AppProvider>,
-    );
-    expect(
-      await screen.findByRole('link', { name: 'meta, the community meta' }),
-    ).toHaveAttribute('href', 'https://meta.pick3.gg');
-  });
-
   it('explains a link with a Pokemon pick3 does not know', async () => {
     const analyze = vi.fn();
     render(

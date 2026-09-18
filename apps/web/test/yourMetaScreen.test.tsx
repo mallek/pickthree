@@ -77,6 +77,17 @@ describe('Your meta screen', () => {
     ).toHaveAttribute('href', 'https://meta.pick3.gg');
   });
 
+  it('carries the meta.pick3.gg pill in its page head, next to the cog', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <YourMeta />
+      </AppProvider>,
+    );
+    expect(
+      await screen.findByRole('link', { name: 'meta, the community meta' }),
+    ).toHaveAttribute('href', 'https://meta.pick3.gg');
+  });
+
   it('offers a new set when nothing is open', async () => {
     render(
       <AppProvider host={fakeHost()}>

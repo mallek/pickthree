@@ -1650,35 +1650,27 @@ textarea.paste {
   gap: 4px;
 }
 
-/* The pill naming the sister site, meta.pick3.gg. Same shape as meta's own header pill
-   (apps/meta/src/app.css's .site-pill), drawn from this app's own tokens. Icon-only (see
-   components.tsx's SitePill for why); still at least 40px in its short dimension for a
-   comfortable tap target. */
+/* The pill naming the sister site, meta.pick3.gg: on the four tab-root screens' page-head row,
+   before the cog (Teams.tsx, Counters.tsx, Collection.tsx, YourMeta.tsx), where there is room for
+   its visible label. Same shape as meta's own header pill (apps/meta/src/app.css's .site-pill),
+   drawn from this app's own tokens; the glyph is pick3's own ink, not meta's violet (see
+   components.tsx's MetaGlyph for why). At least 40px in its short dimension for a comfortable
+   tap target. */
 .site-pill {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 40px;
+  gap: 6px;
   min-height: 40px;
-  padding: 0 8px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--divider);
   background: var(--surface2);
-  flex: none;
-}
-
-/* Visually hidden but present for assistive tech: an off-screen clip rather than display:none,
-   which screen readers skip. */
-.vh {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
-  border: 0;
+  text-decoration: none;
+  flex: none;
 }
 
 /* matchup grid, opponents as rows */

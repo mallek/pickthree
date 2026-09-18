@@ -50,6 +50,18 @@ describe('Counters screen, league from a link', () => {
       .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
   });
 
+  it('carries the meta.pick3.gg pill in its page head, next to the cog', async () => {
+    const host = await twoLeagueHost();
+    render(
+      <AppProvider host={host}>
+        <Counters />
+      </AppProvider>,
+    );
+    expect(
+      await screen.findByRole('link', { name: 'meta, the community meta' }),
+    ).toHaveAttribute('href', 'https://meta.pick3.gg');
+  });
+
   it('switches to the league a meta.pick3.gg link names, then scores counters in it', async () => {
     window.location.hash = '#/counters?vs=medicham&l=ultra';
     const host = await twoLeagueHost();

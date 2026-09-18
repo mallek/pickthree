@@ -8,7 +8,15 @@ import {
   type TeamRecord,
 } from '@pickthree/engine';
 import { useMemo, useState } from 'react';
-import { HeadCog, PokemonToken, Seg, useLogCount, useName, useSticky } from '../components.tsx';
+import {
+  HeadCog,
+  PokemonToken,
+  Seg,
+  SitePill,
+  useLogCount,
+  useName,
+  useSticky,
+} from '../components.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { dateLabel } from '../format.ts';
 import { shareLink } from '../share.ts';
@@ -241,7 +249,10 @@ export function YourMeta() {
       <div className="page-head">
         <div className="between">
           <h2>Your Meta</h2>
-          <HeadCog />
+          <span className="row">
+            <SitePill />
+            <HeadCog />
+          </span>
         </div>
         <LeagueSwitcher compact />
         <p className="log-status meta" style={{ margin: 0 }}>

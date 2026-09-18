@@ -296,21 +296,51 @@ export function Mark({ height = 22 }: { height?: number }) {
 
 const META = 'https://meta.pick3.gg';
 
-/** The pill naming the sister site, meta.pick3.gg: same shape, same mark and the same placement
- * logic as meta's own header pill (apps/meta/src/components.tsx's `SitePill`), so the two headers
- * rhyme. Drawn from this app's own tokens rather than meta's palette.
- *
- * The header's right column already carries the settings cog and, on one screen, a share button;
- * at 390px there is no room left for a text label without crowding them (the app is mobile-first
- * and that width is the one every screen actually ships at), so this renders the mark alone. The
- * label survives for assistive tech as a visually-hidden span rather than an aria-label, so the
- * accessible name is built the same way most links on this site get theirs: `Mark` already
- * carries its own aria-hidden, so the name is never doubled. */
-export function SitePill() {
+/** Three ascending bars, suggesting rankings: the glyph for the `SitePill` below. Not the pick3
+ * mark. On pick3's own header the pick3 mark means "home", so wearing it on a link that leaves
+ * would read backwards; a destination badge should depict the destination, not the app it sits
+ * in. Drawn in `currentColor` at the same stroke weight as this app's other line icons
+ * (ShareButton, HeadCog: 1.8, round caps and joins), so it takes pick3's own ink rather than
+ * meta's violet and looks native here. */
+function MetaGlyph() {
   return (
-    <a className="site-pill" href={META}>
-      <Mark height={16} />
-      <span className="vh">meta, the community meta</span>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 18v-4" />
+      <path d="M12 18V10" />
+      <path d="M18 18V6" />
+    </svg>
+  );
+}
+
+/** The pill naming the sister site, meta.pick3.gg: same shape, size and placement logic as meta's
+ * own header pill (apps/meta/src/components.tsx's `SitePill`), so the two headers rhyme through
+ * shape and placement, not through a shared glyph (see `MetaGlyph`). Sits on the four tab-root
+ * screens' page-head row, before the cog, where there is room for a visible label; it does not
+ * live in the shared `Header` used by the back-button screens, which are already tight.
+ *
+ * The visible label is "meta"; the accessible name is the fuller "meta, the community meta",
+ * since a bare "meta" read aloud names nothing. The glyph carries its own aria-hidden and the
+ * label is hidden from assistive tech too, so aria-label is the one source of the name.
+ *
+ * `compact` drops the visible label, same fallback as before, but now justified per screen
+ * rather than applied everywhere: Collection's row already carries a count and a "+ Add" button,
+ * and at 390px a fourth item pushes the count text into a three-line wrap. Every other tab-root
+ * screen has room for the full pill. */
+export function SitePill({ compact = false }: { compact?: boolean } = {}) {
+  return (
+    <a className="site-pill" href={META} aria-label="meta, the community meta">
+      <MetaGlyph />
+      {compact ? null : <span aria-hidden="true">meta</span>}
     </a>
   );
 }
@@ -610,11 +640,14 @@ export function Header({
         <span>{title}</span>
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
-      <span className="row hdr-actions">
-        <SitePill />
-        {action}
-        {cog ? <HeadCog /> : null}
-      </span>
+      {action || cog ? (
+        <span className="row hdr-actions">
+          {action}
+          {cog ? <HeadCog /> : null}
+        </span>
+      ) : (
+        <span className="back-spacer" />
+      )}
       {extra ? <div className="hdr-extra">{extra}</div> : null}
     </header>
   );
