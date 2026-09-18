@@ -18,6 +18,7 @@ import {
 import {
   Chip,
   Header,
+  MoveRows,
   PokemonToken,
   Progress,
   useName,
@@ -293,38 +294,26 @@ export function Build() {
     // wanted is derived from the same state wantedKeys summarises.
   }, [wantedKeys, s.boot, s.leagueInfo, pools, movePool]);
 
-  /** The moves a pick runs, as chips coloured by type, once its pool is known. */
-  const moveChips = (p: TeamPick, pool: MovePool | null) => {
+  /** The moves a pick runs as the same rows the analysis page uses, once its pool is known. */
+  const moveRows = (p: TeamPick, pool: MovePool | null) => {
     if (!pool) {
       return <span className="meta">Recommended moves</span>;
     }
     const ids = p.moves ?? pool.recommended;
-    const all = [...pool.fast, ...pool.charged];
-    const chip = (id: string, kind: 'fast' | 'charged') => {
-      const m = all.find((x) => x.moveId === id);
-      return (
-        <span
-          className={`move-chip ${kind}`}
-          key={id}
-          style={
-            m
-              ? ({ '--c': typeColor(m.type), '--t': `var(--type-${m.type}-ink)` } as CSSProperties)
-              : undefined
-          }
-        >
-          {m?.name ?? id}
-        </span>
-      );
-    };
-    // Fast move outlined, a thin divider, then the charged moves filled: the shape says which is which.
+    const fast = pool.fast.find((m) => m.moveId === ids.fast);
+    const charged = ids.charged
+      .map((id) => pool.charged.find((m) => m.moveId === id))
+      .filter((m) => m !== undefined);
+    if (!fast) {
+      return <span className="meta">{movesLine(p, pool)}</span>;
+    }
     return (
-      <span className="move-chips">
-        {chip(ids.fast, 'fast')}
-        <span className="move-sep" aria-hidden="true" />
-        <span className="move-group">{ids.charged.map((id) => chip(id, 'charged'))}</span>
-        {p.moves ? <span className="tag">changed</span> : null}
+      <span className="pick-moves">
+        <MoveRows fast={fast} charged={charged} compact />
+        {p.moves ? <span className="tag">moves changed</span> : null}
       </span>
     );
+    // The pool missing a move id falls back to the plain line above.
   };
 
   const movesLine = (p: TeamPick, pool: MovePool | null): string => {
@@ -522,24 +511,21 @@ export function Build() {
                   onClick={() => setMovesSlot(movesSlot === i ? null : i)}
                   aria-label={`${info.title} moves`}
                 >
+                  <span className="pick-role-head">{role}</span>
                   <span className="pick-token">
                     <PokemonToken speciesId={info.speciesId} size={56} />
-                    <span className="pick-role-pill">{role}</span>
+                    <b className="pick-name">{info.title}</b>
+                    <span className="pick-types">
+                      {types
+                        .filter((t) => t !== 'none')
+                        .map((t) => (
+                          <span key={t} style={{ color: `var(--type-${t}-ink)` }}>
+                            {typeLabel(t)}
+                          </span>
+                        ))}
+                    </span>
                   </span>
                   <span className="pick-card-body">
-                    <span className="pick-head">
-                      <b className="pick-name">{info.title}</b>
-                      <span className="pick-types">
-                        {types
-                          .filter((t) => t !== 'none')
-                          .map((t) => (
-                            <span key={t} style={{ color: `var(--type-${t}-ink)` }}>
-                              {typeLabel(t)}
-                            </span>
-                          ))}
-                      </span>
-                    </span>
-                    {moveChips(p, poolFor(p))}
                     <span className="pick-v">
                       {sp ? (
                         <>
@@ -554,6 +540,7 @@ export function Build() {
                       )}
                     </span>
                   </span>
+                  {moveRows(p, poolFor(p))}
                 </button>
                 <span className="pick-side">
                   <button

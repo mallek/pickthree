@@ -279,7 +279,8 @@ for (let i = 0; i < buildQueries.length; i++) {
   for (const q of buildQueries[i]) {
     // The search opens from the empty slot it will fill.
     if (!(await page.$('.search'))) {
-      await page.click('.pick-card.empty');
+      // Through the DOM: right after a pick the old slot node can detach under a geometry click.
+      await page.$eval('.pick-card.empty', (el) => el.click());
       await page.waitForSelector('.search');
     }
     await page.click('.search', { clickCount: 3 });
@@ -353,7 +354,7 @@ console.log('build with a species PvPoke does not rank');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-x');
 await page.click('.pick-x');
-await page.click('.pick-card.empty');
+await page.$eval('.pick-card.empty', (el) => el.click());
 await page.waitForSelector('.search');
 await page.type('.search', 'magikarp');
 await page.waitForSelector('.recent-token', { timeout: 15_000 });
