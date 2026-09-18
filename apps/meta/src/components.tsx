@@ -196,10 +196,27 @@ const SPARK_Y1 = 4;
 
 /** A trend line with no axes, no labels: the numbers it depicts are always printed beside it,
  * so it is aria-hidden. A single point has no line to draw, so it renders an empty svg rather
- * than a broken one. */
+ * than a broken one.
+ *
+ * `preserveAspectRatio="none"` on both returns makes the drawing stretch to fill whatever box
+ * it is given rather than the default `xMidYMid meet`, which centres a 140x40 drawing inside a
+ * wide card and leaves empty space either side (it only looked right in the design export
+ * because that card was about as narrow as the viewBox is wide). Stretching scales the stroke
+ * non-uniformly too, so the polyline pins its own width with `vectorEffect="non-scaling-stroke"`
+ * rather than smearing into a band. A circular end-point marker cannot survive that same
+ * non-uniform scale without becoming an ellipse, so there is no marker here; the value it would
+ * have marked is already printed as text under the chart by every caller. */
 export function Sparkline({ values }: { values: number[] }) {
   if (values.length < 2) {
-    return <svg viewBox="0 0 140 40" width="100%" height={40} aria-hidden="true" />;
+    return (
+      <svg
+        viewBox="0 0 140 40"
+        width="100%"
+        height={40}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      />
+    );
   }
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -213,18 +230,23 @@ export function Sparkline({ values }: { values: number[] }) {
         : SPARK_Y0 + ((v - min) / (max - min)) * (SPARK_Y1 - SPARK_Y0);
     return { x, y };
   });
-  const last = points[points.length - 1]!;
   return (
-    <svg viewBox="0 0 140 40" width="100%" height={40} aria-hidden="true">
+    <svg
+      viewBox="0 0 140 40"
+      width="100%"
+      height={40}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
       <polyline
         fill="none"
         stroke="var(--accent)"
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
         points={points.map((p) => `${p.x},${p.y}`).join(' ')}
       />
-      <circle cx={last.x} cy={last.y} r={3.5} fill="var(--accent)" />
     </svg>
   );
 }

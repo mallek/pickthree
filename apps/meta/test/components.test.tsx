@@ -158,6 +158,16 @@ describe('Sparkline', () => {
     expect(container.querySelector('polyline')).not.toBeNull();
   });
 
+  it('stretches to fill its box rather than centering a fixed-size drawing', () => {
+    const { container } = render(<Sparkline values={[1, 3, 2]} />);
+    const svg = container.querySelector('svg');
+    expect(svg).toHaveAttribute('preserveAspectRatio', 'none');
+    const line = container.querySelector('polyline');
+    // The non-uniform scale that comes with stretching would smear an unpinned stroke into a
+    // band; this keeps the drawn line thin regardless of the box it is stretched into.
+    expect(line).toHaveAttribute('vector-effect', 'non-scaling-stroke');
+  });
+
   it('draws a flat line at mid height for two identical values, not NaN coordinates', () => {
     const { container } = render(<Sparkline values={[5, 5]} />);
     const line = container.querySelector('polyline') as SVGPolylineElement;
@@ -167,8 +177,10 @@ describe('Sparkline', () => {
       .split(' ')
       .map((p) => p.split(',').map(Number));
     expect(points.every(([, y]) => y === 20)).toBe(true);
-    const circle = container.querySelector('circle');
-    expect(circle).toHaveAttribute('cy', '20');
+    // A circular end marker cannot survive the non-uniform stretch (it becomes an ellipse), so
+    // there is no circle any more; the point count is what actually matters here.
+    expect(points).toHaveLength(2);
+    expect(container.querySelector('circle')).toBeNull();
   });
 
   it('draws a flat line at mid height when every value is equal, not NaN coordinates', () => {
@@ -180,8 +192,8 @@ describe('Sparkline', () => {
       .split(' ')
       .map((p) => p.split(',').map(Number));
     expect(points.every(([, y]) => y === 20)).toBe(true);
-    const circle = container.querySelector('circle');
-    expect(circle).toHaveAttribute('cy', '20');
+    expect(points).toHaveLength(3);
+    expect(container.querySelector('circle')).toBeNull();
   });
 });
 
