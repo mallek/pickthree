@@ -17,7 +17,7 @@ type Own = 'all' | 'have' | 'build';
 
 export function Counters() {
   const s = useAppState();
-  const { loadCounters, navigate, setPick } = useActions();
+  const { loadCounters, navigate, setPick, setLeague } = useActions();
   const league = useLeague();
   const name = useName();
   const species = useSpecies();
@@ -25,14 +25,28 @@ export function Counters() {
   const [radar, setRadar] = useState(false);
   /** Species to score against instead of the whole meta, from the Your meta most-faced rows. */
   const vs = s.route.screen === 'counters' ? (s.route.vs ?? null) : null;
+  /** League named on a link from meta.pick3.gg; the app's own links never carry one. */
+  const routeLeague = s.route.screen === 'counters' ? (s.route.league ?? null) : null;
+  const knownRouteLeague =
+    routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
   const stale = s.counters === null || s.countersVs !== vs;
 
-  // The collection only marks what you own; the meta itself needs no import.
+  // Switch to the league the link named. An unknown league id is ignored silently: the link
+  // still works, in whatever league the reader was already in.
   useEffect(() => {
-    if (s.boot === 'ready' && s.leagueInfo && stale && !s.countersLoading) {
+    if (knownRouteLeague && routeLeague && (s.settings.league ?? 'great') !== routeLeague) {
+      setLeague(routeLeague);
+    }
+  }, [knownRouteLeague, routeLeague, s.settings.league, setLeague]);
+
+  // The collection only marks what you own; the meta itself needs no import. While a known
+  // route league has not caught up in leagueInfo yet, hold off so the scores that load match it.
+  const switchingLeague = knownRouteLeague && s.leagueInfo?.id !== routeLeague;
+  useEffect(() => {
+    if (s.boot === 'ready' && s.leagueInfo && stale && !s.countersLoading && !switchingLeague) {
       void loadCounters(vs);
     }
-  }, [s.boot, s.leagueInfo, stale, s.countersLoading, loadCounters, vs]);
+  }, [s.boot, s.leagueInfo, stale, s.countersLoading, loadCounters, vs, switchingLeague]);
 
   const counters = stale ? null : s.counters;
   let rows: CounterEntry[] = counters?.entries ?? [];
