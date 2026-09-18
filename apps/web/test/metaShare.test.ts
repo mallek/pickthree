@@ -21,7 +21,15 @@ const sets: BattleSet[] = [
     id: 's1',
     league: 'great',
     startedAt: '2026-09-15T10:00:00Z',
-    team: { species: ['tinkaton', 'azumarill', 'clodsire'], specimenIds: ['a', 'b', 'c'] },
+    team: {
+      species: ['tinkaton', 'azumarill', 'clodsire'],
+      specimenIds: ['a', 'b', 'c'],
+      moves: [
+        { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER', 'BULLDOZE'] },
+        null,
+        { fast: 'POISON_STING', charged: ['EARTHQUAKE'] },
+      ],
+    },
     battles: [
       {
         id: 'b1',
@@ -72,6 +80,11 @@ describe('community meta sharing', () => {
       season: 28,
       at: '2026-09-15T10:05:00Z',
       team: ['tinkaton', 'azumarill', 'clodsire'],
+      moves: [
+        { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER', 'BULLDOZE'] },
+        null,
+        { fast: 'POISON_STING', charged: ['EARTHQUAKE'] },
+      ],
       opponents: ['medicham'],
       result: 'win',
       tanked: false,

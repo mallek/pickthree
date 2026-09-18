@@ -1,5 +1,11 @@
 import { buildOptionsFor, buildsFor, type BuildOptions } from '../builds/eligibility.js';
-import { movePool, rankingsById, recommendMoveset, type MoveChoice } from '../builds/moves.js';
+import {
+  movePool,
+  movesetFrom,
+  rankingsById,
+  recommendMoveset,
+  type MoveChoice,
+} from '../builds/moves.js';
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
 import { simOptionsFor } from '../gamedata/league.js';
@@ -127,13 +133,23 @@ export function faceoff(
     const build = specimen
       ? buildsFor(specimen, index, opts).find((b) => b.speciesId === speciesId)
       : undefined;
-    const moveset = recommendMoveset(
-      speciesId,
-      overall,
-      build?.specimen.currentMoves ?? NO_MOVES,
-      { allowEliteTm: opts.allowEliteTm },
-      index,
-    );
+    const known = team.moves?.[i] ?? null;
+    const current = build?.specimen.currentMoves ?? NO_MOVES;
+    let moveset: ReturnType<typeof recommendMoveset>;
+    try {
+      moveset = known
+        ? movesetFrom(speciesId, known, current, index)
+        : recommendMoveset(speciesId, overall, current, { allowEliteTm: opts.allowEliteTm }, index);
+    } catch {
+      // A move the species cannot learn (data drift): fall back to the recommendation.
+      moveset = recommendMoveset(
+        speciesId,
+        overall,
+        current,
+        { allowEliteTm: opts.allowEliteTm },
+        index,
+      );
+    }
     const me: Omit<SimPokemonSpec, 'shields'> = {
       speciesId,
       fastMove: moveset.fast.moveId,

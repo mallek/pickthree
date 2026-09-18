@@ -20,6 +20,7 @@ import {
   type BattleRow,
   type MetaSummary,
   type SharedBatch,
+  type SharedMoves,
 } from './battles.js';
 import { parseReport, type ErrorReport } from './report.js';
 
@@ -79,6 +80,11 @@ export class MetaStore extends DurableObject<Env> {
       CREATE INDEX IF NOT EXISTS battles_league_at ON battles (league, at);
       CREATE INDEX IF NOT EXISTS battles_device ON battles (device);
     `);
+    // Added after the first deploy; SQLite has no ADD COLUMN IF NOT EXISTS.
+    const cols = ctx.storage.sql.exec('PRAGMA table_info(battles)').toArray();
+    if (!cols.some((c) => c['name'] === 'moves')) {
+      ctx.storage.sql.exec('ALTER TABLE battles ADD COLUMN moves TEXT');
+    }
   }
 
   ingest(batch: SharedBatch): { stored: number; skipped: number } {
@@ -87,8 +93,8 @@ export class MetaStore extends DurableObject<Env> {
     for (const b of batch.battles) {
       const cursor = this.ctx.storage.sql.exec(
         `INSERT OR IGNORE INTO battles
-           (key, device, id, league, season, at, team, opponents, result, tanked, band, client, received)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (key, device, id, league, season, at, team, moves, opponents, result, tanked, band, client, received)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         `${batch.device}:${b.id}`,
         batch.device,
         b.id,
@@ -96,6 +102,7 @@ export class MetaStore extends DurableObject<Env> {
         b.season,
         b.at,
         JSON.stringify(b.team),
+        b.moves ? JSON.stringify(b.moves) : null,
         JSON.stringify(b.opponents),
         b.result,
         b.tanked ? 1 : 0,
@@ -116,7 +123,7 @@ export class MetaStore extends DurableObject<Env> {
   summary(league: string, since: string): MetaSummary {
     const rows = this.ctx.storage.sql
       .exec(
-        `SELECT device, league, season, at, team, opponents, result, tanked, band
+        `SELECT device, league, season, at, team, moves, opponents, result, tanked, band
            FROM battles WHERE league = ? AND at >= ? ORDER BY at DESC LIMIT ?`,
         league,
         since,
@@ -129,6 +136,8 @@ export class MetaStore extends DurableObject<Env> {
       season: typeof r['season'] === 'number' ? r['season'] : null,
       at: String(r['at']),
       team: JSON.parse(String(r['team'])) as string[],
+      moves:
+        typeof r['moves'] === 'string' ? (JSON.parse(r['moves']) as (SharedMoves | null)[]) : null,
       opponents: JSON.parse(String(r['opponents'])) as string[],
       result: (r['result'] as 'win' | 'loss' | null) ?? null,
       tanked: r['tanked'] === 1,

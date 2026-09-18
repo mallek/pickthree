@@ -1,4 +1,4 @@
-import { teamKey, type TeamRef } from '@pickthree/engine';
+import { teamKey, type TeamMoves, type TeamRef } from '@pickthree/engine';
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   FitTag,
@@ -73,6 +73,10 @@ export function NewSet() {
       team: {
         species: t.slots.map((x) => x.candidate.build.speciesId) as [string, string, string],
         specimenIds: t.slots.map((x) => x.candidate.build.specimenId) as [string, string, string],
+        moves: t.slots.map((x) => ({
+          fast: x.candidate.moveset.fast.moveId,
+          charged: x.candidate.moveset.charged.map((m) => m.moveId),
+        })) as [TeamMoves | null, TeamMoves | null, TeamMoves | null],
       },
     }));
   }, [s.recommendation, s.analysis]);

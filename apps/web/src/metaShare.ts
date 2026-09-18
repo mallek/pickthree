@@ -19,12 +19,19 @@ export const BAND_LABELS: Record<Band, string> = {
   legend: 'Legend',
 };
 
+export interface SharedMoves {
+  fast: string;
+  charged: string[];
+}
+
 export interface SharedBattle {
   id: string;
   league: string;
   season: number | null;
   at: string;
   team: [string, string, string];
+  /** The moves each of the three ran, when the set knows them. */
+  moves?: [SharedMoves | null, SharedMoves | null, SharedMoves | null];
   opponents: string[];
   result: 'win' | 'loss' | null;
   tanked: boolean;
@@ -100,6 +107,13 @@ export function pendingBattles(
         season: seasonOf(b.at, seasons),
         at: b.at,
         team: set.team.species,
+        ...(set.team.moves
+          ? {
+              moves: set.team.moves.map((m) =>
+                m ? { fast: m.fast, charged: [...m.charged] } : null,
+              ) as [SharedMoves | null, SharedMoves | null, SharedMoves | null],
+            }
+          : {}),
         opponents: b.opponents.slice(0, 3),
         result: b.result,
         tanked: b.tanked,

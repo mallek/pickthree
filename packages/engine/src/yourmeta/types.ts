@@ -1,8 +1,19 @@
 /** Your team for a set of battles. Species ids are PvPoke ids; shadows are their own id. */
+/** Fast move id and one or two charged move ids. */
+export interface TeamMoves {
+  fast: string;
+  charged: string[];
+}
+
 export interface TeamRef {
   species: [string, string, string];
   /** Present when the team came from a pick3 recommendation or the collection. */
   specimenIds?: [string, string, string];
+  /**
+   * The moves each member ran, when known (Take to battle from an analysis, or a pick3 team).
+   * The one accurate moveset signal there is; opponents' moves stay a guess.
+   */
+  moves?: [TeamMoves | null, TeamMoves | null, TeamMoves | null];
 }
 
 export interface LoggedBattle {

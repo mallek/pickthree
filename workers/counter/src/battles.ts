@@ -6,6 +6,11 @@
 export const BANDS = ['below', 'ace', 'veteran', 'expert', 'legend'] as const;
 export type Band = (typeof BANDS)[number];
 
+export interface SharedMoves {
+  fast: string;
+  charged: string[];
+}
+
 export interface SharedBattle {
   /** The battle's own id on the phone; unique per device. */
   id: string;
@@ -15,6 +20,8 @@ export interface SharedBattle {
   at: string;
   /** The reporter's three, PvPoke species ids. */
   team: [string, string, string];
+  /** The moves each of the three ran, when the phone knew them. */
+  moves: [SharedMoves | null, SharedMoves | null, SharedMoves | null] | null;
   /** 0 to 3 opponents seen. */
   opponents: string[];
   result: 'win' | 'loss' | null;
@@ -34,6 +41,29 @@ export const MAX_BATCH = 200;
 const ID = /^[a-z0-9_]+$/;
 const BATTLE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DEVICE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const MOVE = /^[A-Z0-9_]+$/;
+
+function parseMoves(x: unknown): SharedMoves | null | undefined {
+  if (x === null) {
+    return null;
+  }
+  if (!isRecord(x)) {
+    return undefined;
+  }
+  const { fast, charged } = x;
+  if (typeof fast !== 'string' || !MOVE.test(fast)) {
+    return undefined;
+  }
+  if (
+    !Array.isArray(charged) ||
+    charged.length < 1 ||
+    charged.length > 2 ||
+    !charged.every((c) => typeof c === 'string' && MOVE.test(c))
+  ) {
+    return undefined;
+  }
+  return { fast, charged: [...new Set(charged as string[])] };
+}
 
 function isRecord(x: unknown): x is Record<string, unknown> {
   return typeof x === 'object' && x !== null;
@@ -43,7 +73,7 @@ function parseBattle(x: unknown): SharedBattle | null {
   if (!isRecord(x)) {
     return null;
   }
-  const { id, league, season, at, team, opponents, result, tanked, band } = x;
+  const { id, league, season, at, team, moves, opponents, result, tanked, band } = x;
   if (typeof id !== 'string' || !BATTLE_ID.test(id)) {
     return null;
   }
@@ -70,6 +100,17 @@ function parseBattle(x: unknown): SharedBattle | null {
   ) {
     return null;
   }
+  let parsedMoves: SharedBattle['moves'] = null;
+  if (moves !== undefined && moves !== null) {
+    if (!Array.isArray(moves) || moves.length !== 3) {
+      return null;
+    }
+    const each = moves.map(parseMoves);
+    if (each.some((m) => m === undefined)) {
+      return null;
+    }
+    parsedMoves = each as SharedBattle['moves'];
+  }
   if (!(result === 'win' || result === 'loss' || result === null)) {
     return null;
   }
@@ -89,6 +130,7 @@ function parseBattle(x: unknown): SharedBattle | null {
     season,
     at: new Date(at).toISOString(),
     team: team as [string, string, string],
+    moves: parsedMoves,
     opponents: [...new Set(opponents as string[])],
     result,
     tanked,
@@ -129,10 +171,18 @@ export interface BattleRow {
   season: number | null;
   at: string;
   team: string[];
+  moves: (SharedMoves | null)[] | null;
   opponents: string[];
   result: 'win' | 'loss' | null;
   tanked: boolean;
   band: Band | null;
+}
+
+export interface MovesetSummary {
+  fast: string;
+  charged: string[];
+  /** Counted battles the reporter ran this species with these moves. */
+  battles: number;
 }
 
 export interface SpeciesSummary {
@@ -161,12 +211,15 @@ export interface MetaSummary {
   bands: Record<string, number>;
   species: SpeciesSummary[];
   teams: TeamSummary[];
+  /** Per species the reporters ran, the movesets they ran it with, most common first. */
+  movesets: Record<string, MovesetSummary[]>;
 }
 
 /** Rolls rows up into the per-league summary; tanked battles count only as tanked. */
 export function aggregate(league: string, rows: BattleRow[], teamLimit = 50): MetaSummary {
   const species = new Map<string, SpeciesSummary>();
   const teams = new Map<string, TeamSummary>();
+  const movesets = new Map<string, Map<string, MovesetSummary>>();
   const devices = new Set<string>();
   const bands: Record<string, number> = {};
   let battles = 0;
@@ -188,6 +241,19 @@ export function aggregate(league: string, rows: BattleRow[], teamLimit = 50): Me
       s.losses += loss;
       species.set(id, s);
     }
+    r.team.forEach((speciesId, i) => {
+      const m = r.moves?.[i];
+      if (!m) {
+        return;
+      }
+      const charged = [...m.charged].sort();
+      const setKey = `${m.fast}|${charged.join('+')}`;
+      const per = movesets.get(speciesId) ?? new Map<string, MovesetSummary>();
+      const ms = per.get(setKey) ?? { fast: m.fast, charged, battles: 0 };
+      ms.battles += 1;
+      per.set(setKey, ms);
+      movesets.set(speciesId, per);
+    });
     const key = [...r.team].sort().join('+');
     const t = teams.get(key) ?? {
       species: [...r.team].sort() as [string, string, string],
@@ -212,5 +278,11 @@ export function aggregate(league: string, rows: BattleRow[], teamLimit = 50): Me
     teams: [...teams.values()]
       .sort((a, b) => b.battles - a.battles || a.species.join().localeCompare(b.species.join()))
       .slice(0, teamLimit),
+    movesets: Object.fromEntries(
+      [...movesets.entries()].map(([id, per]) => [
+        id,
+        [...per.values()].sort((a, b) => b.battles - a.battles || a.fast.localeCompare(b.fast)),
+      ]),
+    ),
   };
 }

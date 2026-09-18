@@ -1,4 +1,4 @@
-import { teamKey, type TeamRef } from '@pickthree/engine';
+import { teamKey, type TeamMoves, type TeamRef } from '@pickthree/engine';
 import { useState } from 'react';
 import {
   GLOSSARY,
@@ -122,7 +122,11 @@ export function TeamDetail({ id }: { id: string }) {
       string,
       string,
     ];
-    const ref: TeamRef = { species, specimenIds };
+    const moves = team.slots.map((x) => ({
+      fast: x.candidate.moveset.fast.moveId,
+      charged: x.candidate.moveset.charged.map((m) => m.moveId),
+    })) as [TeamMoves | null, TeamMoves | null, TeamMoves | null];
+    const ref: TeamRef = { species, specimenIds, moves };
     const open = s.sets.find((x) => !x.closed);
     if (open && teamKey(open.team.species) === teamKey(species)) {
       navigate({ screen: 'meta-log' });

@@ -23,6 +23,29 @@ describe('parseBatch', () => {
     expect(r!.battles[0]!.band).toBe('ace');
   });
 
+  it('takes the moves each of the three ran, and refuses a malformed set', () => {
+    const moves = [
+      { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER', 'BULLDOZE'] },
+      null,
+      { fast: 'POISON_STING', charged: ['EARTHQUAKE', 'EARTHQUAKE'] },
+    ];
+    const r = parseBatch({ device, client: 'pick3', battles: [{ ...battle, moves }] });
+    expect(r!.battles[0]!.moves).toEqual([
+      { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER', 'BULLDOZE'] },
+      null,
+      { fast: 'POISON_STING', charged: ['EARTHQUAKE'] },
+    ]);
+    expect(
+      parseBatch({ device, client: 'pick3', battles: [battle] })!.battles[0]!.moves,
+    ).toBeNull();
+    const bad = (m: unknown) =>
+      parseBatch({ device, client: 'pick3', battles: [{ ...battle, moves: m }] });
+    expect(bad([moves[0], moves[1]])).toBeNull();
+    expect(bad([{ fast: 'fairy wind', charged: ['X'] }, null, null])).toBeNull();
+    expect(bad([{ fast: 'FAIRY_WIND', charged: [] }, null, null])).toBeNull();
+    expect(bad([{ fast: 'FAIRY_WIND', charged: ['A', 'B', 'C'] }, null, null])).toBeNull();
+  });
+
   it('takes a missing band as null', () => {
     const { band: _b, ...noBand } = battle;
     void _b;
@@ -57,11 +80,29 @@ describe('aggregate', () => {
     season: 28,
     at: '2026-09-17T10:00:00Z',
     team: ['tinkaton', 'azumarill', 'clodsire'],
+    moves: null,
     opponents: ['medicham'],
     result: 'win',
     tanked: false,
     band: 'ace',
     ...patch,
+  });
+
+  it('rolls up the movesets reporters ran each species with', () => {
+    const tink = { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER', 'BULLDOZE'] };
+    const tinkSwapped = { fast: 'FAIRY_WIND', charged: ['BULLDOZE', 'GIGATON_HAMMER'] };
+    const tinkOther = { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER'] };
+    const s = aggregate('great', [
+      row({ moves: [tink, null, null] }),
+      row({ moves: [tinkSwapped, null, null] }),
+      row({ moves: [tinkOther, null, null] }),
+      row({ moves: [tink, null, null], tanked: true, result: null }),
+    ]);
+    expect(s.movesets['tinkaton']).toEqual([
+      { fast: 'FAIRY_WIND', charged: ['BULLDOZE', 'GIGATON_HAMMER'], battles: 2 },
+      { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER'], battles: 1 },
+    ]);
+    expect(s.movesets['azumarill']).toBeUndefined();
   });
 
   it('counts sightings with the reporter record, rolls teams up in any order, skips tanked', () => {
