@@ -45,7 +45,10 @@ function TeamRow({ team, data, league }: { team: TeamStats; data: StaticData; le
       ? `${battlesText(team.battles)}, ${count(decided)} decided`
       : battlesText(team.battles);
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    // .card is a flex column by default now (app.css); this row packs four dense sub-rows
+    // (sprites, count/rate, the margin sentence, the link), so it keeps its own tighter 8px
+    // gap instead of the card default 12px, rather than doubling up on both.
+    <div className="card" style={{ gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <SpriteStack species={species} />
         <span className="name">{label}</span>

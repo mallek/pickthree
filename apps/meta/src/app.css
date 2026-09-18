@@ -83,10 +83,25 @@ a {
 }
 
 /* Surfaces */
+/* The "no padding" complaint was never the padding number: .card already had 14px of it. What
+   it lacked was `gap`, so a card's children (a heading, a list, a paragraph) stacked with zero
+   space between them and read as flush against each other, padding included. `gap: 12px` fixes
+   that; 16px padding reads better than 14px at this site's text sizes while we are in here. */
 .card {
   background: var(--surface);
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A child's own default browser margin (a <p>'s, mainly) used to be the only thing standing in
+   for the gap above; left in place it would now add on top of that gap instead of replacing it.
+   Zeroed here, scoped to cards only, so nothing outside a card (which still leans on a
+   paragraph's own margin for its rhythm) loses spacing it was never given explicitly. */
+.card > * {
+  margin: 0;
 }
 
 .stat {
@@ -120,43 +135,91 @@ a {
 }
 
 /* Controls: every one is a real <button> or <a> */
-/* Fixed 3-column grid with exactly 3 options (WindowKey has 3 values): it never wraps to a
-   second row, so the .seg > *::after vertical inset below has no wrapped-row neighbour to
-   overlap. */
-.seg {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  background: var(--surface);
-  border-radius: 999px;
-  padding: 4px;
+
+/* League toggle: ported from pick3's own .league-switcher (apps/web/src/app.css) so the one
+   control that picks a league reads the same on both sites, geometry and all. pick3's tokens
+   have no equivalent here, so they are mapped onto this site's own: --divider -> --border,
+   and --accent-tint (the "on" segment's tinted background) -> --surface2, the token this site's
+   own .pills > .on already uses for the same job. --faint (pick3's dimmed idle-segment ink, a
+   step below --muted) has no counterpart here either, so the idle segment falls back to
+   --muted, same as everywhere else on this site that needs a quieter label than body text. */
+.league-switcher {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.seg > * {
+.league-switcher button {
+  flex: 1;
   position: relative;
-  text-align: center;
-  padding: 9px 0;
-  border-radius: 999px;
+  padding: 8px 6px;
   font-size: 13px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
   color: var(--muted);
   border: 0;
   background: transparent;
-  font-family: inherit;
+  font: inherit;
+  font-weight: 500;
 }
 
-/* Painted height measures 35px; the touch target extends to 41px, clear of the 40px floor.
-   Vertical only, so options packed edge to edge in the grid never overlap sideways. */
-.seg > *::after {
+.league-switcher button + button {
+  border-left: 1px solid var(--border);
+}
+
+.league-switcher button.on {
+  color: var(--text);
+  background: var(--surface2);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* Painted height measures 32px (16px shield + 8px top/bottom padding); the touch target extends
+   to 40px, the site's own floor. Vertical only: the three segments already tile edge to edge, so
+   a sideways extension would just overlap the divider between them for no gain. */
+.league-switcher button::after {
   content: '';
   position: absolute;
-  inset: -3px 0;
+  inset: -4px 0;
 }
 
-.seg > .on {
-  background: var(--accent);
-  color: var(--on-accent);
+/* The focus ring would otherwise get clipped: .league-switcher's rounded corners are cut by
+   `overflow: hidden`, so an outward ring on an edge segment is invisible along that outer edge.
+   Drawing it inward, the same fix .seg used before this control replaced it, keeps it visible on
+   every segment, edge ones included. */
+.league-switcher button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.league-shield {
+  flex: none;
+}
+
+/* The window and rank-band rows: each gets a visible caption above it (App.tsx), so the two read
+   as two separate filters rather than one long, unlabelled run of pills. */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: 11px;
   font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .pills {
@@ -168,15 +231,18 @@ a {
   row-gap: 12px;
 }
 
+/* A visible border even when idle, ported from pick3's own .chip: without it a pill has only a
+   faint surface tint to say it is a control at all, which is what read as a plain button rather
+   than a filter. */
 .pills > * {
   position: relative;
   padding: 7px 12px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   background: var(--surface);
   color: var(--muted);
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
 }
 
 /* Painted height measures 30px; the touch target extends to 40px. Vertical only, so pills
@@ -351,7 +417,6 @@ a.row {
   background: var(--warn);
   color: var(--on-accent);
   font-weight: 800;
-  margin-right: 8px;
 }
 
 /* ConfidenceDot: exactly three fixed tones, so modifiers rather than an inline colour. */
@@ -521,7 +586,7 @@ a.row {
 /* States */
 a,
 button,
-.seg > *,
+.league-switcher button,
 .pills > *,
 .row {
   -webkit-tap-highlight-color: transparent;
@@ -529,7 +594,6 @@ button,
 
 a:focus-visible,
 button:focus-visible,
-.seg > *:focus-visible,
 .pills > *:focus-visible,
 .row:focus-visible {
   outline: 2px solid var(--accent);
