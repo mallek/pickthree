@@ -326,6 +326,41 @@ a.row {
   overflow: hidden;
 }
 
+/* The small-sample banner's warning badge: one fixed colour, not per-item, so it is a class
+   rather than an inline style. */
+.note-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--warn);
+  color: var(--on-accent);
+  font-weight: 800;
+  margin-right: 8px;
+}
+
+/* ConfidenceDot: exactly three fixed tones, so modifiers rather than an inline colour. */
+.conf-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.conf-dot.conf-few {
+  background: var(--muted);
+}
+
+.conf-dot.conf-some {
+  background: var(--warn);
+}
+
+.conf-dot.conf-many {
+  background: var(--up);
+}
+
 .bar > span {
   display: block;
   height: 100%;

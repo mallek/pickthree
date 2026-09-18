@@ -11,7 +11,7 @@
 import { useState, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
-import { confidence, type Confidence } from './stats.js';
+import { confidence } from './stats.js';
 
 const TYPES: readonly string[] = [
   'normal',
@@ -59,9 +59,17 @@ function capitalize(s: string): string {
 
 /** The coloured disc behind a species' sprite, split diagonally between its two types (or one
  * type twice, for a single-typed species). The sprite art overflows the disc by 6px on purpose,
- * matching pick3's own token. */
+ * matching pick3's own token.
+ *
+ * The name lives on the outer span, in every state, so a broken image never leaves the disc
+ * nameless to a screen reader: the inner `<img>` carries no name of its own (`alt=""`,
+ * `aria-hidden`), so the name is never doubled either. `broken` is keyed on the species id
+ * rather than a plain boolean, so swapping which species this instance renders (e.g. a list
+ * reusing the same component) does not leave a later, perfectly good image hidden by an
+ * earlier one's failure. */
 export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: number }) {
-  const [broken, setBroken] = useState(false);
+  const [brokenId, setBrokenId] = useState<string | null>(null);
+  const broken = brokenId === species.id;
   // typeColor already maps anything unrecognised (including a missing type) to the neutral
   // token, so a species with no types at all still gets a solid disc instead of `undefined`.
   const c1 = typeColor(species.types[0] ?? '');
@@ -70,6 +78,8 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
   return (
     <span
       className="token"
+      role="img"
+      aria-label={species.name}
       style={{
         width: size,
         height: size,
@@ -80,11 +90,17 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
         <img
           className="sprite"
           src={spriteUrl(species.id)}
-          alt={species.name}
+          alt=""
+          aria-hidden="true"
           loading="lazy"
           width={imgSize}
           height={imgSize}
-          onError={() => setBroken(true)}
+          // `app.css` pins `.token .sprite` at 46px; a stylesheet rule beats an HTML sizing
+          // attribute, so the inline style is what actually lets the art scale with `size`.
+          // The width/height attributes stay too, so the browser reserves layout space
+          // before the image loads.
+          style={{ width: imgSize, height: imgSize }}
+          onError={() => setBrokenId(species.id)}
         />
       )}
     </span>
@@ -145,7 +161,9 @@ export function Bar({
   /** An accessible name, for a bar that stands alone rather than sitting next to its own label. */
   label?: string;
 }) {
-  const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+  // Math.round(NaN) survives both clamps below, so guard non-finite input (a NaN rate, an
+  // unset divide) before it reaches the DOM as aria-valuenow="NaN" and width: NaN%.
+  const clamped = Number.isFinite(pct) ? Math.max(0, Math.min(100, Math.round(pct))) : 0;
   return (
     <div
       className="bar"
@@ -212,7 +230,9 @@ export function StatCard({ value, label }: { value: string; label: string }) {
 }
 
 /** The bordered card used for a small-sample banner or any other aside. `tone="warn"` adds a
- * badge; the title text already says what it is, so the badge itself is decorative. */
+ * badge; a title already says what it is, so the badge is decorative there. Without a title
+ * the badge is the only visual cue, so the warning gets an accessible name of its own instead
+ * (the badge stays `aria-hidden`: it is a repeat of that name, not a second source of it). */
 export function Note({
   tone = 'plain',
   title,
@@ -222,23 +242,15 @@ export function Note({
   title?: string;
   children: ReactNode;
 }) {
+  const warnNoTitle = tone === 'warn' && !title;
   return (
-    <div className="card note">
+    <div
+      className="card note"
+      role={warnNoTitle ? 'note' : undefined}
+      aria-label={warnNoTitle ? 'Warning' : undefined}
+    >
       {tone === 'warn' ? (
-        <span
-          aria-hidden="true"
-          style={{
-            display: 'inline-grid',
-            placeItems: 'center',
-            width: 22,
-            height: 22,
-            borderRadius: '50%',
-            background: 'var(--warn)',
-            color: 'var(--on-accent)',
-            fontWeight: 800,
-            marginRight: 8,
-          }}
-        >
+        <span className="note-badge" aria-hidden="true">
           !
         </span>
       ) : null}
@@ -248,29 +260,14 @@ export function Note({
   );
 }
 
-const CONFIDENCE_COLOR: Record<Confidence, string> = {
-  few: 'var(--muted)',
-  some: 'var(--warn)',
-  many: 'var(--up)',
-};
-
 /** How much a sample is worth trusting, said in a word, not just a colour: colour alone is not
- * an accessible way to carry meaning. */
+ * an accessible way to carry meaning. The dot itself is a fixed, non-per-item colour (one of
+ * exactly three tones), so it is a CSS class and modifier rather than an inline style. */
 export function ConfidenceDot({ n }: { n: number }) {
   const c = confidence(n);
   return (
     <span>
-      <span
-        aria-hidden="true"
-        style={{
-          display: 'inline-block',
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: CONFIDENCE_COLOR[c],
-          marginRight: 4,
-        }}
-      />
+      <span className={`conf-dot conf-${c}`} aria-hidden="true" />
       {c}
     </span>
   );

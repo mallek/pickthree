@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -8,6 +8,7 @@ import {
   Segmented,
   Sparkline,
   Sprite,
+  SpriteStack,
   TypeTags,
   typeColor,
 } from '../src/components.js';
@@ -22,6 +23,15 @@ const azumarill: SpeciesLite = {
   shadow: false,
 };
 
+const clodsire: SpeciesLite = {
+  id: 'clodsire',
+  name: 'Clodsire',
+  short: 'Clodsire',
+  dex: 980,
+  types: ['poison', 'ground'],
+  shadow: false,
+};
+
 describe('typeColor', () => {
   it('maps a type to its token and an unknown type to the neutral one', () => {
     expect(typeColor('water')).toBe('var(--type-water)');
@@ -31,10 +41,75 @@ describe('typeColor', () => {
 
 describe('Sprite', () => {
   it('loads the pick3 sprite and labels it for a screen reader', () => {
-    render(<Sprite species={azumarill} />);
-    const img = screen.getByRole('img', { name: 'Azumarill' });
+    const { container } = render(<Sprite species={azumarill} />);
+    // The accessible name now lives on the outer token span (fix 1), not the image itself,
+    // so the image's own attributes are checked separately from the role query.
+    const token = screen.getByRole('img', { name: 'Azumarill' });
+    const img = container.querySelector('img');
     expect(img).toHaveAttribute('src', 'https://pick3.gg/data/sprites/azumarill.webp');
     expect(img).toHaveAttribute('loading', 'lazy');
+    expect(token).toContainElement(img);
+  });
+
+  it('renders a solid muted disc, with no "undefined" in the gradient, for a typeless species', () => {
+    const { container } = render(<Sprite species={{ ...azumarill, types: [] }} />);
+    const token = container.querySelector('.token') as HTMLElement;
+    expect(token.style.background).not.toContain('undefined');
+    expect(token.style.background).toBe(
+      'linear-gradient(135deg, var(--muted) 0 50%, var(--muted) 50% 100%)',
+    );
+  });
+
+  it('repeats the single type across both halves of a mono-type disc', () => {
+    const { container } = render(<Sprite species={{ ...azumarill, types: ['fire'] }} />);
+    const token = container.querySelector('.token') as HTMLElement;
+    expect(token.style.background).toBe(
+      'linear-gradient(135deg, var(--type-fire) 0 50%, var(--type-fire) 50% 100%)',
+    );
+  });
+
+  it('falls back to the neutral colour for an unknown type rather than an invalid variable', () => {
+    const { container } = render(<Sprite species={{ ...azumarill, types: ['quantum'] }} />);
+    const token = container.querySelector('.token') as HTMLElement;
+    expect(token.style.background).toBe(
+      'linear-gradient(135deg, var(--muted) 0 50%, var(--muted) 50% 100%)',
+    );
+  });
+
+  it('scales the sprite art 6px larger than the disc at a non-default size', () => {
+    const { container } = render(<Sprite species={azumarill} size={64} />);
+    const img = container.querySelector('img') as HTMLImageElement;
+    // app.css pins .token .sprite at 46px; only the inline style (fix 3) actually wins here.
+    expect(img.style.width).toBe('70px');
+    expect(img.style.height).toBe('70px');
+  });
+
+  describe('onError', () => {
+    it('hides the image and leaves the named, coloured disc', () => {
+      const { container } = render(<Sprite species={azumarill} />);
+      const img = container.querySelector('img') as HTMLImageElement;
+      fireEvent.error(img);
+      expect(container.querySelector('img')).toBeNull();
+      expect(screen.getByRole('img', { name: 'Azumarill' })).toBeInTheDocument();
+    });
+
+    it('resets once the same instance renders a different species', () => {
+      const { container, rerender } = render(<Sprite species={azumarill} />);
+      fireEvent.error(container.querySelector('img') as HTMLImageElement);
+      expect(container.querySelector('img')).toBeNull();
+      rerender(<Sprite species={clodsire} />);
+      expect(container.querySelector('img')).not.toBeNull();
+      expect(screen.getByRole('img', { name: 'Clodsire' })).toBeInTheDocument();
+    });
+  });
+});
+
+describe('SpriteStack', () => {
+  it('gives the group one accessible name and hides the individual sprites from it', () => {
+    render(<SpriteStack species={[azumarill, clodsire]} />);
+    expect(screen.getByRole('img', { name: 'Azumarill, Clodsire' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Azumarill' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Clodsire' })).toBeNull();
   });
 });
 
@@ -52,9 +127,27 @@ describe('Bar', () => {
     const bar = screen.getByRole('progressbar');
     expect(bar).toHaveAttribute('aria-valuenow', '100');
   });
+
+  it('floors a negative value at zero', () => {
+    render(<Bar pct={-30} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+  });
+
+  it('treats a non-finite value as zero rather than emitting NaN', () => {
+    render(<Bar pct={NaN} />);
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+    const fill = bar.querySelector('span') as HTMLSpanElement;
+    expect(fill.style.width).toBe('0%');
+  });
 });
 
 describe('Sparkline', () => {
+  it('renders nothing readable for zero values', () => {
+    const { container } = render(<Sparkline values={[]} />);
+    expect(container.querySelector('polyline')).toBeNull();
+  });
+
   it('renders nothing readable for a single point rather than a broken line', () => {
     const { container } = render(<Sparkline values={[1]} />);
     expect(container.querySelector('polyline')).toBeNull();
@@ -63,6 +156,32 @@ describe('Sparkline', () => {
   it('draws a polyline once there are two points', () => {
     const { container } = render(<Sparkline values={[1, 3, 2]} />);
     expect(container.querySelector('polyline')).not.toBeNull();
+  });
+
+  it('draws a flat line at mid height for two identical values, not NaN coordinates', () => {
+    const { container } = render(<Sparkline values={[5, 5]} />);
+    const line = container.querySelector('polyline') as SVGPolylineElement;
+    const points = line
+      .getAttribute('points')!
+      .trim()
+      .split(' ')
+      .map((p) => p.split(',').map(Number));
+    expect(points.every(([, y]) => y === 20)).toBe(true);
+    const circle = container.querySelector('circle');
+    expect(circle).toHaveAttribute('cy', '20');
+  });
+
+  it('draws a flat line at mid height when every value is equal, not NaN coordinates', () => {
+    const { container } = render(<Sparkline values={[7, 7, 7]} />);
+    const line = container.querySelector('polyline') as SVGPolylineElement;
+    const points = line
+      .getAttribute('points')!
+      .trim()
+      .split(' ')
+      .map((p) => p.split(',').map(Number));
+    expect(points.every(([, y]) => y === 20)).toBe(true);
+    const circle = container.querySelector('circle');
+    expect(circle).toHaveAttribute('cy', '20');
   });
 });
 
