@@ -17,7 +17,7 @@ import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
 import type { ThemeChoice } from './theme.js';
 
-export { Term, TypeChip, TypeChips, typeColor } from '@pickthree/ui';
+export { LEAGUE_COLORS, LeagueShield, LeagueSwitcher, Term, TypeChip, TypeChips, typeColor } from '@pickthree/ui';
 
 /** The coloured disc behind a species' sprite, split diagonally between its two types (or one
  * type twice, for a single-typed species). The sprite art overflows the disc by 6px on purpose,
@@ -491,60 +491,5 @@ export function Select<T extends string>({ options, value, onChange, label }: Ch
   );
 }
 
-/** Game colours for the three open leagues, kept byte-identical to pick3's own
- * apps/web/src/components/LeagueSwitcher.tsx: these are the game's own league colours, brand
- * rather than this site's theme, so they are not swapped for anything in `tokens.css`. */
-export const LEAGUE_COLORS: Record<string, string> = {
-  great: '#3F7DE8',
-  ultra: '#F2B01E',
-  master: '#B03DBE',
-};
-
-/** The shield mark pick3 draws for a league, ported geometry-for-geometry from pick3's own
- * `LeagueShield` so the two sites' league controls read as the same control. `id` doubles as a
- * `LEAGUE_COLORS` key; anything else (there is no cup switcher on this site today) falls back to
- * the neutral shield rather than an undefined fill. */
-export function LeagueShield({ id, size = 16 }: { id: string; size?: number }) {
-  const color = LEAGUE_COLORS[id] ?? '#8E9AAF';
-  return (
-    <svg
-      className="league-shield"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" fill={color} />
-      <path d="M12 6.2l4.4 1.9v3.4c0 3-1.9 5.5-4.4 6.9V6.2z" fill="rgba(255,255,255,0.28)" />
-    </svg>
-  );
-}
-
-/** The league toggle: a full-width radiogroup with the game's own shield colours, replacing the
- * generic `Segmented` control (the enclosed pill switch) this site used before porting pick3's
- * purpose-built one. Each option's `value` is a league id, which is also the `LeagueShield` /
- * `LEAGUE_COLORS` key that picks its colour. */
-export function LeagueSwitcher<T extends string>({
-  options,
-  value,
-  onChange,
-  label,
-}: ChoiceProps<T>) {
-  return (
-    <div className="league-switcher" role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={o.value === value}
-          className={o.value === value ? 'on' : undefined}
-          onClick={() => onChange(o.value)}
-        >
-          <LeagueShield id={o.value} />
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
+// LEAGUE_COLORS, LeagueShield and LeagueSwitcher moved to packages/ui/src/components/League.tsx
+// and are re-exported above.
