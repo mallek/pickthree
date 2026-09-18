@@ -13,7 +13,15 @@ import { BUCKET_MS, type MetaSummaryV1 } from '../api.js';
 import type { Baseline } from '../baseline.js';
 import { Bar, Note, Sprite, StatCard, TrendTag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { ago, battleWord, battles as battlesText, count, pct, pctPrecise, plural } from '../format.js';
+import {
+  ago,
+  battleWord,
+  battles as battlesText,
+  count,
+  pct,
+  pctPrecise,
+  plural,
+} from '../format.js';
 import { PICK3 } from '../links.js';
 import {
   RANKED_SHARE,
@@ -189,9 +197,11 @@ function BaselineSection({
       <p className="sub">
         {`PvPoke's hand-kept list for ${leagueTitle}, from its rankings of ${pvpokeDate}. Not measured play.`}
       </p>
-      {baselineRows.map((row) => (
-        <BaselineRowView key={row.speciesId} row={row} data={data} league={league} href={href} />
-      ))}
+      <div className="list">
+        {baselineRows.map((row) => (
+          <BaselineRowView key={row.speciesId} row={row} data={data} league={league} href={href} />
+        ))}
+      </div>
     </section>
   );
 }
@@ -298,25 +308,27 @@ export function Overview(p: {
         <span>Top {ranking.measured.length} - most faced</span>
         <span>faced - record</span>
       </div>
-      {ranking.measured.map((row) => (
-        <MeasuredRowView
-          key={row.speciesId}
-          row={row}
-          data={data}
-          league={league}
-          battles={ranking.battles}
-          measuredEnough={measuredEnough}
-          href={href}
-        />
-      ))}
+      <div className="list">
+        {ranking.measured.map((row) => (
+          <MeasuredRowView
+            key={row.speciesId}
+            row={row}
+            data={data}
+            league={league}
+            battles={ranking.battles}
+            measuredEnough={measuredEnough}
+            href={href}
+          />
+        ))}
+      </div>
       <p className="fine">
         {/* A4: RANKED_SHARE is a stated cut, not a glance-at number, so it keeps its decimal
          * (pctPrecise) rather than rounding 0.5% up to a misleading "1%". */}
         Only Pokemon faced in at least {pctPrecise(RANKED_SHARE)}% of battles are ranked.
       </p>
       <p className="fine">
-        Updated every {count(BUCKET_MS / 60_000)}{' '}
-        {plural(BUCKET_MS / 60_000, 'minute', 'minutes')} from battles shared by pick3 players.
+        Updated every {count(BUCKET_MS / 60_000)} {plural(BUCKET_MS / 60_000, 'minute', 'minutes')}{' '}
+        from battles shared by pick3 players.
       </p>
     </section>
   );
@@ -339,17 +351,19 @@ export function Overview(p: {
       )}
       {hasSeenAny ? (
         <>
-          {ranking.measured.map((row) => (
-            <MeasuredRowView
-              key={row.speciesId}
-              row={row}
-              data={data}
-              league={league}
-              battles={ranking.battles}
-              measuredEnough={measuredEnough}
-              href={href}
-            />
-          ))}
+          <div className="list">
+            {ranking.measured.map((row) => (
+              <MeasuredRowView
+                key={row.speciesId}
+                row={row}
+                data={data}
+                league={league}
+                battles={ranking.battles}
+                measuredEnough={measuredEnough}
+                href={href}
+              />
+            ))}
+          </div>
           {ranking.tail > 0 ? <p className="fine">{tailLine(ranking.tail)}</p> : null}
         </>
       ) : null}

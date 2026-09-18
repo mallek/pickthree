@@ -414,7 +414,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           />
         ) : null}
         {showFilters ? (
-          <>
+          <div className="filters">
             <div className="filter-row">
               <Pills
                 label="Window"
@@ -433,7 +433,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
               onChange={(b) => refine({ ...query, band: b })}
               options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
             />
-          </>
+          </div>
         ) : null}
         {renderView(view, activeLeague, query, staticData.data, meta, baseline, detail, now, (v) =>
           hrefFor(v, query),

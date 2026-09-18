@@ -22,46 +22,92 @@ body {
   /* The bottom tab bar is fixed and sits on top of the page, so the scrollable content needs at
      least its full height clear underneath it, safe-area inset included, or the last thing on
      every screen (the About page's footer is the tallest case) hides behind it. */
-  padding: 14px 16px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+  padding: 0 16px calc(64px + env(safe-area-inset-bottom, 0px) + 20px);
   overflow-x: clip;
+  /* Vertical rhythm lives here, not on each block's own margin: the brand row, league switcher,
+     filters and page body are stacked with one gap, so nothing has to know its neighbour. */
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
+/* One column at every width. A two-column grid used to auto-place the switcher and filters into
+   a side column on desktop, which broke the top-to-bottom order the phone layout is built on. */
 @media (min-width: 900px) {
   .app {
-    max-width: 1280px;
-    padding: 24px 32px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 28px;
-    align-items: start;
+    max-width: 560px;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 32px);
   }
+}
+
+/* Page body: sections stacked with a section gap, and inside a section a tighter gap between a
+   heading, its sub line and its list or card. Default paragraph margins are dropped in both, the
+   gap is the spacing. */
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+main > *,
+section > * {
+  margin: 0;
+}
+
+/* A heading sits closer to its own sub line than to the block that follows. */
+section > h2 + .sub,
+section > h2 + .fine {
+  margin-top: -4px;
+}
+
+/* A list of rows: the rows draw their own dividers, so the list itself has no gap. */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The window pills and the rank band chips belong together: one block, a small gap. */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.4px;
 }
 
 h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
 }
 
 .sub {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
 }
 
 body {
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .fine {
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 /* Links carry the accent unless a component overrides it. Without this they fall back to the
@@ -89,11 +135,16 @@ a {
    that; 16px padding reads better than 14px at this site's text sizes while we are in here. */
 .card {
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.card > h2 + .sub,
+.card > h2 + .fine {
+  margin-top: -4px;
 }
 
 /* A child's own default browser margin (a <p>'s, mainly) used to be the only thing standing in
@@ -106,20 +157,34 @@ a {
 
 .stat {
   background: var(--surface);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 14px;
+  padding: 14px 12px;
+  min-width: 0;
 }
 
 .stat .stat-n {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.4px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat .stat-l {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 4px;
+}
+
+/* The species page's headline number, outside a stat tile. */
+section > .stat-n,
+.card > .stat-n {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1;
 }
 
 /* Elevation is a soft shadow in light mode only; dark mode separates surfaces by value alone. */
@@ -226,7 +291,7 @@ a {
   position: relative;
   padding: 7px 12px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   background: var(--surface);
   color: var(--muted);
@@ -279,7 +344,7 @@ a {
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   background: var(--surface);
@@ -348,7 +413,7 @@ a {
   padding: 13px 16px;
   border-radius: 999px;
   border: 0;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   font-family: inherit;
   text-decoration: none;
@@ -421,6 +486,17 @@ a {
 
 .row:last-child {
   border-bottom: 0;
+}
+
+.row .name {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.row > .fine {
+  color: var(--muted);
+  text-align: center;
 }
 
 a.row {
@@ -575,7 +651,7 @@ a.row {
   flex-direction: column;
   gap: 12px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   text-decoration: none;
   color: inherit;
@@ -607,7 +683,7 @@ a.row {
 }
 
 .slot-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.2;
   text-wrap: balance;
@@ -760,8 +836,9 @@ a.row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 0 12px;
   gap: 8px;
+  border-bottom: 1px solid var(--border);
 }
 
 .brand-actions {
@@ -776,7 +853,7 @@ a.row {
    only ordinary inline layout, the same context pick3's own h1 hero puts it in
    (apps/web/src/screens/Welcome.tsx), makes that baseline math do anything at all. */
 .wordmark {
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.2px;
   text-decoration: none;
@@ -887,7 +964,8 @@ a.row {
 /* Page header: sticky, matching apps/web's own .hdr geometry (apps/web/src/app.css) so the two
    sites read as one product. z-index 3 keeps it under the bottom tab bar's z-index 5. */
 .hdr {
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px;
+  margin: 0 -16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 10px;
   display: grid;
   grid-template-columns: minmax(72px, 1fr) minmax(0, auto) minmax(72px, 1fr);
   align-items: center;

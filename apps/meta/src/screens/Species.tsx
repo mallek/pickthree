@@ -136,7 +136,7 @@ function MoveLine({
 function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticData }) {
   if (detail.runs === 0) {
     return (
-      <section>
+      <section className="card">
         <h2>Moves reporters ran</h2>
         <p className="sub">Nobody who shares battles has run it in this window.</p>
       </section>
@@ -145,7 +145,7 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
   const fastShares = aggregateMoves(detail.movesets, (m) => [m.fast]);
   const chargedShares = aggregateMoves(detail.movesets, (m) => m.charged);
   return (
-    <section>
+    <section className="card">
       <h2>Moves reporters ran</h2>
       <p className="sub">Run by reporters in {battlesText(detail.runs)}</p>
       <div className="pick-moves">
@@ -207,7 +207,7 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
     const sightings = weekly.reduce((sum, w) => sum + w.sightings, 0);
     const battles = weekly.reduce((sum, w) => sum + w.battles, 0);
     return (
-      <section>
+      <section className="card">
         <h2>Faced, week by week</h2>
         <p className="sub">
           Faced {count(sightings)} {plural(sightings, 'time', 'times')} in {battlesText(battles)}{' '}
@@ -232,7 +232,7 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
       label === 'even' ? 'about the same as the first week' : `${label} pts since the first week`;
   }
   return (
-    <section>
+    <section className="card">
       <h2>Faced, week by week</h2>
       {/* D1: the latest reading is labelled on the chart itself now, not in a line of text
        * below it; the trend clause (when there is one to state) is the only text left here. */}
@@ -258,7 +258,7 @@ function RecordCard({
   const rate = winRate(detail.wins, detail.losses);
   const decided = detail.wins + detail.losses;
   return (
-    <section>
+    <section className="card">
       <h2>Reporters&apos; record against it</h2>
       {rate === null ? (
         <p className="sub">No decided battles yet.</p>
@@ -318,7 +318,7 @@ function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
   const thin = thinBands(bands);
   const caveat = thinBandCaveat(thin);
   return (
-    <section>
+    <section className="card">
       <h2>Record against it, by rank</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {bands.map((b) => {
@@ -374,7 +374,7 @@ function AlongsideCard({
   href: (view: View) => string;
 }) {
   return (
-    <section>
+    <section className="card">
       <h2>Seen next to</h2>
       {alongside.length === 0 ? (
         <p className="sub">Not enough shared battles yet to see what it is paired with.</p>
@@ -425,7 +425,7 @@ function AlongsideCard({
 function PvPokeCard({ entry, data }: { entry: BaselineSpecies; data: StaticData }) {
   const names = [entry.fastMove, ...entry.chargedMoves].map((id) => data.moves.get(id)?.name ?? id);
   return (
-    <section>
+    <section className="card">
       <h2>PvPoke&apos;s set</h2>
       <p className="sub">{`PvPoke recommends ${joinAnd(names)}.`}</p>
       <p className="fine">PvPoke score: {entry.score !== null ? entry.score : '-'}.</p>
@@ -494,8 +494,10 @@ export function Species(p: {
 
   return (
     <main>
-      {headerTop}
-      <p className="sub">{headerText}</p>
+      <section>
+        {headerTop}
+        <p className="sub">{headerText}</p>
+      </section>
       {d.sightings === 0 ? (
         <p className="sub">No shared battles mention it in this window.</p>
       ) : (
