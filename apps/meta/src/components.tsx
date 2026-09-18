@@ -278,7 +278,7 @@ export function Sparkline({
           y1={SPARK_Y0}
           x2={SPARK_X1}
           y2={SPARK_Y0}
-          stroke="var(--border)"
+          stroke="var(--divider)"
           strokeWidth={1}
           vectorEffect="non-scaling-stroke"
         />

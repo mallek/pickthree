@@ -2012,7 +2012,7 @@ button.counter-row {
   border-radius: var(--r-lg);
   border: 1px solid var(--divider);
   background: var(--surface);
-  color: var(--fg);
+  color: var(--text);
   font:
     12px/1.5 ui-monospace,
     SFMono-Regular,

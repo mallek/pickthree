@@ -31,7 +31,7 @@ function CheckMark(): ReactNode {
     >
       <path
         d="M5 13l4 4L19 7"
-        stroke="var(--up)"
+        stroke="var(--win)"
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -52,7 +52,7 @@ function CrossMark(): ReactNode {
     >
       <path
         d="M6 6l12 12M18 6L6 18"
-        stroke="var(--down)"
+        stroke="var(--loss)"
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"

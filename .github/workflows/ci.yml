@@ -23,6 +23,7 @@ jobs:
             packages/data/.cache
           key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
       - run: npm run lint
+      - run: npm run check-tokens
       - run: npm run typecheck
       - name: Cache built game data
         id: data
