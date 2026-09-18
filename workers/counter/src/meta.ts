@@ -5,6 +5,44 @@
  */
 import { BANDS, type BattleRow, type SharedMoves } from './battles.js';
 
+/** The most days one read request may span. */
+export const MAX_SPAN_DAYS = 400;
+
+export interface ReadParams {
+  league: string;
+  since: string;
+  until: string;
+  band: string;
+}
+
+const LEAGUE = /^[a-z0-9_]+$/;
+
+/** Parses and clamps the window and band every read endpoint shares. */
+export function readParams(url: URL): ReadParams | { error: string } {
+  const league = url.searchParams.get('league') ?? 'great';
+  if (!LEAGUE.test(league)) {
+    return { error: 'bad league' };
+  }
+  const sinceRaw = url.searchParams.get('since') ?? '';
+  const untilRaw = url.searchParams.get('until') ?? '';
+  const since = Date.parse(sinceRaw);
+  const until = Date.parse(untilRaw);
+  if (Number.isNaN(since) || Number.isNaN(until) || until <= since) {
+    return { error: 'bad window' };
+  }
+  if (until - since > MAX_SPAN_DAYS * 86_400_000) {
+    return { error: 'window too long' };
+  }
+  const bandRaw = url.searchParams.get('band') ?? 'all';
+  const band = (BANDS as readonly string[]).includes(bandRaw) ? bandRaw : 'all';
+  return {
+    league,
+    since: new Date(since).toISOString(),
+    until: new Date(until).toISOString(),
+    band,
+  };
+}
+
 export interface SpeciesStats {
   speciesId: string;
   /** Battles in which the reporter saw it on the other side. */
