@@ -109,6 +109,7 @@ body {
 }
 
 .seg > * {
+  position: relative;
   text-align: center;
   padding: 9px 0;
   border-radius: 999px;
@@ -118,6 +119,14 @@ body {
   border: 0;
   background: transparent;
   font-family: inherit;
+}
+
+/* Painted height measures 35px; the touch target extends to 41px, clear of the 40px floor.
+   Vertical only, so options packed edge to edge in the grid never overlap sideways. */
+.seg > *::after {
+  content: '';
+  position: absolute;
+  inset: -3px 0;
 }
 
 .seg > .on {
@@ -133,6 +142,7 @@ body {
 }
 
 .pills > * {
+  position: relative;
   padding: 7px 12px;
   border-radius: 999px;
   font-size: 12px;
@@ -140,6 +150,14 @@ body {
   background: var(--surface);
   color: var(--muted);
   border: 1px solid transparent;
+}
+
+/* Painted height measures 30px; the touch target extends to 40px. Vertical only, so pills
+   sitting side by side with their 6px gap never touch. */
+.pills > *::after {
+  content: '';
+  position: absolute;
+  inset: -5px 0;
 }
 
 .pills > .on {
@@ -154,6 +172,7 @@ body {
 }
 
 .tabs > a {
+  position: relative;
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
@@ -190,6 +209,13 @@ body {
     color: var(--on-accent);
     font-weight: 700;
   }
+
+  /* Same compact metrics as .seg, so the same 35px painted height and 41px touch target apply. */
+  .tabs > a::after {
+    content: '';
+    position: absolute;
+    inset: -3px 0;
+  }
 }
 
 .btn {
@@ -217,8 +243,11 @@ body {
   border: 1px solid var(--border);
 }
 
-/* Icon buttons: a 34px visible circle with enough padding that the tap target reaches 40px. */
+/* Icon buttons: the design's 34px circle stays exactly that size. The touch target is a
+   transparent pseudo-element extended 3px on every side, reaching the 40px floor without
+   changing anything that paints. */
 .icon-btn {
+  position: relative;
   width: 34px;
   height: 34px;
   padding: 3px;
@@ -229,6 +258,12 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--text);
+}
+
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
 }
 
 /* Rows and tokens */

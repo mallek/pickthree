@@ -1,30 +1,16 @@
 /**
  * Every string this site renders goes through here. Reader-facing copy is strict 7-bit ASCII,
- * so species names carrying an accent get folded rather than shown.
+ * so species names carrying an accent get folded rather than shown. Written as \u escapes so
+ * this source file itself stays 7-bit ASCII rather than carrying the characters it strips.
  */
-
-// Built from numeric code points, not escape literals, so this source file stays 7-bit ASCII:
-// combining diacritical marks (0300-036F) and the curly quote pairs NFD normalization leaves behind.
-const COMBINING_MARKS = new RegExp(
-  `[${String.fromCodePoint(0x0300)}-${String.fromCodePoint(0x036f)}]`,
-  'g',
-);
-const CURLY_SINGLE = new RegExp(
-  `[${String.fromCodePoint(0x2018)}${String.fromCodePoint(0x2019)}]`,
-  'g',
-);
-const CURLY_DOUBLE = new RegExp(
-  `[${String.fromCodePoint(0x201c)}${String.fromCodePoint(0x201d)}]`,
-  'g',
-);
 
 /** Folds a string to 7-bit ASCII, dropping combining marks and anything that survives. */
 export function ascii(s: string): string {
   return s
     .normalize('NFD')
-    .replace(COMBINING_MARKS, '')
-    .replace(CURLY_SINGLE, "'")
-    .replace(CURLY_DOUBLE, '"')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
     .replace(/[^\x20-\x7e]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
