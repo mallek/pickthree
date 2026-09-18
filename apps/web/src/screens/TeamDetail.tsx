@@ -127,7 +127,7 @@ export function TeamDetail({ id }: { id: string }) {
   return (
     <div className="screen">
       <Header
-        title="Team analysis"
+        title="Team Analysis"
         onBack={() => navigate(backRoute)}
         backLabel={backLabel}
         action={<ShareButton onClick={() => void share()} label="Share this team" />}
@@ -137,17 +137,11 @@ export function TeamDetail({ id }: { id: string }) {
           <div className="team-strip-row">
             {team.slots.map((slot, i) => {
               const id = slot.candidate.build.speciesId;
-              const assumed = hypothetical.includes(id);
               return (
                 <div className="strip-member" key={`${id}-${i}`}>
                   <PokemonToken speciesId={id} size={48} />
                   <b>{name(id)}</b>
                   <span className="meta">{ROLE_SHORT[slot.role]}</span>
-                  {custom ? (
-                    <span className={`mtag${assumed ? '' : ' good'}`}>
-                      {assumed ? 'assumed IVs' : 'yours'}
-                    </span>
-                  ) : null}
                 </div>
               );
             })}
@@ -331,28 +325,43 @@ export function TeamDetail({ id }: { id: string }) {
                   </div>
                 ) : null}
                 <div className="divider-top stack" style={{ gap: 4 }}>
-                  <div className="kv">
-                    <span className="muted">Yours</span>
-                    <span>
-                      {ivLine(c.build.ivs)} · Level {sp.level.max}
-                      {c.build.stageOffset > 0 ? ` · from ${name(sp.speciesId)}` : ''} · IV rank top{' '}
-                      {topPct(c.build.ivRank)}%
-                      {shadowFlag ? (
-                        <span style={{ marginLeft: 6, color: 'var(--warn)' }}>{shadowFlag}</span>
-                      ) : null}
-                    </span>
-                  </div>
-                  <div className="kv">
-                    <span className="muted">To build</span>
-                    <span>
-                      {c.build.level > sp.level.max
-                        ? `Level ${sp.level.max} to ${c.build.level} · `
-                        : 'Already at level · '}
-                      {costLine(c.cost)}
-                      {c.cost.secondMoveUnlock ? ' · second move unlock' : ''}
-                      {c.cost.estimated ? ' (evolution candy estimated)' : ''}
-                    </span>
-                  </div>
+                  {hypothetical.includes(c.build.speciesId) ? (
+                    <div className="kv">
+                      <span className="muted">Yours</span>
+                      <span className="muted">
+                        Not in your collection. The numbers assume a top-10% IV spread (
+                        {ivLine(c.build.ivs)}) at level {c.build.level}.
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="kv">
+                        <span className="muted">
+                          {c.build.stageOffset > 0 ? `From your ${name(sp.speciesId)}` : 'Yours'}
+                        </span>
+                        <span>
+                          {ivLine(c.build.ivs)} · Level {sp.level.max} · IV rank top{' '}
+                          {topPct(c.build.ivRank)}%
+                          {shadowFlag ? (
+                            <span style={{ marginLeft: 6, color: 'var(--warn)' }}>
+                              {shadowFlag}
+                            </span>
+                          ) : null}
+                        </span>
+                      </div>
+                      <div className="kv">
+                        <span className="muted">To build</span>
+                        <span>
+                          {c.build.level > sp.level.max
+                            ? `Level ${sp.level.max} to ${c.build.level} · `
+                            : 'Already at level · '}
+                          {costLine(c.cost)}
+                          {c.cost.secondMoveUnlock ? ' · second move unlock' : ''}
+                          {c.cost.estimated ? ' (evolution candy estimated)' : ''}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             );

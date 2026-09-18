@@ -62,11 +62,11 @@ export function Counters() {
             style={{ marginBottom: -6 }}
             onClick={() => navigate({ screen: 'meta' })}
           >
-            &lsaquo; Your meta
+            &lsaquo; Your Meta
           </button>
         ) : null}
         <div className="between">
-          <h2>{vs ? `Who beats ${name(vs)}` : 'Counters'}</h2>
+          <h2>{vs ? `Who Beats ${name(vs)}` : 'Counters'}</h2>
           <span className="row">
             {vs ? null : (
               <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>

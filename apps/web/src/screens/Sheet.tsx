@@ -170,7 +170,7 @@ export function Sheet() {
             <LeagueSwitcher />
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
-            <span>Your meta</span>
+            <span>Your Meta</span>
             <button
               type="button"
               className="toggle"

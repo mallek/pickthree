@@ -154,7 +154,7 @@ export function NewSet() {
   return (
     <div className="screen">
       <Header
-        title="Pick your team"
+        title="Pick Your Team"
         onBack={() => navigate({ screen: 'meta' })}
         backLabel="Cancel"
         cog={false}

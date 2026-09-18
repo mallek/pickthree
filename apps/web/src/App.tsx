@@ -90,7 +90,7 @@ function TabBar() {
         onClick={() => navigate({ screen: 'meta' })}
       >
         {ICONS.meta}
-        Your meta
+        Your Meta
       </button>
     </nav>
   );

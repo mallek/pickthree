@@ -240,7 +240,7 @@ export function YourMeta() {
     <div className="screen">
       <div className="page-head">
         <div className="between">
-          <h2>Your meta</h2>
+          <h2>Your Meta</h2>
           <HeadCog />
         </div>
         <LeagueSwitcher compact />

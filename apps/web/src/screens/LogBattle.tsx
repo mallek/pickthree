@@ -127,7 +127,7 @@ export function LogBattle() {
   return (
     <div className="screen">
       <Header
-        title="Log a battle"
+        title="Log a Battle"
         sub={open ? `${open.battles.length} logged with this team` : ''}
         onBack={() => navigate({ screen: 'meta' })}
         backLabel="Close"

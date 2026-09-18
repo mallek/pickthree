@@ -73,7 +73,7 @@ export function SharedTeam({ league, members }: { league: string; members: strin
   return (
     <div className="screen">
       <Header
-        title="Shared team"
+        title="Shared Team"
         sub={teamNames}
         onBack={() => navigate({ screen: 'build' })}
         backLabel="Build"

@@ -244,7 +244,7 @@ export function Build() {
   return (
     <div className="screen">
       <Header
-        title="Build a team"
+        title="Build a Team"
         sub="Same breakdown your recommended teams get, for three you choose."
         onBack={() => navigate({ screen: 'teams' })}
         backLabel="Teams"

@@ -188,7 +188,7 @@ if (!facedHref || !facedHref.startsWith('#/counters?vs=')) {
 await page.goto(`${base}/${facedHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.counter-row, .scroll > p.muted', { timeout: 120_000 });
 const vsTitle = await page.$eval('.page-head h2', (h) => h.textContent);
-if (!vsTitle || !vsTitle.startsWith('Who beats ')) {
+if (!vsTitle || !vsTitle.startsWith('Who Beats ')) {
   throw new Error(`counters vs view has the wrong title: ${vsTitle}`);
 }
 await shot('23-counters-vs', false);
