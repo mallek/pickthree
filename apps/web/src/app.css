@@ -1425,11 +1425,10 @@ textarea.paste {
   overflow: hidden;
 }
 .pick-card.filled {
-  /* Role header across the top; sprite left with the IV line beside it; moves full width. */
-  grid-template-columns: 96px 1fr;
-  grid-template-rows: auto auto auto;
+  /* Sprite and role on the left; name, IVs and the move lines on the right. */
+  grid-template-columns: 88px 1fr;
+  column-gap: 12px;
   align-items: center;
-  row-gap: 10px;
   /* A wash of the first type's colour from the left, fading into the card. */
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--c1) 18%, transparent), transparent 46%),
@@ -1451,34 +1450,23 @@ textarea.paste {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.pick-role-head {
-  grid-column: 1 / -1;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-text);
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--divider);
-}
 .pick-token {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: 4px;
+  gap: 8px;
 }
-.pick-name {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-/* Types as small coloured words under the name, never a chip that could pass for a move. */
-.pick-types {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
+.pick-role-pill {
   font-size: 11px;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 88px;
 }
 .pick-card-body {
   display: flex;
@@ -1486,49 +1474,52 @@ textarea.paste {
   gap: 6px;
   min-width: 0;
 }
+.pick-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pick-name {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
+}
 .pick-v {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.35;
 }
 .pick-v b {
   font-weight: 600;
 }
-/* The analysis page's move rows, one line each, across the whole card. */
+/* One line per move: F or C, the name, its type. */
 .pick-moves {
-  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-.pick-moves .moves {
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 10px;
   border-top: 1px solid var(--divider);
 }
-.pick-moves .move-row {
-  grid-template-columns: 56px 1fr;
-  padding: 5px 0;
-  font-size: 13px;
+.pick-move {
+  display: flex;
   align-items: center;
-}
-.pick-moves .move-kind {
-  font-size: 11px;
-  padding-top: 0;
-}
-.pick-moves .move-main {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
   gap: 8px;
-}
-.pick-moves .move-line {
+  font-size: 14px;
   min-width: 0;
 }
-.pick-moves .move-name {
-  font-size: 13px;
-}
-.pick-moves .move-sub {
-  flex-direction: row;
+.pick-move-k {
+  font-style: normal;
   font-size: 11px;
-  white-space: nowrap;
+  font-weight: 600;
+  color: var(--faint);
+  width: 12px;
+  text-align: center;
+  flex: none;
+}
+.pick-move-name {
+  min-width: 0;
+  line-height: 1.2;
 }
 .pick-moves .tag {
   align-self: flex-start;
@@ -2254,22 +2245,6 @@ input[type='range'] {
   }
 }
 
-/* move picker on the build screen */
-.pick-moves {
-  flex-direction: row;
-  align-items: baseline;
-  gap: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.pick-moves b {
-  flex: 1;
-  min-width: 0;
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--text);
-}
 .move-picker {
   display: flex;
   flex-direction: column;

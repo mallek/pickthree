@@ -337,6 +337,8 @@ await page.$$eval('.move-opt[role="checkbox"]:not(.on)', (rows) => rows[0]?.clic
 await new Promise((r) => setTimeout(r, 300));
 await shot('13b-build-moves', false);
 await page.click('.sheet .btn-ghost');
+// Centre it first: near the bottom edge the fixed tab bar would take the click instead.
+await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
 await page.click('.scroll > .btn');
 await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
 const analyzeError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
@@ -361,6 +363,8 @@ await page.waitForSelector('.recent-token', { timeout: 15_000 });
 await page.click('.recent-token');
 await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length >= 3);
 const tUnranked = Date.now();
+// Centre it first: near the bottom edge the fixed tab bar would take the click instead.
+await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
 await page.click('.scroll > .btn');
 await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
 const unrankedError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
@@ -404,6 +408,8 @@ await page.click('.recent-row .recent-token');
 await page.waitForSelector('.pick-slot');
 await page.type('.field input[placeholder]', '1497');
 await shot('16-add-form', false);
+// Centre it first: near the bottom edge the fixed tab bar would take the click instead.
+await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
 await page.click('.scroll > .btn');
 await page.waitForSelector('.stat3, .verdict', { timeout: 60_000 });
 await new Promise((r) => setTimeout(r, 600));

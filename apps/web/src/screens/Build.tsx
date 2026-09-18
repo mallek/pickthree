@@ -18,15 +18,16 @@ import {
 import {
   Chip,
   Header,
-  MoveRows,
   PokemonToken,
   Progress,
+  TypeChip,
+  TypeChips,
   useName,
   useShortName,
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
-import { ivLine, topPct, typeColor, typeLabel } from '../format.ts';
+import { ivLine, topPct, typeColor } from '../format.ts';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -294,26 +295,30 @@ export function Build() {
     // wanted is derived from the same state wantedKeys summarises.
   }, [wantedKeys, s.boot, s.leagueInfo, pools, movePool]);
 
-  /** The moves a pick runs as the same rows the analysis page uses, once its pool is known. */
-  const moveRows = (p: TeamPick, pool: MovePool | null) => {
+  /** The moves a pick runs, one line each: F or C, the name, its type. */
+  const moveLines = (p: TeamPick, pool: MovePool | null) => {
     if (!pool) {
       return <span className="meta">Recommended moves</span>;
     }
     const ids = p.moves ?? pool.recommended;
-    const fast = pool.fast.find((m) => m.moveId === ids.fast);
-    const charged = ids.charged
-      .map((id) => pool.charged.find((m) => m.moveId === id))
-      .filter((m) => m !== undefined);
-    if (!fast) {
-      return <span className="meta">{movesLine(p, pool)}</span>;
-    }
+    const all = [...pool.fast, ...pool.charged];
+    const line = (id: string, kind: 'F' | 'C') => {
+      const m = all.find((x) => x.moveId === id);
+      return (
+        <span className="pick-move" key={id}>
+          <i className="pick-move-k">{kind}</i>
+          <span className="pick-move-name">{m?.name ?? id}</span>
+          {m ? <TypeChip type={m.type} small /> : null}
+        </span>
+      );
+    };
     return (
       <span className="pick-moves">
-        <MoveRows fast={fast} charged={charged} compact />
+        {line(ids.fast, 'F')}
+        {ids.charged.map((id) => line(id, 'C'))}
         {p.moves ? <span className="tag">moves changed</span> : null}
       </span>
     );
-    // The pool missing a move id falls back to the plain line above.
   };
 
   const movesLine = (p: TeamPick, pool: MovePool | null): string => {
@@ -511,21 +516,15 @@ export function Build() {
                   onClick={() => setMovesSlot(movesSlot === i ? null : i)}
                   aria-label={`${info.title} moves`}
                 >
-                  <span className="pick-role-head">{role}</span>
                   <span className="pick-token">
                     <PokemonToken speciesId={info.speciesId} size={56} />
-                    <b className="pick-name">{info.title}</b>
-                    <span className="pick-types">
-                      {types
-                        .filter((t) => t !== 'none')
-                        .map((t) => (
-                          <span key={t} style={{ color: `var(--type-${t}-ink)` }}>
-                            {typeLabel(t)}
-                          </span>
-                        ))}
-                    </span>
+                    <span className="pick-role-pill">{role}</span>
                   </span>
                   <span className="pick-card-body">
+                    <span className="pick-head">
+                      <b className="pick-name">{info.title}</b>
+                      <TypeChips types={types} small />
+                    </span>
                     <span className="pick-v">
                       {sp ? (
                         <>
@@ -539,8 +538,8 @@ export function Build() {
                         <span className="muted">Not yours; top-10% IVs assumed</span>
                       )}
                     </span>
+                    {moveLines(p, poolFor(p))}
                   </span>
-                  {moveRows(p, poolFor(p))}
                 </button>
                 <span className="pick-side">
                   <button

@@ -392,14 +392,11 @@ export function MoveRows({
   fast,
   charged,
   reads,
-  compact = false,
 }: {
   fast: MoveChoice;
   charged: MoveChoice[];
   /** Optional per-charged-move line, e.g. "extra damage on 31 of 48". */
   reads?: Record<string, string>;
-  /** One line per move: counts as bare numbers, no TM badges. For cards. */
-  compact?: boolean;
 }) {
   return (
     <div className="moves">
@@ -412,12 +409,12 @@ export function MoveRows({
               <TypeChip type={fast.type} small />
               <EffectIcons effects={fast.effects} />
             </span>
-            {compact ? null : <TmBadge tm={fast.tm} />}
+            <TmBadge tm={fast.tm} />
           </span>
         </span>
       </div>
       {charged.map((m) => {
-        const count = compact ? (m.counts?.join('-') ?? null) : countsText(fast.name, m.counts);
+        const count = countsText(fast.name, m.counts);
         const read = reads?.[m.moveId];
         return (
           <div className="move-row" key={m.moveId}>
@@ -430,7 +427,7 @@ export function MoveRows({
                   {m.altType ? <TypeChip type={m.altType} small /> : null}
                   <EffectIcons effects={m.effects} />
                 </span>
-                {compact ? null : <TmBadge tm={m.tm} />}
+                <TmBadge tm={m.tm} />
               </span>
               {count || read ? (
                 <span className="move-sub">
