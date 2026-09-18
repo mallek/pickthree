@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body{margin:0;background:#0d0e15;font-family:Inter,system-ui,sans-serif;}
+    a{color:var(--accent);text-decoration:none}a:hover{color:var(--accent-hi)}
+    [data-theme="dark"]{--bg:#161826;--surface:#232532;--surface2:#2c2e3e;--text:#f1f2f8;--muted:#9a9db4;--accent:#9184d9;--accent-hi:#aca2e8;--on-accent:#161826;--border:rgba(255,255,255,.07);--up:#6fcf97;--down:#f08a8a;--bar:#3a3d52;--warn:#f2c46b}
+    [data-theme="light"]{--bg:#f3f3fa;--surface:#ffffff;--surface2:#e9e9f3;--text:#1a1b27;--muted:#5f6278;--accent:#6c5fcb;--accent-hi:#5748b8;--on-accent:#ffffff;--border:rgba(20,22,40,.09);--up:#2f9e5f;--down:#d0565b;--bar:#dcdcea;--warn:#b5842a}
+  </style>
+</helmet>
+<section data-theme="{{ theme }}" style="padding:40px;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;color:#c8cad8;font-family:Inter,system-ui,sans-serif">
+
+  <!-- 1a Overview 40k -->
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1a</span>League overview · 41k battles · dark</div>
+    <div data-theme="{{ theme }}" data-screen-label="Overview 40k" style="width:390px;border-radius:28px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;padding:14px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:-.2px">meta<span style="color:var(--accent)">.pick3.gg</span><span style="width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px rgba(111,207,151,.2)"></span></div>
+        <div style="display:flex;gap:6px">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">☾</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">≡</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-radius:999px;padding:4px;gap:4px">
+        <div style="text-align:center;padding:9px 0;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:13px">Great</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Ultra</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Master</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--accent);font-size:12px;font-weight:600">This season</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">30 days</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">7 days</div>
+        <div style="margin-left:auto;padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:600">All ranks ▾</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">41,208</div><div style="font-size:11px;color:var(--muted);margin-top:2px">battles</div></div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">3,904</div><div style="font-size:11px;color:var(--muted);margin-top:2px">devices</div></div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">12 min</div><div style="font-size:11px;color:var(--muted);margin-top:2px">since update</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:0 2px"><b style="color:var(--text)">Faced</b> is the share of the 41,208 shared battles where this Pokémon was on the other side. <b style="color:var(--text)">Record</b> is how the people who shared those battles did against it. Trend compares with the previous season.</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px"><span>Top 40 · most faced</span><span>faced · record</span></div>
+      <div style="background:var(--surface);border-radius:12px;padding:4px 10px;display:flex;flex-direction:column">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:22px 40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--muted);font-weight:600;text-align:right">{{ r.rank }}</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,{{ r.c1 }} 0 50%,{{ r.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--bg)"><img src="{{ r.img }}" alt="" style="width:46px;height:46px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+            <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0">{{ r.name }}</span>
+                <sc-for list="{{ r.types }}" as="t" hint-placeholder-count="1"><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;background:{{ t.color }};color:{{ t.fg }};text-transform:uppercase;letter-spacing:.3px;flex:none;white-space:nowrap">{{ t.name }}</span></sc-for>
+              </div>
+              <div style="height:6px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:6px;border-radius:999px;background:var(--accent);width:{{ r.barW }}%"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div style="display:flex;gap:5px;align-items:baseline"><span style="font-size:14px;font-weight:700">{{ r.share }}%</span><span style="font-size:11px;font-weight:600;color:{{ r.trendColor }}">{{ r.trendTxt }}</span></div>
+              <div style="font-size:11px;color:var(--muted)">{{ r.wins }}–{{ r.losses }} · <span style="color:var(--text)">{{ r.wrTxt }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5">Only Pokémon faced in at least 0.5% of battles are ranked.<br>Updated every 10 minutes from battles shared by pick3 users.</div>
+    </div>
+  </div>
+
+  <!-- 1b Overview 40 battles -->
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1b</span>League overview · 40 battles (small sample)</div>
+    <div data-theme="{{ theme }}" data-screen-label="Overview 40 battles" style="width:390px;border-radius:28px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;padding:14px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:-.2px">meta<span style="color:var(--accent)">.pick3.gg</span><span style="width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px rgba(111,207,151,.2)"></span></div>
+        <div style="display:flex;gap:6px">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">☾</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">≡</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-radius:999px;padding:4px;gap:4px">
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Great</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Ultra</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:13px">Master</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">This season</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">30 days</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--accent);font-size:12px;font-weight:600">7 days</div>
+        <div style="margin-left:auto;padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:600">Legend ▾</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">40</div><div style="font-size:11px;color:var(--muted);margin-top:2px">battles</div></div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">6</div><div style="font-size:11px;color:var(--muted);margin-top:2px">devices</div></div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">3 hr</div><div style="font-size:11px;color:var(--muted);margin-top:2px">since update</div></div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border)">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--warn);color:#161826;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none">!</div>
+        <div style="font-size:12px;line-height:1.5;color:var(--muted)"><b style="color:var(--text)">Too few battles to trust yet.</b> Only 40 Master League battles from Legend-rank players have been shared in the last 7 days. Counts are shown as plain numbers, trends are hidden until there are 200 or more. Try <a href="#1a">all ranks</a> or a longer window.</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px"><span>Faced 2+ times</span><span>faced · record</span></div>
+      <div style="background:var(--surface);border-radius:12px;padding:4px 10px;display:flex;flex-direction:column">
+        <sc-for list="{{ rowsSmall }}" as="r" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:22px 40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--muted);font-weight:600;text-align:right">{{ r.rank }}</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,{{ r.c1 }} 0 50%,{{ r.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--bg)"><img src="{{ r.img }}" alt="" style="width:46px;height:46px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+            <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0">{{ r.name }}</span>
+                <sc-for list="{{ r.types }}" as="t" hint-placeholder-count="1"><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;background:{{ t.color }};color:{{ t.fg }};text-transform:uppercase;letter-spacing:.3px;flex:none;white-space:nowrap">{{ t.name }}</span></sc-for>
+              </div>
+              <div style="height:6px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:6px;border-radius:999px;background:var(--muted);width:{{ r.barW }}%"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div style="display:flex;gap:5px;align-items:baseline"><span style="font-size:14px;font-weight:700">{{ r.share }}</span><span style="font-size:11px;color:var(--muted)">of 40</span></div>
+              <div style="font-size:11px;color:var(--muted)">{{ r.wins }}–{{ r.losses }}</div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="padding:12px 0 8px;font-size:12px;color:var(--muted);text-align:center">14 more Pokémon were faced once each</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:14px;font-weight:700">Help fill this in</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Every battle logged in pick3 is shared here automatically (you can switch it off in Settings). Six devices are contributing to this view so far.</div>
+        <div style="display:inline-flex;align-self:flex-start;padding:9px 14px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:13px;font-weight:700">Log battles in pick3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c Overview light -->
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1c</span>League overview · light theme</div>
+    <div data-theme="{{ altTheme }}" data-screen-label="Overview light" style="width:390px;border-radius:28px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;padding:14px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:-.2px">meta<span style="color:var(--accent)">.pick3.gg</span><span style="width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px rgba(47,158,95,.2)"></span></div>
+        <div style="display:flex;gap:6px">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">☀</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">≡</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-radius:999px;padding:4px;gap:4px">
+        <div style="text-align:center;padding:9px 0;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:13px">Great</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Ultra</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Master</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">This season</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--accent);font-size:12px;font-weight:600">30 days</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">7 days</div>
+        <div style="margin-left:auto;padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:600">Ace ▾</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">9,731</div><div style="font-size:11px;color:var(--muted);margin-top:2px">battles</div></div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">1,088</div><div style="font-size:11px;color:var(--muted);margin-top:2px">devices</div></div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 12px 10px"><div style="font-size:20px;font-weight:800;letter-spacing:-.4px">12 min</div><div style="font-size:11px;color:var(--muted);margin-top:2px">since update</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:0 2px"><b style="color:var(--text)">Faced</b> is the share of the 9,731 shared battles where this Pokémon was on the other side. <b style="color:var(--text)">Record</b> is how Ace-rank reporters did against it. Trend compares with the previous 30 days.</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px"><span>Top 40 · most faced</span><span>faced · record</span></div>
+      <div style="background:var(--surface);border-radius:12px;padding:4px 10px;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(20,22,40,.06)">
+        <sc-for list="{{ rowsLight }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:22px 40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--muted);font-weight:600;text-align:right">{{ r.rank }}</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,{{ r.c1 }} 0 50%,{{ r.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--bg)"><img src="{{ r.img }}" alt="" style="width:46px;height:46px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+            <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0">{{ r.name }}</span>
+                <sc-for list="{{ r.types }}" as="t" hint-placeholder-count="1"><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;background:{{ t.color }};color:{{ t.fg }};text-transform:uppercase;letter-spacing:.3px;flex:none;white-space:nowrap">{{ t.name }}</span></sc-for>
+              </div>
+              <div style="height:6px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:6px;border-radius:999px;background:var(--accent);width:{{ r.barW }}%"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div style="display:flex;gap:5px;align-items:baseline"><span style="font-size:14px;font-weight:700">{{ r.share }}%</span><span style="font-size:11px;font-weight:600;color:{{ r.trendColor }}">{{ r.trendTxt }}</span></div>
+              <div style="font-size:11px;color:var(--muted)">{{ r.wins }}–{{ r.losses }} · <span style="color:var(--text)">{{ r.wrTxt }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="padding:12px 0 8px;font-size:12px;color:var(--accent);text-align:center;font-weight:600">Show all 40</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1d Species page -->
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1d</span>Species page · Azumarill</div>
+    <div data-theme="{{ theme }}" data-screen-label="Species Azumarill" style="width:390px;border-radius:28px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;padding:14px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-weight:600"><span style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--text);font-size:16px">‹</span>Great · This season · All ranks</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">⇪</div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;padding:4px 2px">
+        <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#4a90d9 0 50%,#e78fc0 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 3px var(--bg),0 0 0 2px var(--surface2);flex:none"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/184.png" alt="" style="width:84px;height:84px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))"></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:26px;font-weight:800;letter-spacing:-.5px;line-height:1">Azumarill</div>
+          <div style="display:flex;gap:6px"><span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;background:#4a90d9;color:#fff;text-transform:uppercase;letter-spacing:.3px">Water</span><span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;background:#e78fc0;color:#161826;text-transform:uppercase;letter-spacing:.3px">Fairy</span></div>
+          <div style="font-size:12px;color:var(--muted)">#1 most faced · in 18.4% of 41,208 battles</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--surface);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600">Faced, week by week</div>
+          <svg viewBox="0 0 140 40" width="100%" height="40" style="display:block;overflow:visible"><polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="{{ sparkPts }}"></polyline><circle cx="{{ sparkLastX }}" cy="{{ sparkLastY }}" r="3.5" fill="var(--accent)"></circle></svg>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>15.1%</span><span style="color:var(--up);font-weight:600">▲ 3.3 pts</span></div>
+        </div>
+        <div style="background:var(--surface);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600">Reporters' record vs</div>
+          <div style="font-size:24px;font-weight:800;letter-spacing:-.4px;line-height:1.1">45.6%</div>
+          <div style="font-size:11px;color:var(--muted)">3,458 W – 4,124 L</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.4;margin-top:2px">Below 50% means it usually wins when it shows up.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="{{ beatsUrl }}" style="flex:1;text-align:center;padding:13px 0;border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:14px;font-weight:700">Who beats it</a>
+        <a href="{{ buildUrl }}" style="flex:1;text-align:center;padding:13px 0;border-radius:999px;background:var(--surface);color:var(--text);font-size:14px;font-weight:700;border:1px solid var(--border)">Build with it</a>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:14px;font-weight:700">Record vs, by rank</div><div style="font-size:11px;color:var(--muted)">reporters' wins</div></div>
+        <sc-for list="{{ bands }}" as="b" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:78px 1fr 84px;gap:10px;align-items:center">
+            <div style="font-size:12px;font-weight:600">{{ b.name }}</div>
+            <div style="height:8px;border-radius:999px;background:var(--bar);overflow:hidden;position:relative"><div style="height:8px;border-radius:999px;background:{{ b.color }};width:{{ b.pct }}%"></div></div>
+            <div style="font-size:12px;text-align:right"><b>{{ b.pct }}%</b> <span style="color:var(--muted);font-size:11px">· {{ b.n }}</span></div>
+          </div>
+        </sc-for>
+        <div style="font-size:11px;color:var(--muted);line-height:1.4">Legend is 96 battles — treat it as a hint, not a fact.</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:14px;font-weight:700">Seen next to</div><div style="font-size:11px;color:var(--muted)">share of its enemy teams</div></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+          <sc-for list="{{ mates }}" as="m" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,{{ m.c1 }} 0 50%,{{ m.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--surface)"><img src="{{ m.img }}" alt="" style="width:50px;height:50px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+              <div style="font-size:12px;font-weight:700">{{ m.pct }}%</div>
+              <div style="font-size:10px;color:var(--muted);text-align:center;line-height:1.2">{{ m.short }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:14px;font-weight:700">Moves reporters ran</div><div style="font-size:11px;color:var(--muted)">2,104 reporters used it</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Fast</div>
+          <sc-for list="{{ fastMoves }}" as="mv" hint-placeholder-count="2">
+            <div style="display:grid;grid-template-columns:auto 1fr 40px;gap:10px;align-items:center">
+              <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:{{ mv.color }};color:{{ mv.fg }};min-width:86px;text-align:center">{{ mv.name }}</span>
+              <div style="height:8px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:8px;border-radius:999px;background:{{ mv.color }};width:{{ mv.pct }}%"></div></div>
+              <div style="font-size:12px;font-weight:700;text-align:right">{{ mv.pct }}%</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Charged</div>
+          <sc-for list="{{ chargedMoves }}" as="mv" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:auto 1fr 40px;gap:10px;align-items:center">
+              <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:{{ mv.color }};color:{{ mv.fg }};min-width:86px;text-align:center">{{ mv.name }}</span>
+              <div style="height:8px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:8px;border-radius:999px;background:{{ mv.color }};width:{{ mv.pct }}%"></div></div>
+              <div style="font-size:12px;font-weight:700;text-align:right">{{ mv.pct }}%</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.4">Each Azumarill carries two charged moves, so those shares add up to 200%.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1e Teams -->
+  <div id="1e" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1e</span>Teams leaderboard</div>
+    <div data-theme="{{ theme }}" data-screen-label="Teams" style="width:390px;border-radius:28px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;padding:14px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:-.2px">meta<span style="color:var(--accent)">.pick3.gg</span></div>
+        <div style="display:flex;gap:6px">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">☾</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">≡</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-radius:999px;padding:4px;gap:4px">
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Pokémon</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;background:var(--surface2);color:var(--text);font-weight:700;font-size:13px">Teams</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">About</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.4px">Most run teams</div>
+        <div style="font-size:12px;color:var(--muted)">Great League · This season · teams reporters ran themselves</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--accent);font-size:12px;font-weight:600">All ranks</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">Below Ace</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">Ace</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">Veteran</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">Expert</div>
+        <div style="padding:7px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">Legend</div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--muted);align-items:center;padding:0 2px;flex-wrap:wrap">
+        <span style="font-weight:600">Confidence:</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--muted)"></span>few &lt; 30</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--warn)"></span>some 30–300</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--up)"></span>many 300+</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ teams }}" as="tm" hint-placeholder-count="6">
+          <div style="background:var(--surface);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:12px;color:var(--muted);font-weight:600;width:16px">{{ tm.rank }}</div>
+              <div style="display:flex">
+                <sc-for list="{{ tm.mons }}" as="m" hint-placeholder-count="3">
+                  <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,{{ m.c1 }} 0 50%,{{ m.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface);margin-right:-6px"><img src="{{ m.img }}" alt="" style="width:48px;height:48px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;margin-left:8px;min-width:0;flex:1 1 auto;overflow:hidden">
+                <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0">{{ tm.label }}</div>
+                <div style="font-size:11px;color:var(--muted)">{{ tm.battles }} battles</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+                <div style="font-size:16px;font-weight:800">{{ tm.wr }}%</div>
+                <div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--surface2);color:{{ tm.confColor }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ tm.confColor }}"></span>{{ tm.conf }}</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:9px">
+              <div style="font-size:11px;color:var(--muted)">{{ tm.hint }}</div>
+              <a href="{{ tm.url }}" style="font-size:12px;font-weight:700;color:var(--accent)">Open in pick3 →</a>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5">Win rate is the reporters' own result with this team.<br>Small samples swing a lot; the badge tells you how much to trust it.</div>
+    </div>
+  </div>
+
+  <!-- 1f About -->
+  <div id="1f" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1f</span>About the data</div>
+    <div data-theme="{{ theme }}" data-screen-label="About" style="width:390px;border-radius:28px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;padding:14px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:-.2px">meta<span style="color:var(--accent)">.pick3.gg</span></div>
+        <div style="display:flex;gap:6px">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">☾</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">≡</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-radius:999px;padding:4px;gap:4px">
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Pokémon</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Teams</div>
+        <div style="text-align:center;padding:9px 0;border-radius:999px;background:var(--surface2);color:var(--text);font-weight:700;font-size:13px">About</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:4px 2px">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.4px;line-height:1.15">Where these numbers come from</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5">Every number on this site is built from real GO Battle League battles that pick3 users chose to share. Nothing is scraped, estimated or simulated.</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:14px;font-weight:700">What one shared battle contains</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.45">
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>League and season</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>When the battle happened</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>The reporter's three Pokémon and the moves they had set</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>Which opponent Pokémon were seen</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>Win or loss</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>Rank band (Below Ace, Ace, Veteran, Expert, Legend)</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✓</span><span>A random device id, so we can count contributors without knowing who they are</span></div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:14px;font-weight:700">Never collected</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.45">
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--surface2);color:var(--down);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✕</span><span>Your Pokémon collection or storage</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--surface2);color:var(--down);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✕</span><span>IVs, levels or CP</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--surface2);color:var(--down);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✕</span><span>Trainer names, friend codes, emails or anything that identifies you</span></div>
+          <div style="display:flex;gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:var(--surface2);color:var(--down);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;margin-top:1px">✕</span><span>Location</span></div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:14px;font-weight:700">How to contribute</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5">Log your battles in the pick3 app. Sharing is on by default, so every battle you log shows up here within about 10 minutes. To stop sharing, switch it off in <b style="color:var(--text)">Settings → Share battles</b>. Battles already shared stay in the counts.</div>
+        <div style="display:flex;gap:8px">
+          <a href="https://pick3.gg" style="padding:10px 16px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:13px;font-weight:700">Open pick3</a>
+          <a href="#1a" style="padding:10px 16px;border-radius:999px;background:var(--surface2);color:var(--text);font-size:13px;font-weight:700">How "faced" is counted</a>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:700">For other apps</div><span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--accent)">API</span></div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5">Any battle logger can post records here with an API key. Records use the same fields listed above, are tagged with the source app, and count toward the same totals. Keys are free; abusive or fabricated data gets a key revoked.</div>
+        <div style="background:var(--bg);border-radius:10px;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.6;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">POST https://meta.pick3.gg/api/v1/battles<br><span style="color:var(--muted)">Authorization: Bearer &lt;your key&gt;</span></div>
+        <a href="#" style="font-size:13px;font-weight:700;color:var(--accent)">Request a key →</a>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;padding-top:4px">Pokémon and Pokémon GO are trademarks of their owners.<br>meta.pick3.gg is a fan-made tool and is not affiliated with them.</div>
+    </div>
+  </div>
+
+  <!-- 1g Desktop overview -->
+  <div id="1g" style="display:flex;flex-direction:column;gap:12px;flex-basis:100%">
+    <div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="background:#2c2e3e;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700">1g</span>League overview · desktop</div>
+    <div data-theme="{{ theme }}" data-screen-label="Overview desktop" style="width:1280px;border-radius:16px;background:var(--bg);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:Inter,system-ui,sans-serif;box-sizing:border-box;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:28px;padding:18px 32px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;letter-spacing:-.2px">meta<span style="color:var(--accent)">.pick3.gg</span><span style="width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px rgba(111,207,151,.2)"></span></div>
+        <div style="display:flex;gap:4px;background:var(--surface);border-radius:999px;padding:4px">
+          <div style="padding:7px 18px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:13px">Great</div>
+          <div style="padding:7px 18px;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Ultra</div>
+          <div style="padding:7px 18px;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px">Master</div>
+        </div>
+        <div style="display:flex;gap:22px;font-size:13px;font-weight:600;color:var(--muted);margin-left:8px"><span style="color:var(--text)">Pokémon</span><span>Teams</span><span>About the data</span></div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">☾</div>
+          <a href="https://pick3.gg" style="padding:8px 16px;border-radius:999px;background:var(--surface);color:var(--text);font-size:13px;font-weight:700">Open pick3 →</a>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:28px;padding:24px 32px 32px">
+        <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="font-size:24px;font-weight:800;letter-spacing:-.5px;margin-right:12px">Great League · most faced</div>
+            <div style="padding:7px 14px;border-radius:999px;background:var(--surface2);border:1px solid var(--accent);font-size:12px;font-weight:600">This season</div>
+            <div style="padding:7px 14px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">30 days</div>
+            <div style="padding:7px 14px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600">7 days</div>
+            <div style="padding:7px 14px;border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:600;margin-left:6px">All ranks ▾</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;background:var(--surface);border-radius:12px;padding:6px 18px">
+            <div style="display:flex;flex-direction:column">
+              <div style="display:grid;grid-template-columns:24px 36px minmax(0,1fr) 196px;gap:12px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:10px 0 6px;border-bottom:1px solid var(--border)"><span>#</span><span></span><span>Pokémon</span><span style="text-align:right">faced · trend · record</span></div>
+              <sc-for list="{{ rowsL }}" as="r" hint-placeholder-count="10">
+                <div style="display:grid;grid-template-columns:24px 36px minmax(0,1fr) 196px;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+                  <div style="font-size:12px;color:var(--muted);font-weight:600">{{ r.rank }}</div>
+                  <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,{{ r.c1 }} 0 50%,{{ r.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--bg)"><img src="{{ r.img }}" alt="" style="width:42px;height:42px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+                  <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                    <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0">{{ r.name }}</span>
+                      <sc-for list="{{ r.types }}" as="t" hint-placeholder-count="1"><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;background:{{ t.color }};color:{{ t.fg }};text-transform:uppercase;letter-spacing:.3px;flex:none;white-space:nowrap">{{ t.name }}</span></sc-for>
+                    </div>
+                    <div style="height:5px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:5px;border-radius:999px;background:var(--accent);width:{{ r.barW }}%"></div></div>
+                  </div>
+                  <div style="display:flex;justify-content:flex-end;gap:10px;align-items:baseline;font-size:12px;white-space:nowrap"><span style="font-weight:700;font-size:13px">{{ r.share }}%</span><span style="font-weight:600;color:{{ r.trendColor }};width:52px;text-align:right">{{ r.trendTxt }}</span><span style="color:var(--muted);width:44px;text-align:right">{{ r.wrTxt }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="display:grid;grid-template-columns:24px 36px minmax(0,1fr) 196px;gap:12px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:10px 0 6px;border-bottom:1px solid var(--border)"><span>#</span><span></span><span>Pokémon</span><span style="text-align:right">faced · trend · record</span></div>
+              <sc-for list="{{ rowsR }}" as="r" hint-placeholder-count="10">
+                <div style="display:grid;grid-template-columns:24px 36px minmax(0,1fr) 196px;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+                  <div style="font-size:12px;color:var(--muted);font-weight:600">{{ r.rank }}</div>
+                  <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,{{ r.c1 }} 0 50%,{{ r.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--bg)"><img src="{{ r.img }}" alt="" style="width:42px;height:42px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+                  <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                    <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0">{{ r.name }}</span>
+                      <sc-for list="{{ r.types }}" as="t" hint-placeholder-count="1"><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;background:{{ t.color }};color:{{ t.fg }};text-transform:uppercase;letter-spacing:.3px;flex:none;white-space:nowrap">{{ t.name }}</span></sc-for>
+                    </div>
+                    <div style="height:5px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:5px;border-radius:999px;background:var(--accent);width:{{ r.barW }}%"></div></div>
+                  </div>
+                  <div style="display:flex;justify-content:flex-end;gap:10px;align-items:baseline;font-size:12px;white-space:nowrap"><span style="font-weight:700;font-size:13px">{{ r.share }}%</span><span style="font-weight:600;color:{{ r.trendColor }};width:52px;text-align:right">{{ r.trendTxt }}</span><span style="color:var(--muted);width:44px;text-align:right">{{ r.wrTxt }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="background:var(--surface);border-radius:12px;padding:14px"><div style="font-size:22px;font-weight:800;letter-spacing:-.4px">41,208</div><div style="font-size:11px;color:var(--muted);margin-top:2px">battles shared</div></div>
+            <div style="background:var(--surface);border-radius:12px;padding:14px"><div style="font-size:22px;font-weight:800;letter-spacing:-.4px">3,904</div><div style="font-size:11px;color:var(--muted);margin-top:2px">devices</div></div>
+            <div style="background:var(--surface);border-radius:12px;padding:14px;grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:700">Updated 12 min ago</div><div style="font-size:11px;color:var(--muted);margin-top:2px">refreshes every 10 minutes</div></div><span style="width:10px;height:10px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px rgba(111,207,151,.2)"></span></div>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:16px;font-size:13px;color:var(--muted);line-height:1.55"><b style="color:var(--text)">What you're looking at.</b> <b style="color:var(--text)">Faced</b> is the share of shared battles where a Pokémon was on the other side. <b style="color:var(--text)">Record</b> is how the reporters did against it — under 50% means it tends to win. <b style="color:var(--text)">Trend</b> is the change in share since last season. Only Pokémon faced in at least 0.5% of battles are ranked.</div>
+          <div style="background:var(--surface);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:14px;font-weight:700">Most run teams</div><span style="font-size:12px;font-weight:600;color:var(--accent)">All teams →</span></div>
+            <sc-for list="{{ teamsTop }}" as="tm" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="display:flex">
+                  <sc-for list="{{ tm.mons }}" as="m" hint-placeholder-count="3">
+                    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,{{ m.c1 }} 0 50%,{{ m.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface);margin-right:-5px"><img src="{{ m.img }}" alt="" style="width:36px;height:36px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+                  </sc-for>
+                </div>
+                <div style="margin-left:6px;flex:1;min-width:0;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tm.label }}</div>
+                <div style="font-size:13px;font-weight:700">{{ tm.wr }}%</div>
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ tm.confColor }}"></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:14px;font-weight:700">Seen together on enemy teams</div><span style="font-size:11px;color:var(--muted)">share of battles</span></div>
+            <sc-for list="{{ pairs }}" as="p" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="display:flex">
+                  <sc-for list="{{ p.mons }}" as="m" hint-placeholder-count="2">
+                    <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,{{ m.c1 }} 0 50%,{{ m.c2 }} 50% 100%);display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface);margin-right:-5px"><img src="{{ m.img }}" alt="" style="width:34px;height:34px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))"></div>
+                  </sc-for>
+                </div>
+                <div style="margin-left:6px;flex:1;font-size:12px;font-weight:600">{{ p.label }}</div>
+                <div style="width:80px;height:5px;border-radius:999px;background:var(--bar);overflow:hidden"><div style="height:5px;border-radius:999px;background:var(--accent);width:{{ p.barW }}%"></div></div>
+                <div style="font-size:12px;font-weight:700;width:38px;text-align:right">{{ p.pct }}%</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;league&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Great&quot;,&quot;Ultra&quot;,&quot;Master&quot;],&quot;default&quot;:&quot;Great&quot;,&quot;tsType&quot;:&quot;'Great'|'Ultra'|'Master'&quot;,&quot;section&quot;:&quot;Deep links&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const altTheme = theme === 'dark' ? 'light' : 'dark';
+    const lk = (this.props.league ?? 'Great').toLowerCase();
+    const TC = {water:'#4a90d9',fire:'#e8823a',fairy:'#e78fc0',steel:'#7f93ab',ghost:'#7b5ec7',ground:'#c9a352',grass:'#5faf5c',poison:'#a463c9',electric:'#e3c12c',dragon:'#6f6fd8',ice:'#7fcfe0',normal:'#a9a89a',fighting:'#c9584a',psychic:'#e86a9c',dark:'#6b5d72',flying:'#93a8e0',bug:'#9db83a',rock:'#b39b5e'};
+    const LIGHT_FG = new Set(['water','ghost','dragon','fighting','psychic','dark','poison','steel']);
+    const SP = [['Azumarill',184,'water fairy',18.4],['Tinkaton',957,'fairy steel',15.9],['Clodsire',980,'poison ground',14.2],['Medicham',308,'fighting psychic',12.7],['Lanturn',171,'water electric',11.8],['Registeel',379,'steel',10.9],['Corsola (Galarian)',10173,'ghost',10.1],['Annihilape',979,'fighting ghost',9.6],['Feraligatr',160,'water',9.0],['Talonflame',663,'fire flying',8.4],['Mandibuzz',630,'dark flying',8.1],['Skarmory',227,'steel flying',7.6],['Dunsparce',206,'normal',7.2],['Morpeko',877,'electric dark',6.9],['Gastrodon',423,'water ground',6.5],['Cradily',346,'rock grass',6.1],['Jellicent',593,'water ghost',5.8],['Diggersby',660,'normal ground',5.5],['Bastiodon',411,'rock steel',5.2],['Lickitung',108,'normal',4.9],['Umbreon',197,'dark',4.7],['Sableye',302,'dark ghost',4.4],['Steelix',208,'steel ground',4.2],['Guzzlord',799,'dark dragon',4.0],['Toxapex',748,'poison water',3.8],['Furret',162,'normal',3.6],['Serperior',497,'grass',3.4],['Carbink',703,'rock fairy',3.2],['Quagsire',195,'water ground',3.1],['Malamar',687,'dark psychic',2.9],['Charjabug',737,'bug electric',2.8],['Dewgong',87,'water ice',2.6],['Cresselia',488,'psychic',2.5],['Drapion',452,'poison dark',2.4],['Whiscash',340,'water ground',2.2],['Ariados',168,'bug poison',2.1],['Primeape',57,'fighting',2.0],['Golisopod',768,'bug water',1.9],['Wigglytuff',40,'normal fairy',1.8],['Marowak (Alolan)',10115,'fire ghost',1.7]];
+    const rnd = (i,k)=>{const x=Math.sin(i*12.9898+k*78.233)*43758.5453;return x-Math.floor(x);};
+    const fmt = n=>n.toLocaleString('en-US');
+    const cap = s=>s[0].toUpperCase()+s.slice(1);
+    const img = id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+    const base = (s)=>{const ts=s[2].split(' ');const types=ts.map(t=>({name:cap(t),abbr:t.slice(0,3).toUpperCase(),color:TC[t],fg:LIGHT_FG.has(t)?'#fff':'#161826'}));return {name:s[0],slug:s[0].toLowerCase().replace(/ \((\w+)\)/,'-$1'),short:s[0].replace(' (Galarian)','-G').replace(' (Alolan)','-A'),img:img(s[1]),types,c1:types[0].color,c2:(types[1]||types[0]).color};};
+    const byName = Object.fromEntries(SP.map(s=>[s[0],base(s)]));
+    const total = 41208;
+    const rows = SP.map((s,i)=>{const trend=(rnd(i,1)-0.5)*5;const wr=0.44+rnd(i,2)*0.12;const faced=Math.round(total*s[3]/100);const w=Math.round(faced*wr);return {...base(s),rank:i+1,share:s[3].toFixed(1),barW:Math.round(s[3]/18.4*100),trendTxt:(trend>=0?'▲ ':'▼ ')+Math.abs(trend).toFixed(1),trendColor:trend>=0?'var(--up)':'var(--down)',wins:fmt(w),losses:fmt(faced-w),wrTxt:Math.round(wr*100)+'%'};});
+    const smallCounts=[9,7,6,5,5,4,3,3,2,2,2], smallIdx=[0,2,1,5,3,7,4,9,12,6,15];
+    const rowsSmall = smallCounts.map((c,i)=>{const s=SP[smallIdx[i]];const w=Math.round(c*(0.3+rnd(i,3)*0.4));return {...base(s),rank:i+1,share:c,barW:Math.round(c/9*100),wins:w,losses:c-w};});
+    const rowsLight = rows.slice(0,12);
+    const mkTeam=(names,battles,wr,rank)=>{const conf=battles<30?'few':battles<300?'some':'many';const confColor=conf==='few'?'var(--muted)':conf==='some'?'var(--warn)':'var(--up)';const mons=names.map(n=>byName[n]);const margin=Math.round(100/Math.sqrt(battles));return {rank,mons,label:mons.map(m=>m.short).join(' · '),battles:fmt(battles),wr,conf,confColor,hint:conf==='many'?`Real win rate likely within ±${margin} pts`:conf==='some'?`Could be anywhere from ${wr-margin}% to ${wr+margin}%`:`Only ${battles} battles — could easily be ${wr-margin}% or ${Math.min(99,wr+margin)}%`,url:`https://pick3.gg/#/t/${lk}/${mons.map(m=>m.slug).join('+')}`};};
+    const teams=[[['Azumarill','Tinkaton','Clodsire'],1240,54],[['Medicham','Lanturn','Registeel'],980,52],[['Corsola (Galarian)','Annihilape','Feraligatr'],610,51],[['Talonflame','Mandibuzz','Clodsire'],402,49],[['Skarmory','Dunsparce','Morpeko'],188,55],[['Gastrodon','Cradily','Jellicent'],96,57],[['Diggersby','Bastiodon','Lickitung'],44,48],[['Umbreon','Sableye','Steelix'],21,62],[['Guzzlord','Toxapex','Furret'],14,64]].map((t,i)=>mkTeam(t[0],t[1],t[2],i+1));
+    const pairs=[['Azumarill','Tinkaton',5.7],['Azumarill','Clodsire',4.4],['Medicham','Lanturn',3.9],['Tinkaton','Clodsire',3.6],['Corsola (Galarian)','Annihilape',2.8]].map(p=>({mons:[byName[p[0]],byName[p[1]]],label:`${byName[p[0]].short} + ${byName[p[1]].short}`,pct:p[2].toFixed(1),barW:Math.round(p[2]/5.7*100)}));
+    const series=[15.1,15.8,16.2,17.0,16.6,17.4,18.0,18.4];
+    const mn=14.5,mx=19;const pts=series.map((v,i)=>[4+i*(132/(series.length-1)),36-((v-mn)/(mx-mn))*32]);
+    const bands=[['Below Ace',47,'3,120'],['Ace',46,'2,410'],['Veteran',45,'1,102'],['Expert',44,'388'],['Legend',42,'96']].map(b=>({name:b[0],pct:b[1],n:b[2],color:b[1]>=50?'var(--up)':'var(--accent)'}));
+    const mates=[['Tinkaton',31],['Clodsire',24],['Medicham',18],['Registeel',15],['Corsola (Galarian)',12]].map(m=>({...byName[m[0]],pct:m[1]}));
+    const mv=(name,type,pct)=>({name,pct,color:TC[type],fg:LIGHT_FG.has(type)?'#fff':'#161826'});
+    return {
+      theme, altTheme, rows, rowsSmall, rowsLight, rowsL:rows.slice(0,20), rowsR:rows.slice(20), teams, teamsTop:teams.slice(0,4), pairs, bands, mates,
+      fastMoves:[mv('Bubble','water',81),mv('Rock Smash','fighting',19)],
+      chargedMoves:[mv('Ice Beam','ice',71),mv('Play Rough','fairy',66),mv('Hydro Pump','water',63)],
+      sparkPts:pts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' '), sparkLastX:pts[pts.length-1][0].toFixed(1), sparkLastY:pts[pts.length-1][1].toFixed(1),
+      beatsUrl:`https://pick3.gg/#/counters/${lk}/azumarill`, buildUrl:`https://pick3.gg/#/t/${lk}/azumarill`
+    };
+  }
+}
+</script>
+</body>
+</html>
