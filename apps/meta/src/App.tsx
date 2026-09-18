@@ -1,10 +1,12 @@
 /**
  * The shell: current location, theme, static data, and which screen renders. Screens themselves
- * are Tasks 10 to 13; until each lands, its view renders a small placeholder here.
+ * are Tasks 10 to 13; until each lands, its view renders a small placeholder here. Overview
+ * (Task 10) has landed and renders for real.
  */
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { resolveWindow, type MetaSummaryV1 } from './api.js';
 import type { Baseline } from './baseline.js';
+import type { StaticData } from './data.js';
 import { PICK3 } from './links.js';
 import {
   BANDS,
@@ -20,6 +22,7 @@ import {
 } from './route.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
 import { Pills, Segmented } from './components.js';
+import { Overview } from './screens/Overview.js';
 import {
   DepsContext,
   useBaseline,
@@ -58,12 +61,17 @@ function splitHref(href: string): { pathname: string; search: string } {
   return { pathname: pathname ?? '/', search: search ? `?${search}` : '' };
 }
 
-/** Placeholder content for a view whose real screen has not landed yet (Tasks 10 to 13). */
+/** Placeholder content for a view whose real screen has not landed yet (Tasks 11 to 13), or the
+ * real Overview screen (Task 10) for the one view that has landed. */
 function renderView(
   view: View,
   league: string,
+  query: Query,
+  data: StaticData,
   meta: Loaded<MetaSummaryV1>,
   baseline: Loaded<Baseline>,
+  now: Date,
+  href: (v: View) => string,
 ): ReactNode {
   if (view.name === 'about') {
     // Task 13 replaces this with the real about page.
@@ -91,17 +99,16 @@ function renderView(
       </main>
     );
   }
-  // Overview. Task 10 replaces this with the real screen. Until then this placeholder still
-  // says, plainly, when the shared-battles fetch failed, rather than blanking the page; the
-  // exact reader-facing copy and the PvPoke fallback section belong to Task 10.
   return (
-    <main>
-      {meta.state === 'error' ? <p>Could not load the shared battles.</p> : null}
-      <p className="sub">
-        Most faced in {league}. Task 10 replaces this placeholder.
-        {baseline.state === 'ready' ? ' PvPoke list loaded.' : ''}
-      </p>
-    </main>
+    <Overview
+      league={league}
+      query={query}
+      data={data}
+      meta={meta}
+      baseline={baseline}
+      now={now}
+      href={href}
+    />
   );
 }
 
@@ -297,7 +304,9 @@ export function App(props?: { deps?: Deps }): ReactNode {
             />
           </>
         ) : null}
-        {renderView(view, activeLeague, meta, baseline)}
+        {renderView(view, activeLeague, query, staticData.data, meta, baseline, now, (v) =>
+          hrefFor(v, query),
+        )}
       </div>
     );
   }

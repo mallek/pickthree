@@ -1,0 +1,156 @@
+import { render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { App } from '../src/App.js';
+import { resetBaselines } from '../src/baseline.js';
+import { resetStatic } from '../src/data.js';
+import { stubFetch } from './stubs/stubFetch.js';
+
+const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
+
+function sp(speciesId: string, sightings: number, wins: number, losses: number) {
+  return { speciesId, sightings, wins, losses, runs: 0, runWins: 0, runLosses: 0 };
+}
+
+beforeEach(() => {
+  resetStatic();
+  resetBaselines();
+  window.history.replaceState(null, '', '/great');
+});
+
+describe('Overview, with almost no data', () => {
+  const meta = {
+    battles: 40,
+    devices: 6,
+    species: [sp('medicham', 9, 4, 5), sp('lanturn', 2, 1, 1), sp('registeel', 1, 1, 0)],
+  };
+
+  it('says plainly that there is not enough yet', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByText('Too few battles to trust yet.')).toBeInTheDocument();
+  });
+
+  it('leads with PvPoke and labels it as PvPoke, never as measured', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    const heading = await screen.findByRole('heading', { name: "PvPoke's meta group" });
+    const section = heading.closest('section')!;
+    expect(within(section).getByText(/Not measured play/)).toBeInTheDocument();
+    expect(within(section).queryByText(/faced/i)).toBeNull();
+  });
+
+  it('shows what was measured anyway, as counts, with the long tail counted', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    const heading = await screen.findByRole('heading', { name: 'What we have seen' });
+    const section = heading.closest('section')!;
+    expect(within(section).getByText('Medicham')).toBeInTheDocument();
+    expect(within(section).getByText('Lanturn')).toBeInTheDocument();
+    expect(within(section).queryByText('Registeel')).toBeNull();
+    expect(within(section).getByText('1 more was faced once.')).toBeInTheDocument();
+    expect(within(section).queryByText(/%/)).toBeNull();
+  });
+
+  it('invites the reader to contribute, naming how many devices already do', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByText(/6 devices are contributing/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Log battles in pick3' })).toHaveAttribute(
+      'href',
+      'https://pick3.gg/#/meta/log',
+    );
+  });
+
+  it('says so when nothing at all has been shared', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText('No battles shared in this window yet.')).toBeInTheDocument();
+  });
+});
+
+// rank.ts (current code, not the brief) splits the below-threshold reason into 'battles' and
+// 'devices': Ranking.holdback. The brief predates that field and only wrote the 'battles' wording
+// above. This covers the 'devices' branch: battles clear MEASURED_MIN but devices do not, so the
+// banner must blame the device count rather than repeating a battle count that is not the problem.
+describe('Overview, enough battles but too few devices', () => {
+  const meta = {
+    battles: 320,
+    devices: 3,
+    species: [sp('medicham', 20, 10, 8)],
+  };
+
+  it('blames the device count instead of the battle count', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByText('Too few battles to trust yet.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Only 3 devices have shared battles in this window, so this is a few players' matchmaking rather than what everyone is facing. The ranked list below is PvPoke's meta group, not measured play. What we have measured is under it, with its counts.",
+      ),
+    ).toBeInTheDocument();
+  });
+});
+
+describe('Overview, with enough data', () => {
+  const meta = {
+    battles: 1000,
+    devices: 120,
+    species: [sp('azumarill', 184, 80, 104), sp('tinkaton', 159, 90, 69), sp('lanturn', 2, 1, 1)],
+    previous: {
+      battles: 1000,
+      species: [{ speciesId: 'azumarill', sightings: 151 }],
+    },
+  };
+
+  it('leads with the measured list and says what it is measured from', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByRole('heading', { name: 'Most faced' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Measured from 1,000 battles shared by 120 devices.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows shares, records and a trend', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByText('18.4%')).toBeInTheDocument();
+    expect(screen.getByText('+3.3')).toBeInTheDocument();
+    expect(screen.getByText('80-104')).toBeInTheDocument();
+  });
+
+  it('drops a species under the half percent cut', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    await screen.findByText('18.4%');
+    expect(screen.queryByText('Lanturn')).toBeNull();
+  });
+
+  it('still offers PvPoke as a labelled section underneath', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    expect(await screen.findByRole('heading', { name: "PvPoke's meta group" })).toBeInTheDocument();
+  });
+
+  it('links each row to its species page', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    // Scoped to the measured section: PvPoke's own top list is shown underneath it too (see the
+    // brief's own Step 3 structure), and its stub happens to name the same top species, so an
+    // unscoped query for "Azumarill" would match both sections' rows.
+    const heading = await screen.findByRole('heading', { name: 'Most faced' });
+    const section = heading.closest('section')!;
+    const row = within(section).getByRole('link', { name: /Azumarill/ });
+    expect(row).toHaveAttribute('href', '/great/p/azumarill');
+  });
+});
+
+describe('Overview, when the api is down', () => {
+  it('says so and still shows PvPoke', async () => {
+    render(<App deps={{ fetcher: stubFetch({ metaStatus: 500 }), now }} />);
+    expect(
+      await screen.findByText(
+        "Could not load the shared battles. PvPoke's list is below; try again in a moment.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: "PvPoke's meta group" })).toBeInTheDocument();
+  });
+});
+
+describe('Overview filters', () => {
+  it('refetches when the window changes and puts it in the url', async () => {
+    const { findByRole } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    const seven = await findByRole('radio', { name: '7 days' });
+    seven.click();
+    await waitFor(() => expect(window.location.search).toContain('w=7'));
+  });
+});

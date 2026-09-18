@@ -57,9 +57,7 @@ describe('App', () => {
   it('cycles the theme and remembers it', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await userEvent.click(await screen.findByRole('button', { name: /appearance/i }));
-    await waitFor(() =>
-      expect(document.documentElement.getAttribute('data-theme')).toBe('dark'),
-    );
+    await waitFor(() => expect(document.documentElement.getAttribute('data-theme')).toBe('dark'));
     // "remembers it" means the choice survives a reload, not just the in-page attribute, so
     // read the storage back rather than trusting the DOM alone.
     expect(localStorage.getItem(THEME_KEY)).toBe('dark');
@@ -87,7 +85,11 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    expect(await screen.findByText(/Most faced in ultra/)).toBeInTheDocument();
+    // Task 10 replaced the overview placeholder with the real screen, which never says
+    // "Most faced in ultra" (that string does not exist in the real copy). The below-threshold
+    // banner and the baseline sub-line both name "Ultra League" here, so this checks for the
+    // section heading instead of matching that text, which would otherwise find two elements.
+    expect(await screen.findByRole('heading', { name: "PvPoke's meta group" })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/ultra');
   });
 
