@@ -433,9 +433,29 @@ a.row {
   color: var(--accent);
 }
 
-.brand-pick3 {
+/* The pill naming the sister site, pick3.gg. Same shape as pick3's own header pill
+   (apps/web/src/app.css's .site-pill), drawn from this app's own tokens. */
+.site-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  flex: none;
+}
+
+.site-pill-mark {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 /* Page header: sticky, matching apps/web's own .hdr geometry (apps/web/src/app.css) so the two

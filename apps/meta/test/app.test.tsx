@@ -22,6 +22,13 @@ describe('App', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
+  it('carries a pill to pick3 in the brand row', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByRole('link', { name: 'pick3, the team builder' }),
+    ).toHaveAttribute('href', 'https://pick3.gg');
+  });
+
   it('switches league through the segmented control and puts it in the url', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await userEvent.click(await screen.findByRole('radio', { name: 'Ultra' }));

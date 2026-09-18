@@ -21,7 +21,7 @@ import {
   type WindowKey,
 } from './route.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
-import { Header, Pills, Segmented, ThemeIcon } from './components.js';
+import { Header, Pills, Segmented, SitePill, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
 import { Overview } from './screens/Overview.js';
 import { Species } from './screens/Species.js';
@@ -340,9 +340,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
         <span>meta</span>
         <span className="wordmark-accent">.pick3.gg</span>
       </a>
-      <a className="brand-pick3" href={PICK3}>
-        pick3
-      </a>
+      <SitePill href={PICK3} label="pick3" name="pick3, the team builder" />
     </header>
   );
 

@@ -6,6 +6,7 @@ import {
   ConfidenceDot,
   Pills,
   Segmented,
+  SitePill,
   Sparkline,
   Sprite,
   SpriteStack,
@@ -36,6 +37,17 @@ describe('typeColor', () => {
   it('maps a type to its token and an unknown type to the neutral one', () => {
     expect(typeColor('water')).toBe('var(--type-water)');
     expect(typeColor('quantum')).toBe('var(--muted)');
+  });
+});
+
+describe('SitePill', () => {
+  it('links out with an accessible name that says where it goes', () => {
+    render(<SitePill href="https://pick3.gg" label="pick3" name="pick3, the team builder" />);
+    const link = screen.getByRole('link', { name: 'pick3, the team builder' });
+    expect(link).toHaveAttribute('href', 'https://pick3.gg');
+    // The visible label and the mark are both hidden from assistive tech: the aria-label above
+    // is the one source of the accessible name, so it is never announced twice.
+    expect(screen.getByText('pick3')).toHaveAttribute('aria-hidden', 'true');
   });
 });
 

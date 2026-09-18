@@ -294,6 +294,27 @@ export function Mark({ height = 22 }: { height?: number }) {
   );
 }
 
+const META = 'https://meta.pick3.gg';
+
+/** The pill naming the sister site, meta.pick3.gg: same shape, same mark and the same placement
+ * logic as meta's own header pill (apps/meta/src/components.tsx's `SitePill`), so the two headers
+ * rhyme. Drawn from this app's own tokens rather than meta's palette.
+ *
+ * The header's right column already carries the settings cog and, on one screen, a share button;
+ * at 390px there is no room left for a text label without crowding them (the app is mobile-first
+ * and that width is the one every screen actually ships at), so this renders the mark alone. The
+ * label survives for assistive tech as a visually-hidden span rather than an aria-label, so the
+ * accessible name is built the same way most links on this site get theirs: `Mark` already
+ * carries its own aria-hidden, so the name is never doubled. */
+export function SitePill() {
+  return (
+    <a className="site-pill" href={META}>
+      <Mark height={16} />
+      <span className="vh">meta, the community meta</span>
+    </a>
+  );
+}
+
 /** The one way a type is shown anywhere in the app: a small chip in the type's color. */
 export function TypeChip({ type, small }: { type: PokemonType; small?: boolean | undefined }) {
   return (
@@ -589,14 +610,11 @@ export function Header({
         <span>{title}</span>
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
-      {action || cog ? (
-        <span className="row hdr-actions">
-          {action}
-          {cog ? <HeadCog /> : null}
-        </span>
-      ) : (
-        <span className="back-spacer" />
-      )}
+      <span className="row hdr-actions">
+        <SitePill />
+        {action}
+        {cog ? <HeadCog /> : null}
+      </span>
       {extra ? <div className="hdr-extra">{extra}</div> : null}
     </header>
   );

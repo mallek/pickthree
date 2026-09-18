@@ -66,6 +66,17 @@ describe('Your meta screen', () => {
     expect(screen.getByText('1-1', { selector: '.team-row b' })).toBeInTheDocument();
   });
 
+  it('links out to the community meta site', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <YourMeta />
+      </AppProvider>,
+    );
+    expect(
+      await screen.findByRole('link', { name: /See what everyone else is facing/ }),
+    ).toHaveAttribute('href', 'https://meta.pick3.gg');
+  });
+
   it('offers a new set when nothing is open', async () => {
     render(
       <AppProvider host={fakeHost()}>

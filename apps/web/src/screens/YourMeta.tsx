@@ -295,6 +295,16 @@ export function YourMeta() {
           </div>
         ) : null}
         {stats.openSet ? <CurrentTeam set={stats.openSet} /> : <NoTeam />}
+        <a className="action-row" href="https://meta.pick3.gg">
+          <span>
+            <b>See what everyone else is facing</b>
+            <span className="small muted">
+              meta.pick3.gg turns shared battle logs like this one into the community's most-faced
+              Pokemon and teams, by league and rank.
+            </span>
+          </span>
+          <span className="chev">&rsaquo;</span>
+        </a>
         <div className="between">
           <span className="meta">{stats.current.label}</span>
           <Seg
