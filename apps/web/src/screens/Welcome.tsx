@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Progress } from '../components.tsx';
 import { ScanListPanel } from '../components/ScanListPanel.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
-import { fetchCount } from '../counter.ts';
-import { num } from '../format.ts';
+import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { arrivedFromShare, clearShareMarker, takeSharedCsv } from '../share.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
@@ -14,7 +13,7 @@ export function Welcome() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState('');
-  const [count, setCount] = useState<number | null>(null);
+  const count = useTrainerCount();
   const [scanOpen, setScanOpen] = useState(false);
 
   useEffect(() => {
@@ -22,18 +21,6 @@ export function Welcome() {
       void loadScanList();
     }
   }, [scanOpen, boot, leagueInfo, scanList, loadScanList]);
-
-  useEffect(() => {
-    let alive = true;
-    void fetchCount().then((c) => {
-      if (alive) {
-        setCount(c);
-      }
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // Moves every battle `at` and set `startedAt` forward so the newest battle lands a minute ago,
   // keeping the sample inside whatever season is current instead of expiring against the calendar.
@@ -287,12 +274,7 @@ export function Welcome() {
           Your file is processed on your phone and never uploaded anywhere. The only things sent are
           an anonymous tick to the counter and anonymous error reports without your Pokémon.
         </p>
-        {count !== null ? (
-          <p className="counter" aria-live="polite">
-            <span className="counter-digits">{num(count)}</span>{' '}
-            {count === 1 ? 'trainer has' : 'trainers have'} pick3ed
-          </p>
-        ) : null}
+        <TrainerCounter count={count} />
       </div>
     </div>
   );
