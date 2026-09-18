@@ -3,9 +3,9 @@
  * curated list still the honest thing to put first? Both lists always come back. The measured one
  * is never suppressed for being small, and the PvPoke one is never described as measured.
  */
-import type { MetaSummaryV1 } from './api.js';
-import type { Baseline } from './baseline.js';
-import { trendPoints, winRate } from './stats.js';
+import type { MetaSummaryV1, SpeciesStats } from './api.js';
+import type { Baseline, BaselineSpecies } from './baseline.js';
+import { type Confidence, confidence, trendPoints, winRate } from './stats.js';
 
 /**
  * Counted battles needed before the ranked list is the measured one. Below this a handful of
@@ -16,6 +16,10 @@ export const MEASURED_MIN = 300;
 /**
  * When measured, a species is ranked only once it is faced this often (0.5% of battles). Below
  * that a single reporter's odd matchup would otherwise read as part of the meta.
+ *
+ * This is a listing cut, not a trust cut: at MEASURED_MIN battles a species can clear 0.5% share
+ * on as few as 2 sightings. That is why a row's own confidence and winRate are computed from its
+ * own decided battles below, never inferred from the fact that it made the measured list at all.
  */
 export const RANKED_SHARE = 0.005;
 /**
@@ -23,6 +27,12 @@ export const RANKED_SHARE = 0.005;
  * one report and proves nothing about repetition; two is the first point worth printing at all.
  */
 export const SMALL_MIN = 2;
+/**
+ * A win rate is withheld below this many of the row's own decided battles: 1-1 is not "50%".
+ * Deliberately the same number as stats.js's 'few'/'some' split, so a row that is allowed to show
+ * a rate is, by definition, never at 'few' confidence. Keep the two together if either changes.
+ */
+export const WIN_RATE_MIN = 30;
 
 export interface MeasuredRow {
   speciesId: string;
@@ -33,6 +43,8 @@ export interface MeasuredRow {
   wins: number;
   losses: number;
   winRate: number | null;
+  /** How much the row's own record can be trusted, from its decided battles, not the window's. */
+  confidence: Confidence;
   /** Percentage points, or null when a trend is not earned. */
   trend: number | null;
   /** 0 to 100, relative to the most faced species in the list. */
@@ -54,13 +66,32 @@ export interface Ranking {
   source: 'measured' | 'baseline';
   battles: number;
   devices: number;
-  /** Always present, however small. Ordered by sightings (the worker sorts species that way). */
+  /** Always present, however small. Ordered by sightings, highest first. */
   measured: MeasuredRow[];
   /** Species faced exactly once, counted rather than listed, when not measured. */
   tail: number;
-  /** Always present. PvPoke's curated list, ordered by its own score. */
+  /** Always present. PvPoke's curated list, ordered by its own score, highest first. */
   baseline: BaselineRow[];
   pvpokeDate: string;
+}
+
+/**
+ * Highest sightings first, species id as the tiebreak. Must match the worker's own comparator
+ * (workers/counter/src/meta.ts) so a client-side re-sort never disagrees with the server's, and
+ * must not assume the input already arrives this way: an unsorted array should not silently
+ * corrupt rank numbers or "most faced" bars.
+ */
+function bySightings(a: SpeciesStats, b: SpeciesStats): number {
+  return b.sightings - a.sightings || a.speciesId.localeCompare(b.speciesId);
+}
+
+/**
+ * Highest score first, nulls last, species id as the tiebreak. Must match the bake step's own
+ * comparator (apps/meta/scripts/bake.ts) for the same reason: the baseline file is expected to
+ * arrive in this order, but rank() does not take that on faith.
+ */
+function byScore(a: BaselineSpecies, b: BaselineSpecies): number {
+  return (b.score ?? -1) - (a.score ?? -1) || a.speciesId.localeCompare(b.speciesId);
 }
 
 export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
@@ -68,33 +99,41 @@ export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
   const prev = meta.previous;
   const prevById = new Map((prev?.species ?? []).map((s) => [s.speciesId, s.sightings]));
 
-  const kept = meta.species.filter((s) =>
+  const sortedSpecies = [...meta.species].sort(bySightings);
+  const kept = sortedSpecies.filter((s) =>
     measuredEnough
       ? meta.battles > 0 && s.sightings / meta.battles >= RANKED_SHARE
       : s.sightings >= SMALL_MIN,
   );
   const top = kept[0]?.sightings ?? 0;
 
-  const measured: MeasuredRow[] = kept.map((s, i) => ({
-    speciesId: s.speciesId,
-    rank: i + 1,
-    sightings: s.sightings,
-    share: meta.battles > 0 ? s.sightings / meta.battles : 0,
-    wins: s.wins,
-    losses: s.losses,
-    winRate: winRate(s.wins, s.losses),
-    trend: prev
-      ? trendPoints(s.sightings, meta.battles, prevById.get(s.speciesId) ?? 0, prev.battles)
-      : null,
-    barPct: top > 0 ? Math.round((s.sightings / top) * 100) : 0,
-  }));
+  const measured: MeasuredRow[] = kept.map((s, i) => {
+    const decided = s.wins + s.losses;
+    return {
+      speciesId: s.speciesId,
+      rank: i + 1,
+      sightings: s.sightings,
+      share: meta.battles > 0 ? s.sightings / meta.battles : 0,
+      wins: s.wins,
+      losses: s.losses,
+      // A rate needs enough decided battles to mean anything. Below that the row shows its raw
+      // win-loss count and no percentage: 1-1 is not "50%".
+      winRate: decided >= WIN_RATE_MIN ? winRate(s.wins, s.losses) : null,
+      confidence: confidence(decided),
+      trend: prev
+        ? trendPoints(s.sightings, meta.battles, prevById.get(s.speciesId) ?? 0, prev.battles)
+        : null,
+      barPct: top > 0 ? Math.round((s.sightings / top) * 100) : 0,
+    };
+  });
 
   // Below the measured threshold, a species faced exactly once is real but too thin to name; it
   // is folded into a single tail count rather than dropped silently.
-  const tail = measuredEnough ? 0 : meta.species.filter((s) => s.sightings < SMALL_MIN).length;
+  const tail = measuredEnough ? 0 : sortedSpecies.filter((s) => s.sightings < SMALL_MIN).length;
 
-  const bestScore = baseline.species[0]?.score ?? null;
-  const baselineRows: BaselineRow[] = baseline.species.map((s, i) => ({
+  const sortedBaseline = [...baseline.species].sort(byScore);
+  const bestScore = sortedBaseline[0]?.score ?? null;
+  const baselineRows: BaselineRow[] = sortedBaseline.map((s, i) => ({
     speciesId: s.speciesId,
     rank: i + 1,
     score: s.score,

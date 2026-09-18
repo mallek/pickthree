@@ -109,6 +109,58 @@ describe('rank, at and above the measured threshold', () => {
   it("still hands back PvPoke's list so the page can show it as a labelled section", () => {
     expect(rank(big, baseline).baseline).toHaveLength(3);
   });
+
+  it('ranks a species that clears the share cut on too few battles to show a rate', () => {
+    // The regression that matters most in this file: 2 of 300 battles clears the 0.5% share
+    // cut and lands on the measured list, but 1 win and 1 loss must never read as "50%".
+    const r = rank(
+      meta({ battles: MEASURED_MIN, devices: 40, species: [sp('shuckle', 2, 1, 1)] }),
+      baseline,
+    );
+    const row = r.measured[0]!;
+    expect(row.sightings).toBe(2);
+    expect(row.wins).toBe(1);
+    expect(row.losses).toBe(1);
+    expect(row.winRate).toBeNull();
+    expect(row.confidence).toBe('few');
+  });
+
+  it('shows a win rate once a row clears 30 decided battles of its own', () => {
+    const r = rank(
+      meta({ battles: 1000, devices: 40, species: [sp('shuckle', 40, 20, 20)] }),
+      baseline,
+    );
+    const row = r.measured[0]!;
+    expect(row.winRate).toBeCloseTo(0.5, 5);
+    expect(row.confidence).toBe('some');
+  });
+
+  it('reaches "many" confidence once a row clears 300 decided battles of its own', () => {
+    const r = rank(
+      meta({ battles: 1000, devices: 40, species: [sp('shuckle', 300, 150, 150)] }),
+      baseline,
+    );
+    expect(r.measured[0]!.confidence).toBe('many');
+  });
+});
+
+describe('rank, sorting defensively', () => {
+  it('sorts a shuffled species list by sightings before ranking, so a bad input cannot corrupt rank order', () => {
+    const shuffled = [sp('lanturn', 2, 1, 1), sp('umbreon', 1, 1, 0), sp('medicham', 9, 4, 5)];
+    const r = rank(meta({ battles: 40, devices: 6, species: shuffled }), baseline);
+    expect(r.measured.map((m) => m.speciesId)).toEqual(['medicham', 'lanturn']);
+    expect(r.measured.map((m) => m.rank)).toEqual([1, 2]);
+  });
+
+  it('sorts a shuffled baseline list by score before ranking', () => {
+    const shuffledBaseline: Baseline = {
+      ...baseline,
+      species: [bs('clodsire', 80), bs('azumarill', 93), bs('tinkaton', 90)],
+    };
+    const r = rank(meta(), shuffledBaseline);
+    expect(r.baseline.map((b) => b.speciesId)).toEqual(['azumarill', 'tinkaton', 'clodsire']);
+    expect(r.baseline.map((b) => b.rank)).toEqual([1, 2, 3]);
+  });
 });
 
 describe('rank, with nothing at all', () => {
