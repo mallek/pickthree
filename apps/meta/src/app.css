@@ -404,7 +404,8 @@ a.row {
   text-decoration: none;
 }
 
-.wordmark span {
+/* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
+.wordmark-accent {
   color: var(--accent);
 }
 

@@ -2,7 +2,7 @@
  * The shell: current location, theme, static data, and which screen renders. Screens themselves
  * are Tasks 10 to 13; until each lands, its view renders a small placeholder here.
  */
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { resolveWindow, type MetaSummaryV1 } from './api.js';
 import type { Baseline } from './baseline.js';
 import { PICK3 } from './links.js';
@@ -51,6 +51,11 @@ function leagueOf(view: View): string | null {
 
 function isPlainClick(e: MouseEvent): boolean {
   return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+}
+
+function splitHref(href: string): { pathname: string; search: string } {
+  const [pathname, search] = href.split('?');
+  return { pathname: pathname ?? '/', search: search ? `?${search}` : '' };
 }
 
 /** Placeholder content for a view whose real screen has not landed yet (Tasks 10 to 13). */
@@ -104,64 +109,91 @@ export function App(props?: { deps?: Deps }): ReactNode {
   const deps = props?.deps;
   const staticData = useStatic(deps);
 
-  const [loc, setLoc] = useState<{ view: View; query: Query }>(() =>
-    parseLocation(window.location.pathname, window.location.search, []),
-  );
+  // The RAW location, not the parsed route: parsing needs the league list, which is not known
+  // until the static data arrives. Deriving the route eagerly (with an empty league list) was
+  // the bug: every non-first league would fail to resolve and get canonicalised away for good.
+  const [loc, setLoc] = useState<{ pathname: string; search: string }>(() => ({
+    pathname: window.location.pathname,
+    search: window.location.search,
+  }));
   const [theme, setTheme] = useState<ThemeChoice>(() => storedTheme());
-  const [activeLeague, setActiveLeague] = useState<string>(() => leagueOf(loc.view) ?? 'great');
-  const leagueIdsRef = useRef<string[]>([]);
+
+  const leagueIds = staticData.data ? staticData.data.leagues.map((l) => l.id) : [];
+  // A primitive, not the array itself, as the memo key: a fresh `.map()` result every render
+  // would otherwise defeat the memo and re-derive the route (and re-run its effects) each time.
+  const leagueIdsKey = leagueIds.join(',');
+  const { view, query } = useMemo(
+    () => parseLocation(loc.pathname, loc.search, leagueIds),
+    [loc.pathname, loc.search, leagueIdsKey],
+  );
+
+  // The league to show in the switcher and the tabs: the current view's own league, or (on the
+  // league-agnostic About view) whichever one was last seen. Derived during render, not in an
+  // effect, so the switcher never paints one render behind the url it is meant to reflect.
+  const lastLeagueRef = useRef<string>('great');
+  const viewLeague = leagueOf(view);
+  if (viewLeague) {
+    lastLeagueRef.current = viewLeague;
+  }
+  const activeLeague = viewLeague ?? lastLeagueRef.current;
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
+  // Canonicalise only once the league list is known, so an unrecognised path never gets
+  // rewritten purely because the leagues have not loaded yet. Settles in one extra render: once
+  // rewritten, `loc` matches the canonical string, the route re-derives to the same view/query,
+  // and `hrefFor(view, query)` computes the same canonical string again, so the guard is false
+  // and this effect becomes a no-op. Checked directly (see task-9-report.md, "Fix round 1").
   useEffect(() => {
-    leagueIdsRef.current = staticData.data ? staticData.data.leagues.map((l) => l.id) : [];
-  }, [staticData.data]);
-
-  useEffect(() => {
-    const l = leagueOf(loc.view);
-    if (l) {
-      setActiveLeague(l);
+    if (!staticData.data) {
+      return;
     }
-  }, [loc.view]);
-
-  // Mount-only: turn a non-canonical entry path (e.g. "/") into its canonical one ("/great").
-  useEffect(() => {
-    const href = hrefFor(loc.view, loc.query);
-    const current = window.location.pathname + window.location.search;
-    if (href !== current) {
-      window.history.replaceState(null, '', href);
+    const canonical = hrefFor(view, query);
+    if (`${loc.pathname}${loc.search}` !== canonical) {
+      window.history.replaceState(null, '', canonical);
+      setLoc(splitHref(canonical));
     }
-    // Deliberately empty: this normalizes only the path the page was opened with.
-  }, []);
+  }, [staticData.data, loc.pathname, loc.search, view, query]);
 
   useEffect(() => {
     function onPopState(): void {
-      setLoc(
-        parseLocation(window.location.pathname, window.location.search, leagueIdsRef.current),
-      );
+      setLoc({ pathname: window.location.pathname, search: window.location.search });
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  function go(view: View, query: Query): void {
-    const href = hrefFor(view, query);
-    const current = window.location.pathname + window.location.search;
-    if (href !== current) {
+  /** A navigation: a new place, pushed onto history so the back button can undo it. */
+  function go(nextView: View, nextQuery: Query): void {
+    const href = hrefFor(nextView, nextQuery);
+    if (href !== `${loc.pathname}${loc.search}`) {
       window.history.pushState(null, '', href);
     }
-    setLoc({ view, query });
+    setLoc(splitHref(href));
   }
 
-  function navProps(view: View, query: Query): { href: string; onClick: (e: MouseEvent<HTMLAnchorElement>) => void } {
+  /** A filter change: a refinement of the page already on screen, so it replaces the current
+   * history entry rather than adding one. Two filter clicks should not cost two back presses. */
+  function refine(nextQuery: Query): void {
+    const href = hrefFor(view, nextQuery);
+    if (href !== `${loc.pathname}${loc.search}`) {
+      window.history.replaceState(null, '', href);
+    }
+    setLoc(splitHref(href));
+  }
+
+  function navProps(
+    nextView: View,
+    nextQuery: Query,
+  ): { href: string; onClick: (e: MouseEvent<HTMLAnchorElement>) => void } {
     return {
-      href: hrefFor(view, query),
+      href: hrefFor(nextView, nextQuery),
       onClick: (e) => {
         if (isPlainClick(e)) {
           e.preventDefault();
-          go(view, query);
+          go(nextView, nextQuery);
         }
       },
     };
@@ -169,8 +201,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
 
   const seasons = staticData.data?.seasons ?? [];
   const now = deps?.now?.() ?? new Date();
-  const w = resolveWindow(loc.query.w, seasons, now);
-  const meta = useMetaSummary(activeLeague, w, loc.query.band, deps);
+  const w = resolveWindow(query.w, seasons, now);
+  const meta = useMetaSummary(activeLeague, w, query.band, deps);
   const baseline = useBaseline(activeLeague, deps);
 
   const header = (
@@ -180,7 +212,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
         {...navProps({ name: 'overview', league: activeLeague }, DEFAULT_QUERY)}
       >
         <span>meta</span>
-        <span>.pick3.gg</span>
+        <span className="wordmark-accent">.pick3.gg</span>
       </a>
       <div className="hdr-actions">
         <a href={PICK3}>pick3</a>
@@ -212,32 +244,37 @@ export function App(props?: { deps?: Deps }): ReactNode {
     );
   } else {
     const leagues = staticData.data.leagues;
-    const showFilters = loc.view.name === 'overview' || loc.view.name === 'teams';
+    const showFilters = view.name === 'overview' || view.name === 'teams';
+    // About is league-agnostic: withLeague is a no-op there, so showing the switcher would be a
+    // control that does nothing when clicked.
+    const showLeagueSwitch = view.name !== 'about';
     content = (
       <div className="app">
         {header}
-        <Segmented
-          label="League"
-          value={activeLeague}
-          onChange={(id) => go(withLeague(loc.view, id), loc.query)}
-          options={leagues.map((l) => ({ value: l.id, label: l.short }))}
-        />
+        {showLeagueSwitch ? (
+          <Segmented
+            label="League"
+            value={activeLeague}
+            onChange={(id) => go(withLeague(view, id), query)}
+            options={leagues.map((l) => ({ value: l.id, label: l.short }))}
+          />
+        ) : null}
         <nav className="tabs" aria-label="Sections">
           <a
-            className={loc.view.name === 'overview' ? 'on' : undefined}
-            {...navProps({ name: 'overview', league: activeLeague }, loc.query)}
+            className={view.name === 'overview' ? 'on' : undefined}
+            {...navProps({ name: 'overview', league: activeLeague }, query)}
           >
             Pokemon
           </a>
           <a
-            className={loc.view.name === 'teams' ? 'on' : undefined}
-            {...navProps({ name: 'teams', league: activeLeague }, loc.query)}
+            className={view.name === 'teams' ? 'on' : undefined}
+            {...navProps({ name: 'teams', league: activeLeague }, query)}
           >
             Teams
           </a>
           <a
-            className={loc.view.name === 'about' ? 'on' : undefined}
-            {...navProps({ name: 'about' }, loc.query)}
+            className={view.name === 'about' ? 'on' : undefined}
+            {...navProps({ name: 'about' }, query)}
           >
             About
           </a>
@@ -246,19 +283,19 @@ export function App(props?: { deps?: Deps }): ReactNode {
           <>
             <Pills
               label="Window"
-              value={loc.query.w}
-              onChange={(wk) => go(loc.view, { ...loc.query, w: wk })}
+              value={query.w}
+              onChange={(wk) => refine({ ...query, w: wk })}
               options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
             />
             <Pills
               label="Rank band"
-              value={loc.query.band}
-              onChange={(b) => go(loc.view, { ...loc.query, band: b })}
+              value={query.band}
+              onChange={(b) => refine({ ...query, band: b })}
               options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
             />
           </>
         ) : null}
-        {renderView(loc.view, activeLeague, meta, baseline)}
+        {renderView(view, activeLeague, meta, baseline)}
       </div>
     );
   }

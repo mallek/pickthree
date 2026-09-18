@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App.js';
+import { THEME_KEY } from '../src/theme.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -59,6 +60,9 @@ describe('App', () => {
     await waitFor(() =>
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark'),
     );
+    // "remembers it" means the choice survives a reload, not just the in-page attribute, so
+    // read the storage back rather than trusting the DOM alone.
+    expect(localStorage.getItem(THEME_KEY)).toBe('dark');
   });
 
   // The "says so, without blanking the page, when the api is down" case from the brief asserts
@@ -67,4 +71,93 @@ describe('App', () => {
   // this shell's placeholder. That assertion now lives in Task 10's own overview.test.tsx
   // (see task-10-brief.md, "Overview, when the api is down"), which will run against the real
   // screen once it exists.
+});
+
+describe('App, deep links', () => {
+  // Fix round 1: the initial route was derived before the league list existed, so every
+  // non-first league fell back to Great and had the address bar rewritten out from under it,
+  // permanently for the session (nothing ever re-parsed the location once static data arrived).
+  // These reproduce that failure against a URL other than the one the six tests above happen to
+  // use.
+
+  it('opens a non-first league at its own path and does not rewrite the url', async () => {
+    window.history.replaceState(null, '', '/ultra');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radio', { name: 'Ultra' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(await screen.findByText(/Most faced in ultra/)).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/ultra');
+  });
+
+  it('opens a species page in a non-first league and does not rewrite the url', async () => {
+    window.history.replaceState(null, '', '/master/p/registeel');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radio', { name: 'Master' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(await screen.findByText(/registeel in master/)).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/master/p/registeel');
+  });
+
+  it('keeps the league, the view and both filters together', async () => {
+    window.history.replaceState(null, '', '/ultra/teams?w=7&band=ace');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radio', { name: 'Ultra' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(await screen.findByText(/Teams in ultra/)).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: '7 days' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Ace' })).toHaveAttribute('aria-checked', 'true');
+    expect(window.location.pathname).toBe('/ultra/teams');
+    expect(window.location.search).toBe('?w=7&band=ace');
+  });
+
+  it('still canonicalises the root to the first league', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+  });
+
+  it('still falls back a genuinely unknown league to the first one', async () => {
+    window.history.replaceState(null, '', '/premier');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+  });
+});
+
+describe('App, filter history', () => {
+  it('replaces the history entry for a filter change instead of pushing a new one', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    const pushSpy = vi.spyOn(window.history, 'pushState');
+    const replaceSpy = vi.spyOn(window.history, 'replaceState');
+    await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
+    await waitFor(() => expect(window.location.search).toContain('w=7'));
+    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    await waitFor(() => expect(window.location.search).toContain('band=ace'));
+    expect(pushSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).toHaveBeenCalledTimes(2);
+    pushSpy.mockRestore();
+    replaceSpy.mockRestore();
+  });
+
+  it('leaves the page in one back press no matter how many filters changed first', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    await userEvent.click(await screen.findByRole('radio', { name: '7 days' }));
+    await waitFor(() => expect(window.location.search).toContain('w=7'));
+    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    await waitFor(() => expect(window.location.search).toContain('band=ace'));
+    // Neither filter click pushed a history entry, so a single real navigation still undoes in
+    // a single back press, landing on the page with its filters (not on an intermediate filter
+    // state, which pushing would have created).
+    await userEvent.click(screen.getByRole('link', { name: 'About' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/about'));
+    window.history.back();
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    expect(window.location.search).toBe('?w=7&band=ace');
+  });
 });
