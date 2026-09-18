@@ -4,7 +4,7 @@ import { App } from '../src/App.js';
 import { BUCKET_MS } from '../src/api.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
-import { battles as battlesText, count, pct } from '../src/format.js';
+import { battles as battlesText, count, pctPrecise } from '../src/format.js';
 import { RANKED_SHARE, SMALL_MIN } from '../src/rank.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
@@ -125,14 +125,17 @@ describe('Overview, with enough data', () => {
 
   it('shows shares, records and a trend', async () => {
     render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
-    expect(await screen.findByText('18.4%')).toBeInTheDocument();
-    expect(screen.getByText('+3.3')).toBeInTheDocument();
+    // A4: whole percentages, and B1 drops the win rate percentage from this row's record line
+    // entirely (the share above it is the row's one headline number), so "80-104" stands alone.
+    expect(await screen.findByText('18%')).toBeInTheDocument();
+    expect(screen.getByText('+3')).toBeInTheDocument();
     expect(screen.getByText('80-104')).toBeInTheDocument();
+    expect(screen.queryByText(/80-104.*%/)).toBeNull();
   });
 
   it('drops a species under the half percent cut', async () => {
     render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
-    await screen.findByText('18.4%');
+    await screen.findByText('18%');
     expect(screen.queryByText('Lanturn')).toBeNull();
   });
 
@@ -160,7 +163,9 @@ describe('Overview, with enough data', () => {
     render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
     expect(
       await screen.findByText(
-        new RegExp(`Only Pokemon faced in at least ${pct(RANKED_SHARE)}% of battles are ranked`),
+        new RegExp(
+          `Only Pokemon faced in at least ${pctPrecise(RANKED_SHARE)}% of battles are ranked`,
+        ),
       ),
     ).toBeInTheDocument();
     expect(

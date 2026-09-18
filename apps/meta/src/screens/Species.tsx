@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
-import { Bar, Sparkline, Sprite, Tag, TypeTags } from '../components.js';
+import { Bar, Sparkline, Sprite, Tag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pct, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
@@ -99,9 +99,10 @@ function aggregateMoves(
     .sort((a, b) => b.battles - a.battles || a.moveId.localeCompare(b.moveId));
 }
 
-/** A move name tinted by its type, using the same `Tag` (and so the same foreground rule) as a
- * Pokemon's own `TypeTags`. A move id with no entry in the static move file still renders,
- * under its raw id, rather than going blank. */
+/** A move name tinted by its type, using `Tag`'s solid, uppercase pill (`.type-tag`): the pick3-
+ * matching wash chip A2 gave the species header's own types (`TypeChips`) is not this card's
+ * business, see A2's note in components.tsx. A move id with no entry in the static move file
+ * still renders, under its raw id, rather than going blank. */
 function MoveTag({ moveId, data }: { moveId: string; data: StaticData }) {
   const move = data.moves.get(moveId);
   const name = move?.name ?? moveId;
@@ -430,7 +431,7 @@ export function Species(p: {
   const headerTop = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <Sprite species={species} size={64} />
-      <TypeTags types={species.types} />
+      <TypeChips types={species.types} />
     </div>
   );
 

@@ -12,7 +12,9 @@ import {
   Sparkline,
   Sprite,
   SpriteStack,
-  TypeTags,
+  TrendTag,
+  TypeChip,
+  TypeChips,
   typeColor,
 } from '../src/components.js';
 import type { SpeciesLite } from '../src/data.js';
@@ -134,11 +136,56 @@ describe('SpriteStack', () => {
   });
 });
 
-describe('TypeTags', () => {
-  it('names every type in plain words', () => {
-    render(<TypeTags types={['water', 'fairy']} />);
+describe('TypeChip', () => {
+  it('names the type in Title Case, in pick3\'s chip shape, coloured from its type tokens', () => {
+    const { container } = render(<TypeChip type="water" />);
+    const chip = screen.getByText('Water');
+    expect(chip).toHaveClass('tchip');
+    expect(chip).not.toHaveClass('tchip-sm');
+    expect((chip as HTMLElement).style.getPropertyValue('--c')).toBe('var(--type-water)');
+    expect((chip as HTMLElement).style.getPropertyValue('--t')).toBe('var(--type-water-ink)');
+    expect(container.querySelector('.tchip')?.textContent).toBe('Water');
+  });
+
+  it('falls back to the neutral tokens for an unrecognised type rather than an unset variable', () => {
+    render(<TypeChip type="quantum" />);
+    const chip = screen.getByText('Quantum');
+    expect((chip as HTMLElement).style.getPropertyValue('--c')).toBe('var(--muted)');
+    expect((chip as HTMLElement).style.getPropertyValue('--t')).toBe('var(--muted)');
+  });
+
+  it('adds the small modifier when asked', () => {
+    render(<TypeChip type="water" small />);
+    expect(screen.getByText('Water')).toHaveClass('tchip-sm');
+  });
+});
+
+describe('TypeChips', () => {
+  it('names every type in Title Case, wrapped in one tchips row', () => {
+    const { container } = render(<TypeChips types={['water', 'fairy']} />);
     expect(screen.getByText('Water')).toBeInTheDocument();
     expect(screen.getByText('Fairy')).toBeInTheDocument();
+    expect(container.querySelectorAll('.tchips')).toHaveLength(1);
+    expect(container.querySelectorAll('.tchip')).toHaveLength(2);
+  });
+});
+
+describe('TrendTag', () => {
+  it('reads a rising share as a small green-toned "up" tag', () => {
+    render(<TrendTag points={3.34} />);
+    const tag = screen.getByText('+3');
+    expect(tag).toHaveClass('trend-tag', 'up');
+  });
+
+  it('reads a falling share as a small red-toned "down" tag', () => {
+    render(<TrendTag points={-1.21} />);
+    const tag = screen.getByText('-1');
+    expect(tag).toHaveClass('trend-tag', 'down');
+  });
+
+  it('renders nothing for a real but sub-whole-point move, rather than a zero-looking tag', () => {
+    const { container } = render(<TrendTag points={0.04} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
 

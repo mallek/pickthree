@@ -8,10 +8,10 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
-import { confidence } from './stats.js';
+import { confidence, trendLabel } from './stats.js';
 import type { ThemeChoice } from './theme.js';
 
 const TYPES: readonly string[] = [
@@ -39,6 +39,14 @@ const TYPES: readonly string[] = [
  * rather than an undefined CSS variable. */
 export function typeColor(type: string): string {
   return TYPES.includes(type) ? `var(--type-${type})` : 'var(--muted)';
+}
+
+/** A type's chip text colour, the same fallback rule as `typeColor` above but reading the `-ink`
+ * token instead of the fill: an unrecognised type gets a readable neutral tag rather than an
+ * unset CSS variable (there is no `--quantum-ink` to fall through to). Private: `TypeChip` below
+ * is the one place that reads it. */
+function typeInk(type: string): string {
+  return TYPES.includes(type) ? `var(--type-${type}-ink)` : 'var(--muted)';
 }
 
 /** From the design export: the types whose colour is dark enough that only white text reads on
@@ -132,11 +140,12 @@ export function SpriteStack({ species, size }: { species: SpeciesLite[]; size?: 
   );
 }
 
-/** One coloured pill: background from the type's paint, foreground chosen so the label always
- * reads against it. `type` picks the colour; `label` is the text, which need not be the type's
- * own name (Species.tsx uses this for a move, tinted by the move's type, labelled with the
- * move's name). The only place the two foreground hex literals and the white-text type list
- * exist, so `TypeTags` and a move tag can never disagree on which types get which ink. */
+/** One solid, uppercase pill (`.type-tag`): background from the type's paint, foreground chosen
+ * so the label always reads against it. `type` picks the colour; `label` is the text, which need
+ * not be the type's own name (Species.tsx's `MoveTag` uses this for a move, tinted by the move's
+ * type, labelled with the move's name). A2 gave a Pokemon's own types the separate, pick3-
+ * matching `TypeChip`/`TypeChips` below instead of this one, so a move tag's look is untouched;
+ * this stays the only place the two foreground hex literals and the white-text type list exist. */
 export function Tag({ type, label }: { type: string; label: string }) {
   return (
     <span
@@ -148,14 +157,35 @@ export function Tag({ type, label }: { type: string; label: string }) {
   );
 }
 
-/** One tag per type, plain-worded and coloured. */
-export function TypeTags({ types }: { types: string[] }) {
+/**
+ * A2: the one way a type is shown anywhere on this site, pick3's own chip shape and colour rule
+ * ported byte-for-byte (apps/web/src/components.tsx's `TypeChip`/`TypeChips`): Title Case text
+ * on a light wash of the type's colour, using `.tchip`/`.tchip-sm` (app.css) rather than the
+ * solid, uppercase `.type-tag` a move tag (`MoveTag` in Species.tsx, via `Tag` above) still uses.
+ * `type` is a plain string, not a closed union like pick3's `PokemonType`, since this site reads
+ * types off the static data file rather than the engine; `typeColor`/`typeInk`'s fallback is what
+ * keeps a bad value from ever landing on an undefined CSS variable.
+ */
+export function TypeChip({ type, small }: { type: string; small?: boolean | undefined }) {
   return (
-    <>
+    <span
+      className={`tchip${small ? ' tchip-sm' : ''}`}
+      style={{ '--c': typeColor(type), '--t': typeInk(type) } as CSSProperties}
+    >
+      {capitalize(type)}
+    </span>
+  );
+}
+
+/** One chip per type, wrapped in pick3's `.tchips` row so they wrap together rather than one at
+ * a time. */
+export function TypeChips({ types, small }: { types: string[]; small?: boolean | undefined }) {
+  return (
+    <span className="tchips">
       {types.map((t) => (
-        <Tag key={t} type={t} label={capitalize(t)} />
+        <TypeChip key={t} type={t} small={small} />
       ))}
-    </>
+    </span>
   );
 }
 
@@ -188,6 +218,22 @@ export function Bar({
       <span className={tone === 'muted' ? 'muted' : undefined} style={{ width: `${clamped}%` }} />
     </div>
   );
+}
+
+/**
+ * A4/B1: the small coloured tag that follows a name when a trend was earned, "+15" or "-9",
+ * green for a rising share and red for a falling one. The caller passes points only once it has
+ * already checked `trend !== null` (a null trend is "we cannot say", not a zero one, and must
+ * render nothing); this component adds its own second guard for `trendLabel`'s "even" case, a
+ * real but sub-whole-point move, since a zero-looking tag colored green or red would claim a
+ * direction the rounded number no longer shows.
+ */
+export function TrendTag({ points }: { points: number }) {
+  const label = trendLabel(points);
+  if (label === 'even') {
+    return null;
+  }
+  return <span className={`trend-tag ${points > 0 ? 'up' : 'down'}`}>{label}</span>;
 }
 
 const SPARK_X0 = 4;

@@ -399,13 +399,16 @@ a {
   inset: -2px;
 }
 
-/* Rows and tokens */
+/* Rows and tokens. B1: token and padding sized to match pick3's own .counter-row rhythm
+   (apps/web/src/app.css: 44px token, 12px vertical padding); the leading rank number is a column
+   pick3's row does not need (pick3 does not rank a fixed top N), so it stays as this site's own
+   addition rather than something pick3's rhythm dictates. */
 .row {
   display: grid;
-  grid-template-columns: 22px 40px 1fr auto;
-  gap: 10px;
+  grid-template-columns: 22px 44px 1fr auto;
+  gap: 12px;
   align-items: center;
-  padding: 8px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
   min-width: 0;
 }
@@ -441,6 +444,36 @@ a.row {
   letter-spacing: 0.3px;
   padding: 1px 6px;
   border-radius: 999px;
+}
+
+/* A2: pick3's own type chip, ported byte-for-byte from apps/web/src/app.css (.tchips/.tchip/
+   .tchip-sm) so the two sites' type chips are the same control: Title Case text on a light wash
+   of the type's colour, rather than .type-tag's solid uppercase pill above (kept as-is; it is
+   still what a move tag uses, D3's business, not this one's). */
+.tchips {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  vertical-align: middle;
+}
+.tchip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--t);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  line-height: 1.3;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.tchip-sm {
+  padding: 0 5px;
+  font-size: 10px;
 }
 
 .bar {
@@ -493,6 +526,50 @@ a.row {
 
 .bar > span.muted {
   background: var(--muted);
+}
+
+/* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small
+   (apps/web/src/app.css): the share (or, below the measured threshold, the sighting count) as
+   the big number, the record as a small muted line under it. */
+.row-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.row-figure b {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+}
+.row-figure small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, like ConfidenceDot
+   above: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a neutral
+   or zero one, so there is no third modifier here. */
+.trend-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  vertical-align: middle;
+  flex: none;
+}
+.trend-tag.up {
+  color: var(--up);
+  background: color-mix(in srgb, var(--up) 16%, transparent);
+}
+.trend-tag.down {
+  color: var(--down);
+  background: color-mix(in srgb, var(--down) 16%, transparent);
 }
 
 /* Names truncate rather than wrap. The grid/flex parent needs min-width: 0 or this fails

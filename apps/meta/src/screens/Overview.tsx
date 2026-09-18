@@ -11,9 +11,9 @@
 import type { ReactNode } from 'react';
 import { BUCKET_MS, type MetaSummaryV1 } from '../api.js';
 import type { Baseline } from '../baseline.js';
-import { Bar, Note, Sprite, StatCard, TypeTags } from '../components.js';
+import { Bar, Note, Sprite, StatCard, TrendTag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { ago, battleWord, battles as battlesText, count, pct, plural } from '../format.js';
+import { ago, battleWord, battles as battlesText, count, pct, pctPrecise, plural } from '../format.js';
 import { PICK3 } from '../links.js';
 import {
   RANKED_SHARE,
@@ -24,7 +24,6 @@ import {
   type Ranking,
 } from '../rank.js';
 import type { BandKey, Query, View } from '../route.js';
-import { trendLabel } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
 /** Same labels as App.tsx's own (private) map, for the sentences that name the chosen band. */
@@ -131,34 +130,34 @@ function MeasuredRowView({
   return (
     <a className="row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
       <span className="fine">{row.rank}</span>
-      <Sprite species={species} size={40} />
+      <Sprite species={species} size={44} />
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <span className="name">{species.short}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span className="name">{species.short}</span>
+          {/* B1: the trend tag now sits after the name rather than glued onto the share, and only
+           * when the row is actually ranked by a measured share (the below-threshold branch never
+           * carried a trend of its own, since rank.ts computes it off that same measured share). */}
+          {measuredEnough && row.trend !== null ? <TrendTag points={row.trend} /> : null}
+        </span>
         <span style={{ display: 'flex', gap: 4 }}>
-          <TypeTags types={species.types} />
+          <TypeChips types={species.types} />
         </span>
         <Bar pct={row.barPct} tone={measuredEnough ? 'accent' : 'muted'} />
       </span>
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-        <span>
-          {measuredEnough && row.share !== null ? (
-            <>
-              <span>{pct(row.share)}%</span>
-              {row.trend !== null ? <span className="fine"> {trendLabel(row.trend)}</span> : null}
-            </>
-          ) : (
-            <>
-              <span>{count(row.sightings)}</span>
-              <span className="fine"> of {count(battles)}</span>
-            </>
-          )}
-        </span>
-        <span className="fine">
-          <span>
-            {row.wins}-{row.losses}
-          </span>
-          {row.winRate !== null ? <span> {pct(row.winRate)}%</span> : null}
-        </span>
+      <span className="row-figure">
+        {measuredEnough && row.share !== null ? (
+          <>
+            <b>{pct(row.share)}%</b>
+            <small>
+              {row.wins}-{row.losses}
+            </small>
+          </>
+        ) : (
+          <>
+            <b>{count(row.sightings)}</b>
+            <small>of {count(battles)}</small>
+          </>
+        )}
       </span>
     </a>
   );
@@ -225,11 +224,11 @@ function BaselineRowView({
   return (
     <a className="row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
       <span className="fine">{row.rank}</span>
-      <Sprite species={species} size={40} />
+      <Sprite species={species} size={44} />
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span className="name">{species.short}</span>
         <span style={{ display: 'flex', gap: 4 }}>
-          <TypeTags types={species.types} />
+          <TypeChips types={species.types} />
         </span>
         <Bar pct={row.barPct} />
       </span>
@@ -321,7 +320,9 @@ export function Overview(p: {
         />
       ))}
       <p className="fine">
-        Only Pokemon faced in at least {pct(RANKED_SHARE)}% of battles are ranked.
+        {/* A4: RANKED_SHARE is a stated cut, not a glance-at number, so it keeps its decimal
+         * (pctPrecise) rather than rounding 0.5% up to a misleading "1%". */}
+        Only Pokemon faced in at least {pctPrecise(RANKED_SHARE)}% of battles are ranked.
       </p>
       <p className="fine">
         Updated every {count(BUCKET_MS / 60_000)}{' '}

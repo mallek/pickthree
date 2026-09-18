@@ -53,7 +53,8 @@ describe('Species', () => {
     // own Header, not a heading), so this checks the text rather than a heading role.
     expect(await screen.findByText('Azumarill')).toBeInTheDocument();
     expect(screen.getByText('Water')).toBeInTheDocument();
-    expect(screen.getByText(/in 18.4% of 1,000 battles/)).toBeInTheDocument();
+    // A4: whole percentages everywhere; 184 / 1,000 is 18.4%, rounded to 18%.
+    expect(screen.getByText(/in 18% of 1,000 battles/)).toBeInTheDocument();
   });
 
   it('gives the record with its margin and explains a sub-50% number', async () => {
@@ -220,7 +221,8 @@ describe('Species', () => {
       ],
     };
     render(<App deps={{ fetcher: stubFetch({ species: flat, meta }), now }} />);
-    expect(await screen.findByText('20.0% latest')).toBeInTheDocument();
+    // A4: whole percentages; 100 / 500 is exactly 20%.
+    expect(await screen.findByText('20% latest')).toBeInTheDocument();
     expect(screen.queryByText(/pts since the first week/)).toBeNull();
     expect(screen.queryByText(/about the same/)).toBeNull();
     expect(screen.queryByText(/even/)).toBeNull();
@@ -309,8 +311,8 @@ describe('Species', () => {
       'section',
     )!;
     // The fixture's own two weeks are both 500 battles: 109 of 500 in 2026-W37, the later one,
-    // is 21.8%.
-    expect(within(card).getByText(/21.8% latest/)).toBeInTheDocument();
+    // is 21.8%, rounded to 22% (A4: whole percentages).
+    expect(within(card).getByText(/22% latest/)).toBeInTheDocument();
     expect(card.querySelector('svg')).not.toBeNull();
   });
 

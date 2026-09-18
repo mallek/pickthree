@@ -103,10 +103,15 @@ export function trendPoints(
   return (p1 - p2) * 100;
 }
 
-/** Below a tenth of a point the movement is noise, so it is named rather than numbered. */
+/** A4: whole points, rounded, no decimal ("+15", never "+15.0"), matching `format.ts`'s `pct`.
+ * Below half a point the rounded number is 0, which would print as "+0" or "-0": a move that
+ * small reads as noise regardless of which side of the statistical gate it landed on (see
+ * `trendPoints`), so it is named "even" instead, the same word this used at its old, finer
+ * threshold. */
 export function trendLabel(points: number): string {
-  if (Math.abs(points) < 0.05) {
+  const rounded = Math.round(Math.abs(points));
+  if (rounded === 0) {
     return 'even';
   }
-  return `${points > 0 ? '+' : '-'}${Math.abs(points).toFixed(1)}`;
+  return `${points > 0 ? '+' : '-'}${rounded}`;
 }

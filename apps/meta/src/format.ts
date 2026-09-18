@@ -43,7 +43,17 @@ export function count(n: number): string {
   return n.toLocaleString('en-US');
 }
 
+/** A4: whole percent, rounded, no decimal: the default everywhere a share or rate is a number to
+ * glance at ("26%", never "26.0%"). */
 export function pct(fraction: number): string {
+  return Math.round(fraction * 100).toString();
+}
+
+/** One-decimal percent, for the rare case where the precision itself is the stated fact (a rule
+ * like "ranked at 0.5% or more"), not a measurement to glance at: rounding RANKED_SHARE's 0.5% to
+ * a whole percent would silently change what the rule says it does. Kept separate from `pct`
+ * rather than special-cased at its one call site (Overview.tsx's ranking-cut sentence). */
+export function pctPrecise(fraction: number): string {
   return (fraction * 100).toFixed(1);
 }
 
