@@ -127,8 +127,7 @@ export function TeamDetail({ id }: { id: string }) {
   return (
     <div className="screen">
       <Header
-        title={`${team.score.fit} fit · ${structureLabel}`}
-        sub={`${team.score.difficulty} to play · ${team.score.difficultyWhy}`}
+        title="Team analysis"
         onBack={() => navigate(backRoute)}
         backLabel={backLabel}
         action={<ShareButton onClick={() => void share()} label="Share this team" />}
@@ -153,6 +152,10 @@ export function TeamDetail({ id }: { id: string }) {
               );
             })}
           </div>
+          <span className="meta" style={{ textAlign: 'center' }}>
+            {team.score.fit} fit · {structureLabel} · {team.score.difficulty} to play:{' '}
+            {team.score.difficultyWhy}
+          </span>
           {custom ? null : (
             <button
               type="button"
