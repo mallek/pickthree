@@ -2,7 +2,7 @@
  * The shell: current location, theme, static data, and which screen renders. Screens themselves
  * are Tasks 10 to 13; until each lands, its view renders a small placeholder here.
  */
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { resolveWindow, type MetaSummaryV1 } from './api.js';
 import type { Baseline } from './baseline.js';
 import { PICK3 } from './links.js';
@@ -128,14 +128,16 @@ export function App(props?: { deps?: Deps }): ReactNode {
   );
 
   // The league to show in the switcher and the tabs: the current view's own league, or (on the
-  // league-agnostic About view) whichever one was last seen. Derived during render, not in an
-  // effect, so the switcher never paints one render behind the url it is meant to reflect.
-  const lastLeagueRef = useRef<string>('great');
+  // league-agnostic About view) whichever one was last seen. About carries no league, so the
+  // switcher needs the last one seen. Adjusting state during render keeps that synchronous with
+  // the URL without a ref, which a discarded concurrent render could otherwise leave holding a
+  // value no commit ever matched.
+  const [lastLeague, setLastLeague] = useState('great');
   const viewLeague = leagueOf(view);
-  if (viewLeague) {
-    lastLeagueRef.current = viewLeague;
+  if (viewLeague && viewLeague !== lastLeague) {
+    setLastLeague(viewLeague);
   }
-  const activeLeague = viewLeague ?? lastLeagueRef.current;
+  const activeLeague = viewLeague ?? lastLeague;
 
   useEffect(() => {
     applyTheme(theme);
