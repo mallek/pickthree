@@ -21,7 +21,7 @@ import {
   type WindowKey,
 } from './route.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
-import { Pills, Segmented } from './components.js';
+import { Pills, Segmented, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
 import { Overview } from './screens/Overview.js';
 import { Species } from './screens/Species.js';
@@ -50,6 +50,18 @@ const BAND_LABELS: Record<BandKey, string> = {
   expert: 'Expert',
   legend: 'Legend',
 };
+
+const THEME_LABELS: Record<ThemeChoice, string> = {
+  system: 'system',
+  light: 'light',
+  dark: 'dark',
+};
+
+/** Built from the current and next choice, not three separate sentences, so the three states
+ * cannot drift out of step with each other or with what a click actually does. */
+function appearanceLabel(theme: ThemeChoice): string {
+  return `Appearance: ${THEME_LABELS[theme]}. Switch to ${THEME_LABELS[nextTheme(theme)]}.`;
+}
 
 /** Views that carry a league at all; About does not. */
 function leagueOf(view: View): string | null {
@@ -233,10 +245,10 @@ export function App(props?: { deps?: Deps }): ReactNode {
         <button
           type="button"
           className="icon-btn"
-          aria-label="Appearance"
+          aria-label={appearanceLabel(theme)}
           onClick={() => setTheme((t) => nextTheme(t))}
         >
-          <span aria-hidden="true">*</span>
+          <ThemeIcon choice={theme} />
         </button>
       </div>
     </header>

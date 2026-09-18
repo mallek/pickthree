@@ -12,6 +12,7 @@ import { useState, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
 import { confidence } from './stats.js';
+import type { ThemeChoice } from './theme.js';
 
 const TYPES: readonly string[] = [
   'normal',
@@ -321,6 +322,67 @@ export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' }) {
       style={dir === 'left' ? { transform: 'scaleX(-1)' } : undefined}
     >
       <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+/** The appearance control's glyph. This project's rendered text is strict 7-bit ASCII, so the
+ * design's moon/sun characters are drawn, not spelled, in the same stroke style as Chevron.
+ * System gets a half-filled circle (the familiar contrast/"auto" symbol) rather than a monitor
+ * outline: a rectangle would sit oddly next to two round marks, and the half-circle already
+ * reads, on its own, as "follows whatever is set elsewhere" at 16px. The sun keeps to four
+ * cardinal rays rather than the design's full ring of them, which blurs into a smear at this
+ * size. */
+export function ThemeIcon({ choice }: { choice: ThemeChoice }) {
+  if (choice === 'dark') {
+    return (
+      <svg
+        width={16}
+        height={16}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+      </svg>
+    );
+  }
+  if (choice === 'light') {
+    return (
+      <svg
+        width={16}
+        height={16}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" />
     </svg>
   );
 }

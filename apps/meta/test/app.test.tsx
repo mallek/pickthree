@@ -63,6 +63,21 @@ describe('App', () => {
     expect(localStorage.getItem(THEME_KEY)).toBe('dark');
   });
 
+  it('names the appearance control by its current and next choice, and cycles through all three', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    // Asserting the accessible name, not the icon: a screen reader user cannot see that the
+    // glyph changed, and the icon's own path data is an implementation detail, not the contract.
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Appearance: system. Switch to dark.' }),
+    );
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Appearance: dark. Switch to light.' }),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Appearance: light. Switch to system.' }),
+    ).toBeInTheDocument();
+  });
+
   // The "says so, without blanking the page, when the api is down" case from the brief asserts
   // on Overview's real copy ("Could not load the shared battles. PvPoke's list is below; try
   // again in a moment." and a "PvPoke's meta group" heading), which is Task 10's content, not
