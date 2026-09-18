@@ -1401,6 +1401,75 @@ textarea.paste {
   text-transform: uppercase;
   color: var(--accent-text);
 }
+/* Build: one card per team member, moves and IVs on it, tap for the moves sheet. */
+.pick-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pick-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 12px 40px 12px 12px;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  border: 1px solid transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.pick-card.empty {
+  background: transparent;
+  border: 1px dashed var(--divider);
+  cursor: default;
+  padding-right: 12px;
+}
+.pick-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.move-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.drag-grip {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--faint);
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+.drag-grip:active {
+  cursor: grabbing;
+}
+.slot-wrap.drop-target .pick-card,
+.pick-card.empty.drop-target {
+  border-color: var(--accent);
+}
+.move-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c, var(--faint)) 22%, transparent);
+  color: var(--t, var(--text));
+  font-size: 11px;
+  font-weight: 600;
+}
 .pick-body {
   display: grid;
   grid-template-columns: 40px 1fr auto;

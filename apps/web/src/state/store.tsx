@@ -160,7 +160,7 @@ type Action =
   | { type: 'notice'; message: string | null }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
-  | { type: 'picks'; picks: [TeamPick, TeamPick, TeamPick]; shared: boolean }
+  | { type: 'picks'; picks: AppState['picks']; shared: boolean }
   | { type: 'order-mode'; mode: 'best' | 'given' }
   | { type: 'analyze-start' }
   | { type: 'analyze-done'; analysis: TeamAnalysis }
@@ -438,8 +438,8 @@ interface Actions {
   loadCounters(vs?: string | null): Promise<void>;
   loadScanList(): Promise<void>;
   setPick(slot: number, pick: TeamPick | null): void;
-  /** Replace all three picks at once, marking them as arrived by link when shared is true. */
-  setPicks(picks: [TeamPick, TeamPick, TeamPick], shared: boolean): void;
+  /** Replace all three slots at once, marking them as arrived by link when shared is true. */
+  setPicks(picks: AppState['picks'], shared: boolean): void;
   setOrderMode(mode: 'best' | 'given'): void;
   analyze(): Promise<void>;
   /** Legal moves for one team member, with the recommendation, in the league in play. */
@@ -771,7 +771,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
-  const setPicks = useCallback((picks: [TeamPick, TeamPick, TeamPick], shared: boolean) => {
+  const setPicks = useCallback((picks: AppState['picks'], shared: boolean) => {
     dispatch({ type: 'picks', picks, shared });
   }, []);
 

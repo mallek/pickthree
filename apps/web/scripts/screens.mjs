@@ -143,7 +143,7 @@ await page.click('.hdr .back');
 await page.waitForFunction(
   () =>
     document.location.hash === '#/build' &&
-    document.querySelectorAll('.opp-slot.filled').length === 3,
+    document.querySelectorAll('.pick-card.filled').length === 3,
   { timeout: 30_000 },
 );
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
@@ -292,15 +292,40 @@ for (let i = 0; i < buildQueries.length; i++) {
     throw new Error(`build a team: no matches for any of ${buildQueries[i].join(', ')}`);
   }
   await page.waitForFunction(
-    (n) => document.querySelectorAll('.opp-slot.filled').length >= n,
+    (n) => document.querySelectorAll('.pick-card.filled').length >= n,
     {},
     i + 1,
   );
 }
 await shot('13-build', false);
+// Drag the first card's grip onto the third slot: the order changes and becomes "Keep my order".
+const namesBefore = await page.$$eval('.pick-card.filled .spec-name', (els) =>
+  els.map((e) => e.firstChild?.textContent?.trim() ?? ''),
+);
+const grips = await page.$$('.drag-grip');
+const fromBox = await grips[0].boundingBox();
+const toCard = await (await page.$$('.pick-card.filled'))[2].boundingBox();
+await page.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(fromBox.x + fromBox.width / 2, toCard.y + toCard.height / 2, { steps: 8 });
+await page.mouse.up();
+await page.waitForFunction(
+  (first) =>
+    document.querySelector('.pick-card.filled .spec-name')?.firstChild?.textContent?.trim() !==
+    first,
+  { timeout: 5_000 },
+  namesBefore[0],
+);
+const namesAfter = await page.$$eval('.pick-card.filled .spec-name', (els) =>
+  els.map((e) => e.firstChild?.textContent?.trim() ?? ''),
+);
+if (namesAfter[2] !== namesBefore[0]) {
+  throw new Error(`drag reorder: expected ${namesBefore[0]} last, got ${namesAfter.join(', ')}`);
+}
+console.log(`  dragged ${namesBefore[0]} to the third slot`);
 // Swap one move on the first slot: the sheet lists the legal pool with the recommendation
 // ticked; tapping an unticked charged move bumps the one picked first.
-await page.click('.opp-slot.filled');
+await page.click('.pick-card.filled');
 await page.waitForSelector('.move-opt[role="checkbox"]', { timeout: 60_000 });
 await page.$$eval('.move-opt[role="checkbox"]:not(.on)', (rows) => rows[0]?.click());
 await new Promise((r) => setTimeout(r, 300));
@@ -327,7 +352,7 @@ await page.click('.search', { clickCount: 3 });
 await page.type('.search', 'magikarp');
 await page.waitForSelector('.recent-token', { timeout: 15_000 });
 await page.click('.recent-token');
-await page.waitForFunction(() => document.querySelectorAll('.opp-slot.filled').length >= 3);
+await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length >= 3);
 const tUnranked = Date.now();
 await page.click('.scroll > .btn');
 await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
