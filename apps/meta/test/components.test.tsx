@@ -3,12 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
   Bar,
-  Chips,
   ConfidenceTag,
   LEAGUE_COLORS,
   LeagueShield,
   LeagueSwitcher,
-  Pills,
+  Select,
   SitePill,
   Sparkline,
   Sprite,
@@ -298,31 +297,11 @@ describe('LeagueSwitcher', () => {
   });
 });
 
-describe('Pills', () => {
-  it('works the same way as the segmented control', async () => {
+describe('Select', () => {
+  it('is a labelled native select that reports the chosen option', async () => {
     const onChange = vi.fn();
     render(
-      <Pills
-        label="Rank"
-        value="all"
-        onChange={onChange}
-        options={[
-          { value: 'all', label: 'All ranks' },
-          { value: 'ace', label: 'Ace' },
-        ]}
-      />,
-    );
-    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
-    expect(onChange).toHaveBeenCalledWith('ace');
-  });
-});
-
-// A5: same radiogroup contract as Pills, a different (scrolling) container class.
-describe('Chips', () => {
-  it('is a radiogroup of real buttons, same as Pills', async () => {
-    const onChange = vi.fn();
-    render(
-      <Chips
+      <Select
         label="Rank band"
         value="all"
         onChange={onChange}
@@ -332,9 +311,9 @@ describe('Chips', () => {
         ]}
       />,
     );
-    const group = screen.getByRole('radiogroup', { name: 'Rank band' });
-    expect(group).toHaveClass('chips');
-    await userEvent.click(screen.getByRole('radio', { name: 'Ace' }));
+    const select = screen.getByRole('combobox', { name: 'Rank band' });
+    expect(select).toHaveValue('all');
+    await userEvent.selectOptions(select, 'ace');
     expect(onChange).toHaveBeenCalledWith('ace');
   });
 });

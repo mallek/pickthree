@@ -21,7 +21,7 @@ import {
   type WindowKey,
 } from './route.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
-import { Chips, Header, LeagueSwitcher, Pills, SitePill, ThemeIcon } from './components.js';
+import { Header, LeagueSwitcher, Select, SitePill, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
 import { Overview } from './screens/Overview.js';
 import { Species } from './screens/Species.js';
@@ -414,20 +414,14 @@ export function App(props?: { deps?: Deps }): ReactNode {
           />
         ) : null}
         {showFilters ? (
-          <div className="filters">
-            <div className="filter-row">
-              <Pills
-                label="Window"
-                value={query.w}
-                onChange={(wk) => refine({ ...query, w: wk })}
-                options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
-              />
-            </div>
-            {/* A5: the rank band was a single native <select>; six options read as pick3's own
-                scrolling chip row instead (`.chips`/`Chip`, apps/web/src/app.css), a second row
-                under the window pills rather than a menu, the one control on the site that was
-                not already a pick3 pattern. */}
-            <Chips
+          <div className="filter-row">
+            <Select
+              label="Window"
+              value={query.w}
+              onChange={(wk) => refine({ ...query, w: wk })}
+              options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
+            />
+            <Select
               label="Rank band"
               value={query.band}
               onChange={(b) => refine({ ...query, band: b })}

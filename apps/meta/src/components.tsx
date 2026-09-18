@@ -8,7 +8,7 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
@@ -430,13 +430,24 @@ export function SitePill({ href, name }: { href: string; name: string }) {
   return (
     <a className="site-pill" href={href} aria-label={name}>
       <img className="only-dark site-pill-lockup" src="/lockup.svg" alt="" aria-hidden="true" />
-      <img className="only-light site-pill-lockup" src="/lockup-light.svg" alt="" aria-hidden="true" />
+      <img
+        className="only-light site-pill-lockup"
+        src="/lockup-light.svg"
+        alt=""
+        aria-hidden="true"
+      />
     </a>
   );
 }
 
 /** The one arrow-like mark in this project: nothing here uses an arrow or chevron character. */
-export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' }) {
+const CHEVRON_TURN: Record<'right' | 'left' | 'down', CSSProperties | undefined> = {
+  right: undefined,
+  left: { transform: 'scaleX(-1)' },
+  down: { transform: 'rotate(90deg)' },
+};
+
+export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' | 'down' }) {
   return (
     <svg
       width={16}
@@ -448,7 +459,7 @@ export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      style={dir === 'left' ? { transform: 'scaleX(-1)' } : undefined}
+      style={CHEVRON_TURN[dir]}
     >
       <path d="M9 6l6 6-6 6" />
     </svg>
@@ -528,46 +539,36 @@ interface ChoiceProps<T extends string> {
   label: string;
 }
 
-/** `Pills` and `LeagueSwitcher` both render a radiogroup of real buttons, one aria-checked at a
- * time; `Pills` is the shared body, `LeagueSwitcher` below draws its own markup instead of
- * reusing it because a league segment also carries a shield icon `Pills` has no room for. */
-function ChoiceGroup<T extends string>({
-  className,
-  options,
-  value,
-  onChange,
-  label,
-}: ChoiceProps<T> & { className: string }) {
+/** A labelled native select, the filter control for the window and the rank band. The label
+ * is visible, not just aria, so a reader knows what "This season" is a choice of before opening
+ * it. The chevron is drawn here rather than the platform's own so both fields match on every
+ * browser. */
+export function Select<T extends string>({ options, value, onChange, label }: ChoiceProps<T>) {
+  const id = useId();
   return (
-    <div className={className} role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={o.value === value}
-          className={o.value === value ? 'on' : undefined}
-          onClick={() => onChange(o.value)}
+    <label className="field" htmlFor={id}>
+      <span className="field-l">{label}</span>
+      <span className="select-wrap">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => {
+            const next = options.find((o) => o.value === e.target.value);
+            if (next) {
+              onChange(next.value);
+            }
+          }}
         >
-          {o.label}
-        </button>
-      ))}
-    </div>
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <Chevron dir="down" />
+      </span>
+    </label>
   );
-}
-
-/** The wrapping row of pills, e.g. a rank-band filter with more options than fit one row. */
-export function Pills<T extends string>(p: ChoiceProps<T>) {
-  return <ChoiceGroup className="pills" {...p} />;
-}
-
-/** A5: a horizontally scrolling row, pick3's own `.chips` shape (apps/web/src/app.css), for a
- * choice with too many options to fit one line at phone width without wrapping (the rank band:
- * All ranks, Below Ace, Ace, Veteran, Expert, Legend). Built on the same `ChoiceGroup` as `Pills`
- * above (still a real radiogroup of real buttons, one aria-checked at a time) so the two controls
- * share every behaviour and differ only in how the row overflows. */
-export function Chips<T extends string>(p: ChoiceProps<T>) {
-  return <ChoiceGroup className="chips" {...p} />;
 }
 
 /** A3: a tap-to-reveal note, ported from pick3's own `Term` (apps/web/src/components.tsx):

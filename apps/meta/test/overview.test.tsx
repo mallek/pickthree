@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App.js';
@@ -204,8 +205,8 @@ describe('Overview, when the api is down', () => {
 describe('Overview filters', () => {
   it('refetches when the window changes and puts it in the url', async () => {
     const { findByRole } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    const seven = await findByRole('radio', { name: '7 days' });
-    seven.click();
+    const window7 = await findByRole('combobox', { name: 'Window' });
+    await userEvent.selectOptions(window7, '7');
     await waitFor(() => expect(window.location.search).toContain('w=7'));
   });
 });

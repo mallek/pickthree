@@ -11,17 +11,9 @@
 import type { ReactNode } from 'react';
 import { BUCKET_MS, type MetaSummaryV1 } from '../api.js';
 import type { Baseline } from '../baseline.js';
-import { Bar, Note, Sprite, StatCard, TrendTag, TypeChips } from '../components.js';
+import { Bar, Note, Sprite, TrendTag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import {
-  ago,
-  battleWord,
-  battles as battlesText,
-  count,
-  pct,
-  pctPrecise,
-  plural,
-} from '../format.js';
+import { battleWord, battles as battlesText, count, pct, pctPrecise, plural } from '../format.js';
 import { PICK3 } from '../links.js';
 import {
   RANKED_SHARE,
@@ -243,25 +235,13 @@ export function Overview(p: {
   now: Date;
   href: (view: View) => string;
 }): ReactNode {
-  const { league, query, data, meta, baseline, now, href } = p;
+  const { league, query, data, meta, baseline, href } = p;
   const leagueInfo = data.leagues.find((l) => l.id === league) ?? null;
   const leagueTitle = leagueInfo?.title ?? league;
 
-  const statCards = (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-      <StatCard value={meta.data ? count(meta.data.battles) : '-'} label="battles" />
-      <StatCard value={meta.data ? count(meta.data.devices) : '-'} label="devices" />
-      <StatCard value={meta.data ? ago(meta.data.generatedAt, now) : '-'} label="updated" />
-    </div>
-  );
-
-  // The api failed: there is no MetaSummaryV1 to rank against, so the measured half of the page
-  // cannot exist. The baseline half does not depend on it, and the design spec's "never blank"
-  // rule says to show it anyway rather than leaving the reader with only an error line.
   if (meta.state === 'error') {
     return (
       <main>
-        {statCards}
         <p className="sub">
           Could not load the shared battles. PvPoke&apos;s list is below; try again in a moment.
         </p>
@@ -284,7 +264,6 @@ export function Overview(p: {
   if (!meta.data || !baseline.data) {
     return (
       <main>
-        {statCards}
         <p className="sub">Loading</p>
       </main>
     );
@@ -383,7 +362,6 @@ export function Overview(p: {
 
   return (
     <main>
-      {statCards}
       {ranking.source === 'baseline' ? (
         <Note tone="warn" title="Too few battles to trust yet.">
           <p className="sub">{bannerBody(ranking, leagueTitle, query.band)}</p>

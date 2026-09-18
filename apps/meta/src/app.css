@@ -72,13 +72,6 @@ section > h2 + .fine {
   flex-direction: column;
 }
 
-/* The window pills and the rank band chips belong together: one block, a small gap. */
-.filters {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 h1 {
   margin: 0;
   font-size: 24px;
@@ -265,97 +258,63 @@ section > .stat-n,
   flex: none;
 }
 
-/* A5: the window pills, at their own natural width, on their own row. The rank band used to
-   share this row as a select pushed to the far right; it is a second row of its own now (the
-   `.chips` row just below), so this row no longer needs `justify-content` to split two controls
-   apart, only to hold the one. */
+/* Filters: two native selects side by side, the window and the rank band. A select is the
+   one control that holds six options in a row of phone width without wrapping or scrolling, and
+   it opens the platform's own picker. Styled on pick3's field: 44px tall, surface, 1px border,
+   16px text so iOS never zooms into it. */
 .filter-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
-.pills {
+.field {
   display: flex;
-  flex-wrap: wrap;
-  /* Column gap is the design's 6px. Row gap must clear the 5px hit-area overhang above and below
-     a wrapped row, or two rows' touch targets overlap by 4px. */
-  column-gap: 6px;
-  row-gap: 12px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
-/* A visible border even when idle, ported from pick3's own .chip: without it a pill has only a
-   faint surface tint to say it is a control at all, which is what read as a plain button rather
-   than a filter. */
-.pills > * {
+.field-l {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.select-wrap {
   position: relative;
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  background: var(--surface);
-  color: var(--muted);
+  min-width: 0;
+}
+
+.select-wrap select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 36px 0 14px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-}
-
-/* Painted height measures 30px; the touch target extends to 40px. Vertical only, so pills
-   side by side on the same row (6px column gap) never touch; the 12px row gap on .pills
-   does the same job for pills stacked across a wrap. */
-.pills > *::after {
-  content: '';
-  position: absolute;
-  inset: -5px 0;
-}
-
-.pills > .on {
-  background: var(--surface2);
-  border-color: var(--accent);
+  background: var(--surface);
   color: var(--text);
-}
-
-/* A5: the rank band, ported from pick3's own scrolling `.chips` row (apps/web/src/app.css)
-   rather than the wrapping `.pills` above: six options do not fit one line at phone width, and
-   wrapping them would need the same row-gap-vs-hit-area treatment `.pills` already carries for a
-   shorter list, for no benefit over letting the row scroll sideways instead. The horizontal
-   overflow lives on this row alone, never on `html` or `body` (that would drag the fixed tab bar
-   sideways on iOS), and `.app`'s own `overflow-x: clip` still contains it if a chip's focus ring
-   or hit-area ever nudged the row a pixel past its own edge. */
-.chips {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  /* Bleeds to .app's own 16px side padding, the same trick pick3's .chips uses for its 20px, so
-     the row's edge chips sit flush with everything above and below them instead of stopping
-     short, and the cut-off chip past the fold is the visual cue that the row keeps going. */
-  margin: 0 -16px;
-  padding: 0 16px 6px;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
-/* Painted height is 40px directly (not the 30px-plus-hit-area trick `.pills` uses): a chip on
-   this row has no neighbour above or below it to protect from an overlapping touch target, since
-   the row never wraps, so there is nothing an invisible `::after` overhang would need to clear. */
-.chips > * {
-  flex: none;
-  min-height: 40px;
-  padding: 0 14px;
-  border-radius: 999px;
-  font-size: 13px;
+  font: inherit;
+  font-size: 16px;
   font-weight: 500;
+  appearance: none;
+  -webkit-appearance: none;
   white-space: nowrap;
-  background: var(--surface);
-  color: var(--muted);
-  border: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.chips > .on {
-  background: var(--surface2);
-  border-color: var(--accent);
-  color: var(--text);
+.select-wrap svg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.select-wrap select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 /* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
@@ -1027,24 +986,18 @@ a,
 button,
 select,
 .league-switcher button,
-.pills > *,
-.chips > *,
 .row {
   -webkit-tap-highlight-color: transparent;
 }
 
 a:focus-visible,
 button:focus-visible,
-.pills > *:focus-visible,
-.chips > *:focus-visible,
 .row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  .pills > *:hover,
-  .chips > *:hover,
   .row:hover {
     background: var(--surface2);
   }
