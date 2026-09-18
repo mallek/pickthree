@@ -9,13 +9,13 @@ import {
   type VerdictLabel,
 } from '@pickthree/engine';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { initialOf, metaTags, shortName, speciesDisplayName } from './format.ts';
+import { metaTags, shortName, speciesDisplayName } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
-import { TypeChip, typeColor } from '@pickthree/ui';
+import { SpeciesToken, TypeChip } from '@pickthree/ui';
 
 export { Chip, Seg, Term, TypeChip } from '@pickthree/ui';
 
@@ -203,35 +203,21 @@ export function PokemonToken({
   const sp = useSpecies()(speciesId);
   const name = useName()(speciesId);
   const spritesOn = useAppState().settings.sprites !== false;
-  const [broken, setBroken] = useState(false);
-  const types: [PokemonType, PokemonType | 'none'] = sp?.types ?? ['normal', 'none'];
-  const a = typeColor(types[0]);
-  const b = types[1] === 'none' ? a : typeColor(types[1]);
-  const background = types[1] === 'none' ? a : `linear-gradient(135deg, ${a} 50%, ${b} 50%)`;
-  const picture = spritesOn && !broken;
+  const types = sp ? sp.types.filter((t) => t !== 'none') : ['normal'];
+  const src = spritesOn ? `/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp` : undefined;
   const shadow = speciesId.endsWith('_shadow');
   return (
     <span
-      className={`token${picture ? ' has-sprite' : ''}${shadow ? ' is-shadow' : ''}`}
-      title={title ?? name}
-      aria-label={name}
-      style={{ width: size, height: size, background, fontSize: Math.round(size * 0.36) }}
+      className={shadow ? 'token-shadow-wrap' : undefined}
+      style={shadow ? { width: size, height: size } : undefined}
     >
-      {picture ? (
-        <img
-          className="sprite"
-          src={`/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp`}
-          alt=""
-          draggable={false}
-          loading="lazy"
-          decoding="async"
-          onError={() => setBroken(true)}
-        />
-      ) : showInitial ? (
-        initialOf(name)
-      ) : (
-        ''
-      )}
+      <SpeciesToken
+        name={title ?? name}
+        types={types}
+        size={size}
+        showInitial={showInitial}
+        {...(src !== undefined ? { src } : {})}
+      />
     </span>
   );
 }

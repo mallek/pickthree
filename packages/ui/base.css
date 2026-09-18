@@ -306,6 +306,17 @@
   color: var(--text);
   font-size: 13px;
 }
+/* .token: the species disc SpeciesToken renders. `display` stays a per-app override rather than
+   joining this base rule: web's current rule is `inline-grid` (it sits inline next to running
+   text in some contexts, e.g. Report.tsx's pill), meta's is `grid`; folding either into base
+   would silently change the other app's outer display type, so only the properties both apps'
+   current rules agree on byte-for-byte move here. */
+.token {
+  border-radius: 50%;
+  place-items: center;
+  flex: none;
+  position: relative;
+}
 /* .brand: pick3's own wordmark row is only this thin; meta's override in its own app.css adds
    the safe-area padding, the divider and the space-between layout it needs for the rest of the
    row's content. */

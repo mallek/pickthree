@@ -75,36 +75,40 @@ describe('Sprite', () => {
   });
 
   it('renders a solid muted disc, with no "undefined" in the gradient, for a typeless species', () => {
+    // SpeciesToken (packages/ui) renders a single flat colour rather than a same-colour gradient
+    // when both halves would match; a two-stop gradient of one colour looks identical, but this
+    // is the string the shared component actually produces.
     const { container } = render(<Sprite species={{ ...azumarill, types: [] }} />);
     const token = container.querySelector('.token') as HTMLElement;
     expect(token.style.background).not.toContain('undefined');
-    expect(token.style.background).toBe(
-      'linear-gradient(135deg, var(--muted) 0 50%, var(--muted) 50% 100%)',
-    );
+    expect(token.style.background).toBe('var(--muted)');
   });
 
   it('repeats the single type across both halves of a mono-type disc', () => {
     const { container } = render(<Sprite species={{ ...azumarill, types: ['fire'] }} />);
     const token = container.querySelector('.token') as HTMLElement;
-    expect(token.style.background).toBe(
-      'linear-gradient(135deg, var(--type-fire) 0 50%, var(--type-fire) 50% 100%)',
-    );
+    expect(token.style.background).toBe('var(--type-fire)');
   });
 
   it('falls back to the neutral colour for an unknown type rather than an invalid variable', () => {
     const { container } = render(<Sprite species={{ ...azumarill, types: ['quantum'] }} />);
     const token = container.querySelector('.token') as HTMLElement;
-    expect(token.style.background).toBe(
-      'linear-gradient(135deg, var(--muted) 0 50%, var(--muted) 50% 100%)',
-    );
+    expect(token.style.background).toBe('var(--muted)');
   });
 
-  it('scales the sprite art 6px larger than the disc at a non-default size', () => {
+  it('sizes the sprite art through a --sprite-size custom property, not an inline style on the img', () => {
+    // Pre-migration Sprite computed size+6 in JS and set it directly as an inline style on the
+    // <img>, which always wins over a stylesheet rule regardless of what the rule says.
+    // SpeciesToken (packages/ui) sets no such inline style on the <img> itself; Sprite's wrapper
+    // span carries `--sprite-size` instead, which app.css's `.token .sprite` rule reads, so the
+    // <img> has nothing inline left to assert, but the wrapper's custom property is checkable.
     const { container } = render(<Sprite species={azumarill} size={64} />);
     const img = container.querySelector('img') as HTMLImageElement;
-    // app.css pins .token .sprite at 46px; only the inline style (fix 3) actually wins here.
-    expect(img.style.width).toBe('70px');
-    expect(img.style.height).toBe('70px');
+    expect(img.style.width).toBe('');
+    expect(img.style.height).toBe('');
+    expect(img.className).toBe('sprite');
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.style.getPropertyValue('--sprite-size')).toBe('70px');
   });
 
   describe('onError', () => {
@@ -128,7 +132,7 @@ describe('Sprite', () => {
 });
 
 describe('TypeChip', () => {
-  it('names the type in Title Case, in pick3\'s chip shape, coloured from its type tokens', () => {
+  it("names the type in Title Case, in pick3's chip shape, coloured from its type tokens", () => {
     const { container } = render(<TypeChip type="water" />);
     const chip = screen.getByText('Water');
     expect(chip).toHaveClass('tchip');

@@ -194,15 +194,14 @@ a {
   bottom: 0;
 }
 
-/* token */
+/* token: the shared base (border-radius, place-items, flex, position) lives in
+   packages/ui/base.css. `display` stays here since it is not the same value as meta's (see the
+   comment on .token in base.css). */
 .token {
-  border-radius: 50%;
   display: inline-grid;
-  place-items: center;
   color: rgba(255, 255, 255, 0.92);
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  flex: none;
 }
 .token.has-sprite {
   overflow: hidden;
@@ -216,14 +215,18 @@ a {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
   pointer-events: none;
 }
-/* Shadow Pokemon: the game's purple flame, as a glow rising inside the circle plus a violet halo. */
-.token {
+/* Shadow Pokemon: the game's purple flame, as a glow rising inside the circle plus a violet halo.
+   This sits on an outer wrapper around the token now, not on `.token.is-shadow` itself:
+   SpeciesToken (packages/ui) only ever renders `class="token"`, never an `is-shadow` modifier, so
+   PokemonToken wraps it in `.token-shadow-wrap` instead. The wrapper has no border or padding of
+   its own, so it reads identically to the old `.token.is-shadow` box-shadow/::before. */
+.token-shadow-wrap {
   position: relative;
-}
-.token.is-shadow {
+  display: inline-block;
+  border-radius: 50%;
   box-shadow: 0 0 10px 2px rgba(150, 80, 255, 0.55);
 }
-.token.is-shadow::before {
+.token-shadow-wrap::before {
   content: '';
   position: absolute;
   inset: 0;

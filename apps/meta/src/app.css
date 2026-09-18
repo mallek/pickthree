@@ -321,18 +321,28 @@ a.rank-row {
   color: inherit;
 }
 
+/* .token: the shared base (border-radius, place-items, flex, position) lives in
+   packages/ui/base.css. `display` stays here since it is not the same value as web's (see the
+   comment on .token in base.css). */
 .token {
+  display: grid;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
   box-shadow: inset 0 0 0 2px var(--bg);
 }
 
+/* The sprite art overflows its disc by a constant 6px, at every token size Sprite is called
+   with (40, 44, 52, 64 across the app), not just the 40px default. A first attempt read this off
+   .token's own rendered box with `width: calc(100% + 6px)`, relying on the single grid item's
+   track stretching to the container's full size; that broke for at least one real sprite (a tall
+   image, e.g. Medicham, ballooned far past its disc on the Teams screen), so this reads the size
+   from `--sprite-size` instead, a custom property the Sprite wrapper (components.tsx) sets in
+   pixels from the same `size + 6` arithmetic the pre-migration component computed in JS and
+   applied as an inline style (which always won over this class, whatever it said, which is why
+   the fixed `46px` here only ever matched the rendered size at the 40px default). */
 .token .sprite {
-  width: 46px;
-  height: 46px;
+  width: var(--sprite-size, 46px);
+  height: var(--sprite-size, 46px);
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 

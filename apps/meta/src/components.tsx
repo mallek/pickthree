@@ -10,8 +10,8 @@
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
-import { Chevron, typeColor } from '@pickthree/ui';
-import { useState, type ReactNode } from 'react';
+import { Chevron, SpeciesToken } from '@pickthree/ui';
+import type { CSSProperties, ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
@@ -31,50 +31,30 @@ export {
 
 /** The coloured disc behind a species' sprite, split diagonally between its two types (or one
  * type twice, for a single-typed species). The sprite art overflows the disc by 6px on purpose,
- * matching pick3's own token.
+ * matching pick3's own token: the `--sprite-size` custom property set here reaches `.token
+ * .sprite` in app.css (custom properties inherit through the SpeciesToken span in between), so
+ * this stays true at every size `Sprite` is called with (40, 44, 52, 64 across the app), not just
+ * the 40px default. A `width: calc(100% + 6px)` rule on the class alone, with no JS-computed
+ * size, was tried first and looked right for most sprites, but relies on a grid item's track
+ * stretching to fill its container; that broke for at least one real sprite (a tall image, e.g.
+ * Medicham, ballooned far past its disc on the Teams screen), so the pixel size is computed here
+ * instead, the same `size + 6` arithmetic the pre-migration Sprite computed in JS.
  *
- * The name lives on the outer span, in every state, so a broken image never leaves the disc
- * nameless to a screen reader: the inner `<img>` carries no name of its own (`alt=""`,
- * `aria-hidden`), so the name is never doubled either. `broken` is keyed on the species id
- * rather than a plain boolean, so swapping which species this instance renders (e.g. a list
- * reusing the same component) does not leave a later, perfectly good image hidden by an
- * earlier one's failure. */
+ * `key={species.id}` on the wrapper: SpeciesToken tracks a broken image with a plain boolean, not
+ * one keyed on the species (the old, pre-migration Sprite did key its own broken flag on the
+ * species id, so that a list reusing the same component instance for a new species never left a
+ * later, perfectly good image hidden by an earlier one's failure). Keying the wrapper here
+ * reproduces that: a changed id remounts a fresh instance instead of carrying a stale `broken`
+ * flag over. */
 export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: number }) {
-  const [brokenId, setBrokenId] = useState<string | null>(null);
-  const broken = brokenId === species.id;
-  // typeColor already maps anything unrecognised (including a missing type) to the neutral
-  // token, so a species with no types at all still gets a solid disc instead of `undefined`.
-  const c1 = typeColor(species.types[0] ?? '');
-  const c2 = typeColor(species.types[1] ?? species.types[0] ?? '');
-  const imgSize = size + 6;
   return (
-    <span
-      className="token"
-      role="img"
-      aria-label={species.name}
-      style={{
-        width: size,
-        height: size,
-        background: `linear-gradient(135deg, ${c1} 0 50%, ${c2} 50% 100%)`,
-      }}
-    >
-      {broken ? null : (
-        <img
-          className="sprite"
-          src={spriteUrl(species.id)}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          width={imgSize}
-          height={imgSize}
-          // `app.css` pins `.token .sprite` at 46px; a stylesheet rule beats an HTML sizing
-          // attribute, so the inline style is what actually lets the art scale with `size`.
-          // The width/height attributes stay too, so the browser reserves layout space
-          // before the image loads.
-          style={{ width: imgSize, height: imgSize }}
-          onError={() => setBrokenId(species.id)}
-        />
-      )}
+    <span key={species.id} style={{ '--sprite-size': `${size + 6}px` } as CSSProperties}>
+      <SpeciesToken
+        name={species.name}
+        types={species.types}
+        src={spriteUrl(species.id)}
+        size={size}
+      />
     </span>
   );
 }
@@ -360,12 +340,7 @@ export function SitePill({ href, name }: { href: string; name: string }) {
   return (
     <a className="site-pill" href={href} aria-label={name}>
       <img className="only-dark site-pill-lockup" src={lockupDark} alt="" aria-hidden="true" />
-      <img
-        className="only-light site-pill-lockup"
-        src={lockupLight}
-        alt=""
-        aria-hidden="true"
-      />
+      <img className="only-light site-pill-lockup" src={lockupLight} alt="" aria-hidden="true" />
     </a>
   );
 }

@@ -54,8 +54,10 @@ describe('Species', () => {
     expect(await screen.findByText('Azumarill')).toBeInTheDocument();
     // D3 also prints a move's own type as a chip further down the page (BUBBLE is Water too), so
     // this scopes to the header's own sprite-and-types row rather than asserting a page-wide
-    // unique match on "Water".
-    const head = screen.getByRole('img', { name: 'Azumarill' }).parentElement!;
+    // unique match on "Water". Two levels up: Sprite (components.tsx) wraps SpeciesToken in a
+    // span that carries the `--sprite-size` custom property, so the flex row that also holds
+    // TypeChips is the sprite token's grandparent now, not its immediate parent.
+    const head = screen.getByRole('img', { name: 'Azumarill' }).parentElement!.parentElement!;
     expect(within(head).getByText('Water')).toBeInTheDocument();
     // A4: whole percentages everywhere; 184 / 1,000 is 18.4%, rounded to 18%.
     expect(screen.getByText(/in 18% of 1,000 battles/)).toBeInTheDocument();
@@ -187,9 +189,9 @@ describe('Species', () => {
     expect(screen.getAllByText('Ice Beam')).toHaveLength(1);
     expect(screen.getByText('Play Rough')).toBeInTheDocument();
     // D3: fast moves first, then charged, each line marked F or C (pick3's own `.pick-move-k`).
-    const card = (
-      await screen.findByRole('heading', { name: 'Moves reporters ran' })
-    ).closest('section')!;
+    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
+      'section',
+    )!;
     const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
     expect(markers).toEqual(['F', 'C', 'C']);
     // BUBBLE and ICE_BEAM sit in both sets (60 of 60 battles, 100%); PLAY_ROUGH sits in only the

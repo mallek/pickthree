@@ -1,6 +1,11 @@
 import type { Layout, MetaRank } from '@pickthree/engine';
 import type { Cost, IvRankResult, Species } from '@pickthree/engine';
 
+// Re-exported, not duplicated: SpeciesToken (packages/ui) needs its own copy internally, and
+// format.test.ts tests this one directly, so this stays the one place web code and web tests
+// import it from.
+export { initialOf } from '@pickthree/ui';
+
 const REGIONAL: Record<string, string> = {
   '(Alolan)': 'Alolan',
   '(Galarian)': 'Galarian',
@@ -30,11 +35,6 @@ export function shortName(speciesId: string, species: Species | undefined): stri
     .replace(/^Shadow /, 'S. ')
     .replace(/^Galarian /, 'G. ')
     .replace(/^Alolan /, 'A. ');
-}
-
-export function initialOf(displayName: string): string {
-  const base = displayName.replace(/^(Shadow|Galarian|Alolan|Hisuian|Paldean) /, '');
-  return base.charAt(0).toUpperCase();
 }
 
 export function num(n: number): string {
