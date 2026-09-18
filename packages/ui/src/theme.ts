@@ -1,10 +1,10 @@
 /**
  * Appearance. The default follows the system; a manual choice is remembered on this device only.
- * Storage can throw in a private window, so every access is guarded and the site still renders.
+ * Storage can throw in a private window, so every access is guarded and the page still renders.
  */
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
-export const THEME_KEY = 'meta.pick3.theme';
+export const THEME_KEY = 'pickthree.theme';
 
 const CHOICES: readonly ThemeChoice[] = ['system', 'light', 'dark'];
 

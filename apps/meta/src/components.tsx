@@ -10,12 +10,11 @@
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
-import { Chevron, SpeciesToken } from '@pickthree/ui';
+import { Chevron, SpeciesToken, type ThemeChoice } from '@pickthree/ui';
 import type { CSSProperties, ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
-import type { ThemeChoice } from './theme.js';
 
 export {
   Chevron,

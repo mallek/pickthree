@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { THEME_KEY } from '@pickthree/ui';
 import { App } from '../src/App.js';
-import { THEME_KEY } from '../src/theme.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');

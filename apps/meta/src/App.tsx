@@ -22,7 +22,7 @@ import {
   type View,
   type WindowKey,
 } from './route.js';
-import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
+import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from '@pickthree/ui';
 import { Header, LeagueSwitcher, Select, SitePill, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
 import { Overview } from './screens/Overview.js';

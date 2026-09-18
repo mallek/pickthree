@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { BattleSet, ImportReport, Specimen } from '@pickthree/engine';
+import type { ThemeChoice } from '@pickthree/ui';
 
 export interface StoredCollection {
   key: 'current';
@@ -11,7 +12,7 @@ export interface StoredCollection {
 
 export interface Settings {
   key: 'current';
-  theme: 'system' | 'dark' | 'light';
+  theme: ThemeChoice;
   filters: {
     noXl: boolean;
     noShadow: boolean;

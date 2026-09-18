@@ -31,6 +31,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
+import { applyTheme } from '@pickthree/ui';
 import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { arrivedFromShare } from '../share.ts';
@@ -621,13 +622,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   }, [state.boot, state.settingsLoaded, state.data, leagueId]);
 
   useEffect(() => {
-    const t = state.settings.theme;
-    const root = document.documentElement;
-    if (t === 'system') {
-      root.removeAttribute('data-theme');
-    } else {
-      root.setAttribute('data-theme', t);
-    }
+    applyTheme(state.settings.theme);
   }, [state.settings.theme]);
 
   const navigate = useCallback((route: Route) => {

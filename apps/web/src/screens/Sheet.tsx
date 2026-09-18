@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import type { ThemeChoice } from '@pickthree/ui';
 import { PokemonToken, Seg, useLogCount, useName } from '../components.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { BAND_LABELS, BANDS, shareEnabled, type Band } from '../metaShare.ts';
@@ -80,7 +81,7 @@ export function Sheet() {
   const excluded = s.settings.excludedSpecimenIds
     .map((id) => s.collection?.specimens.find((sp) => sp.id === id))
     .filter((sp): sp is NonNullable<typeof sp> => Boolean(sp));
-  const themes: ('system' | 'dark' | 'light')[] = ['system', 'dark', 'light'];
+  const themes: ThemeChoice[] = ['system', 'dark', 'light'];
   return (
     <>
       <div className="overlay" onClick={closeSheet} aria-hidden="true" />

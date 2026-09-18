@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { THEME_KEY, applyTheme, nextTheme, storedTheme } from '../src/theme.js';
+import { THEME_KEY, applyTheme, nextTheme, storedTheme } from '@pickthree/ui';
 
 function store(initial: Record<string, string> = {}): Storage {
   const map = new Map(Object.entries(initial));
