@@ -99,6 +99,9 @@ body {
 }
 
 /* Controls: every one is a real <button> or <a> */
+/* Fixed 3-column grid with exactly 3 options (WindowKey has 3 values): it never wraps to a
+   second row, so the .seg > *::after vertical inset below has no wrapped-row neighbour to
+   overlap. */
 .seg {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -138,7 +141,10 @@ body {
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  /* Column gap is the design's 6px. Row gap must clear the 5px hit-area overhang above and below
+     a wrapped row, or two rows' touch targets overlap by 4px. */
+  column-gap: 6px;
+  row-gap: 12px;
 }
 
 .pills > * {
@@ -153,7 +159,8 @@ body {
 }
 
 /* Painted height measures 30px; the touch target extends to 40px. Vertical only, so pills
-   sitting side by side with their 6px gap never touch. */
+   side by side on the same row (6px column gap) never touch; the 12px row gap on .pills
+   does the same job for pills stacked across a wrap. */
 .pills > *::after {
   content: '';
   position: absolute;
@@ -186,7 +193,9 @@ body {
   border-bottom-color: var(--accent);
 }
 
-/* Below 900px the tabs collapse into a seg-style enclosed row instead of an underlined row. */
+/* Below 900px the tabs collapse into a seg-style enclosed row instead of an underlined row.
+   Fixed 3-column grid with exactly 3 tabs (overview, teams, about): it never wraps, so the
+   .tabs > a::after vertical inset below has no wrapped-row neighbour to overlap. */
 @media (max-width: 899px) {
   .tabs {
     display: grid;
@@ -364,6 +373,9 @@ a.row {
   color: var(--accent);
 }
 
+/* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .icon-btn::after's
+   all-sides inset only ever meets the 8px gap between buttons on the same row, which is enough
+   clearance for a 3px inset on each side. */
 .hdr-actions {
   display: flex;
   align-items: center;
