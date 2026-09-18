@@ -36,10 +36,11 @@ describe('shared team link', () => {
       {
         kind: 'species',
         id: 'azumarill',
+        preferOwned: true,
         moves: { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
       },
-      { kind: 'species', id: 'tinkaton' },
-      { kind: 'species', id: 'clodsire' },
+      { kind: 'species', id: 'tinkaton', preferOwned: true },
+      { kind: 'species', id: 'clodsire', preferOwned: true },
     ]);
     // The engine's complaint reaches the screen with a way into Build.
     await waitFor(() => expect(screen.getByText('stop here')).toBeInTheDocument());

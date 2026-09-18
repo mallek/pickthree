@@ -85,11 +85,15 @@ export function parseTeamPath(league: string, members: string): ParsedTeam {
   return { team: { league, picks: picks as [SharedPick, SharedPick, SharedPick] } };
 }
 
-/** Build's picks for a shared team: species picks, with the link's moves when it has them. */
+/**
+ * Build's picks for a shared team: species picks that run the player's own best specimen when
+ * there is one, with the link's moves when it has them.
+ */
 export function toTeamPicks(team: SharedTeam): [TeamPick, TeamPick, TeamPick] {
   return team.picks.map((p) => ({
     kind: 'species' as const,
     id: p.speciesId,
+    preferOwned: true,
     ...(p.moves ? { moves: { fast: p.moves.fast, charged: [...p.moves.charged] } } : {}),
   })) as [TeamPick, TeamPick, TeamPick];
 }

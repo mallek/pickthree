@@ -37,8 +37,9 @@ describe('New set and Log a battle', () => {
     ];
     for (const [q, fullName] of picks) {
       fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), { target: { value: q } });
-      // Grid tokens are labelled with the full name; the slot buttons are labelled "Clear ...".
-      fireEvent.click(screen.getByRole('button', { name: fullName }));
+      // Grid tokens are labelled with the full name; they appear once the game data has booted.
+      const token = await screen.findByRole('button', { name: fullName });
+      fireEvent.click(token);
     }
     expect(start).toBeEnabled();
     await act(async () => {

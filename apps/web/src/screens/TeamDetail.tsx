@@ -13,6 +13,7 @@ import {
   MetaTags,
   RankTag,
   TypeChips,
+  ShareButton,
   useMetaRank,
   useName,
 } from '../components.tsx';
@@ -130,25 +131,38 @@ export function TeamDetail({ id }: { id: string }) {
         sub={`${team.score.difficulty} to play · ${team.score.difficultyWhy}`}
         onBack={() => navigate(backRoute)}
         backLabel={backLabel}
+        action={<ShareButton onClick={() => void share()} label="Share this team" />}
       />
       <div className="scroll" style={{ gap: 24 }}>
-        <div className="btn-pair">
-          <button type="button" className="btn" onClick={() => void takeToBattle()}>
-            Take to battle
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => void share()}>
-            Share
-          </button>
-        </div>
-        {custom && s.sharedTeam ? (
-          <div className="card custom-note" style={{ gap: 6 }}>
-            <b>Shared team</b>
-            <span className="small muted">
-              Opened from a link, so the numbers assume a top-10% IV spread for each. Own one of
-              them? Open Build and swap yours in for exact numbers.
-            </span>
+        <div className="card team-strip-card">
+          <div className="team-strip-row">
+            {team.slots.map((slot, i) => {
+              const id = slot.candidate.build.speciesId;
+              const assumed = hypothetical.includes(id);
+              return (
+                <div className="strip-member" key={`${id}-${i}`}>
+                  <PokemonToken speciesId={id} size={48} />
+                  <b>{name(id)}</b>
+                  <span className="meta">{ROLE_SHORT[slot.role]}</span>
+                  {custom ? (
+                    <span className={`mtag${assumed ? '' : ' good'}`}>
+                      {assumed ? 'assumed IVs' : 'yours'}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
-        ) : null}
+          {custom ? null : (
+            <button
+              type="button"
+              className="btn take-to-battle"
+              onClick={() => void takeToBattle()}
+            >
+              Take to battle
+            </button>
+          )}
+        </div>
         {custom ? (
           <div className="card custom-note" style={{ gap: 6 }}>
             <div className="rating-row">
@@ -163,6 +177,20 @@ export function TeamDetail({ id }: { id: string }) {
                 team.score.topUncovered,
               )}
             </span>
+            {s.sharedTeam ? (
+              <span className="small muted">
+                Shared team link.{' '}
+                {hypothetical.length > 0
+                  ? `IVs assumed for ${hypothetical.map((h) => name(h)).join(', ')}; the rest are yours.`
+                  : 'All three are yours, so the numbers are exact.'}
+              </span>
+            ) : hypothetical.length > 0 ? (
+              <span className="small muted">
+                {hypothetical.map((h) => name(h)).join(', ')}{' '}
+                {hypothetical.length === 1 ? 'is' : 'are'} not in your collection, so the numbers
+                assume a top-10% IV spread rather than a perfect one.
+              </span>
+            ) : null}
             {best ? (
               <span className="small muted">
                 Your best recommended team rates {best.score.fit.toLowerCase()} at{' '}
@@ -184,13 +212,6 @@ export function TeamDetail({ id }: { id: string }) {
             ) : (
               <span className="small">Run in the order you picked.</span>
             )}
-            {hypothetical.length > 0 ? (
-              <span className="small muted">
-                {hypothetical.map((h) => name(h)).join(', ')}{' '}
-                {hypothetical.length === 1 ? 'is' : 'are'} not in your collection, so the numbers
-                assume a top-10% IV spread rather than a perfect one.
-              </span>
-            ) : null}
             {chosenMoves.length > 0 ? (
               <span className="small muted">
                 {chosenMoves.map((h) => name(h)).join(', ')} ran the moves you chose, not the
@@ -205,6 +226,14 @@ export function TeamDetail({ id }: { id: string }) {
                 badges; where it plays comes from those battles alone.
               </span>
             ) : null}
+            <button
+              type="button"
+              className="btn take-to-battle"
+              style={{ marginTop: 6 }}
+              onClick={() => void takeToBattle()}
+            >
+              Take to battle
+            </button>
           </div>
         ) : null}
         <div className="stack" style={{ gap: 12 }}>

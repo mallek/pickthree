@@ -49,6 +49,11 @@ export interface TeamPick {
   asSpeciesId?: string;
   /** Moves to run instead of the recommendation. Must be in the species' pool. */
   moves?: MoveIds;
+  /**
+   * For a species pick: run the player's best specimen that can be this species when there is
+   * one, and the top-10% stand-in only otherwise. Shared links use it.
+   */
+  preferOwned?: boolean;
 }
 
 export interface AnalyzeOptions extends BuildOptions {
@@ -133,6 +138,19 @@ function resolvePick(
   const overall = new Map(); // stage choice below uses the caller's ranking map when given
   void overall;
   if (pick.kind === 'species') {
+    if (pick.preferOwned) {
+      let best: Build | undefined;
+      for (const sp of specimens) {
+        for (const b of buildsFor(sp, index, opts)) {
+          if (b.speciesId === pick.id && (!best || b.ivRank.rank < best.ivRank.rank)) {
+            best = b;
+          }
+        }
+      }
+      if (best) {
+        return { build: best, hypothetical: false };
+      }
+    }
     const s = hypotheticalSpecimen(pick.id, index, opts);
     const build = buildsFor(s, index, opts).find((b) => b.speciesId === pick.id);
     if (!build) {

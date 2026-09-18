@@ -1425,6 +1425,34 @@ textarea.paste {
 .custom-note {
   border-left: 3px solid var(--accent);
 }
+/* Team detail: the three members at a glance, above everything else. */
+.team-strip-card {
+  gap: 12px;
+}
+.team-strip-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.strip-member {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  min-width: 0;
+  font-size: 13px;
+}
+.strip-member b {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hdr-actions {
+  justify-self: end;
+  gap: 4px;
+}
 
 /* matchup grid, opponents as rows */
 .ogrid {

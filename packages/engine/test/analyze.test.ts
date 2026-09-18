@@ -42,6 +42,27 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
     expect(b!.ivRank.rank).toBeLessThanOrEqual(line);
   });
 
+  it('a species pick that prefers owned runs the best specimen the player has', () => {
+    const build = buildsFor(a!, index, { ...DEFAULT_BUILD_OPTIONS, minCp: 0 })[0]!;
+    const picks: [TeamPick, TeamPick, TeamPick] = [
+      { kind: 'species', id: build.speciesId, preferOwned: true },
+      { kind: 'species', id: 'azumarill', preferOwned: true },
+      { kind: 'species', id: 'tinkaton', preferOwned: true },
+    ];
+    const r = analyzeTeam(picks, specimens, { order: 'given' }, deps);
+    const lead = r.team.slots[0]!.candidate.build;
+    expect(lead.speciesId).toBe(build.speciesId);
+    expect(specimens.some((s) => s.id === lead.specimenId)).toBe(true);
+    expect(r.hypothetical).not.toContain(build.speciesId);
+    // The best owned by IV rank, not just the first found.
+    const ranks = specimens.flatMap((s) =>
+      buildsFor(s, index, { ...DEFAULT_BUILD_OPTIONS, minCp: 0 })
+        .filter((b) => b.speciesId === build.speciesId)
+        .map((b) => b.ivRank.rank),
+    );
+    expect(lead.ivRank.rank).toBe(Math.min(...ranks));
+  });
+
   it('tries all six orders and keeps the best', () => {
     const picks: [TeamPick, TeamPick, TeamPick] = [
       { kind: 'specimen', id: a!.id },

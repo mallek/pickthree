@@ -109,6 +109,29 @@ export function useMetaRank(): (id: string) => MetaRank | undefined {
 /** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
  * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
  * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair. */
+/** The share icon, a box with an arrow out of the top, as an icon button. */
+export function ShareButton({ onClick, label = 'Share' }: { onClick: () => void; label?: string }) {
+  return (
+    <button type="button" className="head-cog" aria-label={label} title={label} onClick={onClick}>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3v12" />
+        <path d="M8 7l4-4 4 4" />
+        <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+      </svg>
+    </button>
+  );
+}
+
 /** Segmented control: real buttons, so Enter and Space activate them like a tap. */
 export function Seg<T extends string>({
   value,
@@ -541,6 +564,7 @@ export function Header({
   backLabel,
   cog = true,
   extra,
+  action,
 }: {
   title: string;
   sub?: string;
@@ -549,6 +573,8 @@ export function Header({
   cog?: boolean;
   /** A row under the title that scrolls with the header, such as the set's team. */
   extra?: ReactNode;
+  /** An icon button on the right, before the cog, such as Share. */
+  action?: ReactNode;
 }) {
   return (
     <header className="hdr">
@@ -563,7 +589,14 @@ export function Header({
         <span>{title}</span>
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
-      {cog ? <HeadCog /> : <span className="back-spacer" />}
+      {action || cog ? (
+        <span className="row hdr-actions">
+          {action}
+          {cog ? <HeadCog /> : null}
+        </span>
+      ) : (
+        <span className="back-spacer" />
+      )}
       {extra ? <div className="hdr-extra">{extra}</div> : null}
     </header>
   );

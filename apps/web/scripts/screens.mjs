@@ -140,7 +140,7 @@ await shot('03-team-detail');
 console.log('take to battle');
 // The sample log has an open set with another team, so the confirm dialog appears.
 page.once('dialog', (d) => void d.accept());
-await page.click('.scroll > .btn-pair > .btn');
+await page.click('.take-to-battle');
 await page.waitForFunction(() => document.location.hash === '#/meta/log', { timeout: 30_000 });
 await page.waitForSelector('.team-strip', { timeout: 30_000 });
 const strip = await page.$eval('.team-strip', (e) => e.textContent ?? '');
@@ -337,7 +337,7 @@ if (sharedError) {
 const sharedNote = await page.$$eval('.custom-note', (els) =>
   els.map((e) => e.textContent).join(' '),
 );
-if (!sharedNote.includes('Opened from a link')) {
+if (!sharedNote.includes('Shared team link')) {
   throw new Error(`shared team did not say it was shared: ${sharedNote}`);
 }
 if (!page.url().endsWith('#/build/team')) {

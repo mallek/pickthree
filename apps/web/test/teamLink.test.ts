@@ -27,14 +27,16 @@ describe('team links', () => {
       {
         kind: 'species',
         id: 'azumarill',
+        preferOwned: true,
         moves: { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
       },
       {
         kind: 'species',
         id: 'tinkaton',
+        preferOwned: true,
         moves: { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER'] },
       },
-      { kind: 'species', id: 'clodsire' },
+      { kind: 'species', id: 'clodsire', preferOwned: true },
     ]);
   });
 
