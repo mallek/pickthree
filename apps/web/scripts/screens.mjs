@@ -138,14 +138,24 @@ await new Promise((r) => setTimeout(r, 300));
 await shot('03-team-detail');
 
 console.log('edit in build');
-// Back from a recommended team loads it into Build for edits.
-await page.click('.hdr .back');
-await page.waitForFunction(
-  () =>
-    document.location.hash === '#/build' &&
-    document.querySelectorAll('.pick-card.filled').length === 3,
-  { timeout: 30_000 },
-);
+// Back from a recommended team loads it into Build for edits. Through the DOM: the sticky
+// header sits under the update toast's spot, and a geometry click has missed here before.
+await page.$eval('.hdr .back', (el) => el.click());
+try {
+  await page.waitForFunction(() => document.location.hash === '#/build', { timeout: 15_000 });
+  await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length === 3, {
+    timeout: 15_000,
+  });
+} catch (e) {
+  const diag = await page.evaluate(() => ({
+    hash: document.location.hash,
+    filled: document.querySelectorAll('.pick-card.filled').length,
+    toast: document.querySelector('.update-toast')?.textContent ?? null,
+    text: document.body.innerText.slice(0, 300),
+  }));
+  console.log(`  edit in build did not land: ${JSON.stringify(diag)}`);
+  throw e;
+}
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.take-to-battle', { timeout: 60_000 });
 
