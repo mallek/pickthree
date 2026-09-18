@@ -29,3 +29,4 @@ playwright-report/
 
 # local headless-chrome captures
 apps/web/screenshots/
+apps/meta/screenshots/

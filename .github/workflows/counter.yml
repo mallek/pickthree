@@ -1,9 +1,12 @@
-name: counter
+name: worker and meta site
 on:
   push:
     branches: [main]
     paths:
       - 'workers/counter/**'
+      - 'apps/meta/**'
+      - 'packages/data/pvpoke.lock.json'
+      - 'packages/data/seasons.json'
       - '.github/workflows/counter.yml'
   workflow_dispatch:
 jobs:
@@ -17,6 +20,27 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm -w @pickthree/counter run typecheck
+      - name: Cache PvPoke checkout
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/data/.pvpoke
+            packages/data/.cache
+          key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
+      - name: Cache built game data
+        id: data
+        uses: actions/cache@v4
+        with:
+          path: apps/web/public/data
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/seasons.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/sim-pvpoke/src/**') }}
+      - run: npm run data:fetch
+        if: steps.data.outputs.cache-hit != 'true'
+      - run: npm run data:build
+        if: steps.data.outputs.cache-hit != 'true'
+      # The worker serves apps/meta/dist as its static assets, so the site is built first. A
+      # deploy without that directory present would publish an empty asset set and blank the live
+      # site, so this order matters more than anything else in this file.
+      - run: npm -w @pickthree/meta run build
       - run: npm -w @pickthree/counter run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
