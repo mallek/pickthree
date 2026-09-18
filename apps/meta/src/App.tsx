@@ -23,6 +23,7 @@ import {
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
 import { Pills, Segmented } from './components.js';
 import { Overview } from './screens/Overview.js';
+import { Teams } from './screens/Teams.js';
 import {
   DepsContext,
   useBaseline,
@@ -82,12 +83,7 @@ function renderView(
     );
   }
   if (view.name === 'teams') {
-    // Task 11 replaces this with the real teams screen.
-    return (
-      <main>
-        <p className="sub">Teams in {league}. Task 11 replaces this placeholder.</p>
-      </main>
-    );
+    return <Teams league={league} query={query} data={data} meta={meta} now={now} />;
   }
   if (view.name === 'species') {
     // Task 12 replaces this with the real species screen.

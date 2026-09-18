@@ -111,7 +111,9 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    expect(await screen.findByText(/Teams in ultra/)).toBeInTheDocument();
+    // Task 11 replaced the teams placeholder ("Teams in ultra") with the real screen, whose
+    // sub-line names the league and window instead.
+    expect(await screen.findByText(/Ultra League - 7 days/)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '7 days' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radio', { name: 'Ace' })).toHaveAttribute('aria-checked', 'true');
     expect(window.location.pathname).toBe('/ultra/teams');
