@@ -1,5 +1,5 @@
 import type { Layout, MetaRank } from '@pickthree/engine';
-import type { Cost, IvRankResult, PokemonType, Species } from '@pickthree/engine';
+import type { Cost, IvRankResult, Species } from '@pickthree/engine';
 
 const REGIONAL: Record<string, string> = {
   '(Alolan)': 'Alolan',
@@ -35,14 +35,6 @@ export function shortName(speciesId: string, species: Species | undefined): stri
 export function initialOf(displayName: string): string {
   const base = displayName.replace(/^(Shadow|Galarian|Alolan|Hisuian|Paldean) /, '');
   return base.charAt(0).toUpperCase();
-}
-
-export function typeColor(t: PokemonType | 'none'): string {
-  return t === 'none' ? 'transparent' : `var(--type-${t})`;
-}
-
-export function typeLabel(t: PokemonType | 'none'): string {
-  return t === 'none' ? '' : t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 export function num(n: number): string {

@@ -1,7 +1,7 @@
 import type { Faceoff, FaceoffCell, FaceoffMember } from '@pickthree/engine';
 import type { CSSProperties } from 'react';
 import { PokemonToken, TypeChips, useName, useShortName, useSpecies } from '../components.tsx';
-import { typeColor } from '../format.ts';
+import { typeColor } from '@pickthree/ui';
 
 /** One word each, read from the equal-shield pairs; "Mixed" means look at the grid. */
 const VERDICT: Record<FaceoffMember['verdict'], string> = {

@@ -9,21 +9,15 @@ import {
   type VerdictLabel,
 } from '@pickthree/engine';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  initialOf,
-  metaTags,
-  shortName,
-  speciesDisplayName,
-  typeColor,
-  typeLabel,
-} from './format.ts';
+import { initialOf, metaTags, shortName, speciesDisplayName } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
+import { TypeChip, typeColor } from '@pickthree/ui';
 
-export { Term } from '@pickthree/ui';
+export { Term, TypeChip } from '@pickthree/ui';
 
 export function useSpecies(): (id: string) => SpeciesLite | undefined {
   const { data } = useAppState();
@@ -348,18 +342,11 @@ export function MetaButton() {
   );
 }
 
-/** The one way a type is shown anywhere in the app: a small chip in the type's color. */
-export function TypeChip({ type, small }: { type: PokemonType; small?: boolean | undefined }) {
-  return (
-    <span
-      className={`tchip${small ? ' tchip-sm' : ''}`}
-      style={{ '--c': typeColor(type), '--t': `var(--type-${type}-ink)` } as CSSProperties}
-    >
-      {typeLabel(type)}
-    </span>
-  );
-}
-
+/** Web's `types` tuple carries a literal `'none'` for a single-typed species' absent second slot
+ * (`[PokemonType, PokemonType | 'none']`, see `packages/engine/src/gamedata/types.ts`), unlike
+ * meta's plain `string[]` with no such sentinel. The shared `TypeChips` has no filter for that,
+ * so this thin wrapper strips `'none'` before handing the rest to the shared `TypeChip`, keeping
+ * every one of web's own call sites (which pass the tuple straight through) unchanged. */
 export function TypeChips({
   types,
   small,

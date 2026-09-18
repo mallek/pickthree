@@ -10,52 +10,14 @@
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
+import { typeColor } from '@pickthree/ui';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
 import { confidence, trendLabel } from './stats.js';
 import type { ThemeChoice } from './theme.js';
 
-export { Term } from '@pickthree/ui';
-
-const TYPES: readonly string[] = [
-  'normal',
-  'fire',
-  'water',
-  'electric',
-  'grass',
-  'ice',
-  'fighting',
-  'poison',
-  'ground',
-  'flying',
-  'psychic',
-  'bug',
-  'rock',
-  'ghost',
-  'dragon',
-  'dark',
-  'steel',
-  'fairy',
-];
-
-/** A type's paint. Unknown types (a bad CSV cell, a future type) fall back to the neutral token
- * rather than an undefined CSS variable. */
-export function typeColor(type: string): string {
-  return TYPES.includes(type) ? `var(--type-${type})` : 'var(--muted)';
-}
-
-/** A type's chip text colour, the same fallback rule as `typeColor` above but reading the `-ink`
- * token instead of the fill: an unrecognised type gets a readable neutral tag rather than an
- * unset CSS variable (there is no `--quantum-ink` to fall through to). Private: `TypeChip` below
- * is the one place that reads it. */
-function typeInk(type: string): string {
-  return TYPES.includes(type) ? `var(--type-${type}-ink)` : 'var(--muted)';
-}
-
-function capitalize(s: string): string {
-  return s.length === 0 ? s : s.slice(0, 1).toUpperCase() + s.slice(1);
-}
+export { Term, TypeChip, TypeChips, typeColor } from '@pickthree/ui';
 
 /** The coloured disc behind a species' sprite, split diagonally between its two types (or one
  * type twice, for a single-typed species). The sprite art overflows the disc by 6px on purpose,
@@ -103,42 +65,6 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
           onError={() => setBrokenId(species.id)}
         />
       )}
-    </span>
-  );
-}
-
-/**
- * A2: the one way a type is shown anywhere on this site, pick3's own chip shape and colour rule
- * ported byte-for-byte (apps/web/src/components.tsx's `TypeChip`/`TypeChips`): Title Case text
- * on a light wash of the type's colour, using `.tchip`/`.tchip-sm` (app.css). Species.tsx's move
- * lines used to render through a separate solid, uppercase `Tag`/`.type-tag` pill; D3 moved them
- * onto this component instead (`MoveLine`'s `TypeChip type={move.type} small`, matching pick3's
- * Build cards byte for byte), which left `Tag` with no caller anywhere in this app, so FIX 5
- * removed it (and `.type-tag`, and the white-text type list only it read) rather than carry a
- * second, unused way to draw a type. `type` is a plain string, not a closed union like pick3's
- * `PokemonType`, since this site reads types off the static data file rather than the engine;
- * `typeColor`/`typeInk`'s fallback is what keeps a bad value from ever landing on an undefined
- * CSS variable.
- */
-export function TypeChip({ type, small }: { type: string; small?: boolean | undefined }) {
-  return (
-    <span
-      className={`tchip${small ? ' tchip-sm' : ''}`}
-      style={{ '--c': typeColor(type), '--t': typeInk(type) } as CSSProperties}
-    >
-      {capitalize(type)}
-    </span>
-  );
-}
-
-/** One chip per type, wrapped in pick3's `.tchips` row so they wrap together rather than one at
- * a time. */
-export function TypeChips({ types, small }: { types: string[]; small?: boolean | undefined }) {
-  return (
-    <span className="tchips">
-      {types.map((t) => (
-        <TypeChip key={t} type={t} small={small} />
-      ))}
     </span>
   );
 }

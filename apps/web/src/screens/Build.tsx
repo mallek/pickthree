@@ -26,7 +26,8 @@ import {
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
-import { ivLine, topPct, typeColor } from '../format.ts';
+import { ivLine, topPct } from '../format.ts';
+import { typeColor } from '@pickthree/ui';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
