@@ -11,11 +11,4 @@ describe('SitePill', () => {
     // tech, so the aria-label above is the one source of the accessible name.
     expect(screen.getByText('meta')).toHaveAttribute('aria-hidden', 'true');
   });
-
-  it('keeps the same accessible name when compact, even with no visible label', () => {
-    render(<SitePill compact />);
-    const link = screen.getByRole('link', { name: 'meta, the community meta' });
-    expect(link).toHaveAttribute('href', 'https://meta.pick3.gg');
-    expect(screen.queryByText('meta')).not.toBeInTheDocument();
-  });
 });

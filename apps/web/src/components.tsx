@@ -324,23 +324,21 @@ function MetaGlyph() {
 
 /** The pill naming the sister site, meta.pick3.gg: same shape, size and placement logic as meta's
  * own header pill (apps/meta/src/components.tsx's `SitePill`), so the two headers rhyme through
- * shape and placement, not through a shared glyph (see `MetaGlyph`). Sits on the four tab-root
- * screens' page-head row, before the cog, where there is room for a visible label; it does not
- * live in the shared `Header` used by the back-button screens, which are already tight.
+ * shape and placement, not through a shared glyph (see `MetaGlyph`). Sits on three of the four
+ * tab-root screens' page-head row, before the cog, where there is room for a visible label
+ * (Teams, Counters, Your Meta). Collection's row already carries a count and a "+ Add" button and
+ * has no room to spare at 390px, so it does not carry this pill; the switcher is reachable from
+ * the other three screens and Your Meta's own contextual link. It does not live in the shared
+ * `Header` used by the back-button screens, which are already tight.
  *
  * The visible label is "meta"; the accessible name is the fuller "meta, the community meta",
  * since a bare "meta" read aloud names nothing. The glyph carries its own aria-hidden and the
- * label is hidden from assistive tech too, so aria-label is the one source of the name.
- *
- * `compact` drops the visible label, same fallback as before, but now justified per screen
- * rather than applied everywhere: Collection's row already carries a count and a "+ Add" button,
- * and at 390px a fourth item pushes the count text into a three-line wrap. Every other tab-root
- * screen has room for the full pill. */
-export function SitePill({ compact = false }: { compact?: boolean } = {}) {
+ * label is hidden from assistive tech too, so aria-label is the one source of the name. */
+export function SitePill() {
   return (
     <a className="site-pill" href={META} aria-label="meta, the community meta">
       <MetaGlyph />
-      {compact ? null : <span aria-hidden="true">meta</span>}
+      <span aria-hidden="true">meta</span>
     </a>
   );
 }

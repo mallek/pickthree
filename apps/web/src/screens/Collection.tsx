@@ -7,7 +7,6 @@ import {
   MetaTags,
   PokemonToken,
   Progress,
-  SitePill,
   VerdictChip,
   useMetaRank,
   useName,
@@ -233,7 +232,6 @@ export function Collection() {
             >
               + Add
             </button>
-            <SitePill compact />
             <HeadCog />
           </span>
         </div>
