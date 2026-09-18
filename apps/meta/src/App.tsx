@@ -4,7 +4,7 @@
  * (Task 10) has landed and renders for real.
  */
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { resolveWindow, type MetaSummaryV1 } from './api.js';
+import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.js';
 import type { Baseline } from './baseline.js';
 import type { StaticData } from './data.js';
 import { PICK3 } from './links.js';
@@ -23,11 +23,13 @@ import {
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from './theme.js';
 import { Pills, Segmented } from './components.js';
 import { Overview } from './screens/Overview.js';
+import { Species } from './screens/Species.js';
 import { Teams } from './screens/Teams.js';
 import {
   DepsContext,
   useBaseline,
   useMetaSummary,
+  useSpeciesDetail,
   useStatic,
   type Deps,
   type Loaded,
@@ -71,6 +73,7 @@ function renderView(
   data: StaticData,
   meta: Loaded<MetaSummaryV1>,
   baseline: Loaded<Baseline>,
+  detail: Loaded<SpeciesDetailV1>,
   now: Date,
   href: (v: View) => string,
 ): ReactNode {
@@ -86,13 +89,18 @@ function renderView(
     return <Teams league={league} query={query} data={data} meta={meta} now={now} />;
   }
   if (view.name === 'species') {
-    // Task 12 replaces this with the real species screen.
     return (
-      <main>
-        <p className="sub">
-          {view.speciesId} in {league}. Task 12 replaces this placeholder.
-        </p>
-      </main>
+      <Species
+        league={league}
+        speciesId={view.speciesId}
+        query={query}
+        data={data}
+        detail={detail}
+        meta={meta}
+        baseline={baseline}
+        now={now}
+        href={href}
+      />
     );
   }
   return (
@@ -209,6 +217,11 @@ export function App(props?: { deps?: Deps }): ReactNode {
   const w = resolveWindow(query.w, seasons, now);
   const meta = useMetaSummary(activeLeague, w, query.band, deps);
   const baseline = useBaseline(activeLeague, deps);
+  // Called unconditionally, same as meta and baseline above, to keep hook order stable across
+  // views: on a non-species view there is no id to look up, so this fetches an empty one (the
+  // stub, and the real worker, both answer it harmlessly) rather than skipping the hook.
+  const speciesId = view.name === 'species' ? view.speciesId : '';
+  const detail = useSpeciesDetail(activeLeague, speciesId, w, query.band, deps);
 
   const header = (
     <header className="hdr sticky">
@@ -300,7 +313,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
             />
           </>
         ) : null}
-        {renderView(view, activeLeague, query, staticData.data, meta, baseline, now, (v) =>
+        {renderView(view, activeLeague, query, staticData.data, meta, baseline, detail, now, (v) =>
           hrefFor(v, query),
         )}
       </div>

@@ -41,8 +41,9 @@ export function typeColor(type: string): string {
 }
 
 /** From the design export: the types whose colour is dark enough that only white text reads on
- * it. Every other type gets the app's near-black ink. Deliberate, not a guess. */
-const WHITE_TEXT = new Set([
+ * it. Every other type gets the app's near-black ink. Deliberate, not a guess. Exported so a
+ * move tag (Species.tsx) can use the same foreground rule as a type tag. */
+export const WHITE_TEXT = new Set([
   'water',
   'ghost',
   'dragon',

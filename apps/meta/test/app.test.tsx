@@ -100,7 +100,13 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    expect(await screen.findByText(/registeel in master/)).toBeInTheDocument();
+    // Task 12 replaced the species placeholder ("registeel in master") with the real screen.
+    // Registeel has no shared battles and is not in the stub baseline for any league, so its
+    // page is just the header and the no-data line.
+    expect(await screen.findByRole('heading', { name: 'Registeel' })).toBeInTheDocument();
+    expect(
+      screen.getByText('No shared battles mention it in this window.'),
+    ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/master/p/registeel');
   });
 
