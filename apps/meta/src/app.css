@@ -19,14 +19,17 @@ body {
 .app {
   max-width: 430px;
   margin-inline: auto;
-  padding: 14px 16px 40px;
+  /* The bottom tab bar is fixed and sits on top of the page, so the scrollable content needs at
+     least its full height clear underneath it, safe-area inset included, or the last thing on
+     every screen (the About page's footer is the tallest case) hides behind it. */
+  padding: 14px 16px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
   overflow-x: clip;
 }
 
 @media (min-width: 900px) {
   .app {
     max-width: 1280px;
-    padding: 24px 32px 40px;
+    padding: 24px 32px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
     display: grid;
     grid-template-columns: 1fr 340px;
     gap: 28px;
@@ -191,58 +194,51 @@ a {
   color: var(--text);
 }
 
+/* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
+   two sites read as one product on a phone. Real <a href> elements, not buttons: this site
+   routes on real paths, not a hash, and a tab has to stay openable in a new tab. */
 .tabs {
-  display: flex;
-  gap: 18px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 430px;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 5;
 }
 
 .tabs > a {
-  position: relative;
-  font-size: 13px;
-  font-weight: 600;
+  min-height: 48px;
   color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
   text-decoration: none;
-  padding-bottom: 6px;
-  border-bottom: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 .tabs > a.on {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: var(--accent);
 }
 
-/* Below 900px the tabs collapse into a seg-style enclosed row instead of an underlined row.
-   Fixed 3-column grid with exactly 3 tabs (overview, teams, about): it never wraps, so the
-   .tabs > a::after vertical inset below has no wrapped-row neighbour to overlap. */
-@media (max-width: 899px) {
-  .tabs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    background: var(--surface);
-    border-radius: 999px;
-    padding: 4px;
-  }
-
-  .tabs > a {
-    text-align: center;
-    padding: 9px 0;
-    border-radius: 999px;
-    border-bottom: 0;
-  }
-
-  .tabs > a.on {
-    background: var(--accent);
-    color: var(--on-accent);
-    font-weight: 700;
-  }
-
-  /* Same compact metrics as .seg, so the same 35px painted height and 41px touch target apply. */
-  .tabs > a::after {
-    content: '';
-    position: absolute;
-    inset: -3px 0;
-  }
+.tabs > a svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
 }
 
 .btn {
@@ -399,8 +395,13 @@ a.row {
   min-width: 0;
 }
 
-/* Header */
-.hdr {
+/* Brand row: the wordmark, the pick3 mark and a link back to the main app. Shown on the three
+   tab-root screens (Overview, Teams, About), each reached straight from the bottom tab bar.
+   Species is a drill-down from Overview rather than a tab of its own, so its sticky header's
+   back link fills this row's "how do I leave this page" job instead, and the wordmark is
+   dropped there rather than duplicating it. Not sticky itself: only the page header below it is,
+   so the two never have to share row 0. */
+.brand {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -408,14 +409,10 @@ a.row {
   gap: 8px;
 }
 
-.hdr.sticky {
-  position: sticky;
-  top: 0;
-  background: var(--bg);
-  z-index: 3;
-}
-
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.2px;
@@ -425,15 +422,77 @@ a.row {
   color: var(--text);
 }
 
+.wordmark-mark {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 /* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
 .wordmark-accent {
   color: var(--accent);
+}
+
+.brand-pick3 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Page header: sticky, matching apps/web's own .hdr geometry (apps/web/src/app.css) so the two
+   sites read as one product. z-index 3 keeps it under the bottom tab bar's z-index 5. */
+.hdr {
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px;
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(0, auto) minmax(72px, 1fr);
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 3;
+}
+
+.hdr-title {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 0;
+}
+
+.hdr-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.back {
+  justify-self: start;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--accent);
+  font-weight: 600;
+  padding: 0 4px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+}
+
+.back-spacer {
+  min-width: 44px;
 }
 
 /* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .icon-btn::after's
    all-sides inset only ever meets the 8px gap between buttons on the same row, which is enough
    clearance for a 3px inset on each side. */
 .hdr-actions {
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 8px;

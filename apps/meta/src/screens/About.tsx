@@ -106,7 +106,6 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
   const { baseline } = p;
   return (
     <main>
-      <h1>Where these numbers come from</h1>
       <p className="sub">
         Every number on this site is built from real GO Battle League battles that pick3 players
         chose to share. Nothing is scraped, estimated or simulated. The one exception is

@@ -117,8 +117,10 @@ describe('App, deep links', () => {
     );
     // Task 12 replaced the species placeholder ("registeel in master") with the real screen.
     // Registeel has no shared battles and is not in the stub baseline for any league, so its
-    // page is just the header and the no-data line.
-    expect(await screen.findByRole('heading', { name: 'Registeel' })).toBeInTheDocument();
+    // page is just the header and the no-data line. The species name is App.tsx's sticky header
+    // title now (a plain span, matching apps/web's own Header, not a heading), so this checks
+    // the text rather than a heading role.
+    expect(await screen.findByText('Registeel')).toBeInTheDocument();
     expect(
       screen.getByText('No shared battles mention it in this window.'),
     ).toBeInTheDocument();

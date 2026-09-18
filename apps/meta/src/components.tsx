@@ -306,6 +306,44 @@ export function ConfidenceDot({ n }: { n: number }) {
   );
 }
 
+/** The sticky per-screen header: a back link (or spacer, so the title stays centred) on the
+ * left, the title and an optional subtitle in the middle, and a right-hand slot for this app's
+ * one recurring action, the appearance toggle. Modelled on apps/web's own Header
+ * (apps/web/src/components.tsx), including that the title is a plain span rather than a heading:
+ * each screen's own `<h2>`s still carry the real heading structure, this is chrome around them.
+ * `backHref` is a real link (not a button with an onClick) so the back target stays openable in
+ * a new tab, same as every other link on this site. */
+export function Header({
+  title,
+  sub,
+  backHref,
+  backLabel,
+  action,
+}: {
+  title: string;
+  sub?: string;
+  backHref?: string;
+  backLabel?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <header className="hdr">
+      {backHref ? (
+        <a className="back" href={backHref}>
+          <Chevron dir="left" /> {backLabel ?? 'Back'}
+        </a>
+      ) : (
+        <span className="back-spacer" />
+      )}
+      <span className="hdr-title">
+        <span>{title}</span>
+        {sub ? <span className="hdr-sub">{sub}</span> : null}
+      </span>
+      {action ? <span className="hdr-actions">{action}</span> : <span className="back-spacer" />}
+    </header>
+  );
+}
+
 /** The one arrow-like mark in this project: nothing here uses an arrow or chevron character. */
 export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' }) {
   return (

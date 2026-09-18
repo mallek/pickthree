@@ -15,17 +15,10 @@ import { ConfidenceDot, Chevron, SpriteStack } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count } from '../format.js';
 import { teamLink, type LinkMember } from '../links.js';
-import type { Query, WindowKey } from '../route.js';
+import type { Query } from '../route.js';
 import { MANY, SOME, marginSentence, winRate } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 import { Contribute } from './Overview.js';
-
-/** Same labels as App.tsx's own (private) map, for the sub-line naming the chosen window. */
-const WINDOW_LABELS: Record<WindowKey, string> = {
-  season: 'This season',
-  '30': '30 days',
-  '7': '7 days',
-};
 
 /** The members `teamLink` wants: each species id, with its most common moveset when the record
  * has enough battles behind it to name one. `team.moves` is aligned with `team.species` by
@@ -77,10 +70,7 @@ export function Teams(p: {
   meta: Loaded<MetaSummaryV1>;
   now: Date;
 }): ReactNode {
-  const { league, query, data, meta } = p;
-  const leagueInfo = data.leagues.find((l) => l.id === league) ?? null;
-  const leagueTitle = leagueInfo?.title ?? league;
-  const windowLabel = WINDOW_LABELS[query.w];
+  const { league, data, meta } = p;
 
   if (meta.state === 'error') {
     return (
@@ -103,10 +93,6 @@ export function Teams(p: {
   return (
     <main>
       <section>
-        <h2>Most run teams</h2>
-        <p className="sub">
-          {leagueTitle} - {windowLabel} - teams reporters ran themselves
-        </p>
         <p className="fine">
           Confidence: few under {count(SOME)}, some {count(SOME)} to {count(MANY)}, many{' '}
           {count(MANY)} or more, counted on decided battles.
