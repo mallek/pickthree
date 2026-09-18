@@ -29,12 +29,26 @@ export interface Loaded<T> {
 
 const LOADING = { state: 'loading', data: null, error: null } as const;
 
-function useAsync<T>(run: (signal: AbortSignal) => Promise<T>, keys: unknown[]): Loaded<T> {
+/**
+ * `run` returning `null` (not a promise) means there is nothing to fetch this render, e.g. no
+ * species id to look up on a view that does not show one. That settles the result immediately,
+ * with no data and no error, rather than issuing a request nobody asked for or leaving every
+ * consumer to special-case a loading state that would never resolve.
+ */
+function useAsync<T>(
+  run: (signal: AbortSignal) => Promise<T> | null,
+  keys: unknown[],
+): Loaded<T> {
   const [result, setResult] = useState<Loaded<T>>(LOADING);
   useEffect(() => {
     const controller = new AbortController();
+    const promise = run(controller.signal);
+    if (!promise) {
+      setResult({ state: 'ready', data: null, error: null });
+      return () => controller.abort();
+    }
     setResult(LOADING);
-    run(controller.signal).then(
+    promise.then(
       (data) => {
         if (!controller.signal.aborted) {
           setResult({ state: 'ready', data, error: null });
@@ -88,6 +102,13 @@ export function useMetaSummary(
   );
 }
 
+/**
+ * Called unconditionally by App.tsx on every view, to keep hook order stable. Most views have
+ * no species id to look up, and the worker's species route requires a non-empty one anyway, so
+ * an empty `id` here is not a request that failed, it is a request that never needed to happen:
+ * `run` returns `null` rather than a promise, and `useAsync` settles that as an idle, dataless
+ * "ready" instead of issuing a guaranteed-404 round trip on the site's two most visited pages.
+ */
 export function useSpeciesDetail(
   league: string,
   id: string,
@@ -97,8 +118,11 @@ export function useSpeciesDetail(
 ): Loaded<SpeciesDetailV1> {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync(
+  return useAsync<SpeciesDetailV1>(
     (signal) => {
+      if (id === '') {
+        return null;
+      }
       const opts: { signal: AbortSignal; fetcher?: typeof fetch } = { signal };
       if (fetcher) {
         opts.fetcher = fetcher;

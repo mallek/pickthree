@@ -47,8 +47,14 @@ export function pct(fraction: number): string {
   return (fraction * 100).toFixed(1);
 }
 
+/** The noun alone, for a sentence that has to put something (a league name, an adjective)
+ * between the count and the word. Prefer `battles()` when nothing sits in between. */
+export function battleWord(n: number): string {
+  return n === 1 ? 'battle' : 'battles';
+}
+
 export function battles(n: number): string {
-  return `${count(n)} ${n === 1 ? 'battle' : 'battles'}`;
+  return `${count(n)} ${battleWord(n)}`;
 }
 
 const MIN = 60_000;

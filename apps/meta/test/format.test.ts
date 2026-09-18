@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ago, ascii, battles, count, pct, shortName } from '../src/format.js';
+import { ago, ascii, battleWord, battles, count, pct, shortName } from '../src/format.js';
 
 describe('ascii', () => {
   it('folds accented letters so every rendered string is 7-bit', () => {
@@ -40,6 +40,12 @@ describe('numbers', () => {
     expect(battles(1)).toBe('1 battle');
     expect(battles(1240)).toBe('1,240 battles');
     expect(battles(0)).toBe('0 battles');
+  });
+
+  it('gives the plural word alone for a sentence with something between the count and it', () => {
+    expect(battleWord(1)).toBe('battle');
+    expect(battleWord(0)).toBe('battles');
+    expect(battleWord(2)).toBe('battles');
   });
 });
 

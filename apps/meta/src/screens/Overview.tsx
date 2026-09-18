@@ -13,7 +13,7 @@ import type { MetaSummaryV1 } from '../api.js';
 import type { Baseline } from '../baseline.js';
 import { Bar, Note, Sprite, StatCard, TypeTags } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { ago, count, pct } from '../format.js';
+import { ago, battleWord, battles as battlesText, count, pct } from '../format.js';
 import { PICK3 } from '../links.js';
 import { rank, type BaselineRow, type MeasuredRow, type Ranking } from '../rank.js';
 import type { BandKey, Query, View } from '../route.js';
@@ -73,9 +73,9 @@ function bannerBody(ranking: Ranking, leagueTitle: string, band: BandKey): strin
   }
   const bandSuffix = band === 'all' ? '' : ` from ${BAND_LABELS[band]} players`;
   return (
-    `Only ${count(ranking.battles)} ${leagueTitle} battles${bandSuffix} have been shared in this ` +
-    "window. The ranked list below is PvPoke's meta group, not measured play. What we have " +
-    'measured is under it, with its counts.'
+    `Only ${count(ranking.battles)} ${leagueTitle} ${battleWord(ranking.battles)}${bandSuffix} ` +
+    "have been shared in this window. The ranked list below is PvPoke's meta group, not " +
+    "measured play. What we have measured is under it, with its counts."
   );
 }
 
@@ -83,7 +83,9 @@ function bannerBody(ranking: Ranking, leagueTitle: string, band: BandKey): strin
  * and trend sentences folded in only when they apply. */
 function explainerText(ranking: Ranking, band: BandKey): string {
   const n = count(ranking.battles);
-  let s = `Faced is the share of the ${n} shared battles where this Pokemon was on the other side. `;
+  let s =
+    `Faced is the share of the ${n} shared ${battleWord(ranking.battles)} where this Pokemon ` +
+    'was on the other side. ';
   s +=
     band === 'all'
       ? 'Record is how the people who shared those battles did against it.'
@@ -282,7 +284,7 @@ export function Overview(p: {
     <section>
       <h2>Most faced</h2>
       <p className="sub">
-        Measured from {count(ranking.battles)} battles shared by {count(ranking.devices)} devices.
+        Measured from {battlesText(ranking.battles)} shared by {count(ranking.devices)} devices.
       </p>
       <p className="sub">{explainerText(ranking, query.band)}</p>
       <div className="fine" style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -309,7 +311,7 @@ export function Overview(p: {
     <section>
       <h2>What we have seen</h2>
       <p className="sub">
-        Every Pokemon faced at least twice in these {count(ranking.battles)} battles.
+        Every Pokemon faced at least twice in these {battlesText(ranking.battles)}.
       </p>
       {ranking.measured.length === 0 && ranking.tail === 0 ? (
         <p className="sub">No battles shared in this window yet.</p>

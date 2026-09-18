@@ -117,4 +117,30 @@ describe('Species', () => {
       screen.getByText('Nobody who shares battles has run it in this window.'),
     ).toBeInTheDocument();
   });
+
+  it('reads the singular correctly at n = 1, not "1 battles"', async () => {
+    // Fix round 1: every hand-spliced `{count(n)} battles` read "1 battles" at n = 1, and this
+    // site launches with samples this small routinely, not as an edge case.
+    const one = {
+      ...species,
+      runs: 1,
+      movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 1 }],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: one, meta }), now }} />);
+    expect(await screen.findByText('Run by reporters in 1 battle')).toBeInTheDocument();
+    expect(screen.queryByText(/1 battles\b/)).toBeNull();
+  });
+
+  it('says "about the same" instead of "even pts" when the week is unchanged', async () => {
+    const flat = {
+      ...species,
+      weekly: [
+        { week: '2026-W36', battles: 500, sightings: 100 },
+        { week: '2026-W37', battles: 500, sightings: 100 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: flat, meta }), now }} />);
+    expect(await screen.findByText(/about the same as the first week/)).toBeInTheDocument();
+    expect(screen.queryByText(/even pts/)).toBeNull();
+  });
 });

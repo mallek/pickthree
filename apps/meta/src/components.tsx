@@ -41,9 +41,9 @@ export function typeColor(type: string): string {
 }
 
 /** From the design export: the types whose colour is dark enough that only white text reads on
- * it. Every other type gets the app's near-black ink. Deliberate, not a guess. Exported so a
- * move tag (Species.tsx) can use the same foreground rule as a type tag. */
-export const WHITE_TEXT = new Set([
+ * it. Every other type gets the app's near-black ink. Deliberate, not a guess. Private: `Tag`
+ * below is the one place that reads it. */
+const WHITE_TEXT = new Set([
   'water',
   'ghost',
   'dragon',
@@ -131,19 +131,28 @@ export function SpriteStack({ species, size }: { species: SpeciesLite[]; size?: 
   );
 }
 
-/** One tag per type, plain-worded and coloured, with the foreground chosen per type so the text
- * always reads against its own background. */
+/** One coloured pill: background from the type's paint, foreground chosen so the label always
+ * reads against it. `type` picks the colour; `label` is the text, which need not be the type's
+ * own name (Species.tsx uses this for a move, tinted by the move's type, labelled with the
+ * move's name). The only place the two foreground hex literals and the white-text type list
+ * exist, so `TypeTags` and a move tag can never disagree on which types get which ink. */
+export function Tag({ type, label }: { type: string; label: string }) {
+  return (
+    <span
+      className="type-tag"
+      style={{ background: typeColor(type), color: WHITE_TEXT.has(type) ? '#fff' : '#161826' }}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** One tag per type, plain-worded and coloured. */
 export function TypeTags({ types }: { types: string[] }) {
   return (
     <>
       {types.map((t) => (
-        <span
-          key={t}
-          className="type-tag"
-          style={{ background: typeColor(t), color: WHITE_TEXT.has(t) ? '#fff' : '#161826' }}
-        >
-          {capitalize(t)}
-        </span>
+        <Tag key={t} type={t} label={capitalize(t)} />
       ))}
     </>
   );

@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
-import { Bar, Chevron, Sparkline, Sprite, TypeTags, WHITE_TEXT, typeColor } from '../components.js';
+import { Bar, Chevron, Sparkline, Sprite, Tag, TypeTags } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pct } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
@@ -92,20 +92,14 @@ function aggregateMoves(
     .sort((a, b) => b.battles - a.battles || a.moveId.localeCompare(b.moveId));
 }
 
-/** A move name tinted by its type, the same foreground rule TypeTags uses. A move id with no
- * entry in the static move file still renders, under its raw id, rather than going blank. */
+/** A move name tinted by its type, using the same `Tag` (and so the same foreground rule) as a
+ * Pokemon's own `TypeTags`. A move id with no entry in the static move file still renders,
+ * under its raw id, rather than going blank. */
 function MoveTag({ moveId, data }: { moveId: string; data: StaticData }) {
   const move = data.moves.get(moveId);
   const name = move?.name ?? moveId;
   const type = move?.type ?? '';
-  return (
-    <span
-      className="type-tag"
-      style={{ background: typeColor(type), color: WHITE_TEXT.has(type) ? '#fff' : '#161826' }}
-    >
-      {name}
-    </span>
-  );
+  return <Tag type={type} label={name} />;
 }
 
 function MoveShareRow({ share, runs, data }: { share: MoveShare; runs: number; data: StaticData }) {
@@ -138,7 +132,7 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
   return (
     <section>
       <h2>Moves reporters ran</h2>
-      <p className="sub">Run by reporters in {count(detail.runs)} battles</p>
+      <p className="sub">Run by reporters in {battlesText(detail.runs)}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {fastShares.map((s) => (
           <MoveShareRow key={`fast-${s.moveId}`} share={s} runs={detail.runs} data={data} />
@@ -162,12 +156,18 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
   const first = shares[0]!;
   const latest = shares[shares.length - 1]!;
   const changePoints = (latest - first) * 100;
+  const label = trendLabel(changePoints);
+  // trendLabel returns the word "even" precisely so a caller does not print a number next to
+  // it; appending "pts" to that word read as nonsense ("even pts"), so this is worded as its
+  // own sentence instead of the number's unit.
+  const changeText =
+    label === 'even' ? 'about the same as the first week' : `${label} pts since the first week`;
   return (
     <section>
       <h2>Faced, week by week</h2>
       <Sparkline values={shares} />
       <p className="sub">
-        {pct(latest)}% latest, {trendLabel(changePoints)} pts since the first week
+        {pct(latest)}% latest, {changeText}
       </p>
     </section>
   );
@@ -258,8 +258,7 @@ function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
       </div>
       {warnThin && thin ? (
         <p className="fine">
-          {bandLabel(thin.band)} is {count(thin.sightings)} battles, treat it as a hint, not a
-          fact.
+          {bandLabel(thin.band)} is {battlesText(thin.sightings)}, treat it as a hint, not a fact.
         </p>
       ) : null}
     </section>
@@ -400,9 +399,9 @@ export function Species(p: {
   } else if (measuredEnough) {
     const share = m.battles > 0 ? d.sightings / m.battles : 0;
     const rankNum = rankAmong(m, speciesId, d.sightings);
-    headerText = `#${rankNum} most faced - in ${pct(share)}% of ${count(m.battles)} battles`;
+    headerText = `#${rankNum} most faced - in ${pct(share)}% of ${battlesText(m.battles)}`;
   } else {
-    headerText = `Faced ${count(d.sightings)} times in ${count(m.battles)} battles`;
+    headerText = `Faced ${count(d.sightings)} times in ${battlesText(m.battles)}`;
   }
 
   const baselineEntry = baseline.data?.byId.get(speciesId) ?? null;

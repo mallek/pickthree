@@ -1,5 +1,5 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
@@ -152,5 +152,15 @@ describe('Overview filters', () => {
     const seven = await findByRole('radio', { name: '7 days' });
     seven.click();
     await waitFor(() => expect(window.location.search).toContain('w=7'));
+  });
+});
+
+describe('Overview, request cost', () => {
+  it('never asks for a species detail: nothing on this page has an id to look up', async () => {
+    const fetcher = vi.fn(stubFetch({}));
+    render(<App deps={{ fetcher, now }} />);
+    expect(await screen.findByRole('heading', { name: "PvPoke's meta group" })).toBeInTheDocument();
+    const urls = fetcher.mock.calls.map((call) => String(call[0]));
+    expect(urls.some((u) => u.includes('/api/v1/species/'))).toBe(false);
   });
 });
