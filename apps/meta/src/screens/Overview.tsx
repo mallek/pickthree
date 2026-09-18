@@ -324,7 +324,8 @@ export function Overview(p: {
         Only Pokemon faced in at least {pct(RANKED_SHARE)}% of battles are ranked.
       </p>
       <p className="fine">
-        Updated every {count(BUCKET_MS / 60_000)} minutes from battles shared by pick3 players.
+        Updated every {count(BUCKET_MS / 60_000)}{' '}
+        {plural(BUCKET_MS / 60_000, 'minute', 'minutes')} from battles shared by pick3 players.
       </p>
     </section>
   );

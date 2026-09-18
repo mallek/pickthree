@@ -163,20 +163,28 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
  * `TREND_MIN` counted battles in both compared windows. Task 12's tests missed it because every
  * fixture week happened to have 500 battles.
  *
- * Two independent floors now apply. A week's SHARE is not printed at all below `SHARE_MIN`
- * battles that week (false precision: "0%" from two battles is not a share); when fewer than
- * two weeks clear that floor, the card falls back to the raw counts instead of a chart. The
- * week-over-week CHANGE goes through `trendPoints`, the same statistical gate the League
- * overview and the About page's own promise both use (`TREND_MIN` counted battles on both
- * sides, and the difference has to clear its own 95% band); `null` means the data cannot say,
- * which the card must not silently render as "no change".
+ * Two independent rules now apply. The series is charted, and a share quoted, only when EVERY
+ * week clears `SHARE_MIN` battles: this used to filter down to just the qualifying weeks (fix
+ * round 3's first pass), which review caught as two bugs at once. `Sparkline` spaces points
+ * evenly by array index with no labels, so dropping a thin week from the MIDDLE of the series
+ * (not just the ends) drew a straight line between two weeks that are not actually adjacent, a
+ * chart that invents continuity a reader has no way to see. And "latest" stopped meaning the
+ * real latest week once a thin week could be filtered off the end, which a current, still
+ * in-progress week is exactly likely to be. All-or-nothing avoids both at once: any week under
+ * the floor drops the whole series to the raw-counts fallback, so a rendered chart always joins
+ * genuinely consecutive weeks and "latest" always means the actual latest one. The week-over-
+ * week CHANGE still goes through `trendPoints`, the same statistical gate the League overview
+ * and the About page's own promise both use (`TREND_MIN` counted battles on both sides, and the
+ * difference has to clear its own 95% band); `null` means the data cannot say, which the card
+ * must not silently render as "no change".
  */
 function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
   if (weekly.length < 2) {
     return null;
   }
-  const chartable = weekly.filter((w) => w.battles >= SHARE_MIN);
-  if (chartable.length < 2) {
+  // All-or-nothing, on purpose: see the comment above for the two bugs a per-week filter caused.
+  const everyWeekQualifies = weekly.every((w) => w.battles >= SHARE_MIN);
+  if (!everyWeekQualifies) {
     const sightings = weekly.reduce((sum, w) => sum + w.sightings, 0);
     const battles = weekly.reduce((sum, w) => sum + w.battles, 0);
     return (
@@ -190,9 +198,9 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
       </section>
     );
   }
-  const shares = chartable.map((w) => w.sightings / w.battles);
-  const first = chartable[0]!;
-  const latest = chartable[chartable.length - 1]!;
+  const shares = weekly.map((w) => w.sightings / w.battles);
+  const first = weekly[0]!;
+  const latest = weekly[weekly.length - 1]!;
   const latestShare = shares[shares.length - 1]!;
   const change = trendPoints(latest.sightings, latest.battles, first.sightings, first.battles);
   let changeText: string | null = null;

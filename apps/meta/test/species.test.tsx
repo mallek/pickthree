@@ -228,7 +228,15 @@ describe('Species', () => {
   // battles: a species faced once in a two-battle week and not at all in a three-battle week
   // used to render "0% latest, -50.0 pts since the first week", a trend and a share the data
   // cannot support. Neither a percentage nor a sparkline should appear; the raw counts should.
-  it('does not chart a share from battle-starved weeks, and shows the counts instead', async () => {
+  //
+  // Fix round 4: the rule that removes a bad share must not itself invent a chart. A per-week
+  // filter (this test's original fix) drops thin weeks from wherever they fall, and Sparkline
+  // spaces points evenly by index with no labels, so a thin week in the MIDDLE of the series
+  // used to draw a straight line between two weeks that are not actually adjacent, and a thin
+  // week at the END used to let an older week masquerade as "latest". The rule is now
+  // all-or-nothing: any thin week anywhere drops the whole series to the counts fallback. The
+  // four cases below pin that rule directly rather than relying on one fixture to imply it.
+  it('shows counts only, no chart, when every week is thin', async () => {
     const thin = {
       ...species,
       sightings: 1,
@@ -244,6 +252,64 @@ describe('Species', () => {
     expect(within(card).getByText('Faced 1 time in 5 battles over 2 weeks')).toBeInTheDocument();
     expect(within(card).queryByText(/%/)).toBeNull();
     expect(within(card).queryByText(/pts since the first week/)).toBeNull();
+    expect(card.querySelector('svg')).toBeNull();
+  });
+
+  it('shows counts only, not a chart that skips it, when a thin week sits in the middle', async () => {
+    const middleThin = {
+      ...species,
+      sightings: 205,
+      weekly: [
+        { week: '2026-W34', battles: 500, sightings: 100 },
+        { week: '2026-W35', battles: 10, sightings: 5 },
+        { week: '2026-W36', battles: 500, sightings: 100 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: middleThin, meta }), now }} />);
+    const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
+      'section',
+    )!;
+    expect(
+      within(card).getByText('Faced 205 times in 1,010 battles over 3 weeks'),
+    ).toBeInTheDocument();
+    expect(within(card).queryByText(/%/)).toBeNull();
+    // The bug this pins: a per-week filter would have kept only the two 500-battle weeks and
+    // drawn a line straight across the thin one between them, as if they were adjacent.
+    expect(card.querySelector('svg')).toBeNull();
+  });
+
+  it('shows counts only, not an older week mislabelled "latest", when only the newest week is thin', async () => {
+    const endThin = {
+      ...species,
+      sightings: 205,
+      weekly: [
+        { week: '2026-W36', battles: 500, sightings: 100 },
+        { week: '2026-W37', battles: 500, sightings: 100 },
+        { week: '2026-W38', battles: 10, sightings: 5 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: endThin, meta }), now }} />);
+    const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
+      'section',
+    )!;
+    expect(
+      within(card).getByText('Faced 205 times in 1,010 battles over 3 weeks'),
+    ).toBeInTheDocument();
+    // The bug this pins: a per-week filter would have dropped the thin, in-progress current
+    // week and called the prior (500-battle) week "latest", which it is not.
+    expect(within(card).queryByText(/latest/)).toBeNull();
+    expect(card.querySelector('svg')).toBeNull();
+  });
+
+  it('charts a share and quotes the real latest week when every week clears SHARE_MIN', async () => {
+    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
+    const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
+      'section',
+    )!;
+    // The fixture's own two weeks are both 500 battles: 109 of 500 in 2026-W37, the later one,
+    // is 21.8%.
+    expect(within(card).getByText(/21.8% latest/)).toBeInTheDocument();
+    expect(card.querySelector('svg')).not.toBeNull();
   });
 
   // Fix round 2: a single win or loss is not a hypothetical on a site this new, and neither is
