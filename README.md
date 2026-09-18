@@ -1,4 +1,4 @@
-<p align="center"><img src="apps/web/public/lockup.svg" alt="pick3" width="240"></p>
+<p align="center"><img src="packages/ui/brand/lockup.svg" alt="pick3" width="240"></p>
 
 # pick3
 

@@ -3,6 +3,8 @@
  * are Tasks 10 to 13; until each lands, its view renders a small placeholder here. Overview
  * (Task 10) has landed and renders for real.
  */
+import lockupDark from '@pickthree/ui/brand/lockup.svg';
+import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.js';
 import type { Baseline } from './baseline.js';
@@ -349,8 +351,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
         {...navProps({ name: 'overview', league: activeLeague }, DEFAULT_QUERY)}
       >
         <span>meta.</span>
-        <img className="only-dark hero-lockup" src="/lockup.svg" alt="" aria-hidden="true" />
-        <img className="only-light hero-lockup" src="/lockup-light.svg" alt="" aria-hidden="true" />
+        <img className="only-dark hero-lockup" src={lockupDark} alt="" aria-hidden="true" />
+        <img className="only-light hero-lockup" src={lockupLight} alt="" aria-hidden="true" />
         <span className="wordmark-muted">.gg</span>
       </a>
       <span className="brand-actions">

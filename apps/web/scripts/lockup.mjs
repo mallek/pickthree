@@ -4,8 +4,8 @@
  *
  *   node apps/web/scripts/lockup.mjs
  *
- * Writes apps/web/public/lockup.svg (dark), lockup-light.svg, and banner-dark.svg / banner-light.svg
- * (1200 x 360, for social and README headers).
+ * Writes packages/ui/brand/lockup.svg (dark) and lockup-light.svg, plus apps/web/public/banner-dark.svg
+ * / banner-light.svg (1200 x 360, for social and README headers).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,8 +13,11 @@ import { fileURLToPath } from 'node:url';
 import opentype from 'opentype.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const brand = path.resolve(here, '..', 'brand');
-const out = path.resolve(here, '..', 'public');
+const brand = path.resolve(here, '..', '..', '..', 'packages', 'ui', 'brand');
+const out = brand;
+// Banners are social-media/README assets, not referenced by either app at runtime, and stay in
+// apps/web/public/ (out of this migration's scope).
+const publicOut = path.resolve(here, '..', 'public');
 
 const WEIGHT = process.env.PICK3_WEIGHT ?? '700';
 const fontBytes = fs.readFileSync(path.join(brand, `Inter-${WEIGHT}.ttf`));
@@ -116,11 +119,11 @@ fs.writeFileSync(
   lockup({ fontSize: 72, textColor: '#292B31', bg: null, pad: 6, rx: 0 }),
 );
 fs.writeFileSync(
-  path.join(out, 'banner-dark.svg'),
+  path.join(publicOut, 'banner-dark.svg'),
   banner({ textColor: '#E9E9ED', bg: '#161826' }),
 );
 fs.writeFileSync(
-  path.join(out, 'banner-light.svg'),
+  path.join(publicOut, 'banner-light.svg'),
   banner({ textColor: '#292B31', bg: '#F3F5FE' }),
 );
 console.log(

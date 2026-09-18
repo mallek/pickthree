@@ -5,5 +5,7 @@
 "pick" wordmark so the lockup SVGs render identically everywhere. Regenerate with
 `npm run brand:lockup` (set `PICK3_WEIGHT=600` for the lighter cut).
 
-Generated outputs live in `apps/web/public/`: `lockup.svg`, `lockup-light.svg`, `banner-dark.svg`,
-`banner-light.svg`. The mark itself is `mark.svg`; the app icon is `icon.svg` / `favicon.svg`.
+Generated outputs: `lockup.svg` and `lockup-light.svg` live here in `packages/ui/brand/`, imported
+through Vite by both apps. `banner-dark.svg` and `banner-light.svg` (social media / README headers,
+not referenced by either app at runtime) still live in `apps/web/public/`. The mark itself is
+`mark.svg`; the app icon is `icon.svg` / `favicon.svg`.

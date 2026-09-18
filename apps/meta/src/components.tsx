@@ -8,6 +8,8 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
+import lockupDark from '@pickthree/ui/brand/lockup.svg';
+import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
@@ -409,7 +411,7 @@ export function Header({
  * accessible name ("pick3, the team builder"), since the icon alone says nothing about where the
  * link goes to a screen reader.
  *
- * G: the icon is pick3's own lockup (apps/web/public/lockup.svg / lockup-light.svg) now, not the
+ * G: the icon is pick3's own lockup (packages/ui/brand/lockup.svg / lockup-light.svg) now, not the
  * bare "3" mark plus a plain "pick3" text label this pill used to carry: the lockup already draws
  * the word "pick3", so a second, plain-text copy of it right next to that drawing would just
  * repeat itself on screen. Both colourways render; `.site-pill-lockup`'s `.only-dark` /
@@ -419,10 +421,10 @@ export function Header({
 export function SitePill({ href, name }: { href: string; name: string }) {
   return (
     <a className="site-pill" href={href} aria-label={name}>
-      <img className="only-dark site-pill-lockup" src="/lockup.svg" alt="" aria-hidden="true" />
+      <img className="only-dark site-pill-lockup" src={lockupDark} alt="" aria-hidden="true" />
       <img
         className="only-light site-pill-lockup"
-        src="/lockup-light.svg"
+        src={lockupLight}
         alt=""
         aria-hidden="true"
       />

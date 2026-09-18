@@ -1,3 +1,5 @@
+import lockupDark from '@pickthree/ui/brand/lockup.svg';
+import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useRef, useState } from 'react';
 import { Progress } from '../components.tsx';
 import { ScanListPanel } from '../components/ScanListPanel.tsx';
@@ -120,8 +122,8 @@ export function Welcome() {
         <div className="stack">
           <h1 className="hero">
             Find your best battle team with{' '}
-            <img className="only-dark hero-lockup" src="/lockup.svg" alt="pick3" />
-            <img className="only-light hero-lockup" src="/lockup-light.svg" alt="pick3" />
+            <img className="only-dark hero-lockup" src={lockupDark} alt="pick3" />
+            <img className="only-light hero-lockup" src={lockupLight} alt="pick3" />
           </h1>
           <p className="muted">
             Which Pokémon to use, in what order, with which moves, and what it costs.
