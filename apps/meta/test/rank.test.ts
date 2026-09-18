@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { MetaSummaryV1, SpeciesStats } from '../src/api.js';
 import type { Baseline, BaselineSpecies } from '../src/baseline.js';
-import { MEASURED_MIN, rank } from '../src/rank.js';
+import { MEASURED_MIN, MEASURED_MIN_DEVICES, RANKED_SHARE, WIN_RATE_MIN, rank } from '../src/rank.js';
 
-function sp(speciesId: string, sightings: number, wins = 0, losses = 0): SpeciesStats {
-  return { speciesId, sightings, wins, losses, runs: 0, runWins: 0, runLosses: 0 };
+function sp(speciesId: string, sightings: number, wins = 0, losses = 0, runs = 0): SpeciesStats {
+  return { speciesId, sightings, wins, losses, runs, runWins: 0, runLosses: 0 };
 }
 
 function meta(over: Partial<MetaSummaryV1> = {}): MetaSummaryV1 {
@@ -56,18 +56,44 @@ describe('rank, below the measured threshold', () => {
   it('leads with PvPoke and says so through the source', () => {
     const r = rank(small, baseline);
     expect(r.source).toBe('baseline');
+    expect(r.holdback).toBe('battles');
     expect(r.baseline.map((b) => b.speciesId)).toEqual(['azumarill', 'tinkaton', 'clodsire']);
+    expect(r.pvpokeCommit).toBe('abc1234');
     expect(r.pvpokeDate).toBe('2026-09-10');
   });
 
   it('still shows every species faced twice or more, with its counts', () => {
     const r = rank(small, baseline);
     expect(r.measured.map((m) => m.speciesId)).toEqual(['medicham', 'lanturn']);
-    expect(r.measured[0]).toMatchObject({ rank: 1, sightings: 9, wins: 4, losses: 5 });
+    expect(r.measured[0]).toMatchObject({ rank: 1, sightings: 9, wins: 4, losses: 5, decided: 9 });
     expect(r.tail).toBe(1);
   });
 
-  it('never invents a trend from a small sample', () => {
+  it('never shows a share below the measured threshold, a count instead', () => {
+    const r = rank(small, baseline);
+    expect(r.measured.every((m) => m.share === null)).toBe(true);
+  });
+
+  it('never counts a species a reporter ran but never faced (sightings 0) in measured or tail', () => {
+    // The worker emits a sightings-0 row for every species on a reported team, whether or not it
+    // was ever seen across the table (it calls take() for each of the three team slots). Those
+    // rows must not inflate the "faced once each" tail or slip onto the measured list.
+    const withRunOnly = meta({
+      battles: 40,
+      devices: 6,
+      species: [
+        sp('medicham', 9, 4, 5),
+        sp('lanturn', 2, 1, 1),
+        sp('umbreon', 1, 1, 0),
+        sp('golbat', 0, 0, 0, 5),
+      ],
+    });
+    const r = rank(withRunOnly, baseline);
+    expect(r.measured.map((m) => m.speciesId)).not.toContain('golbat');
+    expect(r.tail).toBe(1);
+  });
+
+  it('shows no trend when there is no previous window to compare, rather than inventing one', () => {
     expect(rank(small, baseline).measured.every((m) => m.trend === null)).toBe(true);
   });
 });
@@ -94,6 +120,24 @@ describe('rank, at and above the measured threshold', () => {
     expect(top.share).toBeCloseTo(200 / MEASURED_MIN, 5);
     expect(top.winRate).toBeCloseTo(0.45, 5);
     expect(top.barPct).toBe(100);
+  });
+
+  it('keeps a species at exactly the 0.5% share cut', () => {
+    const atCut = meta({
+      battles: 1000,
+      devices: 40,
+      species: [sp('azumarill', 5, 3, 2)],
+    });
+    expect(rank(atCut, baseline).measured.map((m) => m.speciesId)).toEqual(['azumarill']);
+    expect(5 / 1000).toBe(RANKED_SHARE);
+  });
+
+  it('shows a win rate at exactly WIN_RATE_MIN decided battles', () => {
+    const r = rank(
+      meta({ battles: 1000, devices: 40, species: [sp('shuckle', WIN_RATE_MIN, 15, 15)] }),
+      baseline,
+    );
+    expect(r.measured[0]!.winRate).toBeCloseTo(0.5, 5);
   });
 
   it('shows a trend once both windows are big enough', () => {
@@ -141,6 +185,44 @@ describe('rank, at and above the measured threshold', () => {
       baseline,
     );
     expect(r.measured[0]!.confidence).toBe('many');
+  });
+});
+
+describe('rank, the devices floor', () => {
+  it('holds back on battles when the battle count itself is short, however many devices', () => {
+    const r = rank(
+      meta({ battles: MEASURED_MIN - 1, devices: 100, species: [] }),
+      baseline,
+    );
+    expect(r.source).toBe('baseline');
+    expect(r.holdback).toBe('battles');
+  });
+
+  it('holds back on devices when battles clear the floor but contributors do not', () => {
+    // 300 battles from one device is one person's matchmaking queue, not what players face.
+    const r = rank(
+      meta({ battles: MEASURED_MIN, devices: MEASURED_MIN_DEVICES - 1, species: [] }),
+      baseline,
+    );
+    expect(r.source).toBe('baseline');
+    expect(r.holdback).toBe('devices');
+  });
+
+  it('has no holdback once both battles and devices clear their floors', () => {
+    const r = rank(
+      meta({ battles: MEASURED_MIN, devices: MEASURED_MIN_DEVICES, species: [] }),
+      baseline,
+    );
+    expect(r.source).toBe('measured');
+    expect(r.holdback).toBeNull();
+  });
+
+  it('still reads as baseline one battle short of the measured floor', () => {
+    const r = rank(
+      meta({ battles: MEASURED_MIN - 1, devices: 40, species: [] }),
+      baseline,
+    );
+    expect(r.source).toBe('baseline');
   });
 });
 

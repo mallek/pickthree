@@ -42,7 +42,11 @@ function clampPct(x: number): number {
   return Math.max(0, Math.min(100, Math.round(x)));
 }
 
-/** The sentence under a win rate, scaled to how much the number can be trusted. */
+/**
+ * The sentence under a win rate, scaled to how much the number can be trusted. `n` must be the
+ * row's own decided battles (wins + losses), not its sightings: passing sightings understates
+ * how thin the rate actually is.
+ */
 export function marginSentence(rate: number, n: number): string {
   const m = margin(n);
   const low = clampPct(rate * 100 - m);
@@ -74,7 +78,17 @@ export function trendPoints(
   if (battles < TREND_MIN || prevBattles < TREND_MIN) {
     return null;
   }
-  return (sightings / battles - prevSightings / prevBattles) * 100;
+  const p1 = sightings / battles;
+  const p2 = prevSightings / prevBattles;
+  // A difference of two shares carries the noise of both. Reporting one smaller than its own 95%
+  // band would be reporting the noise, so below that we say there was no measurable change. The
+  // count gate above is necessary but not sufficient: it only says each share is old enough to
+  // trust on its own, not that the gap between them is real.
+  const se = Math.sqrt((p1 * (1 - p1)) / battles + (p2 * (1 - p2)) / prevBattles);
+  if (Math.abs(p1 - p2) < 1.96 * se) {
+    return null;
+  }
+  return (p1 - p2) * 100;
 }
 
 /** Below a tenth of a point the movement is noise, so it is named rather than numbered. */

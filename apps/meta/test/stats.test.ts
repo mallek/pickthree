@@ -53,6 +53,13 @@ describe('marginSentence', () => {
   it('gives a middling sample a range without the scolding', () => {
     expect(marginSentence(0.52, 100)).toBe('Could be anywhere from 42% to 62%');
   });
+
+  it('changes shape at the exact boundaries between tiers', () => {
+    // At n = 30 the scolding "Only N battles" wording stops and the plain range starts.
+    expect(marginSentence(0.5, 30)).toBe('Could be anywhere from 32% to 68%');
+    // At n = 300 the range gives way to a single margin, matching the "many" confidence tier.
+    expect(marginSentence(0.5, 300)).toBe('Real win rate likely within +/-6 pts');
+  });
 });
 
 describe('trendPoints', () => {
@@ -61,9 +68,25 @@ describe('trendPoints', () => {
     expect(trendPoints(50, 1000, 40, TREND_MIN - 1)).toBeNull();
   });
 
+  it('lets a big enough move through right at the count floor', () => {
+    // 50% to 10% at exactly TREND_MIN battles on both sides: the count gate is satisfied, and
+    // the move is far too large to be the two windows' own noise.
+    expect(trendPoints(100, TREND_MIN, 20, TREND_MIN)).toBeCloseTo(40, 5);
+  });
+
   it('is the change in share, in percentage points', () => {
     expect(trendPoints(200, 1000, 150, 1000)).toBeCloseTo(5, 5);
     expect(trendPoints(100, 1000, 150, 1000)).toBeCloseTo(-5, 5);
+  });
+
+  it('hides a move too small to clear its own noise, even with enough battles to count', () => {
+    // 2% to 5% at 200 battles a side: the count gate passes, but the 95% band on that
+    // difference is wider than the difference itself, so this is not a trend, it is noise.
+    expect(trendPoints(10, 200, 4, 200)).toBeNull();
+  });
+
+  it('shows that same 2% to 5% move once there is enough data for it to clear its own noise', () => {
+    expect(trendPoints(250, 5000, 100, 5000)).toBeCloseTo(3, 1);
   });
 });
 

@@ -33,16 +33,25 @@ export const SMALL_MIN = 2;
  * a rate is, by definition, never at 'few' confidence. Keep the two together if either changes.
  */
 export const WIN_RATE_MIN = 30;
+/**
+ * Devices needed, alongside MEASURED_MIN battles, before the list is measured. 300 battles from
+ * one device is one person's matchmaking queue, not what players face: whether the data
+ * describes a population is a question about contributors, and battle count alone cannot answer
+ * it.
+ */
+export const MEASURED_MIN_DEVICES = 5;
 
 export interface MeasuredRow {
   speciesId: string;
   rank: number;
   sightings: number;
-  /** Share of counted battles, 0 to 1. */
-  share: number;
+  /** Share of counted battles, 0 to 1, or null below the measured threshold: a count, not a percentage. */
+  share: number | null;
   wins: number;
   losses: number;
   winRate: number | null;
+  /** wins + losses. The right number to hand marginSentence, which wants decided battles, not sightings. */
+  decided: number;
   /** How much the row's own record can be trusted, from its decided battles, not the window's. */
   confidence: Confidence;
   /** Percentage points, or null when a trend is not earned. */
@@ -66,12 +75,15 @@ export interface Ranking {
   source: 'measured' | 'baseline';
   battles: number;
   devices: number;
+  /** Why the measured list is not leading, or null when it is. */
+  holdback: 'battles' | 'devices' | null;
   /** Always present, however small. Ordered by sightings, highest first. */
   measured: MeasuredRow[];
   /** Species faced exactly once, counted rather than listed, when not measured. */
   tail: number;
   /** Always present. PvPoke's curated list, ordered by its own score, highest first. */
   baseline: BaselineRow[];
+  pvpokeCommit: string;
   pvpokeDate: string;
 }
 
@@ -95,7 +107,16 @@ function byScore(a: BaselineSpecies, b: BaselineSpecies): number {
 }
 
 export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
-  const measuredEnough = meta.battles >= MEASURED_MIN;
+  const battlesEnough = meta.battles >= MEASURED_MIN;
+  const devicesEnough = meta.devices >= MEASURED_MIN_DEVICES;
+  const measuredEnough = battlesEnough && devicesEnough;
+  // Named so a screen can say the real reason instead of guessing: battles takes priority when
+  // both are short, since a low battle count is the more basic problem.
+  const holdback: 'battles' | 'devices' | null = measuredEnough
+    ? null
+    : battlesEnough
+      ? 'devices'
+      : 'battles';
   const prev = meta.previous;
   const prevById = new Map((prev?.species ?? []).map((s) => [s.speciesId, s.sightings]));
 
@@ -113,12 +134,15 @@ export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
       speciesId: s.speciesId,
       rank: i + 1,
       sightings: s.sightings,
-      share: meta.battles > 0 ? s.sightings / meta.battles : 0,
+      // Percentages become counts below the measured threshold: a screen cannot print a share
+      // here without deliberately inventing one, because there is not one to print.
+      share: measuredEnough ? (meta.battles > 0 ? s.sightings / meta.battles : 0) : null,
       wins: s.wins,
       losses: s.losses,
       // A rate needs enough decided battles to mean anything. Below that the row shows its raw
       // win-loss count and no percentage: 1-1 is not "50%".
       winRate: decided >= WIN_RATE_MIN ? winRate(s.wins, s.losses) : null,
+      decided,
       confidence: confidence(decided),
       trend: prev
         ? trendPoints(s.sightings, meta.battles, prevById.get(s.speciesId) ?? 0, prev.battles)
@@ -128,8 +152,11 @@ export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
   });
 
   // Below the measured threshold, a species faced exactly once is real but too thin to name; it
-  // is folded into a single tail count rather than dropped silently.
-  const tail = measuredEnough ? 0 : sortedSpecies.filter((s) => s.sightings < SMALL_MIN).length;
+  // is folded into a single tail count rather than dropped silently. This must be sightings === 1,
+  // not < SMALL_MIN: the worker emits a sightings-0 row for every species a reporter ran and never
+  // faced (it calls take() for each team member), and those were never faced at all, so counting
+  // them here would inflate "N more were faced once each" with species that were faced zero times.
+  const tail = measuredEnough ? 0 : sortedSpecies.filter((s) => s.sightings === 1).length;
 
   const sortedBaseline = [...baseline.species].sort(byScore);
   const bestScore = sortedBaseline[0]?.score ?? null;
@@ -149,9 +176,11 @@ export function rank(meta: MetaSummaryV1, baseline: Baseline): Ranking {
     source: measuredEnough ? 'measured' : 'baseline',
     battles: meta.battles,
     devices: meta.devices,
+    holdback,
     measured,
     tail,
     baseline: baselineRows,
+    pvpokeCommit: baseline.pvpokeCommit,
     pvpokeDate: baseline.pvpokeDate,
   };
 }
