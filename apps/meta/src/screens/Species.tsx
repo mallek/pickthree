@@ -301,10 +301,15 @@ function AlongsideCard({
                   alignItems: 'center',
                   gap: 4,
                   textDecoration: 'none',
+                  // A sprite tile reads as content, not a call to action, same convention as
+                  // a.row in app.css: plain ink, not the base link accent.
+                  color: 'var(--text)',
                 }}
               >
                 <Sprite species={other} size={40} />
-                <span className="fine">{other.short}</span>
+                <span className="fine" style={{ color: 'var(--muted)' }}>
+                  {other.short}
+                </span>
                 <span className="fine">{Math.round(share)}%</span>
               </a>
             );
@@ -353,7 +358,9 @@ export function Species(p: {
   const backLink = (
     <a
       className="fine"
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+      // A back link is secondary navigation, not a call to action: muted, like the design's own
+      // back row, not the base link accent (the Chevron reads the same colour via currentColor).
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--muted)' }}
       href={href({ name: 'overview', league })}
     >
       <Chevron dir="left" /> Back to {leagueTitle}

@@ -61,6 +61,24 @@ body {
   font-size: 11px;
 }
 
+/* Links carry the accent unless a component overrides it. Without this they fall back to the
+   browser's default link and visited colours, which are unreadable on this ground. The hover
+   swap is behind (hover: hover) so a phone tap does not leave a link stuck in its hover colour.
+   This also settles :visited on its own: an author rule for `a`, even with no pseudo-class,
+   already outranks the user-agent stylesheet's :link/:visited colours (origin beats specificity),
+   so a visited species page never reads differently from an unvisited one without a rule saying
+   so, and none is added here on purpose. */
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  a:hover {
+    color: var(--accent-hi);
+  }
+}
+
 /* Surfaces */
 .card {
   background: var(--surface);
@@ -402,6 +420,9 @@ a.row {
   font-weight: 800;
   letter-spacing: -0.2px;
   text-decoration: none;
+  /* The link's own colour (the base `a` rule above) is the accent; without this the "meta" span,
+     which sets no colour of its own, would inherit that accent instead of body ink. */
+  color: var(--text);
 }
 
 /* Only the ".pick3.gg" span is accent-coloured; "meta" stays the body ink. */
