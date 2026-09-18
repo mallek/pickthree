@@ -1,0 +1,371 @@
+@import './design/tokens.css';
+
+/* Frame and type */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* Phone-width column by default, clipped sideways rather than scrollable: never put overflow-x
+   on html or body, which would move the PWA tab bar on iOS. */
+.app {
+  max-width: 430px;
+  margin-inline: auto;
+  padding: 14px 16px 40px;
+  overflow-x: clip;
+}
+
+@media (min-width: 900px) {
+  .app {
+    max-width: 1280px;
+    padding: 24px 32px 40px;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+  }
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sub {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+body {
+  font-size: 13px;
+}
+
+.fine {
+  font-size: 11px;
+}
+
+/* Surfaces */
+.card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.stat {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.stat .stat-n {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.stat .stat-l {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Elevation is a soft shadow in light mode only; dark mode separates surfaces by value alone. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .card,
+  :root:not([data-theme='dark']) .stat {
+    box-shadow: 0 1px 3px rgba(20, 22, 40, 0.06);
+  }
+}
+:root[data-theme='light'] .card,
+:root[data-theme='light'] .stat {
+  box-shadow: 0 1px 3px rgba(20, 22, 40, 0.06);
+}
+
+/* Controls: every one is a real <button> or <a> */
+.seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.seg > * {
+  text-align: center;
+  padding: 9px 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.seg > .on {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pills > * {
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.pills > .on {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.tabs {
+  display: flex;
+  gap: 18px;
+}
+
+.tabs > a {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 6px;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs > a.on {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* Below 900px the tabs collapse into a seg-style enclosed row instead of an underlined row. */
+@media (max-width: 899px) {
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 4px;
+  }
+
+  .tabs > a {
+    text-align: center;
+    padding: 9px 0;
+    border-radius: 999px;
+    border-bottom: 0;
+  }
+
+  .tabs > a.on {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 13px 16px;
+  border-radius: 999px;
+  border: 0;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Icon buttons: a 34px visible circle with enough padding that the tap target reaches 40px. */
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+/* Rows and tokens */
+.row {
+  display: grid;
+  grid-template-columns: 22px 40px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+a.row {
+  text-decoration: none;
+  color: inherit;
+}
+
+.token {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 2px var(--bg);
+}
+
+.token .sprite {
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+}
+
+.type-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bar);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.bar > span.muted {
+  background: var(--muted);
+}
+
+/* Names truncate rather than wrap. The grid/flex parent needs min-width: 0 or this fails
+   silently. */
+.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Header */
+.hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  gap: 8px;
+}
+
+.hdr.sticky {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 3;
+}
+
+.wordmark {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  text-decoration: none;
+}
+
+.wordmark span {
+  color: var(--accent);
+}
+
+.hdr-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* States */
+a,
+button,
+.seg > *,
+.pills > *,
+.row {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+.seg > *:focus-visible,
+.pills > *:focus-visible,
+.row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .pills > *:hover,
+  .row:hover {
+    background: var(--surface2);
+  }
+}
+
+::selection {
+  background: var(--glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
