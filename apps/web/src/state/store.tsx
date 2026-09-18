@@ -804,7 +804,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       const ordered = analysis.team.slots.map((slot) => {
         const b = slot.candidate.build;
         let i = remaining.findIndex(
-          (p) => p !== null && (p.kind === 'specimen' ? p.id === b.specimenId : p.id === b.speciesId),
+          (p) =>
+            p !== null && (p.kind === 'specimen' ? p.id === b.specimenId : p.id === b.speciesId),
         );
         if (i < 0) {
           i = remaining.findIndex((p) => p !== null);
@@ -951,14 +952,21 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
 
   /** Writes the sets and reloads the league. False, with a toast, when the phone refused. */
   const persistSets = useCallback(
-    async (sets: BattleSet[]): Promise<boolean> => {
+    async (sets: BattleSet[], what: 'that battle' | 'your team'): Promise<boolean> => {
       try {
         for (const set of sets) {
           await storage.saveSet(set);
         }
       } catch (e) {
         recordError('battle-log', e);
-        notify('Could not save that battle. Storage on this phone may be full or blocked.');
+        // A full store says so by name; anything else is a browser refusing storage, which
+        // in-app browsers (Reddit, Facebook) do routinely.
+        const full = e instanceof Error && e.name === 'QuotaExceededError';
+        notify(
+          full
+            ? `Could not save ${what}: storage on this phone is full.`
+            : `Could not save ${what}: this browser blocks storage. Open pick3.gg in Safari or Chrome, or the installed app.`,
+        );
         return false;
       }
       const league = stateRef.current.settings.league ?? 'great';
@@ -981,7 +989,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           battles: [],
           closed: false,
         };
-        return persistSets([...open, set]);
+        return persistSets([...open, set], 'your team');
       }),
     [persistSets, serialized],
   );
@@ -1004,7 +1012,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         };
         const battles = [...open.battles, battle];
         // Battles accumulate under the current team; only picking another team closes a set.
-        return persistSets([{ ...open, battles }]);
+        return persistSets([{ ...open, battles }], 'that battle');
       }),
     [persistSets, serialized],
   );
@@ -1013,7 +1021,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     () =>
       serialized(async () => {
         const open = setsRef.current.find((s) => !s.closed);
-        return open ? persistSets([{ ...open, closed: true }]) : true;
+        return open ? persistSets([{ ...open, closed: true }], 'your team') : true;
       }),
     [persistSets, serialized],
   );

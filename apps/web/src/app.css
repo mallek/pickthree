@@ -1352,6 +1352,12 @@ textarea.paste {
 }
 .notice-toast {
   background: var(--warn-tint);
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+}
+.notice-toast > span {
+  min-width: 0;
 }
 .update-toast button {
   border: 0;

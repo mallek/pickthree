@@ -127,8 +127,24 @@ describe('battle log actions', () => {
         });
       });
       expect(saved).toBe(false);
-      expect(latest!.state.notice).toMatch(/Could not save that battle/);
+      expect(latest!.state.notice).toMatch(
+        /Could not save that battle: this browser blocks storage/,
+      );
       expect(latest!.state.sets[0]?.battles).toHaveLength(0);
+      // Switching teams says what it was saving, and a full store is named as such.
+      const quota = new Error('quota');
+      quota.name = 'QuotaExceededError';
+      spy.mockRejectedValue(quota);
+      let started = true;
+      await act(async () => {
+        started = await latest!.actions.startSet({
+          species: ['azumarill', 'tinkaton', 'clodsire'],
+        });
+      });
+      expect(started).toBe(false);
+      expect(latest!.state.notice).toMatch(
+        /Could not save your team: storage on this phone is full/,
+      );
     } finally {
       spy.mockRestore();
     }
