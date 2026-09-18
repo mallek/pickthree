@@ -365,6 +365,15 @@ a {
   border: 1px solid var(--border);
 }
 
+/* D4: the "Who beats it" / "Build a team" pair, ported from pick3's own .btn-pair
+   (apps/web/src/app.css): a two-column grid so both buttons split the row evenly, used with two
+   .btn.btn-secondary children so neither reads as more filled, more primary, than the other. */
+.btn-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 /* The header's one icon button, ported from pick3's own .head-cog (apps/web/src/app.css) so it
    matches exactly: a 36px bordered circle in the muted ink, not a filled control. pick3's own
    version paints at 36px with no touch-target extension of its own; this site's own floor is 40px
@@ -445,8 +454,9 @@ a.row {
 
 /* A2: pick3's own type chip, ported byte-for-byte from apps/web/src/app.css (.tchips/.tchip/
    .tchip-sm) so the two sites' type chips are the same control: Title Case text on a light wash
-   of the type's colour, rather than .type-tag's solid uppercase pill above (kept as-is; it is
-   still what a move tag uses, D3's business, not this one's). */
+   of the type's colour, rather than .type-tag's solid uppercase pill above. D3 later moved the
+   species page's own move tags onto this chip too, so .type-tag is unused today but stays as a
+   general-purpose pill. */
 .tchips {
   display: inline-flex;
   gap: 4px;
@@ -673,6 +683,69 @@ a.row {
 .trend-tag.down {
   color: var(--down);
   background: color-mix(in srgb, var(--down) 16%, transparent);
+}
+
+/* D1: the sparkline's latest-point dot and label, and its week-tick row. Plain HTML rather than
+   SVG, and positioned by percentage/pixel rather than drawn in the chart's own stretched
+   coordinate space, so neither is warped the way a circle or SVG text would be (see the comment
+   on Sparkline in components.tsx for why). */
+.spark-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.spark-label {
+  position: absolute;
+  transform: translate(calc(-100% - 8px), -50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.spark-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* D3: movesets shown as pick3's Build cards show them, ported from apps/web/src/app.css's own
+   .pick-moves/.pick-move/.pick-move-k/.pick-move-name byte for byte, apart from the share number
+   this card appends at the end of each line (pick3's own version has no share to show). */
+.pick-moves {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pick-move {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  min-width: 0;
+}
+.pick-move-k {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  width: 12px;
+  text-align: center;
+  flex: none;
+}
+.pick-move-name {
+  min-width: 0;
+  line-height: 1.2;
+}
+.pick-move-share {
+  margin-left: auto;
+  flex: none;
 }
 
 /* Names truncate rather than wrap. The grid/flex parent needs min-width: 0 or this fails

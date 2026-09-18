@@ -119,10 +119,10 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
 
 /** One solid, uppercase pill (`.type-tag`): background from the type's paint, foreground chosen
  * so the label always reads against it. `type` picks the colour; `label` is the text, which need
- * not be the type's own name (Species.tsx's `MoveTag` uses this for a move, tinted by the move's
- * type, labelled with the move's name). A2 gave a Pokemon's own types the separate, pick3-
- * matching `TypeChip`/`TypeChips` below instead of this one, so a move tag's look is untouched;
- * this stays the only place the two foreground hex literals and the white-text type list exist. */
+ * not be the type's own name. Species.tsx's move lines used to render through this (tinted by the
+ * move's type, labelled with the move's name) until D3 moved them onto `TypeChip` below instead,
+ * to match pick3's Build cards; nothing in this app currently renders through `Tag`, but it stays
+ * here as the one place the two foreground hex literals and the white-text type list exist. */
 export function Tag({ type, label }: { type: string; label: string }) {
   return (
     <span
@@ -138,8 +138,10 @@ export function Tag({ type, label }: { type: string; label: string }) {
  * A2: the one way a type is shown anywhere on this site, pick3's own chip shape and colour rule
  * ported byte-for-byte (apps/web/src/components.tsx's `TypeChip`/`TypeChips`): Title Case text
  * on a light wash of the type's colour, using `.tchip`/`.tchip-sm` (app.css) rather than the
- * solid, uppercase `.type-tag` a move tag (`MoveTag` in Species.tsx, via `Tag` above) still uses.
- * `type` is a plain string, not a closed union like pick3's `PokemonType`, since this site reads
+ * solid, uppercase `.type-tag` `Tag` above draws. D3 moved Species.tsx's move lines onto this
+ * component too (`MoveLine`'s `TypeChip type={move.type} small`, matching pick3's Build cards
+ * byte for byte), so `Tag` is now unused within this app. `type` is a plain string, not a closed
+ * union like pick3's `PokemonType`, since this site reads
  * types off the static data file rather than the engine; `typeColor`/`typeInk`'s fallback is what
  * keeps a bad value from ever landing on an undefined CSS variable.
  */
@@ -213,28 +215,56 @@ export function TrendTag({ points }: { points: number }) {
   return <span className={`trend-tag ${points > 0 ? 'up' : 'down'}`}>{label}</span>;
 }
 
+const SPARK_VIEW_W = 140;
 const SPARK_X0 = 4;
 const SPARK_X1 = 136;
 const SPARK_Y0 = 36;
 const SPARK_Y1 = 4;
 
-/** A trend line with no axes, no labels: the numbers it depicts are always printed beside it,
- * so it is aria-hidden. A single point has no line to draw, so it renders an empty svg rather
- * than a broken one.
+/** Short form of the worker's own week key ("2026-W36" -> "W36", `isoWeek` in
+ * workers/counter/src/meta.ts), the only shape a tick is ever handed. A key that does not carry
+ * "-W" still renders, uncut, so a future key format cannot blank a tick rather than shortening it. */
+function weekTick(week: string): string {
+  const i = week.indexOf('-W');
+  return i === -1 ? week : week.slice(i + 1);
+}
+
+/**
+ * D1: a filled area over a baseline, week ticks along the bottom, and the latest point labelled
+ * on the chart itself. Chosen over small weekly bars because the series is a share, a genuinely
+ * continuous read from week to week (the whole reason `WeeklyCard`'s all-or-nothing gate exists,
+ * see Species.tsx), and an area keeps that continuity on screen instead of drawing each week as
+ * its own disconnected column.
  *
- * `preserveAspectRatio="none"` on both returns makes the drawing stretch to fill whatever box
- * it is given rather than the default `xMidYMid meet`, which centres a 140x40 drawing inside a
- * wide card and leaves empty space either side (it only looked right in the design export
- * because that card was about as narrow as the viewBox is wide). Stretching scales the stroke
- * non-uniformly too, so the polyline pins its own width with `vectorEffect="non-scaling-stroke"`
- * rather than smearing into a band. A circular end-point marker cannot survive that same
- * non-uniform scale without becoming an ellipse, so there is no marker here; the value it would
- * have marked is already printed as text under the chart by every caller. */
-export function Sparkline({ values }: { values: number[] }) {
+ * `preserveAspectRatio="none"` makes the drawing stretch to fill whatever box it is given rather
+ * than the default `xMidYMid meet`, which centres a 140x40 drawing inside a wide card and leaves
+ * empty space either side. Stretching scales the stroke non-uniformly too, so the polyline pins
+ * its own width with `vectorEffect="non-scaling-stroke"` rather than smearing into a band. That
+ * same non-uniform scale would turn a circular marker into an ellipse and squeeze or stretch SVG
+ * `<text>` glyphs depending on how wide the card happens to be, so the latest-point dot, its
+ * label and the week ticks are all plain HTML laid over the chart rather than SVG content: `left`
+ * as a percentage of the card's own width lines up with the stretched drawing, and `top` as the
+ * SVG's own pixel value lines up too, because only the width is stretched, never the height.
+ *
+ * A single point has no line to draw, so it renders an empty svg rather than a broken one. */
+export function Sparkline({
+  values,
+  weekLabels,
+  latestLabel,
+}: {
+  values: number[];
+  /** One id per value, the worker's own week key, printed as a small tick under its point.
+   * Omitted, or mismatched in length with `values`, leaves the chart with no tick row rather
+   * than a misaligned one. */
+  weekLabels?: string[];
+  /** D1: the latest point's own reading, drawn on the chart next to its dot instead of a
+   * caller's separate line of text below it. Omitted draws no dot and no label. */
+  latestLabel?: string;
+}) {
   if (values.length < 2) {
     return (
       <svg
-        viewBox="0 0 140 40"
+        viewBox={`0 0 ${SPARK_VIEW_W} 40`}
         width="100%"
         height={40}
         preserveAspectRatio="none"
@@ -254,24 +284,63 @@ export function Sparkline({ values }: { values: number[] }) {
         : SPARK_Y0 + ((v - min) / (max - min)) * (SPARK_Y1 - SPARK_Y0);
     return { x, y };
   });
+  const last = points[points.length - 1]!;
+  const lastLeftPct = (last.x / SPARK_VIEW_W) * 100;
+  const linePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+  // The fill closes the line down to the baseline and back, so the chart reads as a filled trend
+  // rather than a bare line floating with nothing under it; the line itself is drawn again on top
+  // so its stroke stays crisp over the fill instead of being part of the filled shape's outline.
+  const areaPoints = `${SPARK_X0},${SPARK_Y0} ${linePoints} ${SPARK_X1},${SPARK_Y0}`;
+  const ticks = weekLabels && weekLabels.length === values.length ? weekLabels : null;
   return (
-    <svg
-      viewBox="0 0 140 40"
-      width="100%"
-      height={40}
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <polyline
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        points={points.map((p) => `${p.x},${p.y}`).join(' ')}
-      />
-    </svg>
+    <div style={{ position: 'relative' }}>
+      <svg
+        viewBox={`0 0 ${SPARK_VIEW_W} 40`}
+        width="100%"
+        height={40}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <polygon points={areaPoints} fill="var(--accent)" fillOpacity={0.15} stroke="none" />
+        <line
+          x1={SPARK_X0}
+          y1={SPARK_Y0}
+          x2={SPARK_X1}
+          y2={SPARK_Y0}
+          stroke="var(--border)"
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+        />
+        <polyline
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+          points={linePoints}
+        />
+      </svg>
+      {latestLabel ? (
+        <>
+          <span
+            className="spark-dot"
+            aria-hidden="true"
+            style={{ left: `${lastLeftPct}%`, top: last.y }}
+          />
+          <span className="spark-label" style={{ left: `${lastLeftPct}%`, top: last.y }}>
+            {latestLabel}
+          </span>
+        </>
+      ) : null}
+      {ticks ? (
+        <div className="spark-ticks">
+          {ticks.map((w) => (
+            <span key={w}>{weekTick(w)}</span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -52,7 +52,11 @@ describe('Species', () => {
     // The species name is App.tsx's sticky header title now (a plain span, matching apps/web's
     // own Header, not a heading), so this checks the text rather than a heading role.
     expect(await screen.findByText('Azumarill')).toBeInTheDocument();
-    expect(screen.getByText('Water')).toBeInTheDocument();
+    // D3 also prints a move's own type as a chip further down the page (BUBBLE is Water too), so
+    // this scopes to the header's own sprite-and-types row rather than asserting a page-wide
+    // unique match on "Water".
+    const head = screen.getByRole('img', { name: 'Azumarill' }).parentElement!;
+    expect(within(head).getByText('Water')).toBeInTheDocument();
     // A4: whole percentages everywhere; 184 / 1,000 is 18.4%, rounded to 18%.
     expect(screen.getByText(/in 18% of 1,000 battles/)).toBeInTheDocument();
   });
@@ -83,15 +87,11 @@ describe('Species', () => {
     ).closest('section')!;
     // Fix round 3 ("FIX 3"): the old rule named only the single thinnest band, which under-warned
     // a 90-battle band standing right next to a 3-battle one. All three bands with battles here
-    // (below 90, ace 60, legend 34) are under THIN_BAND_MAX, so all three are named, most
-    // battles first, each with its own count.
+    // (below 90, ace 60, legend 34) are under THIN_BAND_MAX, so the caveat still fires with more
+    // than one thin band in play. D2 shortened its words from naming each band and its count to
+    // one generic line; the interpolated threshold is what this test now pins.
     expect(
-      within(card).getByText(
-        new RegExp(
-          `Below Ace \\(90 battles\\), Ace \\(60 battles\\) and Legend \\(34 battles\\) are all ` +
-            `under ${THIN_BAND_MAX} battles`,
-        ),
-      ),
+      within(card).getByText(`Under ${THIN_BAND_MAX} battles per band: hints, not facts.`),
     ).toBeInTheDocument();
     expect(within(card).getAllByText('no battles')).toHaveLength(3);
   });
@@ -112,8 +112,9 @@ describe('Species', () => {
     const card = (
       await screen.findByRole('heading', { name: 'Record against it, by rank' })
     ).closest('section')!;
+    // D2: a single thin band (Legend, 34 battles here) reads the same short line as several would.
     expect(
-      within(card).getByText('Legend is 34 battles, treat it as a hint, not a fact.'),
+      within(card).getByText(`Under ${THIN_BAND_MAX} battles per band: hints, not facts.`),
     ).toBeInTheDocument();
   });
 
@@ -134,10 +135,10 @@ describe('Species', () => {
       await screen.findByRole('heading', { name: 'Record against it, by rank' })
     ).closest('section')!;
     // Old rule (a strict `<` comparison over the minimum) named only the first of a tie. Both
-    // are named now, and correctly in the singular: "1 battle", not "1 battles". Tied on
-    // sightings, the tiebreak is the band id, so "ace" sorts before "below".
+    // bands still count as thin now (the gate itself is unchanged), which is what still fires the
+    // (now generic, D2) caveat line.
     expect(
-      within(card).getByText(/Ace \(1 battle\) and Below Ace \(1 battle\) are all under/),
+      within(card).getByText(`Under ${THIN_BAND_MAX} battles per band: hints, not facts.`),
     ).toBeInTheDocument();
   });
 
@@ -164,7 +165,7 @@ describe('Species', () => {
     expect(within(card).queryByText(/%/)).toBeNull();
   });
 
-  it('aggregates movesets into one bar per move and warns that charged shares double up', async () => {
+  it('aggregates movesets into one pick3-style line per move, fast first, share at the end', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
     // Correction 2: `runs` counts battles, not distinct reporters, so the header must not claim
     // "60 reporters ran it themselves". This site never overstates a count it does not have.
@@ -175,7 +176,18 @@ describe('Species', () => {
     expect(screen.getAllByText('Bubble')).toHaveLength(1);
     expect(screen.getAllByText('Ice Beam')).toHaveLength(1);
     expect(screen.getByText('Play Rough')).toBeInTheDocument();
-    expect(screen.getByText(/add up to about 200%/)).toBeInTheDocument();
+    // D3: fast moves first, then charged, each line marked F or C (pick3's own `.pick-move-k`).
+    const card = (
+      await screen.findByRole('heading', { name: 'Moves reporters ran' })
+    ).closest('section')!;
+    const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
+    expect(markers).toEqual(['F', 'C', 'C']);
+    // BUBBLE and ICE_BEAM sit in both sets (60 of 60 battles, 100%); PLAY_ROUGH sits in only the
+    // first (48 of 60, 80%). D2 dropped the old "add up to about 200%" footnote that used to
+    // explain shares like these; the per-line share is the whole explanation now.
+    const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
+    expect(shares).toEqual(['100%', '100%', '80%']);
+    expect(screen.queryByText(/add up to about 200%/)).toBeNull();
   });
 
   it('labels PvPoke as PvPoke', async () => {
@@ -311,9 +323,13 @@ describe('Species', () => {
       'section',
     )!;
     // The fixture's own two weeks are both 500 battles: 109 of 500 in 2026-W37, the later one,
-    // is 21.8%, rounded to 22% (A4: whole percentages).
+    // is 21.8%, rounded to 22% (A4: whole percentages). D1 moved this onto the chart itself
+    // (`.spark-label`) rather than a separate line of text below it.
     expect(within(card).getByText(/22% latest/)).toBeInTheDocument();
     expect(card.querySelector('svg')).not.toBeNull();
+    // D1: a week tick under each point, labelling the real weeks the worker's own key ids name.
+    const ticks = [...card.querySelectorAll('.spark-ticks span')].map((el) => el.textContent);
+    expect(ticks).toEqual(['W36', 'W37']);
   });
 
   // Fix round 2: a single win or loss is not a hypothetical on a site this new, and neither is
