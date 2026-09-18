@@ -1,4 +1,5 @@
 @import '@pickthree/ui/tokens.css';
+@import '@pickthree/ui/base.css';
 
 /* Frame and type */
 *,
@@ -16,7 +17,7 @@ body {
 
 /* Phone-width column by default, clipped sideways rather than scrollable: never put overflow-x
    on html or body, which would move the PWA tab bar on iOS. */
-.app {
+.page {
   max-width: 430px;
   margin-inline: auto;
   /* The bottom tab bar is fixed and sits on top of the page, so the scrollable content needs at
@@ -34,7 +35,7 @@ body {
 /* One column at every width. A two-column grid used to auto-place the switcher and filters into
    a side column on desktop, which broke the top-to-bottom order the phone layout is built on. */
 @media (min-width: 900px) {
-  .app {
+  .page {
     max-width: 560px;
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 32px);
   }
@@ -127,12 +128,7 @@ a {
    space between them and read as flush against each other, padding included. `gap: 12px` fixes
    that; 16px padding reads better than 14px at this site's text sizes while we are in here. */
 .card {
-  background: var(--surface);
-  border-radius: 14px;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .card > h2 + .sub,
@@ -146,29 +142,6 @@ a {
    paragraph's own margin for its rhythm) loses spacing it was never given explicitly. */
 .card > * {
   margin: 0;
-}
-
-.stat {
-  background: var(--surface);
-  border-radius: 14px;
-  padding: 14px 12px;
-  min-width: 0;
-}
-
-.stat .stat-n {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stat .stat-l {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
 }
 
 /* The species page's headline number, outside a stat tile. */
@@ -194,46 +167,17 @@ section > .stat-n,
 
 /* Controls: every one is a real <button> or <a> */
 
-/* League toggle: ported from pick3's own .league-switcher (apps/web/src/app.css) so the one
-   control that picks a league reads the same on both sites, geometry and all. pick3's tokens
-   have no equivalent here, so they are mapped onto this site's own: --divider -> --border,
-   and --accent-tint (the "on" segment's tinted background) -> --surface2, the token this site's
-   own .pills > .on already uses for the same job. --faint (pick3's dimmed idle-segment ink, a
-   step below --muted) has no counterpart here either, so the idle segment falls back to
-   --muted, same as everywhere else on this site that needs a quieter label than body text. */
-.league-switcher {
-  display: flex;
-  width: 100%;
-  border: 1px solid var(--divider);
-  border-radius: 10px;
-  overflow: hidden;
-}
+/* League toggle: ported from pick3's own .league-switcher (apps/web/src/app.css, now shared in
+   packages/ui/base.css) so the one control that picks a league reads the same on both sites,
+   geometry and all. Task 3's token unification means meta needs no visual override at all: its
+   --surface2 stand-in for the "on" background is the real --accent-tint, its idle-segment ink
+   is the real --faint, and its 10px radius is the shared --r-md. */
 
+/* .league-switcher button needs its own stacking context back: base's rule does not set
+   position, but meta's own ::after touch-target extension below is absolutely positioned and
+   needs to anchor to the button, not the next positioned ancestor up. */
 .league-switcher button {
-  flex: 1;
   position: relative;
-  padding: 8px 6px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  color: var(--muted);
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-weight: 500;
-}
-
-.league-switcher button + button {
-  border-left: 1px solid var(--divider);
-}
-
-.league-switcher button.on {
-  color: var(--text);
-  background: var(--surface2);
-  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 /* Painted height measures 32px (16px shield + 8px top/bottom padding); the touch target extends
@@ -243,15 +187,6 @@ section > .stat-n,
   content: '';
   position: absolute;
   inset: -4px 0;
-}
-
-/* The focus ring would otherwise get clipped: .league-switcher's rounded corners are cut by
-   `overflow: hidden`, so an outward ring on an edge segment is invisible along that outer edge.
-   Drawing it inward, the same fix .seg used before this control replaced it, keeps it visible on
-   every segment, edge ones included. */
-.league-switcher button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
 }
 
 .league-shield {
@@ -269,9 +204,6 @@ section > .stat-n,
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   min-width: 0;
 }
 
@@ -321,19 +253,8 @@ section > .stat-n,
    two sites read as one product on a phone. Real <a href> elements, not buttons: this site
    routes on real paths, not a hash, and a tab has to stay openable in a new tab. */
 .tabs {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0 auto;
   max-width: 430px;
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
-  padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
-  display: grid;
   grid-template-columns: repeat(3, 1fr);
-  background: var(--surface);
-  border-top: 1px solid var(--divider);
-  z-index: 5;
 }
 
 .tabs > a {
@@ -364,76 +285,13 @@ section > .stat-n,
   display: block;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 13px 16px;
-  border-radius: 999px;
-  border: 0;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: inherit;
-  text-decoration: none;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.btn-secondary {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--divider);
-}
-
-/* D4: the "Who beats it" / "Build a team" pair, ported from pick3's own .btn-pair
-   (apps/web/src/app.css): a two-column grid so both buttons split the row evenly, used with two
-   .btn.btn-secondary children so neither reads as more filled, more primary, than the other. */
-.btn-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-/* The header's one icon button, ported from pick3's own .head-cog (apps/web/src/app.css) so it
-   matches exactly: a 36px bordered circle in the muted ink, not a filled control. pick3's own
-   version paints at 36px with no touch-target extension of its own; this site's own floor is 40px
-   everywhere else, so a -2px inset (36 + 2 + 2 = 40) closes that gap here without changing what
-   paints. A1 moved this app's only appearance toggle into the brand row wearing this class in
-   place of the plainer .icon-btn it used to be (nothing else used that class, so it is gone). */
-.head-cog {
-  position: relative;
-  height: 36px;
-  width: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--divider);
-  background: var(--surface);
-  color: var(--muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-}
-
-.head-cog svg {
-  width: 20px;
-  height: 20px;
-}
-
-.head-cog::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-}
-
 /* Rows and tokens. B1: token and padding sized to match pick3's own .counter-row rhythm
    (apps/web/src/app.css: 44px token, 12px vertical padding); the leading rank number is a column
    pick3's row does not need (pick3 does not rank a fixed top N), so it stays as this site's own
-   addition rather than something pick3's rhythm dictates. */
-.row {
+   addition rather than something pick3's rhythm dictates. Named .rank-row, not .row: pick3's own
+   .row (packages/ui/base.css) is a generic flex utility used across 16 files, so this one, a
+   grid ranked-list item, kept its own name rather than converting. */
+.rank-row {
   display: grid;
   grid-template-columns: 22px 44px 1fr auto;
   gap: 12px;
@@ -443,22 +301,22 @@ section > .stat-n,
   min-width: 0;
 }
 
-.row:last-child {
+.rank-row:last-child {
   border-bottom: 0;
 }
 
-.row .name {
+.rank-row .name {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.2;
 }
 
-.row > .fine {
+.rank-row > .fine {
   color: var(--muted);
   text-align: center;
 }
 
-a.row {
+a.rank-row {
   text-decoration: none;
   color: inherit;
 }
@@ -476,37 +334,6 @@ a.row {
   width: 46px;
   height: 46px;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
-}
-
-/* A2: pick3's own type chip, ported byte-for-byte from apps/web/src/app.css (.tchips/.tchip/
-   .tchip-sm) so the two sites' type chips are the same control: Title Case text on a light wash
-   of the type's colour. This used to sit beside a separate solid, uppercase .type-tag pill for a
-   move's own type; D3 moved that onto this chip too, which left .type-tag with no caller, so
-   FIX 5 removed it rather than carry a second, unused way to draw a type. */
-.tchips {
-  display: inline-flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  vertical-align: middle;
-}
-.tchip {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--t);
-  background: color-mix(in srgb, var(--c) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-  line-height: 1.3;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-.tchip-sm {
-  padding: 0 5px;
-  font-size: 10px;
 }
 
 .bar {
@@ -560,31 +387,8 @@ a.row {
 }
 
 /* A3: the tap-to-reveal note (`Term`), ported from pick3's own `.term-wrap`/`.term`/`.term-tip`
-   (apps/web/src/app.css). pick3's tip background is its own `--accent-tint`; this site has no
-   such token (see the `.league-switcher` comment above for the same substitution), so `--surface2`
-   stands in for it here too. */
-.term-wrap {
-  position: relative;
-  display: inline;
-}
-
-.term {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline dotted var(--accent);
-  text-underline-offset: 3px;
-}
-
+   (packages/ui/base.css). Task 3's token unification means only the font size still differs here. */
 .term-tip {
-  display: block;
-  margin-top: 6px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--surface2);
-  color: var(--text);
   font-size: 12px;
 }
 
@@ -600,25 +404,13 @@ a.row {
 }
 
 /* C1/C2: the team card, ported from pick3's own .team-card/.slots3/.slot/.slot-name/.cost-line/
-   .team-details (apps/web/src/app.css) so a shared team reads the same shape on both sites.
+   .team-details (packages/ui/base.css) so a shared team reads the same shape on both sites.
    pick3's own card is a div (it only loads local state on tap); this one is a real <a> straight
    to the pick3 deep link, since tapping it here means leaving the site. The foot affordance
    stays plain text rather than a second <a>, so a link never nests inside this outer one and
    there is exactly one focusable element per card. */
 .team-card {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
-  background: var(--surface);
-  border-radius: 14px;
-  padding: 16px;
-  text-decoration: none;
-  color: inherit;
-}
-
-.team-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 @media (hover: hover) {
@@ -627,41 +419,16 @@ a.row {
   }
 }
 
-.slots3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
-}
-
 .slot-name {
   font-size: 14px;
-  font-weight: 500;
-  line-height: 1.2;
-  text-wrap: balance;
 }
 
 .cost-line {
-  border-top: 1px solid var(--divider);
-  padding-top: 10px;
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
 }
 
 .team-details {
-  color: var(--accent);
-  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -741,34 +508,9 @@ a.row {
   color: var(--muted);
 }
 
-/* D3: movesets shown as pick3's Build cards show them, ported from apps/web/src/app.css's own
+/* D3: movesets shown as pick3's Build cards show them, ported from packages/ui/base.css's own
    .pick-moves/.pick-move/.pick-move-k/.pick-move-name byte for byte, apart from the share number
    this card appends at the end of each line (pick3's own version has no share to show). */
-.pick-moves {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.pick-move {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  min-width: 0;
-}
-.pick-move-k {
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  width: 12px;
-  text-align: center;
-  flex: none;
-}
-.pick-move-name {
-  min-width: 0;
-  line-height: 1.2;
-}
 .pick-move-share {
   margin-left: auto;
   flex: none;
@@ -792,8 +534,6 @@ a.row {
    wordmark is dropped there rather than duplicating it. Not sticky itself: only the page header,
    switcher and filters below it are, so the two never have to share row 0. */
 .brand {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   padding: calc(env(safe-area-inset-top, 0px) + 16px) 0 12px;
   gap: 8px;
@@ -827,16 +567,6 @@ a.row {
   color: var(--muted);
 }
 
-/* Ported byte for byte from apps/web/src/app.css's own .hero-lockup: the Inter 700 metrics that
-   put the SVG's baseline on the wordmark's text baseline and its cap height on the wordmark's cap
-   height. Do not retune these numbers here; if the pick3 wordmark ever needs different metrics,
-   that change belongs in pick3's own rule first, this one after. */
-.hero-lockup {
-  height: 1.135em;
-  width: auto;
-  vertical-align: -0.325em;
-  margin-left: 0.02em;
-}
 .only-light.hero-lockup {
   display: none;
 }
@@ -920,65 +650,23 @@ a.row {
   display: block;
 }
 
-/* Page header: sticky, matching apps/web's own .hdr geometry (apps/web/src/app.css) so the two
+/* Page header: sticky, matching apps/web's own .hdr geometry (packages/ui/base.css) so the two
    sites read as one product. z-index 3 keeps it under the bottom tab bar's z-index 5. */
 .hdr {
   margin: 0 -16px;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 10px;
-  display: grid;
-  grid-template-columns: minmax(72px, 1fr) minmax(0, auto) minmax(72px, 1fr);
-  align-items: center;
   gap: 8px;
-  border-bottom: 1px solid var(--divider);
-  position: sticky;
-  top: 0;
-  background: var(--bg);
-  z-index: 3;
+  padding-bottom: 10px;
 }
 
 .hdr-title {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 2px;
   font-weight: 700;
-  font-size: 15px;
   min-width: 0;
 }
 
-.hdr-sub {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 400;
-}
-
 .back {
-  justify-self: start;
-  min-width: 44px;
-  min-height: 44px;
-  color: var(--accent);
   font-weight: 600;
-  padding: 0 4px;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
   text-decoration: none;
-}
-
-.back-spacer {
-  min-width: 44px;
-}
-
-/* flex-wrap defaults to nowrap: icon buttons never stack into a second row, so .head-cog::after's
-   all-sides inset only ever meets the 8px gap between buttons on the same row, which is enough
-   clearance for a 3px inset on each side. */
-.hdr-actions {
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* States */
@@ -986,19 +674,19 @@ a,
 button,
 select,
 .league-switcher button,
-.row {
+.rank-row {
   -webkit-tap-highlight-color: transparent;
 }
 
 a:focus-visible,
 button:focus-visible,
-.row:focus-visible {
+.rank-row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  .row:hover {
+  .rank-row:hover {
     background: var(--surface2);
   }
 }

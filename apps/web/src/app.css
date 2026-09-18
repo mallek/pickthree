@@ -1,4 +1,5 @@
 @import '@pickthree/ui/tokens.css';
+@import '@pickthree/ui/base.css';
 
 *,
 *::before,
@@ -130,23 +131,10 @@ a {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.card {
-  background: var(--surface);
-  border-radius: var(--r-xl);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 .stack {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-.row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 .between {
   display: flex;
@@ -160,50 +148,14 @@ a {
 }
 
 /* header */
-.hdr {
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px;
-  display: grid;
-  grid-template-columns: minmax(72px, 1fr) minmax(0, auto) minmax(72px, 1fr);
-  align-items: center;
-  border-bottom: 1px solid var(--divider);
-  position: sticky;
-  top: 0;
-  background: var(--bg);
-  z-index: 3;
-}
-.hdr-title {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-weight: 500;
-  font-size: 15px;
-}
-.hdr-sub {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 400;
-}
 .hdr-extra {
   grid-column: 1 / -1;
   padding-top: 6px;
 }
 .back {
-  justify-self: start;
-  min-width: 44px;
-  min-height: 44px;
   border: 0;
   background: transparent;
-  color: var(--accent);
   font-weight: 500;
-  padding: 0 4px;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-.back-spacer {
-  min-width: 44px;
 }
 .page-head {
   padding: calc(env(safe-area-inset-top, 0px) + 20px) 20px 10px;
@@ -218,35 +170,6 @@ a {
 }
 
 /* buttons */
-.btn {
-  min-height: 52px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--accent);
-  background: var(--accent-tint);
-  color: var(--accent-text);
-  font-weight: 500;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 0 16px;
-}
-.btn i {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--accent);
-  display: inline-block;
-}
-.btn-secondary {
-  min-height: 44px;
-  border-color: var(--divider);
-  background: transparent;
-  color: var(--text);
-  font-size: 15px;
-}
 .btn-ghost {
   border: 0;
   background: transparent;
@@ -524,33 +447,6 @@ a {
   color: var(--muted);
 }
 
-/* type chips, one style everywhere: the type's ink on a light wash of its colour */
-.tchips {
-  display: inline-flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  vertical-align: middle;
-}
-.tchip {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--t);
-  background: color-mix(in srgb, var(--c) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-  line-height: 1.3;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-.tchip-sm {
-  padding: 0 5px;
-  font-size: 10px;
-}
-
 /* buff and debuff icons */
 .fx {
   display: inline-flex;
@@ -634,29 +530,6 @@ a {
   margin-top: 2px;
 }
 
-/* terms */
-.term-wrap {
-  position: relative;
-  display: inline;
-}
-.term {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: inherit;
-  text-decoration: underline dotted var(--accent);
-  text-underline-offset: 3px;
-}
-.term-tip {
-  display: block;
-  margin-top: 6px;
-  padding: 8px 10px;
-  border-radius: var(--r-md);
-  background: var(--accent-tint);
-  color: var(--text);
-  font-size: 13px;
-}
-
 /* progress */
 .progress {
   display: flex;
@@ -686,14 +559,6 @@ a {
   font-size: 30px;
   line-height: 1.18;
 }
-.hero-lockup {
-  /* Inter 700 metrics: the SVG spans cap height + descender + padding; these put its baseline on
-     the text baseline and its cap height on the headline's cap height. */
-  height: 1.135em;
-  width: auto;
-  vertical-align: -0.325em;
-  margin-left: 0.02em;
-}
 .only-light.hero-lockup {
   display: none;
 }
@@ -719,11 +584,6 @@ a {
 }
 .only-dark.hero-lockup {
   display: inline;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 .dots span {
   width: 14px;
@@ -855,52 +715,18 @@ textarea.paste {
 
 /* team card */
 .team-card {
-  text-decoration: none;
-  display: flex;
-  background: var(--surface);
-  border-radius: var(--r-xl);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
   gap: 14px;
   width: 100%;
   text-align: left;
   border: 0;
-  color: inherit;
+  cursor: pointer;
 }
 .team-card.first {
   box-shadow: var(--shadow-md);
 }
-.team-card {
-  cursor: pointer;
-}
-.team-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 .team-details {
-  color: var(--accent);
-  font-weight: 600;
   text-decoration: none;
   padding: 4px 0 4px 8px;
-}
-.slots3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
-}
-.slot-name {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.2;
-  text-wrap: balance;
 }
 .diff {
   text-align: right;
@@ -914,13 +740,7 @@ textarea.paste {
   max-width: 160px;
 }
 .cost-line {
-  border-top: 1px solid var(--divider);
-  padding-top: 10px;
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
   justify-content: space-between;
-  gap: 8px;
 }
 .cost-line b {
   color: var(--accent);
@@ -1249,21 +1069,6 @@ textarea.paste {
 }
 
 /* tabs */
-.tabs {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0 auto;
-  max-width: 560px;
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
-  padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  background: var(--surface);
-  border-top: 1px solid var(--divider);
-  z-index: 5;
-}
 .tab {
   min-height: 48px;
   border: 0;
@@ -1325,12 +1130,6 @@ textarea.paste {
   font-size: 22px;
   color: var(--accent-text);
 }
-.btn-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
 /* update toast */
 .update-toast {
   position: fixed;
@@ -1510,32 +1309,9 @@ textarea.paste {
 }
 /* One line per move: F or C, the name, its type. */
 .pick-moves {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   margin-top: 4px;
   padding-top: 10px;
   border-top: 1px solid var(--divider);
-}
-.pick-move {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  min-width: 0;
-}
-.pick-move-k {
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--faint);
-  width: 12px;
-  text-align: center;
-  flex: none;
-}
-.pick-move-name {
-  min-width: 0;
-  line-height: 1.2;
 }
 .pick-moves .tag {
   align-self: flex-start;
@@ -1646,7 +1422,6 @@ textarea.paste {
   white-space: nowrap;
 }
 .hdr-actions {
-  justify-self: end;
   gap: 4px;
 }
 
@@ -1720,9 +1495,6 @@ textarea.paste {
   gap: 8px;
 }
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -1792,42 +1564,9 @@ button.counter-row {
 }
 
 /* league switcher: the three open leagues, full width */
-.league-switcher {
-  display: flex;
-  width: 100%;
-  border: 1px solid var(--divider);
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
-.league-switcher button {
-  flex: 1;
-  padding: 8px 6px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  color: var(--faint);
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-weight: 500;
-}
-.league-switcher button + button {
-  border-left: 1px solid var(--divider);
-}
-.league-switcher button.on {
-  color: var(--text);
-  background: var(--accent-tint);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
 .league-switcher.compact button {
   padding: 6px 4px;
   font-size: 12px;
-}
-.league-shield {
-  flex: none;
 }
 
 /* collection: search with a settings cog, verdict pills, tap-to-cycle sort */
@@ -2352,12 +2091,6 @@ input[type='range'] {
 .move-picker-reset {
   align-self: flex-start;
   padding-left: 0;
-}
-.head-cog {
-  height: 36px;
-  width: 36px;
-  border-radius: 50%;
-  position: relative;
 }
 .hdr .head-cog {
   justify-self: end;

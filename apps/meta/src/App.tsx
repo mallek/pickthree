@@ -363,14 +363,14 @@ export function App(props?: { deps?: Deps }): ReactNode {
   let content: ReactNode;
   if (staticData.state === 'loading') {
     content = (
-      <div className="app">
+      <div className="page">
         {brandRow}
         <p className="sub">Loading</p>
       </div>
     );
   } else if (staticData.state === 'error' || !staticData.data) {
     content = (
-      <div className="app">
+      <div className="page">
         {brandRow}
         <p>Could not load the site data. Try again in a moment.</p>
       </div>
@@ -402,7 +402,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
       ) : null;
 
     content = (
-      <div className="app">
+      <div className="page">
         {showBrand ? brandRow : null}
         {pageHeader}
         {showLeagueSwitch ? (

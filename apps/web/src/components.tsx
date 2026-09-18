@@ -642,7 +642,7 @@ export function Header({
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
       {action || cog ? (
-        <span className="row hdr-actions">
+        <span className="hdr-actions">
           {action}
           {cog ? <HeadCog /> : null}
         </span>

@@ -144,7 +144,7 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           Switching it off also deletes what your device has already sent.
         </p>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a className="btn btn-primary" href={PICK3}>
+          <a className="btn" href={PICK3}>
             Open pick3
           </a>
           <a className="btn btn-secondary" href={`${PICK3}/#/meta/log`}>

@@ -315,16 +315,6 @@ export function Sparkline({
   );
 }
 
-/** One number over its label, as in the design's three-up stat row. */
-export function StatCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="stat">
-      <div className="stat-n">{value}</div>
-      <div className="stat-l">{label}</div>
-    </div>
-  );
-}
-
 /** The bordered card used for a small-sample banner or any other aside. `tone="warn"` adds a
  * badge; a title already says what it is, so the badge is decorative there. Without a title
  * the badge is the only visual cue, so the warning gets an accessible name of its own instead

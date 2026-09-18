@@ -115,7 +115,7 @@ function MeasuredRowView({
 }) {
   const species = speciesOf(data, row.speciesId);
   return (
-    <a className="row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
+    <a className="rank-row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
       <span className="fine">{row.rank}</span>
       <Sprite species={species} size={44} />
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
@@ -161,7 +161,7 @@ export function Contribute({ devices }: { devices: number }) {
         Settings. {count(devices)} {plural(devices, 'device is', 'devices are')} contributing to
         this view so far.
       </p>
-      <a className="btn btn-primary" href={`${PICK3}/#/meta/log`}>
+      <a className="btn" href={`${PICK3}/#/meta/log`}>
         Log battles in pick3
       </a>
     </div>
@@ -211,7 +211,7 @@ function BaselineRowView({
 }) {
   const species = speciesOf(data, row.speciesId);
   return (
-    <a className="row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
+    <a className="rank-row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
       <span className="fine">{row.rank}</span>
       <Sprite species={species} size={44} />
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
