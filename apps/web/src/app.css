@@ -606,49 +606,72 @@ a {
 }
 /* The landing has to hold one screen on every phone, so its spacing is a class rather than an
    inline style and the short-screen rules below can claw space back instead of scrolling. */
+/* .scroll reserves 120px at the bottom to clear the tab bar. The landing has no tab bar, it has
+   the action block, so that reservation is dead space here and the page pays for it in scrolling. */
 .landing-scroll {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 44px);
-  gap: 20px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 32px);
+  padding-bottom: 12px;
+  gap: 18px;
+}
+.landing .bottom-actions {
+  gap: 8px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+.landing .hero-trio {
+  min-height: 70px;
 }
 @media (max-height: 820px) {
   .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 18px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
     gap: 12px;
   }
   .landing .hero {
     font-size: 25px;
   }
   .landing .mp-rows {
-    height: 126px;
+    height: 108px;
   }
   .landing .mp-row {
-    height: 42px;
+    height: 36px;
   }
   .landing .mp-card {
     gap: 8px;
-    padding: 12px 14px;
-  }
-  .landing .bottom-actions {
-    gap: 8px;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    padding: 10px 14px;
   }
 }
-/* An iPhone SE is 47px short of the tier above, so it gives up a little more of the headline and
-   the meta rows. Everything stays on the page; nothing is dropped. */
+/* Shortest phones cannot hold all of it, so the decoration goes first and the rest tightens.
+   Nothing anyone reads or taps is dropped. */
 @media (max-height: 700px) {
   .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
     gap: 8px;
   }
   .landing .hero {
-    font-size: 21px;
+    font-size: 22px;
   }
   .landing .mp-rows {
-    height: 102px;
+    height: 96px;
   }
   .landing .mp-row {
-    height: 34px;
+    height: 32px;
   }
+  .landing .hero-trio {
+    display: none;
+  }
+}
+/* The footer names what the buttons under it are for, so the two ways in are not bare verbs. */
+.footer-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+.footer-head b {
+  font-weight: 500;
+}
+.footer-head span {
+  font-size: 12.5px;
+  color: var(--muted);
 }
 /* The landing's meta card. Its own kicker class rather than the shared .kicker: that selector is
  * what the share and screenshot scripts wait on to know the report screen rendered, and it should
@@ -686,7 +709,7 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 150px;
+  height: 126px;
   border-top: 1px solid var(--divider);
 }
 .mp-rows-note {
@@ -698,7 +721,7 @@ a {
   grid-template-columns: 32px minmax(0, 1fr) 40px;
   align-items: center;
   gap: 12px;
-  height: 50px;
+  height: 42px;
 }
 .mp-row + .mp-row {
   border-top: 1px solid var(--divider);

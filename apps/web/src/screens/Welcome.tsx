@@ -1,6 +1,7 @@
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
+import { PokemonToken } from '../components.tsx';
 import { MetaPreview } from '../components/MetaPreview.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -47,12 +48,24 @@ export function Welcome() {
             Which three to bring, in what order, with which moves, and what they will cost to build.
           </p>
         </div>
+        {/* Decorative: three type-coloured discs for a little colour up top. Hidden from screen
+         * readers, which have no use for three Pokémon names that are not part of the flow, and
+         * the first thing dropped on a short screen since nothing depends on it. */}
+        <div className="hero-trio" aria-hidden="true">
+          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
+            <PokemonToken key={id} speciesId={id} size={64} showInitial={false} />
+          ))}
+        </div>
         <MetaPreview />
         {bootError ? (
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}
       </div>
       <div className="bottom-actions">
+        <div className="footer-head">
+          <b>Your Pokémon</b>
+          <span>Find battle teams with Pokémon from your collection.</span>
+        </div>
         <button
           type="button"
           className="btn"
