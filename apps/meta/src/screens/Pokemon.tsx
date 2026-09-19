@@ -56,19 +56,17 @@ function recordLine(row: SpeciesRow): string {
   return `players went ${row.wins}-${row.losses}`;
 }
 
-/** PvPoke's list is never described with a measured word: this marker only ever says that PvPoke
- * does not rank the species, never anything about how much it was faced. */
-function NewMarker(): ReactNode {
-  return (
-    <Term term="New">
-      PvPoke does not rank this one, so its place here comes entirely from how often players faced
-      it.
-    </Term>
-  );
+/** The explainer behind the "New" word: PvPoke does not rank the species, never anything about
+ * how much it was faced (PvPoke's list is never described with a measured word). Fix round 1,
+ * item 2: this used to be a `Term` nested inside each row's own `<a>`, which put interactive
+ * content inside an anchor (invalid markup, and the tap bubbled into a navigation before the tip
+ * could ever be read). Hosted once here, outside every row, next to the header line's own `Term`. */
+function newExplainer(): string {
+  return 'PvPoke does not rank this one, so its place here comes entirely from how often players faced it.';
 }
 
 function tailLine(n: number): string {
-  return `${count(n)} more were faced once each`;
+  return plural(n, '1 more was faced once', `${count(n)} more were faced once each`);
 }
 
 function RowView({
@@ -100,10 +98,10 @@ function RowView({
         <Bar pct={row.barPct} />
       </span>
       <span className="row-figure">
-        <b>{row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : <NewMarker />}</b>
+        <b>{row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}</b>
         <small>{facedLine(row, battles)}</small>
         <small>
-          {recordLine(row)} <ConfidenceTag n={row.decided} />
+          {recordLine(row)} {row.decided > 0 ? <ConfidenceTag n={row.decided} /> : null}
         </small>
       </span>
     </a>
@@ -167,7 +165,8 @@ export function Pokemon(p: {
       <section>
         <h2>What you face</h2>
         <p className="sub">
-          {headerLine(ranking)} <Term term="How the blend works">{blendExplainer()}</Term>
+          {headerLine(ranking)} <Term term="How the blend works">{blendExplainer()}</Term>{' '}
+          <Term term="New">{newExplainer()}</Term>
         </p>
         <div className="list">
           {drawn.map((row) => (

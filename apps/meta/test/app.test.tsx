@@ -215,6 +215,25 @@ describe('App, deep links', () => {
   });
 });
 
+// Fix round 1, item 3 (Task 13): the old pokemon.test.tsx asserted this against a full <App>
+// render, which is this invariant's proper home (it is App.tsx's own hook, `useSpeciesDetail`,
+// called unconditionally on every view to keep hook order stable, that short-circuits to no
+// request at all when there is no species id; `Pokemon.tsx`'s own tests render the screen in
+// isolation and cannot see App.tsx's hooks at all). The rewrite of pokemon.test.tsx for Task 13
+// dropped this along with the rest of the old file's App-level coverage; re-added here so a
+// regression in that short-circuit costs three list views (Teams, Pokemon, About) an extra round
+// trip and a test catches it rather than a review comment.
+describe('App, request cost', () => {
+  it('never asks for a species detail on the Pokemon list', async () => {
+    const fetcher = vi.fn(stubFetch({}));
+    window.history.replaceState(null, '', '/great/pokemon');
+    render(<App deps={{ fetcher, now }} />);
+    expect(await screen.findByRole('heading', { name: 'What you face' })).toBeInTheDocument();
+    const urls = fetcher.mock.calls.map((call) => String(call[0]));
+    expect(urls.some((u) => u.includes('/api/v1/species/'))).toBe(false);
+  });
+});
+
 describe('App, filter history', () => {
   it('replaces the history entry for a filter change instead of pushing a new one', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);

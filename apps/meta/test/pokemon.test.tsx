@@ -55,14 +55,7 @@ function href(view: Parameters<typeof hrefFor>[0]): string {
  * tests exercise the screen's actual reading of a `SpeciesRow`, not a fixture that happens to look
  * like one.
  */
-function renderPokemon(opts: {
-  battles: number;
-  devices: number;
-  species: SpeciesStats[];
-  /** Unused by this harness: the tail is read off the real ranking, never asserted into it. Kept
-   * so a call site can document its own expectation next to the fixture that produces it. */
-  tail?: number;
-}) {
+function renderPokemon(opts: { battles: number; devices: number; species: SpeciesStats[] }) {
   const meta: MetaSummaryV1 = {
     league: 'great',
     since: '2026-09-01T00:00:00.000Z',
@@ -152,7 +145,6 @@ describe('Pokemon, blended', () => {
       battles: 40,
       devices: 2,
       species: [faced('one', 1, 0, 1), faced('two', 1, 1, 0), faced('three', 1, 0, 0)],
-      tail: 3,
     });
     expect(screen.getByText('3 more were faced once each')).toBeInTheDocument();
     expect(screen.queryByText('One')).toBeNull();
@@ -160,10 +152,66 @@ describe('Pokemon, blended', () => {
     expect(screen.queryByText('Three')).toBeNull();
   });
 
+  // Fix round 1, item 5: the plural template has no singular form of its own ("1 more were faced
+  // once each" reads wrong), so the plan amended the copy table with a dedicated singular line.
+  it('uses the singular tail line at exactly one', () => {
+    renderPokemon({
+      battles: 40,
+      devices: 2,
+      species: [faced('one', 1, 0, 1)],
+    });
+    expect(screen.getByText('1 more was faced once')).toBeInTheDocument();
+    expect(screen.queryByText(/was faced once each/)).toBeNull();
+  });
+
   it('links a row to its species page', () => {
     renderPokemon({ battles: 480, devices: 9, species: [faced('azumarill', 200, 90, 110)] });
     const row = screen.getByText('Azumarill').closest('a');
     expect(row).toHaveAttribute('href', '/great/p/azumarill');
+  });
+
+  // Fix round 1, item 1: `confidence(0)` is 'few', not "nothing to say", so tagging an undecided
+  // row read "no result recorded few": a confidence level attached to a record that does not
+  // exist. This is every row on a day-one board, which is exactly why nothing had caught it.
+  it('never tags an undecided record with a confidence level', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [faced('surprise', 120, 0, 0)] });
+    const row = screen.getByText('Surprise').closest('a') as HTMLElement;
+    expect(within(row).getByText(/no result recorded/)).toBeInTheDocument();
+    expect(within(row).queryByText('few')).toBeNull();
+  });
+
+  // Fix round 1, item 4: the closest existing coverage only asserted the record text was
+  // present, which would still pass if PvPoke's rank and the measured record were run together
+  // into one string. This pins the honesty rule itself: the element holding the rank carries no
+  // measured word, and the old flip's own headings never come back.
+  it('never lets a measured word touch the PvPoke rank, and never brings the old banner back', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [faced('azumarill', 240, 120, 120)] });
+    expect(screen.getByText('PvPoke #1').textContent).not.toMatch(/faced|record|win rate/i);
+    expect(screen.queryByText("PvPoke's meta group")).toBeNull();
+    expect(screen.queryByText('Too few battles to trust yet.')).toBeNull();
+  });
+
+  // Fix round 1, item 6: `Contribute` changed from gated to unconditional in this task and had
+  // no coverage anywhere in the meta suite.
+  it('always offers the contribute card', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [faced('azumarill', 200, 90, 110)] });
+    expect(screen.getByText('Help fill this in')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Log battles in pick3' })).toHaveAttribute(
+      'href',
+      'https://pick3.gg/#/meta/log',
+    );
+  });
+
+  // Fix round 1, item 2: the "New" marker's explainer used to be a `Term` nested inside the row's
+  // own anchor, which put interactive content inside a link and made the tap navigate away before
+  // the tip could be read. It is now plain text on the row, with the explainer hosted once near
+  // the header line, outside every anchor.
+  it('renders New as plain text on the row, not as nested interactive content', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [faced('surprise', 120, 50, 70)] });
+    const row = screen.getByText('Surprise').closest('a') as HTMLElement;
+    expect(within(row).getByText('New').tagName).not.toBe('BUTTON');
+    expect(within(row).queryByRole('button')).toBeNull();
+    expect(screen.getByRole('button', { name: 'New' })).toBeInTheDocument();
   });
 });
 
