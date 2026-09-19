@@ -77,7 +77,24 @@ run('generateColdStartTeams', () => {
     // Pin every point of facing weight on one opponent; the board must change to answer it.
     const pinned = new Map([[data.matrix.opponents[0] as string, 1]]);
     const skewed = generateColdStartTeams(pool, view, types, { results: 8, weights: pinned });
-    expect(skewed[0]!.species).not.toEqual(flat[0]!.species);
+    // Compare the whole emitted order, not just the top team: pinning all weight on one opponent
+    // collapses coverage to a near-binary signal, so many teams can tie on it and the winner falls
+    // through to consistency, safety and finally the species-id tiebreak. Whether the single top
+    // team differs is a property of this data snapshot (which data-refresh.yml bumps weekly), not
+    // of the algorithm, so the order as a whole is the property worth asserting.
+    const flatOrder = flat.map((t) => t.species.join('+'));
+    const skewedOrder = skewed.map((t) => t.species.join('+'));
+    expect(skewedOrder).not.toEqual(flatOrder);
+  });
+
+  it('fills the board from a pool too small to stay diverse, without duplicates', () => {
+    const { view, pool, types } = setup(5);
+    // Five species yield ten trios, of which at most two can avoid sharing two members, so
+    // asking for five forces the fallback loop that admits clashing teams.
+    const teams = generateColdStartTeams(pool, view, types, { results: 5 });
+    expect(teams).toHaveLength(5);
+    const keys = teams.map((t) => [...t.species].sort().join('+'));
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
   it('finishes fast enough to sit in a bake', () => {

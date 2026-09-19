@@ -67,7 +67,7 @@ export function generateColdStartTeams(
   types: { types(id: string): [PokemonType, PokemonType | 'none'] },
   opts: GenerateOptions,
 ): GeneratedTeam[] {
-  const ctx = opts.weights ? strengthContext(view, opts.weights) : strengthContext(view);
+  const ctx = strengthContext(view, opts.weights);
   const prepared: Prepared[] = prepare([...pool], view, types);
   const n = prepared.length;
   const all: Scored[] = [];
