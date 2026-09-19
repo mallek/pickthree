@@ -14,7 +14,7 @@ import type { Baseline } from '../baseline.js';
 import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
 import { HALF_SAY_BATTLES, HALF_SAY_DEVICES } from '../rank.js';
-import { SOME, TREND_MIN } from '../stats.js';
+import { MANY, SOME, TREND_MIN } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
 /** The two decorative marks below. Their meaning lives in the section heading and the text next
@@ -107,9 +107,10 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
   return (
     <main>
       <p className="sub">
-        Every number on this site is built from real GO Battle League battles that pick3 players
-        chose to share. Nothing is scraped, estimated or simulated. The one exception is
-        PvPoke&apos;s meta group, which is labelled as PvPoke&apos;s list wherever it appears.
+        Every number on this site comes from one of two places: real GO Battle League battles that
+        pick3 players chose to share, or PvPoke&apos;s own curated meta group and the simulated
+        matchups behind it. Nothing is scraped. A measured number always says so; a projection
+        always says it is one instead, and never a win rate.
       </p>
 
       <section className="card">
@@ -177,8 +178,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           sign up for.
         </p>
         <p className="fine">
-          Reading is already public and needs no key, since this site reads it the same way. The
-          team board behind Teams:
+          Reading needs no key. A server or script can call it freely; a page running in someone
+          else&apos;s browser is limited by this site&apos;s CORS allow-list for now. The team board
+          behind Teams:
         </p>
         <p className="fine">
           <code>
@@ -206,17 +208,16 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <section className="card">
         <h2>How the lists are built</h2>
         <p className="sub">
-          A league&apos;s ranked list is measured once {count(HALF_SAY_BATTLES)} or more counted{' '}
-          {battleWord(HALF_SAY_BATTLES)} have been shared, from {count(HALF_SAY_DEVICES)} or more{' '}
-          {plural(HALF_SAY_DEVICES, 'device', 'devices')}, for the window and rank band you are
-          looking at. Under either floor, the ranked list is PvPoke&apos;s meta group, clearly
-          marked, and everything we have measured is shown under it with its counts. Tanked battles
-          are counted separately and never touch a record. On that list, a record is always the raw
-          win-loss count, never a percentage. On Most run teams, a win rate is always shown, with a
-          confidence tag beside it, and below {count(SOME)} decided {battleWord(SOME)} the likely
-          range is spelled out too. A trend is only shown when both windows being compared hold at
-          least {count(TREND_MIN)} {battleWord(TREND_MIN)}, and only when the change is bigger than
-          the noise in the numbers.
+          Tanked battles are counted separately and never touch a record. On the Pokemon list, a
+          record is always the raw win-loss count, never a percentage, with a confidence tag beside
+          it: few under {count(SOME)} decided {battleWord(SOME)}, some from there up to{' '}
+          {count(MANY)}, many at {count(MANY)} or more. On the Species page, a win rate is shown as
+          a percentage, with a plain-language range beside it that narrows the more decided battles
+          stand behind it. On Teams, a record is always the raw win-loss count too; a projection,
+          when a row has one, is labelled &quot;a projection, not a win rate&quot; in the same line
+          it appears. A trend is only shown when both windows being compared hold at least{' '}
+          {count(TREND_MIN)} {battleWord(TREND_MIN)}, and only when the change is bigger than the
+          noise in the numbers.
         </p>
       </section>
 
@@ -268,14 +269,17 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         <p className="sub">
           Players log up to three opponents, and most of the time they log one or two. So a pair
           counts as a core: two Pokemon that were seen together, with whatever came third. A
-          core&apos;s projection is the average over the thirds it was actually seen with, which is
-          why a complete team usually scores above or below its own core rather than the same: we
-          know all three of one and only two of the other.
+          core&apos;s projection is the average over the thirds it was actually seen with; a core
+          never seen complete is instead projected against PvPoke&apos;s own group, the same thirds
+          any of them would expect to face. That is why a complete team usually scores above or
+          below its own core rather than the same: we know all three of one, and only two of the
+          other, or sometimes none at all.
         </p>
         <p className="sub">
           A team&apos;s record counts both sides. If you ran it, that is your result. If you faced
-          it, that is your result reversed: you winning means the team you faced lost that battle.
-          Each card keeps the two counts apart so you can see which is which.
+          it, that is your result reversed: you winning means the team you faced lost that battle. A
+          card with both keeps the battle counts apart (run this many times, faced that many times)
+          but combines the win-loss record into one line, labelled overall.
         </p>
       </section>
 

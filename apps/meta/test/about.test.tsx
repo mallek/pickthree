@@ -3,9 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
-import { battleWord, count, plural } from '../src/format.js';
-import { HALF_SAY_BATTLES, HALF_SAY_DEVICES } from '../src/rank.js';
-import { SOME, TREND_MIN } from '../src/stats.js';
+import { battleWord, count } from '../src/format.js';
+import { MANY, SOME, TREND_MIN } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -41,52 +40,61 @@ describe('About', () => {
     expect(screen.getByText('Your IP address')).toBeInTheDocument();
   });
 
-  // rank.ts's HALF_SAY_BATTLES and HALF_SAY_DEVICES are the blend's two half-say points, not a
-  // gate any more, but a league still needs both a battle count and a device count behind it for
-  // the ranked list to read as measured, so the page has to name the device floor too, not just
-  // the battle one. stats.ts's TREND_MIN and SOME are the other two thresholds this card promises
-  // (FIX 3: WIN_RATE_MIN is gone along with the sentence that used to name it, since B1 made the
-  // overview's own record an unconditional raw count, and SOME is the real threshold behind
-  // Teams' "likely range" caveat, not a leftover of the removed field).
-  // These assertions read the same constants the page interpolates, not typed-out digits: if one
-  // of them ever changes, the page's prose changes with it and this test keeps passing, or the
-  // page falls out of sync with the constant and this test is the thing that catches it, never a
-  // pair of literals that quietly agree with each other while disagreeing with the code.
-  it('explains the thresholds in the same numbers the code uses', async () => {
+  // IMPORTANT 3: the old opening line said "Nothing is scraped, estimated or simulated" with
+  // PvPoke's meta group as the one exception, which the Teams board's own projections (computed
+  // from PvPoke's simulated matchup matrix) and the "What 'projected' means" section directly
+  // below contradict. The opening line has to name both real sources, including the simulated
+  // one, rather than promise there is only one.
+  it('names both real sources up front, including the simulated one', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
-      await screen.findByText(
-        new RegExp(`${count(HALF_SAY_BATTLES)} or more counted ${battleWord(HALF_SAY_BATTLES)}`),
-      ),
+      await screen.findByText(/PvPoke's own curated meta group and the simulated matchups/),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing is scraped, estimated or simulated/)).toBeNull();
+  });
+
+  // Task 14 fix round 1 (CRITICAL 1): this card used to state the exact flip the deletion in
+  // rank.ts retired ("measured once 300 battles from 5 devices, otherwise PvPoke's list leads"),
+  // two cards above the new section that says "Nothing flips." That threshold language is gone
+  // for good; what is left is the confidence-tag tiers (stats.ts's SOME and MANY) and the trend
+  // floor (TREND_MIN), read from the same constants the page interpolates, not typed-out digits.
+  it('names the confidence tiers and the trend floor, not a measured/baseline threshold', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
-      screen.getByText(
-        new RegExp(
-          `${count(HALF_SAY_DEVICES)} or more ${plural(HALF_SAY_DEVICES, 'device', 'devices')}`,
-        ),
-      ),
+      await screen.findByText(new RegExp(`few under ${count(SOME)} decided ${battleWord(SOME)}`)),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(new RegExp(`below ${count(SOME)} decided ${battleWord(SOME)}`)),
-    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`many at ${count(MANY)} or more`))).toBeInTheDocument();
     expect(
       screen.getByText(new RegExp(`at least ${count(TREND_MIN)} ${battleWord(TREND_MIN)}`)),
     ).toBeInTheDocument();
+    // The retired language must not survive under a new name: no "or more counted battles" gate,
+    // and no claim that either list "leads" the other.
+    expect(screen.queryByText(/or more counted/)).toBeNull();
+    expect(screen.queryByText(/leads/)).toBeNull();
   });
 
-  // FIX 3: the page's job is to be true of the code. The overview never shows a record as a
-  // percentage any more (B1), and Teams always shows a win rate (with a confidence tag), never a
-  // raw count in its place, so the old "fewer than N decided battles shows its raw count" sentence
-  // described neither screen. This pins the corrected claims separately from the numeric thresholds
-  // above.
-  it('describes what the overview and teams lists actually show, not the old shared rule', async () => {
+  // IMPORTANT 4: the old sentence named a screen called "Most run teams" that does not exist, and
+  // claimed it shows a win rate with a confidence tag, which is Pokemon's own behavior, not
+  // Teams'. Teams.tsx never prints a percentage for an observed record (`recordLine`, always raw
+  // counts) and labels a projection, when it has one, "a projection, not a win rate" in the same
+  // line (`projectionLine`). This pins the corrected, per-screen claims.
+  it('describes what the Pokemon list, the Species page and Teams actually show', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
-      await screen.findByText(/a record is always the raw win-loss count, never a percentage/),
+      await screen.findByText(
+        /On the Pokemon list, a record is always the raw win-loss count, never a percentage/,
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/On Most run teams, a win rate is always shown, with a confidence tag/),
+      screen.getByText(/On the Species page, a win rate is shown as a percentage/),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/On Teams, a record is always the raw win-loss count too/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/labelled "a projection, not a win rate" in the same line/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Most run teams/)).toBeNull();
   });
 
   // A3: these definitions used to sit above every visit to Overview's measured list; they moved
@@ -126,6 +134,31 @@ describe('About', () => {
     ).toBeInTheDocument();
   });
 
+  // IMPORTANT 6: teamRank.ts's `projectCore` averages over the thirds actually seen with a core,
+  // but falls back to PvPoke's own group, weighted by the blended weights, once a core has never
+  // been seen complete (the COMMON case, since a third is only recorded when all three opponents
+  // were logged, and the same paragraph says most players log one or two). The card itself
+  // already says "Never seen complete. Projected against any third PvPoke would expect."; the
+  // page has to say the same thing.
+  it('says a core never seen complete is projected against PvPoke instead', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText(/a core never seen complete is instead projected against PvPoke/),
+    ).toBeInTheDocument();
+  });
+
+  // IMPORTANT 7: Teams.tsx's `recordLine` keeps the two battle counts apart ("Run N times and
+  // faced M times") but merges the record itself into one line labelled "overall"
+  // ("33-27 overall"), so "each card keeps the two counts apart so you can see which is which"
+  // overclaimed: the counts are apart, the record is not. The page has to say both halves.
+  it('says the battle counts are kept apart but the record is combined', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/keeps the battle counts apart/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/combines the win-loss record into one line, labelled overall/),
+    ).toBeInTheDocument();
+  });
+
   it('says an epoch reset deletes nothing', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByText(/Nothing is deleted/)).toBeInTheDocument();
@@ -136,10 +169,32 @@ describe('About', () => {
     expect(await screen.findByText(/\/api\/v1\/teams/)).toBeInTheDocument();
   });
 
-  it('is strict 7-bit ASCII throughout', async () => {
+  // Also-fix: "already public and needs no key" was true for a server but not for a browser page
+  // on another origin, since workers/counter/src/index.ts's `cors()` answers with a fixed
+  // allow-list, not a wildcard. The claim has to carry that distinction.
+  it('is precise about who can actually read the api without a key', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/Reading needs no key/)).toBeInTheDocument();
+    expect(screen.getByText(/limited by this site's CORS allow-list for now/)).toBeInTheDocument();
+  });
+
+  // Also-fix: `\s` in a JS regex matches a non-breaking space (U+00A0) and a few other characters
+  // outside the printable ASCII range, so the guard used to let the single most likely smart
+  // character (a pasted NBSP) straight through. `\n\r\t` names only the whitespace this page
+  // actually uses. Attribute text (aria-label, title, alt) is checked too, since a screen reader
+  // or a tooltip reads those the same as visible text.
+  it('is strict 7-bit ASCII throughout, including attribute text', async () => {
     const { container } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await screen.findByText(/PvPoke rankings of/);
-    expect(container.textContent ?? '').toMatch(/^[\x20-\x7e\s]*$/);
+    expect(container.textContent ?? '').toMatch(/^[\x20-\x7e\n\r\t]*$/);
+    for (const el of container.querySelectorAll('[aria-label], [title], [alt]')) {
+      for (const attr of ['aria-label', 'title', 'alt']) {
+        const value = el.getAttribute(attr);
+        if (value !== null) {
+          expect(value).toMatch(/^[\x20-\x7e\n\r\t]*$/);
+        }
+      }
+    }
   });
 
   it('does not promise an api that does not exist yet', async () => {

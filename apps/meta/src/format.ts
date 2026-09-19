@@ -50,9 +50,9 @@ export function pct(fraction: number): string {
 }
 
 /** One-decimal percent, for the rare case where the precision itself is the stated fact (a rule
- * like "ranked at 0.5% or more"), not a measurement to glance at: rounding RANKED_SHARE's 0.5% to
+ * like "ranked at 0.5% or more"), not a measurement to glance at: rounding the cut's 0.5% to
  * a whole percent would silently change what the rule says it does. Kept separate from `pct`
- * rather than special-cased at its one call site (Overview.tsx's ranking-cut sentence). */
+ * rather than special-cased at its one call site (a screen's own ranking-cut sentence). */
 export function pctPrecise(fraction: number): string {
   return (fraction * 100).toFixed(1);
 }
@@ -62,7 +62,7 @@ export function pctPrecise(fraction: number): string {
  * overstatement this site exists to avoid, only pointed the other way. A share that rounds to
  * zero but is not actually zero renders "<1%" instead. Includes its own "%" (unlike `pct`,
  * which leaves that to the caller), since "<1%" is not `pct`'s digits with a suffix glued on.
- * `RANKED_SHARE` already keeps every row in the ranked list above this floor, so this only
+ * The ranking already keeps every row in the ranked list above this floor, so this only
  * matters off that list: the species page, reachable for any id via "Seen next to". */
 export function pctFloor(fraction: number): string {
   if (fraction <= 0) {

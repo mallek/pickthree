@@ -60,7 +60,7 @@ describe('Species', () => {
     const head = screen.getByRole('img', { name: 'Azumarill' }).parentElement!.parentElement!;
     expect(within(head).getByText('Water')).toBeInTheDocument();
     // A4: whole percentages everywhere; 184 / 1,000 is 18.4%, rounded to 18%.
-    expect(screen.getByText(/in 18% of 1,000 battles/)).toBeInTheDocument();
+    expect(screen.getByText('184 of 1,000 battles (18%)')).toBeInTheDocument();
   });
 
   // FIX 2 (honesty): reachable for any id through "Seen next to", not just the ranked list, which
@@ -70,21 +70,33 @@ describe('Species', () => {
   it('floors a real but sub-one-percent share at "<1%" instead of rounding it away to 0%', async () => {
     const rare = { ...species, sightings: 2 };
     render(<App deps={{ fetcher: stubFetch({ species: rare, meta }), now }} />);
-    expect(await screen.findByText(/in <1% of 1,000 battles/)).toBeInTheDocument();
-    expect(screen.queryByText(/in 0% of 1,000 battles/)).toBeNull();
+    expect(await screen.findByText('2 of 1,000 battles (<1%)')).toBeInTheDocument();
+    expect(screen.queryByText(/\(0%\)/)).toBeNull();
   });
 
-  // Task 14: the header also gains the species' place in the league's whole blended list
-  // (rank.ts's `rankSpecies`, the same ranking Pokemon and Teams read), not just this window's own
-  // count. azumarill leads RANK_ORDER and, with real sightings behind it here, also leads the
-  // two-species blended list (azumarill and tinkaton are the only two in this stub's baseline).
-  it("shows its place in the blended list alongside PvPoke's own rank", async () => {
+  // Task 14 fix round 1 (Also-fix): azumarill is both RANK_ORDER[0] and the baseline's first
+  // entry, so the original version of this fixture gave it rank 1 in both the blended list and
+  // PvPoke's own order, and the test would have passed even if Species.tsx printed the same
+  // number in both slots. Here tinkaton (PvPoke rank 5) is given nine times azumarill's measured
+  // sightings, which is enough to outweigh azumarill's much stronger prior (see rank.test.ts's
+  // own blend math) and push azumarill to blended rank 2 while its PvPoke rank stays 1, so the
+  // assertion below can only pass if the two numbers really come from two different fields.
+  it("shows its place in the blended list alongside PvPoke's own rank, and the two can differ", async () => {
     const measured = {
       ...meta,
       species: [
         {
           speciesId: 'azumarill',
-          sightings: 500,
+          sightings: 100,
+          wins: 0,
+          losses: 0,
+          runs: 0,
+          runWins: 0,
+          runLosses: 0,
+        },
+        {
+          speciesId: 'tinkaton',
+          sightings: 900,
           wins: 0,
           losses: 0,
           runs: 0,
@@ -94,7 +106,7 @@ describe('Species', () => {
       ],
     };
     render(<App deps={{ fetcher: stubFetch({ species, meta: measured }), now }} />);
-    expect(await screen.findByText('#1 of what players face - PvPoke #1')).toBeInTheDocument();
+    expect(await screen.findByText('#2 of what players face - PvPoke #1')).toBeInTheDocument();
   });
 
   // A species not faced at all this window has nothing to claim a blended rank from (the row
@@ -201,12 +213,18 @@ describe('Species', () => {
     expect(within(card).getByText('31% - 57 battles')).toBeInTheDocument();
   });
 
-  it('shows a count instead of a share when the league is not measured yet', async () => {
+  // Task 14 fix round 1 (CRITICAL 2): this used to hide the share below a 300 battle / 5 device
+  // floor, the exact "hides measured numbers for being small" behavior CLAUDE.md rules out for
+  // meta.pick3.gg. The share is unconditional now, with its count beside it, the same way it is
+  // above with a thick league.
+  it('shows a share even in a league far below the old measured floor', async () => {
     const thin = { battles: 50, devices: 2 };
     render(<App deps={{ fetcher: stubFetch({ species, meta: thin }), now }} />);
     const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest('section')!;
-    expect(within(card).getByText('57 battles')).toBeInTheDocument();
-    expect(within(card).queryByText(/%/)).toBeNull();
+    // tinkaton: 57 of azumarill's 184 sightings is still 30.978...%, rounded to 31%, whatever the
+    // league's own battle or device count is: the alongside share is a share of THIS species' own
+    // sightings, not of the league's, so it never depended on the old floor in the first place.
+    expect(within(card).getByText('31% - 57 battles')).toBeInTheDocument();
   });
 
   it('aggregates movesets into one pick3-style line per move, fast first, share at the end', async () => {
@@ -384,10 +402,31 @@ describe('Species', () => {
     expect(await screen.findByText('1 win, 1 loss')).toBeInTheDocument();
   });
 
-  it('reads "Faced 1 time", not "Faced 1 times", when the league is not measured yet', async () => {
+  // Task 14 fix round 1: the header's new "N of M battles (P%)" phrasing dropped the old
+  // "time"/"times" wording this test used to pin, but `battlesText` still inflects on 1, so the
+  // singular risk moved to the total ("1 battle", not "1 battles") rather than disappearing.
+  it('reads "1 battle", not "1 battles", when the whole window is a single battle', async () => {
     const oneSighting = { ...species, sightings: 1 };
-    const thin = { battles: 7, devices: 2 };
-    render(<App deps={{ fetcher: stubFetch({ species: oneSighting, meta: thin }), now }} />);
-    expect(await screen.findByText('Faced 1 time in 7 battles')).toBeInTheDocument();
+    const oneBattle = { battles: 1, devices: 1 };
+    render(<App deps={{ fetcher: stubFetch({ species: oneSighting, meta: oneBattle }), now }} />);
+    expect(await screen.findByText('1 of 1 battle (100%)')).toBeInTheDocument();
+  });
+
+  // Task 14 fix round 1 (IMPORTANT 5): a blended rank without the say figure next to it can
+  // mislead (a row can lead the blended list on a say of a few percent, almost entirely PvPoke's
+  // own prior). Pokemon.tsx and Teams.tsx both print this figure above their own lists; Species
+  // now does too, in the same words.
+  it("gives the same 'how far along it is' figure Pokemon and Teams print", async () => {
+    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
+    // measuredSay(1000, 120) rounds to 77% (min(1000/1300, 120/125) = 1000/1300 = 0.7692...).
+    expect(
+      await screen.findByText('77% measured, from 1,000 battles shared by 120 devices'),
+    ).toBeInTheDocument();
+  });
+
+  it('says no shared battles yet, rather than a made-up percentage, when the league has none', async () => {
+    const empty = { battles: 0, devices: 0 };
+    render(<App deps={{ fetcher: stubFetch({ species, meta: empty }), now }} />);
+    expect(await screen.findByText('No shared battles in this window yet.')).toBeInTheDocument();
   });
 });

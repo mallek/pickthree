@@ -2,7 +2,7 @@
  * The species page: how often reporters faced this Pokemon over time, their record against it
  * overall and by rank band, what they saw it alongside, and the moveset they ran when they used
  * it themselves. PvPoke's own recommended set sits alongside as a clearly separate, unmeasured
- * card (see Overview.tsx's header comment for the two-sources rule this whole site follows).
+ * card (see Pokemon.tsx's header comment for the two-sources rule this whole site follows).
  *
  * See docs/superpowers/specs/2026-09-18-meta-site-design.md and this task's brief
  * (.superpowers/sdd/2026-09-18-meta-site/task-12-brief.md, with four corrections recorded in
@@ -15,7 +15,7 @@ import { Bar, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pctFloor, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
-import { HALF_SAY_BATTLES, HALF_SAY_DEVICES, type SpeciesRanking } from '../rank.js';
+import type { SpeciesRanking } from '../rank.js';
 import type { Query, View } from '../route.js';
 import {
   marginSentence,
@@ -54,25 +54,20 @@ function joinAnd(names: string[]): string {
 }
 
 /**
- * This species' rank among every species the window recorded, highest sightings first, same
- * tiebreak as rank.ts's own comparator (species id, ascending). Computed by counting how many
- * species are ahead of it rather than indexing into a sorted copy, so a species missing from
- * `meta.species` (impossible in production, since the summary lists everything it has ever
- * faced, but true of a species detail fetched in isolation, as the tests do) still gets a sane
- * answer instead of an undefined one.
+ * Fix round 1 (task 14): the same "how far along it is" figure Pokemon.tsx and Teams.tsx print
+ * above their own lists (rank.ts's `rankSpecies`), duplicated here rather than exported from
+ * either, the same way Teams.tsx already duplicates its own copy of it. Without this line the
+ * blended standing below ("#N of what players face") had no context: a species can lead that
+ * list on a say of a few percent, almost entirely PvPoke's own prior, and a reader has no way to
+ * tell that apart from a say near 100% without this figure sitting next to it.
  */
-function rankAmong(meta: MetaSummaryV1, speciesId: string, sightings: number): number {
-  let ahead = 0;
-  for (const s of meta.species) {
-    if (s.speciesId === speciesId) {
-      continue;
-    }
-    const tiedButFirst = s.sightings === sightings && s.speciesId.localeCompare(speciesId) < 0;
-    if (s.sightings > sightings || tiedButFirst) {
-      ahead += 1;
-    }
+function sayHeaderLine(ranking: SpeciesRanking): string {
+  if (ranking.battles === 0) {
+    return 'No shared battles in this window yet.';
   }
-  return ahead + 1;
+  const pctVal = Math.round(ranking.say * 100);
+  const devices = `${count(ranking.devices)} ${plural(ranking.devices, 'device', 'devices')}`;
+  return `${pctVal}% measured, from ${battlesText(ranking.battles)} shared by ${devices}`;
 }
 
 /** A move id and the battles behind it, aggregated across every complete set the worker
@@ -358,17 +353,12 @@ function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
 function AlongsideCard({
   alongside,
   sightings,
-  measuredEnough,
   data,
   league,
   href,
 }: {
   alongside: SpeciesDetailV1['alongside'];
   sightings: number;
-  /** Same gate as the header ("#R most faced" vs "Faced S times"): below it a share is not a
-   * share, it is two small counts pretending to be one, so this card shows the raw count
-   * instead, the same rule Overview.tsx's own rows already follow. */
-  measuredEnough: boolean;
   data: StaticData;
   league: string;
   href: (view: View) => string;
@@ -403,8 +393,7 @@ function AlongsideCard({
                   {other.short}
                 </span>
                 <span className="fine">
-                  {measuredEnough ? `${Math.round(share)}% - ` : ''}
-                  {battlesText(a.battles)}
+                  {Math.round(share)}% - {battlesText(a.battles)}
                 </span>
               </a>
             );
@@ -481,17 +470,18 @@ export function Species(p: {
 
   const d = detail.data;
   const m = meta.data;
-  const measuredEnough = m.battles >= HALF_SAY_BATTLES && m.devices >= HALF_SAY_DEVICES;
 
+  // Fix round 1 (task 14): this used to switch between "#R most faced" and a bare count once the
+  // league cleared a 300 battle / 5 device floor, the exact flip this whole plan exists to
+  // retire, still live here even after rank.ts's own copy of it was deleted (CLAUDE.md: meta.pick3.gg
+  // "never hides measured numbers for being small"). The share is shown unconditionally now, with
+  // its count beside it, the same way Pokemon.tsx's own rows always print theirs.
   let headerText: string;
   if (d.sightings === 0) {
     headerText = 'Not faced in this window';
-  } else if (measuredEnough) {
-    const share = m.battles > 0 ? d.sightings / m.battles : 0;
-    const rankNum = rankAmong(m, speciesId, d.sightings);
-    headerText = `#${rankNum} most faced - in ${pctFloor(share)} of ${battlesText(m.battles)}`;
   } else {
-    headerText = `Faced ${count(d.sightings)} ${plural(d.sightings, 'time', 'times')} in ${battlesText(m.battles)}`;
+    const share = m.battles > 0 ? d.sightings / m.battles : 0;
+    headerText = `${count(d.sightings)} of ${battlesText(m.battles)} (${pctFloor(share)})`;
   }
 
   const baselineEntry = baseline.data?.byId.get(speciesId) ?? null;
@@ -513,6 +503,11 @@ export function Species(p: {
     <main>
       <section>
         {headerTop}
+        {/* Fix round 1: without this line a blended rank had no context. A row can lead "what
+         * players face" on a say of a few percent, almost entirely PvPoke's own prior, and this
+         * is the only thing on the page that tells a reader the two apart. Same convention
+         * Pokemon.tsx and Teams.tsx use for their own header line. */}
+        {ranking ? <p className="sub">{sayHeaderLine(ranking)}</p> : null}
         <p className="sub">{headerText}</p>
         {standingText ? <p className="sub">{standingText}</p> : null}
       </section>
@@ -526,7 +521,6 @@ export function Species(p: {
           <AlongsideCard
             alongside={d.alongside}
             sightings={d.sightings}
-            measuredEnough={measuredEnough}
             data={data}
             league={league}
             href={href}
