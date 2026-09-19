@@ -64,13 +64,45 @@ describe('Species', () => {
   });
 
   // FIX 2 (honesty): reachable for any id through "Seen next to", not just the ranked list, which
-  // RANKED_SHARE keeps above this floor. A species faced 2 times in 1,000 battles is 0.2%, real
-  // but not "0%": whole-percent rounding must not say it was never faced.
+  // draws only a species PvPoke ranks or one faced at least twice (Pokemon.tsx's own cut). A
+  // species faced 2 times in 1,000 battles is 0.2%, real but not "0%": whole-percent rounding
+  // must not say it was never faced.
   it('floors a real but sub-one-percent share at "<1%" instead of rounding it away to 0%', async () => {
     const rare = { ...species, sightings: 2 };
     render(<App deps={{ fetcher: stubFetch({ species: rare, meta }), now }} />);
     expect(await screen.findByText(/in <1% of 1,000 battles/)).toBeInTheDocument();
     expect(screen.queryByText(/in 0% of 1,000 battles/)).toBeNull();
+  });
+
+  // Task 14: the header also gains the species' place in the league's whole blended list
+  // (rank.ts's `rankSpecies`, the same ranking Pokemon and Teams read), not just this window's own
+  // count. azumarill leads RANK_ORDER and, with real sightings behind it here, also leads the
+  // two-species blended list (azumarill and tinkaton are the only two in this stub's baseline).
+  it("shows its place in the blended list alongside PvPoke's own rank", async () => {
+    const measured = {
+      ...meta,
+      species: [
+        {
+          speciesId: 'azumarill',
+          sightings: 500,
+          wins: 0,
+          losses: 0,
+          runs: 0,
+          runWins: 0,
+          runLosses: 0,
+        },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species, meta: measured }), now }} />);
+    expect(await screen.findByText('#1 of what players face - PvPoke #1')).toBeInTheDocument();
+  });
+
+  // A species not faced at all this window has nothing to claim a blended rank from (the row
+  // still exists in `ranking`, purely from PvPoke's own prior, which is not "what players face").
+  it('says nothing about a blended rank for a species nobody has faced this window', async () => {
+    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
+    await screen.findByText('No shared battles mention it in this window.');
+    expect(screen.queryByText(/of what players face/)).toBeNull();
   });
 
   it('gives the record with its margin and explains a sub-50% number', async () => {

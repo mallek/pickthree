@@ -4,7 +4,7 @@ import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
 import { battleWord, count, plural } from '../src/format.js';
-import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../src/rank.js';
+import { HALF_SAY_BATTLES, HALF_SAY_DEVICES } from '../src/rank.js';
 import { SOME, TREND_MIN } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
@@ -41,12 +41,13 @@ describe('About', () => {
     expect(screen.getByText('Your IP address')).toBeInTheDocument();
   });
 
-  // rank.ts's MEASURED_MIN and MEASURED_MIN_DEVICES both gate the measured list; a league can
-  // clear the battle count alone and still show PvPoke's list, so the page has to name the
-  // device floor too, not just the battle one. stats.ts's TREND_MIN and SOME are the other two
-  // thresholds this card promises (FIX 3: WIN_RATE_MIN is gone along with the sentence that used
-  // to name it, since B1 made the overview's own record an unconditional raw count, and SOME is
-  // the real threshold behind Teams' "likely range" caveat, not a leftover of the removed field).
+  // rank.ts's HALF_SAY_BATTLES and HALF_SAY_DEVICES are the blend's two half-say points, not a
+  // gate any more, but a league still needs both a battle count and a device count behind it for
+  // the ranked list to read as measured, so the page has to name the device floor too, not just
+  // the battle one. stats.ts's TREND_MIN and SOME are the other two thresholds this card promises
+  // (FIX 3: WIN_RATE_MIN is gone along with the sentence that used to name it, since B1 made the
+  // overview's own record an unconditional raw count, and SOME is the real threshold behind
+  // Teams' "likely range" caveat, not a leftover of the removed field).
   // These assertions read the same constants the page interpolates, not typed-out digits: if one
   // of them ever changes, the page's prose changes with it and this test keeps passing, or the
   // page falls out of sync with the constant and this test is the thing that catches it, never a
@@ -55,13 +56,13 @@ describe('About', () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
       await screen.findByText(
-        new RegExp(`${count(MEASURED_MIN)} or more counted ${battleWord(MEASURED_MIN)}`),
+        new RegExp(`${count(HALF_SAY_BATTLES)} or more counted ${battleWord(HALF_SAY_BATTLES)}`),
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
         new RegExp(
-          `${count(MEASURED_MIN_DEVICES)} or more ${plural(MEASURED_MIN_DEVICES, 'device', 'devices')}`,
+          `${count(HALF_SAY_DEVICES)} or more ${plural(HALF_SAY_DEVICES, 'device', 'devices')}`,
         ),
       ),
     ).toBeInTheDocument();
@@ -99,6 +100,48 @@ describe('About', () => {
     expect(screen.getByText(/Trend is the change in a Pokemon's share/)).toBeInTheDocument();
   });
 
+  it('explains the blend, in words, with both half-say points', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText(/At 300 counted battles the measured side has half the say/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/At 5 devices it also has half the say/)).toBeInTheDocument();
+  });
+
+  it('says plainly that nothing flips', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/Nothing flips\./)).toBeInTheDocument();
+  });
+
+  it('says a projection is never printed as a win rate', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/this site never prints one as a win rate/)).toBeInTheDocument();
+  });
+
+  it('explains cores and the inverted faced record', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/a pair counts as a core/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/you winning means the team you faced lost that battle/),
+    ).toBeInTheDocument();
+  });
+
+  it('says an epoch reset deletes nothing', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/Nothing is deleted/)).toBeInTheDocument();
+  });
+
+  it('lists the teams endpoint', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByText(/\/api\/v1\/teams/)).toBeInTheDocument();
+  });
+
+  it('is strict 7-bit ASCII throughout', async () => {
+    const { container } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByText(/PvPoke rankings of/);
+    expect(container.textContent ?? '').toMatch(/^[\x20-\x7e\s]*$/);
+  });
+
   it('does not promise an api that does not exist yet', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByText('Planned')).toBeInTheDocument();
@@ -119,6 +162,10 @@ describe('About', () => {
       'For other apps',
       'How to read the lists',
       'How the lists are built',
+      'How the ranking works',
+      'What "projected" means',
+      'Teams and cores',
+      'When the game changes',
     ]) {
       expect(await screen.findByRole('heading', { name })).toBeInTheDocument();
     }

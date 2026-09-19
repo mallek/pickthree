@@ -13,7 +13,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Baseline } from '../baseline.js';
 import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
-import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
+import { HALF_SAY_BATTLES, HALF_SAY_DEVICES } from '../rank.js';
 import { SOME, TREND_MIN } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
@@ -139,9 +139,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <section className="card">
         <h2>How to contribute</h2>
         <p className="sub">
-          Log your battles in pick3. Sharing is on by default, so every battle you log shows up
-          here within about ten minutes. To stop, switch off Share your battles in Settings.
-          Switching it off also deletes what your device has already sent.
+          Log your battles in pick3. Sharing is on by default, so every battle you log shows up here
+          within about ten minutes. To stop, switch off Share your battles in Settings. Switching it
+          off also deletes what your device has already sent.
         </p>
         <div style={{ display: 'flex', gap: 8 }}>
           <a className="btn" href={PICK3}>
@@ -172,9 +172,18 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           </span>
         </div>
         <p className="sub">
-          Any battle logger will be able to post records here with an API key, using the same
-          fields listed above and tagged with the source app. That is not built yet, so there is
-          nothing to sign up for.
+          Any battle logger will be able to post records here with an API key, using the same fields
+          listed above and tagged with the source app. That is not built yet, so there is nothing to
+          sign up for.
+        </p>
+        <p className="fine">
+          Reading is already public and needs no key, since this site reads it the same way. The
+          team board behind Teams:
+        </p>
+        <p className="fine">
+          <code>
+            {'GET https://meta.pick3.gg/api/v1/teams?league=great&since=<iso>&until=<iso>&band=ace'}
+          </code>
         </p>
       </section>
 
@@ -187,8 +196,8 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         <h2>How to read the lists</h2>
         <p className="sub">
           Faced is the share of a window&apos;s shared battles where a Pokemon was on the other
-          side. Record is how the reporters who shared those battles did against it, or, when
-          you pick a rank band, how that band&apos;s reporters did. Trend is the change in a
+          side. Record is how the reporters who shared those battles did against it, or, when you
+          pick a rank band, how that band&apos;s reporters did. Trend is the change in a
           Pokemon&apos;s share since the window before this one; it is only shown when there is
           enough data in both windows to trust the difference (the thresholds are below).
         </p>
@@ -197,17 +206,92 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <section className="card">
         <h2>How the lists are built</h2>
         <p className="sub">
-          A league&apos;s ranked list is measured once {count(MEASURED_MIN)} or more counted{' '}
-          {battleWord(MEASURED_MIN)} have been shared, from {count(MEASURED_MIN_DEVICES)} or more{' '}
-          {plural(MEASURED_MIN_DEVICES, 'device', 'devices')}, for the window and rank band you
-          are looking at. Under either floor, the ranked list is PvPoke&apos;s meta group,
-          clearly marked, and everything we have measured is shown under it with its counts.
-          Tanked battles are counted separately and never touch a record. On that list, a record
-          is always the raw win-loss count, never a percentage. On Most run teams, a win rate is
-          always shown, with a confidence tag beside it, and below {count(SOME)} decided{' '}
-          {battleWord(SOME)} the likely range is spelled out too. A trend is only shown when both
-          windows being compared hold at least {count(TREND_MIN)} {battleWord(TREND_MIN)}, and
-          only when the change is bigger than the noise in the numbers.
+          A league&apos;s ranked list is measured once {count(HALF_SAY_BATTLES)} or more counted{' '}
+          {battleWord(HALF_SAY_BATTLES)} have been shared, from {count(HALF_SAY_DEVICES)} or more{' '}
+          {plural(HALF_SAY_DEVICES, 'device', 'devices')}, for the window and rank band you are
+          looking at. Under either floor, the ranked list is PvPoke&apos;s meta group, clearly
+          marked, and everything we have measured is shown under it with its counts. Tanked battles
+          are counted separately and never touch a record. On that list, a record is always the raw
+          win-loss count, never a percentage. On Most run teams, a win rate is always shown, with a
+          confidence tag beside it, and below {count(SOME)} decided {battleWord(SOME)} the likely
+          range is spelled out too. A trend is only shown when both windows being compared hold at
+          least {count(TREND_MIN)} {battleWord(TREND_MIN)}, and only when the change is bigger than
+          the noise in the numbers.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>How the ranking works</h2>
+        <p className="sub">
+          Two sources, one number. PvPoke keeps a curated list of what a league&apos;s meta looks
+          like, hand made by people who play it. We have battles players have shared from pick3.
+          Neither is the answer on its own, so every number here is a blend of the two.
+        </p>
+        <p className="sub">
+          How much the measured side counts depends on two things: how many battles have been
+          shared, and how many different devices shared them. At {count(HALF_SAY_BATTLES)} counted{' '}
+          {battleWord(HALF_SAY_BATTLES)} the measured side has half the say. At{' '}
+          {count(HALF_SAY_DEVICES)} {plural(HALF_SAY_DEVICES, 'device', 'devices')} it also has half
+          the say, and the smaller of the two wins. One person sharing 900 battles is one
+          person&apos;s matchmaking queue, so they are held to a sixth of the say until other people
+          show up.
+        </p>
+        <p className="sub">
+          Nothing flips. There is no point where the list suddenly becomes measured. Every battle
+          shared moves it a little, and the header on each screen says exactly how far along it is
+          right now.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>What &quot;projected&quot; means</h2>
+        <p className="sub">
+          A team nobody has shared yet still gets a number, worked out from PvPoke&apos;s own
+          matchup data: how much of the meta the three of them beat between them, how well those
+          wins hold up when shields change, and whether the switch has any matchups that simply end
+          it.
+        </p>
+        <p className="sub">
+          That is a projection, not a measurement, and this site never prints one as a win rate. A
+          win rate here always means battles that actually happened. A projection always says
+          &quot;projects&quot; and always says it is a projection.
+        </p>
+        <p className="sub">
+          Projections cover the Pokemon PvPoke ranks. Someone you faced who is not on that list is
+          counted in the measured numbers and left out of the projections, and any card that is
+          missing a member says so instead of guessing.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>Teams and cores</h2>
+        <p className="sub">
+          Players log up to three opponents, and most of the time they log one or two. So a pair
+          counts as a core: two Pokemon that were seen together, with whatever came third. A
+          core&apos;s projection is the average over the thirds it was actually seen with, which is
+          why a complete team usually scores above or below its own core rather than the same: we
+          know all three of one and only two of the other.
+        </p>
+        <p className="sub">
+          A team&apos;s record counts both sides. If you ran it, that is your result. If you faced
+          it, that is your result reversed: you winning means the team you faced lost that battle.
+          Each card keeps the two counts apart so you can see which is which.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>When the game changes</h2>
+        <p className="sub">
+          A move rebalance or a season turn can make everything before it stop describing what you
+          face now. When that happens we move the default window forward to the new starting point.
+          Nothing is deleted: the 30 day and 7 day views keep working and still count every battle
+          in them.
+        </p>
+        <p className="sub">
+          The projections come from a pinned copy of PvPoke&apos;s data. If a rebalance has landed
+          and that copy has not caught up yet, the projections describe the old movesets while the
+          measured numbers already describe the new ones. When we know those two disagree, the
+          affected screens say so.
         </p>
       </section>
 

@@ -218,6 +218,7 @@ function renderView(
         detail={detail}
         meta={meta}
         baseline={baseline}
+        ranking={ranking}
         now={now}
         href={href}
       />

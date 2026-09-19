@@ -190,7 +190,7 @@ export function LogBattle() {
           </div>
         ) : null}
         <p className="meta" style={{ margin: 0, textAlign: 'center' }}>
-          Add the opponents you saw. One or two is fine.
+          Add all three opponents when you can. One or two still helps.
         </p>
         <div className="opp-slots">
           {[0, 1, 2].map((i) => {

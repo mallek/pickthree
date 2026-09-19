@@ -49,6 +49,25 @@ describe('New set and Log a battle', () => {
     expect(window.location.hash).toBe('#/meta');
   });
 
+  it('asks for all three opponents, not just the ones you saw', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: [],
+      closed: false,
+    });
+    render(
+      <AppProvider host={fakeHost()}>
+        <LogBattle />
+      </AppProvider>,
+    );
+    expect(
+      await screen.findByText('Add all three opponents when you can. One or two still helps.'),
+    ).toBeInTheDocument();
+  });
+
   it('fills slots from the recent row and saves a win', async () => {
     await storage.saveSet({
       id: 's1',

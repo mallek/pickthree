@@ -15,7 +15,7 @@ import { Bar, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pctFloor, plural } from '../format.js';
 import { countersLink, PICK3 } from '../links.js';
-import { MEASURED_MIN, MEASURED_MIN_DEVICES } from '../rank.js';
+import { HALF_SAY_BATTLES, HALF_SAY_DEVICES, type SpeciesRanking } from '../rank.js';
 import type { Query, View } from '../route.js';
 import {
   marginSentence,
@@ -442,10 +442,14 @@ export function Species(p: {
   detail: Loaded<SpeciesDetailV1>;
   meta: Loaded<MetaSummaryV1>;
   baseline: Loaded<Baseline>;
+  /** The same blended ranking Pokemon and Teams read (App.tsx computes it once). Null while it
+   * is loading or one of its own three sources failed; the header simply omits the blended
+   * standing rather than guessing at a rank it does not have. */
+  ranking: SpeciesRanking | null;
   now: Date;
   href: (view: View) => string;
 }): ReactNode {
-  const { league, speciesId, data, detail, meta, baseline, href } = p;
+  const { league, speciesId, data, detail, meta, baseline, ranking, href } = p;
   const species = speciesOf(data, speciesId);
 
   // The species name itself is App.tsx's sticky header title now, not a heading printed here, so
@@ -477,7 +481,7 @@ export function Species(p: {
 
   const d = detail.data;
   const m = meta.data;
-  const measuredEnough = m.battles >= MEASURED_MIN && m.devices >= MEASURED_MIN_DEVICES;
+  const measuredEnough = m.battles >= HALF_SAY_BATTLES && m.devices >= HALF_SAY_DEVICES;
 
   let headerText: string;
   if (d.sightings === 0) {
@@ -492,11 +496,25 @@ export function Species(p: {
 
   const baselineEntry = baseline.data?.byId.get(speciesId) ?? null;
 
+  // The same blended standing Pokemon's rows show (rank.ts's `rankSpecies`), added here rather
+  // than replacing headerText's own window-scoped line above: that line is about this species in
+  // this window, this one is about where it sits in the league's whole blended list. Shown only
+  // once this window has actually faced it (d.sightings > 0): the row still exists in `ranking`
+  // even at zero sightings (PvPoke's own prior order never goes away), and printing a "what
+  // players face" rank next to "Not faced in this window" would claim a fact this window does not
+  // support.
+  const row =
+    d.sightings > 0 ? (ranking?.rows.find((x) => x.speciesId === speciesId) ?? null) : null;
+  const standingText = row
+    ? `#${row.rank} of what players face - ${row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}`
+    : null;
+
   return (
     <main>
       <section>
         {headerTop}
         <p className="sub">{headerText}</p>
+        {standingText ? <p className="sub">{standingText}</p> : null}
       </section>
       {d.sightings === 0 ? (
         <p className="sub">No shared battles mention it in this window.</p>
