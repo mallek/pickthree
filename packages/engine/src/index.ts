@@ -28,6 +28,7 @@ export * from './search/candidates.js';
 export * from './search/trios.js';
 export * from './search/finalists.js';
 export * from './score/score.js';
+export * from './score/simStrength.js';
 export * from './explain/explain.js';
 export * from './verdicts/worth.js';
 export * from './counters/counters.js';
