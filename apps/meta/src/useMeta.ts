@@ -16,6 +16,13 @@ import { loadBaseline, type Baseline } from './baseline.js';
 import { loadStatic, type StaticData } from './data.js';
 import { loadEpochs, type Epoch } from './epochs.js';
 import type { BandKey } from './route.js';
+import {
+  loadGenerated,
+  loadRanks,
+  loadSlice,
+  type GeneratedFile,
+  type Slice,
+} from './slice.js';
 
 export interface Deps {
   fetcher?: typeof fetch;
@@ -89,6 +96,29 @@ export function useEpochs(deps?: Deps): Loaded<Epoch[]> {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
   return useAsync(() => loadEpochs(fetcher), [fetcher]);
+}
+
+/** The per-league matchup slice, fetched lazily like the baseline. Called unconditionally on
+ * every view, same as `useBaseline`, so hook order stays stable across screens. */
+export function useSlice(league: string, deps?: Deps): Loaded<Slice> {
+  const ctx = useContext(DepsContext);
+  const fetcher = deps?.fetcher ?? ctx.fetcher;
+  return useAsync(() => loadSlice(league, fetcher), [league, fetcher]);
+}
+
+/** The per-league PvPoke rank order the slice's projections are weighed against. */
+export function useRanks(league: string, deps?: Deps): Loaded<string[]> {
+  const ctx = useContext(DepsContext);
+  const fetcher = deps?.fetcher ?? ctx.fetcher;
+  return useAsync(() => loadRanks(league, fetcher), [league, fetcher]);
+}
+
+/** The baked generated teams for a league, recomputed against the blended weights once the
+ * slice is in hand (`buildBoard` does that recompute, not this hook). */
+export function useGenerated(league: string, deps?: Deps): Loaded<GeneratedFile> {
+  const ctx = useContext(DepsContext);
+  const fetcher = deps?.fetcher ?? ctx.fetcher;
+  return useAsync(() => loadGenerated(league, fetcher), [league, fetcher]);
 }
 
 export function useTeams(

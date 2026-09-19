@@ -6,10 +6,12 @@
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.js';
+import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1, type TeamsV1 } from './api.js';
 import type { Baseline } from './baseline.js';
 import { speciesOf, type StaticData } from './data.js';
+import { epochFor, type Epoch } from './epochs.js';
 import { PICK3 } from './links.js';
+import { rankSpecies, type SpeciesRanking } from './rank.js';
 import {
   BANDS,
   DEFAULT_QUERY,
@@ -22,6 +24,7 @@ import {
   type View,
   type WindowKey,
 } from './route.js';
+import { buildBoard, type Board } from './teamRank.js';
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from '@pickthree/ui';
 import { Header, LeagueSwitcher, Select, SitePill, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
@@ -31,9 +34,14 @@ import { Teams } from './screens/Teams.js';
 import {
   DepsContext,
   useBaseline,
+  useEpochs,
+  useGenerated,
   useMetaSummary,
+  useRanks,
+  useSlice,
   useSpeciesDetail,
   useStatic,
+  useTeams,
   type Deps,
   type Loaded,
 } from './useMeta.js';
@@ -176,6 +184,10 @@ function renderView(
   detail: Loaded<SpeciesDetailV1>,
   now: Date,
   href: (v: View) => string,
+  teams: Loaded<TeamsV1>,
+  board: Board | null,
+  ranking: SpeciesRanking | null,
+  epoch: Epoch | null,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} />;
@@ -208,7 +220,17 @@ function renderView(
       />
     );
   }
-  return <Teams league={league} query={query} data={data} meta={meta} now={now} />;
+  return (
+    <Teams
+      league={league}
+      data={data}
+      teams={teams}
+      board={board}
+      ranking={ranking}
+      epoch={epoch}
+      bakedCommit={baseline.data?.pvpokeCommit ?? null}
+    />
+  );
 }
 
 export function App(props?: { deps?: Deps }): ReactNode {
@@ -319,6 +341,36 @@ export function App(props?: { deps?: Deps }): ReactNode {
   // stub, and the real worker, both answer it harmlessly) rather than skipping the hook.
   const speciesId = view.name === 'species' ? view.speciesId : '';
   const detail = useSpeciesDetail(activeLeague, speciesId, w, query.band, deps);
+
+  // Task 12: the team board. `ranking` and `board` are computed once here, not inside Teams
+  // itself, so Teams and Pokemon (Task 13) read the exact same blended weights and never quietly
+  // disagree about them. Every hook below is called unconditionally, same as meta and baseline
+  // above, to keep hook order stable across views even though only the Teams view reads them.
+  const epochs = useEpochs(deps);
+  const teamsData = useTeams(activeLeague, w, query.band, deps);
+  const slice = useSlice(activeLeague, deps);
+  const ranks = useRanks(activeLeague, deps);
+  const generated = useGenerated(activeLeague, deps);
+  const ranking = useMemo(
+    () =>
+      meta.data && baseline.data && ranks.data
+        ? rankSpecies(meta.data, baseline.data, ranks.data)
+        : null,
+    [meta.data, baseline.data, ranks.data],
+  );
+  const board = useMemo(
+    () =>
+      teamsData.data && ranking
+        ? buildBoard({
+            teams: teamsData.data,
+            ranking,
+            generated: generated.data?.teams ?? [],
+            view: slice.data?.view ?? null,
+          })
+        : null,
+    [teamsData.data, ranking, generated.data, slice.data],
+  );
+  const epoch = epochs.data ? epochFor(epochs.data, activeLeague, now) : null;
 
   // A1: pick3's tab roots carry the settings cog in their one header row, not a row of its own,
   // so the appearance toggle now sits in the brand row too (see brandRow below), drawn as pick3's
@@ -446,8 +498,20 @@ export function App(props?: { deps?: Deps }): ReactNode {
             {leagueSwitcher}
           </>
         )}
-        {renderView(view, activeLeague, query, staticData.data, meta, baseline, detail, now, (v) =>
-          hrefFor(v, query),
+        {renderView(
+          view,
+          activeLeague,
+          query,
+          staticData.data,
+          meta,
+          baseline,
+          detail,
+          now,
+          (v) => hrefFor(v, query),
+          teamsData,
+          board,
+          ranking,
+          epoch,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>

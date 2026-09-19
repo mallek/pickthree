@@ -411,10 +411,12 @@ a.rank-row {
 
 /* C1/C2: the team card, ported from pick3's own .team-card/.slots3/.slot/.slot-name/.cost-line/
    .team-details (packages/ui/base.css) so a shared team reads the same shape on both sites.
-   pick3's own card is a div (it only loads local state on tap); this one is a real <a> straight
-   to the pick3 deep link, since tapping it here means leaving the site. The foot affordance
-   stays plain text rather than a second <a>, so a link never nests inside this outer one and
-   there is exactly one focusable element per card. */
+   pick3's own card is a div (it only loads local state on tap); a card with no nested builds is
+   a real <a> straight to the pick3 deep link, since tapping it here means leaving the site, and
+   its foot affordance stays plain text rather than a second <a> so nothing nests inside it. A
+   core card that DOES carry nested builds (Teams.tsx's `Card`) is a plain `<div>` instead, with
+   its own real "Open in pick3" <a> in the foot: an anchor cannot contain another anchor, and the
+   nested build lines below are anchors of their own. */
 .team-card {
   gap: 12px;
 }
@@ -438,6 +440,61 @@ a.rank-row {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+}
+
+/* Task 12: a core's two-member token row, same shape as .slots3 but for two. */
+.slots2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* Task 12: the kind tag ("Core", "Full team", "Projected") on a card or a nested build line.
+   Neutral, unlike ConfidenceTag's tag-few/some/many: this says what a row IS, not how much to
+   trust it. */
+.tag-kind {
+  background: var(--surface2);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Task 12: the "Built as" list nested under a core card, and its compact rows. Each row is its
+   own <a> (see the .team-card comment above), smaller and denser than a top-level card since the
+   core's own sprites and deep link already carry the full-size version of this information. */
+.builds {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.build-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px;
+  border-radius: var(--r-lg);
+  background: var(--surface2);
+  text-decoration: none;
+  color: inherit;
+}
+
+.build-sprites {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+/* Forced onto its own row (a fact sentence and the deep link never fit one line at phone width):
+   flex-basis 100% wraps everything after it, and the link's own margin-left: auto then pushes it
+   to the end of that next row on its own. */
+.build-fact {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.build-line .team-details {
+  margin-left: auto;
 }
 
 /* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small

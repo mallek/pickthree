@@ -155,7 +155,7 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    expect(await screen.findByRole('heading', { name: 'Most run teams' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/ultra');
   });
 
@@ -189,7 +189,7 @@ describe('App, deep links', () => {
     // sub-line) in favour of the switcher and filter chips saying so directly: the "Ultra" and
     // "7 days" checks above and below already cover that, and Teams' own left-aligned heading
     // is what is left to identify the screen itself.
-    expect(await screen.findByRole('heading', { name: 'Most run teams' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Window' })).toHaveValue('7');
     expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
     await waitFor(() => expect(window.location.pathname).toBe('/ultra'));
