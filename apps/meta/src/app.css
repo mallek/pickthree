@@ -189,10 +189,6 @@ section > .stat-n,
   inset: -4px 0;
 }
 
-.league-shield {
-  flex: none;
-}
-
 /* Filters: two native selects side by side, the window and the rank band. A select is the
    one control that holds six options in a row of phone width without wrapping or scrolling, and
    it opens the platform's own picker. Styled on pick3's field: 44px tall, surface, 1px border,

@@ -1,5 +1,6 @@
 import type { CounterEntry, CounterMatchup } from '@pickthree/engine';
 import { useEffect, useState, type ReactNode } from 'react';
+import { Chevron } from '@pickthree/ui';
 import {
   Chip,
   HeadCog,
@@ -77,7 +78,7 @@ export function Counters() {
             style={{ marginBottom: -6 }}
             onClick={() => navigate({ screen: 'meta' })}
           >
-            &lsaquo; Your Meta
+            <Chevron dir="left" /> Your Meta
           </button>
         ) : null}
         <div className="between">

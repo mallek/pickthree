@@ -330,7 +330,7 @@
    side that changed (it is not released yet; pick3's rules are the more reviewed ones). */
 
 /* .btn / .btn-secondary: meta converted to pick3's meaning (a full-width block, not an inline
-   pill needing a modifier). meta's own .btn/.btn-secondary/.btn-primary are gone; its six call
+   pill needing a modifier). meta's own .btn/.btn-secondary/.btn-primary are gone; its five call
    sites now use plain "btn" or "btn btn-secondary" against these rules. */
 .btn {
   min-height: 52px;
