@@ -161,19 +161,51 @@ export function Welcome() {
         </ol>
         <details>
           <summary className="small" style={{ color: 'var(--accent-text)', cursor: 'pointer' }}>
-            How to export from Poke Genie
+            What file does pick3 need?
           </summary>
           <p className="small muted" style={{ marginTop: 8 }}>
-            In Poke Genie open the scan history (the list icon), tap the share or export button,
-            choose CSV, then Save to Files. Come back here and pick that file. On Android with pick3
-            installed you can share the CSV straight to it. Scans made with the IV appraisal screen
-            open carry the IVs pick3 needs; bulk scans without it will be listed as needing a
-            rescan. Poke Genie charges for the export; the other two ways in are free.
+            Any CSV with a name, CP and the three IVs. pick3 reads the columns by what is in them,
+            not by what they are called, so an export from whatever IV checker you use works, and so
+            does a sheet you typed yourself. Save it to Files, come back here and pick it. On
+            Android with pick3 installed you can share the file straight to it.
           </p>
           <p className="small muted">
-            Calcy IV exports and sheets of your own work too. pick3 looks for a name, CP and the
-            three IVs and works out the rest from the values, whatever the columns are called.
+            Scans taken with the IV appraisal screen open carry the IVs pick3 needs. Anything
+            without them comes in listed as needing a rescan. No file at all? Add your Pokémon by
+            hand, or build a team from any Pokémon. Everything in pick3 is free.
           </p>
+          <p className="small muted">
+            Template:{' '}
+            <a href="/pick3-template.csv" download="pick3-template.csv">
+              download a blank CSV
+            </a>
+            . It has the column headers and one example row. Replace the Magikarp with your own
+            Pokémon, one row each. Form and Shadow are optional. Leave Form blank unless it matters,
+            like Alolan or Origin.
+          </p>
+          <details>
+            <summary className="small" style={{ color: 'var(--accent-text)', cursor: 'pointer' }}>
+              Export steps for common IV checkers
+            </summary>
+            <p className="small muted" style={{ marginTop: 8 }}>
+              Most IV checkers can save their scan history as a CSV. Look for export, share, or
+              backup, and choose CSV.
+            </p>
+            <ul className="small muted">
+              <li>
+                Poke Genie: open the scan history (the list icon), tap share or export, choose CSV,
+                then Save to Files.
+              </li>
+              <li>
+                Calcy IV: it can export its scan history to CSV. Look for the export option on the
+                history screen.
+              </li>
+              <li>
+                A sheet of your own: use the template above, or any sheet with the name, the CP and
+                the three IVs in their own columns. The column names do not matter.
+              </li>
+            </ul>
+          </details>
         </details>
         <details onToggle={(e) => setScanOpen(e.currentTarget.open)}>
           <summary className="small" style={{ color: 'var(--accent-text)', cursor: 'pointer' }}>
@@ -185,7 +217,7 @@ export function Welcome() {
         {importError ? <div className="error">{importError}</div> : null}
         {shareMiss ? (
           <div className="error">
-            The share did not include a CSV file. In Poke Genie choose Export to CSV, then share the
+            The share did not include a CSV file. Export your scans to CSV first, then share that
             file to pick3.
           </div>
         ) : null}
@@ -249,7 +281,7 @@ export function Welcome() {
           Upload a CSV
         </button>
         <span className="small muted" style={{ textAlign: 'center' }}>
-          No Poke Genie export? You do not need one.
+          No CSV? You do not need one.
         </span>
         <div className="btn-pair">
           <button

@@ -33,7 +33,7 @@ export function ScanListPanel({ list, ready }: { list: ScanList | null; ready: b
       <p className="small muted" style={{ margin: 0 }}>
         You do not need to scan everything. Paste this into the search box in Pokémon GO. It shows
         only your Pokémon that fit the league and are a top pick, a counter to the current meta, or
-        evolve into one. Open each one with the appraisal screen up and let Poke Genie scan as you
+        evolve into one. Open each one with the appraisal screen up and record the three IVs as you
         swipe.
       </p>
       {list ? (

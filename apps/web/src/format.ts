@@ -141,11 +141,9 @@ export function layoutLine(layout: Layout | undefined): string | null {
     return null;
   }
   const label =
-    layout.format === 'poke-genie'
-      ? 'a Poke Genie export'
-      : layout.format === 'calcy-iv'
-        ? 'a Calcy IV export'
-        : layout.hasHeader
+    layout.format === 'poke-genie' || layout.format === 'calcy-iv'
+      ? 'a scan export'
+      : layout.hasHeader
           ? 'a sheet'
           : 'a sheet with no header row';
   return `Read as ${label}: ${layout.columnCount} columns, ${layout.columns.length} used.`;

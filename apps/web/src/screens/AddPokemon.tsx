@@ -88,7 +88,7 @@ export function AddPokemon() {
     <div className="screen">
       <Header
         title="Add a Pokémon"
-        sub="No Poke Genie export needed. Type in what the game shows you."
+        sub="No file needed. Type in what the game shows you."
         onBack={() => navigate(s.collection ? { screen: 'collection' } : { screen: 'welcome' })}
         backLabel={s.collection ? 'Collection' : 'Start'}
       />

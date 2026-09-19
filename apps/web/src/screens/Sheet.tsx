@@ -331,7 +331,7 @@ export function Sheet() {
               navigate({ screen: 'welcome' });
             }}
           >
-            {s.collection ? 'Import a new Poke Genie export' : 'Import a Poke Genie export'}
+            {s.collection ? 'Import a new CSV' : 'Import a CSV'}
           </button>
           {s.collection ? (
             <button

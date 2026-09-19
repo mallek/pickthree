@@ -593,9 +593,10 @@ export function NoCollection({
         </button>
       </div>
       <div className="choice-card">
-        <b>Import a Poke Genie export</b>
+        <b>Import your collection</b>
         <span className="small muted">
-          If you have the CSV, upload it and every scan comes in at once.
+          A CSV from whatever IV checker you use, or a sheet of your own. Every Pokémon comes in at
+          once.
         </span>
         <button
           type="button"

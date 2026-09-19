@@ -141,7 +141,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     return {
       ...base,
       label: 'Needs rescan',
-      line: `Poke Genie did not read the IVs for this ${name}. Rescan it with the appraisal screen open.`,
+      line: `No IVs came through for this ${name}. Rescan it with the appraisal screen open.`,
     };
   }
   const builds = buildsFor(s, deps.index, { ...deps.buildOptions, minCp: 0 });

@@ -462,7 +462,7 @@ export function Build() {
             ) : null}
             {!s.collection ? (
               <p className="small muted" style={{ margin: 0 }}>
-                No collection imported. Import a Poke Genie export to include your own Pokemon here.
+                No collection imported. Import a CSV to include your own Pokemon here.
               </p>
             ) : null}
             {s.collection && Object.keys(s.verdicts).length === 0 ? (
