@@ -16,13 +16,7 @@ import { loadBaseline, type Baseline } from './baseline.js';
 import { loadStatic, type StaticData } from './data.js';
 import { loadEpochs, type Epoch } from './epochs.js';
 import type { BandKey } from './route.js';
-import {
-  loadGenerated,
-  loadRanks,
-  loadSlice,
-  type GeneratedFile,
-  type Slice,
-} from './slice.js';
+import { loadGenerated, loadRanks, loadSlice, type GeneratedFile, type Slice } from './slice.js';
 
 export interface Deps {
   fetcher?: typeof fetch;
@@ -45,10 +39,7 @@ const LOADING = { state: 'loading', data: null, error: null } as const;
  * with no data and no error, rather than issuing a request nobody asked for or leaving every
  * consumer to special-case a loading state that would never resolve.
  */
-function useAsync<T>(
-  run: (signal: AbortSignal) => Promise<T> | null,
-  keys: unknown[],
-): Loaded<T> {
+function useAsync<T>(run: (signal: AbortSignal) => Promise<T> | null, keys: unknown[]): Loaded<T> {
   const [result, setResult] = useState<Loaded<T>>(LOADING);
   useEffect(() => {
     const controller = new AbortController();

@@ -93,6 +93,22 @@ export interface Board {
    * falls back to the strength baked with it. No row carries an `order`.
    */
   projectionless: boolean;
+  /**
+   * Share of the blended facing weight the matrix's opponent columns account for, 0 to 1. The
+   * same figure `rowFrom` copies onto every row as `weightCovered` (task-12 fix round 1, item 6:
+   * it used to be read back off `board.rows[0]`, a board-wide fact reconstructed from a row that
+   * might not exist). 0 when there is no slice, matching `projectionless`.
+   */
+  weightCovered: number;
+  /**
+   * The matrix's opponent-column count, i.e. how many species the projection is actually weighed
+   * against. `weightCovered`'s numerator and this count come from the same `StrengthContext`, so
+   * a screen's coverage note ("Projections cover the N Pokemon PvPoke lists, which is P% of what
+   * players actually faced") reads both off this one object rather than pairing `weightCovered`
+   * with a count computed some other way, which nothing would keep in step with it. 0 when there
+   * is no slice.
+   */
+  metaGroupSize: number;
 }
 
 interface Projection {
@@ -200,9 +216,7 @@ function rowFrom(src: TeamRowV1, projection: Projection, weightCovered: number):
   const measured = decided > 0 ? wins / decided : null;
   // The row's own decided battles, not the league's: a team reported 5-0 has earned nothing yet.
   const say =
-    measured === null
-      ? 0
-      : blendShare(decided, { minBattles: TEAM_MIN, halfLife: TEAM_HALF_SAY });
+    measured === null ? 0 : blendShare(decided, { minBattles: TEAM_MIN, halfLife: TEAM_HALF_SAY });
   const projected = projection.strength === null ? null : expectedWinRate(projection.strength);
   // `moves` is documented as aligned with `species`, so the two are sorted together. The worker
   // already emits both sorted, which makes this a no-op on real data and a guard on any other
@@ -335,5 +349,10 @@ export function buildBoard(input: {
   }
 
   const rows = [...coreByKey.values(), ...orphans].sort(byScore).slice(0, limit);
-  return { rows, projectionless: ctx === null };
+  return {
+    rows,
+    projectionless: ctx === null,
+    weightCovered: covered,
+    metaGroupSize: ctx ? ctx.view.opponents.length : 0,
+  };
 }

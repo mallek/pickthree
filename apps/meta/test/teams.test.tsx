@@ -82,6 +82,12 @@ const STATIC_DATA: StaticData = {
       ['facedc', 'Faced C'],
       ['outsidera', 'Outsider A'],
       ['outsiderb', 'Outsider B'],
+      // Fix round 1, item 2: `stranger` stays out of CANDIDATES (that is what makes it outside
+      // the slice), but it IS a real, known species: species.json is baked from the whole
+      // pokemon.json, not the ranked slice, so "outside the slice" never means "unknown". Adding
+      // it here is what makes the fixture faithful to production instead of accidentally
+      // rewarding a raw-id fallback.
+      ['stranger', 'Stranger'],
       ['oppa', 'Opp A'],
       ['oppb', 'Opp B'],
       ['oppc', 'Opp C'],
@@ -142,6 +148,14 @@ const OUTSIDER = row(['outsidera', 'outsiderb', 'stranger'], 'team', {
   runLosses: 3,
 });
 
+/** A core with no OBSERVED complete team at all: the only thing that ever nests under it is a
+ * generated one. Fix round 1, item 1's converse case. */
+const GEN_CORE = row(['lonelya', 'facedc'], 'core', {
+  runBattles: 5,
+  runWins: 3,
+  runLosses: 2,
+});
+
 const GENERATED: GeneratedTeamLite[] = [
   {
     species: ['gen_a', 'gen_b', 'gen_c'],
@@ -153,6 +167,29 @@ const GENERATED: GeneratedTeamLite[] = [
     exposure: [],
   },
 ];
+
+/** Nests under GEN_CORE's own pair, the only build it will ever have. */
+const GEN_MATCH_LONELY: GeneratedTeamLite = {
+  species: ['lonelya', 'facedc', 'gen_a'],
+  strength: 85,
+  coverage: 100,
+  consistency: 100,
+  safety: 100,
+  structure: 'ABC',
+  exposure: [],
+};
+
+/** Nests under CORE's own pair ALONGSIDE the real FULL team: this is fix round 1, item 1's exact
+ * reported bug, a generated third sitting next to an observed one under the same core. */
+const GEN_MATCH_CORE: GeneratedTeamLite = {
+  species: ['azumarill', 'clodsire', 'gen_b'],
+  strength: 82,
+  coverage: 100,
+  consistency: 100,
+  safety: 100,
+  structure: 'ABC',
+  exposure: [],
+};
 
 function opponentRow(id: string, i: number, weight: number): SpeciesRow {
   return {
@@ -192,7 +229,12 @@ function makeRanking(battles: number, devices: number, weightCovered = 1): Speci
   };
 }
 
-function makeTeams(battles: number, devices: number, teams: TeamRowV1[], cores: TeamRowV1[]): TeamsV1 {
+function makeTeams(
+  battles: number,
+  devices: number,
+  teams: TeamRowV1[],
+  cores: TeamRowV1[],
+): TeamsV1 {
   return {
     league: 'great',
     since: '2026-09-01T00:00:00.000Z',
@@ -215,15 +257,23 @@ function renderTeams(opts: {
   generated: GeneratedTeamLite[];
   weightCovered?: number;
   mismatch?: boolean;
+  /** Fix round 1, item 3: a failure of any of the four sources the board is built from, not just
+   * the shared teams themselves. */
+  boardError?: boolean;
+  /** Fix round 1, item 4: the slice failing to load (`buildBoard`'s `view: null`), distinct from
+   * `boardError` above; this degrades to `board.projectionless` rather than blanking the screen. */
+  sliceMissing?: boolean;
 }) {
   const teamsData = makeTeams(opts.battles, opts.devices, opts.teams, opts.cores);
   const ranking = makeRanking(opts.battles, opts.devices, opts.weightCovered ?? 1);
-  const board = buildBoard({
-    teams: teamsData,
-    ranking,
-    generated: opts.generated,
-    view: view(),
-  });
+  const board = opts.boardError
+    ? null
+    : buildBoard({
+        teams: teamsData,
+        ranking,
+        generated: opts.generated,
+        view: opts.sliceMissing ? null : view(),
+      });
   const epoch: Epoch | null = opts.mismatch
     ? { at: '2026-01-01T00:00:00Z', note: 'test epoch', pvpokeCommit: OTHER_COMMIT }
     : null;
@@ -231,9 +281,9 @@ function renderTeams(opts: {
     <Teams
       league="great"
       data={STATIC_DATA}
-      teams={{ state: 'ready', data: teamsData, error: null }}
+      boardError={opts.boardError ?? false}
       board={board}
-      ranking={ranking}
+      ranking={opts.boardError ? null : ranking}
       epoch={epoch}
       bakedCommit={BAKED_COMMIT}
     />,
@@ -260,7 +310,9 @@ describe('Teams, cold start', () => {
 describe('Teams, with measured play', () => {
   it('says how measured the board is', () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: GENERATED });
-    expect(screen.getByText(/% measured, from 480 battles shared by 9 devices/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/% measured, from 480 battles shared by 9 devices/),
+    ).toBeInTheDocument();
   });
 
   it('says "1 device" rather than "1 devices"', () => {
@@ -284,10 +336,41 @@ describe('Teams, with measured play', () => {
     expect(screen.getByText(/Never seen complete/)).toBeInTheDocument();
   });
 
-  it('names the members that cost a row its projection', () => {
+  // Fix round 1, item 1: `core.builds` nests generated teams alongside observed ones, so "seen
+  // with" and "never seen complete" must filter to observed builds only, or a core reads as
+  // having been played complete when only a projection ever named that third.
+  it('still says never seen complete when a core only has a generated build under it', () => {
+    renderTeams({
+      battles: 100,
+      devices: 4,
+      cores: [GEN_CORE],
+      teams: [],
+      generated: [GEN_MATCH_LONELY],
+    });
+    // The generated team IS nested and shown (source is honestly labelled 'Projected'), but the
+    // "seen with" sentence must not fire off a build nobody actually played.
+    expect(screen.getByText('Built as')).toBeInTheDocument();
+    expect(screen.getAllByText('Projected').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Never seen complete/)).toBeInTheDocument();
+    expect(screen.queryByText(/Seen with/)).toBeNull();
+  });
+
+  it('never names a generated third in "seen with", even nested alongside a real one', () => {
+    renderTeams({
+      battles: 480,
+      devices: 9,
+      cores: [CORE],
+      teams: [FULL],
+      generated: [GEN_MATCH_CORE],
+    });
+    expect(screen.getByText('Seen with Tinkaton')).toBeInTheDocument();
+    expect(screen.queryByText(/Gen B/)).toBeNull();
+  });
+
+  it('names the members that cost a row its projection, by their plain display name', () => {
     renderTeams({ battles: 100, devices: 4, cores: [], teams: [OUTSIDER], generated: [] });
     expect(
-      screen.getByText("No projection: stranger is outside PvPoke's ranked list."),
+      screen.getByText("No projection: Stranger is outside PvPoke's ranked list."),
     ).toBeInTheDocument();
   });
 
@@ -303,15 +386,71 @@ describe('Teams, with measured play', () => {
     expect(screen.getByText(/which is 60% of what players actually faced/)).toBeInTheDocument();
   });
 
+  // Fix round 1, item 4: `covered = ctx?.weightCovered ?? 0` and `projectionless: ctx === null`
+  // are the same condition, so without this guard the coverage note would fire with "0%" right
+  // above the "Projections are unavailable" note when the slice itself failed.
+  it('does not show the coverage note when the slice itself could not be loaded', () => {
+    renderTeams({
+      battles: 480,
+      devices: 9,
+      cores: [CORE],
+      teams: [],
+      generated: [],
+      sliceMissing: true,
+    });
+    expect(screen.getByText(/Projections are unavailable right now/)).toBeInTheDocument();
+    expect(screen.queryByText(/Pokemon PvPoke lists/)).toBeNull();
+  });
+
   it('warns when the epoch expects a different PvPoke commit', () => {
-    renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [], generated: [], mismatch: true });
+    renderTeams({
+      battles: 480,
+      devices: 9,
+      cores: [CORE],
+      teams: [],
+      generated: [],
+      mismatch: true,
+    });
     expect(screen.getByText(/may still describe the old movesets/)).toBeInTheDocument();
   });
 
-  it('deep links every card into pick3', () => {
+  it('deep links every card into pick3, with no anchor nested inside another', () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
-    for (const link of screen.getAllByRole('link', { name: /Open in pick3/ })) {
+    const links = screen.getAllByRole('link', { name: /Open in pick3/ });
+    // A core with builds and a nested build line are both anchors: two links, one for the core's
+    // own foot and one for FULL's nested line.
+    expect(links.length).toBeGreaterThanOrEqual(2);
+    for (const link of links) {
       expect(link).toHaveAttribute('href', expect.stringContaining('https://pick3.gg/#/t/great/'));
+      // Fix round 1, item 5: this is the one structural rule with an explicit "invalid markup,
+      // screen readers handle it badly" justification, and the rewrite had dropped its test.
+      expect(link.querySelector('a')).toBeNull();
     }
+  });
+
+  // Fix round 1, item 7: `projectionLine` welds the number to its caveat in one function today,
+  // which is a stronger guarantee than a test, but nothing failed if a future change split them
+  // across two elements. This pins the two to one element.
+  it('keeps the projection caveat welded to its own number, in one element', () => {
+    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
+    expect(
+      screen.getByText(/^Projects \d+% \(a projection, not a win rate\)\.$/),
+    ).toBeInTheDocument();
+  });
+
+  // Fix round 1, item 3: a failure of meta, baseline or ranks (not just the shared teams) used to
+  // leave `ranking` null forever with no error surfaced, since only `teams.state` was checked.
+  it('says so when any of its four sources failed to load', () => {
+    renderTeams({
+      battles: 480,
+      devices: 9,
+      cores: [CORE],
+      teams: [],
+      generated: [],
+      boardError: true,
+    });
+    expect(
+      screen.getByText('Could not load the shared teams. Try again in a moment.'),
+    ).toBeInTheDocument();
   });
 });

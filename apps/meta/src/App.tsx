@@ -1,12 +1,13 @@
 /**
  * The shell: current location, theme, static data, and which screen renders. Teams is the
- * league root (Task 11); Pokemon (the former Overview, Task 10) lives at /<league>/pokemon.
- * The Species placeholder is Task 12.
+ * league root (Task 11) and carries the team board (Task 12); Pokemon (the former Overview,
+ * Task 10) lives at /<league>/pokemon, and Species is a real drill-down from it, not a
+ * placeholder.
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1, type TeamsV1 } from './api.js';
+import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.js';
 import type { Baseline } from './baseline.js';
 import { speciesOf, type StaticData } from './data.js';
 import { epochFor, type Epoch } from './epochs.js';
@@ -184,7 +185,7 @@ function renderView(
   detail: Loaded<SpeciesDetailV1>,
   now: Date,
   href: (v: View) => string,
-  teams: Loaded<TeamsV1>,
+  boardError: boolean,
   board: Board | null,
   ranking: SpeciesRanking | null,
   epoch: Epoch | null,
@@ -224,7 +225,7 @@ function renderView(
     <Teams
       league={league}
       data={data}
-      teams={teams}
+      boardError={boardError}
       board={board}
       ranking={ranking}
       epoch={epoch}
@@ -371,6 +372,15 @@ export function App(props?: { deps?: Deps }): ReactNode {
     [teamsData.data, ranking, generated.data, slice.data],
   );
   const epoch = epochs.data ? epochFor(epochs.data, activeLeague, now) : null;
+  // Fix round 1, item 3: `ranking` needs meta, baseline AND ranks; a failure in any of those
+  // three left `ranking` (and so `board`) null forever with no error surfaced, because the only
+  // thing Teams used to check was `teamsData.state`. `slice` is excluded on purpose: a failed
+  // matchup slice degrades to `board.projectionless` rather than blanking the screen.
+  const boardError =
+    teamsData.state === 'error' ||
+    meta.state === 'error' ||
+    baseline.state === 'error' ||
+    ranks.state === 'error';
 
   // A1: pick3's tab roots carry the settings cog in their one header row, not a row of its own,
   // so the appearance toggle now sits in the brand row too (see brandRow below), drawn as pick3's
@@ -402,10 +412,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
   // explicit, exactly as apps/web/src/screens/Welcome.tsx already does for its own hero.
   const brandRow = (
     <header className="brand">
-      <a
-        className="wordmark"
-        {...navProps({ name: 'teams', league: activeLeague }, DEFAULT_QUERY)}
-      >
+      <a className="wordmark" {...navProps({ name: 'teams', league: activeLeague }, DEFAULT_QUERY)}>
         <span>meta.</span>
         <img className="only-dark hero-lockup" src={lockupDark} alt="" aria-hidden="true" />
         <img className="only-light hero-lockup" src={lockupLight} alt="" aria-hidden="true" />
@@ -508,7 +515,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           detail,
           now,
           (v) => hrefFor(v, query),
-          teamsData,
+          boardError,
           board,
           ranking,
           epoch,

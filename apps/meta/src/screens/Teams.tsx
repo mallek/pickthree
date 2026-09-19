@@ -17,7 +17,7 @@
  * Neither is hidden here just because the other exists.
  */
 import type { ReactNode } from 'react';
-import type { MovesetStats, TeamsV1 } from '../api.js';
+import type { MovesetStats } from '../api.js';
 import { Chevron, Note, Sprite } from '../components.js';
 import { speciesOf, type SpeciesLite, type StaticData } from '../data.js';
 import { battles as battlesText, count, plural } from '../format.js';
@@ -26,13 +26,15 @@ import type { Epoch } from '../epochs.js';
 import { commitMismatch } from '../epochs.js';
 import type { SpeciesRanking } from '../rank.js';
 import type { Board, BoardRow } from '../teamRank.js';
-import type { Loaded } from '../useMeta.js';
 import { Contribute } from './Pokemon.js';
 
 /** The members `teamLink` wants: each species id, with its most common moveset when the record
  * has enough battles behind it to name one. A core hands over only its two known members; pick3
  * fills in the third itself. */
-function membersOf(species: readonly string[], moves: readonly (MovesetStats | null)[]): LinkMember[] {
+function membersOf(
+  species: readonly string[],
+  moves: readonly (MovesetStats | null)[],
+): LinkMember[] {
   return species.map((speciesId, i): LinkMember => {
     const mv = moves[i];
     return mv ? { speciesId, moves: { fast: mv.fast, charged: mv.charged } } : { speciesId };
@@ -80,11 +82,12 @@ function joinNames(names: readonly string[]): string {
   return `${rest} and ${last}`;
 }
 
-/** The members that cost a row its projection. Named by their raw id, not a display name: these
- * are exactly the members with no matrix row, so there is nothing to look their display name up
- * against with any more confidence than the id itself carries. */
-function outsideText(ids: readonly string[]): string {
-  return `No projection: ${joinNames([...ids])} ${ids.length === 1 ? 'is' : 'are'} outside PvPoke's ranked list.`;
+/** The members that cost a row its projection, by their plain display name: `outsideSlice` only
+ * means "not in the top-250 matrix slice", never "unknown". `species.json` is baked from the
+ * whole `pokemon.json`, not the ranked slice, so the lookup always resolves. */
+function outsideText(ids: readonly string[], data: StaticData): string {
+  const names = ids.map((id) => speciesOf(data, id).short);
+  return `No projection: ${joinNames(names)} ${names.length === 1 ? 'is' : 'are'} outside PvPoke's ranked list.`;
 }
 
 /** `Projects <P>%`, with the "not a win rate" caveat immediately beside it, in the same line, so
@@ -96,31 +99,43 @@ function projectionLine(projection: number): string {
 
 /** The one fact block every card needs: what it is made of, and how (projected, run, faced, or
  * some mix), in that order, never printing the score that ranked it. */
-function RowFacts({ row }: { row: BoardRow }): ReactNode {
+function RowFacts({ row, data }: { row: BoardRow; data: StaticData }): ReactNode {
   return (
     <>
       {row.source === 'generated' ? (
-        <p className="fine">Projected against PvPoke&apos;s group, not yet seen in shared battles</p>
+        <p className="fine">
+          Projected against PvPoke&apos;s group, not yet seen in shared battles
+        </p>
       ) : (
         <p className="fine">{recordLine(row)}</p>
       )}
       {row.projection !== null ? (
         <p className="fine">{projectionLine(row.projection)}</p>
       ) : row.outsideSlice.length > 0 ? (
-        <p className="fine">{outsideText(row.outsideSlice)}</p>
+        <p className="fine">{outsideText(row.outsideSlice, data)}</p>
       ) : null}
     </>
   );
 }
 
-/** The distinct thirds a core has actually been seen complete with, read off its own `builds`
- * rather than a separate field: the nested list and this sentence must never be able to disagree
- * about what "seen with" means, so there is only one source for it. */
+/** `core.builds` nests generated teams alongside observed ones (a generated team whose pair was
+ * never run still belongs under its core on the board), but "seen with" and "never seen complete"
+ * are claims about OBSERVED play. Reading `core.builds` directly for either would print a
+ * projected third as something this core was actually seen alongside, and the converse: a core
+ * whose only builds are generated would wrongly skip "never seen complete." This is the one
+ * filter both of those sentences share. */
+function observedBuilds(core: BoardRow): BoardRow[] {
+  return core.builds.filter((build) => build.source !== 'generated');
+}
+
+/** The distinct thirds a core has actually been seen complete with, read off its own observed
+ * `builds` rather than a separate field: the nested list and this sentence must never be able to
+ * disagree about what "seen with" means, so there is only one source for it. */
 function thirdsOf(core: BoardRow): string[] {
   const pair = new Set(core.species);
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const build of core.builds) {
+  for (const build of observedBuilds(core)) {
     const third = build.species.find((id) => !pair.has(id));
     if (third !== undefined && !seen.has(third)) {
       seen.add(third);
@@ -131,15 +146,21 @@ function thirdsOf(core: BoardRow): string[] {
 }
 
 function CoreFacts({ core, data }: { core: BoardRow; data: StaticData }): ReactNode {
-  if (core.builds.length === 0) {
+  const observed = observedBuilds(core);
+  if (observed.length > 0) {
+    const names = thirdsOf(core).map((id) => speciesOf(data, id).short);
+    return <p className="fine">{`Seen with ${joinNames(names)}`}</p>;
+  }
+  // The canned sentence below claims a projection exists ("Projected against any third PvPoke
+  // would expect"). When it does not (the pair itself is outside the slice), RowFacts already
+  // says so with its own "No projection: ..." line; printing this one too would have the card
+  // contradict itself in two adjacent lines about whether a projection exists at all.
+  if (core.projection !== null) {
     return (
-      <p className="fine">
-        Never seen complete. Projected against any third PvPoke would expect.
-      </p>
+      <p className="fine">Never seen complete. Projected against any third PvPoke would expect.</p>
     );
   }
-  const names = thirdsOf(core).map((id) => speciesOf(data, id).short);
-  return <p className="fine">{`Seen with ${joinNames(names)}`}</p>;
+  return null;
 }
 
 function SpeciesSlots({ species, twoUp }: { species: SpeciesLite[]; twoUp: boolean }): ReactNode {
@@ -175,7 +196,7 @@ function BuildLine({
     : build.projection !== null
       ? projectionLine(build.projection)
       : build.outsideSlice.length > 0
-        ? outsideText(build.outsideSlice)
+        ? outsideText(build.outsideSlice, data)
         : '';
   return (
     <a className="build-line" href={href}>
@@ -197,7 +218,15 @@ function BuildLine({
  * core WITH complete teams becomes a `<div>` instead of the usual `<a>`, because its nested build
  * lines are their own links and an anchor cannot contain another anchor (screen readers handle it
  * badly, and it is invalid markup regardless). */
-function Card({ row, data, league }: { row: BoardRow; data: StaticData; league: string }): ReactNode {
+function Card({
+  row,
+  data,
+  league,
+}: {
+  row: BoardRow;
+  data: StaticData;
+  league: string;
+}): ReactNode {
   const isCore = row.kind === 'core';
   const species = row.species.map((id) => speciesOf(data, id));
   const href = teamLink(league, membersOf(row.species, row.moves));
@@ -207,7 +236,7 @@ function Card({ row, data, league }: { row: BoardRow; data: StaticData; league: 
     <>
       <SpeciesSlots species={species} twoUp={isCore} />
       <span className="tag tag-kind">{kindTag(row)}</span>
-      <RowFacts row={row} />
+      <RowFacts row={row} data={data} />
       {isCore ? <CoreFacts core={row} data={data} /> : null}
       {hasChildren ? (
         <div className="builds">
@@ -257,15 +286,20 @@ function headerLine(ranking: SpeciesRanking): string {
 export function Teams(p: {
   league: string;
   data: StaticData;
-  teams: Loaded<TeamsV1>;
+  /**
+   * True when any of the four sources the board is built from (the shared teams, the meta
+   * summary, the baseline or the rank order) failed to load. `useSlice` is deliberately not one
+   * of them: it is allowed to degrade to `board.projectionless` rather than blank the screen.
+   */
+  boardError: boolean;
   board: Board | null;
   ranking: SpeciesRanking | null;
   epoch: Epoch | null;
   bakedCommit: string | null;
 }): ReactNode {
-  const { league, data, teams, board, ranking, epoch, bakedCommit } = p;
+  const { league, data, boardError, board, ranking, epoch, bakedCommit } = p;
 
-  if (teams.state === 'error') {
+  if (boardError) {
     return (
       <main>
         <p className="sub">Could not load the shared teams. Try again in a moment.</p>
@@ -283,8 +317,6 @@ export function Teams(p: {
 
   const mismatch = bakedCommit !== null && epoch !== null && commitMismatch(epoch, bakedCommit);
   const bakedShort = bakedCommit !== null ? bakedCommit.slice(0, 7) : null;
-  const weightCovered = board.rows[0]?.weightCovered ?? 1;
-  const inGroup = ranking.rows.filter((r) => r.inMetaGroup).length;
   const empty = board.rows.length === 0;
 
   return (
@@ -292,9 +324,9 @@ export function Teams(p: {
       <section>
         <h2>Teams</h2>
         <p className="sub">{headerLine(ranking)}</p>
-        {!empty && weightCovered < 0.95 ? (
+        {!empty && !board.projectionless && board.weightCovered < 0.95 ? (
           <p className="fine">
-            {`Projections cover the ${count(inGroup)} Pokemon PvPoke lists, which is ${Math.round(weightCovered * 100)}% of what players actually faced.`}
+            {`Projections cover the ${count(board.metaGroupSize)} Pokemon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
           </p>
         ) : null}
         {mismatch && epoch?.pvpokeCommit !== undefined && bakedShort !== null ? (

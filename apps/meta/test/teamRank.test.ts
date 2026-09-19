@@ -176,7 +176,12 @@ describe('buildBoard, observed rows', () => {
 
   it('lets a long record simply win', () => {
     const t = teamRow({ species: ['d', 'e', 'f'], runBattles: 600, runWins: 540, runLosses: 60 });
-    const b = buildBoard({ teams: teams({ teams: [t] }), ranking, generated: GENERATED, view: view() });
+    const b = buildBoard({
+      teams: teams({ teams: [t] }),
+      ranking,
+      generated: GENERATED,
+      view: view(),
+    });
     expect(b.rows[0]?.species.join('+')).toBe('d+e+f');
     expect(b.rows[0]?.say).toBeGreaterThan(0.9);
   });
@@ -220,7 +225,13 @@ describe('buildBoard, observed rows', () => {
       { fast: 'A_FAST', charged: ['A_ONE'], battles: 20 },
       null,
     ];
-    const t = teamRow({ species: ['c', 'a', 'b'], moves, facedBattles: 10, facedWins: 5, facedLosses: 5 });
+    const t = teamRow({
+      species: ['c', 'a', 'b'],
+      moves,
+      facedBattles: 10,
+      facedWins: 5,
+      facedLosses: 5,
+    });
     const b = buildBoard({ teams: teams({ teams: [t] }), ranking, generated: [], view: view() });
     const row = b.rows[0];
     expect(row?.species).toEqual(['a', 'b', 'c']);
@@ -376,7 +387,12 @@ describe('buildBoard, cores', () => {
   it('nests a complete team under every core it was seen with', () => {
     const core1 = teamRow({ species: ['a', 'b'], facedBattles: 10, facedWins: 6, facedLosses: 4 });
     const core2 = teamRow({ species: ['a', 'c'], facedBattles: 10, facedWins: 6, facedLosses: 4 });
-    const team = teamRow({ species: ['a', 'b', 'c'], facedBattles: 10, facedWins: 6, facedLosses: 4 });
+    const team = teamRow({
+      species: ['a', 'b', 'c'],
+      facedBattles: 10,
+      facedWins: 6,
+      facedLosses: 4,
+    });
     const b = buildBoard({
       teams: teams({ cores: [core1, core2], teams: [team] }),
       ranking,
@@ -487,8 +503,19 @@ describe('buildBoard, outside the slice', () => {
         ['outsider', 0.5],
       ]),
     };
-    const b = buildBoard({ teams: teams(), ranking: withOutsider, generated: GENERATED, view: view() });
+    const b = buildBoard({
+      teams: teams(),
+      ranking: withOutsider,
+      generated: GENERATED,
+      view: view(),
+    });
     expect(b.rows[0]?.weightCovered).toBeCloseTo(0.5, 10);
+    // Task 12 fix round 1, item 6: the same figure is a board-wide fact too, not just something
+    // reconstructed by reading it off a row that might not exist. `metaGroupSize` comes from the
+    // same StrengthContext as `weightCovered`, so a screen reading both off `Board` cannot let
+    // them drift out of step the way reading one off a row and the other off `ranking.rows` did.
+    expect(b.weightCovered).toBeCloseTo(0.5, 10);
+    expect(b.metaGroupSize).toBe(3);
   });
 
   it('ranks every row on its record when the slice is missing entirely', () => {
@@ -504,6 +531,11 @@ describe('buildBoard, outside the slice', () => {
     expect(b.rows.map((r) => r.species.join('+'))).toEqual(['d+e+f', 'a+b+c']);
     expect(b.rows.every((r) => r.projection === null)).toBe(true);
     expect(b.rows[0]?.score).toBe(0.8);
+    // No slice, nothing to cover: both board-wide facts read as "none", matching `projectionless`
+    // rather than a stale or defaulted-to-full figure a screen might otherwise show as if the
+    // meta group had been fully accounted for.
+    expect(b.weightCovered).toBe(0);
+    expect(b.metaGroupSize).toBe(0);
   });
 });
 
@@ -522,10 +554,20 @@ describe('buildBoard, the shape of the board', () => {
     expect(b.rows).toHaveLength(3);
   });
 
-  it('sorts a core\'s builds best first', () => {
+  it("sorts a core's builds best first", () => {
     const core = teamRow({ species: ['a', 'b'], facedBattles: 10, facedWins: 5, facedLosses: 5 });
-    const weak = teamRow({ species: ['a', 'b', 'd'], facedBattles: 60, facedWins: 6, facedLosses: 54 });
-    const strong = teamRow({ species: ['a', 'b', 'c'], facedBattles: 60, facedWins: 54, facedLosses: 6 });
+    const weak = teamRow({
+      species: ['a', 'b', 'd'],
+      facedBattles: 60,
+      facedWins: 6,
+      facedLosses: 54,
+    });
+    const strong = teamRow({
+      species: ['a', 'b', 'c'],
+      facedBattles: 60,
+      facedWins: 54,
+      facedLosses: 6,
+    });
     const b = buildBoard({
       teams: teams({ cores: [core], teams: [weak, strong] }),
       ranking,
