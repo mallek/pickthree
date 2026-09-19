@@ -10,7 +10,7 @@
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
-import { Chevron, SpeciesToken, type ThemeChoice } from '@pickthree/ui';
+import { Chevron, HeaderShell, SpeciesToken, type ThemeChoice } from '@pickthree/ui';
 import type { CSSProperties, ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
@@ -305,20 +305,18 @@ export function Header({
   action?: ReactNode;
 }) {
   return (
-    <header className="hdr">
-      {backHref ? (
-        <a className="back" href={backHref}>
-          <Chevron dir="left" /> {backLabel ?? 'Back'}
-        </a>
-      ) : (
-        <span className="back-spacer" />
-      )}
-      <span className="hdr-title">
-        <span>{title}</span>
-        {sub ? <span className="hdr-sub">{sub}</span> : null}
-      </span>
-      {action ? <span className="hdr-actions">{action}</span> : <span className="back-spacer" />}
-    </header>
+    <HeaderShell
+      back={
+        backHref ? (
+          <a className="back" href={backHref}>
+            <Chevron dir="left" /> {backLabel ?? 'Back'}
+          </a>
+        ) : undefined
+      }
+      title={title}
+      sub={sub}
+      actions={action}
+    />
   );
 }
 

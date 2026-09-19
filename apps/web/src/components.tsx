@@ -15,7 +15,7 @@ import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { yourMetaFrom } from './state/yourMeta.ts';
-import { SpeciesToken, TypeChip } from '@pickthree/ui';
+import { Chevron, HeaderShell, SpeciesToken, TypeChip } from '@pickthree/ui';
 
 export { Chip, Seg, Term, TypeChip } from '@pickthree/ui';
 
@@ -542,28 +542,26 @@ export function Header({
   action?: ReactNode;
 }) {
   return (
-    <header className="hdr">
-      {onBack ? (
-        <button type="button" className="back" onClick={onBack}>
-          &lsaquo; {backLabel ?? 'Back'}
-        </button>
-      ) : (
-        <span className="back-spacer" />
-      )}
-      <span className="hdr-title">
-        <span>{title}</span>
-        {sub ? <span className="hdr-sub">{sub}</span> : null}
-      </span>
-      {action || cog ? (
-        <span className="hdr-actions">
-          {action}
-          {cog ? <HeadCog /> : null}
-        </span>
-      ) : (
-        <span className="back-spacer" />
-      )}
-      {extra ? <div className="hdr-extra">{extra}</div> : null}
-    </header>
+    <HeaderShell
+      back={
+        onBack ? (
+          <button type="button" className="back" onClick={onBack}>
+            <Chevron dir="left" /> {backLabel ?? 'Back'}
+          </button>
+        ) : undefined
+      }
+      title={title}
+      sub={sub}
+      actions={
+        action || cog ? (
+          <>
+            {action}
+            {cog ? <HeadCog /> : null}
+          </>
+        ) : undefined
+      }
+      extra={extra}
+    />
   );
 }
 
