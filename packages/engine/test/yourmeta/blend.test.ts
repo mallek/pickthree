@@ -74,6 +74,12 @@ describe('blendShare with an explicit share', () => {
     expect(blendShare(100, { ...DEFAULT_BLEND_OPTIONS, share: 2 })).toBe(1);
   });
 
+  it('treats an explicit zero as a real share, not as absent', () => {
+    // share: 0 means measured play has earned no say. A truthiness check would discard it
+    // and fall through to the curve, which at 600 battles would wrongly return 20/21.
+    expect(blendShare(600, { minBattles: 0, halfLife: 30, share: 0 })).toBe(0);
+  });
+
   it('is unchanged when no share is given', () => {
     expect(blendShare(0)).toBe(0);
     expect(blendShare(14)).toBe(0);
