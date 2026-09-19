@@ -13,6 +13,9 @@ export default tseslint.config(
       'packages/sim-pvpoke/src/exports-tail.js',
       'packages/data/.pvpoke/**',
       'apps/web/public/data/**',
+      // wrangler dev drops a generated bundle here; it is gitignored but eslint's ignores are
+      // separate from .gitignore, so without this `npm run lint` breaks after any local run.
+      'workers/counter/.wrangler/**',
       'docs/design/**',
     ],
   },
