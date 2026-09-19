@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { THEME_KEY } from '@pickthree/ui';
 import { App } from '../src/App.js';
+import { resetEpochs } from '../src/epochs.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -13,6 +14,10 @@ beforeEach(() => {
   // jsdom keeps localStorage across cases in this file; the theme test would otherwise leak
   // its stored choice into whichever case runs after it.
   localStorage.clear();
+  // epochs.ts memoises the fetched list at module scope (one real fetch per page load in
+  // production); without resetting it here, whichever test in this file renders <App> first
+  // permanently caches its stub's epochs for every test that runs after it in this file.
+  resetEpochs();
 });
 
 describe('App', () => {
@@ -223,6 +228,35 @@ describe('App, deep links', () => {
 // dropped this along with the rest of the old file's App-level coverage; re-added here so a
 // regression in that short-circuit costs three list views (Teams, Pokemon, About) an extra round
 // trip and a test catches it rather than a review comment.
+describe('App, epochs', () => {
+  // Fix 2: the epoch list App.tsx passed to resolveWindow was hard-coded to [], so a "This meta"
+  // window (the default, DEFAULT_QUERY.w = 'meta') always fell back to the season start no matter
+  // what epochs.json said. The stub's default epoch (EPOCHS_FILE) sits exactly on the season
+  // start, which is why that coincidence let the bug through undetected: since = season start
+  // either way. This epoch starts a week AFTER the season start (2026-09-08T20:00:00.000Z), so it
+  // only moves `since` if the epoch is actually wired through. If App.tsx's `epochs: []` regresses,
+  // this test fails: `since` would come back as the season start instead.
+  it('moves the default window since to an epoch that starts after the season', async () => {
+    const laterEpoch = { at: '2026-09-15T00:00:00.000Z', note: 'mid-season rebalance' };
+    const fetcher = vi.fn(stubFetch({ epochs: [laterEpoch] }));
+    window.history.replaceState(null, '', '/great');
+    render(<App deps={{ fetcher, now }} />);
+    await screen.findByRole('heading', { name: 'Teams' });
+    await waitFor(() => {
+      // The window recomputes as static data and the epoch list each arrive, refetching each
+      // time (useMetaSummary's effect keys include w.since), so the LAST call is the one that
+      // matters: an earlier render's fallback (before either has loaded) is expected and ignored.
+      const metaCalls = fetcher.mock.calls.filter((call) =>
+        String(call[0]).startsWith('/api/v1/meta'),
+      );
+      expect(metaCalls.length).toBeGreaterThan(0);
+      const lastCall = metaCalls[metaCalls.length - 1];
+      const since = new URL(String(lastCall?.[0]), 'http://localhost').searchParams.get('since');
+      expect(since).toBe('2026-09-15T00:00:00.000Z');
+    });
+  });
+});
+
 describe('App, request cost', () => {
   it('never asks for a species detail on the Pokemon list', async () => {
     const fetcher = vi.fn(stubFetch({}));

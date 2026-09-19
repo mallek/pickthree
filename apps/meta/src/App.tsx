@@ -335,9 +335,17 @@ export function App(props?: { deps?: Deps }): ReactNode {
 
   const seasons = staticData.data?.seasons ?? [];
   const now = deps?.now?.() ?? new Date();
-  // Epochs land properly in Task 11; an empty list here just means every "meta" window falls
-  // back to the season start, which is exactly what it already did before this task.
-  const w = resolveWindow(query.w, { league: activeLeague, seasons, epochs: [] }, now);
+  // Called before resolveWindow (not down with the other Task 12 hooks below) because the default
+  // "This meta" window needs the epoch list to compute `since`: an empty list here silently drops
+  // every epoch and every "meta" window falls back to the season start regardless of what
+  // epochs.json says, which is the bug fix round 2 reported. Still unconditional, same as every
+  // other hook in this function, to keep hook order stable across views.
+  const epochsData = useEpochs(deps);
+  const w = resolveWindow(
+    query.w,
+    { league: activeLeague, seasons, epochs: epochsData.data ?? [] },
+    now,
+  );
   const meta = useMetaSummary(activeLeague, w, query.band, deps);
   const baseline = useBaseline(activeLeague, deps);
   // Called unconditionally, same as meta and baseline above, to keep hook order stable across
@@ -350,7 +358,6 @@ export function App(props?: { deps?: Deps }): ReactNode {
   // itself, so Teams and Pokemon (Task 13) read the exact same blended weights and never quietly
   // disagree about them. Every hook below is called unconditionally, same as meta and baseline
   // above, to keep hook order stable across views even though only the Teams view reads them.
-  const epochs = useEpochs(deps);
   const teamsData = useTeams(activeLeague, w, query.band, deps);
   const slice = useSlice(activeLeague, deps);
   const ranks = useRanks(activeLeague, deps);
@@ -374,7 +381,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
         : null,
     [teamsData.data, ranking, generated.data, slice.data],
   );
-  const epoch = epochs.data ? epochFor(epochs.data, activeLeague, now) : null;
+  const epoch = epochsData.data ? epochFor(epochsData.data, activeLeague, now) : null;
   // Fix round 1, item 3: `ranking` needs meta, baseline AND ranks; a failure in any of those
   // three left `ranking` (and so `board`) null forever with no error surfaced, because the only
   // thing Teams used to check was `teamsData.state`. `slice` is excluded on purpose: a failed

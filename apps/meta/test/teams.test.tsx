@@ -142,6 +142,31 @@ const FACED = row(['faceda', 'facedb', 'facedc'], 'team', {
   facedLosses: 10,
 });
 
+// Fix 1 (win/loss inversion): the worker (workers/counter/src/teams.ts) increments a faced row's
+// `facedWins` on the REPORTER's loss and `facedLosses` on the REPORTER's win, because a reporter's
+// loss is the team they faced winning that battle. So `facedWins` is the number of battles the
+// faced team won, and `facedLosses` is the number it lost. The players' own record is the inverse:
+// their wins are `facedLosses` (12) and their losses are `facedWins` (25). This fixture uses the
+// spec's own worked example ("faced 37 times, players went 12-25") so the expected string in the
+// test below is traceable to the spec, not just derived from the fix.
+const FACED_SPEC_EXAMPLE = row(['faceda', 'facedb', 'facedc'], 'team', {
+  facedBattles: 37,
+  facedWins: 25,
+  facedLosses: 12,
+});
+
+// Run and faced counts sum to the TEAM's total record: runWins is the team winning as the
+// reporter's own pick, facedWins is the team winning as the reporter's opponent, so both add to
+// the team's wins (12 + 25 = 37 here), and the sentence names the team, not the players.
+const COMBINED = row(['faceda', 'facedb', 'facedc'], 'team', {
+  runBattles: 10,
+  runWins: 7,
+  runLosses: 3,
+  facedBattles: 37,
+  facedWins: 25,
+  facedLosses: 12,
+});
+
 const OUTSIDER = row(['outsidera', 'outsiderb', 'stranger'], 'team', {
   runBattles: 6,
   runWins: 3,
@@ -320,9 +345,35 @@ describe('Teams, with measured play', () => {
     expect(screen.getByText(/shared by 1 device$/)).toBeInTheDocument();
   });
 
-  it("prints a faced record as the faced team's own, not the reporters'", () => {
+  it("prints the players own record for a faced-only row, not the faced team's", () => {
     renderTeams({ battles: 100, devices: 4, cores: [], teams: [FACED], generated: [] });
-    expect(screen.getByText('Faced 40 times, players went 30-10')).toBeInTheDocument();
+    // facedWins (30) counts battles the faced team WON (the reporters lost); facedLosses (10)
+    // counts battles the faced team LOST (the reporters won). "players went" must read the
+    // players' own wins-losses, so 10-30, never the raw field order 30-10.
+    expect(screen.getByText('Faced 40 times, players went 10-30')).toBeInTheDocument();
+  });
+
+  // Fix 1: this is the test that would have caught the inversion. Using the spec's own worked
+  // example (37 faced battles, facedWins 25, facedLosses 12) means the expected string below,
+  // "players went 12-25", is checked against the spec text itself rather than re-derived from the
+  // (possibly still-wrong) implementation.
+  it('matches the spec worked example: faced 37 times, players went 12-25', () => {
+    renderTeams({
+      battles: 100,
+      devices: 4,
+      cores: [],
+      teams: [FACED_SPEC_EXAMPLE],
+      generated: [],
+    });
+    expect(screen.getByText('Faced 37 times, players went 12-25')).toBeInTheDocument();
+  });
+
+  it('names the team, not the players, for a run-and-faced row', () => {
+    renderTeams({ battles: 100, devices: 4, cores: [], teams: [COMBINED], generated: [] });
+    // wins = runWins (7) + facedWins (25) = 32, the team's own wins across both roles.
+    expect(
+      screen.getByText('Run 10 times and faced 37 times, the team went 32-15 overall'),
+    ).toBeInTheDocument();
   });
 
   it('nests complete teams under their core', () => {

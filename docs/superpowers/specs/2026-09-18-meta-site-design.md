@@ -56,28 +56,10 @@ and rank band (`?band=all|below|ace|veteran|expert|legend`). League is in the pa
 
 ## The two sources, and the rule that keeps them apart
 
-**Measured** is our own data: battles shared from pick3, aggregated by the worker.
-
-**Baseline** is PvPoke's curated meta group and overall rankings for the league, baked into the site
-at build time from the same static JSON pick3 already publishes, stamped with the pinned PvPoke
-commit and date.
-
-The rule, in one sentence: the baseline is always labelled as PvPoke's list and never described with
-a measured word, and the measured numbers are always on screen with their counts, however small.
-
-Concretely, for a given league, window and band:
-
-- **Counted battles >= 300.** The ranked list is measured. Its header says "measured from N battles
-  shared by D devices". PvPoke's list is still reachable, as a labelled section under it, because it
-  is what pick3 itself plans against.
-- **Counted battles < 300.** The ranked list is PvPoke's meta group, ordered by PvPoke's overall
-  score, under a banner that says in plain words that it is PvPoke's list and not measured play.
-  Directly below it, every species we actually saw, with plain counts rather than percentages, a
-  "faced 2 or more times" cut, a line for the long tail ("14 more were faced once each"), and a card
-  inviting the reader to log battles in pick3.
-
-Never the reverse: the measured block is not suppressed for being small, and the baseline block never
-borrows the word "faced", "record" or "win rate".
+Superseded by `docs/superpowers/specs/2026-09-18-meta-ranking-design.md`. The two sources no
+longer flip at a threshold; they blend continuously, and the numbers this section gated on are
+the half-say points of that blend. The rule that survives: PvPoke's list is never described with
+a measured word, and measured numbers are never hidden for being small.
 
 ## Honesty rules
 

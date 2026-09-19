@@ -1,15 +1,24 @@
 /* global document, window */
 /**
  * Drives the built meta site in the locally installed Chrome and screenshots every screen at
- * phone size, the first time any of this has run outside jsdom. Modeled on
- * apps/web/scripts/screens.mjs: same puppeteer-core setup, same CHROME_PATH handling, same
- * console-error collection and failure behaviour.
+ * phone size. Modeled on apps/web/scripts/screens.mjs: same puppeteer-core setup, same
+ * CHROME_PATH handling, same console-error collection and failure behaviour.
  *
  * There is no worker behind `npx vite preview` for apps/meta, so this script intercepts
- * /api/v1/* itself and answers from a fixture, rather than depending on live data (or polluting
- * it). It runs the whole page list twice: once against an empty summary (the day-one state every
- * league actually ships in), once against a populated one, so both the below-threshold banner and
- * the measured list get a real render.
+ * /api/v1/meta, /api/v1/teams, /api/v1/species/<id> and /epochs.json itself and answers from a
+ * fixture, rather than depending on live data (or polluting it). The three baked matrix/rank
+ * files (/matrix/<league>.json, /ranks/<league>.json, /baseline/<league>-teams.json) are real
+ * output of `npm -w @pickthree/meta run build`'s bake step: this script reads them straight off
+ * disk (apps/meta/public/) rather than inventing them, both to build believable fixtures (real
+ * species ids, so sprites resolve) and to serve them back to the page explicitly rather than
+ * relying on the preview server's static passthrough for a path this script otherwise controls.
+ *
+ * It runs the whole page list four times, at the volumes docs/superpowers/specs/2026-09-18-
+ * meta-ranking-design.md names for the blend's two half-say points (300 counted battles, 5
+ * devices): empty (day one, nothing shared), thin (one device, a sixth of the device say), mid
+ * (the battle half-say point almost exactly), and thick (comfortably past both). Task 15's report
+ * looks at all sixteen screenshots by hand; this script's own job is only to fail on a console
+ * error or a needle that stops appearing, not to judge whether the blend "looks right".
  *
  * Sprites load from https://pick3.gg/data/sprites/*.webp, a real remote origin this script does
  * not control. In CI that fetch may be slow or blocked, and that is not a bug in this site: the
@@ -28,6 +37,7 @@ import puppeteer from 'puppeteer-core';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '..', 'screenshots');
+const publicDir = path.resolve(here, '..', 'public');
 const base = process.argv[2] ?? 'http://localhost:4174';
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 
@@ -53,25 +63,167 @@ function isSpriteUrl(url) {
 
 const ISO_NOW = '2026-09-18T12:00:00.000Z';
 const ISO_SINCE_SEASON = '2026-09-08T20:00:00.000Z';
+const LEAGUE = 'great';
 
-const EMPTY_META = {
-  league: 'great',
-  since: ISO_SINCE_SEASON,
-  until: ISO_NOW,
-  band: 'all',
-  battles: 0,
-  tanked: 0,
-  devices: 0,
-  bands: {},
-  species: [],
-  teams: [],
-  previous: null,
-  generatedAt: '2026-09-18T11:50:00.000Z',
-};
+function readPublicJson(relPath) {
+  return JSON.parse(fs.readFileSync(path.join(publicDir, relPath), 'utf8'));
+}
+
+// The real baked baseline (npm -w @pickthree/meta run build must have already run), so the
+// fixtures below use species ids that actually have a matrix row and a real sprite, rather than
+// invented ids the app would have to render as "outside the slice" or a broken image.
+const BASELINE = readPublicJson(path.join('baseline', `${LEAGUE}.json`));
+const CURATED_IDS = (() => {
+  const seen = new Set();
+  const ids = [];
+  for (const s of BASELINE.species) {
+    if (!seen.has(s.speciesId)) {
+      seen.add(s.speciesId);
+      ids.push(s.speciesId);
+    }
+    if (ids.length >= 6) {
+      break;
+    }
+  }
+  return ids;
+})();
+// The species drill-down target: the curated group's own top pick, guaranteed a matrix row, a
+// real sprite, and (once battles > 0) a nonzero record from the species stats built below.
+const DETAIL_SPECIES = CURATED_IDS[0];
+
+const SHARE_CURVE = [0.3, 0.22, 0.16, 0.12, 0.1, 0.08];
+
+function splitDecided(n, winShare) {
+  const wins = Math.round(n * winShare);
+  return [wins, n - wins];
+}
+
+function speciesStats(speciesId, share, battles) {
+  const sightings = Math.round(battles * share);
+  const [wins, losses] = splitDecided(sightings, 0.55);
+  const runs = Math.round(sightings * 0.4);
+  const [runWins, runLosses] = splitDecided(runs, 0.5);
+  return { speciesId, sightings, wins, losses, runs, runWins, runLosses };
+}
+
+/** The measured summary at one seeded volume: battles and devices are the two numbers that drive
+ * `measuredSay` (rank.ts), so they are the whole point of each run, not filler. Species stats are
+ * distributed over the curated group's own top six by a fixed share curve, so the copy has real
+ * numbers to print (a bar, a share, a record) without claiming anything about a species the
+ * curated group does not already know about. */
+function metaFixture(battles, devices) {
+  const species =
+    battles === 0 ? [] : CURATED_IDS.map((id, i) => speciesStats(id, SHARE_CURVE[i] ?? 0, battles));
+  return {
+    league: LEAGUE,
+    since: ISO_SINCE_SEASON,
+    until: ISO_NOW,
+    band: 'all',
+    battles,
+    tanked: Math.round(battles * 0.03),
+    devices,
+    bands:
+      battles === 0
+        ? {}
+        : {
+            below: Math.round(battles * 0.2),
+            ace: Math.round(battles * 0.3),
+            veteran: Math.round(battles * 0.25),
+            expert: Math.round(battles * 0.15),
+            legend: Math.round(battles * 0.1),
+          },
+    sources: battles === 0 ? {} : { ladder: battles },
+    species,
+    teams: [],
+    previous: null,
+    generatedAt: ISO_NOW,
+  };
+}
+
+function teamRow(species, kind, run, faced, winShare = 0.58) {
+  const [runWins, runLosses] = splitDecided(run, winShare);
+  const [facedWins, facedLosses] = splitDecided(faced, winShare);
+  return {
+    species,
+    kind,
+    runBattles: run,
+    runWins,
+    runLosses,
+    facedBattles: faced,
+    facedWins,
+    facedLosses,
+    moves: species.map(() => null),
+    thirds: [],
+  };
+}
+
+/**
+ * The shared team board at the same seeded volume. `core` shares its pair with `teamA`, so
+ * buildBoard (teamRank.ts) nests teamA under it ("Built as" / "Seen with"); `teamB` shares no pair
+ * with any core here, so it stands alone as an orphaned "Full team" card. Every count scales with
+ * `battles`, so `decided` (runBattles + facedBattles) crosses teamRank.ts's TEAM_MIN (15) only at
+ * the larger volumes: at 0 battles nothing is shared; at 50 every row is still under 15 decided,
+ * so `a` floors to 0 and the board is projection-only.
+ *
+ * `core` and `teamA` are also given a real record (0.80 win share) well above their own baked
+ * projection (high 50s to low 60s here, PvPoke's matchup data for this pair), the "climb the
+ * board as their record lands" case the spec's cold-start section describes: at `mid` their score
+ * is already competitive with the generated board's top projections, and by `thick` (a > 0.9) it
+ * should clear them, so the observed rows actually lead. `teamB` keeps a middling, unexceptional
+ * record (the default win share) throughout, as the plainer contrast case.
+ */
+function teamsFixture(battles, devices) {
+  if (battles === 0) {
+    return {
+      league: LEAGUE,
+      since: ISO_SINCE_SEASON,
+      until: ISO_NOW,
+      band: 'all',
+      battles: 0,
+      devices: 0,
+      sources: {},
+      teams: [],
+      cores: [],
+      generatedAt: ISO_NOW,
+    };
+  }
+  const [a, b, c, d, e, f] = CURATED_IDS;
+  const OVERPERFORM = 0.8;
+  const core = teamRow(
+    [a, b].sort(),
+    'core',
+    Math.round(battles * 0.08),
+    Math.round(battles * 0.04),
+    OVERPERFORM,
+  );
+  // Shares the core's own pair [a, b], so buildBoard nests it as the core's "Full team".
+  const teamA = teamRow(
+    [a, b, c].sort(),
+    'team',
+    Math.round(battles * 0.06),
+    Math.round(battles * 0.03),
+    OVERPERFORM,
+  );
+  // Shares no pair with `core`, so it stands alone on the board as an orphaned "Full team" card,
+  // run-only (never faced), the third recordLine branch (Teams.tsx's "reporters went").
+  const teamB = teamRow([d, e, f].sort(), 'team', Math.round(battles * 0.016), 0);
+  return {
+    league: LEAGUE,
+    since: ISO_SINCE_SEASON,
+    until: ISO_NOW,
+    band: 'all',
+    battles,
+    devices,
+    sources: { ladder: battles },
+    teams: [teamA, teamB],
+    cores: [core],
+    generatedAt: ISO_NOW,
+  };
+}
 
 const EMPTY_SPECIES_DETAIL = {
-  league: 'great',
-  speciesId: 'azumarill',
+  league: LEAGUE,
+  speciesId: DETAIL_SPECIES,
   since: ISO_SINCE_SEASON,
   until: ISO_NOW,
   band: 'all',
@@ -85,150 +237,162 @@ const EMPTY_SPECIES_DETAIL = {
   bands: [],
   alongside: [],
   movesets: [],
-  generatedAt: '2026-09-18T11:50:00.000Z',
+  generatedAt: ISO_NOW,
 };
 
-// Real, baked species ids (apps/meta/public/species.json), so sprites resolve to a real path on
-// pick3.gg rather than a 404 the app has to paper over on top of the one it is already tolerating.
-function sp(speciesId, sightings, wins, losses) {
-  return { speciesId, sightings, wins, losses, runs: 0, runWins: 0, runLosses: 0 };
+function speciesDetailFixture(battles) {
+  if (battles === 0) {
+    return EMPTY_SPECIES_DETAIL;
+  }
+  const s = speciesStats(DETAIL_SPECIES, SHARE_CURVE[0] ?? 0, battles);
+  return {
+    league: LEAGUE,
+    speciesId: DETAIL_SPECIES,
+    since: ISO_SINCE_SEASON,
+    until: ISO_NOW,
+    band: 'all',
+    sightings: s.sightings,
+    wins: s.wins,
+    losses: s.losses,
+    runs: s.runs,
+    runWins: s.runWins,
+    runLosses: s.runLosses,
+    weekly: [{ week: '2026-W37', battles, sightings: s.sightings }],
+    bands: [{ band: 'ace', sightings: s.sightings, wins: s.wins, losses: s.losses }],
+    alongside: [],
+    movesets: [],
+    generatedAt: ISO_NOW,
+  };
 }
 
-const FULL_META = {
-  league: 'great',
-  since: ISO_SINCE_SEASON,
-  until: ISO_NOW,
-  band: 'all',
-  battles: 1000,
-  tanked: 15,
-  devices: 42,
-  bands: { below: 200, ace: 300, veteran: 250, expert: 150, legend: 100 },
-  species: [
-    sp('azumarill', 260, 140, 100),
-    sp('tinkaton', 210, 90, 100),
-    sp('clodsire', 150, 60, 70),
-    sp('medicham', 95, 40, 45),
-    sp('lanturn', 60, 25, 20),
-    sp('registeel', 30, 10, 15),
-  ],
-  teams: [
-    {
-      species: ['azumarill', 'tinkaton', 'clodsire'],
-      battles: 120,
-      wins: 70,
-      losses: 50,
-      moves: [
-        { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], battles: 100 },
-        { fast: 'FAIRY_WIND', charged: ['GIGATON_HAMMER'], battles: 90 },
-        null,
-      ],
-    },
-    {
-      species: ['medicham', 'lanturn', 'registeel'],
-      battles: 45,
-      wins: 20,
-      losses: 25,
-      moves: [null, null, null],
-    },
-    {
-      species: ['azumarill', 'medicham', 'registeel'],
-      battles: 10,
-      wins: 6,
-      losses: 4,
-      moves: [null, null, null],
-    },
-  ],
-  previous: {
-    battles: 950,
-    species: [
-      { speciesId: 'azumarill', sightings: 230 },
-      { speciesId: 'tinkaton', sightings: 200 },
-    ],
-  },
-  generatedAt: ISO_NOW,
-};
+/** Whole-percent measured, exactly as `measuredSay` (rank.ts) computes it: min(battles curve,
+ * devices curve). Kept here as one function, not typed four times, so a fixture's own expected
+ * copy string cannot silently drift from the formula that actually renders it. */
+function pctMeasured(battles, devices) {
+  const byBattles = battles <= 0 ? 0 : battles / (battles + 300);
+  const byDevices = devices <= 0 ? 0 : devices / (devices + 5);
+  return Math.round(Math.min(byBattles, byDevices) * 100);
+}
 
-const FULL_AZUMARILL_DETAIL = {
-  league: 'great',
-  speciesId: 'azumarill',
-  since: ISO_SINCE_SEASON,
-  until: ISO_NOW,
-  band: 'all',
-  sightings: 260,
-  wins: 140,
-  losses: 100,
-  runs: 100,
-  runWins: 55,
-  runLosses: 45,
-  weekly: [
-    { week: '2026-W35', battles: 500, sightings: 120 },
-    { week: '2026-W36', battles: 500, sightings: 140 },
-  ],
-  bands: [
-    { band: 'below', sightings: 40, wins: 20, losses: 20 },
-    { band: 'ace', sightings: 60, wins: 35, losses: 25 },
-    { band: 'veteran', sightings: 70, wins: 40, losses: 30 },
-    { band: 'expert', sightings: 50, wins: 25, losses: 25 },
-    { band: 'legend', sightings: 40, wins: 20, losses: 20 },
-  ],
-  alongside: [
-    { speciesId: 'tinkaton', battles: 90 },
-    { speciesId: 'clodsire', battles: 70 },
-    { speciesId: 'medicham', battles: 40 },
-  ],
-  movesets: [
-    { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], battles: 80 },
-    { fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 20 },
-  ],
-  generatedAt: ISO_NOW,
-};
+function battlesText(n) {
+  return `${n.toLocaleString('en-US')} ${n === 1 ? 'battle' : 'battles'}`;
+}
+
+function devicesText(n) {
+  return `${n.toLocaleString('en-US')} ${n === 1 ? 'device' : 'devices'}`;
+}
+
+function headerFragment(battles, devices) {
+  return `${pctMeasured(battles, devices)}% measured, from ${battlesText(battles)} shared by ${devicesText(devices)}`;
+}
 
 const RUNS = [
   {
     name: 'empty',
-    meta: EMPTY_META,
-    species: { azumarill: EMPTY_SPECIES_DETAIL },
-    mustContain: ["Too few battles to trust yet.", "PvPoke's meta group"],
+    battles: 0,
+    devices: 0,
+    needles: {
+      great: [
+        "Projected against PvPoke's meta group. No shared battles in this window yet.",
+        'Projected',
+      ],
+      pokemon: ["PvPoke's list. No shared battles in this window yet."],
+    },
   },
   {
-    name: 'full',
-    meta: FULL_META,
-    species: { azumarill: FULL_AZUMARILL_DETAIL },
-    mustContain: ['Most faced'],
+    name: 'thin',
+    battles: 50,
+    devices: 1,
+    needles: {
+      great: [headerFragment(50, 1)],
+      pokemon: [headerFragment(50, 1)],
+    },
   },
-];
+  {
+    name: 'mid',
+    battles: 500,
+    devices: 5,
+    needles: {
+      great: [headerFragment(500, 5)],
+      pokemon: [headerFragment(500, 5)],
+    },
+  },
+  {
+    name: 'thick',
+    battles: 5000,
+    devices: 30,
+    needles: {
+      great: [headerFragment(5000, 30)],
+      pokemon: [headerFragment(5000, 30), 'PvPoke #'],
+    },
+  },
+].map((run) => ({
+  ...run,
+  meta: metaFixture(run.battles, run.devices),
+  teams: teamsFixture(run.battles, run.devices),
+  speciesDetail: speciesDetailFixture(run.battles),
+}));
 
 const PAGES = [
-  ['great', '/great'],
-  ['teams', '/great/teams'],
-  ['species-azumarill', '/great/p/azumarill'],
+  ['great', `/${LEAGUE}`],
+  ['pokemon', `/${LEAGUE}/pokemon`],
+  [`species-${DETAIL_SPECIES}`, `/${LEAGUE}/p/${DETAIL_SPECIES}`],
   ['about', '/about'],
-  ['great-w7-legend', '/great?w=7&band=legend'],
 ];
 
 const errors = [];
 
-/** Serves /api/v1/meta and /api/v1/species/<id> from the run's fixture; every other request
- * (the static bundle, the baked json files, sprites) goes to the network unchanged. */
+/** Serves /api/v1/meta, /api/v1/teams, /api/v1/species/<id> and /epochs.json from the run's
+ * fixture, and the three baked matrix/rank files straight off disk (apps/meta/public), for
+ * whichever league the page asks for. Every other request (the static bundle, /leagues.json,
+ * /seasons.json, /species.json, /moves.json, the curated /baseline/<league>.json, sprites) goes
+ * to the network unchanged. */
 function fixtureFor(run) {
   return async (request) => {
     const url = new URL(request.url());
-    if (url.pathname === '/api/v1/meta') {
-      await request.respond({
+    const json = (body) =>
+      request.respond({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(run.meta),
+        body: JSON.stringify(body),
       });
+
+    if (url.pathname === '/api/v1/meta') {
+      await json(run.meta);
+      return;
+    }
+    if (url.pathname === '/api/v1/teams') {
+      await json(run.teams);
       return;
     }
     if (url.pathname.startsWith('/api/v1/species/')) {
       const id = decodeURIComponent(url.pathname.slice('/api/v1/species/'.length));
-      const detail = run.species[id] ?? { ...EMPTY_SPECIES_DETAIL, speciesId: id };
-      await request.respond({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(detail),
-      });
+      const detail =
+        id === DETAIL_SPECIES ? run.speciesDetail : { ...EMPTY_SPECIES_DETAIL, speciesId: id };
+      await json(detail);
+      return;
+    }
+    // Epochs are deliberately empty for every run: the epoch feature (Task 8-9) has its own real
+    // coverage elsewhere (apps/meta/test/epochs.test.ts, App.test.tsx's "App, epochs"), and an
+    // epoch landing here would either move `since` out from under the fixed ISO_SINCE_SEASON
+    // these fixtures use, or fire the commit-mismatch banner, neither of which this pass is about.
+    if (url.pathname === '/epochs.json') {
+      await json([]);
+      return;
+    }
+    const baked = /^\/(ranks|matrix)\/([a-z]+)\.json$/.exec(url.pathname);
+    if (baked) {
+      const body = fs.readFileSync(path.join(publicDir, baked[1], `${baked[2]}.json`), 'utf8');
+      await request.respond({ status: 200, contentType: 'application/json', body });
+      return;
+    }
+    const bakedTeams = /^\/baseline\/([a-z]+)-teams\.json$/.exec(url.pathname);
+    if (bakedTeams) {
+      const body = fs.readFileSync(
+        path.join(publicDir, 'baseline', `${bakedTeams[1]}-teams.json`),
+        'utf8',
+      );
+      await request.respond({ status: 200, contentType: 'application/json', body });
       return;
     }
     await request.continue();
@@ -281,7 +445,7 @@ const browser = await puppeteer.launch({
 const t0 = Date.now();
 
 for (const run of RUNS) {
-  console.log(`== ${run.name} ==`);
+  console.log(`== ${run.name} (${run.battles} battles, ${run.devices} devices) ==`);
   const page = await browser.newPage();
   await page.setViewport({
     width: 390,
@@ -340,12 +504,10 @@ for (const run of RUNS) {
     await page.screenshot({ path: viewportFile, fullPage: false });
     console.log(`    ${run.name}-${name}.png (${Date.now() - t0} ms)`);
 
-    // The overview page (both plain and with the window/band query set) is where the
-    // below-threshold banner and the measured list actually render, so that is where this run's
-    // defining content is checked.
-    if (name === 'great' || name === 'great-w7-legend') {
+    const needles = run.needles[name];
+    if (needles) {
       const bodyText = await page.evaluate(() => document.body.innerText);
-      for (const needle of run.mustContain) {
+      for (const needle of needles) {
         if (!bodyText.includes(needle)) {
           throw new Error(`${label}: expected the page to contain ${JSON.stringify(needle)}`);
         }

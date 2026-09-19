@@ -63,10 +63,10 @@ function recordLine(row: BoardRow): string {
   if (hasRun && hasFaced) {
     const wins = row.runWins + row.facedWins;
     const losses = row.runLosses + row.facedLosses;
-    return `Run ${count(row.runBattles)} times and faced ${count(row.facedBattles)} times, ${wins}-${losses} overall`;
+    return `Run ${count(row.runBattles)} times and faced ${count(row.facedBattles)} times, the team went ${wins}-${losses} overall`;
   }
   if (hasFaced) {
-    return `Faced ${count(row.facedBattles)} times, players went ${row.facedWins}-${row.facedLosses}`;
+    return `Faced ${count(row.facedBattles)} times, players went ${row.facedLosses}-${row.facedWins}`;
   }
   return `Run ${count(row.runBattles)} times, reporters went ${row.runWins}-${row.runLosses}`;
 }
