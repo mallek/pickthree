@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleRow } from '../src/battles.js';
-import { teamBoard } from '../src/teams.js';
+import { teamBoard, THIRDS_LIMIT } from '../src/teams.js';
 
 const WINDOW = {
   league: 'great',
@@ -74,12 +74,30 @@ describe('teamBoard, the run side', () => {
       ],
     });
     expect(find(out.cores, 'azumarill', 'medicham')?.thirds).toEqual([
-      { speciesId: 'registeel', battles: 2 },
-      { speciesId: 'lanturn', battles: 1 },
+      { speciesId: 'registeel', sightings: 2 },
+      { speciesId: 'lanturn', sightings: 1 },
     ]);
   });
 
-  it('carries the most common run moveset per member, and never one for a faced row', () => {
+  it('caps thirds at THIRDS_LIMIT, most common first', () => {
+    const rows: BattleRow[] = [];
+    for (let i = 0; i < THIRDS_LIMIT + 1; i++) {
+      const speciesId = `third${i}`;
+      // third0 completes the pair THIRDS_LIMIT + 1 times, each next one time fewer, so the sort
+      // order is unambiguous and the least common, 13th distinct third is the one dropped.
+      const count = THIRDS_LIMIT + 1 - i;
+      for (let n = 0; n < count; n++) {
+        rows.push(row({ team: ['azumarill', 'medicham', speciesId] }));
+      }
+    }
+    const out = teamBoard({ ...WINDOW, rows });
+    const c = find(out.cores, 'azumarill', 'medicham');
+    expect(c?.thirds).toHaveLength(THIRDS_LIMIT);
+    expect(c?.thirds[0]).toEqual({ speciesId: 'third0', sightings: THIRDS_LIMIT + 1 });
+    expect(c?.thirds.some((t) => t.speciesId === `third${THIRDS_LIMIT}`)).toBe(false);
+  });
+
+  it('carries the most common run moveset per member', () => {
     const moves = [
       { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
       null,
@@ -123,6 +141,12 @@ describe('teamBoard, the faced side', () => {
     expect(find(out.teams, 'lanturn', 'skarmory')).toBeUndefined();
   });
 
+  it('gives a faced pair null moves too, not only a faced complete team', () => {
+    const out = teamBoard({ ...WINDOW, rows: [row({ opponents: ['lanturn', 'skarmory'], result: 'loss' })] });
+    const c = find(out.cores, 'lanturn', 'skarmory');
+    expect(c?.moves).toEqual([null, null]);
+  });
+
   it('makes no team or core out of a single opponent', () => {
     const out = teamBoard({ ...WINDOW, rows: [row({ team: ['a', 'b', 'c'], opponents: ['lanturn'] })] });
     expect(out.cores.some((c) => c.species.includes('lanturn'))).toBe(false);
@@ -150,7 +174,7 @@ describe('teamBoard, the faced side', () => {
     const out = teamBoard({ ...WINDOW, rows: [row({ opponents: ['lanturn', 'skarmory', 'shadow'] })] });
     expect(find(out.cores, 'lanturn', 'skarmory')?.facedBattles).toBe(1);
     expect(find(out.cores, 'lanturn', 'skarmory')?.thirds).toEqual([
-      { speciesId: 'shadow', battles: 1 },
+      { speciesId: 'shadow', sightings: 1 },
     ]);
   });
 

@@ -20,7 +20,7 @@
  * A faced row never carries movesets: the opponents' movesets are not collected, by design.
  */
 import type { BattleRow } from './battles.js';
-import { bandRows, movesetsBySpecies, type MovesetStats } from './meta.js';
+import { bandRows, MOVESET_MIN, movesetsBySpecies, type MovesetStats } from './meta.js';
 
 export interface TeamRowV1 {
   /** Sorted species ids. Two for a core, three for a complete team. */
@@ -34,11 +34,17 @@ export interface TeamRowV1 {
   facedBattles: number;
   facedWins: number;
   facedLosses: number;
-  /** Aligned with `species`: the most common set that member was RUN with, or null. Never from
-   *  the faced side, because opponents' movesets are not collected. */
+  /** Aligned with `species`: the most common set that SPECIES was run with in this window, or
+   *  null. Window-wide, not team-specific: a team with one run battle can still show a set
+   *  assembled from hundreds of unrelated battles that species was run in. Never from the faced
+   *  side, because opponents' movesets are not collected. */
   moves: (MovesetStats | null)[];
-  /** Cores only: the third members seen completing this pair, most common first. */
-  thirds: { speciesId: string; battles: number }[];
+  /** Cores only: the third members seen completing this pair, most common first. `sightings`
+   *  is the one count on this row that deliberately merges the run and faced populations,
+   *  because a core's projection weights each third by how often it completes the pair at
+   *  all, and a third is evidence of that whether the reporter ran it or faced it. Every
+   *  other count on the row keeps the two sides apart. */
+  thirds: { speciesId: string; sightings: number }[];
 }
 
 export interface TeamsV1 {
@@ -60,9 +66,6 @@ export const TEAM_LIMIT = 200;
 export const CORE_LIMIT = 200;
 /** A core lists at most this many third members. */
 export const THIRDS_LIMIT = 12;
-/** A member's moveset only rides along when this many battles back it, the same floor meta.ts
- *  uses for the deep link. */
-export const MOVESET_MIN = 5;
 
 interface Bucket extends TeamRowV1 {
   /** Third members seen completing this pair, counted before they are sorted and capped. */
@@ -191,8 +194,8 @@ export function teamBoard(opts: {
       return top && top.battles >= MOVESET_MIN ? top : null;
     }),
     thirds: [...bucket.thirdCounts.entries()]
-      .map(([speciesId, battles]) => ({ speciesId, battles }))
-      .sort((a, b) => b.battles - a.battles || a.speciesId.localeCompare(b.speciesId))
+      .map(([speciesId, sightings]) => ({ speciesId, sightings }))
+      .sort((a, b) => b.sightings - a.sightings || a.speciesId.localeCompare(b.speciesId))
       .slice(0, THIRDS_LIMIT),
   });
 
