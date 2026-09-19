@@ -23,7 +23,7 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/great/pokemon');
 });
 
-describe('Overview, with almost no data', () => {
+describe('Pokemon, with almost no data', () => {
   const meta = {
     battles: 40,
     devices: 6,
@@ -103,7 +103,7 @@ describe('Overview, with almost no data', () => {
 // 'devices': Ranking.holdback. The brief predates that field and only wrote the 'battles' wording
 // above. This covers the 'devices' branch: battles clear MEASURED_MIN but devices do not, so the
 // banner must blame the device count rather than repeating a battle count that is not the problem.
-describe('Overview, enough battles but too few devices', () => {
+describe('Pokemon, enough battles but too few devices', () => {
   const meta = {
     battles: 320,
     devices: 3,
@@ -121,7 +121,7 @@ describe('Overview, enough battles but too few devices', () => {
   });
 });
 
-describe('Overview, with enough data', () => {
+describe('Pokemon, with enough data', () => {
   const meta = {
     battles: 1000,
     devices: 120,
@@ -192,7 +192,7 @@ describe('Overview, with enough data', () => {
   });
 });
 
-describe('Overview, when the api is down', () => {
+describe('Pokemon, when the api is down', () => {
   it('says so and still shows PvPoke', async () => {
     render(<App deps={{ fetcher: stubFetch({ metaStatus: 500 }), now }} />);
     expect(
@@ -204,7 +204,7 @@ describe('Overview, when the api is down', () => {
   });
 });
 
-describe('Overview filters', () => {
+describe('Pokemon filters', () => {
   it('refetches when the window changes and puts it in the url', async () => {
     const { findByRole } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
     const window7 = await findByRole('combobox', { name: 'Window' });
@@ -216,7 +216,7 @@ describe('Overview filters', () => {
 // Fix round 2: n = 1 is not an edge case here, it is the likely state for the first weeks this
 // site is live (one contributor, a handful of battles). Every hand-spliced noun and verb that
 // used to read "1 devices have" or "1 battles have" is exercised at n = 1 below.
-describe('Overview, the day-one state (n = 1)', () => {
+describe('Pokemon, the day-one state (n = 1)', () => {
   it('agrees the noun and the verb with a single shared battle', async () => {
     const meta = { battles: 1, devices: 1, species: [sp('medicham', 1, 1, 0)] };
     render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
@@ -244,7 +244,7 @@ describe('Overview, the day-one state (n = 1)', () => {
   });
 });
 
-describe('Overview, request cost', () => {
+describe('Pokemon, request cost', () => {
   it('never asks for a species detail: nothing on this page has an id to look up', async () => {
     const fetcher = vi.fn(stubFetch({}));
     render(<App deps={{ fetcher, now }} />);

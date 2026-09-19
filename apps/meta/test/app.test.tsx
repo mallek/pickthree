@@ -143,6 +143,22 @@ describe('App, deep links', () => {
     expect(window.location.pathname).toBe('/ultra/pokemon');
   });
 
+  // Fix round 1 (task-11-report.md): retargeting the test above to /ultra/pokemon left the
+  // league root itself, now the front door and the shape of a shared link to a non-default
+  // league, with no regression coverage of its own. This is the same class of bug the fix-round-1
+  // tests above guard against (a non-first league canonicalised away before the league list has
+  // loaded), aimed at the route that matters most today: bare /<league>.
+  it('opens a non-first league at its bare root and does not rewrite the url', async () => {
+    window.history.replaceState(null, '', '/ultra');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radio', { name: 'Ultra' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(await screen.findByRole('heading', { name: 'Most run teams' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/ultra');
+  });
+
   it('opens a species page in a non-first league and does not rewrite the url', async () => {
     window.history.replaceState(null, '', '/master/p/registeel');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);

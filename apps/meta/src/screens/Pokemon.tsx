@@ -150,7 +150,7 @@ function MeasuredRowView({
   );
 }
 
-/** The "help fill this in" card, shared verbatim by Overview's below-threshold state and by
+/** The "help fill this in" card, shared verbatim by Pokemon's below-threshold state and by
  * Teams' empty state: both are the same appeal (log battles in pick3) and must read identically. */
 export function Contribute({ devices }: { devices: number }) {
   return (
