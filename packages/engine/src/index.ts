@@ -23,6 +23,7 @@ export * from './math/ivrank.js';
 export * from './builds/eligibility.js';
 export * from './builds/moves.js';
 export * from './builds/cost.js';
+export * from './coldstart/pool.js';
 export * from './search/matrixView.js';
 export * from './search/candidates.js';
 export * from './search/trios.js';

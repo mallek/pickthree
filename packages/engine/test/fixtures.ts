@@ -78,3 +78,8 @@ export function loadStaticData(): StaticData {
   };
   return cached;
 }
+
+/** PvPoke's raw game master, as the data build copies it next to the static data. */
+export function readGameMaster(): unknown {
+  return JSON.parse(fs.readFileSync(path.join(STATIC_DATA_DIR, 'gamemaster.json'), 'utf8'));
+}
