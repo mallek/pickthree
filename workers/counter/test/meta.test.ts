@@ -23,6 +23,7 @@ function row(over: Partial<BattleRow> = {}): BattleRow {
     result: 'win',
     tanked: false,
     band: 'ace',
+    source: 'ladder',
     ...over,
   };
 }
@@ -140,6 +141,26 @@ describe('summarize', () => {
     const s = run([row()]);
     expect(s).toMatchObject({ league: 'great', band: 'all', ...WINDOW });
     expect(s.generatedAt).toBe(NOW.toISOString());
+  });
+});
+
+describe('source discriminator', () => {
+  it('tallies counted battles by source and leaves tanked ones out', () => {
+    const rows: BattleRow[] = [
+      row({ opponents: ['azumarill'], result: 'win' }),
+      row({ opponents: ['medicham'], result: 'loss' }),
+      row({ opponents: ['registeel'], tanked: true }),
+    ];
+    const out = summarize({
+      league: 'great',
+      since: '2026-09-01T00:00:00.000Z',
+      until: '2026-09-30T00:00:00.000Z',
+      band: 'all',
+      rows,
+      previousRows: null,
+      now: new Date('2026-09-30T00:00:00.000Z'),
+    });
+    expect(out.sources).toEqual({ ladder: 2 });
   });
 });
 

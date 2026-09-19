@@ -18,9 +18,11 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
   aggregate,
+  DEFAULT_SOURCE,
   parseBatch,
   type Band,
   type BattleRow,
+  type BattleSource,
   type MetaSummary,
   type SharedBatch,
   type SharedMoves,
@@ -100,6 +102,9 @@ export class MetaStore extends DurableObject<Env> {
     if (!cols.some((c) => c['name'] === 'moves')) {
       ctx.storage.sql.exec('ALTER TABLE battles ADD COLUMN moves TEXT');
     }
+    if (!cols.some((c) => c['name'] === 'source')) {
+      ctx.storage.sql.exec("ALTER TABLE battles ADD COLUMN source TEXT NOT NULL DEFAULT 'ladder'");
+    }
   }
 
   ingest(batch: SharedBatch): { stored: number; skipped: number } {
@@ -108,8 +113,8 @@ export class MetaStore extends DurableObject<Env> {
     for (const b of batch.battles) {
       const cursor = this.ctx.storage.sql.exec(
         `INSERT OR IGNORE INTO battles
-           (key, device, id, league, season, at, team, moves, opponents, result, tanked, band, client, received)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (key, device, id, league, season, at, team, moves, opponents, result, tanked, band, source, client, received)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         `${batch.device}:${b.id}`,
         batch.device,
         b.id,
@@ -122,6 +127,7 @@ export class MetaStore extends DurableObject<Env> {
         b.result,
         b.tanked ? 1 : 0,
         b.band,
+        DEFAULT_SOURCE,
         batch.client,
         received,
       );
@@ -138,7 +144,7 @@ export class MetaStore extends DurableObject<Env> {
   summary(league: string, since: string): MetaSummary {
     const rows = this.ctx.storage.sql
       .exec(
-        `SELECT device, league, season, at, team, moves, opponents, result, tanked, band
+        `SELECT device, league, season, at, team, moves, opponents, result, tanked, band, source
            FROM battles WHERE league = ? AND at >= ? ORDER BY at DESC LIMIT ?`,
         league,
         since,
@@ -157,6 +163,7 @@ export class MetaStore extends DurableObject<Env> {
       result: (r['result'] as 'win' | 'loss' | null) ?? null,
       tanked: r['tanked'] === 1,
       band: (r['band'] as Band | null) ?? null,
+      source: (r['source'] as BattleSource | null) ?? DEFAULT_SOURCE,
     }));
     return aggregate(league, parsed);
   }
@@ -165,7 +172,7 @@ export class MetaStore extends DurableObject<Env> {
   private read(league: string, since: string, until: string): BattleRow[] {
     const rows = this.ctx.storage.sql
       .exec(
-        `SELECT device, league, season, at, team, moves, opponents, result, tanked, band
+        `SELECT device, league, season, at, team, moves, opponents, result, tanked, band, source
            FROM battles WHERE league = ? AND at >= ? AND at < ? ORDER BY at DESC LIMIT ?`,
         league,
         since,
@@ -185,6 +192,7 @@ export class MetaStore extends DurableObject<Env> {
       result: (r['result'] as 'win' | 'loss' | null) ?? null,
       tanked: r['tanked'] === 1,
       band: (r['band'] as Band | null) ?? null,
+      source: (r['source'] as BattleSource | null) ?? DEFAULT_SOURCE,
     }));
   }
 

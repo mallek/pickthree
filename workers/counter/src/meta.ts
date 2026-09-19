@@ -95,6 +95,8 @@ export interface MetaSummaryV1 {
   devices: number;
   /** Every band in the window, not only the filtered one. */
   bands: Record<string, number>;
+  /** Counted battles by source. One key today; nothing reads it yet. */
+  sources: Record<string, number>;
   species: SpeciesStats[];
   teams: TeamStats[];
   previous: { battles: number; species: { speciesId: string; sightings: number }[] } | null;
@@ -235,6 +237,11 @@ export function summarize(opts: {
     (a, b) => b.sightings - a.sightings || a.speciesId.localeCompare(b.speciesId),
   );
 
+  const sources: Record<string, number> = {};
+  for (const r of counted) {
+    sources[r.source] = (sources[r.source] ?? 0) + 1;
+  }
+
   const previousCounted = previousRows
     ? bandRows(previousRows, band).filter((r) => !r.tanked)
     : null;
@@ -257,6 +264,7 @@ export function summarize(opts: {
     tanked: inBand.length - counted.length,
     devices: devices.size,
     bands,
+    sources,
     species,
     teams: [...teams.values()]
       .sort((a, b) => b.battles - a.battles || a.species.join().localeCompare(b.species.join()))

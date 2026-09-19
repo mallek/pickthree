@@ -85,6 +85,7 @@ describe('aggregate', () => {
     result: 'win',
     tanked: false,
     band: 'ace',
+    source: 'ladder',
     ...patch,
   });
 
