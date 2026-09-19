@@ -6,23 +6,28 @@ interface ChoiceOption<T extends string> {
   label: string;
 }
 
-/** A labelled native select. The label is visible, not just aria, so a reader knows what the
- * field is a choice of before opening it. */
+/** A labelled native select. The label is visible by default, so a reader knows what the field
+ * is a choice of before opening it. `hideLabel` keeps the label for a screen reader and takes it
+ * off the screen, for a field whose current value already says what it is (the team board's two
+ * filters: "This meta" and "All ranks" need no caption above them, and the caption cost the row
+ * above the fold). It never removes the name, only the ink. */
 export function Select<T extends string>({
   options,
   value,
   onChange,
   label,
+  hideLabel = false,
 }: {
   options: ChoiceOption<T>[];
   value: T;
   onChange: (v: T) => void;
   label: string;
+  hideLabel?: boolean;
 }) {
   const id = useId();
   return (
     <label className="field" htmlFor={id}>
-      <span className="field-l">{label}</span>
+      <span className={hideLabel ? 'field-l vh' : 'field-l'}>{label}</span>
       <span className="select-wrap">
         <select
           id={id}

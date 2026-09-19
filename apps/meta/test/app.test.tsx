@@ -84,6 +84,20 @@ describe('App', () => {
     expect(await screen.findByRole('combobox', { name: 'Rank band' })).toHaveValue('legend');
   });
 
+  // The two filter captions were taken off the screen, not deleted: their own value already
+  // says what each field is, and the captions cost a row above the fold on a phone. The test
+  // above is what pins the accessible name surviving (it finds both by that name); this pins the
+  // other half, that the name is off the screen rather than printed.
+  it('keeps the filter labels for a screen reader and off the screen', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    for (const name of ['Window', 'Rank band']) {
+      const select = await screen.findByRole('combobox', { name });
+      const caption = select.closest('.field')?.querySelector('.field-l');
+      expect(caption?.textContent).toBe(name);
+      expect(caption?.classList.contains('vh')).toBe(true);
+    }
+  });
+
   it('answers the back button', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await userEvent.click(await screen.findByRole('link', { name: 'About' }));

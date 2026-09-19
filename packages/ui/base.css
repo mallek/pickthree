@@ -165,6 +165,19 @@
   flex-direction: column;
   gap: 4px;
 }
+/* Off the screen, still in the accessibility tree: for text a screen reader needs and a sighted
+   reader does not, such as a select's label when its own value already says what it is. */
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .head-cog {
   position: relative;
   height: 36px;

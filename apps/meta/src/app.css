@@ -785,6 +785,8 @@ a.rank-row {
    tab-root screens (Overview, Teams, About), so scrolling the page body never carries the
    navigation controls away with it. z-index matches .hdr's, below the bottom tab bar's z-index 5.
    Species uses the sticky .hdr instead (see pageHeader in App.tsx) and never renders this. */
+/* The page scrolls under this, so the bar needs its own bottom gutter: without one the first
+   row's edge meets the bottom of the filter selects with nothing between them. */
 .top-bar {
   position: sticky;
   top: 0;
@@ -793,6 +795,7 @@ a.rank-row {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  padding-bottom: 10px;
 }
 
 /* G: deliberately plain inline flow, not a flex container. pick3's own hero-lockup metrics trick
