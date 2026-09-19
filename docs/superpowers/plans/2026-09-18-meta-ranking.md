@@ -5067,14 +5067,13 @@ git commit -m "meta: the teams board, cores as the spine"
 
 ## Task 13: The Pokemon screen
 
-> **Carried obligation from Task 10.** Task 10 rewrote `rank.ts` around `rankSpecies` but had to
-> keep the old `rank()` and its threshold constants alive under a `SUPERSEDED` banner, because
-> `Overview.tsx`, `About.tsx` and `Species.tsx` still imported them. This task removes the last
-> of those imports, so it must also delete the superseded block: `rank`, `MEASURED_MIN`,
-> `MEASURED_MIN_DEVICES`, `RANKED_SHARE`, `SMALL_MIN`, `Ranking`, `MeasuredRow`, `BaselineRow`,
-> and the matching banner and tests in `rank.test.ts`. Leaving it ships two ranking functions
-> with the old flip still live in one of them, which is the single thing this whole plan exists
-> to remove.
+> **Carried obligation from Task 10, part 1 of 2.** Task 10 rewrote `rank.ts` around
+> `rankSpecies` but had to keep the old `rank()` and its threshold constants alive under a
+> `SUPERSEDED` banner, because three screens and two screen tests still imported them. This task
+> owns one of those importers: drop `RANKED_SHARE` and `SMALL_MIN` from the Pokemon screen's test
+> (`pokemon.test.tsx`, renamed from `overview.test.tsx` in Task 11). Do NOT delete the superseded
+> block itself: `About.tsx`, `Species.tsx` and `about.test.tsx` still import `MEASURED_MIN` and
+> `MEASURED_MIN_DEVICES` from it, and Task 14 is the one that removes those and deletes the block.
 
 
 The two sections collapse into one ranked list. Each row carries its own provenance, its measured
@@ -5211,6 +5210,19 @@ git commit -m "meta: one blended species list"
 ---
 
 ## Task 14: About, Species, and the pick3 nudge
+
+> **Carried obligation from Task 10, part 2 of 2. This task is the last one out, so the deletion
+> is yours.** Task 10 kept the old `rank()` and its thresholds alive under a `SUPERSEDED` banner
+> in `apps/meta/src/rank.ts` so the screens still importing them would compile. After Task 13,
+> the only importers left are this task's own files: `About.tsx` and `Species.tsx` (both
+> `MEASURED_MIN`, `MEASURED_MIN_DEVICES`) and `about.test.tsx`. Once you have moved them onto
+> `rankSpecies`, delete the whole superseded block: `rank`, `MEASURED_MIN`,
+> `MEASURED_MIN_DEVICES`, `RANKED_SHARE`, `SMALL_MIN`, `Ranking`, `MeasuredRow`, `BaselineRow`,
+> the banner comments in `rank.ts`, and the matching banner and tests in `rank.test.ts`. Then
+> grep the repo to confirm none of those names survives. Leaving any of it ships two ranking
+> functions with the old flip still live in one, which is the single thing this whole plan
+> exists to remove.
+
 
 About gets the real work. It has to explain the blend, what that percentage means, the epochs, and
 which source each number came from. It is the backstop for every honesty claim the rest of the
