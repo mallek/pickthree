@@ -5256,13 +5256,16 @@ moves it a little, and the header on each screen says exactly how far along it i
 
 ## What "projected" means
 
-A team nobody has shared yet still gets a number, worked out from PvPoke's own matchup data: how
-much of the meta the three of them beat between them, how well those wins hold up when shields
-change, and whether the switch has any matchups that simply end it.
+A team nobody has shared yet still gets a number: how much of the meta the three of them beat
+between them, how well those wins hold when shields change, whether a top opponent goes
+completely unanswered, and whether the switch has matchups that simply end it. It is worked out
+from PvPoke's matchup data, weighted by how often each opponent is actually faced, so measured
+play shapes which opponents count and what the top of the meta means. No battle result feeds it.
 
-That is a projection, not a measurement, and this site never prints one as a win rate. A win
-rate here always means battles that actually happened. A projection always says "projects" and
-always says it is a projection.
+That is a projection, not a measurement, and this site never prints one as a win rate or as any
+percentage. A win rate here always means battles that actually happened. The projection is shown
+as a matchup score out of 100 instead, so it cannot be read as a record, and a team nobody has
+played is tagged "Projected".
 
 Projections cover the Pokemon PvPoke ranks. Someone you faced who is not on that list is counted
 in the measured numbers and left out of the projections, and any card that is missing a member
