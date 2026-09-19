@@ -356,19 +356,34 @@ function renderTeams(opts: {
 }
 
 describe('Teams, cold start', () => {
-  it('shows generated teams and says plainly that they are projections', async () => {
+  it('shows generated teams and marks them as projections', async () => {
     renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
     expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
     expect(
       screen.getByText(/Projected against PvPoke's meta group\. No shared battles/),
     ).toBeInTheDocument();
     expect(screen.getAllByText('Projected').length).toBeGreaterThan(0);
-    expect(screen.getByText(/a projection, not a win rate/)).toBeInTheDocument();
+    // A projection is a matchup score out of 100, never a percentage.
+    expect(screen.getByText(/^Matchup score \d+ of 100$/)).toBeInTheDocument();
   });
 
-  it('never prints a projection as a win rate', () => {
-    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
-    expect(screen.queryByText(/win rate/i)?.textContent).toMatch(/not a win rate/);
+  // The retired caveat ("a projection, not a win rate") existed because a projection used to be
+  // printed as a percentage, which reads as a win rate. A matchup score is not a percentage, so
+  // the ambiguity it guarded against is gone; the rule left standing is that nothing but a real
+  // measured record ever prints with a percent sign.
+  it('never prints a projection as a percentage', () => {
+    const { container } = renderTeams({
+      battles: 0,
+      devices: 0,
+      teams: [],
+      cores: [],
+      generated: GENERATED,
+    });
+    const cards = container.querySelectorAll('.team-card');
+    expect(cards.length).toBeGreaterThan(0);
+    for (const card of cards) {
+      expect(card.textContent ?? '').not.toMatch(/%/);
+    }
   });
 });
 
@@ -565,14 +580,32 @@ describe('Teams, with measured play', () => {
     expect(screen.queryAllByText(/Open in pick3/)).toHaveLength(0);
   });
 
-  // Fix round 1, item 7: `projectionLine` welds the number to its caveat in one function today,
-  // which is a stronger guarantee than a test, but nothing failed if a future change split them
-  // across two elements. This pins the two to one element.
-  it('keeps the projection caveat welded to its own number, in one element', () => {
+  // Fix round 1, item 7 (superseded by the matchup-score change): `matchupScoreLine` builds the
+  // whole "Matchup score N of 100" string in one function, so a future change cannot split the
+  // number from its unit across two elements the way the old caveat could once have been split
+  // from its percentage.
+  it('prints the matchup score as a whole number out of 100, in one element', () => {
     renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
-    expect(
-      screen.getByText(/^Projects \d+% \(a projection, not a win rate\)\.$/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/^Matchup score \d+ of 100$/)).toBeInTheDocument();
+  });
+
+  // The `Term` explaining the matchup score is hosted once in the section header, never inside a
+  // card: a card WITH nested builds is a link-free div (see `Card`), but a link-less complete-team
+  // card is itself an `<a>`, and a `Term` renders a real `<button>`. Nesting one there would be
+  // interactive content inside an anchor, the same invalid-markup problem fix round 1 already
+  // found and fixed for a nested build line's own chevron link.
+  it('keeps the matchup score explainer out of every card, never nested in an anchor', () => {
+    const { container } = renderTeams({
+      battles: 0,
+      devices: 0,
+      teams: [],
+      cores: [],
+      generated: GENERATED,
+    });
+    expect(screen.getByRole('button', { name: 'Matchup score' })).toBeInTheDocument();
+    for (const card of container.querySelectorAll('a.team-card')) {
+      expect(card.querySelector('button')).toBeNull();
+    }
   });
 
   // Fix round 1, item 3: a failure of meta, baseline or ranks (not just the shared teams) used to

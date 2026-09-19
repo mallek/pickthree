@@ -16,7 +16,7 @@ import type { MetaSummaryV1, TeamsV1 } from '../src/api.js';
 import type { Baseline, BaselineSpecies } from '../src/baseline.js';
 import { rankSpecies } from '../src/rank.js';
 import type { GeneratedTeamLite } from '../src/slice.js';
-import { TEAM_MIN, buildBoard } from '../src/teamRank.js';
+import { TEAM_MIN, UNKNOWN_PRIOR, buildBoard } from '../src/teamRank.js';
 import seeded from './fixtures/seeded-great.json';
 
 interface Fixture {
@@ -82,33 +82,40 @@ const EXPECTED_SPECIES = [
 
 /**
  * The board, best first. Worth reading rather than skipping, because the top of it is the blend
- * arguing with itself:
+ * arguing with itself. Recalibrated for PROJECTION_ANCHOR = 100 (a perfect team projects exactly
+ * even, not the old 0.70-ish a battle score of 84 used to read as): every projection on this
+ * board now sits in the low 0.40s, so the say-weighted gap between a row's own projection and its
+ * own measured rate, not the projection's absolute size, decides the order.
  *
- * - `corviknight+tinkaton` takes first while projecting a hair LOWER than the row under it,
- *   0.7028 against 0.7040. It wins purely on its rate: 78% over 23 decided battles against 76%
- *   over 45. Both rates sit above both projections, so the say lifts both rows, and
- *   `ninetales_shadow+tinkaton` is lifted further (say 0.60 against 0.43) and still lands lower,
- *   because it is being lifted toward the smaller number. More battles buys more say, not a
- *   better score.
- * - `cramorant+ninetales_shadow` is third on the highest projection on the whole board, 0.7160,
- *   with 8 decided battles. That is under TEAM_MIN, so its 88% counts for nothing at all yet and
- *   the row is standing on the projection alone.
- * - Row 6 is a generated team with no observed core to nest under, holding its place against
- *   real records on a projection alone.
+ * score = projection + say * (measured - projection), which makes the say-weighted gap read
+ * directly off the numbers below:
+ *
+ * - `ninetales_shadow+tinkaton` takes first with the LOWER measured rate of the top two, 75.6%
+ *   against `corviknight+tinkaton`'s 78.3%, because it has far more say: 45 decided battles give
+ *   it say 0.60 against corviknight's 23 battles and say 0.43. 0.60 of a 0.352 gap (0.211) beats
+ *   0.43 of a 0.380 gap (0.165). More decided battles buys more say, not a better score, and here
+ *   it is enough to overturn a real rate disadvantage.
+ * - `cramorant+ninetales_shadow` (7th) carries the highest projection on the whole board, 0.416,
+ *   on only 8 decided battles. That is under TEAM_MIN, so its 88% record counts for nothing yet
+ *   and the row stands on the projection alone, same as before recalibration, just at the new
+ *   scale.
+ * - `altaria+corviknight+quagsire` (9th) is a generated team with no observed core to nest under,
+ *   holding its place against real records on a projection alone (0.399, second highest on the
+ *   board).
  *
  * This list is here so that changing it has to be a decision.
  */
 const EXPECTED_BOARD = [
-  'corviknight+tinkaton',
   'ninetales_shadow+tinkaton',
-  'cramorant+ninetales_shadow',
+  'corviknight+tinkaton',
   'cramorant+tinkaton',
+  'corsola_galarian+tinkaton',
+  'corsola_galarian+ninetales_shadow',
+  'corviknight+ninetales_shadow',
+  'cramorant+ninetales_shadow',
   'altaria+ninetales_shadow',
   'altaria+corviknight+quagsire',
   'quagsire_shadow+tinkaton',
-  'altaria+tinkaton',
-  'mantine+ninetales_shadow',
-  'quagsire+tinkaton',
 ];
 
 describe('the seeded ranking', () => {
@@ -117,11 +124,19 @@ describe('the seeded ranking', () => {
   });
 
   it('ranks the species in a stable, written-out order', () => {
-    expect(ranking().rows.slice(0, 10).map((r) => r.speciesId)).toEqual(EXPECTED_SPECIES);
+    expect(
+      ranking()
+        .rows.slice(0, 10)
+        .map((r) => r.speciesId),
+    ).toEqual(EXPECTED_SPECIES);
   });
 
   it('builds a stable, written-out board', () => {
-    expect(board().rows.slice(0, 10).map((r) => r.species.join('+'))).toEqual(EXPECTED_BOARD);
+    expect(
+      board()
+        .rows.slice(0, 10)
+        .map((r) => r.species.join('+')),
+    ).toEqual(EXPECTED_BOARD);
   });
 });
 
@@ -152,13 +167,23 @@ describe('the seeded data exercises what it is meant to', () => {
     expect(rows.some((r) => r.decided >= TEAM_MIN)).toBe(true);
   });
 
-  it('carries a row outside the slice, which ranks on its record alone', () => {
+  it('carries a row outside the slice, blended against UNKNOWN_PRIOR rather than its raw record', () => {
     const outside = wholeBoard().rows.filter((r) => r.outsideSlice.length > 0);
     expect(outside.length).toBeGreaterThan(0);
     for (const row of outside) {
       expect(row.projection).toBeNull();
       expect(row.strength).toBeNull();
-      expect(row.score).toBe(row.measured);
+      if (row.measured === null) {
+        expect(row.score).toBeNull();
+        continue;
+      }
+      // Same formula scoreOf uses: UNKNOWN_PRIOR stands in for the missing projection and is
+      // blended by the row's own `say`, exactly like a real one. Recomputed from the row's own
+      // `say` and `measured` (documented, hand-derivable fields) rather than a hard-coded number,
+      // since this fixture carries many such rows at different sample sizes.
+      const expected =
+        row.say === 0 ? UNKNOWN_PRIOR : (1 - row.say) * UNKNOWN_PRIOR + row.say * row.measured;
+      expect(row.score).toBeCloseTo(expected, 10);
     }
   });
 

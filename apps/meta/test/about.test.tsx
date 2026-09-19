@@ -76,8 +76,9 @@ describe('About', () => {
   // IMPORTANT 4: the old sentence named a screen called "Most run teams" that does not exist, and
   // claimed it shows a win rate with a confidence tag, which is Pokemon's own behavior, not
   // Teams'. Teams.tsx never prints a percentage for an observed record (`recordLine`, always raw
-  // counts) and labels a projection, when it has one, "a projection, not a win rate" in the same
-  // line (`projectionLine`). This pins the corrected, per-screen claims.
+  // counts) and, since the matchup-score change, never prints a projection as a percentage
+  // either: a projection is a matchup score out of 100 (`matchupScoreLine`). This pins the
+  // corrected, per-screen claims.
   it('describes what the Pokemon list, the Species page and Teams actually show', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
@@ -92,7 +93,7 @@ describe('About', () => {
       screen.getByText(/On Teams, a record is always the raw win-loss count too/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/labelled "a projection, not a win rate" in the same line/),
+      screen.getByText(/is shown as a matchup score out of 100, never a percentage/),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Most run teams/)).toBeNull();
   });
@@ -121,9 +122,14 @@ describe('About', () => {
     expect(await screen.findByText(/Nothing flips\./)).toBeInTheDocument();
   });
 
-  it('says a projection is never printed as a win rate', async () => {
+  it('says a projection is never printed as a percentage', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByText(/this site never prints one as a win rate/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/this site never prints one as a percentage/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/A projection is shown as a matchup score out of 100 instead/),
+    ).toBeInTheDocument();
   });
 
   it('explains cores and the inverted faced record', async () => {

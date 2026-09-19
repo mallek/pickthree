@@ -185,12 +185,20 @@ export function bestStrength(
 export const PROJECTION_SLOPE = 0.006;
 
 /**
+ * Battle score at which a projection reaches an even match. A perfect team scores 100 on all
+ * three factors, so nothing unplayed ever projects above even: Go Battle League matches on
+ * rating, and no team sustains a winning rate against opposition that keeps pace with it.
+ * Only a measured record can show better than even.
+ */
+export const PROJECTION_ANCHOR = 100;
+
+/**
  * A battle score read as an expected win rate. THE one place the projection is calibrated, so it
  * can be fitted against real results later without hunting through the code. It is a proxy, not a
  * measurement. Never print the result as a win rate.
  */
 export function expectedWinRate(strength: number, slope: number = PROJECTION_SLOPE): number {
-  return Math.max(0, Math.min(1, 0.5 + (strength - 50) * slope));
+  return Math.max(0, Math.min(1, 0.5 + (strength - PROJECTION_ANCHOR) * slope));
 }
 
 function round1(v: number): number {

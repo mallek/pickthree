@@ -109,8 +109,8 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <p className="sub">
         Every number on this site comes from one of two places: real GO Battle League battles that
         pick3 players chose to share, or PvPoke&apos;s own curated meta group and the simulated
-        matchups behind it. Nothing is scraped. A measured number always says so; a projection
-        always says it is one instead, and never a win rate.
+        matchups behind it. Nothing is scraped. A percentage on this site always means real battles;
+        a projection is shown as a matchup score out of 100 instead, never a percentage.
       </p>
 
       <section className="card">
@@ -214,10 +214,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           {count(MANY)}, many at {count(MANY)} or more. On the Species page, a win rate is shown as
           a percentage, with a plain-language range beside it that narrows the more decided battles
           stand behind it. On Teams, a record is always the raw win-loss count too; a projection,
-          when a row has one, is labelled &quot;a projection, not a win rate&quot; in the same line
-          it appears. A trend is only shown when both windows being compared hold at least{' '}
-          {count(TREND_MIN)} {battleWord(TREND_MIN)}, and only when the change is bigger than the
-          noise in the numbers.
+          when a row has one, is shown as a matchup score out of 100, never a percentage. A trend is
+          only shown when both windows being compared hold at least {count(TREND_MIN)}{' '}
+          {battleWord(TREND_MIN)}, and only when the change is bigger than the noise in the numbers.
         </p>
       </section>
 
@@ -253,9 +252,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           it.
         </p>
         <p className="sub">
-          That is a projection, not a measurement, and this site never prints one as a win rate. A
-          win rate here always means battles that actually happened. A projection always says
-          &quot;projects&quot; and always says it is a projection.
+          That is a projection, not a measurement, and this site never prints one as a percentage. A
+          percentage here always means battles that actually happened. A projection is shown as a
+          matchup score out of 100 instead.
         </p>
         <p className="sub">
           Projections cover the top few hundred Pokemon by PvPoke rank, which is the ranked list

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MatrixView, expectedWinRate, type MatchupMatrix } from '@pickthree/engine/meta';
-import { TEAM_HALF_SAY, TEAM_MIN, buildBoard } from '../src/teamRank.js';
+import { TEAM_HALF_SAY, TEAM_MIN, UNKNOWN_PRIOR, buildBoard } from '../src/teamRank.js';
 import type { SpeciesRanking } from '../src/rank.js';
 import type { TeamRowV1, TeamsV1 } from '../src/api.js';
 import type { GeneratedTeamLite } from '../src/slice.js';
@@ -109,7 +109,11 @@ describe('buildBoard, cold start', () => {
     expect(row?.say).toBe(0);
     expect(row?.decided).toBe(0);
     expect(row?.measured).toBeNull();
-    expect(row?.projection).toBeGreaterThan(0.5);
+    // a and b beat every opponent in every scenario here, so the recomputed trio (a, b, c) scores
+    // a perfect 100 (battleScore(100, 100, 100)). PROJECTION_ANCHOR = 100 anchors a perfect team
+    // at exactly even, so this is 0.5, not "greater than 0.5": nothing unplayed projects a
+    // winning record.
+    expect(row?.projection).toBeCloseTo(0.5, 10);
     expect(row?.score).toBe(row?.projection);
   });
 
@@ -381,7 +385,10 @@ describe('buildBoard, cores', () => {
     const core = teamRow({ species: ['a', 'b'], facedBattles: 4, facedWins: 2, facedLosses: 2 });
     const b = buildBoard({ teams: teams({ cores: [core] }), ranking, generated: [], view: narrow });
     expect(b.rows[0]?.projection).toBeNull();
-    expect(b.rows[0]?.score).toBeCloseTo(0.5, 10);
+    // 4 decided battles is under TEAM_MIN (15), so say is 0 and the 50% record has no say at
+    // all: the row stands on UNKNOWN_PRIOR alone, exactly as a real projection would at this
+    // sample size.
+    expect(b.rows[0]?.score).toBeCloseTo(UNKNOWN_PRIOR, 10);
   });
 
   it('nests a complete team under every core it was seen with', () => {
@@ -477,8 +484,11 @@ describe('buildBoard, outside the slice', () => {
     expect(row?.projection).toBeNull();
     expect(row?.strength).toBeNull();
     expect(row?.outsideSlice).toEqual(['stranger']);
-    // It ranks on its measured record alone.
-    expect(row?.score).toBe(row?.measured);
+    // It does NOT rank on its raw measured record: with 40 decided battles (>= TEAM_MIN), say is
+    // 40 / (40 + 30) = 4/7, and the missing projection is replaced with UNKNOWN_PRIOR (0.25)
+    // rather than skipped, so the row is blended exactly like a projected one:
+    //   (1 - 4/7) * 0.25 + (4/7) * 0.75 = 3/7 * 0.25 + 4/7 * 0.75 = 0.75/7 + 3/7 = 3.75/7
+    expect(row?.score).toBeCloseTo(3.75 / 7, 10);
   });
 
   it('gives a core no projection when one of the pair is outside the slice', () => {
@@ -492,7 +502,9 @@ describe('buildBoard, outside the slice', () => {
     const b = buildBoard({ teams: teams({ cores: [core] }), ranking, generated: [], view: view() });
     expect(b.rows[0]?.projection).toBeNull();
     expect(b.rows[0]?.outsideSlice).toEqual(['stranger']);
-    expect(b.rows[0]?.score).toBe(b.rows[0]?.measured);
+    // Same arithmetic as the team case above: 40 decided battles, say = 4/7, blended against
+    // UNKNOWN_PRIOR (0.25) rather than the raw 0.75 record: 3.75 / 7.
+    expect(b.rows[0]?.score).toBeCloseTo(3.75 / 7, 10);
   });
 
   it('keeps a generated row on its baked strength when a member has no row, and names it', () => {
@@ -562,7 +574,14 @@ describe('buildBoard, outside the slice', () => {
     expect(b.projectionless).toBe(true);
     expect(b.rows.map((r) => r.species.join('+'))).toEqual(['d+e+f', 'a+b+c']);
     expect(b.rows.every((r) => r.projection === null)).toBe(true);
-    expect(b.rows[0]?.score).toBe(0.8);
+    // With no slice at all, every row's missing projection is replaced with UNKNOWN_PRIOR (0.25)
+    // and blended exactly like a real one, rather than falling back to the raw record. 100
+    // decided battles gives say = 100 / (100 + 30) = 10/13:
+    //   (1 - 10/13) * 0.25 + (10/13) * 0.8 = 3/13 * 0.25 + 10/13 * 0.8 = 0.75/13 + 8/13 = 8.75/13
+    // The ordering is unaffected (0.673 still beats the poor row's 2.75/13 = 0.212), so "ranks
+    // every row on its record" still holds relatively, even though score is no longer the raw
+    // record itself.
+    expect(b.rows[0]?.score).toBeCloseTo(8.75 / 13, 10);
     // No slice, nothing to cover: both board-wide facts read as "none", matching `projectionless`
     // rather than a stale or defaulted-to-full figure a screen might otherwise show as if the
     // meta group had been fully accounted for.

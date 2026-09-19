@@ -8,9 +8,11 @@
  * honestly. See docs/superpowers/specs/2026-09-18-meta-site-design.md and teamRank.ts's own
  * header comment for the rule this screen exists to enforce: the blended `score` that sorts the
  * board is a ranking key, never a fact about a team, and is never printed. A card prints at most
- * two numbers, a projection (always labelled "a projection, not a win rate", in the same line)
- * and a measured record (always as a win-loss count, never a percentage), because those are the
- * two things about a row that are actually true.
+ * two things about a row: a matchup score out of 100 (a projection worked out from PvPoke's
+ * matchup data, explained once by the `Term` in the section header, and NEVER printed as a
+ * percentage) and a measured record (always as a win-loss count, never a percentage), because
+ * those are the two things about a row that are actually true. A percentage on this site always
+ * means real battles.
  *
  * Two sources feed a card the same way they feed Pokemon.tsx (see that file's header comment for
  * the two-sources rule this site follows everywhere): PvPoke's projection, and measured play.
@@ -18,7 +20,7 @@
  */
 import type { ReactNode } from 'react';
 import type { MovesetStats } from '../api.js';
-import { Chevron, Note, Sprite } from '../components.js';
+import { Chevron, Note, Sprite, Term } from '../components.js';
 import { speciesOf, type SpeciesLite, type StaticData } from '../data.js';
 import { battles as battlesText, count, plural } from '../format.js';
 import { teamLink, type LinkMember } from '../links.js';
@@ -101,11 +103,21 @@ function outsideText(ids: readonly string[], data: StaticData): string {
   return `No projection: ${joinNames(names)} ${names.length === 1 ? 'is' : 'are'} outside the ranked list this site ships projections for.`;
 }
 
-/** `Projects <P>%`, with the "not a win rate" caveat immediately beside it, in the same line, so
- * it is never a footnote a reader can scroll past. The one and only place this screen turns a
- * projection into a percent sign. */
-function projectionLine(projection: number): string {
-  return `Projects ${Math.round(projection * 100)}% (a projection, not a win rate).`;
+/** `Matchup score <S> of 100`, S = the row's own `strength` rounded to a whole number. A
+ * percentage on this site always means real battles, so a projection is never turned into one:
+ * this is the one and only place this screen prints a projection at all, and it prints a score
+ * out of 100, not a percent sign. The explanation lives once, behind the `Term` in the section
+ * header, not repeated on every card. */
+function matchupScoreLine(strength: number): string {
+  return `Matchup score ${Math.round(strength)} of 100`;
+}
+
+/** The explainer behind the "Matchup score" term, hosted once in the section header rather than
+ * inside any card: a card's `Term` would be interactive content nested inside the card's own
+ * anchor, invalid markup two earlier fix rounds already found and removed for "New" on the
+ * Pokemon screen (see that file's `newExplainer`). */
+function matchupScoreExplainer(): string {
+  return "How much of the meta the three of them beat between them, how well those wins hold when shields change, and whether the switch has matchups that simply end it. Worked out from PvPoke's matchup data, not from battles anyone played.";
 }
 
 /** The one fact block every card needs: what it is made of, and how (projected, run, faced, or
@@ -120,8 +132,8 @@ function RowFacts({ row, data }: { row: BoardRow; data: StaticData }): ReactNode
       ) : (
         <p className="fine">{recordLine(row)}</p>
       )}
-      {row.projection !== null ? (
-        <p className="fine">{projectionLine(row.projection)}</p>
+      {row.strength !== null ? (
+        <p className="fine">{matchupScoreLine(row.strength)}</p>
       ) : row.outsideSlice.length > 0 ? (
         <p className="fine">{outsideText(row.outsideSlice, data)}</p>
       ) : null}
@@ -204,8 +216,8 @@ function BuildLine({
   const seen = build.runBattles + build.facedBattles > 0;
   const fact = seen
     ? recordLine(build)
-    : build.projection !== null
-      ? projectionLine(build.projection)
+    : build.strength !== null
+      ? matchupScoreLine(build.strength)
       : build.outsideSlice.length > 0
         ? outsideText(build.outsideSlice, data)
         : '';
@@ -349,7 +361,15 @@ export function Teams(p: {
     <main>
       <section>
         <h2>Teams</h2>
-        <p className="sub">{headerLine(ranking)}</p>
+        <p className="sub">
+          {headerLine(ranking)}
+          {!empty && !board.projectionless ? (
+            <>
+              {' '}
+              <Term term="Matchup score">{matchupScoreExplainer()}</Term>
+            </>
+          ) : null}
+        </p>
         {!empty && !board.projectionless && board.weightCovered < 0.95 ? (
           <p className="fine">
             {`Projections cover the ${count(board.metaGroupSize)} Pokemon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}

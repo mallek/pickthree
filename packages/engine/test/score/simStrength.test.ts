@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MatrixView } from '../../src/search/matrixView.js';
 import type { MatchupMatrix } from '../../src/gamedata/types.js';
 import {
+  PROJECTION_ANCHOR,
   PROJECTION_SLOPE,
   bestStrength,
   expectedWinRate,
@@ -124,16 +125,19 @@ describe('bestStrength', () => {
 
 describe('expectedWinRate', () => {
   it('reads an even battle score as an even match', () => {
-    expect(expectedWinRate(50)).toBeCloseTo(0.5, 10);
+    // A perfect team (100 on all three factors) anchors at exactly even: nothing unplayed may
+    // project a winning record.
+    expect(expectedWinRate(PROJECTION_ANCHOR)).toBeCloseTo(0.5, 10);
   });
 
   it('moves one slope per point either side of even', () => {
-    expect(expectedWinRate(60)).toBeCloseTo(0.5 + 10 * PROJECTION_SLOPE, 10);
-    expect(expectedWinRate(40)).toBeCloseTo(0.5 - 10 * PROJECTION_SLOPE, 10);
+    expect(expectedWinRate(PROJECTION_ANCHOR + 10)).toBeCloseTo(0.5 + 10 * PROJECTION_SLOPE, 10);
+    expect(expectedWinRate(PROJECTION_ANCHOR - 10)).toBeCloseTo(0.5 - 10 * PROJECTION_SLOPE, 10);
   });
 
   it('never leaves 0 to 1, however extreme the score or the slope', () => {
-    expect(expectedWinRate(100, 0.05)).toBe(1);
+    // 300 is well past any real battle score, needed only to push the clamp past 1 at this slope.
+    expect(expectedWinRate(300, 0.05)).toBe(1);
     expect(expectedWinRate(0, 0.05)).toBe(0);
   });
 });

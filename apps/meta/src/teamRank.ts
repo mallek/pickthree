@@ -9,6 +9,11 @@
  * 30 decided battles the report and the projection split it evenly. Past a few hundred the record
  * simply wins.
  *
+ * A row with no projection (a member outside the ranked slice) is not exempt from this: it is
+ * blended against `UNKNOWN_PRIOR`, a low neutral stand-in, exactly like every other row. Without
+ * that a team faced once that happened to win would print an undamped 100% and outrank every
+ * projected team on the board.
+ *
  * A core's prior is averaged over the third members actually seen alongside it, and an average
  * sits closer to the middle by construction, so a strong complete team rises above its own core
  * and a weak one sinks below it: we know all three of the one and only two of the other. No
@@ -195,18 +200,29 @@ function projectCore(
   return { strength: Math.round((sum / total) * 10) / 10, order: null, outside: [] };
 }
 
-/** Blended when both sides exist; whichever one exists otherwise; null when neither does. */
+/**
+ * Stands in for a projection we cannot compute, so an unassessable team is blended like any
+ * other rather than ranking on an undamped win rate. Deliberately below every projection a
+ * real team earns (those land near 0.40), so one lucky sighting cannot take the board, while
+ * a genuine record still lifts the row through the usual `say` curve.
+ */
+export const UNKNOWN_PRIOR = 0.25;
+
+/**
+ * Blended when there is a measured side; a bare number otherwise; null when neither exists.
+ * A missing projection is not skipped, it is replaced with `UNKNOWN_PRIOR` and blended exactly
+ * like a real one: below `say`'s threshold that prior wins outright, exactly as a real
+ * projection would, so a team faced once cannot take the board on an undamped win rate.
+ */
 function scoreOf(projection: number | null, measured: number | null, say: number): number | null {
   if (projection === null && measured === null) {
     return null;
   }
-  if (projection === null) {
-    return measured;
-  }
+  const p = projection === null ? UNKNOWN_PRIOR : projection;
   if (measured === null || say === 0) {
-    return projection;
+    return p;
   }
-  return (1 - say) * projection + say * measured;
+  return (1 - say) * p + say * measured;
 }
 
 function rowFrom(src: TeamRowV1, projection: Projection, weightCovered: number): BoardRow {
