@@ -5067,6 +5067,16 @@ git commit -m "meta: the teams board, cores as the spine"
 
 ## Task 13: The Pokemon screen
 
+> **Carried obligation from Task 10.** Task 10 rewrote `rank.ts` around `rankSpecies` but had to
+> keep the old `rank()` and its threshold constants alive under a `SUPERSEDED` banner, because
+> `Overview.tsx`, `About.tsx` and `Species.tsx` still imported them. This task removes the last
+> of those imports, so it must also delete the superseded block: `rank`, `MEASURED_MIN`,
+> `MEASURED_MIN_DEVICES`, `RANKED_SHARE`, `SMALL_MIN`, `Ranking`, `MeasuredRow`, `BaselineRow`,
+> and the matching banner and tests in `rank.test.ts`. Leaving it ships two ranking functions
+> with the old flip still live in one of them, which is the single thing this whole plan exists
+> to remove.
+
+
 The two sections collapse into one ranked list. Each row carries its own provenance, its measured
 count and share, PvPoke's rank, and the "new" marker when PvPoke does not list it. The
 below-threshold banner goes away, replaced by a header line saying how measured the ranking
