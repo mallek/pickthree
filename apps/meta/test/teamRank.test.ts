@@ -211,6 +211,22 @@ describe('buildBoard, observed rows', () => {
     expect(row?.score).toBeLessThan(1);
   });
 
+  it('keeps each moveset with its own Pokemon when the species are re-sorted', () => {
+    // `moves` is documented as aligned with `species`, and the row sorts `species` for identity.
+    // Sorting the ids alone would put c's moveset under a's sprite. The worker already emits
+    // both sorted, so this is a guard on every other caller.
+    const moves = [
+      { fast: 'C_FAST', charged: ['C_ONE'], battles: 30 },
+      { fast: 'A_FAST', charged: ['A_ONE'], battles: 20 },
+      null,
+    ];
+    const t = teamRow({ species: ['c', 'a', 'b'], moves, facedBattles: 10, facedWins: 5, facedLosses: 5 });
+    const b = buildBoard({ teams: teams({ teams: [t] }), ranking, generated: [], view: view() });
+    const row = b.rows[0];
+    expect(row?.species).toEqual(['a', 'b', 'c']);
+    expect(row?.moves.map((m) => m?.fast ?? null)).toEqual(['A_FAST', null, 'C_FAST']);
+  });
+
   it('holds a row with sightings but no decided battle to its projection alone', () => {
     const t = teamRow({ species: ['a', 'b', 'c'], facedBattles: 12 });
     const b = buildBoard({ teams: teams({ teams: [t] }), ranking, generated: [], view: view() });
@@ -276,6 +292,21 @@ describe('buildBoard, cores', () => {
   it('never averages a pair against itself: a team cannot field the same Pokemon twice', () => {
     // PvPoke's meta group contains the core's own members, so the fallback walks over them. The
     // honest average is over the thirds a player could actually bring.
+    //
+    // The fixture has to make the illegal trio score DIFFERENTLY, or the test cannot fail. z is
+    // the only member that beats opponent z, so it is the only third that completes coverage:
+    //
+    //   [x,y,z]  coverage 100, consistency 100, safety 100 - 20 (x hard-loses z as the switch)
+    //            = battleScore(100, 100, 80) = 95
+    //   [x,y,x]  z uncovered, so coverage (0.5 + 0.3) / 1.0 = 80, consistency 100,
+    //            safety 100 - 20 - 10 (one of the top uncovered)
+    //            = battleScore(80, 100, 70) = 82.5
+    //   [x,y,y]  the same three numbers, 82.5
+    //
+    // So the skip gives 95, and averaging the duplicates in would give
+    // 0.5 * 82.5 + 0.3 * 82.5 + 0.2 * 95 = 85.
+    const beats: Record<string, string[]> = { x: ['x', 'y'], y: [], z: ['z'] };
+    const ids = ['x', 'y', 'z'];
     const pairIsMeta = new MatrixView({
       league: 'great',
       cp: 1500,
@@ -284,15 +315,19 @@ describe('buildBoard, cores', () => {
         { shields: [1, 1], energy: [0, 0] },
         { shields: [2, 2], energy: [0, 0] },
       ],
-      candidates: ['x', 'y', 'z'],
-      opponents: ['x', 'y', 'z'],
-      // x wins everything, y and z lose everything.
-      ratings: ['x', 'y', 'z'].flatMap((c) =>
-        ['x', 'y', 'z'].flatMap(() => [c === 'x' ? 700 : 200, c === 'x' ? 700 : 200, c === 'x' ? 700 : 200]),
+      candidates: ids,
+      opponents: ids,
+      ratings: ids.flatMap((c) =>
+        ids.flatMap((o) => {
+          const v = beats[c]?.includes(o) === true ? 700 : 200;
+          return [v, v, v];
+        }),
       ),
       candidateMovesets: {},
       opponentMovesets: {},
     });
+    const LEGAL_ONLY = 95;
+    const WITH_DUPLICATES = 85;
     const core = teamRow({ species: ['x', 'y'] });
     const board = buildBoard({
       teams: teams({ cores: [core] }),
@@ -308,7 +343,12 @@ describe('buildBoard, cores', () => {
       generated: [],
       view: pairIsMeta,
     });
+    expect(whole.rows[0]?.strength).toBe(LEGAL_ONLY);
+    expect(board.rows[0]?.strength).toBe(LEGAL_ONLY);
     expect(board.rows[0]?.strength).toBe(whole.rows[0]?.strength);
+    // The number the bug produced. Naming it is the point: without this line the assertions
+    // above pass whether or not the duplicates were skipped.
+    expect(board.rows[0]?.strength).not.toBe(WITH_DUPLICATES);
   });
 
   it('has no projection for a pair never seen complete when the meta group has no rows', () => {

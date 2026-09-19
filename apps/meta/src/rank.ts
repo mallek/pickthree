@@ -51,7 +51,13 @@ export interface SpeciesRow {
   /** True when PvPoke's curated meta group lists it. */
   inMetaGroup: boolean;
   sightings: number;
-  /** Share of counted battles, 0 to 1, or null when nothing was counted. */
+  /**
+   * Share of counted battles, 0 to 1, or null when nothing was counted. This is a number to
+   * print, NOT the quantity that feeds `weight`: the blend's measured term is this species'
+   * sightings over the total sightings of every species on the list, which is a different
+   * denominator. A row can be 8% of battles and a larger fraction of the measured term, because
+   * one battle can show up to three opponents.
+   */
   share: number | null;
   wins: number;
   losses: number;
@@ -115,8 +121,12 @@ export function rankSpecies(
       sightings: new Map(ids.map((id) => [id, seen.get(id)?.sightings ?? 0])),
       battles: meta.battles,
     },
-    // minBattles 0 because the curve already handles a small sample: there is no floor to fall
-    // off. share because blendShare cannot express the device cap on its own.
+    // `share` is the whole story: blendShare returns it and never reads the battle curve, so
+    // minBattles and halfLife below are inert, present only because BlendOptions requires them.
+    // They are written as the values this curve would use if it ran (no floor, because the curve
+    // already handles a small sample) rather than as arbitrary numbers, so a reader who deletes
+    // the override does not silently get a different formula.
+    // The override exists because blendShare cannot express the device cap on its own.
     { minBattles: 0, halfLife: HALF_SAY_BATTLES, share: say, unrankedPrior: 0 },
   );
 

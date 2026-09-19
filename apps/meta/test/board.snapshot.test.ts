@@ -81,13 +81,22 @@ const EXPECTED_SPECIES = [
 ];
 
 /**
- * The board, best first. Worth reading rather than skipping: `ninetales_shadow+tinkaton` has the
- * larger record of the top two, 45 decided battles at 76%, and still sits second, because
- * `corviknight+tinkaton` has both a hair more projection and a better rate over 23; and
- * `cramorant+ninetales_shadow` is third on the highest projection on the board with only 8
- * decided battles, under TEAM_MIN, so its 88% counts for nothing yet. Row 6 is a generated team
- * with no observed core to nest under, holding its place against real records on a projection
- * alone. That is the blend, and this list is here so that changing it has to be a decision.
+ * The board, best first. Worth reading rather than skipping, because the top of it is the blend
+ * arguing with itself:
+ *
+ * - `corviknight+tinkaton` takes first while projecting a hair LOWER than the row under it,
+ *   0.7028 against 0.7040. It wins purely on its rate: 78% over 23 decided battles against 76%
+ *   over 45. Both rates sit above both projections, so the say lifts both rows, and
+ *   `ninetales_shadow+tinkaton` is lifted further (say 0.60 against 0.43) and still lands lower,
+ *   because it is being lifted toward the smaller number. More battles buys more say, not a
+ *   better score.
+ * - `cramorant+ninetales_shadow` is third on the highest projection on the whole board, 0.7160,
+ *   with 8 decided battles. That is under TEAM_MIN, so its 88% counts for nothing at all yet and
+ *   the row is standing on the projection alone.
+ * - Row 6 is a generated team with no observed core to nest under, holding its place against
+ *   real records on a projection alone.
+ *
+ * This list is here so that changing it has to be a decision.
  */
 const EXPECTED_BOARD = [
   'corviknight+tinkaton',
