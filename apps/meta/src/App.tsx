@@ -366,14 +366,14 @@ export function App(props?: { deps?: Deps }): ReactNode {
   if (staticData.state === 'loading') {
     content = (
       <div className="page">
-        {brandRow}
+        <div className="top-bar">{brandRow}</div>
         <p className="sub">Loading</p>
       </div>
     );
   } else if (staticData.state === 'error' || !staticData.data) {
     content = (
       <div className="page">
-        {brandRow}
+        <div className="top-bar">{brandRow}</div>
         <p>Could not load the site data. Try again in a moment.</p>
       </div>
     );
@@ -403,34 +403,45 @@ export function App(props?: { deps?: Deps }): ReactNode {
         />
       ) : null;
 
+    const leagueSwitcher: ReactNode = showLeagueSwitch ? (
+      <LeagueSwitcher
+        label="League"
+        value={activeLeague}
+        onChange={(id) => go(withLeague(view, id), query)}
+        options={leagues.map((l) => ({ value: l.id, label: l.short }))}
+      />
+    ) : null;
+    const filters: ReactNode = showFilters ? (
+      <div className="filter-row">
+        <Select
+          label="Window"
+          value={query.w}
+          onChange={(wk) => refine({ ...query, w: wk })}
+          options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
+        />
+        <Select
+          label="Rank band"
+          value={query.band}
+          onChange={(b) => refine({ ...query, band: b })}
+          options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
+        />
+      </div>
+    ) : null;
+
     content = (
       <div className="page">
-        {showBrand ? brandRow : null}
-        {pageHeader}
-        {showLeagueSwitch ? (
-          <LeagueSwitcher
-            label="League"
-            value={activeLeague}
-            onChange={(id) => go(withLeague(view, id), query)}
-            options={leagues.map((l) => ({ value: l.id, label: l.short }))}
-          />
-        ) : null}
-        {showFilters ? (
-          <div className="filter-row">
-            <Select
-              label="Window"
-              value={query.w}
-              onChange={(wk) => refine({ ...query, w: wk })}
-              options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
-            />
-            <Select
-              label="Rank band"
-              value={query.band}
-              onChange={(b) => refine({ ...query, band: b })}
-              options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
-            />
+        {showBrand ? (
+          <div className="top-bar">
+            {brandRow}
+            {leagueSwitcher}
+            {filters}
           </div>
-        ) : null}
+        ) : (
+          <>
+            {pageHeader}
+            {leagueSwitcher}
+          </>
+        )}
         {renderView(view, activeLeague, query, staticData.data, meta, baseline, detail, now, (v) =>
           hrefFor(v, query),
         )}

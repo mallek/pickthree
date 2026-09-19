@@ -537,8 +537,9 @@ a.rank-row {
    (Overview, Teams, About), each reached straight from the bottom tab bar. Species is a
    drill-down from Overview rather than a tab of its own, so its sticky header's back link (and
    its own copy of the appearance toggle, Header's `action`) fills this row's job instead, and the
-   wordmark is dropped there rather than duplicating it. Not sticky itself: only the page header,
-   switcher and filters below it are, so the two never have to share row 0. */
+   wordmark is dropped there rather than duplicating it. Not sticky by itself; .top-bar below
+   wraps it with the league switcher and filters so the group stays pinned as one block, matching
+   pick3's own sticky .hdr. */
 .brand {
   justify-content: space-between;
   padding: calc(env(safe-area-inset-top, 0px) + 16px) 0 12px;
@@ -551,6 +552,20 @@ a.rank-row {
   align-items: center;
   gap: 8px;
   flex: none;
+}
+
+/* Wraps the brand row, the league switcher and the filter row into one sticky block on the three
+   tab-root screens (Overview, Teams, About), so scrolling the page body never carries the
+   navigation controls away with it. z-index matches .hdr's, below the bottom tab bar's z-index 5.
+   Species uses the sticky .hdr instead (see pageHeader in App.tsx) and never renders this. */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 /* G: deliberately plain inline flow, not a flex container. pick3's own hero-lockup metrics trick
