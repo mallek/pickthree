@@ -188,20 +188,22 @@ function renderView(
   boardError: boolean,
   board: Board | null,
   ranking: SpeciesRanking | null,
+  rankingError: boolean,
   epoch: Epoch | null,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} />;
   }
   if (view.name === 'pokemon') {
+    // Task 13: Pokemon reads the same blended ranking Teams does (computed once below, from the
+    // meta summary, the baseline and the rank order together) rather than recomputing its own, so
+    // the two screens can never quietly disagree about a row's weight.
     return (
       <Pokemon
         league={league}
-        query={query}
         data={data}
-        meta={meta}
-        baseline={baseline}
-        now={now}
+        rankingError={rankingError}
+        ranking={ranking}
         href={href}
       />
     );
@@ -381,6 +383,10 @@ export function App(props?: { deps?: Deps }): ReactNode {
     meta.state === 'error' ||
     baseline.state === 'error' ||
     ranks.state === 'error';
+  // Task 13: Pokemon fails to render only when one of `ranking`'s own three sources is down, not
+  // when the team board's own feed (teamsData) is: Pokemon never reads teamsData at all.
+  const rankingError =
+    meta.state === 'error' || baseline.state === 'error' || ranks.state === 'error';
 
   // A1: pick3's tab roots carry the settings cog in their one header row, not a row of its own,
   // so the appearance toggle now sits in the brand row too (see brandRow below), drawn as pick3's
@@ -518,6 +524,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           boardError,
           board,
           ranking,
+          rankingError,
           epoch,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />

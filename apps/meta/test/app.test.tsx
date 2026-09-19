@@ -136,10 +136,10 @@ describe('App, deep links', () => {
       'true',
     );
     // Task 10 replaced the overview placeholder with the real screen, which never says
-    // "Most faced in ultra" (that string does not exist in the real copy). The below-threshold
-    // banner and the baseline sub-line both name "Ultra League" here, so this checks for the
-    // section heading instead of matching that text, which would otherwise find two elements.
-    expect(await screen.findByRole('heading', { name: "PvPoke's meta group" })).toBeInTheDocument();
+    // "Most faced in ultra" (that string does not exist in the real copy). Task 13 collapsed the
+    // screen's two sections (and their "PvPoke's meta group" heading) into the one blended list
+    // under "What you face", so that is the heading this checks for now.
+    expect(await screen.findByRole('heading', { name: 'What you face' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/ultra/pokemon');
   });
 
