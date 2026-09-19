@@ -1,0 +1,3649 @@
+{
+  "note": "Seeded synthetic data, generated once with mulberry32 seed 1 and frozen. Species ids were copied from the baked Great League rank order so the fixture reads naturally; nothing here is read from apps/meta/public at test time, so a PvPoke bump cannot move the expected list. Regenerating this file is a deliberate act: the expected ranking in board.snapshot.test.ts has to be retyped with it.",
+  "league": "great",
+  "pvpokeCommit": "seed0001",
+  "pvpokeDate": "2026-09-10",
+  "ranks": [
+    "tinkaton",
+    "ninetales_shadow",
+    "corsola_galarian",
+    "corviknight",
+    "cramorant",
+    "quagsire_shadow",
+    "quagsire",
+    "altaria",
+    "melmetal",
+    "empoleon",
+    "mantine",
+    "ninetales",
+    "snorlax",
+    "empoleon_shadow",
+    "florges",
+    "thievul",
+    "corviknight_shadow",
+    "mimikyu",
+    "feraligatr",
+    "jellicent",
+    "altaria_shadow",
+    "araquanid",
+    "furret",
+    "azumarill",
+    "clodsire",
+    "fearow",
+    "vigoroth",
+    "deoxys_defense",
+    "marowak",
+    "annihilape",
+    "annihilape_shadow",
+    "feraligatr_shadow",
+    "malamar",
+    "sableye_shadow",
+    "electrode_hisuian",
+    "malamar_shadow",
+    "lapras",
+    "umbreon",
+    "dondozo",
+    "guzzlord"
+  ],
+  "baseline": [
+    {
+      "speciesId": "tinkaton",
+      "score": 95,
+      "rating": 700,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "ninetales_shadow",
+      "score": 94.3,
+      "rating": 697,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "corsola_galarian",
+      "score": 93.6,
+      "rating": 694,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "corviknight",
+      "score": 92.9,
+      "rating": 691,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "cramorant",
+      "score": 92.2,
+      "rating": 688,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "quagsire_shadow",
+      "score": 91.5,
+      "rating": 685,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "quagsire",
+      "score": 90.8,
+      "rating": 682,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "altaria",
+      "score": 90.1,
+      "rating": 679,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "melmetal",
+      "score": 89.4,
+      "rating": 676,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "empoleon",
+      "score": 88.7,
+      "rating": 673,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "mantine",
+      "score": 88,
+      "rating": 670,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "ninetales",
+      "score": 87.3,
+      "rating": 667,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "snorlax",
+      "score": 86.6,
+      "rating": 664,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "empoleon_shadow",
+      "score": 85.9,
+      "rating": 661,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "florges",
+      "score": 85.2,
+      "rating": 658,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "thievul",
+      "score": 84.5,
+      "rating": 655,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "corviknight_shadow",
+      "score": 83.8,
+      "rating": 652,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "mimikyu",
+      "score": 83.1,
+      "rating": 649,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "feraligatr",
+      "score": 82.4,
+      "rating": 646,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "jellicent",
+      "score": 81.7,
+      "rating": 643,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "altaria_shadow",
+      "score": 81,
+      "rating": 640,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "araquanid",
+      "score": 80.3,
+      "rating": 637,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "furret",
+      "score": 79.6,
+      "rating": 634,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    },
+    {
+      "speciesId": "azumarill",
+      "score": 78.9,
+      "rating": 631,
+      "fastMove": "FAST",
+      "chargedMoves": [
+        "CHARGED_ONE",
+        "CHARGED_TWO"
+      ],
+      "fastUsage": [],
+      "chargedUsage": []
+    }
+  ],
+  "matrix": {
+    "league": "great",
+    "cp": 1500,
+    "scenarios": [
+      {
+        "shields": [
+          0,
+          0
+        ],
+        "energy": [
+          0,
+          0
+        ]
+      },
+      {
+        "shields": [
+          1,
+          1
+        ],
+        "energy": [
+          0,
+          0
+        ]
+      },
+      {
+        "shields": [
+          2,
+          2
+        ],
+        "energy": [
+          0,
+          0
+        ]
+      }
+    ],
+    "candidates": [
+      "tinkaton",
+      "ninetales_shadow",
+      "corsola_galarian",
+      "corviknight",
+      "cramorant",
+      "quagsire_shadow",
+      "quagsire",
+      "altaria",
+      "melmetal",
+      "empoleon",
+      "mantine",
+      "ninetales",
+      "snorlax",
+      "empoleon_shadow",
+      "florges",
+      "thievul",
+      "corviknight_shadow",
+      "mimikyu",
+      "feraligatr",
+      "jellicent",
+      "altaria_shadow",
+      "araquanid",
+      "furret",
+      "azumarill",
+      "clodsire",
+      "fearow",
+      "vigoroth",
+      "deoxys_defense",
+      "marowak",
+      "annihilape",
+      "annihilape_shadow",
+      "feraligatr_shadow",
+      "malamar",
+      "sableye_shadow",
+      "electrode_hisuian",
+      "malamar_shadow",
+      "lapras",
+      "umbreon",
+      "dondozo",
+      "guzzlord"
+    ],
+    "opponents": [
+      "tinkaton",
+      "ninetales_shadow",
+      "corsola_galarian",
+      "corviknight",
+      "cramorant",
+      "quagsire_shadow",
+      "quagsire",
+      "altaria",
+      "melmetal",
+      "empoleon",
+      "mantine",
+      "ninetales",
+      "snorlax",
+      "empoleon_shadow",
+      "florges",
+      "thievul"
+    ],
+    "candidateMovesets": {},
+    "opponentMovesets": {},
+    "ratings": [588,486,637,660,693,576,573,632,602,651,568,610,457,550,551,454,563,505,501,618,547,450,453,573,532,613,537,442,576,587,557,468,619,484,589,673,431,580,482,444,498,497,400,561,563,388,454,441,580,669,566,655,631,596,498,615,711,629,613,698,603,660,515,422,640,548,601,555,683,556,473,620,604,460,681,425,510,485,472,490,598,489,529,464,549,594,502,402,467,632,423,426,574,474,460,450,468,486,573,579,609,526,536,575,541,593,509,707,622,639,483,447,448,693,473,594,661,415,485,656,563,598,507,404,450,542,496,475,641,439,606,630,504,547,486,443,461,474,411,592,635,382,454,433,438,637,585,477,491,674,485,649,603,506,598,557,459,558,643,574,446,515,532,571,470,459,517,649,524,495,530,508,413,649,488,529,581,391,414,613,389,549,488,493,451,542,549,396,440,378,524,419,539,541,664,474,470,706,626,449,670,429,526,608,514,518,625,422,490,675,523,541,466,416,553,503,409,550,579,373,418,445,451,546,576,532,533,575,561,390,611,547,385,596,458,498,491,356,386,553,498,454,597,531,595,669,513,607,488,485,594,512,584,598,483,426,575,463,556,625,524,574,596,582,471,534,533,407,428,638,498,401,557,480,419,453,553,439,416,446,445,622,470,472,402,465,368,568,622,483,621,597,567,601,486,567,592,563,617,547,552,577,508,414,610,533,582,519,584,461,426,604,499,566,458,356,563,596,397,454,583,350,429,424,404,578,476,420,513,432,466,534,540,422,376,478,603,539,672,615,564,509,530,561,590,583,499,654,388,511,501,374,517,543,541,468,613,559,488,471,475,507,506,559,526,531,448,385,500,378,492,414,452,439,523,373,389,454,385,417,526,440,364,467,432,601,583,434,530,460,415,495,581,592,494,580,484,494,527,379,533,578,469,401,497,371,527,640,548,488,592,449,380,467,539,380,481,513,553,485,489,538,530,356,364,426,448,452,493,404,412,513,558,603,476,574,537,529,568,523,523,449,586,564,550,447,630,449,557,457,417,458,574,426,492,519,414,530,563,550,385,618,392,384,483,468,441,508,396,506,587,474,366,451,367,377,490,309,348,440,471,477,598,425,419,589,490,618,615,448,505,561,498,407,567,430,444,586,539,453,582,534,590,595,514,464,494,374,559,558,331,410,575,452,518,386,449,471,389,353,347,532,313,527,410,375,335,499,524,599,646,384,602,580,497,466,443,534,432,576,546,448,508,553,571,441,508,392,530,411,403,423,368,450,518,350,562,462,325,446,428,383,343,518,513,550,422,469,453,420,485,337,377,297,406,536,512,466,516,459,480,561,459,553,578,505,396,516,435,470,600,491,418,617,488,566,438,539,364,498,352,490,403,447,375,410,381,440,436,438,356,402,354,481,544,394,428,577,449,333,563,302,356,465,484,525,452,433,535,575,423,498,573,553,520,611,501,535,477,523,540,509,397,535,600,518,367,573,418,433,412,398,441,425,411,550,490,302,547,481,438,326,529,460,488,555,473,457,353,420,406,551,475,525,461,511,421,531,398,420,495,357,377,494,342,503,435,388,457,582,438,563,468,393,456,446,389,468,473,408,360,429,417,337,395,338,456,435,291,521,360,294,498,384,298,466,467,426,347,482,422,591,582,393,431,483,393,514,404,383,582,493,388,505,556,382,505,603,462,362,524,362,443,458,514,444,458,501,343,450,462,530,376,419,372,560,302,326,472,294,449,405,267,373,414,420,461,446,497,592,466,543,459,547,391,538,499,484,489,539,492,408,459,376,506,519,385,514,524,300,480,584,448,412,397,454,395,537,331,483,389,422,312,422,330,390,491,280,393,433,301,445,372,463,321,517,474,540,471,396,390,479,503,498,439,457,481,465,526,439,551,494,466,524,439,517,564,491,513,507,381,365,401,465,343,396,399,310,543,433,487,465,323,498,371,399,310,482,401,341,472,364,470,373,386,437,558,459,501,393,510,527,435,439,385,413,370,356,407,423,387,452,436,519,429,482,416,461,491,402,547,387,397,346,347,403,403,373,429,542,322,288,477,258,314,509,435,452,456,450,271,466,323,387,498,362,471,565,384,552,402,303,446,512,438,403,368,412,504,543,387,341,391,292,424,373,389,418,514,306,475,409,368,381,413,453,365,417,351,463,497,403,454,376,414,457,438,252,265,481,442,524,541,410,464,571,376,436,410,385,447,476,332,407,457,485,386,476,422,324,525,464,412,541,273,375,552,438,345,493,348,418,347,389,340,427,301,328,424,260,318,338,407,291,468,391,286,340,508,350,538,368,498,434,419,420,433,409,438,456,311,362,534,398,518,525,345,447,369,459,306,358,263,463,415,469,421,389,295,421,406,417,470,486,404,452,455,230,472,485,328,341,293,374,257,439,465,509,530,382,393,547,503,482,409,323,320,358,486,378,414,315,368,369,443,354,504,462,377,494,283,401,445,445,349,449,270,470,409,246,479,423,386,400,479,409,388,425,420,451,339,234,272,492,469,459,514,413,415,446,444,396,492,361,372,469,404,513,477,439,460,473,280,484,400,415,288,490,279,317,424,369,339,469,364,336,359,332,356,349,336,260,349,368,365,310,261,270,441,374,332,306,483,394,493,441,331,411,298,383,431,298,409,417,313,324,534,459,363,528,348,387,517,339,463,436,386,321,437,437,289,429,274,285,449,315,269,449,292,312,419,401,265,443,364,296,378,289,266,394,383,523,413,425,382,468,280,497,475,354,430,425,272,426,324,414,312,319,248,292,453,260,395,490,326,351,461,252,344,488,435,378,430,382,334,288,414,414,442,292,328,446,298,423,329,208,221,288,322,345,531,361,389,444,258,379,534,318,444,387,400,387,460,354,307,328,423,431,495,394,477,321,321,268,493,323,267,493,417,322,431,319,321,382,318,346,374,352,367,287,389,377,339,209,425,352,268,385,414,340,323,415,293,433,367,314,399,522,384,375,477,309,478,476,344,359,387,395,397,363,382,392,344,352,377,345,259,332,463,209,447,453,235,314,360,325,410,360,228,321,401,267,362,422,325,468,497,285,483,376,403,358,377,447,449,356,294,390,371,315,280,413,247,271,316,268,374,481,366,448,320,218,334,428,287,292,332,387,224,383,197,298,386,315,338,318,179,222,276,301,369,250,467,305,361,328,359,439,322,338,384,416,364,445,386,409,385,358,387,462,412,415,427,340,407,281,219,418,409,395,236,275,376,438,469,358,427,304,307,347,325,354,308,411,305,218,362,306,408,256,378,314,471,381,427,414,312,428,337,294,274,428,241,445,331,332,304,454,241,351,382,270,269,282,289,321,406,253,305,468,335,391,372,377,352,405,249,415,362,338,379,267,221,325,279,249,397,331,393,418,455,286,373,427,424,269,299,293,428,484,255,274,483,303,259,340,310,423,337,357,248,381,186,325,329,218,257,416,267,245,302,310,277,387,177,259,279,336,320,380,301,206,370,335,384,351,332,336,416,224,393,299,235,435,435,268,413,300,367,447,429,298,396,456,337,389,313,291,405,388,248,270,342,237,307,430,352,219,357,345,233,234,211,298,298,355,189,419,183,307,402,275,224,382,398,452,309,329,338,304,288,419,329,251,278,347,415,324,388,304,363,382,249,349,327,187,283,299,233,246,358,348,242,355,272,400,436,274,324,227,304,382,364,358,360,235,317,209,341,287,275,342,348,455,297,277,263,350,245,331,385,196,255,358,294,307,379,314,406,253,315,228,415,388,281,345,175,323,268,165,403,280,292,373,226,365,256,224,208,205,377,139,321,320,188,347,291,129,277,378,301,356,445,207,399,313,295,313,297,264,402,394,268,302,290,265,396,301,379,218,430,303,239,241,365,195,370,314,337,425,288,195,286,313,318,249,169,186,268,201,239,284,231,211,257,275,309,402,321,338,379,245,279,334,216,353,285,341,384,275,318,387,380,183,347,305,210,295,419,228,346,316,227,233,231,253,252,240,347,311,413,203,288,355,281,170,302,279,345,231,286,161,339,136,212,322,316,341,439,390,290,426,189,309,462,212,248,286,257,351,414,176,264,418,354,294,414,297,358,268,342,183,385,258,219,213,327,367,316,171,279,320,176,296,320,234,177,251,198,155,250,202,172,300,348,264,290,358,399,411,294,282,246,359,391,296,311,284,307,346,395,418,257,275,431,312,270,250,150,377,385,213,315,313,195,315,228,175,346,379,322,303,193,140,194,222,320,150,301,189,236,274,251,230,258,318,362,279,323,328,270,168,283,317,202,230,378,230,227,318,149,228,377,196,370,334,184,295,355,158,290,394,278,216,318,302,184,288,116,323,347,263,206,320,228,239,213,221,290,163]
+  },
+  "meta": {
+    "league": "great",
+    "since": "2026-09-01T00:00:00.000Z",
+    "until": "2026-09-30T00:00:00.000Z",
+    "band": "all",
+    "battles": 500,
+    "tanked": 14,
+    "devices": 5,
+    "bands": {
+      "ace": 260,
+      "veteran": 240
+    },
+    "sources": {
+      "ladder": 500
+    },
+    "species": [
+      {
+        "speciesId": "tinkaton",
+        "sightings": 129,
+        "wins": 76,
+        "losses": 53,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "ninetales_shadow",
+        "sightings": 97,
+        "wins": 57,
+        "losses": 40,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "corsola_galarian",
+        "sightings": 78,
+        "wins": 45,
+        "losses": 33,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "corviknight",
+        "sightings": 46,
+        "wins": 31,
+        "losses": 15,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "cramorant",
+        "sightings": 46,
+        "wins": 27,
+        "losses": 19,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "altaria",
+        "sightings": 37,
+        "wins": 23,
+        "losses": 14,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "quagsire",
+        "sightings": 36,
+        "wins": 19,
+        "losses": 17,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "quagsire_shadow",
+        "sightings": 34,
+        "wins": 21,
+        "losses": 13,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "mantine",
+        "sightings": 30,
+        "wins": 13,
+        "losses": 17,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "ninetales",
+        "sightings": 26,
+        "wins": 15,
+        "losses": 11,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "melmetal",
+        "sightings": 25,
+        "wins": 16,
+        "losses": 9,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "altaria_shadow",
+        "sightings": 19,
+        "wins": 8,
+        "losses": 11,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "empoleon",
+        "sightings": 19,
+        "wins": 12,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "feraligatr",
+        "sightings": 19,
+        "wins": 12,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "florges",
+        "sightings": 18,
+        "wins": 13,
+        "losses": 5,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "snorlax",
+        "sightings": 18,
+        "wins": 11,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "furret",
+        "sightings": 16,
+        "wins": 10,
+        "losses": 6,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "mimikyu",
+        "sightings": 15,
+        "wins": 6,
+        "losses": 9,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "azumarill",
+        "sightings": 14,
+        "wins": 7,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "delibird",
+        "sightings": 14,
+        "wins": 8,
+        "losses": 6,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "clodsire",
+        "sightings": 13,
+        "wins": 4,
+        "losses": 9,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "empoleon_shadow",
+        "sightings": 13,
+        "wins": 7,
+        "losses": 6,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "malamar",
+        "sightings": 13,
+        "wins": 4,
+        "losses": 9,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "thievul",
+        "sightings": 13,
+        "wins": 4,
+        "losses": 9,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "shuckle",
+        "sightings": 12,
+        "wins": 7,
+        "losses": 5,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "wobbuffet",
+        "sightings": 12,
+        "wins": 5,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "corviknight_shadow",
+        "sightings": 11,
+        "wins": 8,
+        "losses": 3,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "jellicent",
+        "sightings": 11,
+        "wins": 4,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "araquanid",
+        "sightings": 10,
+        "wins": 6,
+        "losses": 4,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "feraligatr_shadow",
+        "sightings": 9,
+        "wins": 4,
+        "losses": 5,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "vigoroth",
+        "sightings": 9,
+        "wins": 2,
+        "losses": 7,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "annihilape_shadow",
+        "sightings": 8,
+        "wins": 5,
+        "losses": 3,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "sableye_shadow",
+        "sightings": 8,
+        "wins": 5,
+        "losses": 3,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "fearow",
+        "sightings": 7,
+        "wins": 3,
+        "losses": 4,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "marowak",
+        "sightings": 7,
+        "wins": 4,
+        "losses": 3,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "deoxys_defense",
+        "sightings": 6,
+        "wins": 3,
+        "losses": 3,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "electrode_hisuian",
+        "sightings": 6,
+        "wins": 2,
+        "losses": 4,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "umbreon",
+        "sightings": 6,
+        "wins": 3,
+        "losses": 3,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "annihilape",
+        "sightings": 5,
+        "wins": 1,
+        "losses": 4,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "guzzlord",
+        "sightings": 5,
+        "wins": 3,
+        "losses": 2,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "dondozo",
+        "sightings": 4,
+        "wins": 3,
+        "losses": 1,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "lapras",
+        "sightings": 4,
+        "wins": 0,
+        "losses": 4,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      },
+      {
+        "speciesId": "malamar_shadow",
+        "sightings": 4,
+        "wins": 2,
+        "losses": 2,
+        "runs": 0,
+        "runWins": 0,
+        "runLosses": 0
+      }
+    ],
+    "teams": [],
+    "previous": null,
+    "generatedAt": "2026-09-30T00:00:00.000Z"
+  },
+  "teams": {
+    "league": "great",
+    "since": "2026-09-01T00:00:00.000Z",
+    "until": "2026-09-30T00:00:00.000Z",
+    "band": "all",
+    "battles": 500,
+    "devices": 5,
+    "sources": {
+      "ladder": 500
+    },
+    "teams": [
+      {
+        "species": [
+          "corsola_galarian",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "empoleon",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 3,
+        "runWins": 2,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "corviknight",
+          "ninetales_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 3,
+        "runWins": 2,
+        "runLosses": 1,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "melmetal",
+          "quagsire_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 2,
+        "facedWins": 2,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "cramorant",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "cramorant",
+          "furret",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "cramorant",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria",
+          "cramorant",
+          "ninetales_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 0,
+        "runLosses": 2,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "azumarill",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "clodsire",
+          "corsola_galarian",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 0,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "cramorant",
+          "quagsire"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "cramorant",
+          "snorlax"
+        ],
+        "kind": "team",
+        "runBattles": 0,
+        "runWins": 0,
+        "runLosses": 0,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "cramorant",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "mantine",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 1,
+        "runLosses": 1,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "ninetales_shadow",
+          "quagsire_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 0,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "cramorant",
+          "mantine"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "feraligatr",
+          "ninetales_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "mimikyu",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "ninetales",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "corviknight",
+          "quagsire",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "cramorant",
+          "empoleon",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "cramorant",
+          "thievul",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "dondozo",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "electrode_hisuian",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 0,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "empoleon_shadow",
+          "melmetal",
+          "snorlax"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "feraligatr",
+          "mantine",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "feraligatr",
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "mantine",
+          "ninetales_shadow",
+          "quagsire_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 0,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "melmetal",
+          "snorlax",
+          "tinkaton"
+        ],
+        "kind": "team",
+        "runBattles": 2,
+        "runWins": 2,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "annihilape",
+          "marowak"
+        ],
+        "kind": "team",
+        "runBattles": 0,
+        "runWins": 0,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "annihilape",
+          "melmetal"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "corsola_galarian",
+          "delibird"
+        ],
+        "kind": "team",
+        "runBattles": 0,
+        "runWins": 0,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "corsola_galarian",
+          "sableye_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "corviknight_shadow",
+          "empoleon"
+        ],
+        "kind": "team",
+        "runBattles": 0,
+        "runWins": 0,
+        "runLosses": 0,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "corviknight_shadow",
+          "mantine"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "corviknight",
+          "quagsire_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 0,
+        "runLosses": 1,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "cramorant",
+          "feraligatr_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 1,
+        "runLosses": 0,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "electrode_hisuian",
+          "ninetales_shadow"
+        ],
+        "kind": "team",
+        "runBattles": 1,
+        "runWins": 0,
+        "runLosses": 1,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null,
+          null
+        ],
+        "thirds": []
+      }
+    ],
+    "cores": [
+      {
+        "species": [
+          "ninetales_shadow",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 29,
+        "runWins": 21,
+        "runLosses": 8,
+        "facedBattles": 16,
+        "facedWins": 13,
+        "facedLosses": 3,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 5
+          },
+          {
+            "speciesId": "empoleon",
+            "sightings": 5
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 4
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 3
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 2
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 2
+          },
+          {
+            "speciesId": "dondozo",
+            "sightings": 2
+          },
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 2
+          },
+          {
+            "speciesId": "feraligatr",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "annihilape",
+            "sightings": 1
+          },
+          {
+            "speciesId": "delibird",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 17,
+        "runWins": 9,
+        "runLosses": 8,
+        "facedBattles": 8,
+        "facedWins": 8,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 5
+          },
+          {
+            "speciesId": "clodsire",
+            "sightings": 2
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 2
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 2
+          },
+          {
+            "speciesId": "annihilape",
+            "sightings": 1
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          },
+          {
+            "speciesId": "dondozo",
+            "sightings": 1
+          },
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "feraligatr",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corviknight",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 15,
+        "runWins": 13,
+        "runLosses": 2,
+        "facedBattles": 8,
+        "facedWins": 5,
+        "facedLosses": 3,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 4
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 3
+          },
+          {
+            "speciesId": "mimikyu",
+            "sightings": 2
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 2
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "annihilape_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "clodsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          },
+          {
+            "speciesId": "florges",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "cramorant",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 12,
+        "runWins": 11,
+        "runLosses": 1,
+        "facedBattles": 10,
+        "facedWins": 5,
+        "facedLosses": 5,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "corviknight",
+            "sightings": 3
+          },
+          {
+            "speciesId": "furret",
+            "sightings": 3
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 3
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 2
+          },
+          {
+            "speciesId": "empoleon",
+            "sightings": 2
+          },
+          {
+            "speciesId": "thievul",
+            "sightings": 2
+          },
+          {
+            "speciesId": "delibird",
+            "sightings": 1
+          },
+          {
+            "speciesId": "malamar",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mimikyu",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "shuckle",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 11,
+        "runWins": 7,
+        "runLosses": 4,
+        "facedBattles": 5,
+        "facedWins": 4,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "tinkaton",
+            "sightings": 5
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 3
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "clodsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "thievul",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corviknight",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 11,
+        "runWins": 7,
+        "runLosses": 4,
+        "facedBattles": 4,
+        "facedWins": 3,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "tinkaton",
+            "sightings": 4
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 3
+          },
+          {
+            "speciesId": "feraligatr",
+            "sightings": 2
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "malamar",
+            "sightings": 1
+          },
+          {
+            "speciesId": "marowak",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mimikyu",
+            "sightings": 1
+          },
+          {
+            "speciesId": "thievul",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "altaria",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 10,
+        "runWins": 7,
+        "runLosses": 3,
+        "facedBattles": 4,
+        "facedWins": 3,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "fearow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "furret",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "empoleon",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 10,
+        "runWins": 8,
+        "runLosses": 2,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 5
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 2
+          },
+          {
+            "speciesId": "malamar",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "thievul",
+            "sightings": 1
+          },
+          {
+            "speciesId": "wobbuffet",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "mantine",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 10,
+        "runWins": 7,
+        "runLosses": 3,
+        "facedBattles": 2,
+        "facedWins": 2,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 2
+          },
+          {
+            "speciesId": "feraligatr",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "altaria_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 1
+          },
+          {
+            "speciesId": "jellicent",
+            "sightings": 1
+          },
+          {
+            "speciesId": "marowak",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "shuckle",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "corviknight"
+        ],
+        "kind": "core",
+        "runBattles": 9,
+        "runWins": 7,
+        "runLosses": 2,
+        "facedBattles": 2,
+        "facedWins": 2,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 3
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "annihilape_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "florges",
+            "sightings": 1
+          },
+          {
+            "speciesId": "marowak",
+            "sightings": 1
+          },
+          {
+            "speciesId": "melmetal",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "altaria",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 9,
+        "runWins": 6,
+        "runLosses": 3,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "cramorant",
+            "sightings": 2
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 2
+          },
+          {
+            "speciesId": "annihilape_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 1
+          },
+          {
+            "speciesId": "melmetal",
+            "sightings": 1
+          },
+          {
+            "speciesId": "vigoroth",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "cramorant"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 4,
+        "runLosses": 0,
+        "facedBattles": 6,
+        "facedWins": 3,
+        "facedLosses": 3,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "quagsire",
+            "sightings": 2
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 2
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 2
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "clodsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "ninetales_shadow",
+          "quagsire_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 7,
+        "runWins": 5,
+        "runLosses": 2,
+        "facedBattles": 3,
+        "facedWins": 2,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 2
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 2
+          },
+          {
+            "speciesId": "fearow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "lapras",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "shuckle",
+            "sightings": 1
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "quagsire",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 6,
+        "runWins": 4,
+        "runLosses": 2,
+        "facedBattles": 4,
+        "facedWins": 1,
+        "facedLosses": 3,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "corviknight",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "fearow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "florges",
+            "sightings": 1
+          },
+          {
+            "speciesId": "lapras",
+            "sightings": 1
+          },
+          {
+            "speciesId": "melmetal",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "thievul",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 8,
+        "runWins": 6,
+        "runLosses": 2,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "cramorant",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "clodsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon",
+            "sightings": 1
+          },
+          {
+            "speciesId": "marowak",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "sableye_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "shuckle",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "araquanid",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 7,
+        "runWins": 5,
+        "runLosses": 2,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "dondozo",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "florges",
+            "sightings": 1
+          },
+          {
+            "speciesId": "malamar",
+            "sightings": 1
+          },
+          {
+            "speciesId": "melmetal",
+            "sightings": 1
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "melmetal"
+        ],
+        "kind": "core",
+        "runBattles": 7,
+        "runWins": 6,
+        "runLosses": 1,
+        "facedBattles": 2,
+        "facedWins": 2,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 3
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "lapras",
+            "sightings": 1
+          },
+          {
+            "speciesId": "sableye_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "cramorant",
+          "quagsire_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 6,
+        "runWins": 3,
+        "runLosses": 3,
+        "facedBattles": 3,
+        "facedWins": 1,
+        "facedLosses": 2,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "feraligatr_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "jellicent",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          },
+          {
+            "speciesId": "wobbuffet",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "ninetales",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 5,
+        "facedWins": 1,
+        "facedLosses": 4,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "corviknight",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "feraligatr_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "florges",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corsola_galarian",
+          "quagsire_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 4,
+        "facedWins": 4,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "melmetal",
+            "sightings": 3
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 1
+          },
+          {
+            "speciesId": "delibird",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corviknight",
+          "cramorant"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 4,
+        "runLosses": 0,
+        "facedBattles": 4,
+        "facedWins": 3,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "tinkaton",
+            "sightings": 3
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 2
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "delibird",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "cramorant",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 4,
+        "runLosses": 0,
+        "facedBattles": 4,
+        "facedWins": 3,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "tinkaton",
+            "sightings": 3
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 2
+          },
+          {
+            "speciesId": "annihilape",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "wobbuffet",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "furret",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 2,
+        "runLosses": 2,
+        "facedBattles": 4,
+        "facedWins": 3,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "cramorant",
+            "sightings": 3
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "annihilape",
+            "sightings": 1
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "ninetales_shadow",
+          "quagsire"
+        ],
+        "kind": "core",
+        "runBattles": 3,
+        "runWins": 2,
+        "runLosses": 1,
+        "facedBattles": 5,
+        "facedWins": 3,
+        "facedLosses": 2,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "altaria_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "guzzlord",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "shuckle",
+            "sightings": 1
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "quagsire_shadow",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 5,
+        "runWins": 3,
+        "runLosses": 2,
+        "facedBattles": 3,
+        "facedWins": 0,
+        "facedLosses": 3,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 1
+          },
+          {
+            "speciesId": "feraligatr",
+            "sightings": 1
+          },
+          {
+            "speciesId": "feraligatr_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "malamar",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "azumarill",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 3,
+        "facedWins": 2,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          },
+          {
+            "speciesId": "furret",
+            "sightings": 1
+          },
+          {
+            "speciesId": "shuckle",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "empoleon_shadow",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 5,
+        "runWins": 4,
+        "runLosses": 1,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "fearow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "melmetal",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "umbreon",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "feraligatr",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 6,
+        "runWins": 4,
+        "runLosses": 2,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "mantine",
+            "sightings": 2
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "annihilape_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "florges",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 5,
+        "runWins": 3,
+        "runLosses": 2,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "melmetal",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 6,
+        "runWins": 5,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "snorlax",
+            "sightings": 2
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "snorlax",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 6,
+        "runWins": 5,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "melmetal",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "altaria_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 1
+          },
+          {
+            "speciesId": "malamar",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "altaria_shadow",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 2,
+        "facedWins": 2,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "electrode_hisuian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "guzzlord",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corviknight",
+          "mimikyu"
+        ],
+        "kind": "core",
+        "runBattles": 3,
+        "runWins": 2,
+        "runLosses": 1,
+        "facedBattles": 3,
+        "facedWins": 2,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "tinkaton",
+            "sightings": 2
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "thievul",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "electrode_hisuian",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 5,
+        "runWins": 1,
+        "runLosses": 4,
+        "facedBattles": 1,
+        "facedWins": 1,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "corsola_galarian",
+            "sightings": 1
+          },
+          {
+            "speciesId": "fearow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "melmetal",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "empoleon",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 4,
+        "runWins": 3,
+        "runLosses": 1,
+        "facedBattles": 2,
+        "facedWins": 1,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "tinkaton",
+            "sightings": 5
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "malamar",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 5,
+        "runWins": 4,
+        "runLosses": 1,
+        "facedBattles": 1,
+        "facedWins": 0,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "araquanid",
+            "sightings": 1
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "snorlax",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "mantine",
+          "ninetales_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 3,
+        "runWins": 0,
+        "runLosses": 3,
+        "facedBattles": 3,
+        "facedWins": 2,
+        "facedLosses": 1,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "quagsire_shadow",
+            "sightings": 2
+          },
+          {
+            "speciesId": "altaria",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "quagsire",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "shuckle",
+          "tinkaton"
+        ],
+        "kind": "core",
+        "runBattles": 2,
+        "runWins": 1,
+        "runLosses": 1,
+        "facedBattles": 4,
+        "facedWins": 0,
+        "facedLosses": 4,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "corviknight_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "cramorant",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mantine",
+            "sightings": 1
+          },
+          {
+            "speciesId": "ninetales_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "thievul",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corviknight",
+          "mantine"
+        ],
+        "kind": "core",
+        "runBattles": 3,
+        "runWins": 2,
+        "runLosses": 1,
+        "facedBattles": 2,
+        "facedWins": 2,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "cramorant",
+            "sightings": 2
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mimikyu",
+            "sightings": 1
+          },
+          {
+            "speciesId": "tinkaton",
+            "sightings": 1
+          }
+        ]
+      },
+      {
+        "species": [
+          "corviknight",
+          "quagsire_shadow"
+        ],
+        "kind": "core",
+        "runBattles": 5,
+        "runWins": 4,
+        "runLosses": 1,
+        "facedBattles": 0,
+        "facedWins": 0,
+        "facedLosses": 0,
+        "moves": [
+          null,
+          null
+        ],
+        "thirds": [
+          {
+            "speciesId": "altaria_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "azumarill",
+            "sightings": 1
+          },
+          {
+            "speciesId": "deoxys_defense",
+            "sightings": 1
+          },
+          {
+            "speciesId": "empoleon_shadow",
+            "sightings": 1
+          },
+          {
+            "speciesId": "mimikyu",
+            "sightings": 1
+          }
+        ]
+      }
+    ],
+    "generatedAt": "2026-09-30T00:00:00.000Z"
+  },
+  "generated": [
+    {
+      "species": [
+        "altaria_shadow",
+        "araquanid",
+        "mantine"
+      ],
+      "strength": 93.1,
+      "coverage": 20,
+      "consistency": 46,
+      "safety": 80,
+      "structure": "ABC",
+      "exposure": []
+    },
+    {
+      "species": [
+        "altaria",
+        "corviknight",
+        "quagsire"
+      ],
+      "strength": 80.7,
+      "coverage": 11,
+      "consistency": 87,
+      "safety": 80,
+      "structure": "ABC",
+      "exposure": []
+    },
+    {
+      "species": [
+        "altaria_shadow",
+        "mimikyu",
+        "ninetales"
+      ],
+      "strength": 80.7,
+      "coverage": 38,
+      "consistency": 45,
+      "safety": 80,
+      "structure": "ABC",
+      "exposure": []
+    },
+    {
+      "species": [
+        "altaria",
+        "araquanid",
+        "thievul"
+      ],
+      "strength": 88.4,
+      "coverage": 9,
+      "consistency": 47,
+      "safety": 80,
+      "structure": "ABC",
+      "exposure": []
+    },
+    {
+      "species": [
+        "ninetales_shadow",
+        "thievul",
+        "tinkaton"
+      ],
+      "strength": 77.2,
+      "coverage": 27,
+      "consistency": 22,
+      "safety": 80,
+      "structure": "ABC",
+      "exposure": []
+    },
+    {
+      "species": [
+        "corsola_galarian",
+        "feraligatr",
+        "mimikyu"
+      ],
+      "strength": 73.6,
+      "coverage": 86,
+      "consistency": 65,
+      "safety": 80,
+      "structure": "ABC",
+      "exposure": []
+    }
+  ]
+}

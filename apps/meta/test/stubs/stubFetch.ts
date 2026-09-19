@@ -1,10 +1,13 @@
 /**
- * One stub for every request the site makes: the four baked files, the baseline, and the two read
- * endpoints. Pass overrides to shape a scenario; the defaults are an empty measured dataset, which
- * is the state the site actually ships in.
+ * One stub for every request the site makes: the baked static files, the baseline, the matchup
+ * slice, the rank order, the generated board, and the read endpoints. Pass overrides to shape a
+ * scenario; the defaults are an empty measured dataset, which is the state the site actually
+ * ships in.
  */
+import type { MatchupMatrix } from '@pickthree/engine/meta';
 import type { MetaSummaryV1, SpeciesDetailV1, TeamsV1 } from '../../src/api.js';
 import type { Epoch } from '../../src/epochs.js';
+import type { GeneratedTeamLite } from '../../src/slice.js';
 
 export interface StubOptions {
   meta?: Partial<MetaSummaryV1>;
@@ -12,6 +15,12 @@ export interface StubOptions {
   metaStatus?: number;
   epochs?: Epoch[];
   teams?: Partial<TeamsV1>;
+  /** The baked generated board. Defaults to GENERATED_TEAMS below. */
+  generated?: GeneratedTeamLite[];
+  /** 404 the matchup slice, so the site has to render with no projections at all. */
+  sliceStatus?: number;
+  /** The commit stamped on the slice, for the mismatch banner. Defaults to the baseline's. */
+  sliceCommit?: string;
 }
 
 export const EMPTY_META: MetaSummaryV1 = {
@@ -118,6 +127,92 @@ function baselineFile(league: string): unknown {
   };
 }
 
+/**
+ * PvPoke overall order over the species the stub knows about. `rankSpecies` reads it for the
+ * prior, so a species missing from it is an unranked one: that is how a test asks for the "new
+ * to the meta" marker.
+ */
+export const RANK_ORDER = [
+  'azumarill',
+  'medicham',
+  'registeel',
+  'lanturn',
+  'tinkaton',
+  'clodsire',
+];
+
+/** The slice's rows. A species outside this list has no matrix row, so a team containing it
+ *  gets no projection at all: that is how a test asks for the "outside the slice" state. */
+const SLICE_CANDIDATES = RANK_ORDER;
+/** PvPoke's meta group, the slice's columns. A subset of the rows, as in production. */
+const SLICE_OPPONENTS = ['azumarill', 'medicham', 'lanturn', 'tinkaton'];
+
+/**
+ * A rating that depends only on the two ids, so the stub is deterministic and the strong species
+ * are strong against everything: azumarill and medicham win, registeel trades, the rest lose.
+ * Ratings are the engine's own scale, where above 500 is a win.
+ */
+function ratingFor(candidate: string, opponent: string): number {
+  if (candidate === opponent) {
+    return 500;
+  }
+  if (candidate === 'azumarill' || candidate === 'medicham') {
+    return 700;
+  }
+  if (candidate === 'registeel') {
+    return opponent === 'tinkaton' ? 650 : 480;
+  }
+  return 250;
+}
+
+function sliceMatrix(league: string): MatchupMatrix {
+  const scenarios: MatchupMatrix['scenarios'] = [
+    { shields: [0, 0], energy: [0, 0] },
+    { shields: [1, 1], energy: [0, 0] },
+    { shields: [2, 2], energy: [0, 0] },
+  ];
+  const ratings: number[] = [];
+  for (const candidate of SLICE_CANDIDATES) {
+    for (const opponent of SLICE_OPPONENTS) {
+      for (let s = 0; s < scenarios.length; s++) {
+        ratings.push(ratingFor(candidate, opponent));
+      }
+    }
+  }
+  return {
+    league,
+    cp: 1500,
+    scenarios,
+    candidates: [...SLICE_CANDIDATES],
+    opponents: [...SLICE_OPPONENTS],
+    candidateMovesets: {},
+    opponentMovesets: {},
+    ratings,
+  };
+}
+
+/** The baked board. Two teams, one clearly stronger, both inside the slice. */
+export const GENERATED_TEAMS: GeneratedTeamLite[] = [
+  {
+    species: ['azumarill', 'medicham', 'registeel'],
+    strength: 88,
+    coverage: 100,
+    consistency: 90,
+    safety: 80,
+    structure: 'ABC',
+    exposure: [],
+  },
+  {
+    species: ['lanturn', 'clodsire', 'tinkaton'],
+    strength: 61,
+    coverage: 60,
+    consistency: 50,
+    safety: 40,
+    structure: 'ABC',
+    exposure: ['medicham'],
+  },
+];
+
 export function stubFetch(opts: StubOptions): typeof fetch {
   const json = (body: unknown, status = 200): Response =>
     new Response(JSON.stringify(body), {
@@ -141,9 +236,41 @@ export function stubFetch(opts: StubOptions): typeof fetch {
     if (url.startsWith('/epochs.json')) {
       return json(opts.epochs ?? EPOCHS_FILE);
     }
+    if (url.startsWith('/matrix/')) {
+      if (opts.sliceStatus && opts.sliceStatus >= 400) {
+        return json({ error: 'no slice' }, opts.sliceStatus);
+      }
+      const league = url.slice('/matrix/'.length).replace('.json', '');
+      return json({
+        league,
+        pvpokeCommit: opts.sliceCommit ?? 'abc1234',
+        pvpokeDate: '2026-09-10',
+        matrix: sliceMatrix(league),
+      });
+    }
+    if (url.startsWith('/ranks/')) {
+      const league = url.slice('/ranks/'.length).replace('.json', '');
+      return json({
+        league,
+        pvpokeCommit: 'abc1234',
+        pvpokeDate: '2026-09-10',
+        order: RANK_ORDER,
+      });
+    }
     if (url.startsWith('/baseline/')) {
-      const league = url.slice('/baseline/'.length).replace('.json', '');
-      return json(baselineFile(league));
+      const name = url.slice('/baseline/'.length).replace('.json', '');
+      // The generated board shares the baseline folder: /baseline/great-teams.json.
+      if (name.endsWith('-teams')) {
+        return json({
+          league: name.slice(0, -'-teams'.length),
+          source: 'generated',
+          pvpokeCommit: 'abc1234',
+          pvpokeDate: '2026-09-10',
+          projectionSlope: 0.006,
+          teams: opts.generated ?? GENERATED_TEAMS,
+        });
+      }
+      return json(baselineFile(name));
     }
     if (url.startsWith('/api/v1/meta')) {
       if (opts.metaStatus && opts.metaStatus >= 400) {
