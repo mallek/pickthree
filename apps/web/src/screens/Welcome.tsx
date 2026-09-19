@@ -38,6 +38,14 @@ export function Welcome() {
   return (
     <div className="screen landing">
       <div className="scroll landing-scroll">
+        {/* Decorative: three type-coloured discs open the page. Hidden from screen readers, which
+         * have no use for three Pokémon names that are not part of the flow, and the first thing
+         * dropped on a short screen since nothing depends on it. */}
+        <div className="hero-trio" aria-hidden="true">
+          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
+            <PokemonToken key={id} speciesId={id} size={64} showInitial={false} />
+          ))}
+        </div>
         <div className="stack">
           <h1 className="hero">
             Find your best battle team with{' '}
@@ -47,14 +55,6 @@ export function Welcome() {
           <p className="muted">
             Which three to bring, in what order, with which moves, and what they will cost to build.
           </p>
-        </div>
-        {/* Decorative: three type-coloured discs for a little colour up top. Hidden from screen
-         * readers, which have no use for three Pokémon names that are not part of the flow, and
-         * the first thing dropped on a short screen since nothing depends on it. */}
-        <div className="hero-trio" aria-hidden="true">
-          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
-            <PokemonToken key={id} speciesId={id} size={64} showInitial={false} />
-          ))}
         </div>
         <MetaPreview />
         {bootError ? (
