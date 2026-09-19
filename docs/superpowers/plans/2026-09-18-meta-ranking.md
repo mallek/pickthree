@@ -1985,7 +1985,7 @@ export interface TeamRowV1 {
    *  the faced side, because opponents' movesets are not collected. */
   moves: (MovesetStats | null)[];
   /** Cores only: the third members seen completing this pair, most common first. */
-  thirds: { speciesId: string; battles: number }[];
+  thirds: { speciesId: string; sightings: number }[];
 }
 
 export interface TeamsV1 {
@@ -2101,8 +2101,8 @@ describe('teamBoard, the run side', () => {
       ],
     });
     expect(find(out.cores, 'azumarill', 'medicham')?.thirds).toEqual([
-      { speciesId: 'registeel', battles: 2 },
-      { speciesId: 'lanturn', battles: 1 },
+      { speciesId: 'registeel', sightings: 2 },
+      { speciesId: 'lanturn', sightings: 1 },
     ]);
   });
 
@@ -2177,7 +2177,7 @@ describe('teamBoard, the faced side', () => {
     const out = teamBoard({ ...WINDOW, rows: [row({ opponents: ['lanturn', 'skarmory', 'shadow'] })] });
     expect(find(out.cores, 'lanturn', 'skarmory')?.facedBattles).toBe(1);
     expect(find(out.cores, 'lanturn', 'skarmory')?.thirds).toEqual([
-      { speciesId: 'shadow', battles: 1 },
+      { speciesId: 'shadow', sightings: 1 },
     ]);
   });
 
@@ -2271,7 +2271,7 @@ export interface TeamRowV1 {
   facedWins: number;
   facedLosses: number;
   moves: (MovesetStats | null)[];
-  thirds: { speciesId: string; battles: number }[];
+  thirds: { speciesId: string; sightings: number }[];
 }
 
 export interface TeamsV1 {
@@ -3307,7 +3307,7 @@ export interface TeamRowV1 {
   facedWins: number;
   facedLosses: number;
   moves: (MovesetStats | null)[];
-  thirds: { speciesId: string; battles: number }[];
+  thirds: { speciesId: string; sightings: number }[];
 }
 export interface TeamsV1 {
   league: string;
@@ -4213,8 +4213,8 @@ describe('buildBoard, cores', () => {
       facedWins: 10,
       facedLosses: 10,
       thirds: [
-        { speciesId: 'c', battles: 15 },
-        { speciesId: 'd', battles: 5 },
+        { speciesId: 'c', sightings: 15 },
+        { speciesId: 'd', sightings: 5 },
       ],
     });
     const b = buildBoard({ teams: teams({ cores: [core] }), ranking, generated: [], view: view() });
@@ -4406,7 +4406,7 @@ function projectTeam(ctx: StrengthContext | null, species: readonly string[]): P
 function projectCore(
   ctx: StrengthContext | null,
   pair: readonly string[],
-  thirds: readonly { speciesId: string; battles: number }[],
+  thirds: readonly { speciesId: string; sightings: number }[],
   fallback: readonly string[],
 ): Projection {
   if (!ctx) {
@@ -4418,7 +4418,7 @@ function projectCore(
   }
   const sample: { speciesId: string; weight: number }[] =
     thirds.length > 0
-      ? thirds.map((t) => ({ speciesId: t.speciesId, weight: t.battles }))
+      ? thirds.map((t) => ({ speciesId: t.speciesId, weight: t.sightings }))
       : fallback
           .slice(0, THIRD_SAMPLE)
           .map((id, i) => ({ speciesId: id, weight: ctx.weights[i] ?? 0 }));
