@@ -3,12 +3,15 @@
  * endpoints. Pass overrides to shape a scenario; the defaults are an empty measured dataset, which
  * is the state the site actually ships in.
  */
-import type { MetaSummaryV1, SpeciesDetailV1 } from '../../src/api.js';
+import type { MetaSummaryV1, SpeciesDetailV1, TeamsV1 } from '../../src/api.js';
+import type { Epoch } from '../../src/epochs.js';
 
 export interface StubOptions {
   meta?: Partial<MetaSummaryV1>;
   species?: Partial<SpeciesDetailV1>;
   metaStatus?: number;
+  epochs?: Epoch[];
+  teams?: Partial<TeamsV1>;
 }
 
 export const EMPTY_META: MetaSummaryV1 = {
@@ -20,11 +23,27 @@ export const EMPTY_META: MetaSummaryV1 = {
   tanked: 0,
   devices: 0,
   bands: {},
+  sources: {},
   species: [],
   teams: [],
   previous: null,
   generatedAt: '2026-09-18T11:50:00.000Z',
 };
+
+export const EMPTY_TEAMS: TeamsV1 = {
+  league: 'great',
+  since: EMPTY_META.since,
+  until: EMPTY_META.until,
+  band: 'all',
+  battles: 0,
+  devices: 0,
+  sources: {},
+  teams: [],
+  cores: [],
+  generatedAt: EMPTY_META.generatedAt,
+};
+
+const EPOCHS_FILE: Epoch[] = [{ at: '2026-09-08T13:00:00-07:00', note: 'Season 28' }];
 
 export const EMPTY_SPECIES: SpeciesDetailV1 = {
   league: 'great',
@@ -119,6 +138,9 @@ export function stubFetch(opts: StubOptions): typeof fetch {
     if (url.startsWith('/seasons.json')) {
       return json(SEASONS_FILE);
     }
+    if (url.startsWith('/epochs.json')) {
+      return json(opts.epochs ?? EPOCHS_FILE);
+    }
     if (url.startsWith('/baseline/')) {
       const league = url.slice('/baseline/'.length).replace('.json', '');
       return json(baselineFile(league));
@@ -131,6 +153,9 @@ export function stubFetch(opts: StubOptions): typeof fetch {
     }
     if (url.startsWith('/api/v1/species/')) {
       return json({ ...EMPTY_SPECIES, ...opts.species });
+    }
+    if (url.startsWith('/api/v1/teams')) {
+      return json({ ...EMPTY_TEAMS, ...opts.teams });
     }
     return json({ error: 'not found' }, 404);
   }) as typeof fetch;

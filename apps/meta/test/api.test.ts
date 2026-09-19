@@ -1,6 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BUCKET_MS, fetchMeta, metaUrl, resolveWindow, speciesUrl } from '../src/api.js';
+import {
+  BUCKET_MS,
+  fetchMeta,
+  fetchTeams,
+  metaUrl,
+  resolveWindow,
+  speciesUrl,
+  teamsUrl,
+} from '../src/api.js';
 import type { Season } from '../src/data.js';
+import type { BandKey } from '../src/route.js';
 
 const seasons: Season[] = [
   { id: 27, name: 'Season 27', start: '2026-06-02T13:00:00-07:00' },
@@ -8,10 +17,11 @@ const seasons: Season[] = [
   { id: 29, name: 'Season 29', start: '2026-12-01T13:00:00-08:00' },
 ];
 const now = new Date('2026-09-18T12:07:30.000Z');
+const ctxBase = { league: 'great', seasons, epochs: [] };
 
-describe('resolveWindow', () => {
+describe('resolveWindow (fixed windows)', () => {
   it('rounds the end up to the next ten minutes so the edge cache is worth having', () => {
-    const w = resolveWindow('7', seasons, now);
+    const w = resolveWindow('7', ctxBase, now);
     expect(Date.parse(w.until) % BUCKET_MS).toBe(0);
     expect(w.until).toBe('2026-09-18T12:10:00.000Z');
     expect(w.since).toBe('2026-09-11T12:10:00.000Z');
@@ -19,32 +29,20 @@ describe('resolveWindow', () => {
   });
 
   it('measures 30 days the same way', () => {
-    const w = resolveWindow('30', seasons, now);
-    expect(w.since).toBe('2026-08-19T12:10:00.000Z');
-    expect(w.label).toBe('30 days');
-  });
-
-  it('starts the season window at the season that is running', () => {
-    const w = resolveWindow('season', seasons, now);
-    expect(w.since).toBe('2026-09-08T20:00:00.000Z');
-    expect(w.label).toBe('This season');
-  });
-
-  it('falls back to 30 days when the season list says nothing about now', () => {
-    const w = resolveWindow('season', [], now);
+    const w = resolveWindow('30', ctxBase, now);
     expect(w.since).toBe('2026-08-19T12:10:00.000Z');
     expect(w.label).toBe('30 days');
   });
 
   it('leaves until unchanged when now is already on a ten minute boundary', () => {
     const exact = new Date('2026-09-18T12:10:00.000Z');
-    const w = resolveWindow('7', seasons, exact);
+    const w = resolveWindow('7', ctxBase, exact);
     expect(w.until).toBe('2026-09-18T12:10:00.000Z');
   });
 });
 
 describe('urls', () => {
-  const w = resolveWindow('7', seasons, now);
+  const w = resolveWindow('7', ctxBase, now);
 
   it('builds the meta url, leaving an "all" band out', () => {
     expect(metaUrl('great', w, 'all')).toBe(
@@ -62,7 +60,7 @@ describe('urls', () => {
 });
 
 describe('fetchMeta', () => {
-  const w = resolveWindow('7', seasons, now);
+  const w = resolveWindow('7', ctxBase, now);
 
   it('returns the parsed body', async () => {
     const fetcher = vi.fn().mockResolvedValue(
@@ -81,5 +79,95 @@ describe('fetchMeta', () => {
   it('throws when the network fails, without swallowing the reason', async () => {
     const fetcher = vi.fn().mockRejectedValue(new TypeError('offline'));
     await expect(fetchMeta('great', w, 'all', { fetcher })).rejects.toThrow('offline');
+  });
+});
+
+const SEASONS = [
+  { id: 28, name: 'Twilight Trails', start: '2026-09-08T13:00:00-07:00' },
+  { id: 29, name: 'Season 29', start: '2026-12-01T13:00:00-08:00' },
+];
+const EPOCHS = [
+  { at: '2026-09-08T13:00:00-07:00', note: 'Season 28' },
+  { at: '2026-09-15T00:00:00Z', note: 'move rebalance', leagues: ['great'] },
+];
+const ctx = (league: string) => ({ league, seasons: SEASONS, epochs: EPOCHS });
+
+describe('resolveWindow', () => {
+  it('runs the meta window from the newest epoch that applies', () => {
+    const w = resolveWindow('meta', ctx('great'), new Date('2026-09-20T12:03:00Z'));
+    expect(w.since).toBe('2026-09-15T00:00:00.000Z');
+    expect(w.label).toBe('This meta');
+    expect(w.epoch?.note).toBe('move rebalance');
+    // Rounded up to the next ten minute boundary, so every reader shares an edge cache entry.
+    expect(w.until).toBe('2026-09-20T12:10:00.000Z');
+  });
+
+  it('gives a league the rebalance did not touch the earlier epoch', () => {
+    const w = resolveWindow('meta', ctx('ultra'), new Date('2026-09-20T12:03:00Z'));
+    expect(w.since).toBe('2026-09-08T20:00:00.000Z');
+    expect(w.epoch?.note).toBe('Season 28');
+  });
+
+  it('falls back to the season start when no epoch has begun', () => {
+    const w = resolveWindow(
+      'meta',
+      { league: 'great', seasons: SEASONS, epochs: [] },
+      new Date('2026-09-20T12:03:00Z'),
+    );
+    expect(w.since).toBe('2026-09-08T20:00:00.000Z');
+    expect(w.epoch).toBeNull();
+    expect(w.label).toBe('This meta');
+  });
+
+  it('falls back to 30 days when neither an epoch nor a season covers the moment', () => {
+    const w = resolveWindow(
+      'meta',
+      { league: 'great', seasons: [], epochs: [] },
+      new Date('2026-09-20T12:03:00Z'),
+    );
+    expect(w.key).toBe('meta');
+    expect(Date.parse(w.until) - Date.parse(w.since)).toBe(30 * 86_400_000);
+  });
+
+  it('never asks the worker for a span it rejects', () => {
+    const ancient = [{ at: '2020-01-01T00:00:00Z', note: 'the before times' }];
+    const w = resolveWindow(
+      'meta',
+      { league: 'great', seasons: [], epochs: ancient },
+      new Date('2026-09-20T12:03:00Z'),
+    );
+    // The worker refuses anything over 400 days (MAX_SPAN_DAYS), so the client clamps first.
+    expect(Date.parse(w.until) - Date.parse(w.since)).toBeLessThanOrEqual(400 * 86_400_000);
+  });
+
+  it('leaves the fixed windows alone', () => {
+    const w = resolveWindow('7', ctx('great'), new Date('2026-09-20T12:03:00Z'));
+    expect(Date.parse(w.until) - Date.parse(w.since)).toBe(7 * 86_400_000);
+    expect(w.label).toBe('7 days');
+    expect(w.epoch).toBeNull();
+  });
+});
+
+describe('teamsUrl', () => {
+  it('is its own path, so it gets its own ten minute bucket', () => {
+    const w = resolveWindow('7', ctx('great'), new Date('2026-09-20T12:03:00Z'));
+    expect(teamsUrl('great', w, 'all')).toBe(
+      `/api/v1/teams?league=great&since=${encodeURIComponent(w.since)}&until=${encodeURIComponent(w.until)}`,
+    );
+    expect(teamsUrl('great', w, 'ace')).toContain('band=ace');
+  });
+});
+
+describe('fetchTeams', () => {
+  const w = resolveWindow('7', ctx('great'), new Date('2026-09-20T12:03:00Z'));
+
+  it('returns the parsed body', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ league: 'great', battles: 3, teams: [], cores: [] }), {
+        status: 200,
+      }),
+    );
+    const band: BandKey = 'all';
+    await expect(fetchTeams('great', w, band, { fetcher })).resolves.toMatchObject({ battles: 3 });
   });
 });

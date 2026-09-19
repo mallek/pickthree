@@ -7,6 +7,7 @@
  * match workers/counter/src/meta.ts exactly.
  */
 import type { Season } from './data.js';
+import { epochFor, type Epoch } from './epochs.js';
 import type { BandKey, WindowKey } from './route.js';
 
 export interface SpeciesStats {
@@ -39,9 +40,40 @@ export interface MetaSummaryV1 {
   tanked: number;
   devices: number;
   bands: Record<string, number>;
+  /** Counted battles by source. One key today; nothing reads it yet. */
+  sources: Record<string, number>;
   species: SpeciesStats[];
+  /**
+   * @deprecated Run teams only, and capped at 50. The whole team board, run and faced, cores and
+   * complete teams, is /api/v1/teams. Left in place and unchanged rather than altered under a
+   * consumer; nothing new should read it.
+   */
   teams: TeamStats[];
   previous: { battles: number; species: { speciesId: string; sightings: number }[] } | null;
+  generatedAt: string;
+}
+export interface TeamRowV1 {
+  species: string[];
+  kind: 'core' | 'team';
+  runBattles: number;
+  runWins: number;
+  runLosses: number;
+  facedBattles: number;
+  facedWins: number;
+  facedLosses: number;
+  moves: (MovesetStats | null)[];
+  thirds: { speciesId: string; sightings: number }[];
+}
+export interface TeamsV1 {
+  league: string;
+  since: string;
+  until: string;
+  band: string;
+  battles: number;
+  devices: number;
+  sources: Record<string, number>;
+  teams: TeamRowV1[];
+  cores: TeamRowV1[];
   generatedAt: string;
 }
 export interface SpeciesDetailV1 {
@@ -63,16 +95,27 @@ export interface SpeciesDetailV1 {
   generatedAt: string;
 }
 
+export interface WindowContext {
+  league: string;
+  seasons: readonly Season[];
+  epochs: readonly Epoch[];
+}
+
 export interface ApiWindow {
   since: string;
   until: string;
   label: string;
   key: WindowKey;
+  /** The epoch the window came from, when it came from one. */
+  epoch: Epoch | null;
 }
 
 /** Ten minute buckets, so every reader in a slice asks the edge for the same url. */
 export const BUCKET_MS = 600_000;
 const DAY_MS = 86_400_000;
+/** The most days the worker will answer for (MAX_SPAN_DAYS in workers/counter/src/meta.ts). The
+ *  client clamps first rather than letting an old epoch produce a request that is refused. */
+export const MAX_SPAN_DAYS = 400;
 
 /** Rounds up to the next ten minute boundary. An exact boundary stays where it is. */
 function bucketUp(now: Date): number {
@@ -90,27 +133,34 @@ function seasonStart(seasons: readonly Season[], at: number): number | null {
   return best;
 }
 
-export function resolveWindow(key: WindowKey, seasons: readonly Season[], now: Date): ApiWindow {
+export function resolveWindow(key: WindowKey, ctx: WindowContext, now: Date): ApiWindow {
   const until = bucketUp(now);
-  if (key === 'season') {
-    const start = seasonStart(seasons, until);
-    if (start !== null) {
-      return {
-        since: new Date(start).toISOString(),
-        until: new Date(until).toISOString(),
-        label: 'This season',
-        key,
-      };
-    }
-    // No season covers this moment, so say what is really being measured instead of guessing.
-    return { ...resolveWindow('30', seasons, now), key: 'season' };
+  if (key !== 'meta') {
+    const days = key === '7' ? 7 : 30;
+    return {
+      since: new Date(until - days * DAY_MS).toISOString(),
+      until: new Date(until).toISOString(),
+      label: `${days} days`,
+      key,
+      epoch: null,
+    };
   }
-  const days = key === '7' ? 7 : 30;
+  const epoch = epochFor(ctx.epochs, ctx.league, new Date(until));
+  // An epoch first, the season start second: the season is still the right answer for a league
+  // no epoch has ever named, and it is what a record stamps.
+  const start = epoch ? Date.parse(epoch.at) : seasonStart(ctx.seasons, until);
+  if (start === null || !Number.isFinite(start)) {
+    // Nothing covers this moment, so measure the last 30 days and keep the chip honest.
+    const fallback = resolveWindow('30', ctx, now);
+    return { ...fallback, label: 'This meta', key: 'meta' };
+  }
+  const floor = until - MAX_SPAN_DAYS * DAY_MS;
   return {
-    since: new Date(until - days * DAY_MS).toISOString(),
+    since: new Date(Math.max(start, floor)).toISOString(),
     until: new Date(until).toISOString(),
-    label: `${days} days`,
+    label: 'This meta',
     key,
+    epoch,
   };
 }
 
@@ -128,6 +178,10 @@ export function metaUrl(league: string, w: ApiWindow, band: BandKey): string {
 
 export function speciesUrl(league: string, id: string, w: ApiWindow, band: BandKey): string {
   return `/api/v1/species/${encodeURIComponent(id)}?${search(league, w, band)}`;
+}
+
+export function teamsUrl(league: string, w: ApiWindow, band: BandKey): string {
+  return `/api/v1/teams?${search(league, w, band)}`;
 }
 
 async function get<T>(
@@ -166,4 +220,13 @@ export function fetchSpecies(
   opts: { signal?: AbortSignal; fetcher?: typeof fetch } = {},
 ): Promise<SpeciesDetailV1> {
   return get<SpeciesDetailV1>(speciesUrl(league, id, w, band), opts);
+}
+
+export function fetchTeams(
+  league: string,
+  w: ApiWindow,
+  band: BandKey,
+  opts: { signal?: AbortSignal; fetcher?: typeof fetch } = {},
+): Promise<TeamsV1> {
+  return get<TeamsV1>(teamsUrl(league, w, band), opts);
 }

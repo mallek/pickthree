@@ -39,7 +39,7 @@ import {
 } from './useMeta.js';
 
 const WINDOW_LABELS: Record<WindowKey, string> = {
-  season: 'This season',
+  meta: 'This meta',
   '30': '30 days',
   '7': '7 days',
 };
@@ -307,7 +307,9 @@ export function App(props?: { deps?: Deps }): ReactNode {
 
   const seasons = staticData.data?.seasons ?? [];
   const now = deps?.now?.() ?? new Date();
-  const w = resolveWindow(query.w, seasons, now);
+  // Epochs land properly in Task 11; an empty list here just means every "meta" window falls
+  // back to the season start, which is exactly what it already did before this task.
+  const w = resolveWindow(query.w, { league: activeLeague, seasons, epochs: [] }, now);
   const meta = useMetaSummary(activeLeague, w, query.band, deps);
   const baseline = useBaseline(activeLeague, deps);
   // Called unconditionally, same as meta and baseline above, to keep hook order stable across

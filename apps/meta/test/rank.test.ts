@@ -17,6 +17,7 @@ function meta(over: Partial<MetaSummaryV1> = {}): MetaSummaryV1 {
     tanked: 0,
     devices: 1,
     bands: {},
+    sources: {},
     species: [],
     teams: [],
     previous: null,

@@ -6,12 +6,15 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import {
   fetchMeta,
   fetchSpecies,
+  fetchTeams,
   type ApiWindow,
   type MetaSummaryV1,
   type SpeciesDetailV1,
+  type TeamsV1,
 } from './api.js';
 import { loadBaseline, type Baseline } from './baseline.js';
 import { loadStatic, type StaticData } from './data.js';
+import { loadEpochs, type Epoch } from './epochs.js';
 import type { BandKey } from './route.js';
 
 export interface Deps {
@@ -80,6 +83,32 @@ export function useBaseline(league: string, deps?: Deps): Loaded<Baseline> {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
   return useAsync(() => loadBaseline(league, fetcher), [league, fetcher]);
+}
+
+export function useEpochs(deps?: Deps): Loaded<Epoch[]> {
+  const ctx = useContext(DepsContext);
+  const fetcher = deps?.fetcher ?? ctx.fetcher;
+  return useAsync(() => loadEpochs(fetcher), [fetcher]);
+}
+
+export function useTeams(
+  league: string,
+  w: ApiWindow,
+  band: BandKey,
+  deps?: Deps,
+): Loaded<TeamsV1> {
+  const ctx = useContext(DepsContext);
+  const fetcher = deps?.fetcher ?? ctx.fetcher;
+  return useAsync(
+    (signal) => {
+      const opts: { signal: AbortSignal; fetcher?: typeof fetch } = { signal };
+      if (fetcher) {
+        opts.fetcher = fetcher;
+      }
+      return fetchTeams(league, w, band, opts);
+    },
+    [league, w.since, w.until, band, fetcher],
+  );
 }
 
 export function useMetaSummary(

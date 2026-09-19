@@ -3,7 +3,7 @@
  * SPA fallback is what makes /great/p/azumarill load index.html.
  */
 
-export type WindowKey = 'season' | '30' | '7';
+export type WindowKey = 'meta' | '30' | '7';
 export type BandKey = 'all' | 'below' | 'ace' | 'veteran' | 'expert' | 'legend';
 
 export type View =
@@ -17,20 +17,23 @@ export interface Query {
   band: BandKey;
 }
 
-export const WINDOWS: readonly WindowKey[] = ['season', '30', '7'];
+export const WINDOWS: readonly WindowKey[] = ['meta', '30', '7'];
 export const BANDS: readonly BandKey[] = ['all', 'below', 'ace', 'veteran', 'expert', 'legend'];
-export const DEFAULT_QUERY: Query = { w: 'season', band: 'all' };
+export const DEFAULT_QUERY: Query = { w: 'meta', band: 'all' };
+
+/** The window key was `season` before meta epochs existed. An old link keeps working. */
+const LEGACY_WINDOWS: Record<string, WindowKey> = { season: 'meta' };
 
 const SPECIES = /^[a-z0-9_]+$/;
 
 function readQuery(search: string): Query {
   const p = new URLSearchParams(search);
-  const w = p.get('w');
+  const raw = p.get('w') ?? '';
+  const w = WINDOWS.includes(raw as WindowKey)
+    ? (raw as WindowKey)
+    : (LEGACY_WINDOWS[raw] ?? DEFAULT_QUERY.w);
   const band = p.get('band');
-  return {
-    w: WINDOWS.includes(w as WindowKey) ? (w as WindowKey) : DEFAULT_QUERY.w,
-    band: BANDS.includes(band as BandKey) ? (band as BandKey) : DEFAULT_QUERY.band,
-  };
+  return { w, band: BANDS.includes(band as BandKey) ? (band as BandKey) : DEFAULT_QUERY.band };
 }
 
 export function parseLocation(

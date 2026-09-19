@@ -34,6 +34,10 @@ describe('parseLocation', () => {
   it('tolerates a trailing slash', () => {
     expect(at('/great/teams/').view).toEqual({ name: 'teams', league: 'great' });
   });
+
+  it('reads the old season key as the meta window, so an old link still works', () => {
+    expect(parseLocation('/great', '?w=season', ['great']).query.w).toBe('meta');
+  });
 });
 
 describe('hrefFor', () => {
@@ -53,6 +57,12 @@ describe('hrefFor', () => {
 
   it('leaves the default filters out of the url', () => {
     expect(hrefFor({ name: 'overview', league: 'great' }, DEFAULT_QUERY)).toBe('/great');
+  });
+
+  it('drops the default window from a href', () => {
+    expect(hrefFor({ name: 'teams', league: 'great' }, { w: 'meta', band: 'all' })).toBe(
+      '/great/teams',
+    );
   });
 });
 
