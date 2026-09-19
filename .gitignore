@@ -33,3 +33,6 @@ apps/meta/screenshots/
 
 # subagent-driven-development scratch (ledger, briefs, review packages)
 .superpowers/
+
+# wrangler dev local state, created by any "wrangler dev" run
+workers/counter/.wrangler/
