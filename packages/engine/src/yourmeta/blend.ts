@@ -5,12 +5,30 @@ export interface BlendOptions {
   minBattles: number;
   /** Battles at which the log and PvPoke's prior have an equal say. */
   halfLife: number;
+  /**
+   * Replaces the battle-count curve when the caller works the share out itself. meta.pick3.gg
+   * caps the battle curve on contributing devices as well, which a battle count alone cannot
+   * express; rather than keep a second copy of this formula there, it hands the answer in.
+   * Clamped to 0..1.
+   */
+  share?: number;
+  /**
+   * Prior weight for a species with no PvPoke rank. Defaults to facingWeight(null), the rank-64
+   * floor, which is right on device where it stops an unranked opponent vanishing. Pass 0 where
+   * an unlisted species must ride entirely on how often it was actually measured, or the floor
+   * would seat a never-listed species above genuinely listed ones near rank 64.
+   */
+  unrankedPrior?: number;
 }
 
 export const DEFAULT_BLEND_OPTIONS: BlendOptions = { minBattles: 15, halfLife: 30 };
 
-/** The log's share of the say: 0 below the threshold, a third at 15, half at 30, two thirds at 60. */
+/** The log's share of the say: 0 below the threshold, a third at 15, half at 30, two thirds at 60.
+ *  An explicit `share` wins over the curve entirely. */
 export function blendShare(battles: number, opts: BlendOptions = DEFAULT_BLEND_OPTIONS): number {
+  if (opts.share !== undefined) {
+    return Math.max(0, Math.min(1, opts.share));
+  }
   if (battles < opts.minBattles) {
     return 0;
   }
@@ -40,7 +58,13 @@ export function blendWeights(
   opts: BlendOptions = DEFAULT_BLEND_OPTIONS,
 ): Map<string, number> {
   const a = blendShare(input.battles, opts);
-  const priors = input.species.map((id) => facingWeight(input.ranks.get(id) ?? null));
+  const priors = input.species.map((id) => {
+    const rank = input.ranks.get(id) ?? null;
+    if (rank === null && opts.unrankedPrior !== undefined) {
+      return opts.unrankedPrior;
+    }
+    return facingWeight(rank);
+  });
   const priorSum = priors.reduce((x, y) => x + y, 0);
   let seen = 0;
   for (const id of input.species) {

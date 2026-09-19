@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blendShare, blendWeights } from '../../src/yourmeta/blend.js';
+import { blendShare, blendWeights, DEFAULT_BLEND_OPTIONS } from '../../src/yourmeta/blend.js';
 
 describe('blendShare', () => {
   it('is zero below the threshold and grows with battles', () => {
@@ -60,5 +60,75 @@ describe('blendWeights', () => {
       battles: 30,
     });
     expect(w.get('b')).toBeCloseTo(0.5 * (0.5 / (1 + 0.5 + 1 / 8)) + 0.5 * 1);
+  });
+});
+
+describe('blendShare with an explicit share', () => {
+  it('uses the share it is handed and ignores the curve', () => {
+    expect(blendShare(0, { ...DEFAULT_BLEND_OPTIONS, share: 0.25 })).toBe(0.25);
+    expect(blendShare(10_000, { ...DEFAULT_BLEND_OPTIONS, share: 0.25 })).toBe(0.25);
+  });
+
+  it('clamps a nonsense share rather than letting it out', () => {
+    expect(blendShare(100, { ...DEFAULT_BLEND_OPTIONS, share: -1 })).toBe(0);
+    expect(blendShare(100, { ...DEFAULT_BLEND_OPTIONS, share: 2 })).toBe(1);
+  });
+
+  it('is unchanged when no share is given', () => {
+    expect(blendShare(0)).toBe(0);
+    expect(blendShare(14)).toBe(0);
+    expect(blendShare(15)).toBeCloseTo(15 / 45, 10);
+    expect(blendShare(30)).toBeCloseTo(0.5, 10);
+  });
+});
+
+describe('the site half-say points', () => {
+  const site = { minBattles: 0, halfLife: 300 };
+  it('gives measured play half the say at 300 battles', () => {
+    expect(blendShare(300, site)).toBeCloseTo(0.5, 10);
+  });
+  it('holds one grinder to a sixth of the say, however many battles', () => {
+    // 900 battles is three quarters on its own; 1 device caps it at 1 / 6.
+    const a = Math.min(blendShare(900, site), 1 / (1 + 5));
+    expect(blendShare(900, site)).toBeCloseTo(0.75, 10);
+    expect(a).toBeCloseTo(1 / 6, 10);
+  });
+});
+
+describe('unrankedPrior', () => {
+  const ranks = new Map<string, number | null>([
+    ['azumarill', 1],
+    ['nobody', null],
+  ]);
+
+  it('defaults to the rank-64 floor, so pick3 is unchanged', () => {
+    const w = blendWeights({ species: ['azumarill', 'nobody'], ranks, sightings: new Map(), battles: 0 });
+    // priors 1 and 1/8, normalised over 1.125.
+    expect(w.get('azumarill')).toBeCloseTo(1 / 1.125, 10);
+    expect(w.get('nobody')).toBeCloseTo(0.125 / 1.125, 10);
+  });
+
+  it('gives an unlisted species no prior at all when the site asks for zero', () => {
+    const w = blendWeights(
+      { species: ['azumarill', 'nobody'], ranks, sightings: new Map(), battles: 0 },
+      { minBattles: 0, halfLife: 300, unrankedPrior: 0 },
+    );
+    expect(w.get('azumarill')).toBeCloseTo(1, 10);
+    expect(w.get('nobody')).toBe(0);
+  });
+
+  it('lets an unlisted species ride entirely on how often it was measured', () => {
+    const w = blendWeights(
+      {
+        species: ['azumarill', 'nobody'],
+        ranks,
+        sightings: new Map([['nobody', 60]]),
+        battles: 300,
+      },
+      { minBattles: 0, halfLife: 300, unrankedPrior: 0 },
+    );
+    // a = 0.5. azumarill: 0.5 * 1 + 0.5 * 0. nobody: 0.5 * 0 + 0.5 * 1.
+    expect(w.get('azumarill')).toBeCloseTo(0.5, 10);
+    expect(w.get('nobody')).toBeCloseTo(0.5, 10);
   });
 });
