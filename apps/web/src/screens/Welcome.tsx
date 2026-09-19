@@ -1,13 +1,17 @@
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
-import { PokemonToken } from '../components.tsx';
+import { MetaPreview } from '../components/MetaPreview.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
 
 /**
- * The landing screen and nothing else: what pick3 is, and the three ways in. Importing moved to
- * its own screen so this one can stay a pitch rather than a form.
+ * The landing screen, in one phone screen and in this order: what pick3 does, real output you can
+ * look at without owning anything, then the two ways in, then the promise and the count.
+ *
+ * Build a team is deliberately not here. It is reachable from Teams, and offering import, manual
+ * entry, team building and the meta as four equal choices was the reason this page read as a menu
+ * rather than an answer.
  */
 export function Welcome() {
   const { boot, bootError } = useAppState();
@@ -31,11 +35,8 @@ export function Welcome() {
   }, [infoOpen]);
 
   return (
-    <div className="screen">
-      <div
-        className="scroll"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)', gap: 28 }}
-      >
+    <div className="screen landing">
+      <div className="scroll landing-scroll">
         <div className="stack">
           <h1 className="hero">
             Find your best battle team with{' '}
@@ -43,30 +44,10 @@ export function Welcome() {
             <img className="only-light hero-lockup" src={lockupLight} alt="pick3" />
           </h1>
           <p className="muted">
-            Which Pokémon to use, in what order, with which moves, and what it costs.
+            Which three to bring, in what order, with which moves, and what they will cost to build.
           </p>
         </div>
-        {/* Decorative: three type-coloured discs for a little colour up top. Hidden from screen
-         * readers, which have no use for three Pokémon names that are not part of the flow. */}
-        <div className="hero-trio" aria-hidden="true">
-          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
-            <PokemonToken key={id} speciesId={id} size={64} showInitial={false} />
-          ))}
-        </div>
-        <ol className="steps">
-          <li>
-            <span>1</span>
-            <b>Get your Pokémon in</b>
-          </li>
-          <li>
-            <span>2</span>
-            <b>Get your teams</b>
-          </li>
-          <li>
-            <span>3</span>
-            <b>Check any team</b>
-          </li>
-        </ol>
+        <MetaPreview />
         {bootError ? (
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}
@@ -81,38 +62,24 @@ export function Welcome() {
           <i />
           Import your Pokémon
         </button>
-        <span className="small muted" style={{ textAlign: 'center' }}>
-          No CSV? You do not need one.
-        </span>
-        <div className="btn-pair">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={boot !== 'ready'}
-            onClick={() => navigate({ screen: 'build' })}
-          >
-            Build a team
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={boot !== 'ready'}
-            onClick={() => navigate({ screen: 'add' })}
-          >
-            Add by hand
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={boot !== 'ready'}
+          onClick={() => navigate({ screen: 'add' })}
+        >
+          Add by hand
+        </button>
+        <button
+          type="button"
+          className="privacy-line"
+          aria-expanded={infoOpen}
+          onClick={() => setInfoOpen(true)}
+        >
+          Runs on your phone. Your collection never leaves it.
+        </button>
         <div className="trainer-row">
           <TrainerCounter count={count} />
-          <button
-            type="button"
-            className="info-dot"
-            aria-label="What pick3 sends"
-            aria-expanded={infoOpen}
-            onClick={() => setInfoOpen(true)}
-          >
-            i
-          </button>
         </div>
         {infoOpen ? (
           <>
@@ -125,10 +92,11 @@ export function Welcome() {
                 </button>
               </div>
               <p className="small muted">
-                Your file is processed on your phone and never uploaded anywhere. What is sent: an
-                anonymous tick to the counter, anonymous error reports, and the battles you log, as
-                anonymous records for the community meta (off in Settings if you prefer). Never your
-                Pokémon.
+                pick3 is free, has no ads and needs no account. Your file is read on your phone and
+                never uploaded anywhere, and the teams are worked out on the device. What is sent:
+                an anonymous tick to the counter, anonymous error reports, and the battles you log,
+                as anonymous records for the community meta (off in Settings if you prefer). Never
+                your Pokémon.
               </p>
             </div>
           </>

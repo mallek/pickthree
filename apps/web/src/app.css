@@ -604,6 +604,179 @@ a {
   padding: 0;
   list-style: none;
 }
+/* The landing has to hold one screen on every phone, so its spacing is a class rather than an
+   inline style and the short-screen rules below can claw space back instead of scrolling. */
+.landing-scroll {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 44px);
+  gap: 20px;
+}
+@media (max-height: 820px) {
+  .landing-scroll {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 18px);
+    gap: 12px;
+  }
+  .landing .hero {
+    font-size: 25px;
+  }
+  .landing .mp-rows {
+    height: 126px;
+  }
+  .landing .mp-row {
+    height: 42px;
+  }
+  .landing .mp-card {
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .landing .bottom-actions {
+    gap: 8px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  }
+}
+/* An iPhone SE is 47px short of the tier above, so it gives up a little more of the headline and
+   the meta rows. Everything stays on the page; nothing is dropped. */
+@media (max-height: 700px) {
+  .landing-scroll {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+    gap: 8px;
+  }
+  .landing .hero {
+    font-size: 21px;
+  }
+  .landing .mp-rows {
+    height: 102px;
+  }
+  .landing .mp-row {
+    height: 34px;
+  }
+}
+/* The landing's meta card. Its own kicker class rather than the shared .kicker: that selector is
+ * what the share and screenshot scripts wait on to know the report screen rendered, and it should
+ * not start matching on the landing page. */
+.mp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+.mp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mp-kicker {
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.mp-league {
+  font-size: 13px;
+  color: var(--muted);
+}
+/* Fixed height for three rows, so loading, ready, empty and unavailable all occupy the same
+   space and the buttons below never jump when the network answers. */
+.mp-rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 150px;
+  border-top: 1px solid var(--divider);
+}
+.mp-rows-note {
+  justify-content: center;
+  padding: 0 2px;
+}
+.mp-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 12px;
+  height: 50px;
+}
+.mp-row + .mp-row {
+  border-top: 1px solid var(--divider);
+}
+.mp-mid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.mp-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mp-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent-tint);
+  overflow: hidden;
+}
+.mp-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.mp-pct {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.mp-cta {
+  font-size: 14px;
+  color: var(--accent-text);
+  border-top: 1px solid var(--divider);
+  padding-top: 10px;
+}
+.mp-skel {
+  display: block;
+  border-radius: var(--r-sm);
+  background: var(--surface2);
+}
+.mp-skel-disc {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+.mp-skel-name {
+  height: 10px;
+  width: 60%;
+}
+/* The privacy line is a button so it can open the popover, but it reads as text. The accent dot
+   is what says it is tappable without dressing it up as a control. */
+.privacy-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--faint);
+  cursor: pointer;
+}
+.privacy-line::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
 /* Three type-coloured discs under the hero. The min-height reserves the row before game data
  * lands, so the landing screen does not shift when the species types arrive and colour them. */
 .hero-trio {
