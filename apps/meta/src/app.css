@@ -409,79 +409,202 @@ a.rank-row {
   background: var(--muted);
 }
 
-/* C1/C2: the team card, ported from pick3's own .team-card/.slots3/.slot/.slot-name/.cost-line/
-   .team-details (packages/ui/base.css) so a shared team reads the same shape on both sites.
-   pick3's own card is a div (it only loads local state on tap); a card with no nested builds is
-   a real <a> straight to the pick3 deep link, since tapping it here means leaving the site, and
-   its foot affordance stays plain text rather than a second <a> so nothing nests inside it. A
-   core card that DOES carry nested builds (Teams.tsx's `Card`) is a plain `<div>` instead, with
-   its own real "Open in pick3" <a> in the foot: an anchor cannot contain another anchor, and the
-   nested build lines below are anchors of their own. */
-.team-card {
-  gap: 12px;
+/* The team board's rows. Replaces the full-height card this screen used to stack: with the
+   ranking rework the board runs to hundreds of cores, and a card that filled a phone screen made
+   the list unscannable. A row is a tappable head (sprites, title, one summary line, its matchup
+   score) and a panel that opens under it carrying everything the card used to print.
+
+   The head is a <button> and every link lives inside the panel, so nothing interactive is nested
+   inside anything else interactive. The old card had to pick between three shapes (a bare div, a
+   div with a foot link, or one big anchor) to avoid nesting an anchor in an anchor; this shape
+   has no way to get that wrong. */
+.team-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-row {
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.team-row.open {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--divider));
+}
+
+/* auto 1fr auto auto: sprites and the score keep their natural width, the text column takes the
+   rest and is the only thing that ever truncates. `min-width: 0` on that column is what lets the
+   ellipsis actually happen inside a grid item. */
+.row-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 @media (hover: hover) {
-  .team-card:hover {
+  .row-head:hover {
     background: var(--surface2);
   }
 }
 
-.slot-name {
-  font-size: 14px;
-}
-
-.cost-line {
+/* The members overlap like a hand of cards: two sprites for a core, three for a complete team,
+   and either fits the same column width a single sprite would need plus a little. */
+.row-sprites {
+  display: flex;
   align-items: center;
-  justify-content: flex-end;
 }
 
-.team-details {
+.row-sprites > span + span {
+  margin-left: -11px;
+}
+
+.row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.row-title,
+.row-sub {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-title {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.row-sub {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* The matchup score, and the one place on this site a projection appears as a bare figure. The
+   row head's aria-label names it, since nothing next to it says what it counts. It keeps its
+   width when a row has no projection to print, so the chevrons stay in one column down the
+   board rather than stepping in and out. */
+.row-score {
+  min-width: 2ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 10px 10px;
+  border-top: 1px solid var(--divider);
+}
+
+/* The panel's own gaps are the spacing, the same rule `main` and `section` follow at the top of
+   this file. Without this a paragraph deep inside a row keeps the browser's 1em block margins
+   and the panel opens twice as tall as it needs to be. */
+.row-body p {
+  margin: 0;
+}
+
+.row-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
+.row-part {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The thirds a core has actually been seen with, as tokens rather than a sentence: on a long
+   board this is what a reader is scanning for, and three names read faster as three sprites. */
+.third-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* The sprite art overflows its type disc by 3px a side (`.token .sprite` above), so the gap and
+   the left padding here are 3px wider than they look: anything tighter and the art touches the
+   name next to it. */
+.third-chip {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-}
-
-/* Task 12: a core's two-member token row, same shape as .slots3 but for two. */
-.slots2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  padding: 3px 10px 3px 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  font-size: 11px;
 }
 
-/* Task 12: the kind tag ("Core", "Full team", "Projected") on a card or a nested build line.
-   Neutral, unlike ConfidenceTag's tag-few/some/many: this says what a row IS, not how much to
-   trust it. */
+/* Task 12: the kind tag ("Core", "Full team", "Projected") in an open row or on a nested build
+   line. Neutral, unlike ConfidenceTag's tag-few/some/many: this says what a row IS, not how much
+   to trust it. */
 .tag-kind {
   background: var(--surface2);
   color: var(--text);
   font-weight: 600;
 }
 
-/* Task 12: the "Built as" list nested under a core card, and its compact rows. Each row is its
-   own <a> (see the .team-card comment above), smaller and denser than a top-level card since the
-   core's own sprites and deep link already carry the full-size version of this information. */
+/* Task 12: the "Built as" list nested under a core, and its compact rows. Each row is its own
+   <a> straight into pick3, which is also the only link a core has: a core is two species and a
+   pick3 team link needs three, so the complete teams built on it are its only honest
+   destinations. */
 .builds {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .build-line {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
-  padding: 8px;
+  gap: 4px 8px;
+  padding: 6px 8px;
   border-radius: var(--r-lg);
   background: var(--surface2);
   text-decoration: none;
   color: inherit;
 }
 
+/* Same 3px-a-side overflow: at gap 2px the three sprites in a build line ran into each other. */
 .build-sprites {
   display: flex;
-  gap: 2px;
+  gap: 8px;
   flex: none;
 }
 
@@ -495,6 +618,53 @@ a.rank-row {
 
 .build-line .team-details {
   margin-left: auto;
+}
+
+.team-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.cost-line {
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* The board's own controls: what is on screen, the multi-team filter, the sort cycle. Ported
+   from pick3's own .chip/.chip.on (apps/web/src/app.css) so a chip reads the same on both sites;
+   the count sits first and pushes the chips to the end of the row. */
+.board-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.board-count {
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.chip {
+  flex: none;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip.on {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent-text);
 }
 
 /* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small

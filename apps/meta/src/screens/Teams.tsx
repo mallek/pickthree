@@ -1,39 +1,46 @@
 /**
- * The team board: cores as the spine, complete teams nested under each, one sort by score. This
- * is the league root (Task 11), so it is the first thing a reader sees, in whatever state the
- * meta happens to be in on day one: nothing measured yet, a handful of shared battles, or a
- * mature league with hundreds of devices reporting.
+ * The team board: cores as the spine, complete teams nested under each. This is the league root
+ * (Task 11), so it is the first thing a reader sees, in whatever state the meta happens to be in
+ * on day one: nothing measured yet, a handful of shared battles, or a mature league with hundreds
+ * of devices reporting.
  *
  * `buildBoard` (teamRank.ts) does the ranking; this screen only renders it, and renders it
  * honestly. See docs/superpowers/specs/2026-09-18-meta-site-design.md and teamRank.ts's own
  * header comment for the rule this screen exists to enforce: the blended `score` that sorts the
- * board is a ranking key, never a fact about a team, and is never printed. A card prints at most
- * two things about a row: a matchup score out of 100 (a projection worked out from PvPoke's
+ * board is a ranking key, never a fact about a team, and is never printed. A row prints at most
+ * two things about itself: a matchup score out of 100 (a projection worked out from PvPoke's
  * matchup data, explained once by the `Term` in the section header, and NEVER printed as a
  * percentage) and a measured record (always as a win-loss count, never a percentage), because
  * those are the two things about a row that are actually true. A percentage on this site always
  * means real battles.
  *
- * Two sources feed a card the same way they feed Pokemon.tsx (see that file's header comment for
+ * Two sources feed a row the same way they feed Pokemon.tsx (see that file's header comment for
  * the two-sources rule this site follows everywhere): PvPoke's projection, and measured play.
  * Neither is hidden here just because the other exists.
+ *
+ * Shape: a row is one tappable line (sprites, title, a one-line summary, its matchup score) that
+ * opens onto the full facts. The ranking rework made the board long enough that a full-height
+ * card per row put one row on a phone screen; hundreds of cores need a list a reader can scan.
+ * Nothing was dropped in the shrink, it moved into the panel: every sentence the old card
+ * printed still prints, one tap away. `boardView.ts` holds the ordering and the summary line.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { MovesetStats } from '../api.js';
-import { Chevron, Note, Sprite, Term } from '../components.js';
-import { speciesOf, type SpeciesLite, type StaticData } from '../data.js';
+import { Chevron, Chip, Note, Sprite, Term } from '../components.js';
+import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, plural } from '../format.js';
 import { teamLink, type LinkMember } from '../links.js';
 import type { Epoch } from '../epochs.js';
 import { commitMismatch } from '../epochs.js';
 import type { SpeciesRanking } from '../rank.js';
 import type { Board, BoardRow } from '../teamRank.js';
+import { multiTeamOnly, sortRows, subLine, teamsSeen, SORTS, type SortKey } from '../boardView.js';
 import { Contribute } from './Pokemon.js';
 
 /** The members `teamLink` wants: each species id, with its most common moveset when the record
  * has enough battles behind it to name one. Only a complete, three-member team is ever passed
  * here: pick3's `parseTeamPath` (apps/web/src/teamLink.ts) answers any other count with "A team
- * link needs three Pokemon", so a core links through one of its builds instead (see `Card`). */
+ * link needs three Pokemon", so a core links through one of its builds instead (see `Row`). */
 function membersOf(
   species: readonly string[],
   moves: readonly (MovesetStats | null)[],
@@ -105,17 +112,25 @@ function outsideText(ids: readonly string[], data: StaticData): string {
 
 /** `Matchup score <S> of 100`, S = the row's own `strength` rounded to a whole number. A
  * percentage on this site always means real battles, so a projection is never turned into one:
- * this is the one and only place this screen prints a projection at all, and it prints a score
- * out of 100, not a percent sign. The explanation lives once, behind the `Term` in the section
- * header, not repeated on every card. */
+ * this is the one and only place this screen prints a projection in a sentence, and it prints a
+ * score out of 100, not a percent sign. The bare number on a collapsed row head is the same
+ * figure through `scoreOf` below, named for a screen reader by the head's own label. The
+ * explanation lives once, behind the `Term` in the section header, not repeated on every row. */
 function matchupScoreLine(strength: number): string {
   return `Matchup score ${Math.round(strength)} of 100`;
 }
 
+/** The matchup score as the bare figure a collapsed row shows, or null when the row has no
+ * projection at all. Same rounding as `matchupScoreLine`, so the head and the panel can never
+ * print two different numbers for one row. */
+function scoreOf(row: BoardRow): number | null {
+  return row.strength === null ? null : Math.round(row.strength);
+}
+
 /** The explainer behind the "Matchup score" term, hosted once in the section header rather than
- * inside any card: a card's `Term` would be interactive content nested inside the card's own
- * anchor, invalid markup two earlier fix rounds already found and removed for "New" on the
- * Pokemon screen (see that file's `newExplainer`).
+ * inside any row: a row's `Term` would be interactive content nested inside the row's own
+ * controls, the same invalid-markup problem two earlier fix rounds already found and removed for
+ * "New" on the Pokemon screen (see that file's `newExplainer`).
  *
  * Fix round 1, item 2: the closing clause used to say "not from battles anyone played", which is
  * false. `buildBoard` calls `strengthContext(view, ranking.weights)` with the BLENDED weights
@@ -129,7 +144,7 @@ function matchupScoreExplainer(): string {
   return "How much of the meta the three of them beat between them, how well those wins hold when shields change, whether a top opponent goes completely unanswered, and whether the switch has matchups that simply end it. Worked out from PvPoke's matchup data, weighted by how often each opponent is actually faced, not from how anyone's battles turned out.";
 }
 
-/** The one fact block every card needs: what it is made of, and how (projected, run, faced, or
+/** The one fact block every row needs: what it is made of, and how (projected, run, faced, or
  * some mix), in that order, never printing the score that ranked it. */
 function RowFacts({ row, data }: { row: BoardRow; data: StaticData }): ReactNode {
   return (
@@ -150,24 +165,23 @@ function RowFacts({ row, data }: { row: BoardRow; data: StaticData }): ReactNode
   );
 }
 
-/** `core.builds` nests generated teams alongside observed ones (a generated team whose pair was
- * never run still belongs under its core on the board), but "seen with" and "never seen complete"
- * are claims about OBSERVED play. Reading `core.builds` directly for either would print a
- * projected third as something this core was actually seen alongside, and the converse: a core
- * whose only builds are generated would wrongly skip "never seen complete." This is the one
- * filter both of those sentences share. */
-function observedBuilds(core: BoardRow): BoardRow[] {
-  return core.builds.filter((build) => build.source !== 'generated');
-}
-
 /** The distinct thirds a core has actually been seen complete with, read off its own observed
- * `builds` rather than a separate field: the nested list and this sentence must never be able to
- * disagree about what "seen with" means, so there is only one source for it. */
+ * `builds` rather than a separate field: the chips below and the nested build list must never be
+ * able to disagree about what "seen with" means, so there is only one source for it.
+ *
+ * `builds` nests generated teams alongside observed ones (a generated team whose pair was never
+ * run still belongs under its core), but "seen with" is a claim about OBSERVED play, so a
+ * generated build is filtered out here. `teamsSeen` (boardView.ts) counts the same builds this
+ * walks, which is what keeps the chips, the collapsed line's team count and the multi-team
+ * filter in step. */
 function thirdsOf(core: BoardRow): string[] {
   const pair = new Set(core.species);
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const build of observedBuilds(core)) {
+  for (const build of core.builds) {
+    if (build.source === 'generated') {
+      continue;
+    }
     const third = build.species.find((id) => !pair.has(id));
     if (third !== undefined && !seen.has(third)) {
       seen.add(third);
@@ -177,15 +191,33 @@ function thirdsOf(core: BoardRow): string[] {
   return out;
 }
 
-function CoreFacts({ core, data }: { core: BoardRow; data: StaticData }): ReactNode {
-  const observed = observedBuilds(core);
-  if (observed.length > 0) {
-    const names = thirdsOf(core).map((id) => speciesOf(data, id).short);
-    return <p className="fine">{`Seen with ${joinNames(names)}`}</p>;
+/** What has filled a core's third slot, as tokens rather than a sentence: on a board of hundreds
+ * this is the fact a reader is actually scanning for, and three names in a row read faster as
+ * three sprites than as prose. A core nobody has been seen complete with gets the sentence
+ * instead, since there is nothing to show. */
+function CoreThirds({ core, data }: { core: BoardRow; data: StaticData }): ReactNode {
+  const thirds = thirdsOf(core);
+  if (thirds.length > 0) {
+    return (
+      <div className="row-part">
+        <p className="row-label">Seen with</p>
+        <div className="third-chips">
+          {thirds.map((id) => {
+            const s = speciesOf(data, id);
+            return (
+              <span className="third-chip" key={id}>
+                <Sprite species={s} size={18} />
+                {s.short}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
   }
   // The canned sentence below claims a projection exists ("Projected against any third PvPoke
   // would expect"). When it does not (the pair itself is outside the slice), RowFacts already
-  // says so with its own "No projection: ..." line; printing this one too would have the card
+  // says so with its own "No projection: ..." line; printing this one too would have the row
   // contradict itself in two adjacent lines about whether a projection exists at all.
   if (core.projection !== null) {
     return (
@@ -195,22 +227,9 @@ function CoreFacts({ core, data }: { core: BoardRow; data: StaticData }): ReactN
   return null;
 }
 
-function SpeciesSlots({ species, twoUp }: { species: SpeciesLite[]; twoUp: boolean }): ReactNode {
-  return (
-    <div className={twoUp ? 'slots2' : 'slots3'}>
-      {species.map((s) => (
-        <div className="slot" key={s.id}>
-          <Sprite species={s} size={52} />
-          <span className="slot-name">{s.short}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** A nested build under a core: a compact line, not a full card, since the core's own card
- * already carries the sprites and the deep link at that size. Its own fact is whichever of a
- * record or a projection actually applies to it, never both, to keep the line to one thought. */
+/** A nested build under a core: a compact line, not a row of its own, since the core's head
+ * already carries the sprites at that size. Its own fact is whichever of a record or a projection
+ * actually applies to it, never both, to keep the line to one thought. */
 function BuildLine({
   build,
   data,
@@ -234,7 +253,7 @@ function BuildLine({
     <a className="build-line" href={href}>
       <span className="build-sprites">
         {species.map((s) => (
-          <Sprite key={s.id} species={s} size={32} />
+          <Sprite key={s.id} species={s} size={26} />
         ))}
       </span>
       <span className="tag tag-kind">{kindTag(build)}</span>
@@ -246,78 +265,105 @@ function BuildLine({
   );
 }
 
-/** A top-level row. A complete team is one big `<a>`; a core WITH complete teams under it is a
- * `<div>` with its link in the foot instead, because its nested build lines are their own links
- * and an anchor cannot contain another anchor (screen readers handle it badly, and it is invalid
- * markup regardless). A core with no build under it is a `<div>` with no link at all, for the
- * reason below.
+/** What a collapsed head says out loud. The bare figure on the right is the matchup score and
+ * nothing else identifies it, so the label names it rather than leaving a screen reader to read
+ * "87" after the record and let the listener guess what it counts. */
+function headLabel(row: BoardRow, title: string): string {
+  const score = scoreOf(row);
+  const tail = score === null ? '' : `. ${matchupScoreLine(score)}`;
+  return `${title}. ${subLine(row)}${tail}`;
+}
+
+/** A top-level row: a head that toggles, and the facts underneath when it is open.
  *
- * C1: what a card links to is NOT always its own row. A core is two species and a pick3 team
- * link needs three (apps/web/src/teamLink.ts), so a core links to its best build, which is a
- * real three-Pokemon team and the thing a reader tapping the card most likely wants. A core with
- * no build at all has no honest destination, so it carries no link rather than one pick3 would
- * refuse. `builds` is already sorted by score, so `builds[0]` is the best one. */
-function Card({
+ * The head is a `<button>` and every link lives in the panel below it, so nothing interactive is
+ * ever nested inside anything else interactive. That is what the old card shape had to work
+ * around with three separate branches (a plain div, a div with a foot link, or one big anchor);
+ * the split removes the problem rather than routing around it.
+ *
+ * C1: a core never carries a pick3 link of its own. A core is two species and a pick3 team link
+ * needs three (apps/web/src/teamLink.ts), so the only honest destinations a core has are the
+ * complete teams built on it, and those are the nested build lines, each already linking to its
+ * own three-member team, best first. A core with no build at all therefore has no link anywhere
+ * under it, which is right: there is no three-Pokemon team to point at. */
+function Row({
   row,
   data,
   league,
+  open,
+  onToggle,
 }: {
   row: BoardRow;
   data: StaticData;
   league: string;
+  open: boolean;
+  onToggle: () => void;
 }): ReactNode {
   const isCore = row.kind === 'core';
   const species = row.species.map((id) => speciesOf(data, id));
-  const target: BoardRow | null = isCore ? (row.builds[0] ?? null) : row;
-  const href = target ? teamLink(league, membersOf(target.species, target.moves)) : null;
-  const hasChildren = isCore && row.builds.length > 0;
-
-  const body = (
-    <>
-      <SpeciesSlots species={species} twoUp={isCore} />
-      <span className="tag tag-kind">{kindTag(row)}</span>
-      <RowFacts row={row} data={data} />
-      {isCore ? <CoreFacts core={row} data={data} /> : null}
-      {hasChildren ? (
-        <div className="builds">
-          <p className="fine">Built as</p>
-          {row.builds.map((build) => (
-            <BuildLine key={build.species.join('+')} build={build} data={data} league={league} />
-          ))}
-        </div>
-      ) : null}
-    </>
-  );
-
-  // A core with no build under it: no three-member team to point at, so no link at all rather
-  // than one pick3 would refuse. Every other row has a `href`, and this narrows it for both
-  // branches below.
-  if (href === null) {
-    return <div className="team-card">{body}</div>;
-  }
-
-  if (hasChildren) {
-    return (
-      <div className="team-card">
-        {body}
-        <div className="cost-line">
-          <a className="team-details" href={href}>
-            Open in pick3 <Chevron />
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // A label, not a sentence: "A, B and C" wastes three characters on a line that truncates at
+  // phone width, and it truncated mid-"and". A plain comma join breaks at a name boundary more
+  // often and fits one more name before the ellipsis.
+  const title = species.map((sp) => sp.short).join(', ');
+  const score = scoreOf(row);
 
   return (
-    <a className="team-card" href={href}>
-      {body}
-      <div className="cost-line">
-        <span className="team-details">
-          Open in pick3 <Chevron />
+    <div className={`team-row${open ? ' open' : ''}`}>
+      <button
+        type="button"
+        className="row-head"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={headLabel(row, title)}
+      >
+        <span className="row-sprites">
+          {species.map((s) => (
+            <Sprite key={s.id} species={s} size={30} />
+          ))}
         </span>
-      </div>
-    </a>
+        <span className="row-text">
+          <span className="row-title">{title}</span>
+          <span className="row-sub">{subLine(row)}</span>
+        </span>
+        <span className="row-score">{score === null ? '' : count(score)}</span>
+        <Chevron dir={open ? 'up' : 'down'} />
+      </button>
+
+      {open ? (
+        <div className="row-body">
+          <div className="row-facts">
+            <span className="tag tag-kind">{kindTag(row)}</span>
+            <RowFacts row={row} data={data} />
+          </div>
+          {isCore ? <CoreThirds core={row} data={data} /> : null}
+          {isCore && row.builds.length > 0 ? (
+            <div className="row-part">
+              <p className="row-label">Built as</p>
+              <div className="builds">
+                {row.builds.map((build) => (
+                  <BuildLine
+                    key={build.species.join('+')}
+                    build={build}
+                    data={data}
+                    league={league}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {isCore ? null : (
+            <div className="cost-line">
+              <a
+                className="team-details"
+                href={teamLink(league, membersOf(row.species, row.moves))}
+              >
+                Open in pick3 <Chevron />
+              </a>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -328,6 +374,56 @@ function headerLine(ranking: SpeciesRanking): string {
   const pct = Math.round(ranking.say * 100);
   const devices = `${count(ranking.devices)} ${plural(ranking.devices, 'device', 'devices')}`;
   return `${pct}% measured, from ${battlesText(ranking.battles)} shared by ${devices}`;
+}
+
+/** What is on screen right now, counted by kind rather than as a bare row total: "14 cores, 3
+ * teams" tells a reader what the list is made of, and it moves when the filter does, which is
+ * the whole point of showing it next to the filter. */
+function countLabel(rows: readonly BoardRow[]): string {
+  const cores = rows.filter((row) => row.kind === 'core').length;
+  const teams = rows.length - cores;
+  const parts: string[] = [];
+  if (cores > 0) {
+    parts.push(`${count(cores)} ${plural(cores, 'core', 'cores')}`);
+  }
+  if (teams > 0) {
+    parts.push(`${count(teams)} ${plural(teams, 'team', 'teams')}`);
+  }
+  return parts.join(', ');
+}
+
+/** The board's own controls: how many rows are on screen, the multi-team filter and the sort.
+ * The sort is a cycle rather than a menu because there are four of them and the current one is
+ * the label, so it costs one tap and no screen space. */
+function Controls({
+  rows,
+  multiOnly,
+  onToggleMulti,
+  sort,
+  onCycleSort,
+  showFilter,
+}: {
+  rows: readonly BoardRow[];
+  multiOnly: boolean;
+  onToggleMulti: () => void;
+  sort: SortKey;
+  onCycleSort: () => void;
+  showFilter: boolean;
+}): ReactNode {
+  const label = SORTS.find((s) => s.key === sort)?.label ?? SORTS[0]?.label ?? '';
+  return (
+    <div className="board-controls">
+      <span className="fine board-count">{countLabel(rows)}</span>
+      {showFilter ? (
+        <Chip on={multiOnly} onClick={onToggleMulti}>
+          Multi-team only
+        </Chip>
+      ) : null}
+      <Chip on={sort !== 'ranked'} onClick={onCycleSort}>
+        {`Sort: ${label}`}
+      </Chip>
+    </div>
+  );
 }
 
 export function Teams(p: {
@@ -345,6 +441,9 @@ export function Teams(p: {
   bakedCommit: string | null;
 }): ReactNode {
   const { league, data, boardError, board, ranking, epoch, bakedCommit } = p;
+  const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
+  const [multiOnly, setMultiOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>('ranked');
 
   if (boardError) {
     return (
@@ -365,6 +464,16 @@ export function Teams(p: {
   const mismatch = bakedCommit !== null && epoch !== null && commitMismatch(epoch, bakedCommit);
   const bakedShort = bakedCommit !== null ? bakedCommit.slice(0, 7) : null;
   const empty = board.rows.length === 0;
+  // The filter is only offered when it has something to act on: a board with no core in two or
+  // more teams would answer every tap with an empty list, which is a control that lies about
+  // what it does.
+  const showFilter = board.rows.some((row) => row.kind === 'core' && teamsSeen(row) >= 2);
+  const shown = sortRows(multiOnly ? multiTeamOnly(board.rows) : board.rows, sort);
+
+  const cycleSort = (): void => {
+    const i = SORTS.findIndex((s) => s.key === sort);
+    setSort((SORTS[(i + 1) % SORTS.length] ?? SORTS[0])?.key ?? 'ranked');
+  };
 
   return (
     <main>
@@ -404,9 +513,34 @@ export function Teams(p: {
             <Contribute devices={ranking.devices} />
           </>
         ) : (
-          board.rows.map((row) => (
-            <Card key={row.species.join('+')} row={row} data={data} league={league} />
-          ))
+          <>
+            <Controls
+              rows={shown}
+              multiOnly={multiOnly}
+              onToggleMulti={() => setMultiOnly(!multiOnly)}
+              sort={sort}
+              onCycleSort={cycleSort}
+              showFilter={showFilter}
+            />
+            <div className="team-rows">
+              {shown.map((row) => {
+                const key = row.species.join('+');
+                return (
+                  <Row
+                    key={key}
+                    row={row}
+                    data={data}
+                    league={league}
+                    open={openRows[key] ?? false}
+                    // Functional update, not a spread of the captured `openRows`: two taps in one
+                    // tick both read the same stale object, so the second would throw away the
+                    // first row's open state instead of adding to it.
+                    onToggle={() => setOpenRows((prev) => ({ ...prev, [key]: !prev[key] }))}
+                  />
+                );
+              })}
+            </div>
+          </>
         )}
       </section>
     </main>

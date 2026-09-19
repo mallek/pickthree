@@ -513,6 +513,32 @@ for (const run of RUNS) {
         }
       }
     }
+
+    // The team board renders every row collapsed, so the pass above never sees the panel that
+    // carries most of the screen's copy (the record sentence, the matchup score, the thirds a
+    // core was seen with, the nested build lines). Open the first few and shoot that state too,
+    // or a console error, an overflow or a non-ASCII character in there would go unseen.
+    if (name === 'great') {
+      const opened = await page.evaluate(() => {
+        const heads = Array.from(document.querySelectorAll('.row-head')).slice(0, 3);
+        for (const head of heads) {
+          head.click();
+        }
+        return heads.length;
+      });
+      if (opened > 0) {
+        await settle(page);
+        const openLabel = `${label} open`;
+        await assertNoOverflow(page, openLabel);
+        await assertAscii(page, openLabel);
+        await page.screenshot({ path: path.join(outDir, `${run.name}-great-open.png`), fullPage: true });
+        await page.screenshot({
+          path: path.join(outDir, `${run.name}-great-open-viewport.png`),
+          fullPage: false,
+        });
+        console.log(`    ${run.name}-great-open.png (${Date.now() - t0} ms)`);
+      }
+    }
   }
 
   await page.close();

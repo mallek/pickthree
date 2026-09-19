@@ -18,6 +18,7 @@ import { confidence, trendLabel } from './stats.js';
 
 export {
   Chevron,
+  Chip,
   LEAGUE_COLORS,
   LeagueShield,
   LeagueSwitcher,

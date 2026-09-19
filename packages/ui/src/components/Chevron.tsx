@@ -1,12 +1,13 @@
 import type { CSSProperties } from 'react';
 
-const CHEVRON_TURN: Record<'right' | 'left' | 'down', CSSProperties | undefined> = {
+const CHEVRON_TURN: Record<'right' | 'left' | 'down' | 'up', CSSProperties | undefined> = {
   right: undefined,
   left: { transform: 'scaleX(-1)' },
   down: { transform: 'rotate(90deg)' },
+  up: { transform: 'rotate(-90deg)' },
 };
 
-export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' | 'down' }) {
+export function Chevron({ dir = 'right' }: { dir?: 'right' | 'left' | 'down' | 'up' }) {
   return (
     <svg
       width={16}
