@@ -226,7 +226,7 @@ function BaselineRowView({
   );
 }
 
-export function Overview(p: {
+export function Pokemon(p: {
   league: string;
   query: Query;
   data: StaticData;

@@ -18,7 +18,9 @@ function sp(speciesId: string, sightings: number, wins: number, losses: number) 
 beforeEach(() => {
   resetStatic();
   resetBaselines();
-  window.history.replaceState(null, '', '/great');
+  // Teams is the league root now (Task 11); the Pokemon screen these tests exercise lives at
+  // /<league>/pokemon.
+  window.history.replaceState(null, '', '/great/pokemon');
 });
 
 describe('Overview, with almost no data', () => {

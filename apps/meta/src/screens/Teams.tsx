@@ -20,7 +20,7 @@ import { teamLink, type LinkMember } from '../links.js';
 import type { Query } from '../route.js';
 import { MANY, SOME, confidence, marginSentence, winRate } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
-import { Contribute } from './Overview.js';
+import { Contribute } from './Pokemon.js';
 
 /** The members `teamLink` wants: each species id, with its most common moveset when the record
  * has enough battles behind it to name one. `team.moves` is aligned with `team.species` by

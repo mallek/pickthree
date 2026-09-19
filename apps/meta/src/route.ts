@@ -7,8 +7,8 @@ export type WindowKey = 'meta' | '30' | '7';
 export type BandKey = 'all' | 'below' | 'ace' | 'veteran' | 'expert' | 'legend';
 
 export type View =
-  | { name: 'overview'; league: string }
   | { name: 'teams'; league: string }
+  | { name: 'pokemon'; league: string }
   | { name: 'species'; league: string; speciesId: string }
   | { name: 'about' };
 
@@ -49,21 +49,23 @@ export function parseLocation(
     return { view: { name: 'about' }, query };
   }
   const league = a && leagues.includes(a) ? a : first;
-  if (b === 'teams') {
-    return { view: { name: 'teams', league }, query };
+  if (b === 'pokemon') {
+    return { view: { name: 'pokemon', league }, query };
   }
   if (b === 'p' && c && SPECIES.test(c)) {
     return { view: { name: 'species', league, speciesId: c }, query };
   }
-  return { view: { name: 'overview', league }, query };
+  // Teams is the league root now. /<league>/teams still parses here, and hrefFor writes
+  // /<league>, so App's canonicalise effect rewrites the old path in place rather than 404ing.
+  return { view: { name: 'teams', league }, query };
 }
 
 export function hrefFor(view: View, query: Query): string {
   const path =
     view.name === 'about'
       ? '/about'
-      : view.name === 'teams'
-        ? `/${view.league}/teams`
+      : view.name === 'pokemon'
+        ? `/${view.league}/pokemon`
         : view.name === 'species'
           ? `/${view.league}/p/${view.speciesId}`
           : `/${view.league}`;
@@ -83,8 +85,8 @@ export function withLeague(view: View, league: string): View {
   if (view.name === 'about') {
     return view;
   }
-  if (view.name === 'teams') {
-    return { name: 'teams', league };
+  if (view.name === 'pokemon' || view.name === 'species') {
+    return { name: 'pokemon', league };
   }
-  return { name: 'overview', league };
+  return { name: 'teams', league };
 }

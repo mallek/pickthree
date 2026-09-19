@@ -1,7 +1,7 @@
 /**
- * The shell: current location, theme, static data, and which screen renders. Screens themselves
- * are Tasks 10 to 13; until each lands, its view renders a small placeholder here. Overview
- * (Task 10) has landed and renders for real.
+ * The shell: current location, theme, static data, and which screen renders. Teams is the
+ * league root (Task 11); Pokemon (the former Overview, Task 10) lives at /<league>/pokemon.
+ * The Species placeholder is Task 12.
  */
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
@@ -25,7 +25,7 @@ import {
 import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from '@pickthree/ui';
 import { Header, LeagueSwitcher, Select, SitePill, ThemeIcon } from './components.js';
 import { About } from './screens/About.js';
-import { Overview } from './screens/Overview.js';
+import { Pokemon } from './screens/Pokemon.js';
 import { Species } from './screens/Species.js';
 import { Teams } from './screens/Teams.js';
 import {
@@ -129,19 +129,11 @@ function TabBar({
   query: Query;
   navProps: NavProps;
 }): ReactNode {
-  const onPokemon = view.name === 'overview' || view.name === 'species';
   const onTeams = view.name === 'teams';
+  const onPokemon = view.name === 'pokemon' || view.name === 'species';
   const onAbout = view.name === 'about';
   return (
     <nav className="tabs" aria-label="Sections">
-      <a
-        className={onPokemon ? 'on' : undefined}
-        aria-current={onPokemon ? 'page' : undefined}
-        {...navProps({ name: 'overview', league: activeLeague }, query)}
-      >
-        {TAB_ICONS.pokemon}
-        Pokemon
-      </a>
       <a
         className={onTeams ? 'on' : undefined}
         aria-current={onTeams ? 'page' : undefined}
@@ -149,6 +141,14 @@ function TabBar({
       >
         {TAB_ICONS.teams}
         Teams
+      </a>
+      <a
+        className={onPokemon ? 'on' : undefined}
+        aria-current={onPokemon ? 'page' : undefined}
+        {...navProps({ name: 'pokemon', league: activeLeague }, query)}
+      >
+        {TAB_ICONS.pokemon}
+        Pokemon
       </a>
       <a
         className={onAbout ? 'on' : undefined}
@@ -162,8 +162,10 @@ function TabBar({
   );
 }
 
-/** Placeholder content for a view whose real screen has not landed yet (Tasks 11 to 13), or the
- * real Overview screen (Task 10) for the one view that has landed. */
+/** Teams is the league root, so it is also the default: a view name renderView does not
+ * otherwise recognize (there is none today, but this is the same fallback the old Overview
+ * default was) lands on Teams rather than 404ing. Species is a drill-down from Pokemon (Tasks
+ * 12 to 13); the real Pokemon screen (Task 10, moved here in Task 11) renders for `pokemon`. */
 function renderView(
   view: View,
   league: string,
@@ -178,8 +180,18 @@ function renderView(
   if (view.name === 'about') {
     return <About baseline={baseline} />;
   }
-  if (view.name === 'teams') {
-    return <Teams league={league} query={query} data={data} meta={meta} now={now} />;
+  if (view.name === 'pokemon') {
+    return (
+      <Pokemon
+        league={league}
+        query={query}
+        data={data}
+        meta={meta}
+        baseline={baseline}
+        now={now}
+        href={href}
+      />
+    );
   }
   if (view.name === 'species') {
     return (
@@ -196,17 +208,7 @@ function renderView(
       />
     );
   }
-  return (
-    <Overview
-      league={league}
-      query={query}
-      data={data}
-      meta={meta}
-      baseline={baseline}
-      now={now}
-      href={href}
-    />
-  );
+  return <Teams league={league} query={query} data={data} meta={meta} now={now} />;
 }
 
 export function App(props?: { deps?: Deps }): ReactNode {
@@ -333,8 +335,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
     </button>
   );
 
-  // Shown on the three tab-root screens (Overview, Teams, About), each reached straight from the
-  // bottom tab bar. Species is a drill-down from Overview rather than a tab of its own, so its
+  // Shown on the three tab-root screens (Teams, Pokemon, About), each reached straight from the
+  // bottom tab bar. Species is a drill-down from Pokemon rather than a tab of its own, so its
   // sticky header's back link takes over this row's job instead ("how do I leave this page"),
   // and the wordmark is dropped there rather than duplicating it. Not sticky itself: only the
   // filters/switcher below it are, so the two never have to share row 0 of the sticky stack.
@@ -350,7 +352,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
     <header className="brand">
       <a
         className="wordmark"
-        {...navProps({ name: 'overview', league: activeLeague }, DEFAULT_QUERY)}
+        {...navProps({ name: 'teams', league: activeLeague }, DEFAULT_QUERY)}
       >
         <span>meta.</span>
         <img className="only-dark hero-lockup" src={lockupDark} alt="" aria-hidden="true" />
@@ -383,13 +385,13 @@ export function App(props?: { deps?: Deps }): ReactNode {
     const leagues = staticData.data.leagues;
     const leagueInfo = leagues.find((l) => l.id === activeLeague) ?? null;
     const leagueShort = leagueInfo?.short ?? activeLeague;
-    const showFilters = view.name === 'overview' || view.name === 'teams';
+    const showFilters = view.name === 'teams' || view.name === 'pokemon';
     // About is league-agnostic: withLeague is a no-op there, so showing the switcher would be a
     // control that does nothing when clicked.
     const showLeagueSwitch = view.name !== 'about';
     const showBrand = view.name !== 'species';
 
-    // A1: Overview, Teams and About are tab roots now told apart by the brand row above them,
+    // A1: Teams, Pokemon and About are tab roots now told apart by the brand row above them,
     // the league switcher and the filter chips below them, and (for Teams and About) an `h2`
     // inside the screen's own body (Teams.tsx's "Most run teams", About.tsx's section headings),
     // not by a second, centred title row here. Species is still a drill-in with a back link, so
@@ -399,7 +401,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
       view.name === 'species' ? (
         <Header
           title={speciesOf(staticData.data, view.speciesId).name}
-          backHref={hrefFor({ name: 'overview', league: activeLeague }, query)}
+          backHref={hrefFor({ name: 'pokemon', league: activeLeague }, query)}
           backLabel={leagueShort}
           action={themeButton}
         />

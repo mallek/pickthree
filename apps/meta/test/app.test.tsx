@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { THEME_KEY } from '@pickthree/ui';
@@ -25,6 +25,21 @@ describe('App', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
+  it('lands on Teams', async () => {
+    window.history.replaceState(null, '', '/great');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('heading', { name: /teams/i })).toBeInTheDocument();
+  });
+
+  it('puts Teams first in the tab bar', async () => {
+    window.history.replaceState(null, '', '/great');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    const tabs = within(await screen.findByRole('navigation', { name: 'Sections' })).getAllByRole(
+      'link',
+    );
+    expect(tabs.map((t) => t.textContent)).toEqual(['Teams', 'Pokemon', 'About']);
+  });
+
   it('carries a pill to pick3 in the brand row', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByRole('link', { name: 'pick3, the team builder' })).toHaveAttribute(
@@ -49,8 +64,8 @@ describe('App', () => {
 
   it('moves between the three tabs', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await userEvent.click(await screen.findByRole('link', { name: 'Teams' }));
-    await waitFor(() => expect(window.location.pathname).toBe('/great/teams'));
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokemon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
     await userEvent.click(screen.getByRole('link', { name: 'About' }));
     await waitFor(() => expect(window.location.pathname).toBe('/about'));
   });
@@ -97,11 +112,11 @@ describe('App', () => {
   });
 
   // The "says so, without blanking the page, when the api is down" case from the brief asserts
-  // on Overview's real copy ("Could not load the shared battles. PvPoke's list is below; try
+  // on Pokemon's real copy ("Could not load the shared battles. PvPoke's list is below; try
   // again in a moment." and a "PvPoke's meta group" heading), which is Task 10's content, not
-  // this shell's placeholder. That assertion now lives in Task 10's own overview.test.tsx
-  // (see task-10-brief.md, "Overview, when the api is down"), which will run against the real
-  // screen once it exists.
+  // this shell's placeholder. That assertion now lives in Task 10's own pokemon.test.tsx
+  // (see task-10-brief.md, "Overview, when the api is down"; the screen and its test moved and
+  // were renamed in Task 11), which will run against the real screen once it exists.
 });
 
 describe('App, deep links', () => {
@@ -112,7 +127,9 @@ describe('App, deep links', () => {
   // use.
 
   it('opens a non-first league at its own path and does not rewrite the url', async () => {
-    window.history.replaceState(null, '', '/ultra');
+    // Teams is the league root now (Task 11); the real screen this test exercises (Task 10's
+    // Pokemon, formerly Overview) lives at /<league>/pokemon.
+    window.history.replaceState(null, '', '/ultra/pokemon');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByRole('radio', { name: 'Ultra' })).toHaveAttribute(
       'aria-checked',
@@ -123,7 +140,7 @@ describe('App, deep links', () => {
     // banner and the baseline sub-line both name "Ultra League" here, so this checks for the
     // section heading instead of matching that text, which would otherwise find two elements.
     expect(await screen.findByRole('heading', { name: "PvPoke's meta group" })).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/ultra');
+    expect(window.location.pathname).toBe('/ultra/pokemon');
   });
 
   it('opens a species page in a non-first league and does not rewrite the url', async () => {
@@ -143,7 +160,9 @@ describe('App, deep links', () => {
     expect(window.location.pathname).toBe('/master/p/registeel');
   });
 
-  it('keeps the league, the view and both filters together', async () => {
+  it('keeps the league and both filters together across the old teams path', async () => {
+    // The old /<league>/teams path (kept working by parseLocation) canonicalises to the league
+    // root, but the filters in its query string ride along untouched.
     window.history.replaceState(null, '', '/ultra/teams?w=7&band=ace');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByRole('radio', { name: 'Ultra' })).toHaveAttribute(
@@ -157,8 +176,15 @@ describe('App, deep links', () => {
     expect(await screen.findByRole('heading', { name: 'Most run teams' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Window' })).toHaveValue('7');
     expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
-    expect(window.location.pathname).toBe('/ultra/teams');
+    await waitFor(() => expect(window.location.pathname).toBe('/ultra'));
     expect(window.location.search).toBe('?w=7&band=ace');
+  });
+
+  it('canonicalises the old teams path to the league root', async () => {
+    window.history.replaceState(null, '', '/great/teams');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByRole('heading', { name: /teams/i });
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
   it('still canonicalises the root to the first league', async () => {
