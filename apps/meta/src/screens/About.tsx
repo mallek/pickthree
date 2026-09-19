@@ -189,11 +189,11 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         </p>
       </section>
 
-      {/* A3: Overview used to carry these three definitions as prose above its own list, on
-       * every visit, whether or not the reader had ever wondered what the words meant. They live
-       * here now, once, and Overview links nowhere to them (the words are common enough to read
-       * in place without a footnote) but a curious reader knows where the site's glossary is:
-       * this page. */}
+      {/* A3: the species list, now the Pokemon screen, used to carry these three definitions as
+       * prose above its own list, on every visit, whether or not the reader had ever wondered
+       * what the words meant. They live here now, once, and Pokemon links nowhere to them (the
+       * words are common enough to read in place without a footnote) but a curious reader knows
+       * where the site's glossary is: this page. */}
       <section className="card">
         <h2>How to read the lists</h2>
         <p className="sub">
@@ -258,9 +258,10 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           &quot;projects&quot; and always says it is a projection.
         </p>
         <p className="sub">
-          Projections cover the Pokemon PvPoke ranks. Someone you faced who is not on that list is
-          counted in the measured numbers and left out of the projections, and any card that is
-          missing a member says so instead of guessing.
+          Projections cover the top few hundred Pokemon by PvPoke rank, which is the ranked list
+          this site ships projections for, not every Pokemon PvPoke ranks. Someone you faced who is
+          not on that list is counted in the measured numbers and left out of the projections, and
+          any card that is missing a member says so instead of guessing.
         </p>
       </section>
 

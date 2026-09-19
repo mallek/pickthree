@@ -466,7 +466,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
 
     // A1: Teams, Pokemon and About are tab roots now told apart by the brand row above them,
     // the league switcher and the filter chips below them, and (for Teams and About) an `h2`
-    // inside the screen's own body (Teams.tsx's "Most run teams", About.tsx's section headings),
+    // inside the screen's own body (Teams.tsx's "Teams", About.tsx's section headings),
     // not by a second, centred title row here. Species is still a drill-in with a back link, so
     // it keeps the one place that row belongs: its title is just the species name, since the
     // league it belongs to is already named by the switcher rendered under this header.

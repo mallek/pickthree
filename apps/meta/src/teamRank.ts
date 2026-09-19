@@ -289,41 +289,50 @@ export function buildBoard(input: {
     rowFrom(c, projectCore(ctx, [...c.species].sort(), c.thirds, fallbackThirds), covered),
   );
 
-  const generatedRows: BoardRow[] = input.generated.map((g) => {
-    // Recomputed against the blended weights when the slice is here: the baked strength was
-    // weighted by PvPoke's prior alone, and measured play may since have said otherwise.
-    const p = projectTeam(ctx, [...g.species].sort());
-    const strength = p.strength ?? g.strength;
-    // The baked species array is already lead, switch, closer (GeneratedTeam in the engine), so
-    // it stands in when the recompute could not run. With no slice at all the board says so
-    // through `projectionless` and claims no order for any row, generated or observed.
-    const order = p.order ?? (ctx ? [...g.species] : null);
-    // A generated row has no record at all, so its score IS its projection: say is 0 and there
-    // is nothing on the other side of the blend.
-    const projection = expectedWinRate(strength);
-    return {
-      species: [...g.species].sort(),
-      order,
-      kind: 'team',
-      source: 'generated',
-      strength,
-      projection,
-      outsideSlice: p.outside,
-      weightCovered: covered,
-      runBattles: 0,
-      runWins: 0,
-      runLosses: 0,
-      facedBattles: 0,
-      facedWins: 0,
-      facedLosses: 0,
-      decided: 0,
-      measured: null,
-      say: 0,
-      score: projection,
-      moves: [null, null, null],
-      builds: [],
-    };
-  });
+  // I2: the generated teams are the strongest projections from the same 60-species pool the
+  // teams people actually run come from, so a generated trio matching an observed one is likely,
+  // not exotic. Without this the board would carry two rows for one team, one saying "not yet
+  // seen in shared battles" beside the other's record, and both keyed on the same
+  // `species.join('+')` in Teams.tsx. One row per team: the observed one, which knows more.
+  const observedKeys = new Set(observedTeams.map((t) => t.species.join('+')));
+
+  const generatedRows: BoardRow[] = input.generated
+    .filter((g) => !observedKeys.has([...g.species].sort().join('+')))
+    .map((g) => {
+      // Recomputed against the blended weights when the slice is here: the baked strength was
+      // weighted by PvPoke's prior alone, and measured play may since have said otherwise.
+      const p = projectTeam(ctx, [...g.species].sort());
+      const strength = p.strength ?? g.strength;
+      // The baked species array is already lead, switch, closer (GeneratedTeam in the engine), so
+      // it stands in when the recompute could not run. With no slice at all the board says so
+      // through `projectionless` and claims no order for any row, generated or observed.
+      const order = p.order ?? (ctx ? [...g.species] : null);
+      // A generated row has no record at all, so its score IS its projection: say is 0 and there
+      // is nothing on the other side of the blend.
+      const projection = expectedWinRate(strength);
+      return {
+        species: [...g.species].sort(),
+        order,
+        kind: 'team',
+        source: 'generated',
+        strength,
+        projection,
+        outsideSlice: p.outside,
+        weightCovered: covered,
+        runBattles: 0,
+        runWins: 0,
+        runLosses: 0,
+        facedBattles: 0,
+        facedWins: 0,
+        facedLosses: 0,
+        decided: 0,
+        measured: null,
+        say: 0,
+        score: projection,
+        moves: [null, null, null],
+        builds: [],
+      };
+    });
 
   // Cores are the spine. Every complete team, observed or generated, is nested under each of its
   // pairs that is on the board. A generated team whose pairs were never seen has no core to sit

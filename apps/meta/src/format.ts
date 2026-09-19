@@ -49,10 +49,12 @@ export function pct(fraction: number): string {
   return Math.round(fraction * 100).toString();
 }
 
-/** One-decimal percent, for the rare case where the precision itself is the stated fact (a rule
- * like "ranked at 0.5% or more"), not a measurement to glance at: rounding the cut's 0.5% to
- * a whole percent would silently change what the rule says it does. Kept separate from `pct`
- * rather than special-cased at its one call site (a screen's own ranking-cut sentence). */
+/** One-decimal percent, for a case where the precision itself is the stated fact rather than a
+ * measurement to glance at: a share under half a point would round to "0%" and read as "never",
+ * so a sentence quoting such a figure needs the decimal to say what it means. It has no caller
+ * today (the share cut it was written for is gone, replaced by the continuous blend); it is kept
+ * because the next sentence that quotes a sub-1% figure needs exactly this and nothing else in
+ * this file does it. `pctFloor` below is the glance-at counterpart, for a rendered share. */
 export function pctPrecise(fraction: number): string {
   return (fraction * 100).toFixed(1);
 }

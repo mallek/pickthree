@@ -77,7 +77,7 @@ describe('summarize', () => {
 
   it('does not count a device whose only rows are tanked', () => {
     // A device that only ever tanked has shared nothing usable, and must not inflate the count
-    // gating MEASURED_MIN_DEVICES or the "shared by N devices" line on the site.
+    // feeding the device side of the site's blend curve, or the "shared by N devices" line.
     const s = run([row({ device: 'd1' }), row({ device: 'd2', tanked: true, result: null })]);
     expect(s.devices).toBe(1);
   });

@@ -66,6 +66,21 @@ function species(id: string, name: string): SpeciesLite {
   return { id, name, short: name, dex: 0, types: ['normal'], shadow: false };
 }
 
+/**
+ * C1: pick3 rejects a team path that does not carry exactly three members. `parseTeamPath` in
+ * apps/web/src/teamLink.ts splits the members segment on `+` and answers anything else with
+ * "A team link needs three Pokemon; this one has N.", so a two-member core link takes the
+ * reader to an error screen. `apps/meta` does not depend on `apps/web`, so the rule is encoded
+ * here; apps/web/src/teamLink.ts is its source and the two must stay in step.
+ */
+function teamPathMembers(href: string): string[] {
+  const m = /^https:\/\/pick3\.gg\/#\/t\/([^/]+)\/(.+)$/.exec(href);
+  if (!m) {
+    throw new Error(`not a pick3 team link: ${href}`);
+  }
+  return m[2]!.split('+').filter(Boolean);
+}
+
 const STATIC_DATA: StaticData = {
   species: new Map(
     [
@@ -166,6 +181,31 @@ const COMBINED = row(['faceda', 'facedb', 'facedc'], 'team', {
   facedWins: 25,
   facedLosses: 12,
 });
+
+/**
+ * I3: `recordLine`'s four branches at exactly one battle, which is the regime the front door
+ * opens in on day one. Four distinct trios, so a single render puts all four rows on the board.
+ */
+const ONE_RUN = row(['azumarill', 'clodsire', 'tinkaton'], 'team', {
+  runBattles: 1,
+  runWins: 1,
+  runLosses: 0,
+});
+const ONE_FACED = row(['faceda', 'facedb', 'facedc'], 'team', {
+  facedBattles: 1,
+  facedWins: 1,
+  facedLosses: 0,
+});
+const ONE_EACH = row(['lonelya', 'lonelyb', 'oppa'], 'team', {
+  runBattles: 1,
+  runWins: 1,
+  runLosses: 0,
+  facedBattles: 1,
+  facedWins: 1,
+  facedLosses: 0,
+});
+/** One battle, no result recorded: the `decided === 0` branch. */
+const ONE_UNDECIDED = row(['oppb', 'oppc', 'outsidera'], 'team', { runBattles: 1 });
 
 const OUTSIDER = row(['outsidera', 'outsiderb', 'stranger'], 'team', {
   runBattles: 6,
@@ -345,7 +385,7 @@ describe('Teams, with measured play', () => {
     expect(screen.getByText(/shared by 1 device$/)).toBeInTheDocument();
   });
 
-  it("prints the players own record for a faced-only row, not the faced team's", () => {
+  it("prints the players' own record for a faced-only row, not the faced team's", () => {
     renderTeams({ battles: 100, devices: 4, cores: [], teams: [FACED], generated: [] });
     // facedWins (30) counts battles the faced team WON (the reporters lost); facedLosses (10)
     // counts battles the faced team LOST (the reporters won). "players went" must read the
@@ -366,6 +406,25 @@ describe('Teams, with measured play', () => {
       generated: [],
     });
     expect(screen.getByText('Faced 37 times, players went 12-25')).toBeInTheDocument();
+  });
+
+  // I3: every branch of `recordLine` used to read "1 times". Day one on the front door is
+  // exactly the one-battle regime, so all four are pinned at n = 1.
+  it('says "1 time" rather than "1 times", in every branch', () => {
+    renderTeams({
+      battles: 4,
+      devices: 2,
+      cores: [],
+      teams: [ONE_RUN, ONE_FACED, ONE_EACH, ONE_UNDECIDED],
+      generated: [],
+    });
+    expect(screen.getByText('Run 1 time, reporters went 1-0')).toBeInTheDocument();
+    expect(screen.getByText('Faced 1 time, players went 0-1')).toBeInTheDocument();
+    expect(
+      screen.getByText('Run 1 time and faced 1 time, the team went 2-0 overall'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Seen 1 time, no result recorded')).toBeInTheDocument();
+    expect(screen.queryByText(/1 times/)).toBeNull();
   });
 
   it('names the team, not the players, for a run-and-faced row', () => {
@@ -421,7 +480,9 @@ describe('Teams, with measured play', () => {
   it('names the members that cost a row its projection, by their plain display name', () => {
     renderTeams({ battles: 100, devices: 4, cores: [], teams: [OUTSIDER], generated: [] });
     expect(
-      screen.getByText("No projection: Stranger is outside PvPoke's ranked list."),
+      screen.getByText(
+        'No projection: Stranger is outside the ranked list this site ships projections for.',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -472,11 +533,36 @@ describe('Teams, with measured play', () => {
     // own foot and one for FULL's nested line.
     expect(links.length).toBeGreaterThanOrEqual(2);
     for (const link of links) {
-      expect(link).toHaveAttribute('href', expect.stringContaining('https://pick3.gg/#/t/great/'));
+      // C1: a prefix check passed on a link pick3 rejects. The member segment is what matters,
+      // and it has to be three Pokemon.
+      expect(teamPathMembers(link.getAttribute('href') ?? '')).toHaveLength(3);
       // Fix round 1, item 5: this is the one structural rule with an explicit "invalid markup,
       // screen readers handle it badly" justification, and the rewrite had dropped its test.
       expect(link.querySelector('a')).toBeNull();
     }
+  });
+
+  // C1: a core is two species and pick3's team link needs three, so a core's own card links to
+  // its best build (`row.builds[0]`, already sorted by score) rather than to its own pair.
+  it('links a core card to its best build, never to its own two-member path', () => {
+    renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
+    const links = screen.getAllByRole('link', { name: /Open in pick3/ });
+    expect(links.length).toBeGreaterThanOrEqual(2);
+    for (const link of links) {
+      expect(teamPathMembers(link.getAttribute('href') ?? '')).toEqual([
+        'azumarill',
+        'clodsire',
+        'tinkaton',
+      ]);
+    }
+  });
+
+  // C1: and a core nobody has been seen complete with has no three-member team to point at, so
+  // it carries no card-level link rather than a broken one.
+  it('gives a core with no complete team under it no pick3 link at all', () => {
+    renderTeams({ battles: 100, devices: 4, cores: [LONELY_CORE], teams: [], generated: [] });
+    expect(screen.getByText(/Never seen complete/)).toBeInTheDocument();
+    expect(screen.queryAllByText(/Open in pick3/)).toHaveLength(0);
   });
 
   // Fix round 1, item 7: `projectionLine` welds the number to its caveat in one function today,

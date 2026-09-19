@@ -235,5 +235,8 @@ run('generateFor over the real Great League data', () => {
     const safeties = new Set(teams.map((t) => t.safety));
     expect(safeties.size).toBeGreaterThan(1);
     expect(view.opponents.length).toBeGreaterThan(0);
-  }, 20000); // 5000ms budget, the same margin teams.test.ts gives the identical work in the engine. // alone; under the full suite's parallel workers it can run much slower than the default // Drafting 60-species pool trios (about 34000 trios, six orderings each) is roughly 300ms
+    // Drafting 60-species pool trios (about 34000 trios, six orderings each) is roughly 300ms
+    // alone; under the full suite's parallel workers it can run much slower than the default
+    // 5000ms budget, the same margin teams.test.ts gives the identical work in the engine.
+  }, 20000);
 });

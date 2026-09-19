@@ -419,6 +419,38 @@ describe('buildBoard, cores', () => {
     expect(b.rows[0]?.builds.map((x) => x.source)).toContain('generated');
   });
 
+  // I2: the generated teams are the strongest projections drawn from the same pool the teams
+  // people actually run come from, so a generated trio matching an observed one is likely rather
+  // than exotic. Two rows for one team would say opposite things about it ("not yet seen in
+  // shared battles" beside a record) and collide on the `species.join('+')` key Teams.tsx gives
+  // every row, which React logs and meta:screens fails the build on.
+  it('drops a generated team that has already been observed, leaving one row for it', () => {
+    const t = teamRow({ species: ['a', 'b', 'c'], runBattles: 20, runWins: 12, runLosses: 8 });
+    const b = buildBoard({
+      teams: teams({ teams: [t] }),
+      ranking,
+      generated: GENERATED,
+      view: view(),
+    });
+    expect(b.rows).toHaveLength(1);
+    expect(b.rows[0]?.source).toBe('observed');
+    expect(b.rows[0]?.runBattles).toBe(20);
+    const keys = b.rows.map((r) => r.species.join('+'));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('matches an observed team for the dedupe whatever order its species arrived in', () => {
+    const t = teamRow({ species: ['c', 'a', 'b'], runBattles: 20, runWins: 12, runLosses: 8 });
+    const b = buildBoard({
+      teams: teams({ teams: [t] }),
+      ranking,
+      generated: GENERATED,
+      view: view(),
+    });
+    expect(b.rows).toHaveLength(1);
+    expect(b.rows[0]?.source).toBe('observed');
+  });
+
   it('leaves a complete team at the top level when none of its pairs is a core on the board', () => {
     const core = teamRow({ species: ['d', 'e'], facedBattles: 10, facedWins: 5, facedLosses: 5 });
     const b = buildBoard({

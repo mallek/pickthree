@@ -29,8 +29,9 @@ import type { Board, BoardRow } from '../teamRank.js';
 import { Contribute } from './Pokemon.js';
 
 /** The members `teamLink` wants: each species id, with its most common moveset when the record
- * has enough battles behind it to name one. A core hands over only its two known members; pick3
- * fills in the third itself. */
+ * has enough battles behind it to name one. Only a complete, three-member team is ever passed
+ * here: pick3's `parseTeamPath` (apps/web/src/teamLink.ts) answers any other count with "A team
+ * link needs three Pokemon", so a core links through one of its builds instead (see `Card`). */
 function membersOf(
   species: readonly string[],
   moves: readonly (MovesetStats | null)[],
@@ -58,17 +59,21 @@ function recordLine(row: BoardRow): string {
   const hasFaced = row.facedBattles > 0;
   if (row.decided === 0) {
     const total = row.runBattles + row.facedBattles;
-    return `Seen ${count(total)} times, no result recorded`;
+    return `Seen ${count(total)} ${plural(total, 'time', 'times')}, no result recorded`;
   }
+  // I3: day one on the front door is exactly the low-count regime, so every branch inflects on
+  // 1 rather than printing "Run 1 times".
+  const run = `${count(row.runBattles)} ${plural(row.runBattles, 'time', 'times')}`;
+  const faced = `${count(row.facedBattles)} ${plural(row.facedBattles, 'time', 'times')}`;
   if (hasRun && hasFaced) {
     const wins = row.runWins + row.facedWins;
     const losses = row.runLosses + row.facedLosses;
-    return `Run ${count(row.runBattles)} times and faced ${count(row.facedBattles)} times, the team went ${wins}-${losses} overall`;
+    return `Run ${run} and faced ${faced}, the team went ${wins}-${losses} overall`;
   }
   if (hasFaced) {
-    return `Faced ${count(row.facedBattles)} times, players went ${row.facedLosses}-${row.facedWins}`;
+    return `Faced ${faced}, players went ${row.facedLosses}-${row.facedWins}`;
   }
-  return `Run ${count(row.runBattles)} times, reporters went ${row.runWins}-${row.runLosses}`;
+  return `Run ${run}, reporters went ${row.runWins}-${row.runLosses}`;
 }
 
 /** Oxford-less "A, B and C", the only join this screen ever needs, and always with a leading
@@ -84,10 +89,16 @@ function joinNames(names: readonly string[]): string {
 
 /** The members that cost a row its projection, by their plain display name: `outsideSlice` only
  * means "not in the top-250 matrix slice", never "unknown". `species.json` is baked from the
- * whole `pokemon.json`, not the ranked slice, so the lookup always resolves. */
+ * whole `pokemon.json`, not the ranked slice, so the lookup always resolves.
+ *
+ * I4: this used to say "outside PvPoke's ranked list", which is false. PvPoke's Great League
+ * overall list runs to over a thousand entries; the slice this site ships is the top 250 of it
+ * (`MATRIX_TOP` in apps/meta/scripts/bake.ts). A species PvPoke ranks #400 is on PvPoke's list
+ * and off ours, and pick3's opponent picker searches every species, so logging one is ordinary.
+ * About.tsx's "What projected means" section carries the same wording. */
 function outsideText(ids: readonly string[], data: StaticData): string {
   const names = ids.map((id) => speciesOf(data, id).short);
-  return `No projection: ${joinNames(names)} ${names.length === 1 ? 'is' : 'are'} outside PvPoke's ranked list.`;
+  return `No projection: ${joinNames(names)} ${names.length === 1 ? 'is' : 'are'} outside the ranked list this site ships projections for.`;
 }
 
 /** `Projects <P>%`, with the "not a win rate" caveat immediately beside it, in the same line, so
@@ -214,10 +225,17 @@ function BuildLine({
   );
 }
 
-/** A top-level row. A core with no complete teams under it is a plain card, same as a team; a
- * core WITH complete teams becomes a `<div>` instead of the usual `<a>`, because its nested build
- * lines are their own links and an anchor cannot contain another anchor (screen readers handle it
- * badly, and it is invalid markup regardless). */
+/** A top-level row. A complete team is one big `<a>`; a core WITH complete teams under it is a
+ * `<div>` with its link in the foot instead, because its nested build lines are their own links
+ * and an anchor cannot contain another anchor (screen readers handle it badly, and it is invalid
+ * markup regardless). A core with no build under it is a `<div>` with no link at all, for the
+ * reason below.
+ *
+ * C1: what a card links to is NOT always its own row. A core is two species and a pick3 team
+ * link needs three (apps/web/src/teamLink.ts), so a core links to its best build, which is a
+ * real three-Pokemon team and the thing a reader tapping the card most likely wants. A core with
+ * no build at all has no honest destination, so it carries no link rather than one pick3 would
+ * refuse. `builds` is already sorted by score, so `builds[0]` is the best one. */
 function Card({
   row,
   data,
@@ -229,7 +247,8 @@ function Card({
 }): ReactNode {
   const isCore = row.kind === 'core';
   const species = row.species.map((id) => speciesOf(data, id));
-  const href = teamLink(league, membersOf(row.species, row.moves));
+  const target: BoardRow | null = isCore ? (row.builds[0] ?? null) : row;
+  const href = target ? teamLink(league, membersOf(target.species, target.moves)) : null;
   const hasChildren = isCore && row.builds.length > 0;
 
   const body = (
@@ -248,6 +267,13 @@ function Card({
       ) : null}
     </>
   );
+
+  // A core with no build under it: no three-member team to point at, so no link at all rather
+  // than one pick3 would refuse. Every other row has a `href`, and this narrows it for both
+  // branches below.
+  if (href === null) {
+    return <div className="team-card">{body}</div>;
+  }
 
   if (hasChildren) {
     return (

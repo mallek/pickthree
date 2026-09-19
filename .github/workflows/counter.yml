@@ -5,6 +5,12 @@ on:
     paths:
       - 'workers/counter/**'
       - 'apps/meta/**'
+      # apps/meta depends on both and bundles them: the bake calls generateColdStartTeams and
+      # PROJECTION_SLOPE, the browser runs strengthContext/expectedWinRate, and the page is built
+      # out of packages/ui components. Tuning PROJECTION_SLOPE alone must redeploy
+      # meta.pick3.gg, so a commit touching only these is still a change to this site.
+      - 'packages/engine/**'
+      - 'packages/ui/**'
       - 'packages/data/pvpoke.lock.json'
       - 'packages/data/seasons.json'
       - '.github/workflows/counter.yml'
