@@ -9,6 +9,7 @@
  *   DELETE /battles removes everything one device sent { device }
  *   GET  /meta      per-league summary: ?league=great&days=90
  *   GET  /api/v1/meta               per-league rollup: ?league=great&since=...&until=...&band=
+ *   GET  /api/v1/teams              the team board, run and faced, cores and complete teams
  *   GET  /api/v1/species/<id>       per-species detail over the same window and band
  *
  * Nothing stored identifies a player: no IPs, no collection data, no names. The counter and
@@ -36,6 +37,7 @@ import {
   type SpeciesDetailV1,
 } from './meta.js';
 import { parseReport, type ErrorReport } from './report.js';
+import { teamBoard, type TeamsV1 } from './teams.js';
 
 export interface Env {
   COUNTER: DurableObjectNamespace<Counter>;
@@ -218,6 +220,10 @@ export class MetaStore extends DurableObject<Env> {
       now: new Date(),
     });
   }
+
+  teamsV1(p: { league: string; since: string; until: string; band: string }): TeamsV1 {
+    return teamBoard({ ...p, rows: this.read(p.league, p.since, p.until), now: new Date() });
+  }
 }
 
 function cors(origin: string | null, allowed: string[]): Record<string, string> {
@@ -341,6 +347,9 @@ export default {
       const read = { ...headers, 'Cache-Control': READ_CACHE };
       if (url.pathname === '/api/v1/meta') {
         return Response.json(await meta.summaryV1(p), { headers: read });
+      }
+      if (url.pathname === '/api/v1/teams') {
+        return Response.json(await meta.teamsV1(p), { headers: read });
       }
       const species = url.pathname.slice('/api/v1/species/'.length);
       if (url.pathname.startsWith('/api/v1/species/') && SPECIES.test(species)) {

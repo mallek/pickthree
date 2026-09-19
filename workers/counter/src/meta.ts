@@ -98,6 +98,11 @@ export interface MetaSummaryV1 {
   /** Counted battles by source. One key today; nothing reads it yet. */
   sources: Record<string, number>;
   species: SpeciesStats[];
+  /**
+   * @deprecated Run teams only, and capped at 50. The whole team board, run and faced, cores and
+   * complete teams, is /api/v1/teams. Left in place and unchanged rather than altered under a
+   * consumer; nothing new should read it.
+   */
   teams: TeamStats[];
   previous: { battles: number; species: { speciesId: string; sightings: number }[] } | null;
   generatedAt: string;
