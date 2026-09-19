@@ -604,11 +604,21 @@ a {
   padding: 0;
   list-style: none;
 }
+/* Three type-coloured discs under the hero. The min-height reserves the row before game data
+ * lands, so the landing screen does not shift when the species types arrive and colour them. */
+.hero-trio {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  min-height: 70px;
+}
 .steps li {
   display: grid;
   grid-template-columns: 28px 1fr;
+  align-items: center;
   gap: 14px;
-  padding: 14px 0;
+  padding: 10px 0;
   border-top: 1px solid var(--divider);
 }
 .steps li > span {
@@ -1705,6 +1715,31 @@ button.counter-row {
 }
 .overlay.clear {
   background: transparent;
+}
+/* The trainer counter and its info button sit on one line, so the privacy note costs a dot, not
+ * a paragraph. The dot opens the .popover below. Deliberately not named .counter-row: that class
+ * already belongs to the Counters screen's grid rows further down this file. */
+.trainer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.info-dot {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
 .popover {
   position: fixed;

@@ -1,7 +1,7 @@
 import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useRef, useState } from 'react';
-import { Progress } from '../components.tsx';
+import { PokemonToken, Progress } from '../components.tsx';
 import { ScanListPanel } from '../components/ScanListPanel.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
@@ -17,6 +17,22 @@ export function Welcome() {
   const [text, setText] = useState('');
   const count = useTrainerCount();
   const [scanOpen, setScanOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!infoOpen) {
+      return;
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setInfoOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [infoOpen]);
 
   useEffect(() => {
     if (scanOpen && boot === 'ready' && leagueInfo && !scanList) {
@@ -129,34 +145,25 @@ export function Welcome() {
             Which Pokémon to use, in what order, with which moves, and what it costs.
           </p>
         </div>
+        {/* Decorative: three type-coloured discs for a little colour up top. Hidden from screen
+         * readers, which have no use for three Pokémon names that are not part of the flow. */}
+        <div className="hero-trio" aria-hidden="true">
+          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
+            <PokemonToken key={id} speciesId={id} size={64} showInitial={false} />
+          ))}
+        </div>
         <ol className="steps">
           <li>
             <span>1</span>
-            <div>
-              <b>Get your Pokémon in</b>
-              <span className="small muted">
-                Upload an export or a sheet of your own, add them by hand, or skip it and build from
-                any Pokémon.
-              </span>
-            </div>
+            <b>Get your Pokémon in</b>
           </li>
           <li>
             <span>2</span>
-            <div>
-              <b>Get your teams</b>
-              <span className="small muted">
-                Three Pokémon, in order, with moves, what to shield, and what it costs.
-              </span>
-            </div>
+            <b>Get your teams</b>
           </li>
           <li>
             <span>3</span>
-            <div>
-              <b>Check any team</b>
-              <span className="small muted">
-                Build your own three and see how it holds up against the meta.
-              </span>
-            </div>
+            <b>Check any team</b>
           </li>
         </ol>
         <details>
@@ -304,13 +311,37 @@ export function Welcome() {
         <button type="button" className="btn-ghost" onClick={() => setPaste((p) => !p)}>
           {paste ? 'Hide the paste box' : 'Paste CSV text instead'}
         </button>
-        <p className="meta faint" style={{ textAlign: 'center' }}>
-          Your file is processed on your phone and never uploaded anywhere. What is sent: an
-          anonymous tick to the counter, anonymous error reports, and the battles you log, as
-          anonymous records for the community meta (off in Settings if you prefer). Never your
-          Pokémon.
-        </p>
-        <TrainerCounter count={count} />
+        <div className="trainer-row">
+          <TrainerCounter count={count} />
+          <button
+            type="button"
+            className="info-dot"
+            aria-label="What pick3 sends"
+            aria-expanded={infoOpen}
+            onClick={() => setInfoOpen(true)}
+          >
+            i
+          </button>
+        </div>
+        {infoOpen ? (
+          <>
+            <div className="overlay clear" onClick={() => setInfoOpen(false)} aria-hidden="true" />
+            <div className="popover" role="dialog" aria-label="What pick3 sends">
+              <div className="between" style={{ marginBottom: 4 }}>
+                <b>Your data</b>
+                <button type="button" className="btn-ghost" onClick={() => setInfoOpen(false)}>
+                  Done
+                </button>
+              </div>
+              <p className="small muted">
+                Your file is processed on your phone and never uploaded anywhere. What is sent: an
+                anonymous tick to the counter, anonymous error reports, and the battles you log, as
+                anonymous records for the community meta (off in Settings if you prefer). Never your
+                Pokémon.
+              </p>
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );
