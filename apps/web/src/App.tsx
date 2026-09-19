@@ -12,6 +12,7 @@ import { SpecimenScreen } from './screens/Specimen.tsx';
 import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
+import { Import } from './screens/Import.tsx';
 import { YourMeta } from './screens/YourMeta.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { NoticeToast } from './components/NoticeToast.tsx';
@@ -100,6 +101,8 @@ function renderScreen(r: Route) {
   switch (r.screen) {
     case 'welcome':
       return <Welcome />;
+    case 'import':
+      return <Import />;
     case 'report':
       return <Report />;
     case 'teams':

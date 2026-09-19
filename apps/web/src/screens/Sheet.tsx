@@ -328,7 +328,7 @@ export function Sheet() {
             className="btn btn-secondary"
             onClick={() => {
               closeSheet();
-              navigate({ screen: 'welcome' });
+              navigate({ screen: 'import' });
             }}
           >
             {s.collection ? 'Import a new CSV' : 'Import a CSV'}

@@ -113,7 +113,7 @@ export function Counters() {
         ) : null}
         {s.collection ? null : (
           <p className="meta" style={{ margin: 0 }}>
-            <a href={hashFor({ screen: 'welcome' })}>Import your collection</a> and pick3 marks the
+            <a href={hashFor({ screen: 'import' })}>Import your collection</a> and pick3 marks the
             ones you own or can build.
           </p>
         )}

@@ -65,6 +65,11 @@ await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('h1');
 await shot('00-welcome', false);
 
+console.log('import');
+await page.goto(`${base}/#/import`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.scroll');
+await shot('00b-import', false);
+
 console.log('scan list');
 await page.evaluate(() => {
   const d = [...document.querySelectorAll('details')].find((x) =>
@@ -93,7 +98,7 @@ if (emptyChips.includes('You own')) {
 await shot('18b-counters-no-collection', false);
 
 console.log('import sample');
-await page.goto(`${base}/?sample=1#/`, { waitUntil: 'networkidle0' });
+await page.goto(`${base}/?sample=1#/import`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.kicker', { timeout: 90_000 });
 console.log(`  import done at ${Date.now() - t0} ms`);
 await shot('01-report');

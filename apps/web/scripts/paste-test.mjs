@@ -33,7 +33,7 @@ const sheet = [
 ].join('\n');
 
 async function importText(text) {
-  await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
+  await page.goto(`${base}/#/import`, { waitUntil: 'networkidle0' });
   await page.evaluate(() => {
     const b = [...document.querySelectorAll('button')].find((x) =>
       /Paste CSV text/.test(x.textContent ?? ''),

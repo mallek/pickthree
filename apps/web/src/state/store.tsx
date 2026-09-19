@@ -68,6 +68,7 @@ function noteLayout(layout: Layout | undefined, outcome: 'ok' | 'failed'): void 
 
 export type Route =
   | { screen: 'welcome' }
+  | { screen: 'import' }
   | { screen: 'report' }
   | { screen: 'teams' }
   | { screen: 'team'; id: string }
@@ -335,6 +336,9 @@ export function parseHash(hash: string): Route {
   const [path, query] = hash.replace(/^#\/?/, '').split('?');
   const parts = path!.split('/').filter(Boolean);
   const [a, b] = parts;
+  if (a === 'import') {
+    return { screen: 'import' };
+  }
   if (a === 'report') {
     return { screen: 'report' };
   }
@@ -390,6 +394,8 @@ export function hashFor(r: Route): string {
   switch (r.screen) {
     case 'welcome':
       return '#/';
+    case 'import':
+      return '#/import';
     case 'report':
       return '#/report';
     case 'teams':
@@ -535,7 +541,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         if (!cancelled) {
           dispatch({ type: 'loaded', collection, settings });
           const initialRoute = parseHash(window.location.hash);
-          if (collection && initialRoute.screen === 'welcome' && !arrivedFromShare()) {
+          if (arrivedFromShare()) {
+            // The share redirect cannot carry the screen in a fragment: Response.redirect drops
+            // it, so the landing arrives as /?share=1 with no hash. The `share` param is what
+            // routes a shared file to the import screen, which is what picks it up.
+            dispatch({ type: 'route', route: { screen: 'import' } });
+            window.location.hash = hashFor({ screen: 'import' });
+          } else if (collection && initialRoute.screen === 'welcome') {
             dispatch({ type: 'route', route: { screen: 'teams' } });
             window.location.hash = hashFor({ screen: 'teams' });
           } else {

@@ -569,7 +569,7 @@ export function Header({
 export function NoCollection({
   navigate,
 }: {
-  navigate: (r: { screen: 'welcome' | 'add' | 'build' }) => void;
+  navigate: (r: { screen: 'import' | 'add' | 'build' }) => void;
 }) {
   return (
     <div className="boot choices">
@@ -601,7 +601,7 @@ export function NoCollection({
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => navigate({ screen: 'welcome' })}
+          onClick={() => navigate({ screen: 'import' })}
         >
           Import a CSV
         </button>
