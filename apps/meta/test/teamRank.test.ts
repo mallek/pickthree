@@ -638,4 +638,33 @@ describe('buildBoard, the shape of the board', () => {
     const b = buildBoard({ teams: teams(), ranking, generated: GENERATED, view: view() });
     expect(b.rows[0]?.projection).toBeCloseTo(expectedWinRate(b.rows[0]?.strength ?? 0), 10);
   });
+
+  // Fix round 1, item 4: two unprojectable rows both score exactly UNKNOWN_PRIOR (say is 0 below
+  // TEAM_MIN, so the measured side never enters the blend), a tie the species name used to break
+  // first. Total battles has to win instead, or a row seen ten times can sit under one seen once
+  // for no reason but its name.
+  it('breaks an equal non-null score tie by total battles before the species name', () => {
+    const lowBattles = teamRow({
+      species: ['aaa', 'bbb', 'stranger'],
+      facedBattles: 1,
+      facedWins: 1,
+    });
+    const highBattles = teamRow({
+      species: ['zzz', 'yyy', 'other'],
+      runBattles: 10,
+      runWins: 5,
+      runLosses: 5,
+    });
+    const b = buildBoard({
+      teams: teams({ teams: [lowBattles, highBattles] }),
+      ranking,
+      generated: [],
+      view: view(),
+    });
+    expect(b.rows[0]?.score).toBeCloseTo(UNKNOWN_PRIOR, 10);
+    expect(b.rows[1]?.score).toBeCloseTo(UNKNOWN_PRIOR, 10);
+    // 'aaa+bbb+stranger' sorts alphabetically before 'other+yyy+zzz', so the old tiebreak would
+    // have put the ONE-battle row first. The TEN-battle row must win instead.
+    expect(b.rows.map((r) => r.species.join('+'))).toEqual(['other+yyy+zzz', 'aaa+bbb+stranger']);
+  });
 });

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { MatrixView, type MatchupMatrix } from '@pickthree/engine/meta';
 import type { TeamRowV1, TeamsV1 } from '../src/api.js';
@@ -606,6 +607,24 @@ describe('Teams, with measured play', () => {
     for (const card of container.querySelectorAll('a.team-card')) {
       expect(card.querySelector('button')).toBeNull();
     }
+  });
+
+  // Fix round 1, item 2: the explainer used to claim the matchup score is worked out "not from
+  // battles anyone played", but `buildBoard` weighs coverage and the top-of-the-meta cut by the
+  // BLENDED (measured-aware) weights, not PvPoke's alone. It also named only half of the safety
+  // factor (a hard-losing switch) and left out the other half (an unanswered top opponent). Both
+  // are corrected in the tip text; this pins the corrected wording, not the retired claim.
+  it('explains the matchup score honestly: no battle result feeds it, and both safety terms', async () => {
+    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
+    await userEvent.click(screen.getByRole('button', { name: 'Matchup score' }));
+    expect(
+      screen.getByText(/weighted by how often each opponent is actually faced/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/not from how anyone's battles turned out/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/whether a top opponent goes completely unanswered/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/not from battles anyone played/)).toBeNull();
   });
 
   // Fix round 1, item 3: a failure of meta, baseline or ranks (not just the shared teams) used to

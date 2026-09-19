@@ -115,9 +115,18 @@ function matchupScoreLine(strength: number): string {
 /** The explainer behind the "Matchup score" term, hosted once in the section header rather than
  * inside any card: a card's `Term` would be interactive content nested inside the card's own
  * anchor, invalid markup two earlier fix rounds already found and removed for "New" on the
- * Pokemon screen (see that file's `newExplainer`). */
+ * Pokemon screen (see that file's `newExplainer`).
+ *
+ * Fix round 1, item 2: the closing clause used to say "not from battles anyone played", which is
+ * false. `buildBoard` calls `strengthContext(view, ranking.weights)` with the BLENDED weights
+ * (teamRank.ts), so which opponents count as "the meta" and "the top of it" is itself shaped by
+ * measured play, same as simStrength.ts's own module doc says. What is true, and what the clause
+ * says now, is that no battle RESULT feeds the number: only which opponents matter, never who won.
+ * Also names the other half of the safety factor this used to leave out: a hard-losing switch
+ * matchup (named already) is one half of `strengthOf`'s safety score, an unanswered top opponent
+ * (`topUncovered`) is the other, and it is the one that actually separates most real teams. */
 function matchupScoreExplainer(): string {
-  return "How much of the meta the three of them beat between them, how well those wins hold when shields change, and whether the switch has matchups that simply end it. Worked out from PvPoke's matchup data, not from battles anyone played.";
+  return "How much of the meta the three of them beat between them, how well those wins hold when shields change, whether a top opponent goes completely unanswered, and whether the switch has matchups that simply end it. Worked out from PvPoke's matchup data, weighted by how often each opponent is actually faced, not from how anyone's battles turned out.";
 }
 
 /** The one fact block every card needs: what it is made of, and how (projected, run, faced, or

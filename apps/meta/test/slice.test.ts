@@ -53,6 +53,7 @@ function generatedFile(league: string): GeneratedFile {
     pvpokeCommit: 'abc123',
     pvpokeDate: '2026-09-10',
     projectionSlope: 0.006,
+    projectionAnchor: 100,
     teams: [
       {
         species: [`${league}_first`, `${league}_second`, `${league}_third`],
@@ -196,12 +197,13 @@ describe('loadRanks', () => {
 });
 
 describe('loadGenerated', () => {
-  it('hands back the baked board with its slope and its commit', async () => {
+  it('hands back the baked board with its slope, its anchor and its commit', async () => {
     const mock = stub({ generated: generatedFile('great') });
     const file = await loadGenerated('great', mock as unknown as typeof fetch);
     expect(mock.mock.calls[0]?.[0]).toBe('/baseline/great-teams.json');
     expect(file.pvpokeCommit).toBe('abc123');
     expect(file.projectionSlope).toBe(0.006);
+    expect(file.projectionAnchor).toBe(100);
     expect(file.teams).toHaveLength(1);
     expect(file.teams[0]?.strength).toBe(88);
   });

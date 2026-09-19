@@ -132,6 +132,24 @@ describe('About', () => {
     ).toBeInTheDocument();
   });
 
+  // Fix round 1, item 2: this passage used to claim the number is "worked out from PvPoke's own
+  // matchup data" with no mention that the weighing is measured-aware, and it named only the
+  // hard-loss half of the safety factor. Both are corrected here to match what buildBoard/
+  // strengthOf actually do (strengthContext is called with the blended weights, and safety docks
+  // for both a hard-losing switch and an unanswered top opponent).
+  it('says the matchup score is weighted by measured play and names both safety terms', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText(/weighted by how often each opponent is actually faced/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/No battle result feeds it, only which opponents matter/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/whether a top opponent goes completely unanswered/),
+    ).toBeInTheDocument();
+  });
+
   it('explains cores and the inverted faced record', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByText(/a pair counts as a core/)).toBeInTheDocument();

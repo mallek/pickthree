@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { facingWeight, MatrixView, matrixIndex, type MatchupMatrix } from '@pickthree/engine/meta';
 import {
   GameDataIndex,
+  PROJECTION_ANCHOR,
   PROJECTION_SLOPE,
   buildOptionsFor,
   candidatePool,
@@ -367,6 +368,7 @@ async function main(): Promise<void> {
       pvpokeCommit: manifest.pvpokeCommit,
       pvpokeDate: manifest.pvpokeDate,
       projectionSlope: PROJECTION_SLOPE,
+      projectionAnchor: PROJECTION_ANCHOR,
       teams: generateFor({ league, index, matrix, rankings: leagueRankings, gameMaster }),
     };
 

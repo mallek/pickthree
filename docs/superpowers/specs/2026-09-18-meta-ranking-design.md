@@ -62,13 +62,23 @@ Prior 0 is also the "new to the meta" marker. It is a fact about the row, not a 
 
 ```
 a = decided / (decided + 30), and 0 below 15 decided battles
-teamScore = (1 - a) * simStrength + a * measuredWinRate
+projection = expectedWinRate(simStrength), or UNKNOWN_PRIOR (0.25) when simStrength cannot be
+  computed (any member outside the ranked slice)
+teamScore = (1 - a) * projection + a * measuredWinRate
 ```
 
 `a` comes from the team's own decided battles, not the league's. A team reported 5-0 is under the
 floor, so `a` is 0 and it ranks on its projection alone. It cannot take the top spot on five
 battles. At 30 decided battles the report and the projection split it evenly. Past a few hundred the
 record simply wins.
+
+**An unprojectable row is not exempt from this.** A member outside the ranked slice leaves nothing
+to compute `simStrength` from, but the row does not fall back to ranking on its raw record: a
+fixed low prior, `UNKNOWN_PRIOR`, stands in for the missing projection and is blended by the row's
+own `a` exactly like a real one, well below what a genuinely strong projected row earns. So a team
+faced once that happened to win still cannot outrank a real projection on an undamped win rate. It
+is a below-average prior, not a floor: a weak enough real projection scores under it too, so it can
+still be outranked by a thin, unprojectable record, correctly.
 
 ### Cores
 
@@ -96,11 +106,20 @@ prior and the whole site hangs off one number.
 that at least one member beats, which is not the same as winning a 3v3 match. Two consequences, both
 binding:
 
-- The calibration from battle score to expected win rate lives in one named function with one
-  constant, so it can be tuned against real data later without hunting through the code.
-- **A projected number is never printed as a win rate.** A generated or unplayed team shows a
-  projection, labelled as one. Only a measured record is shown as a win rate. This is the same rule
-  that keeps PvPoke's list from borrowing the word "faced", applied to the new source.
+- The calibration from battle score to expected win rate lives in one named function with two
+  constants, a slope and an anchor, so it can be tuned against real data later without hunting
+  through the code. The anchor is the battle score that reads as an even match; it is set at 100,
+  a theoretically perfect team, so nothing unplayed can ever project a winning record, since real
+  teams top out in the high 80s to low 90s and Go Battle League matches on rating besides. Only a
+  measured record can show better than even.
+- **A projected number is never printed as a win rate, or as any percentage.** Any row that has a
+  projection, generated or observed, shows the same figure: a matchup score out of 100. The figure
+  itself carries no per-row word marking it a projection, since a score out of 100 cannot be
+  mistaken for a win rate the way a percentage can; what it means is explained once, behind a term
+  hosted above the whole board, not repeated card by card. A generated row is still tagged
+  "Projected" (it has never been run or faced), and only a measured record is ever shown as a
+  percentage. This is the same rule that keeps PvPoke's list from borrowing the word "faced",
+  applied to the new source.
 
 ## Where the faced teams come from
 
@@ -159,8 +178,12 @@ A hand-kept file, the same pattern as `packages/data/seasons.json`, which Travis
 ```json
 [
   { "at": "2026-09-08T13:00:00-07:00", "note": "Season 28" },
-  { "at": "2026-10-14T00:00:00Z", "note": "move rebalance", "leagues": ["great"],
-    "pvpokeCommit": "<expected commit>" }
+  {
+    "at": "2026-10-14T00:00:00Z",
+    "note": "move rebalance",
+    "leagues": ["great"],
+    "pvpokeCommit": "<expected commit>"
+  }
 ]
 ```
 
@@ -209,10 +232,14 @@ copy of the formula in it.
 - A per-league matrix slice is baked next to the baselines and fetched lazily the way baselines
   already are, restricted to roughly the top 250 by PvPoke rank. Estimated 50 to 70 KB gzipped per
   league; the plan measures it rather than trusting the estimate. A species faced from outside the
-  slice gets no projection and ranks on its measured record alone. A team or core with **any**
-  member outside the slice gets no projection either, rather than a partial one computed from the
-  members that happen to be covered, since a projection missing a member is not a weaker projection
-  but a wrong one. Both cases say so on the row.
+  slice gets no projection and ranks on its measured record alone (species ranking has no
+  `UNKNOWN_PRIOR`; it is a different blend, see "Species ranking" above). A team or core with
+  **any** member outside the slice also gets no projection, rather than a partial one computed
+  from the members that happen to be covered, since a projection missing a member is not a weaker
+  projection but a wrong one. Unlike the species case, this does NOT leave the row ranking on its
+  raw record: the missing projection is replaced by `UNKNOWN_PRIOR` and blended by the row's own
+  `a` exactly like a real one, so a team faced once cannot outrank the board on an undamped win
+  rate (see "Team ranking" above). Both cases say so on the row.
 - `@pickthree/engine` gains a narrow subpath export so `apps/meta` imports the same `blendWeights`
   pick3 runs on device. One formula in the repo, two callers.
 

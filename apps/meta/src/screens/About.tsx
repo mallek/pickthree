@@ -246,10 +246,11 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <section className="card">
         <h2>What &quot;projected&quot; means</h2>
         <p className="sub">
-          A team nobody has shared yet still gets a number, worked out from PvPoke&apos;s own
-          matchup data: how much of the meta the three of them beat between them, how well those
-          wins hold up when shields change, and whether the switch has any matchups that simply end
-          it.
+          A team nobody has shared yet still gets a number, worked out from PvPoke&apos;s matchup
+          data and weighted by how often each opponent is actually faced: how much of the meta the
+          three of them beat between them, how well those wins hold up when shields change, whether
+          a top opponent goes completely unanswered, and whether the switch has any matchups that
+          simply end it. No battle result feeds it, only which opponents matter.
         </p>
         <p className="sub">
           That is a projection, not a measurement, and this site never prints one as a percentage. A

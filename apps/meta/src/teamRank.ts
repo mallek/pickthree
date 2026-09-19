@@ -202,9 +202,14 @@ function projectCore(
 
 /**
  * Stands in for a projection we cannot compute, so an unassessable team is blended like any
- * other rather than ranking on an undamped win rate. Deliberately below every projection a
- * real team earns (those land near 0.40), so one lucky sighting cannot take the board, while
- * a genuine record still lifts the row through the usual `say` curve.
+ * other rather than ranking on an undamped win rate. It sits below the projection of anything
+ * near the top of the board (those land near 0.40), which is what keeps one lucky sighting from
+ * taking the board, while a genuine record still lifts the row through the usual `say` curve.
+ *
+ * It is NOT a floor on every projection. A weak enough team projects under it too: the frozen
+ * board.snapshot fixture alone has real rows projecting from 0.2366 down to 0.0000. So an
+ * unprojectable row with a thin record can, correctly, still outrank a genuinely weak projected
+ * one; it is a below-average prior, not the worst possible one.
  */
 export const UNKNOWN_PRIOR = 0.25;
 
@@ -273,7 +278,17 @@ const byScore = (a: BoardRow, b: BoardRow): number => {
       a.species.join('+').localeCompare(b.species.join('+'))
     );
   }
-  return b.score - a.score || a.species.join('+').localeCompare(b.species.join('+'));
+  // Fix round 1, item 4: an equal non-null score is common, not rare. Every under-TEAM_MIN
+  // unprojectable row scores exactly UNKNOWN_PRIOR (say is 0, so the measured side never enters
+  // the blend), and the live board carries over a hundred rows seen exactly once. Without this,
+  // those ties fell straight to the species-name compare below, so a row seen ten times could sit
+  // under one seen once for no reason but alphabetical order. Total battles breaks the tie first,
+  // the same tiebreak the null-score branch above already uses.
+  return (
+    b.score - a.score ||
+    b.runBattles + b.facedBattles - (a.runBattles + a.facedBattles) ||
+    a.species.join('+').localeCompare(b.species.join('+'))
+  );
 };
 
 function pairsOf(ids: readonly string[]): [string, string][] {

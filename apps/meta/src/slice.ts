@@ -28,6 +28,13 @@ export interface GeneratedFile {
   pvpokeCommit: string;
   pvpokeDate: string;
   projectionSlope: number;
+  /**
+   * Fix round 1, item 5: the file used to stamp the slope alone, recording half a calibration.
+   * Nothing reads this field today either (`expectedWinRate`'s anchor is only ever the engine's
+   * own default), but it is free to keep the snapshot honest for whoever next bisects a live
+   * ranking against a past bake.
+   */
+  projectionAnchor: number;
   teams: GeneratedTeamLite[];
 }
 
@@ -97,7 +104,10 @@ export function loadRanks(league: string, fetcher: typeof fetch = fetch): Promis
   );
 }
 
-export function loadGenerated(league: string, fetcher: typeof fetch = fetch): Promise<GeneratedFile> {
+export function loadGenerated(
+  league: string,
+  fetcher: typeof fetch = fetch,
+): Promise<GeneratedFile> {
   return once(generated, league, () =>
     json<GeneratedFile>(`/baseline/${league}-teams.json`, fetcher),
   );

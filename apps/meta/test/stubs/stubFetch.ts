@@ -132,14 +132,7 @@ function baselineFile(league: string): unknown {
  * prior, so a species missing from it is an unranked one: that is how a test asks for the "new
  * to the meta" marker.
  */
-export const RANK_ORDER = [
-  'azumarill',
-  'medicham',
-  'registeel',
-  'lanturn',
-  'tinkaton',
-  'clodsire',
-];
+export const RANK_ORDER = ['azumarill', 'medicham', 'registeel', 'lanturn', 'tinkaton', 'clodsire'];
 
 /** The slice's rows. A species outside this list has no matrix row, so a team containing it
  *  gets no projection at all: that is how a test asks for the "outside the slice" state. */
@@ -267,6 +260,7 @@ export function stubFetch(opts: StubOptions): typeof fetch {
           pvpokeCommit: 'abc1234',
           pvpokeDate: '2026-09-10',
           projectionSlope: 0.006,
+          projectionAnchor: 100,
           teams: opts.generated ?? GENERATED_TEAMS,
         });
       }
