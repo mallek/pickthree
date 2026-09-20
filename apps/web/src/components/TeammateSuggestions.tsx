@@ -20,8 +20,10 @@ export function TeammateSuggestions({ taken, onTake }: { taken: number; onTake(i
   // The board fills above the fold; the reasons are what the player pressed the button for, so
   // bring them into view rather than leaving them under the tab bar.
   useEffect(() => {
-    if (offer) {
-      box.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    // Guarded: jsdom has no scrollIntoView, and neither do some older mobile browsers.
+    const el = box.current;
+    if (offer && typeof el?.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
   }, [offer]);
   if (s.suggestError) {
