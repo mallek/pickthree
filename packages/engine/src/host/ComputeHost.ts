@@ -6,6 +6,7 @@ import type { Verdict } from '../verdicts/worth.js';
 import type { CountersOptions, CountersResult } from '../counters/counters.js';
 import type { ScanList, ScanListOptions } from '../scan/scanList.js';
 import type { AnalyzeOptions, TeamAnalysis, TeamPick } from '../analyze.js';
+import type { SuggestOptions, SuggestResult } from '../teammates/suggest.js';
 import type { ManualInput, ManualResult } from '../collection/manual.js';
 import type { Faceoff } from '../yourmeta/faceoff.js';
 import type { TeamRef } from '../yourmeta/types.js';
@@ -46,6 +47,15 @@ export interface ComputeHost {
     options: Partial<AnalyzeOptions>,
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<TeamAnalysis>;
+  /**
+   * Teammates for one or two pinned favorites. Matrix only, so it answers fast enough to be a
+   * button; Analyze runs the real simulation on what it fills in.
+   */
+  suggestTeammates(
+    board: [TeamPick | null, TeamPick | null, TeamPick | null],
+    specimens: Specimen[],
+    options: Partial<SuggestOptions>,
+  ): Promise<SuggestResult>;
   manual(input: ManualInput): Promise<ManualResult>;
   /** The in-battle card: one opponent against the set's team, simulated on the device. */
   faceoff(

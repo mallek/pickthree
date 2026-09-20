@@ -17,6 +17,8 @@ import type {
   ScanList,
   ScanListOptions,
   Specimen,
+  SuggestOptions,
+  SuggestResult,
   TeamAnalysis,
   TeamPick,
   Verdict,
@@ -195,6 +197,19 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.analysis;
+  }
+
+  async suggestTeammates(
+    board: [TeamPick | null, TeamPick | null, TeamPick | null],
+    specimens: Specimen[],
+    options: Partial<SuggestOptions>,
+    league = this.league,
+  ): Promise<SuggestResult> {
+    const r = await this.send({ kind: 'suggestTeammates', league, board, specimens, options });
+    if (r.kind !== 'suggestTeammates') {
+      throw new Error('unexpected reply');
+    }
+    return r.suggestion;
   }
 
   async movePool(

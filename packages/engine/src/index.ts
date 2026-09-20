@@ -37,5 +37,7 @@ export * from './counters/counters.js';
 export * from './scan/scanList.js';
 export * from './recommend.js';
 export * from './analyze.js';
+export * from './teammates/suggest.js';
+export * from './teammates/lines.js';
 export * from './host/ComputeHost.js';
 export * from './yourmeta/index.js';

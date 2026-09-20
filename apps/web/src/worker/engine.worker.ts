@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import {
   analyzeTeam,
+  suggestTeammates,
   faceoff,
   buildOptionsFor,
   displayName,
@@ -51,6 +52,8 @@ interface Env {
   sim: BattleSimulator;
   index: GameDataIndex;
   seasons: Season[];
+  /** PvPoke's own game master, for the default-IV stand-ins the matchup matrix was built from. */
+  gamemaster: unknown;
 }
 
 interface LeagueBundle {
@@ -105,7 +108,7 @@ async function boot(step: BootStep): Promise<Env> {
   const sim = new PvPokeSimulator(runtime);
   const index = new GameDataIndex(species, moves);
   step('ready', 4);
-  return { species, moves, manifest, leagues, sim, index, seasons };
+  return { species, moves, manifest, leagues, sim, index, seasons, gamemaster };
 }
 
 function ensureReady(step: BootStep): Promise<Env> {
@@ -282,6 +285,16 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     if (msg.kind === 'faceoff') {
       const result = faceoff(data, msg.team, msg.specimens, msg.opponent, env.sim, msg.options);
       post({ id: msg.id, kind: 'result', result: { kind: 'faceoff', faceoff: result } });
+      return;
+    }
+    if (msg.kind === 'suggestTeammates') {
+      const suggestion = suggestTeammates(
+        msg.board,
+        msg.specimens,
+        { gameMaster: env.gamemaster, ...msg.options },
+        deps,
+      );
+      post({ id: msg.id, kind: 'result', result: { kind: 'suggestTeammates', suggestion } });
       return;
     }
     if (msg.kind === 'analyze') {

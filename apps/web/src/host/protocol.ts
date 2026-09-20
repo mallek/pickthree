@@ -39,6 +39,8 @@ import type {
   ScanListOptions,
   Season,
   Specimen,
+  SuggestOptions,
+  SuggestResult,
   TeamAnalysis,
   TeamPick,
   Verdict,
@@ -55,6 +57,14 @@ export type WorkerRequest =
       league: string;
       specimens: Specimen[];
       options: Partial<RecommendOptions>;
+    }
+  | {
+      id: number;
+      kind: 'suggestTeammates';
+      league: string;
+      board: [TeamPick | null, TeamPick | null, TeamPick | null];
+      specimens: Specimen[];
+      options: Partial<SuggestOptions>;
     }
   | {
       id: number;
@@ -126,5 +136,6 @@ export type WorkerResult =
   | { kind: 'scanlist'; scanList: ScanList }
   | { kind: 'movepool'; pool: MovePool }
   | { kind: 'analyze'; analysis: TeamAnalysis }
+  | { kind: 'suggestTeammates'; suggestion: SuggestResult }
   | { kind: 'manual'; result: ManualResult }
   | { kind: 'faceoff'; faceoff: Faceoff };
