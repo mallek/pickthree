@@ -80,6 +80,12 @@ export function coverLines(
       }
     });
     covers.sort((a, b) => (facing.get(b) ?? 0) - (facing.get(a) ?? 0) || a.localeCompare(b));
+    // PvPoke lists a few species twice in a meta group, with different movesets. They are two
+    // columns in the matrix and rightly simulated apart, but they are one Pokemon to a player,
+    // so the heaviest column speaks for the species and the rest drop out of the sentence.
+    const once = [...new Set(covers)];
+    covers.length = 0;
+    covers.push(...once);
     out.push({ covers, line: lineFor(covers, subjects, wins, index) });
     take(wins);
     subjects.push(fullName(f.build.speciesId, index));

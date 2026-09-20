@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { suggestTeammates } from '../../src/teammates/suggest.js';
 import { toSpecimens } from '../../src/collection/specimen.js';
 import { parseCollectionCsv } from '../../src/csv/parse.js';
@@ -190,6 +191,73 @@ run('suggestTeammates', () => {
 
     expect(result.suggestions.every((s) => !s.chase)).toBe(true);
     expect(result.suggestions[0]?.fills.every((f) => f.standIn)).toBe(true);
+  });
+
+  it('prefers the third that players actually run with the pair', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, { kind: 'species', id: 'registeel' }],
+      [],
+      {
+        gameMaster: readGameMaster(),
+        characters: ['community'],
+        community: [
+          { species: ['azumarill', 'registeel'], thirds: [{ speciesId: 'mandibuzz', sightings: 40 }] },
+        ],
+      },
+      deps(),
+    );
+
+    expect(result.suggestions).toHaveLength(1);
+    expect(result.suggestions[0]?.fills[0]?.speciesId).toBe('mandibuzz');
+    expect(result.suggestions[0]?.sightings).toBe(40);
+  });
+
+  it('drops the community chip when the board has nothing for the pair', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, { kind: 'species', id: 'registeel' }],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest', 'community'], community: [] },
+      deps(),
+    );
+
+    expect(result.suggestions.length).toBeGreaterThan(0);
+    expect(result.suggestions.every((s) => s.character !== 'community')).toBe(true);
+    expect(result.suggestions.every((s) => s.sightings === null)).toBe(true);
+  });
+
+  it('simulates one row for a pin PvPoke does not rank, then reads it like any other', () => {
+    const data = loadStaticData();
+    const sim = new PvPokeSimulator(loadPvPokeInNode(readGameMaster()));
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'magikarp' }, null, null],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      { data, sim },
+    );
+
+    // One row of sims, not a team search: the exception the spec allows, and no more.
+    expect(result.stats.simulatedRows).toBe(1);
+    expect(result.suggestions.length).toBeGreaterThan(0);
+    expect(result.pinLine).toContain('Magikarp');
+    expect(result.pinLine).toMatch(/beats \d+ of \d+/);
+  });
+
+  it('names a Pokemon once even when the meta group lists it twice', () => {
+    // PvPoke's Great League group has 48 entries but 46 species: Shadow Forretress and Shadow
+    // Quagsire each appear twice, with different movesets. Two columns, one Pokemon to a player.
+    for (const pin of ['skarmory', 'azumarill', 'registeel']) {
+      const result = suggestTeammates(
+        [{ kind: 'species', id: pin }, null, null],
+        collection(),
+        { gameMaster: readGameMaster() },
+        deps(),
+      );
+      for (const s of result.suggestions) {
+        for (const f of s.fills) {
+          expect(new Set(f.covers).size).toBe(f.covers.length);
+        }
+      }
+    }
   });
 
   it('gives every character its own core, and never repeats one', () => {

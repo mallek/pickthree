@@ -10,7 +10,7 @@
  */
 import type { TeamPick } from '../analyze.js';
 import { buildOptionsFor, buildsFor, type Build, type BuildOptions } from '../builds/eligibility.js';
-import { rankingsById } from '../builds/moves.js';
+import { movesetFrom, rankingsById, recommendMoveset } from '../builds/moves.js';
 import { coldStartBuilds, coldStartSpecimens, spreadsFromGameMaster } from '../coldstart/pool.js';
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
@@ -28,6 +28,7 @@ import {
 } from '../score/simStrength.js';
 import { candidateFor, candidatePool, type Candidate } from '../search/candidates.js';
 import { MatrixView } from '../search/matrixView.js';
+import { withSimulatedRows, type MatrixFighter } from '../sim/matrixSim.js';
 import { bestBuild } from '../verdicts/worth.js';
 import { coverLines, weakPinLine } from './lines.js';
 import type { YourMetaInput } from '../yourmeta/types.js';
@@ -96,6 +97,8 @@ export interface Suggestion {
   coverage: number;
   /** Summed build cost of the fills. The pin is already paid for, so it is not counted. */
   cost: number;
+  /** Shared battles that ran this exact trio, or null when the board says nothing about it. */
+  sightings: number | null;
 }
 
 export interface SuggestResult {
@@ -110,6 +113,8 @@ export interface SuggestResult {
     poolSize: number;
     /** Cores scored. */
     cores: number;
+    /** Matrix rows simulated for a pin PvPoke does not rank. The only battles this runs. */
+    simulatedRows: number;
   };
   ms: number;
 }
@@ -175,7 +180,7 @@ export function suggestTeammates(
     ...options,
   };
   const index = new GameDataIndex(deps.data.species, deps.data.moves);
-  const view = new MatrixView(deps.data.matrix);
+  let view = new MatrixView(deps.data.matrix);
   const overall = rankingsById(deps.data.rankings.overall);
 
   const pinnedSlots: number[] = [];
@@ -196,14 +201,14 @@ export function suggestTeammates(
     .filter((p): p is TeamPick => p !== null && p.kind === 'species')
     .map((p) => p.id);
   const wanted: string[] = [];
-  const seen = new Set<string>();
-  for (const id of [...pinnedIds, ...deps.data.rankings.overall.map((r) => r.speciesId)]) {
+  const seen = new Set<string>(pinnedIds);
+  for (const id of deps.data.rankings.overall.map((r) => r.speciesId)) {
     if (!rows.has(id) || seen.has(id)) {
       continue;
     }
     seen.add(id);
     wanted.push(id);
-    if (wanted.length >= opts.chasePool * STANDIN_FACTOR + pinnedIds.length) {
+    if (wanted.length >= opts.chasePool * STANDIN_FACTOR) {
       break;
     }
   }
@@ -212,22 +217,57 @@ export function suggestTeammates(
   for (const b of coldStartBuilds(coldStartSpecimens(wanted, spreads, index), index, opts)) {
     standInBuilds.set(b.speciesId, b);
   }
-  const standIn = (speciesId: string): Build | null => standInBuilds.get(speciesId) ?? null;
+  // A pin is exempt from the league's soft CP floor, the same exemption Analyze gives a
+  // hand-picked Pokemon. The player chose it; the floor is there to keep junk out of the pool.
+  const pinStandIns = new Map<string, Build>();
+  for (const b of coldStartBuilds(coldStartSpecimens(pinnedIds, spreads, index), index, {
+    ...opts,
+    minCp: 0,
+  })) {
+    pinStandIns.set(b.speciesId, b);
+  }
+  const standIn = (speciesId: string): Build | null =>
+    pinStandIns.get(speciesId) ?? standInBuilds.get(speciesId) ?? null;
 
-  const pins: Candidate[] = pinnedSlots.map((i) => {
-    const build = resolvePin(
-      board[i] as TeamPick,
-      specimens,
-      index,
-      opts,
-      overall as never,
-      standIn,
-    );
-    return candidateFor(build, deps.data.rankings, view, index, {
-      allowEliteTm: opts.allowEliteTm,
-      moves: (board[i] as TeamPick).moves,
+  const pinBuilds = pinnedSlots.map((i) =>
+    resolvePin(board[i] as TeamPick, specimens, index, { ...opts, minCp: 0 }, overall as never, standIn),
+  );
+
+  // The one thing here that simulates. A pin PvPoke does not rank has no matrix row, so one row
+  // is simulated against the meta group and the rest of the module reads it like any other.
+  // One row, not a team search, and it is the same thing Analyze already does.
+  const missing: MatrixFighter[] = [];
+  pinBuilds.forEach((build, n) => {
+    if (view.rowOf(build.speciesId) !== null) {
+      return;
+    }
+    const chosen = (board[pinnedSlots[n] as number] as TeamPick).moves;
+    const m = chosen
+      ? movesetFrom(build.speciesId, chosen, build.specimen.currentMoves, index)
+      : recommendMoveset(
+          build.speciesId,
+          overall,
+          build.specimen.currentMoves,
+          { allowEliteTm: opts.allowEliteTm },
+          index,
+        );
+    missing.push({
+      speciesId: build.speciesId,
+      moveset: [m.fast.moveId, ...m.charged.map((c) => c.moveId)],
     });
   });
+  if (missing.length > 0) {
+    view = new MatrixView(
+      withSimulatedRows(deps.data.matrix, missing, { sim: deps.sim, league: deps.data.league }),
+    );
+  }
+
+  const pins: Candidate[] = pinBuilds.map((build, n) =>
+    candidateFor(build, deps.data.rankings, view, index, {
+      allowEliteTm: opts.allowEliteTm,
+      moves: (board[pinnedSlots[n] as number] as TeamPick).moves,
+    }),
+  );
   const pinnedSpecies = new Set(pins.map((c) => c.build.speciesId));
 
   // The pool: what the player caught, plus the top-ranked stand-ins they have not.
@@ -258,6 +298,7 @@ export function suggestTeammates(
   const topCtx = strengthContext(view, new Map(heaviest));
 
   const cores = search(ctx, topCtx, pins, pool, emptySlots.length, mineSpecies);
+  countSightings(cores, pins, opts.community);
 
   // Stand-ins the collection forced on us are free. Reaching one past that is a chase, and a
   // chase lives in its own tier so a core the player cannot field never outranks one they can.
@@ -283,6 +324,7 @@ export function suggestTeammates(
       chase,
       coverage: core.coverage,
       cost: core.cost,
+      sightings: core.sightings > 0 ? core.sightings : null,
       fills: core.fills.map((c, n) => ({
         slot: emptySlots[n] as 0 | 1 | 2,
         pick: pickFor(c, mineSpecies),
@@ -298,7 +340,12 @@ export function suggestTeammates(
     pinLine: weakPinLine(pins, emptySlots.length, view, index, deps.data.league.title),
     suggestions,
     assumptions: assumptionsFor(deps.data, opts, profile),
-    stats: { standIns: standInBuilds.size, poolSize: pool.length, cores: cores.length },
+    stats: {
+      standIns: standInBuilds.size,
+      poolSize: pool.length,
+      cores: cores.length,
+      simulatedRows: missing.length,
+    },
     ms: Date.now() - started,
   };
 }
@@ -324,6 +371,8 @@ interface Core {
   owned: boolean;
   /** Fills the player has not caught. */
   standIns: number;
+  /** Shared battles that ran this trio, from the community board. 0 when it says nothing. */
+  sightings: number;
   /** Sorted species ids, so two characters landing on one core can be spotted. */
   key: string;
 }
@@ -358,6 +407,7 @@ function search(
       cost: fills.reduce((acc, c) => acc + c.cost.weight, 0),
       owned: fills.every((c) => mineSpecies.has(c.build.speciesId)),
       standIns: fills.filter((c) => !mineSpecies.has(c.build.speciesId)).length,
+      sightings: 0,
       key: fills
         .map((c) => c.build.speciesId)
         .sort()
@@ -381,6 +431,41 @@ function search(
     }
   }
   return out;
+}
+
+/**
+ * Mark each core with how often shared battles ran that exact trio.
+ *
+ * A pairing plus one of its thirds is a trio, so this covers both shapes the button produces:
+ * two pins and one fill matches a pairing exactly, and one pin with two fills matches when the
+ * pin and one fill are the pair and the other fill is a third the board saw completing it.
+ *
+ * The board only ever reorders cores the matrix already produced. It never adds a candidate and
+ * it never moves a number, so an empty or unreachable board leaves every other character alone.
+ */
+function countSightings(cores: Core[], pins: Candidate[], board: CommunityPairing[] | undefined): void {
+  if (!board || board.length === 0) {
+    return;
+  }
+  const pinIds = pins.map((p) => p.build.speciesId);
+  for (const core of cores) {
+    const trio = [...pinIds, ...core.fills.map((c) => c.build.speciesId)];
+    let most = 0;
+    for (const pairing of board) {
+      if (pairing.species.length !== 2 || !pairing.species.every((id) => trio.includes(id))) {
+        continue;
+      }
+      const rest = trio.filter((id) => !pairing.species.includes(id));
+      if (rest.length !== 1) {
+        continue;
+      }
+      const third = pairing.thirds.find((t) => t.speciesId === rest[0]);
+      if (third && third.sightings > most) {
+        most = third.sightings;
+      }
+    }
+    core.sightings = most;
+  }
 }
 
 /**
@@ -408,8 +493,13 @@ function pickCore(cores: Core[], character: Character): Core | null {
     return best;
   }
   for (const c of cores) {
-    const value = character === 'antimeta' ? c.topStrength : c.strength;
-    const against = best ? (character === 'antimeta' ? best.topStrength : best.strength) : -1;
+    if (character === 'community' && c.sightings === 0) {
+      continue;
+    }
+    const of = (x: Core): number =>
+      character === 'antimeta' ? x.topStrength : character === 'community' ? x.sightings : x.strength;
+    const value = of(c);
+    const against = best ? of(best) : -1;
     if (!best || value > against || (value === against && c.key.localeCompare(best.key) < 0)) {
       best = c;
     }
