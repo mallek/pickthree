@@ -123,13 +123,24 @@ await page.waitForFunction(
 console.log(`  ultra teams rendered at ${Date.now() - t0} ms`);
 await shot('19-teams-ultra', false);
 await page.click('.league-switcher button:nth-child(1)');
-await page.waitForFunction(
-  () =>
-    document.querySelector('.league-switcher[data-league="great"]') &&
-    document.querySelector('.team-card') &&
-    !document.querySelector('.progress'),
-  { timeout: 120_000 },
-);
+// The switcher's data-league comes from settings and flips at once, while the recommendation
+// lags a tick behind it. Without a settle these three conditions all pass on a frame where the
+// PREVIOUS league's cards are still on screen, and the team href read below then points at a
+// team that is about to stop existing. Wait for quiet, pause long enough for the new run to
+// have started, then wait for quiet again.
+const settled = async () => {
+  for (let i = 0; i < 2; i++) {
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.league-switcher[data-league="great"]') &&
+        document.querySelector('.team-card') &&
+        !document.querySelector('.progress'),
+      { timeout: 120_000 },
+    );
+    await new Promise((r) => setTimeout(r, 750));
+  }
+};
+await settled();
 
 console.log('team detail');
 const teamHref = await page.$eval('.team-card .team-details', (a) => a.getAttribute('href'));
