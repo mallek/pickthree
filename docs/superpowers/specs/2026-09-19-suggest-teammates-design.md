@@ -1,7 +1,9 @@
 # Suggest teammates: pin a favorite, pick3 fills the rest
 
-Date: 2026-09-19. Status: approved in chat (Travis), brainstormed the same day. Implementation is
-blocked on the `pick3-tos-wording` work landing in `Build.tsx`; see Rollout.
+Date: 2026-09-19. Status: approved in chat (Travis), brainstormed and implemented the same day.
+The "Implementation notes" section at the end records where the build departed from this design
+and why. The `pick3-tos-wording` collision named in the original draft was already resolved:
+`cd01cf4` had landed in main before this work started.
 
 ## Why
 
@@ -364,11 +366,10 @@ Web:
 
 ## Rollout
 
-**Blocked on `pick3-tos-wording`.** That session is editing import copy in `Build.tsx` around line
-465. Implementation must not start until it has landed. A brainstorm writes only a spec, so there is
-no conflict from this document.
+The `pick3-tos-wording` collision was stale: `cd01cf4 web: source-neutral import copy` was already
+an ancestor of main when this work began, so nothing was blocked.
 
-Then two phases:
+Two phases:
 
 1. **Matrix characters and the button.** Safest, Cheapest and Anti-meta, the tiers, the lines, the
    weak-pin line. Stands entirely on its own with no network call.
@@ -389,3 +390,67 @@ Planning happens in a fresh session from this document.
 - **Chasing more than one Pokemon.** "You are three away" is a shopping list nobody asked for.
 - **Simulating the suggestions.** Analyze does that, one tap later, and doing it twice would print
   two different numbers for one team.
+
+
+## Implementation notes
+
+Written after the build, so the next person reads the design and the departures together.
+
+### The chase pool was already solved
+
+The design proposed capping `hypotheticalSpecimen` by rank and measuring the cost. That turned out
+to be the wrong tool. `coldstart/pool.ts`, built for the meta site's cold start, already makes one
+synthetic specimen per species at PvPoke's own default IVs, cheaply, and those are the exact IVs
+the matchup matrix was built from. The suggestion uses it, and `hypotheticalSpecimen` is not
+involved. `STANDIN_FACTOR` caps the species list by PvPoke rank **before** building, always
+including whatever the player pinned however far down the list it sits.
+
+Measured on the fixture, one pin, Great League: 1562ms before the cap, 417ms after, same result.
+The first guess at the bottleneck was the trio search; the search is 87ms and the stand-in builds
+were 1025ms. It was measured rather than assumed, which is the only reason the right thing got
+fixed.
+
+### simStrength, not draftScore
+
+Cores are ranked by `score/simStrength.ts`, the same matrix-only function meta.pick3.gg ranks teams
+with, rather than by `TrioDraft.draftScore`. It is weight-aware and returns coverage, consistency
+and safety. Nothing prints it.
+
+### Cheapest is a discount, not a minimum
+
+Implemented first as pure minimum cost, which suggested Octillery: already built, covers nothing.
+`CHEAP_DISCOUNT` makes it a discount against the matrix score, as the design said. The test states
+the rule as a floor, that a cheap core may give up at most a fifth of what the safest core covers,
+so a regression there fails rather than quietly returning junk.
+
+### One name per Pokemon
+
+PvPoke lists Shadow Forretress and Shadow Quagsire **twice** in the Great League meta group, with
+different movesets: 48 entries, 46 species. Two matrix columns is correct and they are simulated
+apart. The sentence was naming the same Pokemon twice, so the named list now speaks once per
+species. Counts stay out of 48, matching `assumptions.metaSize` and the rest of the app.
+
+### The button is gated on the league bundle
+
+`boot === 'ready'` is not enough. The league bundle can still be in flight, and the action needs
+it, so a button shown on boot alone silently swallowed the tap under load. It is gated on
+`leagueInfo` too.
+
+### The first offer is applied inside the action
+
+`stateRef.current` is assigned during render, so reading the offer back out of state in the same
+tick after dispatching it finds nothing. The action applies the first offer from the value in
+hand. `takeSuggestion` is only for the chips, where state has settled.
+
+### Panel placement
+
+Driving the built app showed the chips and the reasons below the bottom tab bar: the player pressed
+the button, the board filled, and the reason was off screen. The panel sits above the order row,
+which is also the right order of operations, and scrolls itself into view when an offer lands.
+
+### Still open
+
+- **Zero pins as a visible entry point** remains unexposed, as designed. The engine supports it.
+- **`web:screens` has a pre-existing flaky step.** `edit in build` intermittently fails its back
+  click ("a geometry click has missed here before", per its own comment). Seen once during this
+  work and green on re-run. Not touched, not caused here, worth a look on its own.
