@@ -618,6 +618,17 @@ export function Build() {
           })}
         </div>
 
+        {canSuggest ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            disabled={s.suggesting}
+            onClick={() => void askForTeammates()}
+          >
+            {s.suggesting ? 'Looking...' : 'Suggest teammates'}
+          </button>
+        ) : null}
+        {pinned > 0 ? <TeammateSuggestions taken={taken} onTake={swapSuggestion} /> : null}
         <div className="order-row">
           <button
             type="button"
@@ -633,17 +644,6 @@ export function Build() {
               : 'pick3 tries all six orders and moves the cards. Or drag them yourself.'}
           </span>
         </div>
-        {canSuggest ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={s.suggesting}
-            onClick={() => void askForTeammates()}
-          >
-            {s.suggesting ? 'Looking...' : 'Suggest teammates'}
-          </button>
-        ) : null}
-        {pinned > 0 ? <TeammateSuggestions taken={taken} onTake={swapSuggestion} /> : null}
         {s.analyzeError ? <div className="error">{s.analyzeError}</div> : null}
         {s.analyzing && s.progress ? (
           <Progress stage={s.progress.stage} done={s.progress.done} total={s.progress.total} />

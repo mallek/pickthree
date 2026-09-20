@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { PokemonToken, useName, useShortName } from '../components.tsx';
 import { useAppState } from '../state/store.tsx';
 
@@ -15,6 +16,14 @@ export function TeammateSuggestions({ taken, onTake }: { taken: number; onTake(i
   const short = useShortName();
   const name = useName();
   const offer = s.suggestion;
+  const box = useRef<HTMLDivElement>(null);
+  // The board fills above the fold; the reasons are what the player pressed the button for, so
+  // bring them into view rather than leaving them under the tab bar.
+  useEffect(() => {
+    if (offer) {
+      box.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [offer]);
   if (s.suggestError) {
     return <div className="error">{s.suggestError}</div>;
   }
@@ -23,7 +32,7 @@ export function TeammateSuggestions({ taken, onTake }: { taken: number; onTake(i
   }
   const picked = offer.suggestions[taken] ?? offer.suggestions[0];
   return (
-    <div className="stack" style={{ gap: 8 }}>
+    <div className="stack" style={{ gap: 8 }} ref={box}>
       {offer.pinLine ? (
         <p className="small" style={{ margin: 0 }}>
           {offer.pinLine}

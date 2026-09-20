@@ -276,6 +276,30 @@ await page.goto(`${base}/#/meta/new`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.opp-slot');
 await shot('22-new-set', false);
 
+console.log('suggest teammates around one pin');
+await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.pick-card');
+while (await page.$('.pick-x')) {
+  await page.click('.pick-x');
+  await new Promise((r) => setTimeout(r, 100));
+}
+{
+  await page.$eval('.pick-card.empty', (el) => el.click());
+  await page.waitForSelector('.search');
+  await page.type('.search', 'skarmory');
+  await page.waitForSelector('.recent-token', { timeout: 15_000 });
+  await page.click('.recent-token');
+  await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length === 1);
+  // The button only exists with something pinned and a slot still empty.
+  const suggest = await page.waitForSelector('::-p-text(Suggest teammates)', { timeout: 15_000 });
+  await suggest.click();
+  await page.waitForFunction(
+    () => document.querySelectorAll('.pick-card.filled').length === 3,
+    { timeout: 30_000 },
+  );
+  await shot('12c-suggest-teammates', false);
+}
+
 console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-card');
