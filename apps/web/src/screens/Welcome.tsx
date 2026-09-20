@@ -3,7 +3,8 @@ import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
 import { PokemonToken } from '../components.tsx';
 import { ArrowGlyph, LockGlyph, PeopleGlyph } from '../components/LandingGlyphs.tsx';
-import { CollectionArt, LandingScene } from '../components/LandingScene.tsx';
+import collectionArt from '../assets/collection.webp';
+import { LandingScene } from '../components/LandingScene.tsx';
 import { MetaPreview } from '../components/MetaPreview.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -70,7 +71,9 @@ export function Welcome() {
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}
         <div className="landing-you">
-          <CollectionArt />
+          {/* Decoration, bled off the card's right and bottom edges and hidden in light mode: it
+           * is a night render, and there is no daylight cut of it. */}
+          <img className="you-art" src={collectionArt} alt="" aria-hidden="true" />
           <div className="footer-head">
             <span className="mp-kicker">
               <PeopleGlyph />
