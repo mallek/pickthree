@@ -16,6 +16,7 @@ import {
   type ScanList,
   type Season,
   type Specimen,
+  type SuggestResult,
   type TeamAnalysis,
   type TeamPick,
   type TeamRef,
@@ -34,6 +35,7 @@ import {
 import { applyTheme } from '@pickthree/ui';
 import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
+import { communityCores } from '../community.ts';
 import { arrivedFromShare } from '../share.ts';
 import { recordError, setErrorReportsEnabled } from '../diag.ts';
 import {
@@ -135,6 +137,10 @@ export interface AppState {
   analysis: TeamAnalysis | null;
   analyzing: boolean;
   analyzeError: string | null;
+  /** Teammates offered for the pinned favorites, or null before the button is pressed. */
+  suggestion: SuggestResult | null;
+  suggesting: boolean;
+  suggestError: string | null;
   /** Filters snapshot the current recommendation was computed with. */
   recommendedWith: string | null;
   /** Battle log sets for the league in play, oldest first. */
@@ -145,6 +151,10 @@ export interface AppState {
 }
 
 type Action =
+  | { type: 'suggest-start' }
+  | { type: 'suggest-done'; suggestion: SuggestResult }
+  | { type: 'suggest-error'; message: string }
+  | { type: 'suggest-clear' }
   | { type: 'boot-ready'; data: DataInfo }
   | { type: 'league-start' }
   | { type: 'league-done'; info: LeagueInfo }
@@ -208,6 +218,9 @@ const initial: AppState = {
   analysis: null,
   analyzing: false,
   analyzeError: null,
+  suggestion: null,
+  suggesting: false,
+  suggestError: null,
   recommendedWith: null,
   sets: [],
   setsLoaded: false,
@@ -293,10 +306,18 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, notice: a.message };
     case 'scanlist':
       return { ...s, scanList: a.scanList };
+    case 'suggest-start':
+      return { ...s, suggesting: true, suggestError: null };
+    case 'suggest-done':
+      return { ...s, suggesting: false, suggestion: a.suggestion };
+    case 'suggest-error':
+      return { ...s, suggesting: false, suggestError: a.message };
+    case 'suggest-clear':
+      return { ...s, suggestion: null, suggestError: null };
     case 'pick': {
       const picks = [...s.picks] as AppState['picks'];
       picks[a.slot] = a.pick;
-      return { ...s, picks, analyzeError: null, sharedTeam: false };
+      return { ...s, picks, analyzeError: null, sharedTeam: false, suggestion: null };
     }
     case 'picks':
       return { ...s, picks: a.picks, analyzeError: null, sharedTeam: a.shared };
@@ -427,6 +448,18 @@ export function hashFor(r: Route): string {
   }
 }
 
+/** The offered fills dropped into their slots, leaving every pinned slot untouched. */
+function withFills(
+  picks: AppState['picks'],
+  fills: { slot: 0 | 1 | 2; pick: TeamPick }[],
+): AppState['picks'] {
+  const next = [...picks] as AppState['picks'];
+  for (const fill of fills) {
+    next[fill.slot] = fill.pick;
+  }
+  return next;
+}
+
 export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
   const f = settings.filters;
   return {
@@ -467,6 +500,13 @@ interface Actions {
    */
   findOrder(): Promise<boolean>;
   analyze(): Promise<void>;
+  /**
+   * Fill the empty slots around the one or two Pokemon already on the board. Matrix only, so it
+   * returns fast; Analyze does the real simulation on whatever it puts there.
+   */
+  suggestTeammates(): Promise<void>;
+  /** Put one of the offered cores into the empty slots, leaving the pins alone. */
+  takeSuggestion(which: number): void;
   /** Legal moves for one team member, with the recommendation, in the league in play. */
   movePool(
     speciesId: string,
@@ -853,6 +893,55 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       return false;
     }
   }, []);
+  /**
+   * Teammates for whatever is already on the board. Matrix only in the worker, so it is quick
+   * enough to be a button; nothing is simulated here beyond a pin PvPoke does not rank.
+   */
+  const suggestTeammates = useCallback(async () => {
+    const h = hostRef.current as WorkerHost;
+    const s = stateRef.current;
+    const picks = s.picks;
+    const pinned = picks.filter(Boolean).length;
+    if (s.suggesting || s.analyzing || pinned === 0 || pinned === 3 || !s.leagueInfo) {
+      return;
+    }
+    dispatch({ type: 'suggest-start' });
+    try {
+      const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
+        optionsFrom(s.settings);
+      const community = await communityCores(s.settings, s.leagueInfo.id);
+      const suggestion = await h.suggestTeammates(picks, s.collection?.specimens ?? [], {
+        yourMeta: yourMeta(),
+        ...(community ? { community } : {}),
+        ...(allowXl !== undefined ? { allowXl } : {}),
+        ...(allowShadow !== undefined ? { allowShadow } : {}),
+        ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
+        ...(budgetStardust !== undefined ? { budgetStardust } : {}),
+        ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
+      });
+      dispatch({ type: 'suggest-done', suggestion });
+      // Applied here, from the value in hand: stateRef only catches up on the next render, so
+      // reading the offer back out of state in the same tick would find nothing.
+      const first = suggestion.suggestions[0];
+      if (first) {
+        dispatch({ type: 'picks', picks: withFills(picks, first.fills), shared: false });
+      }
+    } catch (e) {
+      recordError('suggest', e);
+      dispatch({ type: 'suggest-error', message: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
+  /** Swap one of the other offered cores in. The pins stay where they are. */
+  const takeSuggestion = useCallback((which: number) => {
+    const s = stateRef.current;
+    const offer = s.suggestion?.suggestions[which];
+    if (!offer) {
+      return;
+    }
+    dispatch({ type: 'picks', picks: withFills(s.picks, offer.fills), shared: false });
+  }, []);
+
   const analyze = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
@@ -1191,6 +1280,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setPicks,
       findOrder,
       analyze,
+      suggestTeammates,
+      takeSuggestion,
       movePool,
       faceoff,
       addManual,
@@ -1221,6 +1312,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       setPicks,
       findOrder,
       analyze,
+      suggestTeammates,
+      takeSuggestion,
       movePool,
       faceoff,
       addManual,

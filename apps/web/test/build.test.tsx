@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Build } from '../src/screens/Build.tsx';
 import { AppProvider } from '../src/state/store.tsx';
 import { resetDbForTests } from '../src/storage/db.ts';
@@ -45,6 +45,73 @@ describe('Build a team', () => {
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Remove Tinkaton' })).not.toBeInTheDocument(),
     );
+  });
+
+  it('offers teammates once something is pinned, and drops them into the empty slots', async () => {
+    const suggestTeammates = vi.fn(async () => ({
+      pinLine: 'Tinkaton beats 12 of 48 in the current Great League meta group.',
+      suggestions: [
+        {
+          character: 'safest' as const,
+          label: 'Safest',
+          chase: false,
+          coverage: 30,
+          cost: 0,
+          sightings: null,
+          fills: [
+            {
+              slot: 1 as const,
+              pick: { kind: 'species' as const, id: 'azumarill' },
+              speciesId: 'azumarill',
+              standIn: true,
+              covers: ['clodsire'],
+              line: 'Beats Clodsire and 4 more that Tinkaton loses to.',
+            },
+            {
+              slot: 2 as const,
+              pick: { kind: 'species' as const, id: 'clodsire' },
+              speciesId: 'clodsire',
+              standIn: true,
+              covers: ['medicham'],
+              line: 'Beats Medicham and 2 more that Tinkaton and Azumarill lose to.',
+            },
+          ],
+        },
+      ],
+      assumptions: {} as never,
+      stats: { standIns: 0, poolSize: 0, cores: 0, simulatedRows: 0 },
+      ms: 1,
+    }));
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates })}>
+        <Build />
+      </AppProvider>,
+    );
+
+    // Nothing pinned: nothing to build around, so no button.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('button', { name: 'Suggest teammates' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lead, empty' }));
+    fireEvent.change(await screen.findByPlaceholderText('Search any Pokemon for Lead'), {
+      target: { value: 'tink' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Tinkaton' }));
+
+    const button = await screen.findByRole('button', { name: 'Suggest teammates' });
+    fireEvent.click(button);
+
+    // The offer lands in the two empty slots, so Analyze is reachable with no further taps.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Remove Clodsire' })).toBeInTheDocument();
+    expect(screen.getByText(/Beats Clodsire and 4 more/)).toBeInTheDocument();
+    expect(screen.getByText(/Tinkaton beats 12 of 48/)).toBeInTheDocument();
+    // Reasons only. The verdict out of 100 belongs to Analyze, one tap later.
+    expect(screen.queryByText(/out of 100/)).not.toBeInTheDocument();
   });
 
   it('opens and closes the moves sheet for a filled slot', async () => {

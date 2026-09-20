@@ -33,6 +33,7 @@ import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { MovePicker } from '../components/MovePicker.tsx';
+import { TeammateSuggestions } from '../components/TeammateSuggestions.tsx';
 
 const SLOT_LABELS = ['Lead', 'Safe Switch', 'Closer'] as const;
 const ORDER: Record<VerdictLabel, number> = {
@@ -46,10 +47,22 @@ const ORDER: Record<VerdictLabel, number> = {
 /** Hand-pick three Pokémon, from the collection or any species at top-10% IVs, and analyze them. */
 export function Build() {
   const s = useAppState();
-  const { navigate, setPick, setPicks, findOrder, analyze, loadVerdicts, movePool } = useActions();
+  const {
+    navigate,
+    setPick,
+    setPicks,
+    findOrder,
+    analyze,
+    loadVerdicts,
+    movePool,
+    suggestTeammates,
+    takeSuggestion,
+  } = useActions();
   /** True after pick3 ordered the cards, until a drag or a pick changes them. */
   const [orderedByPick3, setOrderedByPick3] = useState(false);
   const [finding, setFinding] = useState(false);
+  /** Which offered core is in the slots, so the chips can show which one is showing. */
+  const [taken, setTaken] = useState(0);
   const name = useName();
   const short = useShortName();
   const species = useSpecies();
@@ -408,6 +421,22 @@ export function Build() {
   };
 
   const ready = s.picks.every(Boolean) && s.boot === 'ready' && !s.analyzing;
+  /** The button is for a board that has something to build around and somewhere to put it. */
+  const pinned = s.picks.filter(Boolean).length;
+  // leagueInfo as well as boot: the suggestion needs the league bundle, and a button that is
+  // pressable before it arrives just swallows the tap.
+  const canSuggest =
+    pinned > 0 && pinned < 3 && s.boot === 'ready' && Boolean(s.leagueInfo) && !s.analyzing;
+  const askForTeammates = async (): Promise<void> => {
+    setTaken(0);
+    setOrderedByPick3(false);
+    await suggestTeammates();
+  };
+  const swapSuggestion = (i: number): void => {
+    setTaken(i);
+    takeSuggestion(i);
+    setOrderedByPick3(false);
+  };
   const sheetPick = movesSlot !== null ? s.picks[movesSlot] : null;
   const sheetInfo = sheetPick ? pickInfo(sheetPick) : null;
   const sheetPool = sheetPick ? poolFor(sheetPick) : null;
@@ -604,6 +633,17 @@ export function Build() {
               : 'pick3 tries all six orders and moves the cards. Or drag them yourself.'}
           </span>
         </div>
+        {canSuggest ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            disabled={s.suggesting}
+            onClick={() => void askForTeammates()}
+          >
+            {s.suggesting ? 'Looking...' : 'Suggest teammates'}
+          </button>
+        ) : null}
+        {pinned > 0 ? <TeammateSuggestions taken={taken} onTake={swapSuggestion} /> : null}
         {s.analyzeError ? <div className="error">{s.analyzeError}</div> : null}
         {s.analyzing && s.progress ? (
           <Progress stage={s.progress.stage} done={s.progress.done} total={s.progress.total} />
