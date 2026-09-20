@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
  * Guards the token contract: every var(--x) in base.css and the two app.css files must resolve
- * to a custom property packages/ui/tokens.css defines, or be one of the handful of custom
- * properties a component sets inline via style (never in tokens.css). An undefined custom
+ * to a custom property packages/ui/tokens.css defines, one the same file defines itself, or one of
+ * the handful a component sets inline via style (never in tokens.css). An undefined custom
  * property fails silently at runtime, so this is the one thing typecheck and vitest cannot catch.
+ *
+ * A file's own definitions count because not every custom property is a token. The landing page
+ * scopes its scenery to `.landing` (sky, treeline, the pokeball's colours, the tally pink): those
+ * vary by theme but they are one page's decoration, not semantic tokens, and putting them in
+ * tokens.css would hand them to apps/meta as well. What this gives up is scope: a property defined
+ * on one selector and used under another still passes here. Typos, which are what actually fail
+ * silently, still do not.
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -38,9 +45,10 @@ let bad = 0;
 for (const file of SCAN_FILES) {
   const text = readFileSync(file, 'utf8');
   const used = names(text, /var\(--([a-zA-Z0-9-]+)/g);
+  const local = names(text, /--([a-zA-Z0-9-]+)\s*:/g);
   for (const name of used) {
-    if (!defined.has(name) && !INLINE_ONLY.has(name)) {
-      console.error(`${path.relative(root, file)}: var(--${name}) is not defined in tokens.css`);
+    if (!defined.has(name) && !local.has(name) && !INLINE_ONLY.has(name)) {
+      console.error(`${path.relative(root, file)}: var(--${name}) is not defined in tokens.css or in this file`);
       bad += 1;
     }
   }
