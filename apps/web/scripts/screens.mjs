@@ -1,7 +1,13 @@
 /* global document */
 /**
  * Drives the built app in the locally installed Chrome, imports the sample collection, and
- * screenshots every screen at phone size. Run `npx vite preview --port 4173` in apps/web first.
+ * screenshots every screen at phone size.
+ *
+ *   npm run web:screens
+ *
+ * That wrapper builds the app and serves it first. This script drives the BUILT app over HTTP and
+ * builds nothing, so running it directly points it at whatever is already on the port, which may
+ * be a stale dist. Do that only with a server you started yourself:
  *
  *   node apps/web/scripts/screens.mjs [baseUrl]
  *
