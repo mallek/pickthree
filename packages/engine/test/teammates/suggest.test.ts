@@ -159,6 +159,39 @@ run('suggestTeammates', () => {
     expect(cheapest!.coverage).toBeGreaterThanOrEqual(Math.floor(safest!.coverage * 0.8));
   });
 
+  it('keeps a chase pick in its own tier rather than slipping it into the caught one', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'skarmory' }, null, null],
+      collection(),
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      deps(),
+    );
+
+    const safest = result.suggestions.find((s) => s.character === 'safest');
+    expect(safest).toBeDefined();
+    expect(safest!.chase).toBe(false);
+    // The fixture collection can fill both slots, so tier 1 owes the player nothing it lacks.
+    expect(safest!.fills.every((f) => !f.standIn)).toBe(true);
+
+    const chase = result.suggestions.filter((s) => s.chase);
+    expect(chase.length).toBeLessThanOrEqual(1);
+    for (const c of chase) {
+      expect(c.fills.filter((f) => f.standIn)).toHaveLength(1);
+    }
+  });
+
+  it('does not call a forced stand-in a chase when there is no collection', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, null],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      deps(),
+    );
+
+    expect(result.suggestions.every((s) => !s.chase)).toBe(true);
+    expect(result.suggestions[0]?.fills.every((f) => f.standIn)).toBe(true);
+  });
+
   it('gives every character its own core, and never repeats one', () => {
     const result = suggestTeammates(
       [{ kind: 'species', id: 'azumarill' }, null, null],

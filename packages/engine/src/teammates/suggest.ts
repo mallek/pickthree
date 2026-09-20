@@ -90,6 +90,8 @@ export interface Suggestion {
   character: Character;
   label: string;
   fills: SuggestedSlot[];
+  /** Reaches one Pokemon past what the collection could cover. Its own tier, never mixed in. */
+  chase: boolean;
   /** Meta opponents the whole trio beats at 1-1 shields. A count, never a score out of 100. */
   coverage: number;
   /** Summed build cost of the fills. The pin is already paid for, so it is not counted. */
@@ -118,6 +120,15 @@ export interface SuggestResult {
  * costs about a second on a desktop, which is the whole budget for a button on a phone.
  */
 export const STANDIN_FACTOR = 3;
+
+/**
+ * How many matrix points a one-away core must beat the best caught core by before it is worth
+ * telling the player about something they have to go and get.
+ */
+export const CHASE_MARGIN = 3;
+
+/** The chip on the one-away tier. It is not a character, it is a different bargain. */
+export const CHASE_LABEL = 'One away';
 
 type Board = [TeamPick | null, TeamPick | null, TeamPick | null];
 
@@ -247,11 +258,29 @@ export function suggestTeammates(
   const topCtx = strengthContext(view, new Map(heaviest));
 
   const cores = search(ctx, topCtx, pins, pool, emptySlots.length, mineSpecies);
-  const suggestions = choose(cores, opts.characters).map(({ character, core }) => {
+
+  // Stand-ins the collection forced on us are free. Reaching one past that is a chase, and a
+  // chase lives in its own tier so a core the player cannot field never outranks one they can.
+  const need = Math.max(0, emptySlots.length - mineSpecies.size);
+  const tier1 = cores.filter((c) => c.standIns <= need);
+  const chosen = choose(tier1, opts.characters).map((x) => ({ ...x, chase: false }));
+  const best = chosen.find((x) => x.character === 'safest')?.core ?? null;
+  const reach = cores
+    .filter((c) => c.standIns === need + 1)
+    .reduce<Core | null>(
+      (acc, c) => (!acc || c.strength > acc.strength ? c : acc),
+      null,
+    );
+  if (reach && (!best || reach.strength >= best.strength + CHASE_MARGIN)) {
+    chosen.push({ character: 'safest', core: reach, chase: true });
+  }
+
+  const suggestions = chosen.map(({ character, core, chase }) => {
     const said = coverLines(pins, core.fills, view, index, facing);
     return {
       character,
-      label: CHARACTER_LABEL[character],
+      label: chase ? CHASE_LABEL : CHARACTER_LABEL[character],
+      chase,
       coverage: core.coverage,
       cost: core.cost,
       fills: core.fills.map((c, n) => ({
@@ -293,6 +322,8 @@ interface Core {
   coverage: number;
   /** Every fill is one the player has caught. */
   owned: boolean;
+  /** Fills the player has not caught. */
+  standIns: number;
   /** Sorted species ids, so two characters landing on one core can be spotted. */
   key: string;
 }
@@ -326,6 +357,7 @@ function search(
       coverage: beaten.filter(Boolean).length,
       cost: fills.reduce((acc, c) => acc + c.cost.weight, 0),
       owned: fills.every((c) => mineSpecies.has(c.build.speciesId)),
+      standIns: fills.filter((c) => !mineSpecies.has(c.build.speciesId)).length,
       key: fills
         .map((c) => c.build.speciesId)
         .sort()
