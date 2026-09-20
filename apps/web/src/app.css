@@ -767,6 +767,8 @@ a {
   margin: 0 auto;
 }
 .landing-you {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -789,7 +791,7 @@ a {
 .btn-cta {
   position: relative;
   justify-content: flex-start;
-  padding: 0 46px 0 18px;
+  padding: 0 42px 0 18px;
   font-weight: 600;
 }
 .btn-cta .lg-arrow {
@@ -798,13 +800,22 @@ a {
   width: 22px;
   height: 22px;
 }
+.landing-you > *:not(.you-art) {
+  position: relative;
+  z-index: 1;
+}
+/* The buttons stop short of the card's right edge so the illustration has somewhere to be. On a
+   narrow phone they take the whole width back and the art goes. */
 .landing-you .btn {
+  max-width: 244px;
+  font-size: 15px;
   background: linear-gradient(105deg, var(--cta-1), var(--cta-2));
   box-shadow: 0 8px 20px color-mix(in srgb, var(--cta-2) 40%, transparent);
   border-color: transparent;
   color: #fff;
 }
 .landing-you .btn-secondary {
+  max-width: 244px;
   background: transparent;
   border-color: var(--divider);
   color: var(--text);
@@ -956,6 +967,54 @@ a {
   width: 22px;
   height: 22px;
 }
+/* The Your Pokémon card's illustration: a phone holding a collection, a ball arriving, a ball in
+   front. It sits behind the text, bled off the card's right and bottom edges. */
+.you-art {
+  position: absolute;
+  right: -22px;
+  bottom: -14px;
+  width: 118px;
+  height: 157px;
+  z-index: 0;
+  pointer-events: none;
+}
+.ya-phone > rect:first-child {
+  fill: color-mix(in srgb, var(--text) 6%, transparent);
+  stroke: var(--divider);
+  stroke-width: 1.5;
+}
+.ya-notch,
+.ya-slot {
+  fill: color-mix(in srgb, var(--text) 9%, transparent);
+}
+.ya-arrow {
+  stroke: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ya-arrow-head {
+  fill: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ya-ball-top {
+  fill: #c0454c;
+}
+.ya-ball-bottom {
+  fill: color-mix(in srgb, var(--text) 78%, transparent);
+}
+.ya-ball-band,
+.ya-ball-btn {
+  fill: var(--surface2);
+}
+.ya-ball-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--bg) 70%, transparent);
+  stroke-width: 5;
+}
+.ya-ball {
+  opacity: 0.9;
+}
+.ya-ball-small {
+  opacity: 0.6;
+}
+
 /* Narrow phones. Nothing is dropped: the league pill takes its own line, the names and the two
    long labels come down a size, and the closing rules give way rather than push the text out. */
 @media (max-width: 360px) {
@@ -971,6 +1030,13 @@ a {
   }
   .landing .hero {
     font-size: 28px;
+  }
+  .you-art {
+    display: none;
+  }
+  .landing-you .btn,
+  .landing-you .btn-secondary {
+    max-width: none;
   }
   .landing-foot {
     margin: 0;

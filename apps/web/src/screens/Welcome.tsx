@@ -3,7 +3,7 @@ import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
 import { PokemonToken } from '../components.tsx';
 import { ArrowGlyph, LockGlyph, PeopleGlyph } from '../components/LandingGlyphs.tsx';
-import { LandingScene } from '../components/LandingScene.tsx';
+import { CollectionArt, LandingScene } from '../components/LandingScene.tsx';
 import { MetaPreview } from '../components/MetaPreview.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -70,6 +70,7 @@ export function Welcome() {
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}
         <div className="landing-you">
+          <CollectionArt />
           <div className="footer-head">
             <span className="mp-kicker">
               <PeopleGlyph />

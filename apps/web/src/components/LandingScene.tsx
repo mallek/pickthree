@@ -87,3 +87,71 @@ export function LandingScene() {
     </div>
   );
 }
+
+/**
+ * The Your Pokémon card's illustration: a phone holding a collection, a ball arriving into it,
+ * and a ball in front at the size the page's other discs are. Flat geometry in theme colours, not
+ * a picture, and it carries no Pokémon: the four slots are empty rounded squares, because the
+ * sprites are the only Pokémon artwork this app draws.
+ *
+ * It sits behind the card's text and buttons and is hidden from screen readers.
+ */
+export function CollectionArt() {
+  return (
+    <svg className="you-art" viewBox="0 0 120 160" aria-hidden="true" focusable="false">
+      <defs>
+        <clipPath id="ya-ball-clip" clipPathUnits="userSpaceOnUse">
+          <circle cx="50" cy="50" r="48" />
+        </clipPath>
+      </defs>
+      <g className="ya-phone">
+        <rect x="36" y="10" width="74" height="136" rx="13" />
+        <rect className="ya-notch" x="60" y="17" width="26" height="4" rx="2" />
+        {[0, 1].map((col) =>
+          [0, 1].map((row) => (
+            <rect
+              className="ya-slot"
+              key={`${col}${row}`}
+              x={46 + col * 31}
+              y={52 + row * 33}
+              width="25"
+              height="26"
+              rx="7"
+            />
+          )),
+        )}
+      </g>
+      {/* The ball on its way in, arriving from off the card. */}
+      <path
+        className="ya-arrow"
+        d="M16 78c8-12 20-16 30-12"
+        fill="none"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path className="ya-arrow-head" d="M51 62l-9-2 4 9z" />
+      <g className="ya-ball ya-ball-small" transform="translate(84 28) scale(0.2)">
+        <Pokeball />
+      </g>
+      <g className="ya-ball" transform="translate(40 106) scale(0.4)">
+        <Pokeball />
+      </g>
+    </svg>
+  );
+}
+
+/** A pokeball on a 100 x 100 box, centred on its own origin. */
+function Pokeball() {
+  return (
+    <g transform="translate(-50 -50)">
+      <g clipPath="url(#ya-ball-clip)">
+        <rect className="ya-ball-top" x="0" y="0" width="100" height="50" />
+        <rect className="ya-ball-bottom" x="0" y="50" width="100" height="50" />
+        <rect className="ya-ball-band" x="0" y="44" width="100" height="12" />
+      </g>
+      <circle className="ya-ball-ring" cx="50" cy="50" r="48" />
+      <circle className="ya-ball-btn" cx="50" cy="50" r="15" />
+      <circle className="ya-ball-ring" cx="50" cy="50" r="15" />
+    </g>
+  );
+}
