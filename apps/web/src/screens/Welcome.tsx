@@ -3,6 +3,7 @@ import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
 import { PokemonToken } from '../components.tsx';
 import { ArrowGlyph, LockGlyph, PeopleGlyph } from '../components/LandingGlyphs.tsx';
+import collectionArtLight from '../assets/collection-light.webp';
 import collectionArt from '../assets/collection.webp';
 import { LandingScene } from '../components/LandingScene.tsx';
 import { MetaPreview } from '../components/MetaPreview.tsx';
@@ -71,9 +72,11 @@ export function Welcome() {
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}
         <div className="landing-you">
-          {/* Decoration, bled off the card's right and bottom edges and hidden in light mode: it
-           * is a night render, and there is no daylight cut of it. */}
-          <img className="you-art" src={collectionArt} alt="" aria-hidden="true" />
+          {/* Decoration, bled off the card's right and bottom edges. Both cuts of the render are
+           * always in the DOM and .only-dark / .only-light show the one that matches the active
+           * theme, the same way the lockup does. */}
+          <img className="only-dark you-art" src={collectionArt} alt="" aria-hidden="true" />
+          <img className="only-light you-art" src={collectionArtLight} alt="" aria-hidden="true" />
           <div className="footer-head">
             <span className="mp-kicker">
               <PeopleGlyph />

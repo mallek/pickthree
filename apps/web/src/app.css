@@ -967,9 +967,10 @@ a {
   width: 22px;
   height: 22px;
 }
-/* The Your Pokémon card's illustration, lifted from the reference render (see the asset's note
-   in docs/design). Its own backdrop is already pick3's card colour and its left and top edges fade
-   out, so it needs no blend mode; the right and bottom bleed off the card, which clips them. */
+/* The Your Pokémon card's illustration, lifted from the reference renders (see the assets' note
+   in apps/web/src/assets). Each cut's own backdrop is already the card colour of its theme and its
+   left and top edges fade out, so it needs no blend mode; the right and bottom bleed off the card,
+   which clips them. The two cuts are not the same height, so the height is left to the image. */
 .you-art {
   position: absolute;
   right: -6px;
@@ -979,23 +980,28 @@ a {
   z-index: 0;
   pointer-events: none;
 }
-/* Light mode has no daylight cut of the render, so the art goes and the buttons take the width
-   back, the same trade the narrow-phone rules below make. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .you-art {
-    display: none;
-  }
-  :root:not([data-theme='dark']) .landing-you .btn,
-  :root:not([data-theme='dark']) .landing-you .btn-secondary {
-    max-width: none;
-  }
-}
-:root[data-theme='light'] .you-art {
+.only-light.you-art {
   display: none;
 }
-:root[data-theme='light'] .landing-you .btn,
-:root[data-theme='light'] .landing-you .btn-secondary {
-  max-width: none;
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark.you-art {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light.you-art {
+    display: block;
+  }
+}
+:root[data-theme='light'] .only-dark.you-art {
+  display: none;
+}
+:root[data-theme='light'] .only-light.you-art {
+  display: block;
+}
+:root[data-theme='dark'] .only-dark.you-art {
+  display: block;
+}
+:root[data-theme='dark'] .only-light.you-art {
+  display: none;
 }
 
 /* Narrow phones. Nothing is dropped: the league pill takes its own line, the names and the two
