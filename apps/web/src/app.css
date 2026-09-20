@@ -615,6 +615,9 @@ a {
   --tally: #f9598c;
   --cta-1: #7c5edb;
   --cta-2: #6a4ac9;
+  /* The veil that knocks the trio's type colour back. Dark on a night sky, white on a pale one:
+     a dark veil in light mode turns the discs to mud. */
+  --disc-veil: rgba(18, 16, 30, 0.42);
   position: relative;
   isolation: isolate;
   background: transparent;
@@ -699,6 +702,7 @@ a {
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) .landing {
     --tally: #c81f5f;
+    --disc-veil: rgba(255, 255, 255, 0.4);
   }
   :root:not([data-theme='dark']) .landing-scene {
     --sky-1: #eae6fb;
@@ -717,6 +721,7 @@ a {
 }
 :root[data-theme='light'] .landing {
   --tally: #c81f5f;
+  --disc-veil: rgba(255, 255, 255, 0.4);
 }
 :root[data-theme='light'] .landing-scene {
   --sky-1: #eae6fb;
@@ -847,7 +852,11 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
+}
+.mp-league {
+  margin-left: auto;
 }
 .mp-kicker {
   display: inline-flex;
@@ -948,6 +957,35 @@ a {
   right: 18px;
   width: 22px;
   height: 22px;
+}
+/* Narrow phones. Nothing is dropped: the league pill takes its own line, the names and the two
+   long labels come down a size, and the closing rules give way rather than push the text out. */
+@media (max-width: 360px) {
+  .mp-name {
+    font-size: 13px;
+  }
+  .mp-pct {
+    font-size: 24px;
+  }
+  .mp-cta {
+    padding: 0 38px;
+    font-size: 15px;
+  }
+  .landing .hero {
+    font-size: 28px;
+  }
+  .landing-foot {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .landing-foot .privacy-line {
+    white-space: normal;
+  }
+  .landing-foot .privacy-line::before,
+  .landing-foot .privacy-line::after {
+    display: none;
+  }
 }
 .mp-skel {
   display: block;
@@ -1055,7 +1093,7 @@ a {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(18, 16, 30, 0.42);
+  background: var(--disc-veil);
 }
 .trio-disc .token.has-sprite {
   overflow: visible;
