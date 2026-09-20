@@ -114,6 +114,33 @@ run('suggestTeammates', () => {
     expect(result.suggestions[0]?.fills).toHaveLength(2);
   });
 
+  it('says out loud when the favorite is weak, with the real numbers', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'slaking' }, null, null],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      deps(),
+    );
+
+    expect(result.pinLine).toBeTruthy();
+    expect(result.pinLine).toContain('Slaking');
+    expect(result.pinLine).toMatch(/beats \d+ of \d+/);
+    expect(result.pinLine).toContain('Great League');
+    // Said once, then built around anyway.
+    expect(result.suggestions.length).toBeGreaterThan(0);
+  });
+
+  it('stays quiet when the favorite holds its own', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, null],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      deps(),
+    );
+
+    expect(result.pinLine).toBeNull();
+  });
+
   it('buys a cheaper core without giving away the meta', () => {
     const result = suggestTeammates(
       [{ kind: 'species', id: 'skarmory' }, null, null],

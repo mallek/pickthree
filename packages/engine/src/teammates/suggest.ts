@@ -29,7 +29,7 @@ import {
 import { candidateFor, candidatePool, type Candidate } from '../search/candidates.js';
 import { MatrixView } from '../search/matrixView.js';
 import { bestBuild } from '../verdicts/worth.js';
-import { coverLines } from './lines.js';
+import { coverLines, weakPinLine } from './lines.js';
 import type { YourMetaInput } from '../yourmeta/types.js';
 
 export type Character = 'safest' | 'cheapest' | 'antimeta' | 'community';
@@ -97,6 +97,8 @@ export interface Suggestion {
 }
 
 export interface SuggestResult {
+  /** The honest line about a weak favorite, or null when the pins hold their own. */
+  pinLine: string | null;
   suggestions: Suggestion[];
   assumptions: Assumptions;
   stats: {
@@ -264,6 +266,7 @@ export function suggestTeammates(
   });
 
   return {
+    pinLine: weakPinLine(pins, emptySlots.length, view, index, deps.data.league.title),
     suggestions,
     assumptions: assumptionsFor(deps.data, opts, profile),
     stats: { standIns: standInBuilds.size, poolSize: pool.length, cores: cores.length },

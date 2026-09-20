@@ -86,3 +86,42 @@ export function coverLines(
   }
   return out;
 }
+
+/**
+ * Below this share of the meta group beaten at 1-1 shields, a pin is weak enough to say so.
+ * Silence is the reward for a strong pick.
+ */
+export const WEAK_PIN_SHARE = 1 / 3;
+
+/**
+ * The honest line about a weak favorite, or null when the pins hold their own.
+ *
+ * It is not a courtesy. Analyze is one tap away and will print a low number out of 100; saying
+ * nothing first makes the app look like it wasted the player's time, and saying it first makes
+ * that number confirm us. One line, one tier of copy: the numbers carry the severity.
+ */
+export function weakPinLine(
+  pins: Candidate[],
+  fills: number,
+  view: MatrixView,
+  index: GameDataIndex,
+  leagueTitle: string,
+): string | null {
+  const s11 = view.scenarioIndex([1, 1]);
+  const total = view.opponents.length;
+  const weak = pins
+    .map((p) => ({
+      name: fullName(p.build.speciesId, index),
+      wins: view.wins(p.matrixRow, s11).filter(Boolean).length,
+    }))
+    .filter((p) => p.wins / total < WEAK_PIN_SHARE);
+  if (weak.length === 0) {
+    return null;
+  }
+  const said = joinList(weak.map((p) => `${p.name} beats ${p.wins} of ${total}`));
+  const subject = weak.length === 1 ? 'it' : 'they';
+  const cover = fills === 1 ? 'This one covers' : 'These two cover';
+  return `${said} in the current ${leagueTitle} meta group. ${cover} the most ${subject} ${
+    weak.length === 1 ? 'loses' : 'lose'
+  } to.`;
+}
