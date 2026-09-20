@@ -2,13 +2,18 @@ import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
 import { PokemonToken } from '../components.tsx';
+import { LandingScene } from '../components/LandingScene.tsx';
 import { MetaPreview } from '../components/MetaPreview.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
 
 /**
- * The landing screen, in one phone screen and in this order: what pick3 does, real output you can
- * look at without owning anything, then the two ways in, then the promise and the count.
+ * The landing screen, in this order: who this is, what pick3 does, real output you can look at
+ * without owning anything, then the two ways in, then the promise and the count.
+ *
+ * It scrolls as one page rather than squeezing into one viewport behind a stuck action bar. The
+ * bar bought a screenful at the cost of flattening everything into it; on a page whose job is to
+ * be looked at before anything is tapped, the scroll is the cheaper trade.
  *
  * Build a team is deliberately not here. It is reachable from Teams, and offering import, manual
  * entry, team building and the meta as four equal choices was the reason this page read as a menu
@@ -37,16 +42,16 @@ export function Welcome() {
 
   return (
     <div className="screen landing">
+      <LandingScene />
       <div className="scroll landing-scroll">
-        {/* Decorative: three type-coloured discs open the page. Hidden from screen readers, which
-         * have no use for three Pokémon names that are not part of the flow, and the first thing
-         * dropped on a short screen since nothing depends on it. */}
-        <div className="hero-trio" aria-hidden="true">
-          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
-            <PokemonToken key={id} speciesId={id} size={64} showInitial={false} />
-          ))}
+        {/* The lockup opens the page and the headline ends with it, which is the reference's own
+         * repetition. The one up here is decoration: the h1 below already says the name, and a
+         * screen reader has no use for hearing it twice before the sentence starts. */}
+        <div className="landing-lockup" aria-hidden="true">
+          <img className="only-dark hero-lockup" src={lockupDark} alt="" />
+          <img className="only-light hero-lockup" src={lockupLight} alt="" />
         </div>
-        <div className="stack">
+        <div className="stack landing-intro">
           <h1 className="hero">
             Find your best battle team with{' '}
             <img className="only-dark hero-lockup" src={lockupDark} alt="pick3" />
@@ -56,43 +61,55 @@ export function Welcome() {
             Which three to bring, in what order, with which moves, and what they will cost to build.
           </p>
         </div>
+        {/* Decorative: three type-coloured discs under the headline. Hidden from screen readers,
+         * which have no use for three Pokémon names that are not part of the flow, and the first
+         * thing dropped on a short screen since nothing depends on it. */}
+        <div className="hero-trio" aria-hidden="true">
+          {['pikachu', 'bulbasaur', 'charmander'].map((id) => (
+            <span className="trio-disc" key={id}>
+              <PokemonToken speciesId={id} size={84} showInitial={false} />
+            </span>
+          ))}
+        </div>
         <MetaPreview />
         {bootError ? (
           <div className="error">Game data failed to load: {bootError}. Reload to try again.</div>
         ) : null}
-      </div>
-      <div className="bottom-actions">
-        <div className="footer-head">
-          <b>Your Pokémon</b>
-          <span>Find battle teams with Pokémon from your collection.</span>
+        <div className="landing-you">
+          <div className="footer-head">
+            <b>Your Pokémon</b>
+            <span>Find battle teams with Pokémon from your collection.</span>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            disabled={boot === 'error'}
+            onClick={() => navigate({ screen: 'import' })}
+          >
+            <i />
+            Import your Pokémon
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={boot !== 'ready'}
+            onClick={() => navigate({ screen: 'add' })}
+          >
+            Add by hand
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn"
-          disabled={boot === 'error'}
-          onClick={() => navigate({ screen: 'import' })}
-        >
-          <i />
-          Import your Pokémon
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={boot !== 'ready'}
-          onClick={() => navigate({ screen: 'add' })}
-        >
-          Add by hand
-        </button>
-        <button
-          type="button"
-          className="privacy-line"
-          aria-expanded={infoOpen}
-          onClick={() => setInfoOpen(true)}
-        >
-          Runs on your phone. Your collection never leaves it.
-        </button>
-        <div className="trainer-row">
-          <TrainerCounter count={count} />
+        <div className="landing-foot">
+          <button
+            type="button"
+            className="privacy-line"
+            aria-expanded={infoOpen}
+            onClick={() => setInfoOpen(true)}
+          >
+            Runs on your phone. Your collection never leaves it.
+          </button>
+          <div className="trainer-row">
+            <TrainerCounter count={count} />
+          </div>
         </div>
         {infoOpen ? (
           <>

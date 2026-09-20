@@ -604,59 +604,171 @@ a {
   padding: 0;
   list-style: none;
 }
-/* The landing has to hold one screen on every phone, so its spacing is a class rather than an
-   inline style and the short-screen rules below can claw space back instead of scrolling. */
-/* .scroll reserves 120px at the bottom to clear the tab bar. The landing has no tab bar, it has
-   the action block, so that reservation is dead space here and the page pays for it in scrolling. */
+/* The landing. It scrolls as one page over a drawn backdrop, so the spacing here is about the
+   rhythm between blocks rather than about fitting a viewport; the short-screen rules below only
+   tighten it, they no longer have to claw back a screenful. */
+/* .scroll reserves 120px at the bottom to clear the tab bar. The landing has no tab bar, so that
+   reservation is dead space here. */
+.landing {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
 .landing-scroll {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 32px);
-  padding-bottom: 12px;
-  gap: 18px;
+  position: relative;
+  z-index: 1;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  gap: 20px;
 }
-.landing .bottom-actions {
-  gap: 8px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+
+/* The backdrop: a night forest under a purple sky, drawn by LandingScene.tsx. Its own stacking
+   context sits under the content (.landing is `isolation: isolate`, so a negative z-index here
+   would escape behind the page background instead). */
+.landing-scene {
+  --sky-1: #241e3c;
+  --sky-2: #1a1830;
+  --sky-3: #141426;
+  --sky-glow: rgba(137, 106, 214, 0.34);
+  --sky-blush: rgba(176, 82, 124, 0.2);
+  --tree-far: rgba(26, 22, 48, 0.92);
+  --tree-near: #120f1c;
+  --ball-top: #8d2b3c;
+  --ball-bottom: #23223a;
+  --ball-band: #100f1a;
+  --ball-ring: rgba(233, 233, 237, 0.28);
+  --ball-opacity: 0.6;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 46% at 50% 0%, var(--sky-glow), transparent 68%),
+    radial-gradient(70% 26% at 86% 4%, var(--sky-blush), transparent 72%),
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 44%, var(--sky-3) 100%);
 }
-.landing .hero-trio {
-  min-height: 70px;
+/* The treeline sits behind the lockup and headline and is gone by the trio, the way the reference
+   has it: atmosphere at the top of the page, nothing competing with the cards below. */
+.ls-trees {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  min-width: 400px;
+  height: 300px;
+  filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 92%);
 }
-@media (max-height: 820px) {
-  .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
-    gap: 12px;
-  }
-  .landing .hero {
-    font-size: 25px;
-  }
-  .landing .mp-rows {
-    height: 108px;
-  }
-  .landing .mp-row {
-    height: 36px;
-  }
-  .landing .mp-card {
-    gap: 8px;
-    padding: 10px 14px;
+.ls-far {
+  fill: var(--tree-far);
+}
+.ls-near {
+  fill: var(--tree-near);
+}
+/* Off the top right corner, moon-sized and mostly out of frame. */
+.ls-ball {
+  position: absolute;
+  top: -36px;
+  right: -26px;
+  width: 152px;
+  height: 152px;
+  opacity: var(--ball-opacity);
+}
+.ls-ball-top {
+  fill: var(--ball-top);
+}
+.ls-ball-bottom {
+  fill: var(--ball-bottom);
+}
+.ls-ball-band {
+  fill: var(--ball-band);
+}
+.ls-ball-ring {
+  fill: none;
+  stroke: var(--ball-ring);
+  stroke-width: 2;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .landing-scene {
+    --sky-1: #eae6fb;
+    --sky-2: #f0f1fd;
+    --sky-3: #f3f5fe;
+    --sky-glow: rgba(137, 106, 214, 0.22);
+    --sky-blush: rgba(214, 133, 173, 0.24);
+    --tree-far: rgba(121, 108, 191, 0.16);
+    --tree-near: rgba(90, 80, 150, 0.22);
+    --ball-ring: rgba(41, 43, 49, 0.4);
+    --ball-top: #c8323b;
+    --ball-bottom: #e4e7f5;
+    --ball-band: #9397ab;
+    --ball-opacity: 0.16;
   }
 }
-/* Shortest phones cannot hold all of it, so the decoration goes first and the rest tightens.
-   Nothing anyone reads or taps is dropped. */
+:root[data-theme='light'] .landing-scene {
+  --sky-1: #eae6fb;
+  --sky-2: #f0f1fd;
+  --sky-3: #f3f5fe;
+  --sky-glow: rgba(137, 106, 214, 0.22);
+  --sky-blush: rgba(214, 133, 173, 0.24);
+  --tree-far: rgba(121, 108, 191, 0.16);
+  --tree-near: rgba(90, 80, 150, 0.22);
+  --ball-ring: rgba(41, 43, 49, 0.4);
+  --ball-top: #c8323b;
+  --ball-bottom: #e4e7f5;
+  --ball-band: #9397ab;
+  --ball-opacity: 0.16;
+}
+
+/* The lockup opens the page at its own size, above the headline that ends with it again. */
+.landing-lockup {
+  display: block;
+  margin: 0 auto -4px;
+}
+.landing-lockup .hero-lockup {
+  width: 132px;
+  height: auto;
+}
+.landing .hero {
+  font-size: 31px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.landing .hero .hero-lockup {
+  /* Optical: the wordmark's x-height should match the sentence's, not its cap height. */
+  height: 0.78em;
+  width: auto;
+  vertical-align: -0.08em;
+}
+.landing-intro,
+.landing-foot {
+  text-align: center;
+}
+.landing-intro p {
+  font-size: 16px;
+  max-width: 21em;
+  margin: 0 auto;
+}
+.landing-you,
+.landing-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.landing-foot {
+  gap: 12px;
+  padding-top: 4px;
+}
 @media (max-height: 700px) {
   .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-    gap: 8px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    gap: 16px;
   }
   .landing .hero {
-    font-size: 22px;
-  }
-  .landing .mp-rows {
-    height: 96px;
-  }
-  .landing .mp-row {
-    height: 32px;
-  }
-  .landing .hero-trio {
-    display: none;
+    font-size: 27px;
   }
 }
 /* The footer names what the buttons under it are for, so the two ways in are not bare verbs. */
@@ -800,14 +912,54 @@ a {
   border-radius: 50%;
   background: var(--accent);
 }
-/* Three type-coloured discs under the hero. The min-height reserves the row before game data
- * lands, so the landing screen does not shift when the species types arrive and colour them. */
+/* Three type-coloured discs under the hero, big enough to be the picture on the page rather than
+ * a row of bullets. The min-height reserves the row before game data lands, so the landing screen
+ * does not shift when the species types arrive and colour them. */
 .hero-trio {
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 18px;
-  min-height: 70px;
+  align-items: flex-end;
+  gap: 16px;
+  min-height: 104px;
+  padding-bottom: 8px;
+}
+/* Each disc stands on a soft elliptical shadow, and its artwork is scaled past the circle so the
+ * Pokémon sits on the disc rather than inside it. `overflow: visible` has to beat the
+ * `.token.has-sprite` clip that every other token in the app relies on. */
+.trio-disc {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+.trio-disc::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 78%;
+  height: 12px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5), transparent 72%);
+}
+.trio-disc .token {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+.trio-disc .token::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(18, 16, 30, 0.42);
+}
+.trio-disc .token.has-sprite {
+  overflow: visible;
+}
+.trio-disc .sprite {
+  width: 108%;
+  height: 108%;
+  margin-bottom: 5%;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
 }
 .steps li {
   display: grid;
