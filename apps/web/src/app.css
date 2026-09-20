@@ -625,7 +625,7 @@ a {
 .landing-scroll {
   position: relative;
   z-index: 1;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 72px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   gap: 20px;
 }
@@ -738,15 +738,6 @@ a {
   --ball-opacity: 0.16;
 }
 
-/* The lockup opens the page at its own size, above the headline that ends with it again. */
-.landing-lockup {
-  display: block;
-  margin: 0 auto -4px;
-}
-.landing-lockup .hero-lockup {
-  width: 132px;
-  height: auto;
-}
 .landing .hero {
   font-size: 31px;
   font-weight: 700;
@@ -754,10 +745,17 @@ a {
   text-wrap: balance;
 }
 .landing .hero .hero-lockup {
-  /* Optical: the wordmark's x-height should match the sentence's, not its cap height. */
-  height: 0.78em;
+  /* Sized and seated off the lockup's own metrics rather than by eye. In its 81.75 unit tall
+     viewBox the baseline sits at 58.38, the x-height runs 39.30 above it and the 3 tops out 52.48
+     above it. So 1.135em makes the wordmark's x-height match Inter's 0.546em (and drops the 3
+     exactly on Inter's cap height), and pushing the box down 0.325em puts the two baselines on
+     the same line. */
+  height: 1.135em;
   width: auto;
-  vertical-align: -0.08em;
+  vertical-align: -0.325em;
+  /* The viewBox carries 6 of its 194.27 units as padding on the left, which lands on top of the
+     word space before it and reads as a double space. Take exactly that much back. */
+  margin-left: -0.09em;
 }
 .landing-intro,
 .landing-foot {
@@ -814,7 +812,7 @@ a {
 }
 @media (max-height: 700px) {
   .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
     gap: 16px;
   }
   .landing .hero {

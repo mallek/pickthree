@@ -45,13 +45,6 @@ export function Welcome() {
     <div className="screen landing">
       <LandingScene />
       <div className="scroll landing-scroll">
-        {/* The lockup opens the page and the headline ends with it, which is the reference's own
-         * repetition. The one up here is decoration: the h1 below already says the name, and a
-         * screen reader has no use for hearing it twice before the sentence starts. */}
-        <div className="landing-lockup" aria-hidden="true">
-          <img className="only-dark hero-lockup" src={lockupDark} alt="" />
-          <img className="only-light hero-lockup" src={lockupLight} alt="" />
-        </div>
         <div className="stack landing-intro">
           <h1 className="hero">
             Find your best battle team with{' '}
