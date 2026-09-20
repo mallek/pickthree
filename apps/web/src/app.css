@@ -610,6 +610,11 @@ a {
 /* .scroll reserves 120px at the bottom to clear the tab bar. The landing has no tab bar, so that
    reservation is dead space here. */
 .landing {
+  /* The landing's tally pink, the only hue on the page that is neither the accent nor a type
+     colour. Scoped here rather than added to tokens.css: nothing outside this page uses it. */
+  --tally: #f9598c;
+  --cta-1: #7c5edb;
+  --cta-2: #6a4ac9;
   position: relative;
   isolation: isolate;
   background: transparent;
@@ -692,6 +697,9 @@ a {
   stroke-width: 2;
 }
 @media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .landing {
+    --tally: #c81f5f;
+  }
   :root:not([data-theme='dark']) .landing-scene {
     --sky-1: #eae6fb;
     --sky-2: #f0f1fd;
@@ -706,6 +714,9 @@ a {
     --ball-band: #9397ab;
     --ball-opacity: 0.16;
   }
+}
+:root[data-theme='light'] .landing {
+  --tally: #c81f5f;
 }
 :root[data-theme='light'] .landing-scene {
   --sky-1: #eae6fb;
@@ -752,15 +763,49 @@ a {
   max-width: 21em;
   margin: 0 auto;
 }
-.landing-you,
+.landing-you {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-sheet);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--bg)));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  text-align: left;
+}
 .landing-foot {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-.landing-foot {
   gap: 12px;
-  padding-top: 4px;
+  margin: 0 -20px;
+  padding: 6px 10px 0;
+}
+/* The landing's two buttons: text left, arrow pinned right, and the primary one filled the same
+   way as the card's call to action above it so the page has one idea of what "go" looks like. */
+.btn-cta {
+  position: relative;
+  justify-content: flex-start;
+  padding: 0 46px 0 18px;
+  font-weight: 600;
+}
+.btn-cta .lg-arrow {
+  position: absolute;
+  right: 18px;
+  width: 22px;
+  height: 22px;
+}
+.landing-you .btn {
+  background: linear-gradient(105deg, var(--cta-1), var(--cta-2));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--cta-2) 40%, transparent);
+  border-color: transparent;
+  color: #fff;
+}
+.landing-you .btn-secondary {
+  background: transparent;
+  border-color: var(--divider);
+  color: var(--text);
+  min-height: 52px;
 }
 @media (max-height: 700px) {
   .landing-scroll {
@@ -775,15 +820,13 @@ a {
 .footer-head {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  text-align: center;
+  gap: 8px;
+  padding-bottom: 2px;
 }
-.footer-head b {
-  font-weight: 500;
-}
-.footer-head span {
-  font-size: 12.5px;
-  color: var(--muted);
+.footer-head > span:last-child {
+  font-size: 16px;
+  color: var(--text);
+  max-width: 17em;
 }
 /* The landing's meta card. Its own kicker class rather than the shared .kicker: that selector is
  * what the share and screenshot scripts wait on to know the report screen rendered, and it should
@@ -791,89 +834,120 @@ a {
 .mp-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 14px;
+  padding: 18px;
   border: 1px solid var(--divider);
-  border-radius: var(--r-xl);
-  background: var(--surface);
+  border-radius: var(--r-sheet);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--bg)));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
   color: inherit;
   text-decoration: none;
 }
 .mp-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 .mp-kicker {
-  font-size: 12px;
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+.mp-kicker .lg-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--tally);
 }
 .mp-league {
-  font-size: 13px;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
 }
-/* Fixed height for three rows, so loading, ready, empty and unavailable all occupy the same
-   space and the buttons below never jump when the network answers. */
+.mp-league-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--surface2);
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+}
+/* Three columns split by hairlines. The min-height reserves the tallest state, so loading, ready,
+   empty and unavailable all occupy the same space and the button below never jumps. */
 .mp-rows {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 126px;
-  border-top: 1px solid var(--divider);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  min-height: 150px;
+  padding-top: 4px;
 }
 .mp-rows-note {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 0 2px;
+  text-align: center;
+  padding: 0 6px;
 }
 .mp-row {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 40px;
-  align-items: center;
-  gap: 12px;
-  height: 42px;
-}
-.mp-row + .mp-row {
-  border-top: 1px solid var(--divider);
-}
-.mp-mid {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
   min-width: 0;
 }
+.mp-row + .mp-row {
+  border-left: 1px solid var(--divider);
+}
 .mp-name {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mp-bar {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--accent-tint);
-  overflow: hidden;
-}
-.mp-bar > span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: var(--accent);
-}
+/* The number is the point of the card, so it is the biggest thing in it and the only pink. */
 .mp-pct {
-  font-size: 13px;
-  color: var(--muted);
-  text-align: right;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--tally);
   font-variant-numeric: tabular-nums;
 }
+/* The card's own call to action: a filled gradient block, the one on the page that leaves. */
 .mp-cta {
-  font-size: 14px;
-  color: var(--accent-text);
-  border-top: 1px solid var(--divider);
-  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 54px;
+  padding: 0 44px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(105deg, var(--cta-1), var(--cta-2));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--cta-2) 40%, transparent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+.mp-cta .lg-arrow {
+  position: absolute;
+  right: 18px;
+  width: 22px;
+  height: 22px;
 }
 .mp-skel {
   display: block;
@@ -881,36 +955,67 @@ a {
   background: var(--surface2);
 }
 .mp-skel-disc {
-  width: 26px;
-  height: 26px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
 }
 .mp-skel-name {
-  height: 10px;
-  width: 60%;
+  height: 12px;
+  width: 68%;
 }
-/* The privacy line is a button so it can open the popover, but it reads as text. The accent dot
-   is what says it is tappable without dressing it up as a control. */
+.mp-skel-pct {
+  height: 22px;
+  width: 46%;
+}
+/* The privacy line is a button so it can open the popover, but it reads as text: the lock says
+   what it is about and the hairlines either side make it the rule that closes the page. */
 .privacy-line {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 9px;
   border: 0;
   background: transparent;
   padding: 0;
   font: inherit;
   font-size: 12px;
-  color: var(--faint);
+  color: var(--muted);
   cursor: pointer;
+  white-space: nowrap;
 }
-.privacy-line::before {
-  content: '';
-  width: 5px;
-  height: 5px;
+.privacy-line .lg-icon {
+  width: 17px;
+  height: 17px;
   flex: none;
-  border-radius: 50%;
-  background: var(--accent);
+  color: var(--faint);
+}
+.landing-foot .privacy-line::before,
+.landing-foot .privacy-line::after {
+  content: '';
+  flex: 1 1 0;
+  min-width: 8px;
+  height: 1px;
+  background: var(--divider);
+}
+.counter-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.counter-inline .lg-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--tally);
+}
+.counter-inline b {
+  color: var(--tally);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 /* Three type-coloured discs under the hero, big enough to be the picture on the page rather than
  * a row of bullets. The min-height reserves the row before game data lands, so the landing screen

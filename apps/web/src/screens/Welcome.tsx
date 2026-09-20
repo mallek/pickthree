@@ -2,6 +2,7 @@ import lockupDark from '@pickthree/ui/brand/lockup.svg';
 import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useState } from 'react';
 import { PokemonToken } from '../components.tsx';
+import { ArrowGlyph, LockGlyph, PeopleGlyph } from '../components/LandingGlyphs.tsx';
 import { LandingScene } from '../components/LandingScene.tsx';
 import { MetaPreview } from '../components/MetaPreview.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
@@ -77,25 +78,29 @@ export function Welcome() {
         ) : null}
         <div className="landing-you">
           <div className="footer-head">
-            <b>Your Pokémon</b>
+            <span className="mp-kicker">
+              <PeopleGlyph />
+              Your Pokémon
+            </span>
             <span>Find battle teams with Pokémon from your collection.</span>
           </div>
           <button
             type="button"
-            className="btn"
+            className="btn btn-cta"
             disabled={boot === 'error'}
             onClick={() => navigate({ screen: 'import' })}
           >
-            <i />
-            Import your Pokémon
+            Import your collection
+            <ArrowGlyph />
           </button>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-cta"
             disabled={boot !== 'ready'}
             onClick={() => navigate({ screen: 'add' })}
           >
-            Add by hand
+            Add a few by hand
+            <ArrowGlyph />
           </button>
         </div>
         <div className="landing-foot">
@@ -105,11 +110,10 @@ export function Welcome() {
             aria-expanded={infoOpen}
             onClick={() => setInfoOpen(true)}
           >
+            <LockGlyph />
             Runs on your phone. Your collection never leaves it.
           </button>
-          <div className="trainer-row">
-            <TrainerCounter count={count} />
-          </div>
+          <TrainerCounter count={count} inline />
         </div>
         {infoOpen ? (
           <>
