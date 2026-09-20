@@ -1,6 +1,8 @@
+import { LeagueShield } from '@pickthree/ui';
 import { useEffect, useState, type ReactElement } from 'react';
 import { PokemonToken, useName } from '../components.tsx';
 import { COUNTER_ORIGIN } from '../counter.ts';
+import { ArrowGlyph, BarsGlyph } from './LandingGlyphs.tsx';
 
 /**
  * A compact read of what has actually been logged lately, so a first-time visitor sees real
@@ -71,8 +73,8 @@ export function MetaPreview() {
     return () => ctrl.abort();
   }, []);
 
-  // The tallest row wins the reserved height, so the card never resizes between states and the
-  // actions under it do not move once the network answers.
+  // Three columns of the same width, so loading, ready, empty and unavailable all occupy the same
+  // space and the button below never jumps when the network answers.
   const body = (): ReactElement => {
     if (status === 'loading') {
       return (
@@ -80,10 +82,8 @@ export function MetaPreview() {
           {[0, 1, 2].map((i) => (
             <div className="mp-row" key={i}>
               <span className="mp-skel mp-skel-disc" />
-              <span className="mp-mid">
-                <span className="mp-skel mp-skel-name" />
-                <span className="mp-bar" />
-              </span>
+              <span className="mp-skel mp-skel-name" />
+              <span className="mp-skel mp-skel-pct" />
             </div>
           ))}
         </div>
@@ -94,13 +94,8 @@ export function MetaPreview() {
         <div className="mp-rows">
           {rows.map((r) => (
             <div className="mp-row" key={r.id}>
-              <PokemonToken speciesId={r.id} size={32} showInitial={false} />
-              <span className="mp-mid">
-                <span className="mp-name">{name(r.id)}</span>
-                <span className="mp-bar">
-                  <span style={{ width: `${Math.max(2, Math.round(r.pct))}%` }} />
-                </span>
-              </span>
+              <PokemonToken speciesId={r.id} size={60} showInitial={false} />
+              <span className="mp-name">{name(r.id)}</span>
               <span className="mp-pct">{Math.round(r.pct)}%</span>
             </div>
           ))}
@@ -125,11 +120,22 @@ export function MetaPreview() {
       aria-label="Recently logged battles in Great League, on the pick3 meta site"
     >
       <span className="mp-head">
-        <span className="mp-kicker">Recently logged</span>
-        <span className="mp-league">Great League</span>
+        <span className="mp-kicker">
+          <BarsGlyph />
+          Recently logged
+        </span>
+        {/* The league reads as a label, not a control: the whole card is one link to the meta
+         * site, and a chevron here would promise a menu that is not there. */}
+        <span className="mp-league">
+          <span className="mp-league-pill">Great League</span>
+          <LeagueShield id="great" size={20} />
+        </span>
       </span>
       {body()}
-      <span className="mp-cta">Explore the live meta &rsaquo;</span>
+      <span className="mp-cta">
+        Explore the live meta
+        <ArrowGlyph />
+      </span>
     </a>
   );
 }

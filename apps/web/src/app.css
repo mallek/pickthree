@@ -604,74 +604,243 @@ a {
   padding: 0;
   list-style: none;
 }
-/* The landing has to hold one screen on every phone, so its spacing is a class rather than an
-   inline style and the short-screen rules below can claw space back instead of scrolling. */
-/* .scroll reserves 120px at the bottom to clear the tab bar. The landing has no tab bar, it has
-   the action block, so that reservation is dead space here and the page pays for it in scrolling. */
+/* The landing. It scrolls as one page over a drawn backdrop, so the spacing here is about the
+   rhythm between blocks rather than about fitting a viewport; the short-screen rules below only
+   tighten it, they no longer have to claw back a screenful. */
+/* .scroll reserves 120px at the bottom to clear the tab bar. The landing has no tab bar, so that
+   reservation is dead space here. */
+.landing {
+  /* The landing's tally pink, the only hue on the page that is neither the accent nor a type
+     colour. Scoped here rather than added to tokens.css: nothing outside this page uses it. */
+  --tally: #f9598c;
+  --cta-1: #7c5edb;
+  --cta-2: #6a4ac9;
+  /* The veil that knocks the trio's type colour back. Dark on a night sky, white on a pale one:
+     a dark veil in light mode turns the discs to mud. */
+  --disc-veil: rgba(18, 16, 30, 0.42);
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
 .landing-scroll {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 32px);
-  padding-bottom: 12px;
-  gap: 18px;
+  position: relative;
+  z-index: 1;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 72px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  gap: 20px;
 }
-.landing .bottom-actions {
-  gap: 8px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+
+/* The backdrop: a night forest under a purple sky, drawn by LandingScene.tsx. Its own stacking
+   context sits under the content (.landing is `isolation: isolate`, so a negative z-index here
+   would escape behind the page background instead). */
+.landing-scene {
+  --sky-1: #241e3c;
+  --sky-2: #1a1830;
+  --sky-3: #141426;
+  --sky-glow: rgba(137, 106, 214, 0.34);
+  --sky-blush: rgba(176, 82, 124, 0.2);
+  --tree-far: rgba(26, 22, 48, 0.92);
+  --tree-near: #120f1c;
+  --ball-top: #8d2b3c;
+  --ball-bottom: #23223a;
+  --ball-band: #100f1a;
+  --ball-ring: rgba(233, 233, 237, 0.28);
+  --ball-opacity: 0.6;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 46% at 50% 0%, var(--sky-glow), transparent 68%),
+    radial-gradient(70% 26% at 86% 4%, var(--sky-blush), transparent 72%),
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 44%, var(--sky-3) 100%);
 }
-.landing .hero-trio {
-  min-height: 70px;
+/* The treeline sits behind the lockup and headline and is gone by the trio, the way the reference
+   has it: atmosphere at the top of the page, nothing competing with the cards below. */
+.ls-trees {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  min-width: 400px;
+  height: 300px;
+  filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 92%);
 }
-@media (max-height: 820px) {
-  .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
-    gap: 12px;
+.ls-far {
+  fill: var(--tree-far);
+}
+.ls-near {
+  fill: var(--tree-near);
+}
+/* Off the top right corner, moon-sized and mostly out of frame. */
+.ls-ball {
+  position: absolute;
+  top: -36px;
+  right: -26px;
+  width: 152px;
+  height: 152px;
+  opacity: var(--ball-opacity);
+}
+.ls-ball-top {
+  fill: var(--ball-top);
+}
+.ls-ball-bottom {
+  fill: var(--ball-bottom);
+}
+.ls-ball-band {
+  fill: var(--ball-band);
+}
+.ls-ball-ring {
+  fill: none;
+  stroke: var(--ball-ring);
+  stroke-width: 2;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .landing {
+    --tally: #c81f5f;
+    --disc-veil: rgba(255, 255, 255, 0.4);
   }
-  .landing .hero {
-    font-size: 25px;
-  }
-  .landing .mp-rows {
-    height: 108px;
-  }
-  .landing .mp-row {
-    height: 36px;
-  }
-  .landing .mp-card {
-    gap: 8px;
-    padding: 10px 14px;
+  :root:not([data-theme='dark']) .landing-scene {
+    --sky-1: #eae6fb;
+    --sky-2: #f0f1fd;
+    --sky-3: #f3f5fe;
+    --sky-glow: rgba(137, 106, 214, 0.22);
+    --sky-blush: rgba(214, 133, 173, 0.24);
+    --tree-far: rgba(121, 108, 191, 0.16);
+    --tree-near: rgba(90, 80, 150, 0.22);
+    --ball-ring: rgba(41, 43, 49, 0.4);
+    --ball-top: #c8323b;
+    --ball-bottom: #e4e7f5;
+    --ball-band: #9397ab;
+    --ball-opacity: 0.16;
   }
 }
-/* Shortest phones cannot hold all of it, so the decoration goes first and the rest tightens.
-   Nothing anyone reads or taps is dropped. */
+:root[data-theme='light'] .landing {
+  --tally: #c81f5f;
+  --disc-veil: rgba(255, 255, 255, 0.4);
+}
+:root[data-theme='light'] .landing-scene {
+  --sky-1: #eae6fb;
+  --sky-2: #f0f1fd;
+  --sky-3: #f3f5fe;
+  --sky-glow: rgba(137, 106, 214, 0.22);
+  --sky-blush: rgba(214, 133, 173, 0.24);
+  --tree-far: rgba(121, 108, 191, 0.16);
+  --tree-near: rgba(90, 80, 150, 0.22);
+  --ball-ring: rgba(41, 43, 49, 0.4);
+  --ball-top: #c8323b;
+  --ball-bottom: #e4e7f5;
+  --ball-band: #9397ab;
+  --ball-opacity: 0.16;
+}
+
+.landing .hero {
+  font-size: 31px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.landing .hero .hero-lockup {
+  /* Sized and seated off the lockup's own metrics rather than by eye. In its 81.75 unit tall
+     viewBox the baseline sits at 58.38, the x-height runs 39.30 above it and the 3 tops out 52.48
+     above it. So 1.135em makes the wordmark's x-height match Inter's 0.546em (and drops the 3
+     exactly on Inter's cap height), and pushing the box down 0.325em puts the two baselines on
+     the same line. */
+  height: 1.135em;
+  width: auto;
+  vertical-align: -0.325em;
+  /* The viewBox carries 6 of its 194.27 units as padding on the left, which lands on top of the
+     word space before it and reads as a double space. Take exactly that much back. */
+  margin-left: -0.09em;
+}
+.landing-intro,
+.landing-foot {
+  text-align: center;
+}
+.landing-intro p {
+  font-size: 16px;
+  max-width: 21em;
+  margin: 0 auto;
+}
+.landing-you {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-sheet);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--bg)));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  text-align: left;
+}
+.landing-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 6px 10px 0;
+}
+/* The landing's two buttons: text left, arrow pinned right, and the primary one filled the same
+   way as the card's call to action above it so the page has one idea of what "go" looks like. */
+.btn-cta {
+  position: relative;
+  justify-content: flex-start;
+  padding: 0 38px 0 16px;
+  font-weight: 600;
+}
+.btn-cta .lg-arrow {
+  position: absolute;
+  right: 18px;
+  width: 22px;
+  height: 22px;
+}
+.landing-you > *:not(.you-art) {
+  position: relative;
+  z-index: 1;
+}
+/* The buttons stop short of the card's right edge so the illustration has somewhere to be. On a
+   narrow phone they take the whole width back and the art goes. */
+.landing-you .btn {
+  max-width: 236px;
+  font-size: 15px;
+  background: linear-gradient(105deg, var(--cta-1), var(--cta-2));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--cta-2) 40%, transparent);
+  border-color: transparent;
+  color: #fff;
+}
+.landing-you .btn-secondary {
+  max-width: 236px;
+  background: transparent;
+  border-color: var(--divider);
+  color: var(--text);
+  min-height: 52px;
+}
 @media (max-height: 700px) {
   .landing-scroll {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-    gap: 8px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+    gap: 16px;
   }
   .landing .hero {
-    font-size: 22px;
-  }
-  .landing .mp-rows {
-    height: 96px;
-  }
-  .landing .mp-row {
-    height: 32px;
-  }
-  .landing .hero-trio {
-    display: none;
+    font-size: 27px;
   }
 }
 /* The footer names what the buttons under it are for, so the two ways in are not bare verbs. */
 .footer-head {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  text-align: center;
+  gap: 8px;
+  padding-bottom: 2px;
 }
-.footer-head b {
-  font-weight: 500;
-}
-.footer-head span {
-  font-size: 12.5px;
-  color: var(--muted);
+.footer-head > span:last-child {
+  font-size: 16px;
+  color: var(--text);
+  max-width: 17em;
 }
 /* The landing's meta card. Its own kicker class rather than the shared .kicker: that selector is
  * what the share and screenshot scripts wait on to know the report screen rendered, and it should
@@ -679,89 +848,197 @@ a {
 .mp-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 14px;
+  padding: 18px;
   border: 1px solid var(--divider);
-  border-radius: var(--r-xl);
-  background: var(--surface);
+  border-radius: var(--r-sheet);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--bg)));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
   color: inherit;
   text-decoration: none;
 }
 .mp-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
+.mp-league {
+  margin-left: auto;
+}
 .mp-kicker {
-  font-size: 12px;
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+.mp-kicker .lg-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--tally);
 }
 .mp-league {
-  font-size: 13px;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
 }
-/* Fixed height for three rows, so loading, ready, empty and unavailable all occupy the same
-   space and the buttons below never jump when the network answers. */
+.mp-league-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--surface2);
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+}
+/* Three columns split by hairlines. The min-height reserves the tallest state, so loading, ready,
+   empty and unavailable all occupy the same space and the button below never jumps. */
 .mp-rows {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 126px;
-  border-top: 1px solid var(--divider);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  min-height: 150px;
+  padding-top: 4px;
 }
 .mp-rows-note {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 0 2px;
+  text-align: center;
+  padding: 0 6px;
 }
 .mp-row {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 40px;
-  align-items: center;
-  gap: 12px;
-  height: 42px;
-}
-.mp-row + .mp-row {
-  border-top: 1px solid var(--divider);
-}
-.mp-mid {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
   min-width: 0;
 }
+.mp-row + .mp-row {
+  border-left: 1px solid var(--divider);
+}
 .mp-name {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mp-bar {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--accent-tint);
-  overflow: hidden;
-}
-.mp-bar > span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: var(--accent);
-}
+/* The number is the point of the card, so it is the biggest thing in it and the only pink. */
 .mp-pct {
-  font-size: 13px;
-  color: var(--muted);
-  text-align: right;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--tally);
   font-variant-numeric: tabular-nums;
 }
+/* The card's own call to action: a filled gradient block, the one on the page that leaves. */
 .mp-cta {
-  font-size: 14px;
-  color: var(--accent-text);
-  border-top: 1px solid var(--divider);
-  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 54px;
+  padding: 0 44px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(105deg, var(--cta-1), var(--cta-2));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--cta-2) 40%, transparent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+.mp-cta .lg-arrow {
+  position: absolute;
+  right: 18px;
+  width: 22px;
+  height: 22px;
+}
+/* The Your Pokémon card's illustration, lifted from the reference renders (see the assets' note
+   in apps/web/src/assets). Each cut's own backdrop is already the card colour of its theme and its
+   left and top edges fade out, so it needs no blend mode; the right and bottom bleed off the card,
+   which clips them. The two cuts are not the same height, so the height is left to the image. */
+.you-art {
+  position: absolute;
+  right: -6px;
+  bottom: 8px;
+  width: 112px;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+.only-light.you-art {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .only-dark.you-art {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .only-light.you-art {
+    display: block;
+  }
+}
+:root[data-theme='light'] .only-dark.you-art {
+  display: none;
+}
+:root[data-theme='light'] .only-light.you-art {
+  display: block;
+}
+:root[data-theme='dark'] .only-dark.you-art {
+  display: block;
+}
+:root[data-theme='dark'] .only-light.you-art {
+  display: none;
+}
+
+/* Narrow phones. Nothing is dropped: the league pill takes its own line, the names and the two
+   long labels come down a size, and the closing rules give way rather than push the text out. */
+@media (max-width: 360px) {
+  .mp-name {
+    font-size: 13px;
+  }
+  .mp-pct {
+    font-size: 24px;
+  }
+  .mp-cta {
+    padding: 0 38px;
+    font-size: 15px;
+  }
+  .landing .hero {
+    font-size: 28px;
+  }
+  .you-art {
+    display: none;
+  }
+  .landing-you .btn,
+  .landing-you .btn-secondary {
+    max-width: none;
+  }
+  .landing-foot {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .landing-foot .privacy-line {
+    white-space: normal;
+  }
+  .landing-foot .privacy-line::before,
+  .landing-foot .privacy-line::after {
+    display: none;
+  }
 }
 .mp-skel {
   display: block;
@@ -769,45 +1046,116 @@ a {
   background: var(--surface2);
 }
 .mp-skel-disc {
-  width: 26px;
-  height: 26px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
 }
 .mp-skel-name {
-  height: 10px;
-  width: 60%;
+  height: 12px;
+  width: 68%;
 }
-/* The privacy line is a button so it can open the popover, but it reads as text. The accent dot
-   is what says it is tappable without dressing it up as a control. */
+.mp-skel-pct {
+  height: 22px;
+  width: 46%;
+}
+/* The privacy line is a button so it can open the popover, but it reads as text: the lock says
+   what it is about and the hairlines either side make it the rule that closes the page. */
 .privacy-line {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 9px;
   border: 0;
   background: transparent;
   padding: 0;
   font: inherit;
   font-size: 12px;
-  color: var(--faint);
+  color: var(--muted);
   cursor: pointer;
+  white-space: nowrap;
 }
-.privacy-line::before {
-  content: '';
-  width: 5px;
-  height: 5px;
+.privacy-line .lg-icon {
+  width: 17px;
+  height: 17px;
   flex: none;
-  border-radius: 50%;
-  background: var(--accent);
+  color: var(--faint);
 }
-/* Three type-coloured discs under the hero. The min-height reserves the row before game data
- * lands, so the landing screen does not shift when the species types arrive and colour them. */
+.landing-foot .privacy-line::before,
+.landing-foot .privacy-line::after {
+  content: '';
+  flex: 1 1 0;
+  min-width: 8px;
+  height: 1px;
+  background: var(--divider);
+}
+.counter-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.counter-inline .lg-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--tally);
+}
+.counter-inline b {
+  color: var(--tally);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+/* Three type-coloured discs under the hero, big enough to be the picture on the page rather than
+ * a row of bullets. The min-height reserves the row before game data lands, so the landing screen
+ * does not shift when the species types arrive and colour them. */
 .hero-trio {
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 18px;
-  min-height: 70px;
+  align-items: flex-end;
+  gap: 16px;
+  min-height: 104px;
+  padding-bottom: 8px;
+}
+/* Each disc stands on a soft elliptical shadow, and its artwork is scaled past the circle so the
+ * Pokémon sits on the disc rather than inside it. `overflow: visible` has to beat the
+ * `.token.has-sprite` clip that every other token in the app relies on. */
+.trio-disc {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+.trio-disc::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 78%;
+  height: 12px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5), transparent 72%);
+}
+.trio-disc .token {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+.trio-disc .token::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--disc-veil);
+}
+.trio-disc .token.has-sprite {
+  overflow: visible;
+}
+.trio-disc .sprite {
+  width: 108%;
+  height: 108%;
+  margin-bottom: 5%;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
 }
 .steps li {
   display: grid;
