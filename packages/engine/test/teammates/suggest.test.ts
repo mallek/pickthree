@@ -3,6 +3,7 @@ import { suggestTeammates } from '../../src/teammates/suggest.js';
 import { toSpecimens } from '../../src/collection/specimen.js';
 import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
+import { MatrixView } from '../../src/search/matrixView.js';
 import type { BattleSimulator } from '../../src/sim/BattleSimulator.js';
 import type { EngineDeps } from '../../src/recommend.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData, readGameMaster } from '../fixtures.js';
@@ -66,6 +67,69 @@ run('suggestTeammates', () => {
       expect(s.fills[0]?.slot).toBe(1);
       expect(['azumarill', 'registeel']).not.toContain(s.fills[0]?.speciesId);
     }
+  });
+
+  it('covers only what the pin and the earlier fills do not already beat', () => {
+    const data = loadStaticData();
+    const view = new MatrixView(data.matrix);
+    const s11 = view.scenarioIndex([1, 1]);
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, null],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      deps(),
+    );
+
+    const first = result.suggestions[0];
+    expect(first).toBeDefined();
+    const beaten = [...view.wins(view.rowOf('azumarill') as number, s11)];
+    for (const f of first!.fills) {
+      const wins = view.wins(view.rowOf(f.speciesId) as number, s11);
+      for (const id of f.covers) {
+        const o = view.opponentIndex(id);
+        // Nobody before this fill beat it, and this fill does.
+        expect(beaten[o]).toBe(false);
+        expect(wins[o]).toBe(true);
+      }
+      wins.forEach((w, o) => {
+        beaten[o] = beaten[o] || w;
+      });
+    }
+    expect(first!.fills[0]?.covers.length).toBeGreaterThan(0);
+    expect(first!.fills[0]?.line).toContain('Azumarill');
+  });
+
+  it('builds stand-ins for the top of the rankings only, and for the pin wherever it sits', () => {
+    // Slaking is rank 1145 of 1146. Building every stand-in to reach it costs a second, and the
+    // player who pins it is exactly the player this feature is for.
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'slaking' }, null, null],
+      [],
+      { gameMaster: readGameMaster(), characters: ['safest'] },
+      deps(),
+    );
+
+    expect(result.stats.standIns).toBeLessThanOrEqual(250);
+    expect(result.suggestions.length).toBeGreaterThan(0);
+    expect(result.suggestions[0]?.fills).toHaveLength(2);
+  });
+
+  it('buys a cheaper core without giving away the meta', () => {
+    const result = suggestTeammates(
+      [{ kind: 'species', id: 'skarmory' }, null, null],
+      collection(),
+      { gameMaster: readGameMaster(), characters: ['safest', 'cheapest'] },
+      deps(),
+    );
+
+    const safest = result.suggestions.find((s) => s.character === 'safest');
+    const cheapest = result.suggestions.find((s) => s.character === 'cheapest');
+    expect(safest).toBeDefined();
+    expect(cheapest).toBeDefined();
+    expect(cheapest!.cost).toBeLessThan(safest!.cost);
+    // Cheap must not mean useless. A core that saves dust by covering nothing is a trap, not a
+    // suggestion, so it may give up at most a fifth of what the safest core covers.
+    expect(cheapest!.coverage).toBeGreaterThanOrEqual(Math.floor(safest!.coverage * 0.8));
   });
 
   it('gives every character its own core, and never repeats one', () => {

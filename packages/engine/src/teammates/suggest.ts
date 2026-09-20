@@ -29,6 +29,7 @@ import {
 import { candidateFor, candidatePool, type Candidate } from '../search/candidates.js';
 import { MatrixView } from '../search/matrixView.js';
 import { bestBuild } from '../verdicts/worth.js';
+import { coverLines } from './lines.js';
 import type { YourMetaInput } from '../yourmeta/types.js';
 
 export type Character = 'safest' | 'cheapest' | 'antimeta' | 'community';
@@ -79,19 +80,42 @@ export interface SuggestedSlot {
   speciesId: string;
   /** Not in the collection: run at a stand-in spread. */
   standIn: boolean;
+  /** Opponents this fill beats that the pins and the earlier fills do not, heaviest first. */
+  covers: string[];
+  /** Why this one, framed against the pins and any earlier fill. */
+  line: string;
 }
 
 export interface Suggestion {
   character: Character;
   label: string;
   fills: SuggestedSlot[];
+  /** Meta opponents the whole trio beats at 1-1 shields. A count, never a score out of 100. */
+  coverage: number;
+  /** Summed build cost of the fills. The pin is already paid for, so it is not counted. */
+  cost: number;
 }
 
 export interface SuggestResult {
   suggestions: Suggestion[];
   assumptions: Assumptions;
+  stats: {
+    /** Stand-in builds constructed. Each one prices a full IV rank, so this is the cost driver. */
+    standIns: number;
+    /** Candidates the search ran over. */
+    poolSize: number;
+    /** Cores scored. */
+    cores: number;
+  };
   ms: number;
 }
+
+/**
+ * Stand-ins are built for this multiple of `chasePool` before the pool is trimmed to it, leaving
+ * room for the ones eligibility, budget and elite TM rules drop. Building all of them instead
+ * costs about a second on a desktop, which is the whole budget for a button on a phone.
+ */
+export const STANDIN_FACTOR = 3;
 
 type Board = [TeamPick | null, TeamPick | null, TeamPick | null];
 
@@ -141,18 +165,6 @@ export function suggestTeammates(
   const view = new MatrixView(deps.data.matrix);
   const overall = rankingsById(deps.data.rankings.overall);
 
-  // Stand-ins at PvPoke's own default IVs, which is exactly what the matrix was built from.
-  const spreads = spreadsFromGameMaster(opts.gameMaster, deps.data.league.cp);
-  const standInBuilds = new Map<string, Build>();
-  for (const b of coldStartBuilds(
-    coldStartSpecimens(deps.data.matrix.candidates, spreads, index),
-    index,
-    opts,
-  )) {
-    standInBuilds.set(b.speciesId, b);
-  }
-  const standIn = (speciesId: string): Build | null => standInBuilds.get(speciesId) ?? null;
-
   const pinnedSlots: number[] = [];
   const emptySlots: number[] = [];
   board.forEach((p, i) => {
@@ -162,6 +174,32 @@ export function suggestTeammates(
       emptySlots.push(i);
     }
   });
+
+  // Stand-ins at PvPoke's own default IVs, which is exactly what the matrix was built from.
+  // Only the top of the rankings is worth chasing, so only that is built, plus whatever the
+  // player pinned however far down the list it sits. Each build prices a full IV rank.
+  const rows = new Set(deps.data.matrix.candidates);
+  const pinnedIds = board
+    .filter((p): p is TeamPick => p !== null && p.kind === 'species')
+    .map((p) => p.id);
+  const wanted: string[] = [];
+  const seen = new Set<string>();
+  for (const id of [...pinnedIds, ...deps.data.rankings.overall.map((r) => r.speciesId)]) {
+    if (!rows.has(id) || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    wanted.push(id);
+    if (wanted.length >= opts.chasePool * STANDIN_FACTOR + pinnedIds.length) {
+      break;
+    }
+  }
+  const spreads = spreadsFromGameMaster(opts.gameMaster, deps.data.league.cp);
+  const standInBuilds = new Map<string, Build>();
+  for (const b of coldStartBuilds(coldStartSpecimens(wanted, spreads, index), index, opts)) {
+    standInBuilds.set(b.speciesId, b);
+  }
+  const standIn = (speciesId: string): Build | null => standInBuilds.get(speciesId) ?? null;
 
   const pins: Candidate[] = pinnedSlots.map((i) => {
     const build = resolvePin(
@@ -207,20 +245,28 @@ export function suggestTeammates(
   const topCtx = strengthContext(view, new Map(heaviest));
 
   const cores = search(ctx, topCtx, pins, pool, emptySlots.length, mineSpecies);
-  const suggestions = choose(cores, opts.characters).map(({ character, core }) => ({
-    character,
-    label: CHARACTER_LABEL[character],
-    fills: core.fills.map((c, n) => ({
-      slot: emptySlots[n] as 0 | 1 | 2,
-      pick: pickFor(c, mineSpecies),
-      speciesId: c.build.speciesId,
-      standIn: !mineSpecies.has(c.build.speciesId),
-    })),
-  }));
+  const suggestions = choose(cores, opts.characters).map(({ character, core }) => {
+    const said = coverLines(pins, core.fills, view, index, facing);
+    return {
+      character,
+      label: CHARACTER_LABEL[character],
+      coverage: core.coverage,
+      cost: core.cost,
+      fills: core.fills.map((c, n) => ({
+        slot: emptySlots[n] as 0 | 1 | 2,
+        pick: pickFor(c, mineSpecies),
+        speciesId: c.build.speciesId,
+        standIn: !mineSpecies.has(c.build.speciesId),
+        covers: said[n]?.covers ?? [],
+        line: said[n]?.line ?? '',
+      })),
+    };
+  });
 
   return {
     suggestions,
     assumptions: assumptionsFor(deps.data, opts, profile),
+    stats: { standIns: standInBuilds.size, poolSize: pool.length, cores: cores.length },
     ms: Date.now() - started,
   };
 }
@@ -240,6 +286,8 @@ interface Core {
   topStrength: number;
   /** Summed build cost of the fills. The pin's cost is already accepted, so it is not counted. */
   cost: number;
+  /** Meta opponents the whole trio beats at 1-1 shields, as a plain count. */
+  coverage: number;
   /** Every fill is one the player has caught. */
   owned: boolean;
   /** Sorted species ids, so two characters landing on one core can be spotted. */
@@ -256,12 +304,23 @@ function search(
   mineSpecies: Set<string>,
 ): Core[] {
   const out: Core[] = [];
+  const s11 = ctx.view.scenarioIndex([1, 1]);
   const consider = (fills: Candidate[]): void => {
-    const rows = [...pins, ...fills].map((c) => c.matrixRow) as [number, number, number];
+    const members = [...pins, ...fills];
+    const rows = members.map((c) => c.matrixRow) as [number, number, number];
+    const beaten = new Array<boolean>(ctx.view.opponents.length).fill(false);
+    for (const m of members) {
+      ctx.view.wins(m.matrixRow, s11).forEach((w, o) => {
+        if (w) {
+          beaten[o] = true;
+        }
+      });
+    }
     out.push({
       fills,
       strength: bestStrength(ctx, rows).value,
       topStrength: bestStrength(topCtx, rows).value,
+      coverage: beaten.filter(Boolean).length,
       cost: fills.reduce((acc, c) => acc + c.cost.weight, 0),
       owned: fills.every((c) => mineSpecies.has(c.build.speciesId)),
       key: fills
@@ -289,20 +348,31 @@ function search(
   return out;
 }
 
+/**
+ * How many strength points the most expensive core in the pool gives up to the free one, when
+ * the player asked for cheap. A discount, not a minimum: hunting pure minimum cost buys a
+ * Pokemon that is already built and covers nothing, which is a trap rather than a suggestion.
+ */
+export const CHEAP_DISCOUNT = 25;
+
 /** The best core for one character, or null when that character has nothing to offer. */
 function pickCore(cores: Core[], character: Character): Core | null {
   let best: Core | null = null;
-  for (const c of cores) {
-    if (character === 'cheapest') {
-      // Cheapest means cheapest to field now, so it only ever offers what the player has caught.
-      if (!c.owned) {
-        continue;
-      }
-      if (!best || c.cost < best.cost || (c.cost === best.cost && c.strength > best.strength)) {
+  if (character === 'cheapest') {
+    // Cheapest means cheapest to field now, so it only ever offers what the player has caught.
+    const owned = cores.filter((c) => c.owned);
+    const dearest = owned.reduce((acc, c) => Math.max(acc, c.cost), 0);
+    let bestValue = -Infinity;
+    for (const c of owned) {
+      const value = c.strength - (dearest > 0 ? CHEAP_DISCOUNT * (c.cost / dearest) : 0);
+      if (value > bestValue || (value === bestValue && best && c.key.localeCompare(best.key) < 0)) {
+        bestValue = value;
         best = c;
       }
-      continue;
     }
+    return best;
+  }
+  for (const c of cores) {
     const value = character === 'antimeta' ? c.topStrength : c.strength;
     const against = best ? (character === 'antimeta' ? best.topStrength : best.strength) : -1;
     if (!best || value > against || (value === against && c.key.localeCompare(best.key) < 0)) {
