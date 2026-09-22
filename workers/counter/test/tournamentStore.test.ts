@@ -134,6 +134,21 @@ describe('battles', () => {
     expect(rows[0]!.extractor).toBe('spike 0.4');
   });
 
+  it('counts intra-batch duplicates correctly: first is stored, second is replaced', () => {
+    const event = getEvent(sql, EVENT.id)!;
+    const counts = putBattles(
+      sql,
+      event,
+      'spike',
+      [battle({ id: 'dup' }), battle({ id: 'dup', day: 2 })],
+      RECEIVED,
+    );
+    expect(counts).toEqual({ stored: 1, replaced: 1 });
+    const rows = readEventBattles(sql, EVENT.id);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.day).toBe(2);
+  });
+
   it('reads a league window half-open, newest first', () => {
     const event = getEvent(sql, EVENT.id)!;
     putBattles(
@@ -199,6 +214,15 @@ describe('roster', () => {
       charged: ['MOONBLAST'],
     });
     expect(rows.find((r) => r.slot === 2)!.moves).toBeNull();
+  });
+
+  it('counts intra-batch duplicates correctly: first is stored, second is replaced', () => {
+    const dup = { player: 'DUPTEST', slot: 1, species: 'altaria', moves: null };
+    const counts = putRoster(sql, EVENT.id, [dup, { ...dup, species: 'melmetal' }], RECEIVED);
+    expect(counts).toEqual({ stored: 1, replaced: 1 });
+    const rows = readEventRoster(sql, EVENT.id);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.species).toBe('melmetal');
   });
 
   it('reads the roster of several events at once', () => {

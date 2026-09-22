@@ -261,6 +261,7 @@ export function putBattles(
       extractor,
       received,
     );
+    existing.add(b.id);
   }
   return { stored, replaced };
 }
@@ -299,6 +300,7 @@ export function putRoster(
       e.moves ? JSON.stringify(e.moves.charged) : null,
       received,
     );
+    existing.add(`${e.player}:${e.slot}`);
   }
   return { stored, replaced };
 }
