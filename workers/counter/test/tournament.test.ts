@@ -5,7 +5,7 @@ import {
   parseEventBody,
   parseRosterBody,
 } from '../src/tournament.js';
-import fixture from '../../../fixtures/tournament-sample.json' assert { type: 'json' };
+import fixture from '../../../fixtures/tournament-sample.json' with { type: 'json' };
 
 const event = {
   name: '2027 Baltimore Pokemon GO Regional Championships',
