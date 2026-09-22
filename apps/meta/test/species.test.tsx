@@ -521,6 +521,11 @@ describe('Species', () => {
     expect(await screen.findByText('Banned at tournaments')).toBeInTheDocument();
     expect(screen.queryByText(/Tournaments: /)).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Moves at tournaments' })).not.toBeInTheDocument();
+    // BLOCK (spread onto `picks: 0` above) still carries `broughtBy: 4` and `pickedOnStream: 34`,
+    // which would otherwise print "Brought by 4 of 16 players seen on stream, picked in 34 of
+    // their streamed battles." right next to "Banned at tournaments": self-contradictory copy a
+    // banned species cannot show.
+    expect(screen.queryByText(/seen on stream/)).not.toBeInTheDocument();
   });
 
   it('shows no tournaments row at all under GBL, where the block is null', async () => {

@@ -296,9 +296,12 @@ function tournamentRow(block: SpeciesDetailV1['tournament'], banned: boolean): R
 
 /** The roster join, which is the one thing only tournaments can say: what a player BROUGHT, as
  * against what they picked. "Never picked" always means never picked on stream, and the
- * sentence says so rather than leaving a reader to assume a whole event was watched. */
-function rosterLine(block: SpeciesDetailV1['tournament']): string | null {
-  if (!block || block.rosterSize === 0 || block.broughtBy === 0) {
+ * sentence says so rather than leaving a reader to assume a whole event was watched. A banned
+ * species says so and nothing else (same rule `tournamentRow` applies, checked first here too):
+ * "picked in their streamed battles" would contradict "Banned at tournaments" even when the
+ * underlying roster counts are nonzero. */
+function rosterLine(block: SpeciesDetailV1['tournament'], banned: boolean): string | null {
+  if (banned || !block || block.rosterSize === 0 || block.broughtBy === 0) {
     return null;
   }
   const seen = `Brought by ${count(block.broughtBy)} of ${count(block.rosterSize)} ${plural(block.rosterSize, 'player', 'players')} seen on stream`;
@@ -321,7 +324,7 @@ function RecordCard({
 }) {
   const rate = winRate(detail.wins, detail.losses);
   const decided = detail.wins + detail.losses;
-  const roster = rosterLine(detail.tournament);
+  const roster = rosterLine(detail.tournament, banned);
   return (
     <section className="card">
       <h2>Reporters&apos; record against it</h2>
@@ -577,7 +580,7 @@ export function Species(p: {
 
   // Used both by the zero-sightings branch's own tournaments card and by RecordCard, computed
   // once here rather than twice.
-  const roster = rosterLine(d.tournament);
+  const roster = rosterLine(d.tournament, banned);
 
   return (
     <main>
