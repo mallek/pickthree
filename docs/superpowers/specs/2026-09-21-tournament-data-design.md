@@ -416,8 +416,12 @@ which is false; missing says not observable in this population.
 The sentence under the Pokemon list states the weights as the visible weight the CLAUDE.md rule
 requires. Under All:
 
-> PvPoke 45%, tournaments 22%, GBL 33%. From 480 shared battles by 9 devices and 105 tournament
+> PvPoke 45%, tournaments 22%, GBL 33%. From 148 shared battles by 9 devices and 105 tournament
 > battles from 1 event.
+
+(148 by 9 gives `aL = min(148 / 448, 9 / 14) = 0.330`; 105 at 1 event gives `aT = 0.333`; the
+three percentages are `(1 - aL)(1 - aT)`, `(1 - aL) aT` and `aL`. The counts and the percentages
+generate each other, so the sentence can be a test fixture.)
 
 Under GBL, today's sentence. Under Tournaments:
 
