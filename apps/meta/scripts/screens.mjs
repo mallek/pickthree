@@ -7,18 +7,24 @@
  * There is no worker behind `npx vite preview` for apps/meta, so this script intercepts
  * /api/v1/meta, /api/v1/teams, /api/v1/species/<id> and /epochs.json itself and answers from a
  * fixture, rather than depending on live data (or polluting it). The three baked matrix/rank
- * files (/matrix/<league>.json, /ranks/<league>.json, /baseline/<league>-teams.json) are real
- * output of `npm -w @pickthree/meta run build`'s bake step: this script reads them straight off
- * disk (apps/meta/public/) rather than inventing them, both to build believable fixtures (real
- * species ids, so sprites resolve) and to serve them back to the page explicitly rather than
- * relying on the preview server's static passthrough for a path this script otherwise controls.
+ * files (/matrix/<league>.json, /ranks/<league>.json, /baseline/<league>-teams.json) and the
+ * legality list (/legal/<league>.json) are real output of `npm -w @pickthree/meta run build`'s
+ * bake step: this script reads them straight off disk (apps/meta/public/) rather than inventing
+ * them, both to build believable fixtures (real species ids, so sprites resolve, and a real ban
+ * list, so the banned copy is driven by real data) and to serve them back to the page explicitly
+ * rather than relying on the preview server's static passthrough for a path this script otherwise
+ * controls.
  *
  * It runs the whole page list four times, at the volumes docs/superpowers/specs/2026-09-18-
  * meta-ranking-design.md names for the blend's two half-say points (300 counted battles, 5
  * devices): empty (day one, nothing shared), thin (one device, a sixth of the device say), mid
- * (the battle half-say point almost exactly), and thick (comfortably past both). Task 15's report
- * looks at all sixteen screenshots by hand; this script's own job is only to fail on a console
- * error or a needle that stops appearing, not to judge whether the blend "looks right".
+ * (the battle half-say point almost exactly), and thick (comfortably past both). Each run also
+ * seeds a tournament volume (docs/superpowers/specs/2026-09-21-tournament-data-design.md's own
+ * half-say points, 100 tournament battles and 2 events): 0, 1 event/40 battles, 1 event/105
+ * battles, and 4 events/600 battles, so the Source select's Tournaments and PvPoke views, and the
+ * `all` view's three-way blend, all get exercised at a volume where they have something to say.
+ * Task 15's report looks at all the screenshots by hand; this script's own job is only to fail on
+ * a console error or a needle that stops appearing, not to judge whether the blend "looks right".
  *
  * Sprites load from https://pick3.gg/data/sprites/*.webp, a real remote origin this script does
  * not control. In CI that fetch may be slow or blocked, and that is not a bug in this site: the
@@ -110,8 +116,10 @@ function speciesStats(speciesId, share, battles) {
  * `measuredSay` (rank.ts), so they are the whole point of each run, not filler. Species stats are
  * distributed over the curated group's own top six by a fixed share curve, so the copy has real
  * numbers to print (a bar, a share, a record) without claiming anything about a species the
- * curated group does not already know about. */
-function metaFixture(battles, devices) {
+ * curated group does not already know about. `tBattles`/`events` seed the tournament block the
+ * same way `battles`/`devices` seed the ladder one; `tournament` is null at 0, matching
+ * `TournamentBlock | null` on the real wire type (api.ts). */
+function metaFixture(battles, devices, tBattles = 0, events = 0) {
   const species =
     battles === 0 ? [] : CURATED_IDS.map((id, i) => speciesStats(id, SHARE_CURVE[i] ?? 0, battles));
   return {
@@ -136,8 +144,29 @@ function metaFixture(battles, devices) {
     species,
     teams: [],
     previous: null,
+    tournament: tBattles === 0 ? null : tournamentFixture(tBattles, events),
     generatedAt: ISO_NOW,
   };
+}
+
+/** A tournament species stat at one seeded volume: picks distributed over the curated group's own
+ * top six by the same `SHARE_CURVE` ladder battles use, so the two populations look like they
+ * describe the same league rather than two unrelated shapes. The exact win/loss split does not
+ * matter to this pass, only that a record renders. */
+function tournamentSpeciesStats(speciesId, share, battles) {
+  const picks = Math.round(battles * share);
+  const game1Picks = Math.round(picks * 0.6);
+  const [wins, losses] = splitDecided(picks, 0.5);
+  return { speciesId, picks, game1Picks, wins, losses, unresolvedForms: 0 };
+}
+
+/** The tournament block at one seeded volume: `battles` and `events` are the two numbers that
+ * drive `tournamentSay` (rank.ts), the tournament curve's own half-say points, the same way
+ * `metaFixture`'s battles/devices drive the ladder curve. `eventsOther` stays 0: this pass never
+ * exercises an event on a non-blended cup, which has its own coverage in rank.test.ts. */
+function tournamentFixture(battles, events) {
+  const species = CURATED_IDS.map((id, i) => tournamentSpeciesStats(id, SHARE_CURVE[i] ?? 0, battles));
+  return { events, battles, eventsOther: 0, species };
 }
 
 function teamRow(species, kind, run, faced, winShare = 0.58) {
@@ -265,15 +294,6 @@ function speciesDetailFixture(battles) {
   };
 }
 
-/** Whole-percent measured, exactly as `measuredSay` (rank.ts) computes it: min(battles curve,
- * devices curve). Kept here as one function, not typed four times, so a fixture's own expected
- * copy string cannot silently drift from the formula that actually renders it. */
-function pctMeasured(battles, devices) {
-  const byBattles = battles <= 0 ? 0 : battles / (battles + 300);
-  const byDevices = devices <= 0 ? 0 : devices / (devices + 5);
-  return Math.round(Math.min(byBattles, byDevices) * 100);
-}
-
 function battlesText(n) {
   return `${n.toLocaleString('en-US')} ${n === 1 ? 'battle' : 'battles'}`;
 }
@@ -282,8 +302,53 @@ function devicesText(n) {
   return `${n.toLocaleString('en-US')} ${n === 1 ? 'device' : 'devices'}`;
 }
 
-function headerFragment(battles, devices) {
-  return `${pctMeasured(battles, devices)}% measured, from ${battlesText(battles)} shared by ${devicesText(devices)}`;
+function eventsText(n) {
+  return `${n.toLocaleString('en-US')} ${n === 1 ? 'event' : 'events'}`;
+}
+
+/** Whole-percent tournament say, exactly as `tournamentSay` (rank.ts) computes it: min(battles
+ * curve, events curve). The tournament-only source's header line rounds at exactly this one
+ * point, so this number alone reproduces it. */
+function tournamentSay(battles, events) {
+  const byBattles = battles <= 0 ? 0 : battles / (battles + 100);
+  const byEvents = events <= 0 ? 0 : events / (events + 2);
+  return Math.round(Math.min(byBattles, byEvents) * 100);
+}
+
+/** The tournament-only source's header line (headerCopy.ts's `source === 'tournament'` branch,
+ * nonzero case), built from `tournamentSay`. Used as the `pokemon-tournaments` needle: it is a
+ * superset of the required "Not shared ladder play." text, checked exactly rather than loosely
+ * because this branch rounds at only the one point `tournamentSay` already rounds at. */
+function headerFragmentTournament(battles, events) {
+  const t = tournamentSay(battles, events);
+  return `${t}% from tournaments, ${100 - t}% PvPoke. From ${battlesText(battles)} at ${eventsText(events)}. Not shared ladder play.`;
+}
+
+/** The `all` source's header line once a window has both shared ladder battles and blended
+ * tournament battles (headerCopy.ts's `hasTournament` branch). Built from the same unrounded
+ * curves rank.ts computes, not from a rounded-percent helper like `tournamentSay` above:
+ * headerCopy.ts rounds the three percentages only at the very end, after multiplying the two
+ * unrounded fractions together, and rounding each curve to a whole percent first before
+ * multiplying can land on a different integer (checked by hand for this file's own fixture
+ * volumes: at `thin`, 24% vs 25%). */
+function headerFragmentAll(battles, devices, tBattles, events) {
+  const say = Math.min(
+    battles <= 0 ? 0 : battles / (battles + 300),
+    devices <= 0 ? 0 : devices / (devices + 5),
+  );
+  const tSay = Math.min(
+    tBattles <= 0 ? 0 : tBattles / (tBattles + 100),
+    events <= 0 ? 0 : events / (events + 2),
+  );
+  const pvpokePct = Math.round((1 - say) * (1 - tSay) * 100);
+  const tPct = Math.round((1 - say) * tSay * 100);
+  const tourney = `${tBattles.toLocaleString('en-US')} tournament ${tBattles === 1 ? 'battle' : 'battles'} from ${eventsText(events)}`;
+  if (battles === 0) {
+    return `PvPoke ${pvpokePct}%, tournaments ${tPct}%. From ${tourney}. No shared ladder battles in this window yet.`;
+  }
+  const lPct = Math.round(say * 100);
+  const shared = `${battles.toLocaleString('en-US')} shared ${battles === 1 ? 'battle' : 'battles'}`;
+  return `PvPoke ${pvpokePct}%, tournaments ${tPct}%, GBL ${lPct}%. From ${shared} by ${devicesText(devices)} and ${tourney}.`;
 }
 
 const RUNS = [
@@ -291,44 +356,60 @@ const RUNS = [
     name: 'empty',
     battles: 0,
     devices: 0,
+    tBattles: 0,
+    events: 0,
     needles: {
       great: [
         "Projected against PvPoke's meta group. No shared battles in this window yet.",
         'Projected',
       ],
       pokemon: ["PvPoke's list. No shared battles in this window yet."],
+      'pokemon-tournaments': ["PvPoke's list. No tournament battles in this window yet."],
+      'pokemon-pvpoke': ['Nothing measured.'],
     },
   },
   {
     name: 'thin',
     battles: 50,
     devices: 1,
+    tBattles: 40,
+    events: 1,
     needles: {
-      great: [headerFragment(50, 1)],
-      pokemon: [headerFragment(50, 1)],
+      great: [headerFragmentAll(50, 1, 40, 1)],
+      pokemon: [headerFragmentAll(50, 1, 40, 1)],
+      'pokemon-tournaments': [headerFragmentTournament(40, 1)],
+      'pokemon-pvpoke': ['Nothing measured.'],
     },
   },
   {
     name: 'mid',
     battles: 500,
     devices: 5,
+    tBattles: 105,
+    events: 1,
     needles: {
-      great: [headerFragment(500, 5)],
-      pokemon: [headerFragment(500, 5)],
+      great: [headerFragmentAll(500, 5, 105, 1)],
+      pokemon: [headerFragmentAll(500, 5, 105, 1)],
+      'pokemon-tournaments': [headerFragmentTournament(105, 1)],
+      'pokemon-pvpoke': ['Nothing measured.'],
     },
   },
   {
     name: 'thick',
     battles: 5000,
     devices: 30,
+    tBattles: 600,
+    events: 4,
     needles: {
-      great: [headerFragment(5000, 30)],
-      pokemon: [headerFragment(5000, 30), 'PvPoke #'],
+      great: [headerFragmentAll(5000, 30, 600, 4)],
+      pokemon: [headerFragmentAll(5000, 30, 600, 4), 'PvPoke #'],
+      'pokemon-tournaments': [headerFragmentTournament(600, 4)],
+      'pokemon-pvpoke': ['Nothing measured.'],
     },
   },
 ].map((run) => ({
   ...run,
-  meta: metaFixture(run.battles, run.devices),
+  meta: metaFixture(run.battles, run.devices, run.tBattles, run.events),
   teams: teamsFixture(run.battles, run.devices),
   speciesDetail: speciesDetailFixture(run.battles),
 }));
@@ -336,6 +417,8 @@ const RUNS = [
 const PAGES = [
   ['great', `/${LEAGUE}`],
   ['pokemon', `/${LEAGUE}/pokemon`],
+  ['pokemon-tournaments', `/${LEAGUE}/pokemon?source=tournament`],
+  ['pokemon-pvpoke', `/${LEAGUE}/pokemon?source=prior`],
   [`species-${DETAIL_SPECIES}`, `/${LEAGUE}/p/${DETAIL_SPECIES}`],
   ['about', '/about'],
 ];
@@ -378,6 +461,12 @@ function fixtureFor(run) {
     // these fixtures use, or fire the commit-mismatch banner, neither of which this pass is about.
     if (url.pathname === '/epochs.json') {
       await json([]);
+      return;
+    }
+    const legal = /^\/legal\/([a-z]+)\.json$/.exec(url.pathname);
+    if (legal) {
+      const body = fs.readFileSync(path.join(publicDir, 'legal', `${legal[1]}.json`), 'utf8');
+      await request.respond({ status: 200, contentType: 'application/json', body });
       return;
     }
     const baked = /^\/(ranks|matrix)\/([a-z]+)\.json$/.exec(url.pathname);

@@ -1,6 +1,6 @@
 # Tournament data: schema, ingest and the blend
 
-Date: 2026-09-21. Status: decided with Travis, ready for a plan.
+Date: 2026-09-21. Status: implemented 2026-09-21, plan docs/superpowers/plans/2026-09-21-tournament-data.md.
 
 Phase 2 of the meta ranking design (`2026-09-18-meta-ranking-design.md`, "Out of scope"). That
 document parked tournament results as "a facet on the existing band axis". This one replaces that

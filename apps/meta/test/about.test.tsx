@@ -4,6 +4,7 @@ import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
 import { battleWord, count } from '../src/format.js';
+import { HALF_SAY_EVENTS, HALF_SAY_TOURNAMENT_BATTLES } from '../src/rank.js';
 import { MANY, SOME, TREND_MIN } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
@@ -45,11 +46,15 @@ describe('About', () => {
   // from PvPoke's simulated matchup matrix) and the "What 'projected' means" section directly
   // below contradict. The opening line has to name both real sources, including the simulated
   // one, rather than promise there is only one.
-  it('names both real sources up front, including the simulated one', async () => {
+  //
+  // Task 15: a third source (tournament broadcasts) joined the blend, so "one of two places" is
+  // no longer true either. Renamed and extended rather than left as "both" once there were three.
+  it('names all three real sources up front, including the simulated one', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
       await screen.findByText(/PvPoke's own curated meta group and the simulated matchups/),
     ).toBeInTheDocument();
+    expect(screen.getByText(/official tournament broadcasts/)).toBeInTheDocument();
     expect(screen.queryByText(/Nothing is scraped, estimated or simulated/)).toBeNull();
   });
 
@@ -115,6 +120,28 @@ describe('About', () => {
       await screen.findByText(/At 300 counted battles the measured side has half the say/),
     ).toBeInTheDocument();
     expect(screen.getByText(/At 5 devices it also has half the say/)).toBeInTheDocument();
+  });
+
+  // Task 15: the tournament term's own half-say points, read from the same constants the page
+  // interpolates (HALF_SAY_TOURNAMENT_BATTLES, HALF_SAY_EVENTS), never typed as literal digits.
+  it('explains the tournament curve, with its own half-say points', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText(
+        new RegExp(
+          `at ${count(HALF_SAY_TOURNAMENT_BATTLES)} tournament ${battleWord(HALF_SAY_TOURNAMENT_BATTLES)} it has half the say`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`at ${count(HALF_SAY_EVENTS)} events? it also has half the`)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/blend into PvPoke's side of the number first, on their own curve/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Tournament win rates are never part of the ranking: pick share is/),
+    ).toBeInTheDocument();
   });
 
   it('says plainly that nothing flips', async () => {

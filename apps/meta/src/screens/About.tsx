@@ -13,7 +13,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Baseline } from '../baseline.js';
 import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
-import { HALF_SAY_BATTLES, HALF_SAY_DEVICES } from '../rank.js';
+import { HALF_SAY_BATTLES, HALF_SAY_DEVICES, HALF_SAY_EVENTS, HALF_SAY_TOURNAMENT_BATTLES } from '../rank.js';
 import { MANY, SOME, TREND_MIN } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
 
@@ -107,8 +107,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
   return (
     <main>
       <p className="sub">
-        Every number on this site comes from one of two places: real GO Battle League battles that
-        pick3 players chose to share, or PvPoke&apos;s own curated meta group and the simulated
+        Every number on this site comes from one of three places: real GO Battle League battles
+        that pick3 players chose to share, official tournament broadcasts read off the stream and
+        joined to the published rosters, or PvPoke&apos;s own curated meta group and the simulated
         matchups behind it. Nothing is scraped. A percentage on this site always means real battles;
         a projection is shown as a matchup score out of 100 instead, never a percentage.
       </p>
@@ -223,9 +224,10 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
       <section className="card">
         <h2>How the ranking works</h2>
         <p className="sub">
-          Two sources, one number. PvPoke keeps a curated list of what a league&apos;s meta looks
-          like, hand made by people who play it. We have battles players have shared from pick3.
-          Neither is the answer on its own, so every number here is a blend of the two.
+          Three sources, one number. PvPoke keeps a curated list of what a league&apos;s meta looks
+          like, hand made by people who play it. Official tournament broadcasts show what
+          competitive players actually pick. And we have battles players have shared from pick3.
+          None of the three is the answer on its own, so every number here is a blend of all three.
         </p>
         <p className="sub">
           How much the measured side counts depends on two things: how many battles have been
@@ -234,7 +236,19 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           {count(HALF_SAY_DEVICES)} {plural(HALF_SAY_DEVICES, 'device', 'devices')} it also has half
           the say, and the smaller of the two wins. One person sharing 900 battles is one
           person&apos;s matchmaking queue, so they are held to a sixth of the say until other people
-          show up.
+          show up. Tournament pick share works the same way, on its own curve: at{' '}
+          {count(HALF_SAY_TOURNAMENT_BATTLES)} tournament{' '}
+          {battleWord(HALF_SAY_TOURNAMENT_BATTLES)} it has half the say, and at{' '}
+          {count(HALF_SAY_EVENTS)} {plural(HALF_SAY_EVENTS, 'event', 'events')} it also has half the
+          say.
+        </p>
+        <p className="sub">
+          Tournament results come from official Play! Pokemon broadcasts, read off the stream and
+          joined to the published rosters. They are a different population from ladder play, so
+          they blend into PvPoke&apos;s side of the number first, on their own curve, and recede as
+          shared ladder battles arrive. Only events on the league&apos;s own Play! format count
+          toward the blend; the rest are listed and never mixed in. Tournament win rates are never
+          part of the ranking: pick share is.
         </p>
         <p className="sub">
           Nothing flips. There is no point where the list suddenly becomes measured. Every battle
