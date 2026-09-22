@@ -34,6 +34,7 @@ function summary(over: Partial<MetaSummaryV1> = {}): MetaSummaryV1 {
     league: 'great',
     since: '2026-09-01T00:00:00.000Z',
     until: '2026-09-30T00:00:00.000Z',
+    source: 'all',
     band: 'all',
     battles: 0,
     tanked: 0,

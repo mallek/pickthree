@@ -13,6 +13,7 @@ describe('readParams', () => {
       league: 'great',
       since: '2026-09-11T00:00:00.000Z',
       until: '2026-09-18T00:00:00.000Z',
+      source: 'all',
       band: 'all',
     });
   });

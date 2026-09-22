@@ -64,6 +64,35 @@ describe('/api/v1/teams', () => {
   });
 });
 
+describe('the source parameter', () => {
+  it('defaults to all and echoes what it was given', async () => {
+    const plain = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z');
+    expect(((await plain.json()) as { source: string }).source).toBe('all');
+    const ladder = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&source=ladder');
+    expect(((await ladder.json()) as { source: string }).source).toBe('ladder');
+  });
+
+  it('keeps honouring band= while the live site still sends it', async () => {
+    const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { source: string; band: string };
+    expect(body.band).toBe('legend');
+    expect(body.source).toBe('all');
+  });
+
+  it('ignores band= once a source other than all is named', async () => {
+    const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend&source=tournament');
+    const body = (await res.json()) as { source: string; band: string };
+    expect(body.source).toBe('tournament');
+    expect(body.band).toBe('all');
+  });
+
+  it('falls back to all for a source it does not know', async () => {
+    const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&source=rumour');
+    expect(((await res.json()) as { source: string }).source).toBe('all');
+  });
+});
+
 describe('isWorkerPath', () => {
   it('is true for every known worker path', () => {
     for (const p of ['/hit', '/count', '/error', '/errors', '/battles', '/meta']) {

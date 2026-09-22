@@ -200,7 +200,13 @@ export class MetaStore extends DurableObject<Env> {
     }));
   }
 
-  summaryV1(p: { league: string; since: string; until: string; band: string }): MetaSummaryV1 {
+  summaryV1(p: {
+    league: string;
+    since: string;
+    until: string;
+    source: string;
+    band: string;
+  }): MetaSummaryV1 {
     const span = Date.parse(p.until) - Date.parse(p.since);
     const prevSince = new Date(Date.parse(p.since) - span).toISOString();
     return summarize({
@@ -212,7 +218,7 @@ export class MetaStore extends DurableObject<Env> {
   }
 
   speciesV1(
-    p: { league: string; since: string; until: string; band: string },
+    p: { league: string; since: string; until: string; source: string; band: string },
     speciesId: string,
   ): SpeciesDetailV1 {
     return speciesDetail({
@@ -223,7 +229,13 @@ export class MetaStore extends DurableObject<Env> {
     });
   }
 
-  teamsV1(p: { league: string; since: string; until: string; band: string }): TeamsV1 {
+  teamsV1(p: {
+    league: string;
+    since: string;
+    until: string;
+    source: string;
+    band: string;
+  }): TeamsV1 {
     return teamBoard({ ...p, rows: this.read(p.league, p.since, p.until), now: new Date() });
   }
 }

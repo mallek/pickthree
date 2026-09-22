@@ -8,10 +8,21 @@ import { BANDS, type BattleRow, type SharedMoves } from './battles.js';
 /** The most days one read request may span. */
 export const MAX_SPAN_DAYS = 400;
 
+/** The three populations a read may ask for. `prior` is the site's own view and never reaches
+ *  the worker: PvPoke's list is baked, so there is nothing here to serve it from. */
+export const SOURCES: readonly string[] = ['all', 'ladder', 'tournament'];
+
 export interface ReadParams {
   league: string;
   since: string;
   until: string;
+  source: string;
+  /**
+   * The rank band filter, kept working through phase 1 because the deployed site still renders
+   * the select that sends it. Phase 2 retires both together (Task 13). Ignored once `source`
+   * names something other than `all`: a tournament broadcast reports no rank band, so narrowing
+   * that population by one would silently answer with nothing.
+   */
   band: string;
 }
 
@@ -34,12 +45,15 @@ export function readParams(url: URL): ReadParams | { error: string } {
     return { error: 'window too long' };
   }
   const bandRaw = url.searchParams.get('band') ?? 'all';
-  const band = (BANDS as readonly string[]).includes(bandRaw) ? bandRaw : 'all';
+  const asked = (BANDS as readonly string[]).includes(bandRaw) ? bandRaw : 'all';
+  const sourceRaw = url.searchParams.get('source') ?? 'all';
+  const source = SOURCES.includes(sourceRaw) ? sourceRaw : 'all';
   return {
     league,
     since: new Date(since).toISOString(),
     until: new Date(until).toISOString(),
-    band,
+    source,
+    band: source === 'all' ? asked : 'all',
   };
 }
 
@@ -88,6 +102,7 @@ export interface MetaSummaryV1 {
   league: string;
   since: string;
   until: string;
+  source: string;
   band: string;
   /** Counted battles: not tanked. */
   battles: number;
@@ -186,19 +201,34 @@ export function speciesStats(rows: readonly BattleRow[]): Map<string, SpeciesSta
   return out;
 }
 
+/** Counts a caller works out for itself. The tournament read model mirrors one battle into two
+ *  rows so the ladder's own aggregation can run over it, which would double every total here, so
+ *  it hands the three real numbers in instead. */
+export interface Totals {
+  battles: number;
+  devices: number;
+  sources: Record<string, number>;
+}
+
 export function summarize(opts: {
   league: string;
   since: string;
   until: string;
-  band: string;
+  source: string;
+  /** Defaults to `'all'`, so the tournament read model can leave it out entirely. */
+  band?: string;
   /** Every row in the window, all bands. */
   rows: readonly BattleRow[];
   /** Every row in the window of equal length before it, all bands, or null if not asked for. */
   previousRows: readonly BattleRow[] | null;
   now: Date;
   teamLimit?: number;
+  /** Replaces `battles`, `devices` and `sources` when given; species tallies still come from
+   *  `rows`. See `Totals`. */
+  totals?: Totals;
 }): MetaSummaryV1 {
-  const { league, since, until, band, rows, previousRows, now } = opts;
+  const { league, since, until, source, rows, previousRows, now } = opts;
+  const band = opts.band ?? 'all';
   const teamLimit = opts.teamLimit ?? 50;
 
   const bands: Record<string, number> = {};
@@ -265,12 +295,13 @@ export function summarize(opts: {
     league,
     since,
     until,
+    source,
     band,
-    battles: counted.length,
+    battles: opts.totals ? opts.totals.battles : counted.length,
     tanked: inBand.length - counted.length,
-    devices: devices.size,
+    devices: opts.totals ? opts.totals.devices : devices.size,
     bands,
-    sources,
+    sources: opts.totals ? opts.totals.sources : sources,
     species,
     teams: [...teams.values()]
       .sort((a, b) => b.battles - a.battles || a.species.join().localeCompare(b.species.join()))
@@ -285,6 +316,7 @@ export interface SpeciesDetailV1 {
   speciesId: string;
   since: string;
   until: string;
+  source: string;
   band: string;
   sightings: number;
   wins: number;
@@ -323,12 +355,15 @@ export function speciesDetail(opts: {
   speciesId: string;
   since: string;
   until: string;
-  band: string;
+  source: string;
+  /** Defaults to `'all'`, so the tournament read model can leave it out entirely. */
+  band?: string;
   /** Every row in the window, all bands. */
   rows: readonly BattleRow[];
   now: Date;
 }): SpeciesDetailV1 {
-  const { league, speciesId, since, until, band, rows, now } = opts;
+  const { league, speciesId, since, until, source, rows, now } = opts;
+  const band = opts.band ?? 'all';
   const counted = bandRows(rows, band).filter((r) => !r.tanked);
   const mine = speciesStats(counted).get(speciesId) ?? {
     speciesId,
@@ -390,6 +425,7 @@ export function speciesDetail(opts: {
     // hit carries it back unchanged, and the fallback above sets it from this same parameter.
     since,
     until,
+    source,
     band,
     ...mine,
     weekly: [...weeks.values()].sort((a, b) => a.week.localeCompare(b.week)),

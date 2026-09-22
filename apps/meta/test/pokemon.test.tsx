@@ -60,6 +60,7 @@ function renderPokemon(opts: { battles: number; devices: number; species: Specie
     league: 'great',
     since: '2026-09-01T00:00:00.000Z',
     until: '2026-09-08T00:00:00.000Z',
+    source: 'all',
     band: 'all',
     battles: opts.battles,
     tanked: 0,

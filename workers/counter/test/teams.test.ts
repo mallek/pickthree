@@ -6,6 +6,7 @@ const WINDOW = {
   league: 'great',
   since: '2026-09-01T00:00:00.000Z',
   until: '2026-09-30T00:00:00.000Z',
+  source: 'all',
   band: 'all',
   now: new Date('2026-09-30T00:00:00.000Z'),
 };
@@ -207,6 +208,17 @@ describe('teamBoard, the window', () => {
     });
     expect(out.battles).toBe(1);
     expect(out.sources).toEqual({ ladder: 1 });
+  });
+
+  it('takes the totals override for a population whose rows are mirrored', () => {
+    const out = teamBoard({
+      ...WINDOW,
+      rows: [row()],
+      totals: { battles: 1, devices: 0, sources: { broadcast: 1 } },
+    });
+    expect(out.battles).toBe(1);
+    expect(out.devices).toBe(0);
+    expect(out.sources).toEqual({ broadcast: 1 });
   });
 
   it('sorts by total battles and caps both lists', () => {

@@ -35,6 +35,7 @@ export interface MetaSummaryV1 {
   league: string;
   since: string;
   until: string;
+  source: string;
   band: string;
   battles: number;
   tanked: number;
@@ -68,6 +69,7 @@ export interface TeamsV1 {
   league: string;
   since: string;
   until: string;
+  source: string;
   band: string;
   battles: number;
   devices: number;
@@ -81,6 +83,7 @@ export interface SpeciesDetailV1 {
   speciesId: string;
   since: string;
   until: string;
+  source: string;
   band: string;
   sightings: number;
   wins: number;

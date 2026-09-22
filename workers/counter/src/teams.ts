@@ -20,7 +20,7 @@
  * A faced row never carries movesets: the opponents' movesets are not collected, by design.
  */
 import type { BattleRow } from './battles.js';
-import { bandRows, MOVESET_MIN, movesetsBySpecies, type MovesetStats } from './meta.js';
+import { bandRows, MOVESET_MIN, movesetsBySpecies, type MovesetStats, type Totals } from './meta.js';
 
 export interface TeamRowV1 {
   /** Sorted species ids. Two for a core, three for a complete team. */
@@ -51,6 +51,7 @@ export interface TeamsV1 {
   league: string;
   since: string;
   until: string;
+  source: string;
   band: string;
   /** Counted battles in the window and band, the same number /api/v1/meta reports. */
   battles: number;
@@ -102,13 +103,19 @@ export function teamBoard(opts: {
   league: string;
   since: string;
   until: string;
-  band: string;
+  source: string;
+  /** Defaults to `'all'`, so the tournament read model can leave it out entirely. */
+  band?: string;
   rows: readonly BattleRow[];
   now: Date;
   teamLimit?: number;
   coreLimit?: number;
+  /** Replaces `battles`, `devices` and `sources` when given; team and core tallies still come
+   *  from `rows`. See `Totals`. */
+  totals?: Totals;
 }): TeamsV1 {
-  const { league, since, until, band, rows, now } = opts;
+  const { league, since, until, source, rows, now } = opts;
+  const band = opts.band ?? 'all';
   const teamLimit = opts.teamLimit ?? TEAM_LIMIT;
   const coreLimit = opts.coreLimit ?? CORE_LIMIT;
 
@@ -207,10 +214,11 @@ export function teamBoard(opts: {
     league,
     since,
     until,
+    source,
     band,
-    battles: counted.length,
-    devices: devices.size,
-    sources,
+    battles: opts.totals ? opts.totals.battles : counted.length,
+    devices: opts.totals ? opts.totals.devices : devices.size,
+    sources: opts.totals ? opts.totals.sources : sources,
     teams: [...teams.values()].sort(order).slice(0, teamLimit).map(finish),
     cores: [...cores.values()].sort(order).slice(0, coreLimit).map(finish),
     generatedAt: now.toISOString(),

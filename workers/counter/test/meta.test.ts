@@ -34,6 +34,7 @@ function run(rows: BattleRow[], over: Partial<Parameters<typeof summarize>[0]> =
   return summarize({
     league: 'great',
     ...WINDOW,
+    source: 'all',
     band: 'all',
     rows,
     previousRows: null,
@@ -155,12 +156,40 @@ describe('source discriminator', () => {
       league: 'great',
       since: '2026-09-01T00:00:00.000Z',
       until: '2026-09-30T00:00:00.000Z',
+      source: 'all',
       band: 'all',
       rows,
       previousRows: null,
       now: new Date('2026-09-30T00:00:00.000Z'),
     });
     expect(out.sources).toEqual({ ladder: 2 });
+  });
+});
+
+describe('the band filter, still live through phase 1', () => {
+  it('still narrows to one band, and now also echoes the source it was asked for', () => {
+    const rows = [row({ band: 'ace' }), row({ band: 'legend' }), row({ band: null })];
+    const all = run(rows, { source: 'all' });
+    expect(all.battles).toBe(3);
+    expect(all.source).toBe('all');
+    const legend = run(rows, { source: 'all', band: 'legend' });
+    expect(legend.battles).toBe(1);
+    expect(legend.band).toBe('legend');
+    // The breakdown is every band in the window, not the filtered one: unchanged behaviour.
+    expect(legend.bands).toEqual({ ace: 1, legend: 1, unknown: 1 });
+  });
+});
+
+describe('the totals override', () => {
+  it('replaces the three counts a mirrored population must not compute for itself', () => {
+    const s = run([row(), row({ device: 'd2' })], {
+      totals: { battles: 1, devices: 0, sources: { broadcast: 1 } },
+    });
+    expect(s.battles).toBe(1);
+    expect(s.devices).toBe(0);
+    expect(s.sources).toEqual({ broadcast: 1 });
+    // The species tallies still come from the rows themselves.
+    expect(s.species.find((x) => x.speciesId === 'medicham')!.sightings).toBe(2);
   });
 });
 
@@ -188,6 +217,7 @@ function detail(rows: BattleRow[], over: Partial<Parameters<typeof speciesDetail
     league: 'great',
     speciesId: 'medicham',
     ...WINDOW,
+    source: 'all',
     band: 'all',
     rows,
     now: NOW,
