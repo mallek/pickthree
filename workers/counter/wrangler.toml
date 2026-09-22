@@ -3,6 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 workers_dev = true
 
+# INGEST_TOKEN, the bearer token for the tournament ingest routes (PUT/POST/DELETE
+# /api/v1/events/...), is a secret, not a var: set it with `wrangler secret put INGEST_TOKEN`,
+# the same way ERRORS_READ_TOKEN is set. It never appears in this file.
 [vars]
 ALLOWED_ORIGINS = "https://pick3.gg,https://www.pick3.gg,http://localhost:5173,http://localhost:4173"
 

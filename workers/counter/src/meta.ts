@@ -60,7 +60,10 @@ export function readParams(url: URL): ReadParams | { error: string } {
 /**
  * Paths this worker owns. A request to one of these with a method it does not serve gets a JSON
  * 404, not the meta.pick3.gg page: an API path answering with HTML is worse than an honest error.
- * Keep in step with run_worker_first in wrangler.toml.
+ * Keep in step with run_worker_first in wrangler.toml. The six tournament event routes
+ * (PUT/GET/DELETE /api/v1/events/<id>, POST /api/v1/events/<id>/battles and /roster,
+ * GET /api/v1/events) are already covered by the `/api/` prefix check below, so the set itself
+ * does not change for them.
  */
 const WORKER_PATHS = new Set(['/hit', '/count', '/error', '/errors', '/battles', '/meta']);
 

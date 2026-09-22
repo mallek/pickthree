@@ -8,6 +8,7 @@ import {
   mirrorRows,
   speciesTournamentBlock,
   tournamentBlock,
+  tournamentSpeciesDetail,
   tournamentSummary,
   tournamentTeams,
 } from '../src/tournamentRead.js';
@@ -294,6 +295,25 @@ describe('speciesTournamentBlock', () => {
     expect(block.broughtBy).toBe(0);
     expect(block.pickedOnStream).toBe(0);
     expect(block.movesets).toEqual([]);
+  });
+});
+
+describe('tournamentSpeciesDetail', () => {
+  it('counts each battle once per week and zeroes the rank bands', () => {
+    const d = tournamentSpeciesDetail({
+      league: 'great',
+      speciesId: 'altaria',
+      ...WINDOW,
+      source: 'tournament',
+      rows: [battle(), battle({ id: 'b2', game: 2 })],
+      roster: [],
+      now: NOW,
+    });
+    expect(d.weekly).toHaveLength(1);
+    expect(d.weekly[0]!.battles).toBe(2);
+    expect(d.weekly[0]!.sightings).toBe(2);
+    expect(d.bands.every((b) => b.sightings === 0)).toBe(true);
+    expect(d.tournament!.picks).toBe(2);
   });
 });
 

@@ -11,10 +11,18 @@
  *   GET  /api/v1/meta               per-league rollup: ?league=great&since=...&until=...&band=
  *   GET  /api/v1/teams              the team board, run and faced, cores and complete teams
  *   GET  /api/v1/species/<id>       per-species detail over the same window and band
+ *   PUT  /api/v1/events/<id>            declares (or replaces) a tournament event; keyed
+ *   POST /api/v1/events/<id>/battles    stores its battles, upsert by id; keyed
+ *   POST /api/v1/events/<id>/roster     stores its roster entries, upsert by (player, slot); keyed
+ *   DELETE /api/v1/events/<id>          removes the event, its battles and its roster; keyed
+ *   GET  /api/v1/events                 events in a window: ?league=great&since=...&until=...
+ *   GET  /api/v1/events/<id>            one event's matches, roster and species
  *
  * Nothing stored identifies a player: no IPs, no collection data, no names. The counter and
  * the error log live in one Durable Object; the battle records in another with SQLite. Anything
  * that is not one of these routes falls through to the ASSETS binding: the meta.pick3.gg site.
+ * The keyed routes take a bearer token (Authorization: Bearer <INGEST_TOKEN>) instead of an
+ * Origin check: a script calls them, not a browser.
  */
 import { DurableObject } from 'cloudflare:workers';
 import {
@@ -34,11 +42,46 @@ import {
   speciesDetail,
   summarize,
   type MetaSummaryV1,
+  type ReadParams,
   type SpeciesDetailV1,
 } from './meta.js';
 import { parseReport, type ErrorReport } from './report.js';
 import { teamBoard, type TeamsV1 } from './teams.js';
-import { createTournamentTables } from './tournamentStore.js';
+import {
+  eventDetail,
+  eventList,
+  mergedTeams,
+  speciesTournamentBlock,
+  tournamentBlock,
+  tournamentSpeciesDetail,
+  tournamentSummary,
+  tournamentTeams,
+  type EventDetailV1,
+  type EventListRow,
+} from './tournamentRead.js';
+import {
+  EVENT_ID,
+  parseBattlesBody,
+  parseEventBody,
+  parseRosterBody,
+  type BattlesBody,
+  type EventInput,
+  type RosterBody,
+} from './tournament.js';
+import {
+  createTournamentTables,
+  deleteEvent,
+  getEvent,
+  putBattles,
+  putEvent,
+  putRoster,
+  readEventBattles,
+  readEventRoster,
+  readEventsInWindow,
+  readRosterForEvents,
+  readTournamentBattles,
+  type TournamentBattleRow,
+} from './tournamentStore.js';
 
 export interface Env {
   COUNTER: DurableObjectNamespace<Counter>;
@@ -46,6 +89,10 @@ export interface Env {
   ASSETS: Fetcher;
   ALLOWED_ORIGINS: string;
   ERRORS_READ_TOKEN?: string;
+  /** Bearer token for the tournament ingest routes, a worker secret like ERRORS_READ_TOKEN.
+   *  Without it every write is refused: an unconfigured worker must not accept anonymous
+   *  tournament records, which is the whole point of keying this population. */
+  INGEST_TOKEN?: string;
 }
 
 const MAX_ERRORS = 200;
@@ -200,43 +247,150 @@ export class MetaStore extends DurableObject<Env> {
     }));
   }
 
-  summaryV1(p: {
-    league: string;
-    since: string;
-    until: string;
-    source: string;
-    band: string;
-  }): MetaSummaryV1 {
+  declareEvent(e: EventInput): { id: string } {
+    putEvent(this.ctx.storage.sql, e, new Date().toISOString());
+    return { id: e.id };
+  }
+
+  storeBattles(
+    eventId: string,
+    body: BattlesBody,
+  ): { stored: number; replaced: number; rejected: number } | { missing: true } {
+    const event = getEvent(this.ctx.storage.sql, eventId);
+    if (!event) {
+      return { missing: true };
+    }
+    // The event's league and cup are stamped onto every row from here, never from the body: a
+    // battle cannot claim a league its event does not have.
+    const counts = putBattles(
+      this.ctx.storage.sql,
+      event,
+      body.extractor,
+      body.battles,
+      new Date().toISOString(),
+    );
+    return { ...counts, rejected: 0 };
+  }
+
+  storeRoster(
+    eventId: string,
+    body: RosterBody,
+  ): { stored: number; replaced: number; rejected: number } | { missing: true } {
+    const event = getEvent(this.ctx.storage.sql, eventId);
+    if (!event) {
+      return { missing: true };
+    }
+    const counts = putRoster(
+      this.ctx.storage.sql,
+      eventId,
+      body.entries,
+      new Date().toISOString(),
+    );
+    return { ...counts, rejected: 0 };
+  }
+
+  removeEvent(id: string): { events: number; battles: number; roster: number } {
+    return deleteEvent(this.ctx.storage.sql, id);
+  }
+
+  eventsV1(p: ReadParams): { events: EventListRow[] } {
+    const rows = readTournamentBattles(this.ctx.storage.sql, p.league, p.since, p.until);
+    const events = readEventsInWindow(this.ctx.storage.sql, p.league, p.since, p.until);
+    return { events: eventList(p.league, events, rows) };
+  }
+
+  eventV1(id: string): EventDetailV1 | null {
+    const event = getEvent(this.ctx.storage.sql, id);
+    if (!event) {
+      return null;
+    }
+    return eventDetail(
+      event.league,
+      event,
+      readEventBattles(this.ctx.storage.sql, id),
+      readEventRoster(this.ctx.storage.sql, id),
+    );
+  }
+
+  /** Every tournament row for a league in the window. Read once per request, like `read`. */
+  private readTournament(p: ReadParams): TournamentBattleRow[] {
+    return readTournamentBattles(this.ctx.storage.sql, p.league, p.since, p.until);
+  }
+
+  summaryV1(p: ReadParams): MetaSummaryV1 {
+    if (p.source === 'tournament') {
+      return tournamentSummary({
+        ...p,
+        rows: this.readTournament(p),
+        events: readEventsInWindow(this.ctx.storage.sql, p.league, p.since, p.until),
+        now: new Date(),
+      });
+    }
     const span = Date.parse(p.until) - Date.parse(p.since);
     const prevSince = new Date(Date.parse(p.since) - span).toISOString();
-    return summarize({
+    const base = summarize({
       ...p,
       rows: this.read(p.league, p.since, p.until),
       previousRows: this.read(p.league, prevSince, p.since),
       now: new Date(),
     });
+    if (p.source !== 'all') {
+      return base;
+    }
+    return {
+      ...base,
+      tournament: tournamentBlock(
+        p.league,
+        this.readTournament(p),
+        readEventsInWindow(this.ctx.storage.sql, p.league, p.since, p.until),
+      ),
+    };
   }
 
-  speciesV1(
-    p: { league: string; since: string; until: string; source: string; band: string },
-    speciesId: string,
-  ): SpeciesDetailV1 {
-    return speciesDetail({
+  speciesV1(p: ReadParams, speciesId: string): SpeciesDetailV1 {
+    const tournamentRows = p.source === 'ladder' ? [] : this.readTournament(p);
+    const roster =
+      p.source === 'ladder'
+        ? []
+        : readRosterForEvents(this.ctx.storage.sql, [...new Set(tournamentRows.map((r) => r.event))]);
+    if (p.source === 'tournament') {
+      return tournamentSpeciesDetail({
+        ...p,
+        speciesId,
+        rows: tournamentRows,
+        roster,
+        now: new Date(),
+      });
+    }
+    const base = speciesDetail({
       ...p,
       speciesId,
       rows: this.read(p.league, p.since, p.until),
       now: new Date(),
     });
+    if (p.source !== 'all') {
+      return base;
+    }
+    return {
+      ...base,
+      tournament: speciesTournamentBlock({
+        league: p.league,
+        speciesId,
+        rows: tournamentRows,
+        roster,
+      }),
+    };
   }
 
-  teamsV1(p: {
-    league: string;
-    since: string;
-    until: string;
-    source: string;
-    band: string;
-  }): TeamsV1 {
-    return teamBoard({ ...p, rows: this.read(p.league, p.since, p.until), now: new Date() });
+  teamsV1(p: ReadParams): TeamsV1 {
+    if (p.source === 'tournament') {
+      return tournamentTeams({ ...p, rows: this.readTournament(p), now: new Date() });
+    }
+    const ladderRows = this.read(p.league, p.since, p.until);
+    if (p.source !== 'all') {
+      return teamBoard({ ...p, rows: ladderRows, now: new Date() });
+    }
+    return mergedTeams({ ...p, ladderRows, rows: this.readTournament(p), now: new Date() });
   }
 }
 
@@ -266,6 +420,16 @@ async function readJson(
   } catch {
     return { status: 400, error: 'bad json' };
   }
+}
+
+/** How many records a rejected body was carrying, so the `rejected` count is the truth rather
+ *  than a 1 that hides how much was thrown away. */
+function countRows(body: unknown, leaf: 'battles' | 'roster'): number {
+  if (typeof body !== 'object' || body === null) {
+    return 0;
+  }
+  const list = (body as Record<string, unknown>)[leaf === 'battles' ? 'battles' : 'entries'];
+  return Array.isArray(list) ? list.length : 0;
 }
 
 export default {
@@ -343,6 +507,86 @@ export default {
         return Response.json({ error: 'bad device' }, { status: 400, headers });
       }
       return Response.json({ deleted: await meta.forget(device) }, { headers });
+    }
+    // Tournament routes. The writes take a bearer token and no Origin check: a script calls
+    // these, not a browser, and the token is what makes this population unforgeable. The
+    // phone's /battles route cannot reach these tables and these routes cannot reach the
+    // ladder table.
+    if (url.pathname === '/api/v1/events' || url.pathname.startsWith('/api/v1/events/')) {
+      const rest = url.pathname.slice('/api/v1/events'.length).replace(/^\//, '');
+      const [eventId, leaf] = rest.split('/');
+      const read = { ...headers, 'Cache-Control': READ_CACHE };
+
+      if (request.method === 'GET') {
+        if (rest === '') {
+          const p = readParams(url);
+          if ('error' in p) {
+            return Response.json({ error: p.error }, { status: 400, headers });
+          }
+          return Response.json(await meta.eventsV1(p), { headers: read });
+        }
+        if (leaf === undefined && eventId !== undefined && EVENT_ID.test(eventId)) {
+          const detail = await meta.eventV1(eventId);
+          if (!detail) {
+            return Response.json({ error: 'not found' }, { status: 404, headers });
+          }
+          return Response.json(detail, { headers: read });
+        }
+        return Response.json({ error: 'not found' }, { status: 404, headers });
+      }
+
+      const auth = request.headers.get('Authorization') ?? '';
+      if (!env.INGEST_TOKEN || auth !== `Bearer ${env.INGEST_TOKEN}`) {
+        return Response.json({ error: 'unauthorized' }, { status: 401, headers });
+      }
+      if (eventId === undefined || !EVENT_ID.test(eventId)) {
+        return Response.json({ error: 'bad event id' }, { status: 400, headers });
+      }
+
+      if (request.method === 'DELETE' && leaf === undefined) {
+        return Response.json({ deleted: await meta.removeEvent(eventId) }, { headers });
+      }
+      if (request.method === 'PUT' && leaf === undefined) {
+        const body = await readJson(request, 8 * 1024);
+        if ('error' in body) {
+          return Response.json({ error: body.error }, { status: body.status, headers });
+        }
+        const parsed = parseEventBody(body.body, eventId);
+        if (!parsed.ok) {
+          return Response.json(
+            { error: 'bad event', index: parsed.index, reason: parsed.reason },
+            { status: 400, headers },
+          );
+        }
+        return Response.json(await meta.declareEvent(parsed.value), { headers });
+      }
+      if (request.method === 'POST' && (leaf === 'battles' || leaf === 'roster')) {
+        // 200 rows of either kind, comfortably. Battles are the larger of the two.
+        const body = await readJson(request, leaf === 'battles' ? 512 * 1024 : 128 * 1024);
+        if ('error' in body) {
+          return Response.json({ error: body.error }, { status: body.status, headers });
+        }
+        const parsed =
+          leaf === 'battles' ? parseBattlesBody(body.body) : parseRosterBody(body.body);
+        if (!parsed.ok) {
+          // One malformed record rejects the whole request: a pipeline run that half-lands is
+          // worse than one that fails and is rerun.
+          const rows = countRows(body.body, leaf);
+          return Response.json(
+            { stored: 0, replaced: 0, rejected: rows, index: parsed.index, reason: parsed.reason },
+            { status: 400, headers },
+          );
+        }
+        const result =
+          leaf === 'battles'
+            ? await meta.storeBattles(eventId, parsed.value as BattlesBody)
+            : await meta.storeRoster(eventId, parsed.value as RosterBody);
+        if ('missing' in result) {
+          return Response.json({ error: 'no such event' }, { status: 404, headers });
+        }
+        return Response.json(result, { headers });
+      }
+      return Response.json({ error: 'not found' }, { status: 404, headers });
     }
     if (request.method === 'GET' && url.pathname === '/meta') {
       const league = url.searchParams.get('league') ?? 'great';

@@ -16,9 +16,12 @@
  */
 import type { BattleRow } from './battles.js';
 import {
+  isoWeek,
+  speciesDetail,
   summarize,
   type MetaSummaryV1,
   type RosterMovesetStats,
+  type SpeciesDetailV1,
   type SpeciesTournamentBlock,
   type TournamentBlock,
   type TournamentSpeciesStat,
@@ -301,6 +304,59 @@ export function speciesTournamentBlock(opts: {
     // A missing moveset is left out of the denominator; it is never counted as "ran the
     // recommended set". This is that denominator.
     movesetsKnown: brought.filter((r) => r.moves !== null).length,
+  };
+}
+
+/**
+ * The species detail from the tournament population. `speciesDetail` runs over the mirrored
+ * rows, which is right for the counts it computes per species, and wrong for two per-window
+ * fields that count ROWS: `weekly[].battles` would double, and `bands` would file every mirrored
+ * row under "unknown" as though a broadcast reported a rank. Both are rebuilt here from the real
+ * battles instead, which is the same discipline the `totals` override applies to the summary.
+ */
+export function tournamentSpeciesDetail(opts: {
+  league: string;
+  speciesId: string;
+  since: string;
+  until: string;
+  source: string;
+  rows: readonly TournamentBattleRow[];
+  roster: readonly RosterRow[];
+  now: Date;
+}): SpeciesDetailV1 {
+  const rowsIn = blendedOnly(opts.league, opts.rows);
+  const base = speciesDetail({
+    league: opts.league,
+    speciesId: opts.speciesId,
+    since: opts.since,
+    until: opts.until,
+    source: opts.source,
+    rows: rowsIn.flatMap(mirrorRows),
+    now: opts.now,
+  });
+  const weeks = new Map<string, { week: string; battles: number; sightings: number }>();
+  for (const b of rowsIn) {
+    const week = isoWeek(b.at);
+    const held = weeks.get(week) ?? { week, battles: 0, sightings: 0 };
+    held.battles += 1;
+    for (const side of sidesOf(b)) {
+      if (side.team.includes(opts.speciesId)) {
+        held.sightings += 1;
+      }
+    }
+    weeks.set(week, held);
+  }
+  return {
+    ...base,
+    // A broadcast reports no rank band, so every band reads zero rather than "unknown".
+    bands: base.bands.map((b) => ({ band: b.band, sightings: 0, wins: 0, losses: 0 })),
+    weekly: [...weeks.values()].sort((a, b) => a.week.localeCompare(b.week)),
+    tournament: speciesTournamentBlock({
+      league: opts.league,
+      speciesId: opts.speciesId,
+      rows: opts.rows,
+      roster: opts.roster,
+    }),
   };
 }
 
