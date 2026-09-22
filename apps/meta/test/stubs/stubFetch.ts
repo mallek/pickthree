@@ -37,6 +37,7 @@ export const EMPTY_META: MetaSummaryV1 = {
   species: [],
   teams: [],
   previous: null,
+  tournament: null,
   generatedAt: '2026-09-18T11:50:00.000Z',
 };
 
@@ -73,6 +74,7 @@ export const EMPTY_SPECIES: SpeciesDetailV1 = {
   bands: [],
   alongside: [],
   movesets: [],
+  tournament: null,
   generatedAt: EMPTY_META.generatedAt,
 };
 

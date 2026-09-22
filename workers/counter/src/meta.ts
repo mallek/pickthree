@@ -98,6 +98,53 @@ export interface TeamStats {
   moves: (MovesetStats | null)[];
 }
 
+export interface TournamentSpeciesStat {
+  speciesId: string;
+  picks: number;
+  game1Picks: number;
+  /** The record AGAINST it: the opposing side's wins and losses, the same meaning `wins` and
+   *  `losses` carry on the ladder's own SpeciesStats. */
+  wins: number;
+  losses: number;
+  unresolvedForms: number;
+}
+
+export interface TournamentBlock {
+  /** Events in the window on the league's open-equivalent cup. These are the blended ones. */
+  events: number;
+  /** Their battles. Each battle counts once, not once per side. */
+  battles: number;
+  /** Events in the window on other cups: shown, never blended. */
+  eventsOther: number;
+  species: TournamentSpeciesStat[];
+}
+
+export interface RosterMovesetStats {
+  fast: string;
+  charged: string[];
+  /** Roster entries carrying this set, NOT battles: a roster says what a player brought. */
+  entries: number;
+}
+
+export interface SpeciesTournamentBlock {
+  picks: number;
+  game1Picks: number;
+  wins: number;
+  losses: number;
+  /** Picks by bracket depth; index 0 is depth 1. Always 9 long. */
+  byDepth: number[];
+  unresolvedForms: number;
+  /** Players whose roster lists it. */
+  broughtBy: number;
+  /** Players on the roster who appear in at least one streamed battle. */
+  rosterSize: number;
+  /** Their streamed battles in which they picked it. */
+  pickedOnStream: number;
+  movesets: RosterMovesetStats[];
+  /** Roster entries for it that carry a set at all, out of `broughtBy`. */
+  movesetsKnown: number;
+}
+
 export interface MetaSummaryV1 {
   league: string;
   since: string;
@@ -120,6 +167,9 @@ export interface MetaSummaryV1 {
    */
   teams: TeamStats[];
   previous: { battles: number; species: { speciesId: string; sightings: number }[] } | null;
+  /** Tournament play in the same window. Null under source=ladder: that view is the ladder alone
+   *  and a zeroed block would read as "no tournaments" rather than "not asked for". */
+  tournament: TournamentBlock | null;
   generatedAt: string;
 }
 
@@ -307,6 +357,7 @@ export function summarize(opts: {
       .sort((a, b) => b.battles - a.battles || a.species.join().localeCompare(b.species.join()))
       .slice(0, teamLimit),
     previous,
+    tournament: null,
     generatedAt: now.toISOString(),
   };
 }
@@ -332,6 +383,7 @@ export interface SpeciesDetailV1 {
   alongside: { speciesId: string; battles: number }[];
   /** Sets reporters ran it with when it was on their own team. */
   movesets: MovesetStats[];
+  tournament: SpeciesTournamentBlock | null;
   generatedAt: string;
 }
 
@@ -435,6 +487,7 @@ export function speciesDetail(opts: {
       .sort((a, b) => b.battles - a.battles || a.speciesId.localeCompare(b.speciesId))
       .slice(0, ALONGSIDE_LIMIT),
     movesets: movesetsBySpecies(counted).get(speciesId) ?? [],
+    tournament: null,
     generatedAt: now.toISOString(),
   };
 }

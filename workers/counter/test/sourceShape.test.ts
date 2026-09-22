@@ -55,6 +55,7 @@ describe('source=ladder is the old band=all response', () => {
       species: rest.species,
       teams: rest.teams,
       previous: null,
+      tournament: null,
       generatedAt: NOW.toISOString(),
     });
     expect(rest.species.find((s) => s.speciesId === 'medicham')).toEqual({

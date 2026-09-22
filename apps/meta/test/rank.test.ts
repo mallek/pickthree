@@ -44,6 +44,7 @@ function summary(over: Partial<MetaSummaryV1> = {}): MetaSummaryV1 {
     species: [],
     teams: [],
     previous: null,
+    tournament: null,
     generatedAt: '2026-09-30T00:00:00.000Z',
     ...over,
   };

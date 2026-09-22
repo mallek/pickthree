@@ -31,6 +31,38 @@ export interface TeamStats {
   losses: number;
   moves: (MovesetStats | null)[];
 }
+export interface TournamentSpeciesStat {
+  speciesId: string;
+  picks: number;
+  game1Picks: number;
+  wins: number;
+  losses: number;
+  unresolvedForms: number;
+}
+export interface TournamentBlock {
+  events: number;
+  battles: number;
+  eventsOther: number;
+  species: TournamentSpeciesStat[];
+}
+export interface RosterMovesetStats {
+  fast: string;
+  charged: string[];
+  entries: number;
+}
+export interface SpeciesTournamentBlock {
+  picks: number;
+  game1Picks: number;
+  wins: number;
+  losses: number;
+  byDepth: number[];
+  unresolvedForms: number;
+  broughtBy: number;
+  rosterSize: number;
+  pickedOnStream: number;
+  movesets: RosterMovesetStats[];
+  movesetsKnown: number;
+}
 export interface MetaSummaryV1 {
   league: string;
   since: string;
@@ -51,6 +83,7 @@ export interface MetaSummaryV1 {
    */
   teams: TeamStats[];
   previous: { battles: number; species: { speciesId: string; sightings: number }[] } | null;
+  tournament: TournamentBlock | null;
   generatedAt: string;
 }
 export interface TeamRowV1 {
@@ -95,6 +128,7 @@ export interface SpeciesDetailV1 {
   bands: { band: string; sightings: number; wins: number; losses: number }[];
   alongside: { speciesId: string; battles: number }[];
   movesets: MovesetStats[];
+  tournament: SpeciesTournamentBlock | null;
   generatedAt: string;
 }
 
