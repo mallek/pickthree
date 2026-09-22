@@ -75,8 +75,12 @@ Separable and first, because the read model in phase 1 depends on the legality l
 - **Meta bake.** `apps/meta/scripts/bake.ts` writes `public/legal/<league>.json` for each site
   league: `{ cup, banned: string[] }`, where `cup` is the open-equivalent tournament cup for that
   league and `banned` is every species id the cup excludes that the league's ranking lists. The
-  allowlist of open-equivalent cups is one constant in the bake: `{ great: 'championshipseries' }`.
-  Ultra and Master have no Play! format and get `{ cup: null, banned: [] }`.
+  allowlist of open-equivalent cups is one constant, `{ great: 'championshipseries' }`, written
+  in both the bake and the worker, each copy asserted by its own test: the site and the worker
+  share no code, and the worker needs the map to say which events blend. Ultra and Master have
+  no Play! format and get `{ cup: null, banned: [] }`. The bake writes only the site's leagues
+  (`kind: 'standard'`) to the site's `leagues.json` and loops only those for baseline, ranks,
+  matrix and legal files; the Tournament league is the app's, never the site's.
 
 The Tournament league in the app and the Tournaments source on the site are different things: one
 is a ruleset to build a team for, the other is a population of observed battles. The spec uses the
@@ -467,9 +471,13 @@ not know the moves. Counting and computing are different operations and get diff
   gaps accepted, upsert replaces, delete cascades, missing event is a 404, wrong token is a 401.
   Read model tests over a synthetic event: sightings and wins invert correctly for the faced side,
   both sides land on the team board, a battle with no winner counts a sighting and no result,
-  banned species report null, unresolved forms count under the base id, events on a non-blended cup
-  appear in `eventsOther` and never in `tournament.species`. `source=ladder` responses are byte for
-  byte what `band=all` returned, over the existing fixtures. One shared test file asserts that the
+  unresolved forms count under the base id, events on a non-blended cup appear in `eventsOther`
+  and never in `tournament.species`. The worker carries no legality data: a banned species is
+  simply absent from the tournament block, and the site turns that absence into "banned" from
+  `legal/<league>.json`, tested there. `source=ladder` responses are what `band=all` returned,
+  over the existing fixtures, every field equal except the echoed parameter. Through phase 1 the
+  `band=` filter keeps working as today, so the deployed site's rank band select is not a silent
+  no-op between the phase 1 and phase 2 deploys; it is retired in phase 2 with the select. One shared test file asserts that the
   ladder and tournament read paths return the same shape.
 - **Site.** `rank.ts` tests for the sequential blend: the four views, the worked Baltimore case
   (`aT = 0.33`), a banned species holding its prior, a species picked at tournaments but unranked by
