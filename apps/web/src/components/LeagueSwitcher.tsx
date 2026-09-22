@@ -24,15 +24,14 @@ export function useLeague(): League {
 }
 
 /**
- * Standard leagues as a segmented control with the game's shield colours, special cups as chips
- * beneath. Lives in every league-dependent page head, the builder and the sheet. Thin wrapper
- * around the package's generic LeagueSwitcher: this file's only job is pulling league data and
- * the setter out of app state.
+ * Open leagues and the shipped tournament cups (League.kind 'standard' and 'cup'). The
+ * PICKTHREE_SPECIAL_CUPS formats stay out: their rules work, but the app does not yet know
+ * enough about them (megas in the Mega cups, for one) to recommend with a straight face.
  */
 export function LeagueSwitcher({ compact }: { compact?: boolean }) {
   const s = useAppState();
   const { setLeague } = useActions();
-  const leagues = (s.data?.leagues ?? []).filter((l) => l.kind === 'standard');
+  const leagues = (s.data?.leagues ?? []).filter((l) => l.kind !== 'special');
   return (
     <GenericLeagueSwitcher
       compact={compact ?? false}
