@@ -220,6 +220,19 @@ describe('About', () => {
     expect(await screen.findByText(/\/api\/v1\/teams/)).toBeInTheDocument();
   });
 
+  // Final whole-branch review, Finding 2: `band=` was the rank band filter's query param, retired
+  // with the band axis (route.ts's own comment: "band= ... is not mapped to anything"; meta.ts's
+  // `readParams` only reads league, since, until, source). This page's own worked example used to
+  // pass `&band=ace`, which the worker no longer parses, validates or echoes at all; a reader who
+  // copied it would get back the unfiltered `all` response and never know why. Pinned here so a
+  // stale example can never silently reappear (the page's own header comment: "if this page and
+  // the worker ever disagree, this page is the one that is wrong").
+  it('never shows the retired band= query parameter anywhere on the page', async () => {
+    const { container } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByText(/PvPoke rankings of/);
+    expect(container.textContent ?? '').not.toMatch(/band=/);
+  });
+
   // Also-fix: "already public and needs no key" was true for a server but not for a browser page
   // on another origin, since workers/counter/src/index.ts's `cors()` answers with a fixed
   // allow-list, not a wildcard. The claim has to carry that distinction.

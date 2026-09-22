@@ -5,7 +5,7 @@
  * If this page and the worker ever disagree, this page is the one that is wrong, not the worker.
  *
  * This view carries no league (route.ts's View has no `league` on 'about'), so App.tsx renders
- * neither the league switcher nor the window/band filters above it. The PvPoke stamp at the foot
+ * neither the league switcher nor the window/source filters above it. The PvPoke stamp at the foot
  * reads whichever league's baseline App.tsx already has loaded: every league is baked from the
  * same PvPoke commit and date in one data build, so any one of them says the same thing.
  */
@@ -185,7 +185,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         </p>
         <p className="fine">
           <code>
-            {'GET https://meta.pick3.gg/api/v1/teams?league=great&since=<iso>&until=<iso>&band=ace'}
+            {
+              'GET https://meta.pick3.gg/api/v1/teams?league=great&since=<iso>&until=<iso>&source=tournament'
+            }
           </code>
         </p>
       </section>
@@ -200,9 +202,9 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         <p className="sub">
           Faced is the share of a window&apos;s shared battles where a Pokemon was on the other
           side. Record is how the reporters who shared those battles did against it, or, when you
-          pick a rank band, how that band&apos;s reporters did. Trend is the change in a
-          Pokemon&apos;s share since the window before this one; it is only shown when there is
-          enough data in both windows to trust the difference (the thresholds are below).
+          pick a different source, how that source&apos;s own population did. Trend is the change
+          in a Pokemon&apos;s share since the window before this one; it is only shown when there
+          is enough data in both windows to trust the difference (the thresholds are below).
         </p>
       </section>
 

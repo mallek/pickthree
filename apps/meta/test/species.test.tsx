@@ -533,4 +533,67 @@ describe('Species', () => {
     expect(screen.queryByText(/Tournaments: /)).not.toBeInTheDocument();
     expect(screen.queryByText(/seen on stream/)).not.toBeInTheDocument();
   });
+
+  // Final whole-branch review, Finding 1, symptom 1: this screen used to read query.source nowhere
+  // past building the header line, so under `source=prior` (where sourceHeaderLine correctly says
+  // "Nothing measured") every card below it still rendered the real, unfiltered numbers (speciesUrl
+  // maps `prior` to the worker's `all` source, so `detail` carries them regardless). None of the
+  // measured cards should draw here, and the body's own share line must not restate the real count.
+  it('under source=prior, shows nothing measured below the header, not the real ladder cards', async () => {
+    window.history.replaceState(null, '', '/great/p/azumarill?source=prior');
+    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
+    await screen.findByText('Azumarill');
+    expect(screen.getByText('Nothing measured')).toBeInTheDocument();
+    expect(screen.queryByText(/184 of/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Faced, week by week' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: "Reporters' record against it" })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Record against it, by rank' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Seen next to' })).toBeNull();
+  });
+
+  // Finding 1, symptoms 2-4. `metaUrl` (api.ts) never sends a `source` param, so the `meta` this
+  // screen holds is always the ladder-scoped `source=all` summary (1,000 ladder battles below);
+  // dividing a tournament pick count by it, as the header used to, understates the real share by
+  // 25x here (20 of 40 tournament battles is 50%, not 20 of 1,000 which would read 2%).
+  it('under source=tournament, the share uses the tournament battle count and hides the ladder-only cards', async () => {
+    window.history.replaceState(null, '', '/great/p/azumarill?source=tournament');
+    const tournamentMeta = {
+      ...meta,
+      tournament: {
+        events: 3,
+        battles: 40,
+        eventsOther: 0,
+        species: [
+          { speciesId: 'azumarill', picks: 20, game1Picks: 10, wins: 9, losses: 11, unresolvedForms: 0 },
+        ],
+      },
+    };
+    render(
+      <App
+        deps={{
+          fetcher: stubFetch({
+            species: { ...species, tournament: { ...BLOCK, picks: 20, game1Picks: 10, wins: 9, losses: 11 } },
+            meta: tournamentMeta,
+          }),
+          now,
+        }}
+      />,
+    );
+    await screen.findByText('Azumarill');
+    // Symptom 2: the corrected share, from the tournament total (ranking.tournamentBattles), not
+    // the ladder total (meta.battles, 1,000, which would have printed "20 of 1,000 battles (2%)").
+    expect(screen.getByText('20 of 40 battles (50%)')).toBeInTheDocument();
+    expect(screen.queryByText(/1,000/)).toBeNull();
+    // Symptom 3: the ladder-labeled "Reporters' record against it" card must not also print this
+    // same tournament record under a name that implies a different (ladder) population; the
+    // tournament population's own "players went W-L" sentence (tournamentRow) is enough.
+    expect(screen.queryByRole('heading', { name: "Reporters' record against it" })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'At tournaments' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Tournaments: 20 picks, 10 in game one, players went 9-11'),
+    ).toBeInTheDocument();
+    // Symptom 4: a broadcast reports no rank band (tournamentSpeciesDetail zeroes every band), so
+    // the card would otherwise show five all-zero rows.
+    expect(screen.queryByRole('heading', { name: 'Record against it, by rank' })).toBeNull();
+  });
 });

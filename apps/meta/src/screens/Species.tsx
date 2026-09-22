@@ -311,24 +311,37 @@ function rosterLine(block: SpeciesDetailV1['tournament'], banned: boolean): stri
   return `${seen}, picked in ${count(block.pickedOnStream)} of their streamed ${plural(block.pickedOnStream, 'battle', 'battles')}.`;
 }
 
+/**
+ * Fix (Finding 1, symptom 3 of the 2026-09-21 whole-branch review): under `source=tournament`,
+ * `detail.wins`/`detail.losses` are the broadcast/tournament record (computed over the mirrored
+ * rows `tournamentSpeciesDetail` builds, workers/counter/src/tournamentRead.ts), not reporters'
+ * own results, and `tournamentRow` below already prints that same record as "players went W-L".
+ * Printing both would show the same fact twice under two different, half-contradictory labels
+ * ("Reporters' record" next to a number that has no reporters behind it). Under that source this
+ * card shows only the tournament line (and the roster join and the two link buttons, which stay
+ * useful regardless of source); the ladder-labeled rate block renders only when this really is a
+ * reporter population. */
 function RecordCard({
   detail,
   league,
   speciesId,
   banned,
+  tournamentSource,
 }: {
   detail: SpeciesDetailV1;
   league: string;
   speciesId: string;
   banned: boolean;
+  /** True under `query.source === 'tournament'`: see the comment above. */
+  tournamentSource: boolean;
 }) {
   const rate = winRate(detail.wins, detail.losses);
   const decided = detail.wins + detail.losses;
   const roster = rosterLine(detail.tournament, banned);
   return (
     <section className="card">
-      <h2>Reporters&apos; record against it</h2>
-      {rate === null ? (
+      <h2>{tournamentSource ? 'At tournaments' : "Reporters' record against it"}</h2>
+      {tournamentSource ? null : rate === null ? (
         <p className="sub">No decided battles yet.</p>
       ) : (
         <>
@@ -550,13 +563,49 @@ export function Species(p: {
   const d = detail.data;
   const m = meta.data;
 
+  // Finding 1 (2026-09-21 whole-branch review): this screen used to read query.source nowhere
+  // past building the header line, so every card below it kept rendering as if the ladder's own
+  // measured numbers applied no matter which source was picked. `isPrior` and `isTournament` are
+  // read once here and gate every card the rest of the function draws, the same way Pokemon.tsx's
+  // `facedLine`/`recordOf` and Teams.tsx's `observed` memo already key off `query.source`/
+  // `ranking.source` for their own cards.
+  const isPrior = p.query.source === 'prior';
+  const isTournament = p.query.source === 'tournament';
+
+  // The same blended row Pokemon.tsx's own rows read (rank.ts's `rankSpecies`), looked up once and
+  // shared by the header's standing line and, under `source=tournament`, the header's own share
+  // line below (symptom 2: that share used to divide the tournament pick count by `m.battles`,
+  // the LADDER total `metaUrl` always returns, because `metaUrl` never sends a `source` param and
+  // so is shared, cached, across every view; the tournament total lives on `ranking` instead,
+  // computed from the same `meta.tournament` block `rankSpecies` reads).
+  const rankRow = ranking?.rows.find((x) => x.speciesId === speciesId) ?? null;
+
   // Fix round 1 (task 14): this used to switch between "#R most faced" and a bare count once the
   // league cleared a 300 battle / 5 device floor, the exact flip this whole plan exists to
   // retire, still live here even after rank.ts's own copy of it was deleted (CLAUDE.md: meta.pick3.gg
   // "never hides measured numbers for being small"). The share is shown unconditionally now, with
   // its count beside it, the same way Pokemon.tsx's own rows always print theirs.
   let headerText: string;
-  if (d.sightings === 0) {
+  if (isPrior) {
+    // Symptom 1: `speciesUrl` maps `prior` to the worker's `all` source (nothing to fetch
+    // separately), so `d` still carries the ladder's real, unfiltered numbers here. Printing them
+    // would contradict the header's own "Nothing measured" line just above (sourceHeaderLine).
+    headerText = 'Nothing measured';
+  } else if (isTournament) {
+    if (banned) {
+      headerText = 'Banned at tournaments';
+    } else if (!ranking || ranking.tournamentBattles === 0) {
+      headerText = 'No tournament battles in this window';
+    } else {
+      const picks = rankRow?.tournamentPicks ?? 0;
+      if (picks === 0) {
+        headerText = 'Not picked in this window';
+      } else {
+        const share = picks / ranking.tournamentBattles;
+        headerText = `${count(picks)} of ${battlesText(ranking.tournamentBattles)} (${pctFloor(share)})`;
+      }
+    }
+  } else if (d.sightings === 0) {
     headerText = 'Not faced in this window';
   } else {
     const share = m.battles > 0 ? d.sightings / m.battles : 0;
@@ -568,12 +617,12 @@ export function Species(p: {
   // The same blended standing Pokemon's rows show (rank.ts's `rankSpecies`), added here rather
   // than replacing headerText's own window-scoped line above: that line is about this species in
   // this window, this one is about where it sits in the league's whole blended list. Shown only
-  // once this window has actually faced it (d.sightings > 0): the row still exists in `ranking`
-  // even at zero sightings (PvPoke's own prior order never goes away), and printing a "what
-  // players face" rank next to "Not faced in this window" would claim a fact this window does not
-  // support.
-  const row =
-    d.sightings > 0 ? (ranking?.rows.find((x) => x.speciesId === speciesId) ?? null) : null;
+  // once this window has actually faced it (d.sightings > 0) and only outside `prior` (under
+  // `prior` nothing is measured, so "what players face" has nothing to report): the row still
+  // exists in `ranking` even at zero sightings (PvPoke's own prior order never goes away), and
+  // printing a "what players face" rank next to "Not faced in this window" would claim a fact this
+  // window does not support.
+  const row = !isPrior && d.sightings > 0 ? rankRow : null;
   const standingText = row
     ? `#${row.rank} of what players face - ${row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}`
     : null;
@@ -598,7 +647,12 @@ export function Species(p: {
         <p className="sub">{headerText}</p>
         {standingText ? <p className="sub">{standingText}</p> : null}
       </section>
-      {d.sightings === 0 ? (
+      {isPrior ? (
+        // Symptom 1: under `prior` nothing is measured (rank.ts's `rankSpecies` turns both the
+        // ladder and the tournament terms off for this source), so none of the cards below, which
+        // are every one of them built from measured play, have anything honest to show.
+        <p className="sub">Switch source to see what players have actually faced.</p>
+      ) : d.sightings === 0 ? (
         <>
           <p className="sub">No shared battles mention it in this window.</p>
           {/* Task 14: tournament data can exist even when this window has zero ladder sightings,
@@ -614,8 +668,17 @@ export function Species(p: {
       ) : (
         <>
           <WeeklyCard weekly={d.weekly} />
-          <RecordCard detail={d} league={league} speciesId={speciesId} banned={banned} />
-          <BandsCard bands={d.bands} />
+          <RecordCard
+            detail={d}
+            league={league}
+            speciesId={speciesId}
+            banned={banned}
+            tournamentSource={isTournament}
+          />
+          {/* Symptom 4: a broadcast reports no rank band, so `tournamentSpeciesDetail`
+           * (workers/counter/src/tournamentRead.ts) deliberately zeroes every band's sightings,
+           * wins and losses for this source; drawing the card would show five all-zero rows. */}
+          {isTournament ? null : <BandsCard bands={d.bands} />}
           <AlongsideCard
             alongside={d.alongside}
             sightings={d.sightings}
@@ -625,8 +688,8 @@ export function Species(p: {
           />
         </>
       )}
-      <MovesetCard detail={d} data={data} />
-      {d.tournament && !banned ? (
+      {isPrior ? null : <MovesetCard detail={d} data={data} />}
+      {!isPrior && d.tournament && !banned ? (
         <TournamentMovesCard block={d.tournament} entry={baselineEntry} data={data} />
       ) : null}
       {baselineEntry ? <PvPokeCard entry={baselineEntry} data={data} /> : null}
