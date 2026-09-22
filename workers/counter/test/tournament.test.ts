@@ -5,6 +5,7 @@ import {
   parseEventBody,
   parseRosterBody,
 } from '../src/tournament.js';
+import fixture from '../../../fixtures/tournament-sample.json' assert { type: 'json' };
 
 const event = {
   name: '2027 Baltimore Pokemon GO Regional Championships',
@@ -153,5 +154,20 @@ describe('parseRosterBody', () => {
     expect(r.ok).toBe(false);
     expect(!r.ok && r.index).toBe(1);
     expect(!r.ok && r.reason).toBe('bad slot');
+  });
+});
+
+describe('the synthetic event fixture', () => {
+  it('validates against every parser, with no real screen name in it', () => {
+    expect(parseEventBody(fixture.event, fixture.id).ok).toBe(true);
+    const battles = parseBattlesBody(fixture.battles);
+    expect(battles.ok).toBe(true);
+    expect(battles.ok && battles.value.battles.length).toBeGreaterThan(20);
+    expect(parseRosterBody(fixture.roster).ok).toBe(true);
+    // Invented handles only: caps and digits, the shape make-tournament.ts writes.
+    for (const b of fixture.battles.battles) {
+      expect(b.left.player).toMatch(/^[A-Z0-9]+$/);
+      expect(b.right.player).not.toBe(b.left.player);
+    }
   });
 });

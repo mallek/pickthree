@@ -1,0 +1,2212 @@
+{
+  "id": "2027-crown-city-regional",
+  "event": {
+    "name": "2027 Crown City Regional Championships",
+    "startDate": "2026-09-18",
+    "endDate": "2026-09-20",
+    "league": "great",
+    "cup": "championshipseries",
+    "vods": [
+      "vod-day-one",
+      "vod-day-two"
+    ],
+    "notes": "Synthetic fixture. Invented screen names, real species ids."
+  },
+  "battles": {
+    "extractor": "fixtures/make-tournament 1",
+    "battles": [
+      {
+        "id": "2027-crown-city-regional-001",
+        "at": "2026-09-18T15:11:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "A",
+        "roundLabel": "ROUND 1",
+        "match": "day1-1",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "ARCWARDEN",
+          "team": [
+            "jumpluff_shadow",
+            "altaria",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "BLUEKITE",
+          "team": [
+            "corviknight",
+            "clodsire",
+            "lanturn"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g1_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-002",
+        "at": "2026-09-18T15:22:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "A",
+        "roundLabel": "ROUND 1",
+        "match": "day1-1",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "ARCWARDEN",
+          "team": [
+            "medicham",
+            "dunsparce",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "BLUEKITE",
+          "team": [
+            "corsola_galarian",
+            "lanturn",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g2_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-003",
+        "at": "2026-09-18T15:33:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "B",
+        "roundLabel": "ROUND 1",
+        "match": "day1-2",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "lanturn",
+            "azumarill",
+            "clodsire"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "registeel",
+            "medicham",
+            "dunsparce"
+          ],
+          "forms": [
+            "unresolved",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g3_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-004",
+        "at": "2026-09-18T15:44:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "B",
+        "roundLabel": "ROUND 1",
+        "match": "day1-2",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "corviknight",
+            "lanturn",
+            "corsola_galarian"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "jumpluff_shadow",
+            "registeel",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g4_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-005",
+        "at": "2026-09-18T15:55:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "B",
+        "roundLabel": "ROUND 1",
+        "match": "day1-2",
+        "game": 3,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "corviknight",
+            "azumarill",
+            "corsola_galarian"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "jumpluff_shadow",
+            "registeel",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          2,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g5_score_2-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-006",
+        "at": "2026-09-18T16:06:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "C",
+        "roundLabel": "ROUND 1",
+        "match": "day1-3",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 3,
+        "left": {
+          "player": "CINDERVANE",
+          "team": [
+            "medicham",
+            "dunsparce",
+            "melmetal"
+          ],
+          "forms": [
+            "rk9",
+            "unresolved",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "annihilape_shadow",
+            "lanturn",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g6_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-007",
+        "at": "2026-09-18T16:17:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "C",
+        "roundLabel": "ROUND 1",
+        "match": "day1-3",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 3,
+        "left": {
+          "player": "CINDERVANE",
+          "team": [
+            "jumpluff_shadow",
+            "registeel",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "annihilape_shadow",
+            "lanturn",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": null,
+        "resultSource": null,
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g7_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-008",
+        "at": "2026-09-18T16:28:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "D",
+        "roundLabel": "ROUND 1",
+        "match": "day1-4",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "clodsire",
+            "azumarill",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "medicham",
+            "jumpluff_shadow",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g8_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-009",
+        "at": "2026-09-18T16:39:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "D",
+        "roundLabel": "ROUND 1",
+        "match": "day1-4",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "lanturn",
+            "azumarill",
+            "corviknight"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "jumpluff_shadow",
+            "dunsparce",
+            "registeel"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g9_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-010",
+        "at": "2026-09-18T16:50:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "D",
+        "roundLabel": "ROUND 1",
+        "match": "day1-4",
+        "game": 3,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "lanturn",
+            "annihilape_shadow",
+            "corviknight"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "altaria",
+            "melmetal",
+            "medicham"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          2,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g10_score_2-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-011",
+        "at": "2026-09-18T17:01:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "A",
+        "roundLabel": "ROUND 2",
+        "match": "day1-5",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "EMBERFALL",
+          "team": [
+            "altaria",
+            "melmetal",
+            "medicham"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "FROSTQUILL",
+          "team": [
+            "corsola_galarian",
+            "azumarill",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g11_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-012",
+        "at": "2026-09-18T17:12:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "A",
+        "roundLabel": "ROUND 2",
+        "match": "day1-5",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "EMBERFALL",
+          "team": [
+            "medicham",
+            "registeel",
+            "melmetal"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "FROSTQUILL",
+          "team": [
+            "corsola_galarian",
+            "corviknight",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g12_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-013",
+        "at": "2026-09-18T17:23:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "B",
+        "roundLabel": "ROUND 2",
+        "match": "day1-6",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 3,
+        "left": {
+          "player": "FROSTQUILL",
+          "team": [
+            "annihilape_shadow",
+            "corviknight",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "ARCWARDEN",
+          "team": [
+            "dunsparce",
+            "altaria",
+            "jumpluff_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g13_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-014",
+        "at": "2026-09-18T17:34:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "B",
+        "roundLabel": "ROUND 2",
+        "match": "day1-6",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 3,
+        "left": {
+          "player": "FROSTQUILL",
+          "team": [
+            "azumarill",
+            "corsola_galarian",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "ARCWARDEN",
+          "team": [
+            "altaria",
+            "jumpluff_shadow",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": null,
+        "resultSource": null,
+        "scoreAtStart": [
+          0,
+          1
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g14_score_0-1.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-015",
+        "at": "2026-09-18T17:45:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "B",
+        "roundLabel": "ROUND 2",
+        "match": "day1-6",
+        "game": 3,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 3,
+        "left": {
+          "player": "FROSTQUILL",
+          "team": [
+            "azumarill",
+            "clodsire",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "ARCWARDEN",
+          "team": [
+            "melmetal",
+            "jumpluff_shadow",
+            "registeel"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          0,
+          1
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g15_score_0-1.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-016",
+        "at": "2026-09-18T17:56:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "C",
+        "roundLabel": "ROUND 2",
+        "match": "day1-7",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "GLASSREEF",
+          "team": [
+            "altaria",
+            "registeel",
+            "jumpluff_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "corviknight",
+            "lanturn",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g16_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-017",
+        "at": "2026-09-18T18:07:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "C",
+        "roundLabel": "ROUND 2",
+        "match": "day1-7",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 1,
+        "left": {
+          "player": "GLASSREEF",
+          "team": [
+            "registeel",
+            "melmetal",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "unresolved"
+          ]
+        },
+        "right": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "corviknight",
+            "corsola_galarian",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g17_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-018",
+        "at": "2026-09-18T18:18:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "D",
+        "roundLabel": "ROUND 2",
+        "match": "day1-8",
+        "game": 1,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "annihilape_shadow",
+            "clodsire",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "GLASSREEF",
+          "team": [
+            "registeel",
+            "dunsparce",
+            "medicham"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g18_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-019",
+        "at": "2026-09-18T18:29:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "D",
+        "roundLabel": "ROUND 2",
+        "match": "day1-8",
+        "game": 2,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "lanturn",
+            "clodsire",
+            "corsola_galarian"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "GLASSREEF",
+          "team": [
+            "jumpluff_shadow",
+            "medicham",
+            "melmetal"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g19_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-020",
+        "at": "2026-09-18T18:40:00.000Z",
+        "day": 1,
+        "stage": "groups",
+        "group": "D",
+        "roundLabel": "ROUND 2",
+        "match": "day1-8",
+        "game": 3,
+        "matchFormat": "bo3",
+        "bracket": "winners",
+        "bracketDepth": 2,
+        "left": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "corsola_galarian",
+            "lanturn",
+            "corviknight"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "GLASSREEF",
+          "team": [
+            "dunsparce",
+            "medicham",
+            "melmetal"
+          ],
+          "forms": [
+            "unresolved",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          2,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g20_score_2-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-021",
+        "at": "2026-09-18T18:51:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 8",
+        "match": "day2-9",
+        "game": 1,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 6,
+        "left": {
+          "player": "ARCWARDEN",
+          "team": [
+            "medicham",
+            "altaria",
+            "registeel"
+          ],
+          "forms": [
+            "rk9",
+            "unresolved",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "BLUEKITE",
+          "team": [
+            "azumarill",
+            "corsola_galarian",
+            "clodsire"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": null,
+        "resultSource": null,
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g21_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-022",
+        "at": "2026-09-18T19:02:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 8",
+        "match": "day2-9",
+        "game": 2,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 6,
+        "left": {
+          "player": "ARCWARDEN",
+          "team": [
+            "medicham",
+            "jumpluff_shadow",
+            "altaria"
+          ],
+          "forms": [
+            "unresolved",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "BLUEKITE",
+          "team": [
+            "corsola_galarian",
+            "azumarill",
+            "clodsire"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g22_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-023",
+        "at": "2026-09-18T19:13:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 8",
+        "match": "day2-9",
+        "game": 3,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 6,
+        "left": {
+          "player": "ARCWARDEN",
+          "team": [
+            "altaria",
+            "medicham",
+            "registeel"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "BLUEKITE",
+          "team": [
+            "corsola_galarian",
+            "lanturn",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          0,
+          1
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g23_score_0-1.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-024",
+        "at": "2026-09-18T19:24:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 4",
+        "match": "day2-10",
+        "game": 1,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 7,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "corsola_galarian",
+            "clodsire",
+            "annihilape_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "registeel",
+            "dunsparce",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g24_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-025",
+        "at": "2026-09-18T19:35:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 4",
+        "match": "day2-10",
+        "game": 2,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 7,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "corviknight",
+            "corsola_galarian",
+            "clodsire"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "medicham",
+            "melmetal",
+            "jumpluff_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          1
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g25_score_0-1.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-026",
+        "at": "2026-09-18T19:46:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 4",
+        "match": "day2-10",
+        "game": 3,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 7,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "azumarill",
+            "clodsire",
+            "corsola_galarian"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "dunsparce",
+            "medicham",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          2
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g26_score_0-2.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-027",
+        "at": "2026-09-18T19:57:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "TOP 4",
+        "match": "day2-10",
+        "game": 4,
+        "matchFormat": "bo5",
+        "bracket": "winners",
+        "bracketDepth": 7,
+        "left": {
+          "player": "BLUEKITE",
+          "team": [
+            "azumarill",
+            "corsola_galarian",
+            "corviknight"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "EMBERFALL",
+          "team": [
+            "jumpluff_shadow",
+            "registeel",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "unresolved",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          1,
+          2
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g27_score_1-2.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-028",
+        "at": "2026-09-18T20:08:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "WINNERS FINAL",
+        "match": "day2-11",
+        "game": 1,
+        "matchFormat": "bo5",
+        "bracket": "losers",
+        "bracketDepth": 8,
+        "left": {
+          "player": "CINDERVANE",
+          "team": [
+            "registeel",
+            "altaria",
+            "jumpluff_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "unresolved"
+          ]
+        },
+        "right": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "annihilape_shadow",
+            "corviknight",
+            "lanturn"
+          ],
+          "forms": [
+            "unresolved",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": null,
+        "resultSource": null,
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g28_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-029",
+        "at": "2026-09-18T20:19:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "WINNERS FINAL",
+        "match": "day2-11",
+        "game": 2,
+        "matchFormat": "bo5",
+        "bracket": "losers",
+        "bracketDepth": 8,
+        "left": {
+          "player": "CINDERVANE",
+          "team": [
+            "medicham",
+            "dunsparce",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "annihilape_shadow",
+            "clodsire",
+            "lanturn"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g29_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-030",
+        "at": "2026-09-18T20:30:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "WINNERS FINAL",
+        "match": "day2-11",
+        "game": 3,
+        "matchFormat": "bo5",
+        "bracket": "losers",
+        "bracketDepth": 8,
+        "left": {
+          "player": "CINDERVANE",
+          "team": [
+            "altaria",
+            "melmetal",
+            "jumpluff_shadow"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "HOLLOWPINE",
+          "team": [
+            "clodsire",
+            "annihilape_shadow",
+            "corsola_galarian"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "unresolved"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          1,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g30_score_1-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-031",
+        "at": "2026-09-18T20:41:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "GRAND FINAL",
+        "match": "day2-12",
+        "game": 1,
+        "matchFormat": "bo5",
+        "bracket": "grand",
+        "bracketDepth": 9,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "corviknight",
+            "lanturn",
+            "corsola_galarian"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "medicham",
+            "altaria",
+            "dunsparce"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          0
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g31_score_0-0.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-032",
+        "at": "2026-09-18T20:52:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "GRAND FINAL",
+        "match": "day2-12",
+        "game": 2,
+        "matchFormat": "bo5",
+        "bracket": "grand",
+        "bracketDepth": 9,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "clodsire",
+            "corsola_galarian",
+            "corviknight"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "melmetal",
+            "jumpluff_shadow",
+            "altaria"
+          ],
+          "forms": [
+            "unresolved",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "score",
+        "scoreAtStart": [
+          0,
+          1
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g32_score_0-1.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-033",
+        "at": "2026-09-18T21:03:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "GRAND FINAL",
+        "match": "day2-12",
+        "game": 3,
+        "matchFormat": "bo5",
+        "bracket": "grand",
+        "bracketDepth": 9,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "corsola_galarian",
+            "corviknight",
+            "azumarill"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "dunsparce",
+            "jumpluff_shadow",
+            "altaria"
+          ],
+          "forms": [
+            "rk9",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "right",
+        "resultSource": "score",
+        "scoreAtStart": [
+          1,
+          1
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g33_score_1-1.jpg"
+        ],
+        "notes": null
+      },
+      {
+        "id": "2027-crown-city-regional-034",
+        "at": "2026-09-18T21:14:00.000Z",
+        "day": 2,
+        "stage": "top_cut",
+        "group": null,
+        "roundLabel": "GRAND FINAL",
+        "match": "day2-12",
+        "game": 4,
+        "matchFormat": "bo5",
+        "bracket": "grand",
+        "bracketDepth": 9,
+        "left": {
+          "player": "DUSKHOLLOW",
+          "team": [
+            "lanturn",
+            "azumarill",
+            "clodsire"
+          ],
+          "forms": [
+            "rk9",
+            "unresolved",
+            "rk9"
+          ]
+        },
+        "right": {
+          "player": "CINDERVANE",
+          "team": [
+            "jumpluff_shadow",
+            "registeel",
+            "medicham"
+          ],
+          "forms": [
+            "unresolved",
+            "rk9",
+            "rk9"
+          ]
+        },
+        "winnerSide": "left",
+        "resultSource": "banner",
+        "scoreAtStart": [
+          1,
+          2
+        ],
+        "evidence": [
+          "2027-crown-city-regional_g34_score_1-2.jpg"
+        ],
+        "notes": null
+      }
+    ]
+  },
+  "roster": {
+    "entries": [
+      {
+        "player": "ARCWARDEN",
+        "slot": 1,
+        "species": "altaria",
+        "moves": {
+          "fast": "DRAGON_BREATH",
+          "charged": [
+            "MOONBLAST",
+            "FLAMETHROWER"
+          ]
+        }
+      },
+      {
+        "player": "ARCWARDEN",
+        "slot": 2,
+        "species": "melmetal",
+        "moves": {
+          "fast": "THUNDER_SHOCK",
+          "charged": [
+            "SUPER_POWER",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "ARCWARDEN",
+        "slot": 3,
+        "species": "dunsparce",
+        "moves": {
+          "fast": "ROLLOUT",
+          "charged": [
+            "DRILL_RUN",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "ARCWARDEN",
+        "slot": 4,
+        "species": "medicham",
+        "moves": null
+      },
+      {
+        "player": "ARCWARDEN",
+        "slot": 5,
+        "species": "registeel",
+        "moves": {
+          "fast": "LOCK_ON",
+          "charged": [
+            "FOCUS_BLAST",
+            "FLASH_CANNON"
+          ]
+        }
+      },
+      {
+        "player": "ARCWARDEN",
+        "slot": 6,
+        "species": "jumpluff_shadow",
+        "moves": {
+          "fast": "FAIRY_WIND",
+          "charged": [
+            "AERIAL_ACE",
+            "ACROBATICS"
+          ]
+        }
+      },
+      {
+        "player": "BLUEKITE",
+        "slot": 1,
+        "species": "clodsire",
+        "moves": null
+      },
+      {
+        "player": "BLUEKITE",
+        "slot": 2,
+        "species": "corviknight",
+        "moves": {
+          "fast": "SAND_ATTACK",
+          "charged": [
+            "SKY_ATTACK",
+            "IRON_HEAD"
+          ]
+        }
+      },
+      {
+        "player": "BLUEKITE",
+        "slot": 3,
+        "species": "azumarill",
+        "moves": {
+          "fast": "BUBBLE",
+          "charged": [
+            "ICE_BEAM",
+            "PLAY_ROUGH"
+          ]
+        }
+      },
+      {
+        "player": "BLUEKITE",
+        "slot": 4,
+        "species": "lanturn",
+        "moves": {
+          "fast": "WATER_GUN",
+          "charged": [
+            "SURF",
+            "THUNDERBOLT"
+          ]
+        }
+      },
+      {
+        "player": "BLUEKITE",
+        "slot": 5,
+        "species": "annihilape_shadow",
+        "moves": null
+      },
+      {
+        "player": "BLUEKITE",
+        "slot": 6,
+        "species": "corsola_galarian",
+        "moves": {
+          "fast": "ASTONISH",
+          "charged": [
+            "NIGHT_SHADE",
+            "POWER_GEM"
+          ]
+        }
+      },
+      {
+        "player": "CINDERVANE",
+        "slot": 1,
+        "species": "melmetal",
+        "moves": {
+          "fast": "THUNDER_SHOCK",
+          "charged": [
+            "SUPER_POWER",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "CINDERVANE",
+        "slot": 2,
+        "species": "dunsparce",
+        "moves": {
+          "fast": "ROLLOUT",
+          "charged": [
+            "DRILL_RUN",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "CINDERVANE",
+        "slot": 3,
+        "species": "medicham",
+        "moves": null
+      },
+      {
+        "player": "CINDERVANE",
+        "slot": 4,
+        "species": "registeel",
+        "moves": {
+          "fast": "LOCK_ON",
+          "charged": [
+            "FOCUS_BLAST",
+            "FLASH_CANNON"
+          ]
+        }
+      },
+      {
+        "player": "CINDERVANE",
+        "slot": 5,
+        "species": "jumpluff_shadow",
+        "moves": {
+          "fast": "FAIRY_WIND",
+          "charged": [
+            "AERIAL_ACE",
+            "ACROBATICS"
+          ]
+        }
+      },
+      {
+        "player": "CINDERVANE",
+        "slot": 6,
+        "species": "altaria",
+        "moves": {
+          "fast": "DRAGON_BREATH",
+          "charged": [
+            "MOONBLAST",
+            "FLAMETHROWER"
+          ]
+        }
+      },
+      {
+        "player": "DUSKHOLLOW",
+        "slot": 1,
+        "species": "corviknight",
+        "moves": {
+          "fast": "SAND_ATTACK",
+          "charged": [
+            "SKY_ATTACK",
+            "IRON_HEAD"
+          ]
+        }
+      },
+      {
+        "player": "DUSKHOLLOW",
+        "slot": 2,
+        "species": "azumarill",
+        "moves": {
+          "fast": "BUBBLE",
+          "charged": [
+            "ICE_BEAM",
+            "PLAY_ROUGH"
+          ]
+        }
+      },
+      {
+        "player": "DUSKHOLLOW",
+        "slot": 3,
+        "species": "lanturn",
+        "moves": null
+      },
+      {
+        "player": "DUSKHOLLOW",
+        "slot": 4,
+        "species": "annihilape_shadow",
+        "moves": {
+          "fast": "COUNTER",
+          "charged": [
+            "RAGE_FIST",
+            "ICE_PUNCH"
+          ]
+        }
+      },
+      {
+        "player": "DUSKHOLLOW",
+        "slot": 5,
+        "species": "corsola_galarian",
+        "moves": {
+          "fast": "ASTONISH",
+          "charged": [
+            "NIGHT_SHADE",
+            "POWER_GEM"
+          ]
+        }
+      },
+      {
+        "player": "DUSKHOLLOW",
+        "slot": 6,
+        "species": "clodsire",
+        "moves": {
+          "fast": "POISON_STING",
+          "charged": [
+            "EARTHQUAKE",
+            "STONE_EDGE"
+          ]
+        }
+      },
+      {
+        "player": "EMBERFALL",
+        "slot": 1,
+        "species": "dunsparce",
+        "moves": {
+          "fast": "ROLLOUT",
+          "charged": [
+            "DRILL_RUN",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "EMBERFALL",
+        "slot": 2,
+        "species": "medicham",
+        "moves": {
+          "fast": "COUNTER",
+          "charged": [
+            "ICE_PUNCH",
+            "PSYCHIC"
+          ]
+        }
+      },
+      {
+        "player": "EMBERFALL",
+        "slot": 3,
+        "species": "registeel",
+        "moves": {
+          "fast": "LOCK_ON",
+          "charged": [
+            "FOCUS_BLAST",
+            "FLASH_CANNON"
+          ]
+        }
+      },
+      {
+        "player": "EMBERFALL",
+        "slot": 4,
+        "species": "jumpluff_shadow",
+        "moves": null
+      },
+      {
+        "player": "EMBERFALL",
+        "slot": 5,
+        "species": "altaria",
+        "moves": {
+          "fast": "DRAGON_BREATH",
+          "charged": [
+            "MOONBLAST",
+            "FLAMETHROWER"
+          ]
+        }
+      },
+      {
+        "player": "EMBERFALL",
+        "slot": 6,
+        "species": "melmetal",
+        "moves": {
+          "fast": "THUNDER_SHOCK",
+          "charged": [
+            "SUPER_POWER",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "FROSTQUILL",
+        "slot": 1,
+        "species": "azumarill",
+        "moves": {
+          "fast": "BUBBLE",
+          "charged": [
+            "ICE_BEAM",
+            "PLAY_ROUGH"
+          ]
+        }
+      },
+      {
+        "player": "FROSTQUILL",
+        "slot": 2,
+        "species": "lanturn",
+        "moves": {
+          "fast": "WATER_GUN",
+          "charged": [
+            "SURF",
+            "THUNDERBOLT"
+          ]
+        }
+      },
+      {
+        "player": "FROSTQUILL",
+        "slot": 3,
+        "species": "annihilape_shadow",
+        "moves": null
+      },
+      {
+        "player": "FROSTQUILL",
+        "slot": 4,
+        "species": "corsola_galarian",
+        "moves": {
+          "fast": "ASTONISH",
+          "charged": [
+            "NIGHT_SHADE",
+            "POWER_GEM"
+          ]
+        }
+      },
+      {
+        "player": "FROSTQUILL",
+        "slot": 5,
+        "species": "clodsire",
+        "moves": {
+          "fast": "POISON_STING",
+          "charged": [
+            "EARTHQUAKE",
+            "STONE_EDGE"
+          ]
+        }
+      },
+      {
+        "player": "FROSTQUILL",
+        "slot": 6,
+        "species": "corviknight",
+        "moves": {
+          "fast": "SAND_ATTACK",
+          "charged": [
+            "SKY_ATTACK",
+            "IRON_HEAD"
+          ]
+        }
+      },
+      {
+        "player": "GLASSREEF",
+        "slot": 1,
+        "species": "medicham",
+        "moves": {
+          "fast": "COUNTER",
+          "charged": [
+            "ICE_PUNCH",
+            "PSYCHIC"
+          ]
+        }
+      },
+      {
+        "player": "GLASSREEF",
+        "slot": 2,
+        "species": "registeel",
+        "moves": {
+          "fast": "LOCK_ON",
+          "charged": [
+            "FOCUS_BLAST",
+            "FLASH_CANNON"
+          ]
+        }
+      },
+      {
+        "player": "GLASSREEF",
+        "slot": 3,
+        "species": "jumpluff_shadow",
+        "moves": {
+          "fast": "FAIRY_WIND",
+          "charged": [
+            "AERIAL_ACE",
+            "ACROBATICS"
+          ]
+        }
+      },
+      {
+        "player": "GLASSREEF",
+        "slot": 4,
+        "species": "altaria",
+        "moves": null
+      },
+      {
+        "player": "GLASSREEF",
+        "slot": 5,
+        "species": "melmetal",
+        "moves": {
+          "fast": "THUNDER_SHOCK",
+          "charged": [
+            "SUPER_POWER",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "GLASSREEF",
+        "slot": 6,
+        "species": "dunsparce",
+        "moves": {
+          "fast": "ROLLOUT",
+          "charged": [
+            "DRILL_RUN",
+            "ROCK_SLIDE"
+          ]
+        }
+      },
+      {
+        "player": "HOLLOWPINE",
+        "slot": 1,
+        "species": "lanturn",
+        "moves": {
+          "fast": "WATER_GUN",
+          "charged": [
+            "SURF",
+            "THUNDERBOLT"
+          ]
+        }
+      },
+      {
+        "player": "HOLLOWPINE",
+        "slot": 2,
+        "species": "annihilape_shadow",
+        "moves": {
+          "fast": "COUNTER",
+          "charged": [
+            "RAGE_FIST",
+            "ICE_PUNCH"
+          ]
+        }
+      },
+      {
+        "player": "HOLLOWPINE",
+        "slot": 3,
+        "species": "corsola_galarian",
+        "moves": null
+      },
+      {
+        "player": "HOLLOWPINE",
+        "slot": 4,
+        "species": "clodsire",
+        "moves": {
+          "fast": "POISON_STING",
+          "charged": [
+            "EARTHQUAKE",
+            "STONE_EDGE"
+          ]
+        }
+      },
+      {
+        "player": "HOLLOWPINE",
+        "slot": 5,
+        "species": "corviknight",
+        "moves": {
+          "fast": "SAND_ATTACK",
+          "charged": [
+            "SKY_ATTACK",
+            "IRON_HEAD"
+          ]
+        }
+      },
+      {
+        "player": "HOLLOWPINE",
+        "slot": 6,
+        "species": "azumarill",
+        "moves": {
+          "fast": "BUBBLE",
+          "charged": [
+            "ICE_BEAM",
+            "PLAY_ROUGH"
+          ]
+        }
+      }
+    ]
+  }
+}

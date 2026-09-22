@@ -26,6 +26,7 @@
     "data:refresh": "npm -w @pickthree/data run refresh",
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
     "fixtures:derive": "tsx fixtures/derive-fixtures.ts",
+    "fixtures:tournament": "node fixtures/make-tournament.mjs",
     "web:screens": "node scripts/with-preview.mjs web 4173 -- node apps/web/scripts/screens.mjs",
     "meta:screens": "node scripts/with-preview.mjs meta 4174 -- node apps/meta/scripts/screens.mjs",
     "counter:deploy": "npm -w @pickthree/counter run deploy",
