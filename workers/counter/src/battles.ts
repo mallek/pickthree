@@ -6,10 +6,12 @@
 export const BANDS = ['below', 'ace', 'veteran', 'expert', 'legend'] as const;
 export type Band = (typeof BANDS)[number];
 
-/** Where a record came from. Ladder play is everything the app sends today; tournament results
- * are phase 2 and get their own spec. Stamped by the worker, never accepted from the client: a
- * client that could name its own source could forge the population phase 2 exists to separate. */
-export type BattleSource = 'ladder';
+/** Where a battle came from. `ladder` is everything the app sends; `broadcast` is a tournament
+ * battle read off an official stream (docs/superpowers/specs/2026-09-21-tournament-data-design.md).
+ * Stamped by the worker, never accepted from the client: a client that could name its own source
+ * could forge the population the separate tables exist to keep apart. The two live in different
+ * tables; this type is shared only so one read model can aggregate either. */
+export type BattleSource = 'ladder' | 'broadcast';
 export const DEFAULT_SOURCE: BattleSource = 'ladder';
 
 export interface SharedMoves {
