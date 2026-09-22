@@ -24,8 +24,21 @@ function sharedBattlesText(n: number): string {
   return `${count(n)} shared ${battleWord(n)}`;
 }
 
+/** The `all`-source fallback when there is no tournament data in the window. `headerCopy.test.ts`
+ *  ("falls back to the ladder sentence under All...") pins this exact wording, "shared battles",
+ *  which is NOT the same string as the literal `ladder` sentence below even though both branches
+ *  are reached whenever `!hasTournament`. */
 function ladderLine(r: SpeciesRanking): string {
   return `${Math.round(r.say * 100)}% measured, from ${sharedBattlesText(r.battles)} by ${devicesText(r.devices)}`;
+}
+
+/** The literal `source === 'ladder'` sentence: unchanged from today's wording, "battles shared
+ *  by", the exact text Pokemon.tsx, Teams.tsx and Species.tsx currently build inline (not yet
+ *  replaced by this file -- see pokemon.test.tsx:108, teams.test.tsx:422, species.test.tsx:423,
+ *  all still passing, all still this word order). Kept deliberately distinct from `ladderLine`
+ *  above, whose "shared battles" wording belongs only to the `all` fallback. */
+function literalLadderLine(r: SpeciesRanking): string {
+  return `${Math.round(r.say * 100)}% measured, from ${battlesText(r.battles)} shared by ${devicesText(r.devices)}`;
 }
 
 /** `zero` is the screen's own sentence for "nothing measured at all": Teams says it is projecting
@@ -43,7 +56,10 @@ export function sourceHeaderLine(r: SpeciesRanking, zero: string): string {
   }
   const hasTournament = r.source === 'all' && r.tournamentBattles > 0;
   if (!hasTournament) {
-    return r.battles === 0 ? zero : ladderLine(r);
+    if (r.battles === 0) {
+      return zero;
+    }
+    return r.source === 'ladder' ? literalLadderLine(r) : ladderLine(r);
   }
   const pvpokePct = Math.round((1 - r.say) * (1 - r.tournamentSay) * 100);
   const tPct = Math.round((1 - r.say) * r.tournamentSay * 100);

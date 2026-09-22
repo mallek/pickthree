@@ -63,6 +63,17 @@ describe('sourceHeaderLine', () => {
     );
   });
 
+  // The literal `ladder` source is not wired into any screen yet (Task 13/14 does that), but its
+  // wording must stay byte-identical to today's inline sentence in Pokemon.tsx, Teams.tsx and
+  // Species.tsx (see pokemon.test.tsx:108, teams.test.tsx:422, species.test.tsx:423): "battles
+  // shared by", the OLD word order, not the "shared battles by" the All fallback above uses. Same
+  // inputs as the test above, different source, deliberately a different string, so a future wire-
+  // up cannot quietly swap the two wordings.
+  it('keeps the literal ladder sentence in the word order screens already print', () => {
+    const r = ranking({ source: 'ladder', say: 0.5, battles: 300, devices: 10 });
+    expect(sourceHeaderLine(r, ZERO)).toBe('50% measured, from 300 battles shared by 10 devices');
+  });
+
   it('uses the screen own zero sentence when nothing at all was measured', () => {
     expect(sourceHeaderLine(ranking({ source: 'all' }), ZERO)).toBe(ZERO);
     expect(sourceHeaderLine(ranking({ source: 'ladder' }), ZERO)).toBe(ZERO);
