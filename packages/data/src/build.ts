@@ -6,7 +6,8 @@ import { writeManifest } from './build-manifest.js';
 import { writeMatrix } from './build-matrix.js';
 import { writeLeagueRankings } from './build-rankings.js';
 import { writeSprites } from './build-sprites.js';
-import { readLeagues } from './leagues.js';
+import { legalSet, writeDerivedLeague } from './build-derived.js';
+import { DERIVES_FROM, readLeagues } from './leagues.js';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { readRawGameMaster } from './build-gamedata.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
@@ -31,7 +32,10 @@ async function main(): Promise<void> {
     process.env.PICKTHREE_SKIP_MATRIX === '1'
       ? null
       : new PvPokeSimulator(loadPvPokeInNode(readRawGameMaster()));
-  for (const league of leagues) {
+  // Source leagues first: a derived league reads their written files, not PvPoke's.
+  const sourceLeagues = leagues.filter((l) => DERIVES_FROM[l.id] === undefined);
+  const derivedLeagues = leagues.filter((l) => DERIVES_FROM[l.id] !== undefined);
+  for (const league of sourceLeagues) {
     const { meta } = writeLeagueRankings(OUTPUT_DIR, league);
     league.metaSize = meta.length;
     console.log(`${league.id}: meta ${meta.length}`);
@@ -45,6 +49,13 @@ async function main(): Promise<void> {
         };
       }
     }
+  }
+  for (const league of derivedLeagues) {
+    const from = DERIVES_FROM[league.id] as string;
+    const legal = legalSet(data.species, league);
+    const { meta } = writeDerivedLeague(OUTPUT_DIR, league, from, legal);
+    league.metaSize = meta.length;
+    console.log(`${league.id}: meta ${meta.length} (from ${from}, ${legal.size} legal)`);
   }
   fs.writeFileSync(path.join(OUTPUT_DIR, 'leagues.json'), JSON.stringify(leagues));
   readSeasons(); // validates before we ship it
