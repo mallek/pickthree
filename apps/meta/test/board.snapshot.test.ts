@@ -46,7 +46,7 @@ const baseline: Baseline = {
 };
 
 function ranking(): ReturnType<typeof rankSpecies> {
-  return rankSpecies(fixture.meta, baseline, fixture.ranks);
+  return rankSpecies(fixture.meta, baseline, fixture.ranks, { source: 'all', legal: null });
 }
 
 function board(): ReturnType<typeof buildBoard> {

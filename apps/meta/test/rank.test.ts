@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { facingWeight } from '@pickthree/engine/meta';
 import type { MetaSummaryV1, SpeciesStats } from '../src/api.js';
 import type { Baseline } from '../src/baseline.js';
-import { HALF_SAY_BATTLES, HALF_SAY_DEVICES, measuredSay, rankSpecies } from '../src/rank.js';
+import {
+  HALF_SAY_BATTLES,
+  HALF_SAY_DEVICES,
+  HALF_SAY_EVENTS,
+  HALF_SAY_TOURNAMENT_BATTLES,
+  measuredSay,
+  rankSpecies,
+  tournamentSay,
+} from '../src/rank.js';
 
 /** PvPoke's overall order for the fixture: azumarill 1, medicham 2, registeel 3, lanturn 4. */
 const RANKS = ['azumarill', 'medicham', 'registeel', 'lanturn'];
@@ -78,7 +87,7 @@ describe('measuredSay', () => {
 
 describe('rankSpecies with no measured play at all', () => {
   it("is PvPoke's list, in PvPoke's order, with nothing fabricated", () => {
-    const r = rankSpecies(summary(), baseline(RANKS), RANKS);
+    const r = rankSpecies(summary(), baseline(RANKS), RANKS, { source: 'all', legal: null });
     expect(r.say).toBe(0);
     expect(r.rows.map((x) => x.speciesId)).toEqual(RANKS);
     expect(r.rows[0]?.sightings).toBe(0);
@@ -96,6 +105,7 @@ describe('rankSpecies as measured play arrives', () => {
       summary({ battles: 60, devices: 3, species: measured }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     const thick = rankSpecies(
       summary({
@@ -105,6 +115,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     const at = (r: typeof thin, id: string): number => r.rows.findIndex((x) => x.speciesId === id);
     const weightOf = (r: typeof thin, id: string): number =>
@@ -131,6 +142,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     const row = r.rows.find((x) => x.speciesId === 'surprise');
     expect(row).toBeDefined();
@@ -156,6 +168,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     const surprise = r.rows.find((x) => x.speciesId === 'surprise');
     const lanturn = r.rows.find((x) => x.speciesId === 'lanturn');
@@ -175,6 +188,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(['azumarill', 'medicham', 'registeel']),
       RANKS,
+      { source: 'all', legal: null },
     );
     const row = r.rows.find((x) => x.speciesId === 'lanturn');
     expect(row?.pvpokeRank).toBe(4);
@@ -191,13 +205,17 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     const total = r.rows.reduce((a, x) => a + x.weight, 0);
     expect(total).toBeCloseTo(1, 8);
   });
 
   it('reports the say so a header can say how measured the ranking is', () => {
-    const r = rankSpecies(summary({ battles: 480, devices: 9 }), baseline(RANKS), RANKS);
+    const r = rankSpecies(summary({ battles: 480, devices: 9 }), baseline(RANKS), RANKS, {
+      source: 'all',
+      legal: null,
+    });
     expect(Math.round(r.say * 100)).toBe(Math.round(measuredSay(480, 9) * 100));
   });
 
@@ -210,6 +228,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     for (const row of r.rows) {
       expect(r.weights.get(row.speciesId)).toBe(row.weight);
@@ -225,6 +244,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     expect(r.rows[0]?.barPct).toBe(100);
     expect(r.rows.every((x) => x.barPct >= 0 && x.barPct <= 100)).toBe(true);
@@ -241,6 +261,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     expect(r.rows.map((x) => x.speciesId)).toEqual(RANKS);
   });
@@ -258,6 +279,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     const of = (id: string): string | undefined =>
       r.rows.find((x) => x.speciesId === id)?.confidence;
@@ -277,19 +299,197 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     expect(withPrev.rows.find((x) => x.speciesId === 'azumarill')?.trend).toBeCloseTo(5, 5);
     const noPrev = rankSpecies(
       summary({ battles: 1000, devices: 20, species }),
       baseline(RANKS),
       RANKS,
+      { source: 'all', legal: null },
     );
     expect(noPrev.rows.every((x) => x.trend === null)).toBe(true);
   });
 
   it('stamps the ranking with the PvPoke build the prior came from', () => {
-    const r = rankSpecies(summary(), baseline(RANKS), RANKS);
+    const r = rankSpecies(summary(), baseline(RANKS), RANKS, { source: 'all', legal: null });
     expect(r.pvpokeCommit).toBe('abc123');
     expect(r.pvpokeDate).toBe('2026-09-10');
+  });
+});
+
+/** PvPoke's own prior for rank 1 normalised over the two-species fixture list, computed
+ *  from `facingWeight` rather than typed as a decimal, so this expectation cannot drift
+ *  from the curve the blend actually runs. */
+const PRIOR_RANK1 = facingWeight(1) / (facingWeight(1) + facingWeight(2));
+
+function withTournament(over: {
+  battles: number;
+  events: number;
+  species: { speciesId: string; picks: number; wins?: number; losses?: number }[];
+  eventsOther?: number;
+}): MetaSummaryV1 {
+  return summary({
+    tournament: {
+      events: over.events,
+      battles: over.battles,
+      eventsOther: over.eventsOther ?? 0,
+      species: over.species.map((s) => ({
+        speciesId: s.speciesId,
+        picks: s.picks,
+        game1Picks: s.picks,
+        wins: s.wins ?? 0,
+        losses: s.losses ?? 0,
+        unresolvedForms: 0,
+      })),
+    },
+  });
+}
+
+describe('tournamentSay', () => {
+  it('is the smaller of the battles curve and the events curve', () => {
+    expect(tournamentSay(0, 0)).toBe(0);
+    expect(tournamentSay(HALF_SAY_TOURNAMENT_BATTLES, 1000)).toBeCloseTo(0.5, 10);
+    expect(tournamentSay(100_000, HALF_SAY_EVENTS)).toBeCloseTo(0.5, 10);
+    // One event is a third of the say, whatever it holds: one event is one local meta.
+    expect(tournamentSay(100_000, 1)).toBeCloseTo(1 / 3, 10);
+  });
+
+  it('is zero with battles but no events, and with events but no battles', () => {
+    expect(tournamentSay(105, 0)).toBe(0);
+    expect(tournamentSay(0, 3)).toBe(0);
+  });
+});
+
+describe('the sequential blend', () => {
+  const RANKS_4 = RANKS;
+  const BASE = baseline(['azumarill', 'medicham']);
+
+  it('is exactly today formula when there are no tournaments at all', () => {
+    const meta = summary({
+      battles: 300,
+      devices: 10,
+      species: [stats({ speciesId: 'medicham', sightings: 200 })],
+    });
+    const withNull = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    const asLadder = rankSpecies(meta, BASE, RANKS_4, { source: 'ladder', legal: null });
+    expect([...withNull.weights.entries()]).toEqual([...asLadder.weights.entries()]);
+    expect(withNull.tournamentSay).toBe(0);
+  });
+
+  it('reproduces the spec worked case: 105 battles at 1 event is a third of the prior', () => {
+    const meta = withTournament({
+      battles: 105,
+      events: 1,
+      species: [
+        { speciesId: 'medicham', picks: 60 },
+        { speciesId: 'azumarill', picks: 40 },
+      ],
+    });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    expect(r.tournamentSay).toBeCloseTo(1 / 3, 6);
+    expect(r.say).toBe(0);
+    expect(r.tournamentBattles).toBe(105);
+    expect(r.events).toBe(1);
+    // aL is 0 with no shared battles, so the weights are p1 exactly.
+    const medicham = r.rows.find((x) => x.speciesId === 'medicham')!;
+    const azumarill = r.rows.find((x) => x.speciesId === 'azumarill')!;
+    // Prior: facingWeight(1) and facingWeight(2), normalised. Tournament share: 0.6 and 0.4.
+    const aT = 1 / 3;
+    const priorA = PRIOR_RANK1;
+    const priorM = 1 - priorA;
+    expect(azumarill.weight).toBeCloseTo((1 - aT) * priorA + aT * 0.4, 6);
+    expect(medicham.weight).toBeCloseTo((1 - aT) * priorM + aT * 0.6, 6);
+  });
+
+  it('runs the ladder blend over the top of the tournament blend, not beside it', () => {
+    const meta = {
+      ...withTournament({
+        battles: 105,
+        events: 1,
+        species: [{ speciesId: 'medicham', picks: 100 }],
+      }),
+      battles: 300,
+      devices: 10,
+      species: [stats({ speciesId: 'azumarill', sightings: 100 })],
+    };
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    expect(r.say).toBeCloseTo(0.5, 6);
+    expect(r.tournamentSay).toBeCloseTo(1 / 3, 6);
+    const azumarill = r.rows.find((x) => x.speciesId === 'azumarill')!;
+    // Every ladder sighting is Azumarill, so its ladder share is 1 and it carries half the
+    // weight from that term alone.
+    expect(azumarill.weight).toBeGreaterThan(0.5);
+  });
+
+  it('gives a banned species its plain prior, not a zero tournament share', () => {
+    const meta = withTournament({
+      battles: 105,
+      events: 1,
+      species: [{ speciesId: 'medicham', picks: 100 }],
+    });
+    const legal = { league: 'great', cup: 'championshipseries', banned: new Set(['azumarill']) };
+    const r = rankSpecies(meta, baseline(['azumarill', 'medicham']), RANKS_4, {
+      source: 'all',
+      legal,
+    });
+    const azumarill = r.rows.find((x) => x.speciesId === 'azumarill')!;
+    const priorA = PRIOR_RANK1;
+    expect(azumarill.banned).toBe(true);
+    expect(azumarill.weight).toBeCloseTo(priorA, 6);
+    expect(r.rows.find((x) => x.speciesId === 'medicham')!.banned).toBe(false);
+  });
+
+  it('lists a species PvPoke does not rank but tournaments picked', () => {
+    const meta = withTournament({
+      battles: 105,
+      events: 1,
+      species: [{ speciesId: 'gligar', picks: 40 }],
+    });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    const gligar = r.rows.find((x) => x.speciesId === 'gligar')!;
+    expect(gligar.pvpokeRank).toBeNull();
+    expect(gligar.tournamentPicks).toBe(40);
+    expect(gligar.weight).toBeGreaterThan(0);
+  });
+
+  it('gives each view its own weights', () => {
+    const meta = {
+      ...withTournament({
+        battles: 105,
+        events: 1,
+        species: [{ speciesId: 'medicham', picks: 100 }],
+      }),
+      battles: 300,
+      devices: 10,
+      species: [stats({ speciesId: 'azumarill', sightings: 100 })],
+    };
+    const view = (source: 'all' | 'prior' | 'ladder' | 'tournament') =>
+      rankSpecies(meta, BASE, RANKS_4, { source, legal: null });
+    expect(view('prior').say).toBe(0);
+    expect(view('prior').tournamentSay).toBe(0);
+    expect(view('ladder').tournamentSay).toBe(0);
+    expect(view('ladder').say).toBeCloseTo(0.5, 6);
+    expect(view('tournament').say).toBe(0);
+    expect(view('tournament').tournamentSay).toBeCloseTo(1 / 3, 6);
+    const prior = view('prior');
+    const priorA = PRIOR_RANK1;
+    expect(prior.rows.find((x) => x.speciesId === 'azumarill')!.weight).toBeCloseTo(priorA, 6);
+  });
+
+  it('carries the per-row tournament figures onto every row', () => {
+    const meta = withTournament({
+      battles: 10,
+      events: 1,
+      species: [{ speciesId: 'medicham', picks: 6, wins: 4, losses: 2 }],
+      eventsOther: 2,
+    });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'tournament', legal: null });
+    const medicham = r.rows.find((x) => x.speciesId === 'medicham')!;
+    expect(medicham.tournamentPicks).toBe(6);
+    expect(medicham.tournamentGame1Picks).toBe(6);
+    expect([medicham.tournamentWins, medicham.tournamentLosses]).toEqual([4, 2]);
+    expect(r.eventsOther).toBe(2);
+    expect(r.rows.find((x) => x.speciesId === 'azumarill')!.tournamentPicks).toBe(0);
   });
 });

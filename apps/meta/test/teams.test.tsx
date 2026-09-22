@@ -272,6 +272,12 @@ function opponentRow(id: string, i: number, weight: number): SpeciesRow {
     confidence: 'few',
     trend: null,
     barPct: 100,
+    tournamentPicks: 0,
+    tournamentGame1Picks: 0,
+    tournamentWins: 0,
+    tournamentLosses: 0,
+    tournamentUnresolvedForms: 0,
+    banned: false,
   };
 }
 
@@ -285,9 +291,14 @@ function makeRanking(battles: number, devices: number, weightCovered = 1): Speci
     weights.set('outside_the_matrix', total - OPPONENTS.length);
   }
   return {
+    source: 'all',
     say: measuredSay(battles, devices),
     battles,
     devices,
+    tournamentSay: 0,
+    tournamentBattles: 0,
+    events: 0,
+    eventsOther: 0,
     rows: OPPONENTS.map((id, i) => opponentRow(id, i, weights.get(id) ?? 0)),
     weights,
     pvpokeCommit: BAKED_COMMIT,

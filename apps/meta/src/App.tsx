@@ -338,10 +338,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
   );
   const meta = useMetaSummary(activeLeague, w, deps);
   const baseline = useBaseline(activeLeague, deps);
-  // The Play! ban list, fetched lazily like the baseline. Nothing reads it yet: it is wired
-  // through here so a future task (the legality list on the client) has it in hand, the same way
-  // useEpochs was called unconditionally before anything rendered from it.
-  useLegal(activeLeague, deps);
+  // The Play! ban list, fetched lazily like the baseline.
+  const legal = useLegal(activeLeague, deps);
   // Called unconditionally, same as meta and baseline above, to keep hook order stable across
   // views: on a non-species view there is no id to look up, so this fetches an empty one (the
   // stub, and the real worker, both answer it harmlessly) rather than skipping the hook.
@@ -359,9 +357,14 @@ export function App(props?: { deps?: Deps }): ReactNode {
   const ranking = useMemo(
     () =>
       meta.data && baseline.data && ranks.data
-        ? rankSpecies(meta.data, baseline.data, ranks.data)
+        ? rankSpecies(meta.data, baseline.data, ranks.data, {
+            source: query.source,
+            // A failed or absent ban list degrades to "nothing banned" rather than blanking the
+            // screen, the same way a failed matchup slice degrades to `projectionless`.
+            legal: legal.data,
+          })
         : null,
-    [meta.data, baseline.data, ranks.data],
+    [meta.data, baseline.data, ranks.data, query.source, legal.data],
   );
   const board = useMemo(
     () =>

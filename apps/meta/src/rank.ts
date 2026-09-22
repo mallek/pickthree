@@ -20,6 +20,8 @@
 import { blendWeights } from '@pickthree/engine/meta';
 import type { MetaSummaryV1, SpeciesStats } from './api.js';
 import type { Baseline } from './baseline.js';
+import type { Legal } from './legal.js';
+import type { SourceKey } from './route.js';
 import { type Confidence, confidence, trendPoints } from './stats.js';
 
 /** Counted battles at which measured play earns half the say. Was the gate; is now the curve. */
@@ -34,6 +36,21 @@ export function measuredSay(battles: number, devices: number): number {
   const byBattles = battles <= 0 ? 0 : battles / (battles + HALF_SAY_BATTLES);
   const byDevices = devices <= 0 ? 0 : devices / (devices + HALF_SAY_DEVICES);
   return Math.min(byBattles, byDevices);
+}
+
+/** Tournament battles at which tournament play earns half the say of its own term. 100 because
+ *  a tournament battle carries two full teams and a verified result, roughly three ladder
+ *  records of information. A half-say point, not a gate. */
+export const HALF_SAY_TOURNAMENT_BATTLES = 100;
+/** Events at which the same term earns half the say. 2 because one event is one local meta, the
+ *  same reason one phone is held to a sixth of the say. Also a half-say point, not a gate. */
+export const HALF_SAY_EVENTS = 2;
+
+/** How much of the say tournament play has earned: the smaller of the two curves, 0 to 1. */
+export function tournamentSay(battles: number, events: number): number {
+  const byBattles = battles <= 0 ? 0 : battles / (battles + HALF_SAY_TOURNAMENT_BATTLES);
+  const byEvents = events <= 0 ? 0 : events / (events + HALF_SAY_EVENTS);
+  return Math.min(byBattles, byEvents);
 }
 
 export interface SpeciesRow {
@@ -62,13 +79,36 @@ export interface SpeciesRow {
   trend: number | null;
   /** 0 to 100, relative to the heaviest row. */
   barPct: number;
+  /** This species' picks at a blended tournament event, 0 when it was never picked there. */
+  tournamentPicks: number;
+  /** Game 1 picks at a blended tournament event (a subset of `tournamentPicks`). */
+  tournamentGame1Picks: number;
+  /** Wins recorded for this species at a blended tournament event. */
+  tournamentWins: number;
+  /** Losses recorded for this species at a blended tournament event. */
+  tournamentLosses: number;
+  /** Picks at a blended tournament event whose exact form could not be resolved. */
+  tournamentUnresolvedForms: number;
+  /** True when the Play! ban list marks this species banned; it gets the plain prior, not a
+   *  zero tournament share. */
+  banned: boolean;
 }
 
 export interface SpeciesRanking {
-  /** `a`, 0 to 1: how much of the say measured play has earned. */
+  /** Which populations this ranking was asked to blend. */
+  source: SourceKey;
+  /** `a`, 0 to 1: how much of the say measured ladder play has earned. */
   say: number;
   battles: number;
   devices: number;
+  /** How much of the say tournament pick share has earned, 0 to 1. */
+  tournamentSay: number;
+  /** Tournament battles behind `tournamentSay`. */
+  tournamentBattles: number;
+  /** Blended tournament events behind `tournamentSay`. */
+  events: number;
+  /** Tournament events seen but not blended in (too small a sample, or not this league's cup). */
+  eventsOther: number;
   rows: SpeciesRow[];
   /** The same weights, by species id, for the team projections. */
   weights: Map<string, number>;
@@ -80,8 +120,19 @@ export function rankSpecies(
   meta: MetaSummaryV1,
   baseline: Baseline,
   ranks: readonly string[],
+  opts: { source: SourceKey; legal: Legal | null },
 ): SpeciesRanking {
-  const say = measuredSay(meta.battles, meta.devices);
+  const block = meta.tournament;
+  const tBattles = block?.battles ?? 0;
+  const events = block?.events ?? 0;
+  // Each view is the same two blends with one or both terms switched off, never a different
+  // formula: `prior` is both off, `ladder` is today's, `tournament` is the first alone, `all`
+  // is the sequence. One code path, so the four can never disagree about a row.
+  const usesLadder = opts.source === 'all' || opts.source === 'ladder';
+  const usesTournament = opts.source === 'all' || opts.source === 'tournament';
+  const say = usesLadder ? measuredSay(meta.battles, meta.devices) : 0;
+  const aT = usesTournament ? tournamentSay(tBattles, events) : 0;
+
   const rankOf = new Map<string, number>();
   ranks.forEach((id, i) => {
     if (!rankOf.has(id)) {
@@ -90,9 +141,9 @@ export function rankSpecies(
   });
 
   const seen = new Map<string, SpeciesStats>(meta.species.map((s) => [s.speciesId, s]));
-  // The list is PvPoke's curated group plus everything anyone actually faced. A species PvPoke
-  // ranks but nobody curated or faced is not part of what this league is facing, so it is not
-  // a row; its rank is still used the moment it is faced.
+  const picked = new Map(
+    (block?.species ?? []).map((s) => [s.speciesId, s] as const),
+  );
   const ids: string[] = [];
   const known = new Set<string>();
   const add = (id: string): void => {
@@ -109,21 +160,57 @@ export function rankSpecies(
       add(s.speciesId);
     }
   }
+  // Everything picked at a blended event, for the same reason as a faced species: it is part of
+  // what this league's list is about, whether or not PvPoke ranks it.
+  for (const s of block?.species ?? []) {
+    if (s.picks >= LISTED_MIN) {
+      add(s.speciesId);
+    }
+  }
 
-  const weights = blendWeights(
+  const blendInput = {
+    species: ids,
+    ranks: new Map(ids.map((id) => [id, rankOf.get(id) ?? null])),
+  };
+  const options = { minBattles: 0, halfLife: HALF_SAY_BATTLES, unrankedPrior: 0 };
+  // PvPoke's prior alone: `share: 0` makes blendWeights return (1 - 0) * prior, which is the
+  // normalised prior and nothing else. Asked for explicitly rather than recomputed here, so the
+  // normalisation can never drift from the one the blend below uses.
+  const prior = blendWeights(
+    { ...blendInput, sightings: new Map(), battles: 0 },
+    { ...options, share: 0 },
+  );
+  const afterTournament = blendWeights(
     {
-      species: ids,
-      ranks: new Map(ids.map((id) => [id, rankOf.get(id) ?? null])),
-      sightings: new Map(ids.map((id) => [id, seen.get(id)?.sightings ?? 0])),
-      battles: meta.battles,
+      ...blendInput,
+      sightings: new Map(ids.map((id) => [id, picked.get(id)?.picks ?? 0])),
+      battles: tBattles,
     },
-    // `share` is the whole story: blendShare returns it and never reads the battle curve, so
-    // minBattles and halfLife below are inert, present only because BlendOptions requires them.
-    // They are written as the values this curve would use if it ran (no floor, because the curve
-    // already handles a small sample) rather than as arbitrary numbers, so a reader who deletes
-    // the override does not silently get a different formula.
-    // The override exists because blendShare cannot express the device cap on its own.
-    { minBattles: 0, halfLife: HALF_SAY_BATTLES, share: say, unrankedPrior: 0 },
+    { ...options, halfLife: HALF_SAY_TOURNAMENT_BATTLES, share: aT },
+  );
+  const banned = opts.legal?.banned ?? new Set<string>();
+  // A banned species has no tournament share, not a zero one: zero says nobody picked it, which
+  // is false; the plain prior says it was not observable in this population.
+  const p1 = new Map(
+    ids.map((id) => [
+      id,
+      (banned.has(id) ? prior.get(id) : afterTournament.get(id)) ?? 0,
+    ]),
+  );
+
+  // The second blend, written out rather than passed back through blendWeights, because its
+  // prior term is p1 and blendWeights only knows how to build a prior from PvPoke ranks. The
+  // arithmetic is blendWeights' own last line, and with aT = 0 (so p1 = prior) it reduces to
+  // exactly the call this function used to make.
+  let ladderTotal = 0;
+  for (const id of ids) {
+    ladderTotal += seen.get(id)?.sightings ?? 0;
+  }
+  const weights = new Map(
+    ids.map((id) => {
+      const share = ladderTotal === 0 ? 0 : (seen.get(id)?.sightings ?? 0) / ladderTotal;
+      return [id, (1 - say) * (p1.get(id) ?? 0) + say * share];
+    }),
   );
 
   const prev = meta.previous;
@@ -137,6 +224,7 @@ export function rankSpecies(
 
   const rows: SpeciesRow[] = sorted.map((speciesId, i) => {
     const s = seen.get(speciesId);
+    const t = picked.get(speciesId);
     const sightings = s?.sightings ?? 0;
     const wins = s?.wins ?? 0;
     const losses = s?.losses ?? 0;
@@ -149,7 +237,6 @@ export function rankSpecies(
       pvpokeRank: rankOf.get(speciesId) ?? null,
       inMetaGroup: inGroup.has(speciesId),
       sightings,
-      // A share of nothing is not zero, it is nothing. A screen must print a count instead.
       share: meta.battles > 0 ? sightings / meta.battles : null,
       wins,
       losses,
@@ -159,13 +246,24 @@ export function rankSpecies(
         ? trendPoints(sightings, meta.battles, prevById.get(speciesId) ?? 0, prev.battles)
         : null,
       barPct: heaviest > 0 ? Math.round((weight / heaviest) * 100) : 0,
+      tournamentPicks: t?.picks ?? 0,
+      tournamentGame1Picks: t?.game1Picks ?? 0,
+      tournamentWins: t?.wins ?? 0,
+      tournamentLosses: t?.losses ?? 0,
+      tournamentUnresolvedForms: t?.unresolvedForms ?? 0,
+      banned: banned.has(speciesId),
     };
   });
 
   return {
+    source: opts.source,
     say,
+    tournamentSay: aT,
     battles: meta.battles,
     devices: meta.devices,
+    tournamentBattles: tBattles,
+    events,
+    eventsOther: block?.eventsOther ?? 0,
     rows,
     weights,
     pvpokeCommit: baseline.pvpokeCommit,

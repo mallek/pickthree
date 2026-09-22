@@ -73,7 +73,7 @@ function renderPokemon(opts: { battles: number; devices: number; species: Specie
     tournament: null,
     generatedAt: '2026-09-08T00:00:00.000Z',
   };
-  const ranking = rankSpecies(meta, BASELINE, RANKS);
+  const ranking = rankSpecies(meta, BASELINE, RANKS, { source: 'all', legal: null });
   return render(
     <Pokemon
       league="great"

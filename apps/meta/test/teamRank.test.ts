@@ -43,9 +43,14 @@ function view(): MatrixView {
 }
 
 const ranking: SpeciesRanking = {
+  source: 'all',
   say: 0.5,
   battles: 300,
   devices: 5,
+  tournamentSay: 0,
+  tournamentBattles: 0,
+  events: 0,
+  eventsOther: 0,
   rows: [],
   weights: new Map([
     ['x', 0.5],
