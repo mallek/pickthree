@@ -55,6 +55,58 @@ export interface Baked {
 /** The most moves of one kind a baseline entry carries. */
 const MOVE_LIMIT = 4;
 
+/**
+ * The tournament cup each site league's Play! events are played under. Only events on this cup
+ * enter that league's blend (Sao Paulo's laic2027 bans four types and fifteen named species;
+ * pooling it into a Great League ranking would be nonsense). Ultra and Master have no Play!
+ * format and get a null cup and an empty ban list.
+ *
+ * The same map exists in workers/counter/src/tournament.ts as OPEN_EQUIVALENT_CUP, for the same
+ * reason api.ts writes the wire shapes down twice: this app does not depend on that workspace,
+ * and a rule written on both sides is the contract. Both copies are asserted by their own test.
+ */
+export const OPEN_EQUIVALENT_CUP: Record<string, string> = { great: 'championshipseries' };
+
+export interface LegalFile {
+  /** The open-equivalent tournament cup, or null when the league has no Play! format. */
+  cup: string | null;
+  /** Species the league's ranking lists that the cup does not: what "banned" means on a page. */
+  banned: string[];
+}
+
+/** The league's ranked species minus the cup's, in the league's own ranking order. */
+export function legalFor(
+  leagueId: string,
+  leagueRanks: readonly { speciesId: string }[],
+  cupRanks: readonly { speciesId: string }[] | null,
+): LegalFile {
+  const cup = OPEN_EQUIVALENT_CUP[leagueId] ?? null;
+  if (cup === null || cupRanks === null) {
+    return { cup: null, banned: [] };
+  }
+  const allowed = new Set(cupRanks.map((r) => r.speciesId));
+  const banned: string[] = [];
+  const seen = new Set<string>();
+  for (const r of leagueRanks) {
+    if (!allowed.has(r.speciesId) && !seen.has(r.speciesId)) {
+      seen.add(r.speciesId);
+      banned.push(r.speciesId);
+    }
+  }
+  return { cup, banned };
+}
+
+/**
+ * The leagues this SITE has. The data build also ships the app's tournament cup leagues
+ * (League.kind 'cup') and, behind PICKTHREE_SPECIAL_CUPS, PvPoke's special formats; neither is a
+ * population of shared battles, so neither belongs in the site's league switcher, its baselines,
+ * its matrix slices or its legality files. The Tournament league is a ruleset to build a team
+ * for, which is the app's job, and it is deliberately not the Tournaments source on this site.
+ */
+export function siteLeagues<T extends { kind: string }>(leagues: readonly T[]): T[] {
+  return leagues.filter((l) => l.kind === 'standard');
+}
+
 interface PokemonIn {
   speciesId: string;
   speciesName: string;
@@ -82,7 +134,7 @@ interface RankIn {
 export function bake(input: {
   pokemon: unknown[];
   moves: unknown[];
-  leagues: { id: string; meta: string }[];
+  leagues: { id: string; meta: string; kind: string }[];
   metaGroups: Record<string, MetaIn[]>;
   rankings: Record<string, unknown[]>;
   manifest: { pvpokeCommit: string; pvpokeDate: string };
@@ -99,7 +151,7 @@ export function bake(input: {
   }
 
   const baselines: Record<string, BaselineFile> = {};
-  for (const league of input.leagues) {
+  for (const league of siteLeagues(input.leagues)) {
     const group = input.metaGroups[league.id] ?? [];
     const ranked = new Map(
       ((input.rankings[league.id] ?? []) as RankIn[]).map((r) => [r.speciesId, r]),
@@ -291,12 +343,14 @@ async function readJson<T>(...parts: string[]): Promise<T> {
 }
 
 async function main(): Promise<void> {
-  let leagues: { id: string; meta: string }[];
+  let allLeagues: { id: string; meta: string; kind: string }[];
   try {
-    leagues = await readJson(DATA, 'leagues.json');
+    allLeagues = await readJson(DATA, 'leagues.json');
   } catch {
     throw new Error(`No game data at ${DATA}. Run "npm run data:build" at the repo root first.`);
   }
+  // One filter, used for the site's own leagues.json and for every per-league loop below.
+  const leagues = siteLeagues(allLeagues);
   const metaGroups: Record<string, MetaIn[]> = {};
   const rankings: Record<string, unknown[]> = {};
   for (const league of leagues) {
@@ -306,7 +360,7 @@ async function main(): Promise<void> {
   const baked = bake({
     pokemon: await readJson(DATA, 'pokemon.json'),
     moves: await readJson(DATA, 'moves.json'),
-    leagues,
+    leagues: allLeagues,
     metaGroups,
     rankings,
     manifest: await readJson(DATA, 'data-manifest.json'),
@@ -330,7 +384,7 @@ async function main(): Promise<void> {
   const pokemonFull = await readJson<Species[]>(DATA, 'pokemon.json');
   const movesFull = await readJson<Move[]>(DATA, 'moves.json');
   const index = new GameDataIndex(pokemonFull, movesFull);
-  const engineLeagues = await readJson<EngineLeague[]>(DATA, 'leagues.json');
+  const engineLeagues = siteLeagues(await readJson<EngineLeague[]>(DATA, 'leagues.json'));
   const manifest = await readJson<{ pvpokeCommit: string; pvpokeDate: string }>(
     DATA,
     'data-manifest.json',
@@ -381,6 +435,22 @@ async function main(): Promise<void> {
       await writeFile(join(OUT, dir, name), text);
       sizes.push(`${dir}/${name} ${Math.round(text.length / 1024)} KB`);
     }
+  }
+
+  await mkdir(join(OUT, 'legal'), { recursive: true });
+  for (const league of engineLeagues) {
+    const cup = OPEN_EQUIVALENT_CUP[league.id] ?? null;
+    let cupRanks: RankingEntry[] | null = null;
+    if (cup !== null) {
+      // The data build writes the cup as its own league (packages/data/src/build-derived.ts), so
+      // a missing file means the build is older than the Tournament league and must be rerun,
+      // not that nothing is banned. Failing loudly beats shipping an empty ban list.
+      cupRanks = await readJson<RankingEntry[]>(DATA, 'rankings', cup, 'overall.json');
+    }
+    const overall = await readJson<RankingEntry[]>(DATA, 'rankings', league.id, 'overall.json');
+    const file = legalFor(league.id, overall, cupRanks);
+    await writeFile(join(OUT, 'legal', `${league.id}.json`), JSON.stringify(file));
+    sizes.push(`legal/${league.id}.json ${file.banned.length} banned`);
   }
 
   await writeFile(

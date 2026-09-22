@@ -15,9 +15,12 @@ import { facingWeight, MatrixView, type MatchupMatrix } from '@pickthree/engine/
 import {
   bake,
   generateFor,
+  legalFor,
+  OPEN_EQUIVALENT_CUP,
   priorWeights,
   ranksOf,
   readEpochs,
+  siteLeagues,
   sliceMatrix,
 } from '../scripts/bake.js';
 
@@ -35,7 +38,7 @@ const input = {
     { moveId: 'BUBBLE', name: 'Bubble', type: 'water' },
     { moveId: 'ICE_BEAM', name: 'Ice Beam', type: 'ice' },
   ],
-  leagues: [{ id: 'great', meta: 'great' }],
+  leagues: [{ id: 'great', meta: 'great', kind: 'standard' }],
   metaGroups: {
     great: [
       { speciesId: 'azumarill', fastMove: 'BUBBLE', chargedMoves: ['ICE_BEAM', 'PLAY_ROUGH'] },
@@ -194,6 +197,69 @@ describe('priorWeights', () => {
     const weights = priorWeights(overall, ['a', 'ghost']);
     const total = facingWeight(1) + facingWeight(null);
     expect(weights.get('ghost')).toBeCloseTo(facingWeight(null) / total);
+  });
+});
+
+describe('legalFor', () => {
+  it('names the open-equivalent cup only for Great League', () => {
+    expect(OPEN_EQUIVALENT_CUP).toEqual({ great: 'championshipseries' });
+  });
+
+  it('lists every ranked species the cup drops, in the league ranking order', () => {
+    const leagueRanks = [
+      { speciesId: 'azumarill' },
+      { speciesId: 'mimikyu' },
+      { speciesId: 'venusaur_mega' },
+      { speciesId: 'medicham' },
+    ];
+    const cupRanks = [{ speciesId: 'azumarill' }, { speciesId: 'medicham' }];
+    expect(legalFor('great', leagueRanks, cupRanks)).toEqual({
+      cup: 'championshipseries',
+      banned: ['mimikyu', 'venusaur_mega'],
+    });
+  });
+
+  it('gives a league with no Play! format an empty list and no cup', () => {
+    expect(legalFor('ultra', [{ speciesId: 'giratina_altered' }], null)).toEqual({
+      cup: null,
+      banned: [],
+    });
+  });
+
+  it('de-duplicates a league ranking that lists a species twice', () => {
+    const leagueRanks = [
+      { speciesId: 'mimikyu' },
+      { speciesId: 'mimikyu' },
+      { speciesId: 'azumarill' },
+    ];
+    expect(legalFor('great', leagueRanks, [{ speciesId: 'azumarill' }]).banned).toEqual([
+      'mimikyu',
+    ]);
+  });
+});
+
+describe('siteLeagues', () => {
+  it('keeps the open leagues and drops the app-only cup leagues', () => {
+    const leagues = [
+      { id: 'great', meta: 'great', kind: 'standard' },
+      { id: 'ultra', meta: 'ultra', kind: 'standard' },
+      { id: 'championshipseries', meta: 'great', kind: 'cup' },
+      { id: 'remix', meta: 'remix', kind: 'special' },
+    ];
+    expect(siteLeagues(leagues).map((l) => l.id)).toEqual(['great', 'ultra']);
+  });
+});
+
+describe('bake, over a league list carrying a cup league', () => {
+  it('builds a baseline for the site leagues only', () => {
+    const baked = bake({
+      ...input,
+      leagues: [
+        { id: 'great', meta: 'great', kind: 'standard' },
+        { id: 'championshipseries', meta: 'great', kind: 'cup' },
+      ],
+    });
+    expect(Object.keys(baked.baselines)).toEqual(['great']);
   });
 });
 

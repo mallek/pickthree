@@ -21,6 +21,7 @@ apps/meta/public/seasons.json
 apps/meta/public/baseline/
 apps/meta/public/ranks/
 apps/meta/public/matrix/
+apps/meta/public/legal/
 apps/meta/public/epochs.json
 
 # real Poke Genie exports live here locally and never enter the repo
