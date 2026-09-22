@@ -38,6 +38,7 @@ import {
 } from './meta.js';
 import { parseReport, type ErrorReport } from './report.js';
 import { teamBoard, type TeamsV1 } from './teams.js';
+import { createTournamentTables } from './tournamentStore.js';
 
 export interface Env {
   COUNTER: DurableObjectNamespace<Counter>;
@@ -107,6 +108,7 @@ export class MetaStore extends DurableObject<Env> {
     if (!cols.some((c) => c['name'] === 'source')) {
       ctx.storage.sql.exec("ALTER TABLE battles ADD COLUMN source TEXT NOT NULL DEFAULT 'ladder'");
     }
+    createTournamentTables(ctx.storage.sql);
   }
 
   ingest(batch: SharedBatch): { stored: number; skipped: number } {
