@@ -1,9 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Baseline } from '../src/baseline.js';
-import type { MetaSummaryV1, SpeciesStats } from '../src/api.js';
+import type { MetaSummaryV1, SpeciesStats, TournamentBlock } from '../src/api.js';
 import type { StaticData } from '../src/data.js';
-import { DEFAULT_QUERY, hrefFor } from '../src/route.js';
+import type { Legal } from '../src/legal.js';
+import { DEFAULT_QUERY, hrefFor, type SourceKey } from '../src/route.js';
 import { rankSpecies } from '../src/rank.js';
 import { Pokemon } from '../src/screens/Pokemon.js';
 
@@ -18,9 +19,10 @@ const STATIC_DATA: StaticData = {
   seasons: [],
 };
 
-// PvPoke ranks azumarill and nothing else: enough for "shows PvPoke's rank" and "marks ... new"
-// to both have something to contrast against.
-const RANKS: readonly string[] = ['azumarill'];
+// PvPoke ranks azumarill and tinkaton, nothing else: enough for "shows PvPoke's rank" and
+// "marks ... new" to both have something to contrast against, and tinkaton (banned at a
+// tournament in the tests below) a rank of its own to be drawn by regardless of tournament picks.
+const RANKS: readonly string[] = ['azumarill', 'tinkaton'];
 
 const BASELINE: Baseline = {
   league: 'great',
@@ -33,6 +35,15 @@ const BASELINE: Baseline = {
       rating: 699,
       fastMove: 'BUBBLE',
       chargedMoves: ['ICE_BEAM'],
+      fastUsage: [],
+      chargedUsage: [],
+    },
+    {
+      speciesId: 'tinkaton',
+      score: 90,
+      rating: 690,
+      fastMove: 'FAIRY_WIND',
+      chargedMoves: ['GIGATON_HAMMER'],
       fastUsage: [],
       chargedUsage: [],
     },
@@ -55,25 +66,37 @@ function href(view: Parameters<typeof hrefFor>[0]): string {
  * tests exercise the screen's actual reading of a `SpeciesRow`, not a fixture that happens to look
  * like one.
  */
-function renderPokemon(opts: { battles: number; devices: number; species: SpeciesStats[] }) {
+function renderPokemon(opts: {
+  battles?: number;
+  devices?: number;
+  species?: SpeciesStats[];
+  /** A tournament block in the same window. Defaults to null: no tournament data at all. */
+  tournament?: TournamentBlock;
+  /** Defaults to 'all', same as every existing test that predates the Source select. */
+  source?: SourceKey;
+  /** The Play! ban list. Defaults to null: nothing banned, same as before this took a `legal`. */
+  legal?: { cup: string | null; banned: string[] };
+}) {
   const meta: MetaSummaryV1 = {
     league: 'great',
     since: '2026-09-01T00:00:00.000Z',
     until: '2026-09-08T00:00:00.000Z',
     source: 'all',
-    band: 'all',
-    battles: opts.battles,
+    battles: opts.battles ?? 0,
     tanked: 0,
-    devices: opts.devices,
+    devices: opts.devices ?? 0,
     bands: {},
-    sources: { ladder: opts.battles },
-    species: opts.species,
+    sources: { ladder: opts.battles ?? 0 },
+    species: opts.species ?? [],
     teams: [],
     previous: null,
-    tournament: null,
+    tournament: opts.tournament ?? null,
     generatedAt: '2026-09-08T00:00:00.000Z',
   };
-  const ranking = rankSpecies(meta, BASELINE, RANKS, { source: 'all', legal: null });
+  const legal: Legal | null = opts.legal
+    ? { league: 'great', cup: opts.legal.cup, banned: new Set(opts.legal.banned) }
+    : null;
+  const ranking = rankSpecies(meta, BASELINE, RANKS, { source: opts.source ?? 'all', legal });
   return render(
     <Pokemon
       league="great"
@@ -105,13 +128,13 @@ describe('Pokemon, blended', () => {
   it('says how measured the ranking currently is', () => {
     renderPokemon({ battles: 480, devices: 9, species: [faced('azumarill', 200, 90, 110)] });
     expect(
-      screen.getByText(/% measured, from 480 battles shared by 9 devices/),
+      screen.getByText(/% measured, from 480 shared battles by 9 devices/),
     ).toBeInTheDocument();
   });
 
   it('says "1 device" rather than "1 devices"', () => {
     renderPokemon({ battles: 40, devices: 1, species: [faced('azumarill', 20, 10, 8)] });
-    expect(screen.getByText(/shared by 1 device$/)).toBeInTheDocument();
+    expect(screen.getByText(/by 1 device$/)).toBeInTheDocument();
   });
 
   it('marks a species PvPoke does not rank as new', () => {
@@ -214,6 +237,62 @@ describe('Pokemon, blended', () => {
     expect(within(row).getByText('New').tagName).not.toBe('BUTTON');
     expect(within(row).queryByRole('button')).toBeNull();
     expect(screen.getByRole('button', { name: 'New' })).toBeInTheDocument();
+  });
+});
+
+describe('Pokemon, source', () => {
+  it('states all three weights under All', () => {
+    renderPokemon({
+      battles: 480,
+      devices: 9,
+      tournament: { events: 1, battles: 105, eventsOther: 0, species: [] },
+      source: 'all',
+    });
+    // The blend's own two curves at these inputs: measuredSay(480, 9) is 62% of the ladder's say,
+    // and tournamentSay(105, 1) splits what is left between PvPoke and tournaments.
+    expect(screen.getByText(/PvPoke 26%, tournaments 13%, GBL 62%\./)).toBeInTheDocument();
+  });
+
+  it('under Tournaments, prints picks and the record and marks a banned row', () => {
+    renderPokemon({
+      source: 'tournament',
+      legal: { cup: 'championshipseries', banned: ['tinkaton'] },
+      tournament: {
+        events: 1,
+        battles: 100,
+        eventsOther: 0,
+        species: [
+          { speciesId: 'azumarill', picks: 40, game1Picks: 25, wins: 18, losses: 22, unresolvedForms: 0 },
+        ],
+      },
+    });
+    expect(screen.getByText('40 of 100 battles (40%)')).toBeInTheDocument();
+    expect(screen.getByText(/players went 18-22/)).toBeInTheDocument();
+    expect(screen.getByText('Banned at tournaments')).toBeInTheDocument();
+  });
+
+  it('under PvPoke, claims nothing measured on any row', () => {
+    renderPokemon({ source: 'prior', battles: 480, devices: 9 });
+    expect(
+      screen.getByText(/PvPoke's list, commit abc1234 from 2026-09-10\. Nothing measured\./),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Nothing measured').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/players went/)).not.toBeInTheDocument();
+  });
+
+  it('lists a species tournaments picked that nobody faced on the ladder', () => {
+    renderPokemon({
+      source: 'tournament',
+      tournament: {
+        events: 1,
+        battles: 100,
+        eventsOther: 0,
+        species: [
+          { speciesId: 'lanturn', picks: 12, game1Picks: 5, wins: 5, losses: 5, unresolvedForms: 2 },
+        ],
+      },
+    });
+    expect(screen.getByText('12 of 100 battles (12%)')).toBeInTheDocument();
   });
 });
 

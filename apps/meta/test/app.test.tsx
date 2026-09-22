@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { THEME_KEY } from '@pickthree/ui';
@@ -95,6 +95,30 @@ describe('App', () => {
     const caption = select.closest('.field')?.querySelector('.field-l');
     expect(caption?.textContent).toBe('Window');
     expect(caption?.classList.contains('vh')).toBe(true);
+  });
+
+  it('offers the four sources in place of the retired rank band filter', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Source' })).toBeVisible());
+    expect(screen.queryByRole('combobox', { name: 'Rank band' })).not.toBeInTheDocument();
+    const select = screen.getByRole('combobox', { name: 'Source' });
+    expect([...select.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
+      'All',
+      'PvPoke',
+      'GBL',
+      'Tournaments',
+    ]);
+  });
+
+  it('puts the chosen source in the url, replacing rather than pushing', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Source' })).toBeVisible());
+    await act(async () => {
+      fireEvent.change(screen.getByRole('combobox', { name: 'Source' }), {
+        target: { value: 'tournament' },
+      });
+    });
+    await waitFor(() => expect(window.location.search).toBe('?source=tournament'));
   });
 
   it('answers the back button', async () => {

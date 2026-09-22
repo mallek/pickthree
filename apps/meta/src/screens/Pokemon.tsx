@@ -13,47 +13,77 @@
 import type { ReactNode } from 'react';
 import { ConfidenceTag, Bar, Sprite, Term, TrendTag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { battles as battlesText, count, pct, plural } from '../format.js';
+import { count, pct, plural } from '../format.js';
+import { sourceHeaderLine } from '../headerCopy.js';
 import { PICK3 } from '../links.js';
-import { HALF_SAY_BATTLES, type SpeciesRanking, type SpeciesRow } from '../rank.js';
+import {
+  HALF_SAY_BATTLES,
+  HALF_SAY_EVENTS,
+  HALF_SAY_TOURNAMENT_BATTLES,
+  type SpeciesRanking,
+  type SpeciesRow,
+} from '../rank.js';
 import type { View } from '../route.js';
 
-/** The tap-to-reveal note on the header line: how the continuous blend works, with the one
- * number (`HALF_SAY_BATTLES`) read from the constant rather than typed again, so this sentence
- * cannot drift from the curve `measuredSay` actually computes. */
-function blendExplainer(): string {
-  return (
+/** The tap-to-reveal note on the header line. Both numbers come from the constants rather than
+ *  being typed again, so this sentence cannot drift from the curves `measuredSay` and
+ *  `tournamentSay` actually compute. */
+function blendExplainer(ranking: SpeciesRanking): string {
+  const base =
     "Every row blends PvPoke's ranking with what players actually faced. The more battles and " +
     `the more devices, the more the measured side counts. At ${count(HALF_SAY_BATTLES)} battles ` +
-    'it is half.'
+    'it is half.';
+  if (ranking.source !== 'all' && ranking.source !== 'tournament') {
+    return base;
+  }
+  return (
+    `${base} Tournament picks blend into PvPoke's side first, on their own curve: half at ` +
+    `${count(HALF_SAY_TOURNAMENT_BATTLES)} tournament battles and at ${count(HALF_SAY_EVENTS)} events.`
   );
 }
 
-/** At 0% measured this says so in plain words, the same honesty the old below-threshold banner
- * carried, now said continuously rather than as a flip. */
-function headerLine(ranking: SpeciesRanking): string {
-  if (ranking.battles === 0) {
-    return "PvPoke's list. No shared battles in this window yet.";
+/** A row with nothing to divide by prints a count, never a percentage: a share of nothing is not
+ * zero, it is nothing. Under PvPoke there is no measured side at all and the row says so. */
+function facedLine(row: SpeciesRow, ranking: SpeciesRanking): string {
+  if (ranking.source === 'prior') {
+    return 'Nothing measured';
   }
-  const pctVal = Math.round(ranking.say * 100);
-  const devices = `${count(ranking.devices)} ${plural(ranking.devices, 'device', 'devices')}`;
-  return `${pctVal}% measured, from ${battlesText(ranking.battles)} shared by ${devices}`;
-}
-
-/** A row with `share === null` prints a count, never a percentage: a share of nothing is not
- * zero, it is nothing to divide by. */
-function facedLine(row: SpeciesRow, battles: number): string {
+  if (ranking.source === 'tournament') {
+    if (row.banned) {
+      return 'Banned at tournaments';
+    }
+    if (ranking.tournamentBattles === 0) {
+      return 'No tournament battles in this window';
+    }
+    if (row.tournamentPicks === 0) {
+      return 'Not picked in this window';
+    }
+    return `${count(row.tournamentPicks)} of ${count(ranking.tournamentBattles)} battles (${pct(row.tournamentPicks / ranking.tournamentBattles)}%)`;
+  }
   if (row.share === null) {
     return 'Not faced in this window';
   }
-  return `${count(row.sightings)} of ${count(battles)} battles (${pct(row.share)}%)`;
+  return `${count(row.sightings)} of ${count(ranking.battles)} battles (${pct(row.share)}%)`;
 }
 
-function recordLine(row: SpeciesRow): string {
-  if (row.decided === 0) {
+function recordOf(row: SpeciesRow, ranking: SpeciesRanking): { wins: number; losses: number } {
+  return ranking.source === 'tournament'
+    ? { wins: row.tournamentWins, losses: row.tournamentLosses }
+    : { wins: row.wins, losses: row.losses };
+}
+
+function recordLine(row: SpeciesRow, ranking: SpeciesRanking): string {
+  const { wins, losses } = recordOf(row, ranking);
+  if (wins + losses === 0) {
     return 'no result recorded';
   }
-  return `players went ${row.wins}-${row.losses}`;
+  return `players went ${wins}-${losses}`;
+}
+
+/** Battles behind a row's record, in whichever population `ranking.source` reads from: the count
+ * `ConfidenceTag` is asked to grade. */
+function decidedOf(row: SpeciesRow, ranking: SpeciesRanking): number {
+  return ranking.source === 'tournament' ? row.tournamentWins + row.tournamentLosses : row.decided;
 }
 
 /** The explainer behind the "New" word: PvPoke does not rank the species, never anything about
@@ -73,13 +103,13 @@ function RowView({
   row,
   data,
   league,
-  battles,
+  ranking,
   href,
 }: {
   row: SpeciesRow;
   data: StaticData;
   league: string;
-  battles: number;
+  ranking: SpeciesRanking;
   href: (view: View) => string;
 }) {
   const species = speciesOf(data, row.speciesId);
@@ -99,10 +129,13 @@ function RowView({
       </span>
       <span className="row-figure">
         <b>{row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}</b>
-        <small>{facedLine(row, battles)}</small>
-        <small>
-          {recordLine(row)} {row.decided > 0 ? <ConfidenceTag n={row.decided} /> : null}
-        </small>
+        <small>{facedLine(row, ranking)}</small>
+        {ranking.source === 'prior' || (ranking.source === 'tournament' && row.banned) ? null : (
+          <small>
+            {recordLine(row, ranking)}{' '}
+            {decidedOf(row, ranking) > 0 ? <ConfidenceTag n={decidedOf(row, ranking)} /> : null}
+          </small>
+        )}
       </span>
     </a>
   );
@@ -153,11 +186,12 @@ export function Pokemon(p: {
     );
   }
 
-  // The list cut: a row draws when PvPoke ranks it, or when it was faced at least twice. A row
-  // PvPoke does not rank that was faced exactly once cannot have come from anywhere else (see
-  // rank.ts's own `add`: an unranked id only enters the list via a sighting), so what is left out
-  // here is, by construction, species faced once each; they are counted, not dropped.
-  const drawn = ranking.rows.filter((row) => row.pvpokeRank !== null || row.sightings >= 2);
+  // A row draws when PvPoke ranks it, when it was faced at least twice, or when it was picked at
+  // a blended event at all. What is left out is, by construction, species faced exactly once on
+  // the ladder and picked at no tournament; they are counted below, not dropped.
+  const drawn = ranking.rows.filter(
+    (row) => row.pvpokeRank !== null || row.sightings >= 2 || row.tournamentPicks >= 1,
+  );
   const tail = ranking.rows.length - drawn.length;
 
   return (
@@ -165,7 +199,8 @@ export function Pokemon(p: {
       <section>
         <h2>What you face</h2>
         <p className="sub">
-          {headerLine(ranking)} <Term term="How the blend works">{blendExplainer()}</Term>{' '}
+          {sourceHeaderLine(ranking, "PvPoke's list. No shared battles in this window yet.")}{' '}
+          <Term term="How the blend works">{blendExplainer(ranking)}</Term>{' '}
           <Term term="New">{newExplainer()}</Term>
         </p>
         <div className="list">
@@ -175,7 +210,7 @@ export function Pokemon(p: {
               row={row}
               data={data}
               league={league}
-              battles={ranking.battles}
+              ranking={ranking}
               href={href}
             />
           ))}

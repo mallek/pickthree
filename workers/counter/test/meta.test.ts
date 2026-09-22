@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleRow } from '../src/battles.js';
-import {
-  MOVESET_MIN,
-  bandRows,
-  isoWeek,
-  movesetsBySpecies,
-  speciesDetail,
-  summarize,
-} from '../src/meta.js';
+import { MOVESET_MIN, isoWeek, movesetsBySpecies, speciesDetail, summarize } from '../src/meta.js';
 
 const NOW = new Date('2026-09-18T12:00:00.000Z');
 
@@ -35,22 +28,12 @@ function run(rows: BattleRow[], over: Partial<Parameters<typeof summarize>[0]> =
     league: 'great',
     ...WINDOW,
     source: 'all',
-    band: 'all',
     rows,
     previousRows: null,
     now: NOW,
     ...over,
   });
 }
-
-describe('bandRows', () => {
-  it('keeps every row for "all" and filters to one band otherwise', () => {
-    const rows = [row({ band: 'ace' }), row({ band: 'legend' }), row({ band: null })];
-    expect(bandRows(rows, 'all')).toHaveLength(3);
-    expect(bandRows(rows, 'legend')).toHaveLength(1);
-    expect(bandRows(rows, 'ace')[0]!.band).toBe('ace');
-  });
-});
 
 describe('summarize', () => {
   it('counts tanked battles separately and never lets them touch the records', () => {
@@ -83,10 +66,10 @@ describe('summarize', () => {
     expect(s.devices).toBe(1);
   });
 
-  it('counts every band even when filtered to one', () => {
+  it('counts every band in the window', () => {
     const rows = [row({ band: 'ace' }), row({ band: 'legend' }), row({ band: null })];
-    const s = run(rows, { band: 'legend' });
-    expect(s.battles).toBe(1);
+    const s = run(rows);
+    expect(s.battles).toBe(3);
     expect(s.bands).toEqual({ ace: 1, legend: 1, unknown: 1 });
   });
 
@@ -138,9 +121,9 @@ describe('summarize', () => {
     expect(s.teams[0]!.battles).toBe(3);
   });
 
-  it('carries the window, the band and the time it was made', () => {
+  it('carries the window and the time it was made', () => {
     const s = run([row()]);
-    expect(s).toMatchObject({ league: 'great', band: 'all', ...WINDOW });
+    expect(s).toMatchObject({ league: 'great', ...WINDOW });
     expect(s.generatedAt).toBe(NOW.toISOString());
   });
 });
@@ -157,26 +140,11 @@ describe('source discriminator', () => {
       since: '2026-09-01T00:00:00.000Z',
       until: '2026-09-30T00:00:00.000Z',
       source: 'all',
-      band: 'all',
       rows,
       previousRows: null,
       now: new Date('2026-09-30T00:00:00.000Z'),
     });
     expect(out.sources).toEqual({ ladder: 2 });
-  });
-});
-
-describe('the band filter, still live through phase 1', () => {
-  it('still narrows to one band, and now also echoes the source it was asked for', () => {
-    const rows = [row({ band: 'ace' }), row({ band: 'legend' }), row({ band: null })];
-    const all = run(rows, { source: 'all' });
-    expect(all.battles).toBe(3);
-    expect(all.source).toBe('all');
-    const legend = run(rows, { source: 'all', band: 'legend' });
-    expect(legend.battles).toBe(1);
-    expect(legend.band).toBe('legend');
-    // The breakdown is every band in the window, not the filtered one: unchanged behaviour.
-    expect(legend.bands).toEqual({ ace: 1, legend: 1, unknown: 1 });
   });
 });
 
@@ -218,7 +186,6 @@ function detail(rows: BattleRow[], over: Partial<Parameters<typeof speciesDetail
     speciesId: 'medicham',
     ...WINDOW,
     source: 'all',
-    band: 'all',
     rows,
     now: NOW,
     ...over,
@@ -258,11 +225,9 @@ describe('speciesDetail', () => {
     ]);
   });
 
-  it('breaks the record down by band whatever the filter is', () => {
-    const d = detail([row({ band: 'ace' }), row({ band: 'legend', result: 'loss' })], {
-      band: 'ace',
-    });
-    expect(d.sightings).toBe(1);
+  it('breaks the record down by band, over every counted battle', () => {
+    const d = detail([row({ band: 'ace' }), row({ band: 'legend', result: 'loss' })]);
+    expect(d.sightings).toBe(2);
     expect(d.bands).toEqual([
       { band: 'below', sightings: 0, wins: 0, losses: 0 },
       { band: 'ace', sightings: 1, wins: 1, losses: 0 },

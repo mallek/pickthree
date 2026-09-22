@@ -17,18 +17,11 @@ export interface ReadParams {
   since: string;
   until: string;
   source: string;
-  /**
-   * The rank band filter, kept working through phase 1 because the deployed site still renders
-   * the select that sends it. Phase 2 retires both together (Task 13). Ignored once `source`
-   * names something other than `all`: a tournament broadcast reports no rank band, so narrowing
-   * that population by one would silently answer with nothing.
-   */
-  band: string;
 }
 
 const LEAGUE = /^[a-z0-9_]+$/;
 
-/** Parses and clamps the window and band every read endpoint shares. */
+/** Parses and clamps the window every read endpoint shares. */
 export function readParams(url: URL): ReadParams | { error: string } {
   const league = url.searchParams.get('league') ?? 'great';
   if (!LEAGUE.test(league)) {
@@ -44,8 +37,6 @@ export function readParams(url: URL): ReadParams | { error: string } {
   if (until - since > MAX_SPAN_DAYS * 86_400_000) {
     return { error: 'window too long' };
   }
-  const bandRaw = url.searchParams.get('band') ?? 'all';
-  const asked = (BANDS as readonly string[]).includes(bandRaw) ? bandRaw : 'all';
   const sourceRaw = url.searchParams.get('source') ?? 'all';
   const source = SOURCES.includes(sourceRaw) ? sourceRaw : 'all';
   return {
@@ -53,7 +44,6 @@ export function readParams(url: URL): ReadParams | { error: string } {
     since: new Date(since).toISOString(),
     until: new Date(until).toISOString(),
     source,
-    band: source === 'all' ? asked : 'all',
   };
 }
 
@@ -153,12 +143,11 @@ export interface MetaSummaryV1 {
   since: string;
   until: string;
   source: string;
-  band: string;
   /** Counted battles: not tanked. */
   battles: number;
   tanked: number;
   devices: number;
-  /** Every band in the window, not only the filtered one. */
+  /** Every self-reported rank band in the window: a breakdown, not a filter. */
   bands: Record<string, number>;
   /** Counted battles by source. One key today; nothing reads it yet. */
   sources: Record<string, number>;
@@ -180,13 +169,6 @@ export interface MetaSummaryV1 {
 export const TREND_MIN = 200;
 /** A member's moveset only rides along on a team when this many battles back it. */
 export const MOVESET_MIN = 5;
-
-export function bandRows(rows: readonly BattleRow[], band: string): BattleRow[] {
-  if (band === 'all' || !(BANDS as readonly string[]).includes(band)) {
-    return [...rows];
-  }
-  return rows.filter((r) => r.band === band);
-}
 
 function setKey(m: SharedMoves): { key: string; charged: string[] } {
   const charged = [...new Set(m.charged)].sort();
@@ -268,8 +250,6 @@ export function summarize(opts: {
   since: string;
   until: string;
   source: string;
-  /** Defaults to `'all'`, so the tournament read model can leave it out entirely. */
-  band?: string;
   /** Every row in the window, all bands. */
   rows: readonly BattleRow[];
   /** Every row in the window of equal length before it, all bands, or null if not asked for. */
@@ -281,7 +261,6 @@ export function summarize(opts: {
   totals?: Totals;
 }): MetaSummaryV1 {
   const { league, since, until, source, rows, previousRows, now } = opts;
-  const band = opts.band ?? 'all';
   const teamLimit = opts.teamLimit ?? 50;
 
   const bands: Record<string, number> = {};
@@ -293,7 +272,7 @@ export function summarize(opts: {
     bands[key] = (bands[key] ?? 0) + 1;
   }
 
-  const inBand = bandRows(rows, band);
+  const inBand = rows;
   const counted = inBand.filter((r) => !r.tanked);
   // Over `counted`, not `inBand`: a device that only ever tanked has shared nothing usable, so it
   // must not move the device side of the blend curve, which decides how much say the measured
@@ -331,9 +310,7 @@ export function summarize(opts: {
     sources[r.source] = (sources[r.source] ?? 0) + 1;
   }
 
-  const previousCounted = previousRows
-    ? bandRows(previousRows, band).filter((r) => !r.tanked)
-    : null;
+  const previousCounted = previousRows ? previousRows.filter((r) => !r.tanked) : null;
   const previous =
     previousCounted && counted.length >= TREND_MIN && previousCounted.length >= TREND_MIN
       ? {
@@ -349,7 +326,6 @@ export function summarize(opts: {
     since,
     until,
     source,
-    band,
     battles: opts.totals ? opts.totals.battles : counted.length,
     tanked: inBand.length - counted.length,
     devices: opts.totals ? opts.totals.devices : devices.size,
@@ -371,7 +347,6 @@ export interface SpeciesDetailV1 {
   since: string;
   until: string;
   source: string;
-  band: string;
   sightings: number;
   wins: number;
   losses: number;
@@ -380,7 +355,7 @@ export interface SpeciesDetailV1 {
   runLosses: number;
   /** Oldest week first. `battles` is the window total that week, `sightings` this species'. */
   weekly: { week: string; battles: number; sightings: number }[];
-  /** Every band, whatever the filter, so the reader sees what they filtered away. */
+  /** Every self-reported rank band in the window: a breakdown, not a filter. */
   bands: { band: string; sightings: number; wins: number; losses: number }[];
   /** Other opponents seen in the same battles, most common first, at most 8. */
   alongside: { speciesId: string; battles: number }[];
@@ -411,15 +386,12 @@ export function speciesDetail(opts: {
   since: string;
   until: string;
   source: string;
-  /** Defaults to `'all'`, so the tournament read model can leave it out entirely. */
-  band?: string;
   /** Every row in the window, all bands. */
   rows: readonly BattleRow[];
   now: Date;
 }): SpeciesDetailV1 {
   const { league, speciesId, since, until, source, rows, now } = opts;
-  const band = opts.band ?? 'all';
-  const counted = bandRows(rows, band).filter((r) => !r.tanked);
+  const counted = rows.filter((r) => !r.tanked);
   const mine = speciesStats(counted).get(speciesId) ?? {
     speciesId,
     sightings: 0,
@@ -481,7 +453,6 @@ export function speciesDetail(opts: {
     since,
     until,
     source,
-    band,
     ...mine,
     weekly: [...weeks.values()].sort((a, b) => a.week.localeCompare(b.week)),
     bands: everyBand.map((b) => byBand.get(b)!),

@@ -6,6 +6,7 @@ import type { TeamRowV1, TeamsV1 } from '../src/api.js';
 import type { SpeciesLite, StaticData } from '../src/data.js';
 import type { Epoch } from '../src/epochs.js';
 import { measuredSay, type SpeciesRanking, type SpeciesRow } from '../src/rank.js';
+import type { SourceKey } from '../src/route.js';
 import { Teams } from '../src/screens/Teams.js';
 import type { GeneratedTeamLite } from '../src/slice.js';
 import { buildBoard } from '../src/teamRank.js';
@@ -284,14 +285,19 @@ function opponentRow(id: string, i: number, weight: number): SpeciesRow {
 /** The blended weights and the ranking rows: `weightCovered` is the share of these weights that
  * land on a matrix opponent (see teamRank.ts's `strengthContext`). Every opponent carries weight
  * 1, so a coverage below 1 comes from adding weight the matrix cannot see at all. */
-function makeRanking(battles: number, devices: number, weightCovered = 1): SpeciesRanking {
+function makeRanking(
+  battles: number,
+  devices: number,
+  weightCovered = 1,
+  source: SourceKey = 'all',
+): SpeciesRanking {
   const weights = new Map<string, number>(OPPONENTS.map((id) => [id, 1]));
   if (weightCovered < 1) {
     const total = OPPONENTS.length / weightCovered;
     weights.set('outside_the_matrix', total - OPPONENTS.length);
   }
   return {
-    source: 'all',
+    source,
     say: measuredSay(battles, devices),
     battles,
     devices,
@@ -317,7 +323,6 @@ function makeTeams(
     since: '2026-09-01T00:00:00.000Z',
     until: '2026-09-30T00:00:00.000Z',
     source: 'all',
-    band: 'all',
     battles,
     devices,
     sources: { ladder: battles },
@@ -328,11 +333,11 @@ function makeTeams(
 }
 
 function renderTeams(opts: {
-  battles: number;
-  devices: number;
-  teams: TeamRowV1[];
-  cores: TeamRowV1[];
-  generated: GeneratedTeamLite[];
+  battles?: number;
+  devices?: number;
+  teams?: TeamRowV1[];
+  cores?: TeamRowV1[];
+  generated?: GeneratedTeamLite[];
   weightCovered?: number;
   mismatch?: boolean;
   /** Fix round 1, item 3: a failure of any of the four sources the board is built from, not just
@@ -341,15 +346,25 @@ function renderTeams(opts: {
   /** Fix round 1, item 4: the slice failing to load (`buildBoard`'s `view: null`), distinct from
    * `boardError` above; this degrades to `board.projectionless` rather than blanking the screen. */
   sliceMissing?: boolean;
+  /** Defaults to 'all', same as every existing test that predates the Source select. */
+  source?: SourceKey;
+  /** Counted battles by source (`MetaSummaryV1.sources`), fed straight to `Teams`' own prop
+   * rather than through `makeTeams`, since the two are unrelated inputs on the real screen. */
+  sources?: Record<string, number>;
 }) {
-  const teamsData = makeTeams(opts.battles, opts.devices, opts.teams, opts.cores);
-  const ranking = makeRanking(opts.battles, opts.devices, opts.weightCovered ?? 1);
+  const battles = opts.battles ?? 0;
+  const devices = opts.devices ?? 0;
+  const teams = opts.teams ?? [];
+  const cores = opts.cores ?? [];
+  const generated = opts.generated ?? [];
+  const teamsData = makeTeams(battles, devices, teams, cores);
+  const ranking = makeRanking(battles, devices, opts.weightCovered ?? 1, opts.source ?? 'all');
   const board = opts.boardError
     ? null
     : buildBoard({
         teams: teamsData,
         ranking,
-        generated: opts.generated,
+        generated,
         view: opts.sliceMissing ? null : view(),
       });
   const epoch: Epoch | null = opts.mismatch
@@ -364,6 +379,7 @@ function renderTeams(opts: {
       ranking={opts.boardError ? null : ranking}
       epoch={epoch}
       bakedCommit={BAKED_COMMIT}
+      sources={opts.sources ?? {}}
     />,
   );
 }
@@ -415,17 +431,29 @@ describe('Teams, cold start', () => {
   });
 });
 
+describe('Teams, sources', () => {
+  it('says how many battles each source contributed, under All only', () => {
+    renderTeams({ source: 'all', sources: { ladder: 480, broadcast: 105 } });
+    expect(screen.getByText('From 480 battles shared and 105 tournament battles.')).toBeInTheDocument();
+  });
+
+  it('says nothing about sources when only one population has anything', () => {
+    renderTeams({ source: 'all', sources: { ladder: 480 } });
+    expect(screen.queryByText(/tournament battles\./)).not.toBeInTheDocument();
+  });
+});
+
 describe('Teams, with measured play', () => {
   it('says how measured the board is', () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: GENERATED });
     expect(
-      screen.getByText(/% measured, from 480 battles shared by 9 devices/),
+      screen.getByText(/% measured, from 480 shared battles by 9 devices/),
     ).toBeInTheDocument();
   });
 
   it('says "1 device" rather than "1 devices"', () => {
     renderTeams({ battles: 40, devices: 1, cores: [CORE], teams: [], generated: [] });
-    expect(screen.getByText(/shared by 1 device$/)).toBeInTheDocument();
+    expect(screen.getByText(/by 1 device$/)).toBeInTheDocument();
   });
 
   it("prints the players' own record for a faced-only row, not the faced team's", async () => {

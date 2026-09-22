@@ -7,7 +7,6 @@ const WINDOW = {
   since: '2026-09-01T00:00:00.000Z',
   until: '2026-09-30T00:00:00.000Z',
   source: 'all',
-  band: 'all',
   now: new Date('2026-09-30T00:00:00.000Z'),
 };
 
@@ -200,14 +199,13 @@ describe('teamBoard, the window', () => {
     expect(out.devices).toBe(1);
   });
 
-  it('filters by band, and tallies sources over what is left', () => {
+  it('tallies sources over every counted row, whatever band it carries', () => {
     const out = teamBoard({
       ...WINDOW,
-      band: 'legend',
       rows: [row({ band: 'ace' }), row({ band: 'legend' })],
     });
-    expect(out.battles).toBe(1);
-    expect(out.sources).toEqual({ ladder: 1 });
+    expect(out.battles).toBe(2);
+    expect(out.sources).toEqual({ ladder: 2 });
   });
 
   it('takes the totals override for a population whose rows are mirrored', () => {

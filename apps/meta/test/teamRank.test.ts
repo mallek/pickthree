@@ -82,7 +82,6 @@ function teams(over: Partial<TeamsV1> = {}): TeamsV1 {
     since: '2026-09-01T00:00:00.000Z',
     until: '2026-09-30T00:00:00.000Z',
     source: 'all',
-    band: 'all',
     battles: 300,
     devices: 5,
     sources: { ladder: 300 },

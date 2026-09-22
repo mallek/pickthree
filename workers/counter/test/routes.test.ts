@@ -97,19 +97,12 @@ describe('the source parameter', () => {
     expect(((await ladder.json()) as { source: string }).source).toBe('ladder');
   });
 
-  it('keeps honouring band= while the live site still sends it', async () => {
+  it('serves an old band= link as source=all rather than refusing it', async () => {
     const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend');
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { source: string; band: string };
-    expect(body.band).toBe('legend');
+    const body = (await res.json()) as { source: string; band?: string };
     expect(body.source).toBe('all');
-  });
-
-  it('ignores band= once a source other than all is named', async () => {
-    const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend&source=tournament');
-    const body = (await res.json()) as { source: string; band: string };
-    expect(body.source).toBe('tournament');
-    expect(body.band).toBe('all');
+    expect(body.band).toBeUndefined();
   });
 
   it('falls back to all for a source it does not know', async () => {

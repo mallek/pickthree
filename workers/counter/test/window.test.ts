@@ -14,13 +14,13 @@ describe('readParams', () => {
       since: '2026-09-11T00:00:00.000Z',
       until: '2026-09-18T00:00:00.000Z',
       source: 'all',
-      band: 'all',
     });
   });
 
-  it('defaults the band to all and keeps a known one', () => {
-    expect(params(`${ok}&band=legend`)).toMatchObject({ band: 'legend' });
-    expect(params(`${ok}&band=nonsense`)).toMatchObject({ band: 'all' });
+  // The rank band filter is retired (Task 13, in step with the Source select). An old link
+  // carrying `band=` still parses; the parameter is simply never read.
+  it('ignores an old band= parameter entirely', () => {
+    expect(params(`${ok}&band=legend`)).not.toHaveProperty('band');
   });
 
   it('refuses a league that is not an id', () => {

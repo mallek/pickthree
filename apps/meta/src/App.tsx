@@ -15,11 +15,13 @@ import { PICK3 } from './links.js';
 import { rankSpecies, type SpeciesRanking } from './rank.js';
 import {
   DEFAULT_QUERY,
+  SOURCES,
   WINDOWS,
   hrefFor,
   parseLocation,
   withLeague,
   type Query,
+  type SourceKey,
   type View,
   type WindowKey,
 } from './route.js';
@@ -50,6 +52,13 @@ const WINDOW_LABELS: Record<WindowKey, string> = {
   meta: 'This meta',
   '30': '30 days',
   '7': '7 days',
+};
+
+const SOURCE_LABELS: Record<SourceKey, string> = {
+  all: 'All',
+  prior: 'PvPoke',
+  ladder: 'GBL',
+  tournament: 'Tournaments',
 };
 
 const THEME_LABELS: Record<ThemeChoice, string> = {
@@ -180,6 +189,7 @@ function renderView(
   ranking: SpeciesRanking | null,
   rankingError: boolean,
   epoch: Epoch | null,
+  sources: Record<string, number>,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} />;
@@ -223,6 +233,7 @@ function renderView(
       ranking={ranking}
       epoch={epoch}
       bakedCommit={baseline.data?.pvpokeCommit ?? null}
+      sources={sources}
     />
   );
 }
@@ -366,17 +377,28 @@ export function App(props?: { deps?: Deps }): ReactNode {
         : null,
     [meta.data, baseline.data, ranks.data, query.source, legal.data],
   );
+  // Task 13: under PvPoke there is nothing measured by definition, so the board is the generated
+  // projections alone. The fetch is still the same cached `all` read, so switching to `prior`
+  // costs no request; only the board's own observed rows get zeroed before it is built.
+  const observed = useMemo(() => {
+    if (!teamsData.data) {
+      return null;
+    }
+    return query.source === 'prior'
+      ? { ...teamsData.data, teams: [], cores: [] }
+      : teamsData.data;
+  }, [teamsData.data, query.source]);
   const board = useMemo(
     () =>
-      teamsData.data && ranking
+      observed && ranking
         ? buildBoard({
-            teams: teamsData.data,
+            teams: observed,
             ranking,
             generated: generated.data?.teams ?? [],
             view: slice.data?.view ?? null,
           })
         : null,
-    [teamsData.data, ranking, generated.data, slice.data],
+    [observed, ranking, generated.data, slice.data],
   );
   const epoch = epochsData.data ? epochFor(epochsData.data, activeLeague, now) : null;
   // Fix round 1, item 3: `ranking` needs meta, baseline AND ranks; a failure in any of those
@@ -485,8 +507,9 @@ export function App(props?: { deps?: Deps }): ReactNode {
         options={leagues.map((l) => ({ value: l.id, label: l.short }))}
       />
     ) : null;
-    // The filter row is a Window select alone until Task 13 adds the Source select beside it:
-    // `Query` carries `source` now (Task 11), but nothing writes to it from the UI yet.
+    // The Window select and the Source select, replacing the retired rank band select: the two
+    // are asked and worked out the same way, so there is no reason for one to write to the url
+    // and not the other.
     const filters: ReactNode = showFilters ? (
       <div className="filter-row">
         <Select
@@ -495,6 +518,13 @@ export function App(props?: { deps?: Deps }): ReactNode {
           value={query.w}
           onChange={(wk) => refine({ ...query, w: wk })}
           options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
+        />
+        <Select
+          label="Source"
+          hideLabel
+          value={query.source}
+          onChange={(s) => refine({ ...query, source: s })}
+          options={SOURCES.map((k) => ({ value: k, label: SOURCE_LABELS[k] }))}
         />
       </div>
     ) : null;
@@ -528,6 +558,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           ranking,
           rankingError,
           epoch,
+          teamsData.data?.sources ?? {},
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>

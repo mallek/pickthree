@@ -20,7 +20,7 @@
  * A faced row never carries movesets: the opponents' movesets are not collected, by design.
  */
 import type { BattleRow } from './battles.js';
-import { bandRows, MOVESET_MIN, movesetsBySpecies, type MovesetStats, type Totals } from './meta.js';
+import { MOVESET_MIN, movesetsBySpecies, type MovesetStats, type Totals } from './meta.js';
 
 export interface TeamRowV1 {
   /** Sorted species ids. Two for a core, three for a complete team. */
@@ -52,8 +52,7 @@ export interface TeamsV1 {
   since: string;
   until: string;
   source: string;
-  band: string;
-  /** Counted battles in the window and band, the same number /api/v1/meta reports. */
+  /** Counted battles in the window, the same number /api/v1/meta reports. */
   battles: number;
   devices: number;
   sources: Record<string, number>;
@@ -104,8 +103,6 @@ export function teamBoard(opts: {
   since: string;
   until: string;
   source: string;
-  /** Defaults to `'all'`, so the tournament read model can leave it out entirely. */
-  band?: string;
   rows: readonly BattleRow[];
   now: Date;
   teamLimit?: number;
@@ -115,11 +112,10 @@ export function teamBoard(opts: {
   totals?: Totals;
 }): TeamsV1 {
   const { league, since, until, source, rows, now } = opts;
-  const band = opts.band ?? 'all';
   const teamLimit = opts.teamLimit ?? TEAM_LIMIT;
   const coreLimit = opts.coreLimit ?? CORE_LIMIT;
 
-  const counted = bandRows(rows, band).filter((r) => !r.tanked);
+  const counted = rows.filter((r) => !r.tanked);
   // Over counted, not over every row: a device that only ever tanked has shared nothing usable,
   // the same reason tanked rows are excluded from every other tally here.
   const devices = new Set(counted.map((r) => r.device));
@@ -215,7 +211,6 @@ export function teamBoard(opts: {
     since,
     until,
     source,
-    band,
     battles: opts.totals ? opts.totals.battles : counted.length,
     devices: opts.totals ? opts.totals.devices : devices.size,
     sources: opts.totals ? opts.totals.sources : sources,

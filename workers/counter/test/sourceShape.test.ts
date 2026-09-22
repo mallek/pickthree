@@ -27,14 +27,14 @@ const ROWS = [row(), row({ device: 'd2', band: 'legend', result: 'loss' }), row(
 
 /**
  * `source=ladder` has to be the response `band=all` used to give. Everything but the echoed
- * request parameters is compared: those two fields are the only thing this change can
- * legitimately move, and comparing them would only assert the change against itself. This file
- * outlives phase 1: Task 13 drops `band` from the response and this test then destructures one
- * field instead of two, with every other expectation untouched. That is the point of it.
+ * request parameter is compared: that field is the only thing this change can legitimately move,
+ * and comparing it would only assert the change against itself. `band` is gone from the response
+ * entirely now (Task 13), so this destructures one field instead of two, with every other
+ * expectation untouched. That is the point of it.
  */
 describe('source=ladder is the old band=all response', () => {
-  it('differs from a fixed expectation in nothing but the echoed parameters', () => {
-    const { source, band, ...rest } = summarize({
+  it('differs from a fixed expectation in nothing but the echoed source', () => {
+    const { source, ...rest } = summarize({
       league: 'great',
       ...WINDOW,
       source: 'ladder',
@@ -43,7 +43,6 @@ describe('source=ladder is the old band=all response', () => {
       now: NOW,
     });
     expect(source).toBe('ladder');
-    expect(band).toBe('all');
     expect(rest).toEqual({
       league: 'great',
       ...WINDOW,

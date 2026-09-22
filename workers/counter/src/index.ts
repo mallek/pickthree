@@ -8,9 +8,9 @@
  *   POST /battles   stores anonymous battle records { device, client, battles } (max 200)
  *   DELETE /battles removes everything one device sent { device }
  *   GET  /meta      per-league summary: ?league=great&days=90
- *   GET  /api/v1/meta               per-league rollup: ?league=great&since=...&until=...&band=
+ *   GET  /api/v1/meta               per-league rollup: ?league=great&since=...&until=...&source=
  *   GET  /api/v1/teams              the team board, run and faced, cores and complete teams
- *   GET  /api/v1/species/<id>       per-species detail over the same window and band
+ *   GET  /api/v1/species/<id>       per-species detail over the same window and source
  *   PUT  /api/v1/events/<id>            declares (or replaces) a tournament event; keyed
  *   POST /api/v1/events/<id>/battles    stores its battles, upsert by id; keyed
  *   POST /api/v1/events/<id>/roster     stores its roster entries, upsert by (player, slot); keyed

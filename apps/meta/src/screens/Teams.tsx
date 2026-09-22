@@ -28,7 +28,8 @@ import { useState, type ReactNode } from 'react';
 import type { MovesetStats } from '../api.js';
 import { Chevron, Chip, Note, Sprite, Term } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { battles as battlesText, count, plural } from '../format.js';
+import { battles as battlesText, battleWord, count, plural } from '../format.js';
+import { sourceHeaderLine } from '../headerCopy.js';
 import { teamLink, type LinkMember } from '../links.js';
 import type { Epoch } from '../epochs.js';
 import { commitMismatch } from '../epochs.js';
@@ -367,13 +368,15 @@ function Row({
   );
 }
 
-function headerLine(ranking: SpeciesRanking): string {
-  if (ranking.battles === 0) {
-    return "Projected against PvPoke's meta group. No shared battles in this window yet.";
+/** Under All the board mixes two populations, which is the one place on this site they are
+ *  mixed, so it says so with the count from each rather than leaving a reader to assume one. */
+function sourcesLine(sources: Record<string, number>): string | null {
+  const ladder = sources['ladder'] ?? 0;
+  const tournament = sources['broadcast'] ?? 0;
+  if (ladder === 0 || tournament === 0) {
+    return null;
   }
-  const pct = Math.round(ranking.say * 100);
-  const devices = `${count(ranking.devices)} ${plural(ranking.devices, 'device', 'devices')}`;
-  return `${pct}% measured, from ${battlesText(ranking.battles)} shared by ${devices}`;
+  return `From ${battlesText(ladder)} shared and ${count(tournament)} tournament ${battleWord(tournament)}.`;
 }
 
 /** What is on screen right now, counted by kind rather than as a bare row total: "14 cores, 3
@@ -439,8 +442,11 @@ export function Teams(p: {
   ranking: SpeciesRanking | null;
   epoch: Epoch | null;
   bakedCommit: string | null;
+  /** Counted battles by source in the window (`MetaSummaryV1.sources`), for the one sentence
+   *  under the header that says how much of the All board came from each population. */
+  sources: Record<string, number>;
 }): ReactNode {
-  const { league, data, boardError, board, ranking, epoch, bakedCommit } = p;
+  const { league, data, boardError, board, ranking, epoch, bakedCommit, sources } = p;
   const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
   const [multiOnly, setMultiOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>('ranked');
@@ -469,6 +475,7 @@ export function Teams(p: {
   // what it does.
   const showFilter = board.rows.some((row) => row.kind === 'core' && teamsSeen(row) >= 2);
   const shown = sortRows(multiOnly ? multiTeamOnly(board.rows) : board.rows, sort);
+  const sourcesText = sourcesLine(sources);
 
   const cycleSort = (): void => {
     const i = SORTS.findIndex((s) => s.key === sort);
@@ -480,7 +487,7 @@ export function Teams(p: {
       <section>
         <h2>Teams</h2>
         <p className="sub">
-          {headerLine(ranking)}
+          {sourceHeaderLine(ranking, "Projected against PvPoke's meta group. No shared battles in this window yet.")}
           {!empty && !board.projectionless ? (
             <>
               {' '}
@@ -488,6 +495,7 @@ export function Teams(p: {
             </>
           ) : null}
         </p>
+        {ranking.source === 'all' && sourcesText ? <p className="fine">{sourcesText}</p> : null}
         {!empty && !board.projectionless && board.weightCovered < 0.95 ? (
           <p className="fine">
             {`Projections cover the ${count(board.metaGroupSize)} Pokemon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}

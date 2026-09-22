@@ -68,7 +68,6 @@ export interface MetaSummaryV1 {
   since: string;
   until: string;
   source: string;
-  band: string;
   battles: number;
   tanked: number;
   devices: number;
@@ -103,7 +102,6 @@ export interface TeamsV1 {
   since: string;
   until: string;
   source: string;
-  band: string;
   battles: number;
   devices: number;
   sources: Record<string, number>;
@@ -117,7 +115,6 @@ export interface SpeciesDetailV1 {
   since: string;
   until: string;
   source: string;
-  band: string;
   sightings: number;
   wins: number;
   losses: number;
