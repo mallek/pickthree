@@ -24,7 +24,9 @@ export interface League {
   cup: string;
   /** PvPoke meta group name. */
   meta: string;
-  kind: 'standard' | 'special';
+  /** `standard` is an open league, `special` a PvPoke format behind PICKTHREE_SPECIAL_CUPS, and
+   *  `cup` a shipped tournament ruleset (the Play! ban list) that is always built. */
+  kind: 'standard' | 'special' | 'cup';
   /** Builds whose best CP under the cap is below this are not competitive. */
   minCp: number;
   include: CupFilter[];

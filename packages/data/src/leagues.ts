@@ -45,6 +45,38 @@ const STANDARD: { id: string; title: string; short: string; cp: number; meta: st
   { id: 'master', title: 'Master League', short: 'Master', cp: 10000, meta: 'master' },
 ];
 
+/** One PvPoke cup promoted to a pick3 league whatever PICKTHREE_SPECIAL_CUPS says, because it is
+ *  a ruleset players actually build for. Its rankings, meta group and matrix are derived from
+ *  `derivesFrom` filtered to the cup's legal species (build-derived.ts) rather than simulated
+ *  again: PvPoke's own `rankingAlias` for championshipseries is `all`, and matchups do not change
+ *  when a species is banned. */
+interface ShippedCup {
+  id: string;
+  cup: string;
+  title: string;
+  short: string;
+  cp: number;
+  meta: string;
+  derivesFrom: string;
+}
+
+export const SHIPPED_CUPS: readonly ShippedCup[] = [
+  {
+    id: 'championshipseries',
+    cup: 'championshipseries',
+    title: 'Tournament',
+    short: 'Tournament',
+    cp: 1500,
+    meta: 'great',
+    derivesFrom: 'great',
+  },
+];
+
+/** League id to the league whose rankings, meta group and matrix it is filtered from. */
+export const DERIVES_FROM: Record<string, string> = Object.fromEntries(
+  SHIPPED_CUPS.map((c) => [c.id, c.derivesFrom]),
+);
+
 function shortTitle(title: string): string {
   return title
     .replace(/ Championship Series Cup$/, '')
@@ -78,12 +110,31 @@ export function readLeagues(): League[] {
     exclude: all.exclude ?? [],
     metaSize: 0,
   }));
+  for (const shipped of SHIPPED_CUPS) {
+    const cup = readCup(shipped.cup);
+    out.push({
+      id: shipped.id,
+      title: shipped.title,
+      short: shipped.short,
+      cp: shipped.cp,
+      cup: shipped.cup,
+      meta: shipped.meta,
+      kind: 'cup',
+      minCp: minCpFor(shipped.cp),
+      include: cup.include ?? [],
+      exclude: cup.exclude ?? [],
+      metaSize: 0,
+    });
+  }
   // Special cups are built only when asked for. The rules work, but the app does not yet know
   // enough about them (megas in the Mega cups, for one) to recommend with a straight face.
   const formats =
     process.env.PICKTHREE_SPECIAL_CUPS === '1' ? readJson<RawFormat[]>(FORMATS_PATH) : [];
   for (const f of formats) {
     if (!f.showFormat || f.hideRankings || f.cup === 'custom' || f.cup === 'all') {
+      continue;
+    }
+    if (out.some((l) => l.id === idFor(f))) {
       continue;
     }
     if (!hasRankings(f.cup, f.cp) || !hasGroup(f.meta)) {
