@@ -79,6 +79,9 @@ Every string below is exact. Where a number is interpolated the generator expres
 
 - `all`, with both populations:
   `PvPoke 45%, tournaments 22%, GBL 33%. From 480 shared battles by 9 devices and 105 tournament battles from 1 event.`
+  (the spec's own example, quoted for its SHAPE. Its counts do not generate its percentages:
+  `measuredSay(480, 9)` is 0.62, so those counts would really print "GBL 62%". Follow the
+  generator expression, not the digits. See Self-review, "Still open".)
   Generated as
   `` `PvPoke ${pvpokePct}%, tournaments ${tPct}%, GBL ${lPct}%. From ${battles(b)} shared by ${count(d)} ${plural(d, 'device', 'devices')} and ${count(tb)} tournament ${battleWord(tb)} from ${count(ev)} ${plural(ev, 'event', 'events')}.` ``
 - `all`, tournaments only (no shared battles yet):
@@ -134,11 +137,20 @@ and PvPoke's own recommended set is marked with the trailing text `PvPoke's set`
 
 ## Decisions this plan makes, where the spec left room
 
-1. **The read routes echo `source`, not `band`.** `MetaSummaryV1`, `TeamsV1` and `SpeciesDetailV1`
-   replace their `band: string` field with `source: string`. The `bands` breakdown stays in the
-   payload untouched. The spec's "`source=ladder` responses are byte for byte what `band=all`
-   returned" is implemented as a test asserting deep equality of every field except the echoed
-   request parameter, which is the only thing that can differ.
+1. **`source` arrives beside `band` in phase 1 and replaces it in phase 2.** Task 8 adds
+   `source: string` to `MetaSummaryV1`, `TeamsV1` and `SpeciesDetailV1` while leaving `band` and
+   its filter working; Task 13 deletes both in the same commit that swaps the rank band select
+   for the Source select. The split is what makes phase 1 genuinely dark: `counter.yml` builds
+   `apps/meta` from the same commit it deploys the worker from, so a worker that stopped
+   honouring `band=` at Task 10 would leave the live site's rank band select doing nothing until
+   the phase 2 deploy. Spec, amended Testing bullet: "Through phase 1 the `band=` filter keeps
+   working as today, so the deployed site's rank band select is not a silent no-op between the
+   phase 1 and phase 2 deploys; it is retired in phase 2 with the select."
+   `band` is ignored the moment `source` names something other than `all`, normalised in
+   `readParams` so no reader downstream carries the rule. The `bands` breakdown is untouched
+   throughout. The spec's "`source=ladder` responses are what `band=all` returned" is a test
+   asserting deep equality of every field except the echoed request parameters, which are the
+   only things that can differ.
 2. **Bad shape rejects the whole request.** A battles or roster POST with one malformed record
    stores nothing and answers `400` with
    `{ stored: 0, replaced: 0, rejected: <records in the body>, index, reason }`, so a pipeline run
@@ -193,11 +205,11 @@ and PvPoke's own recommended set is marked with the trailing text `PvPoke's set`
 | `packages/data/src/leagues.ts` | `SHIPPED_CUPS` allowlist and `DERIVES_FROM`. |
 | `packages/data/src/build.ts` | Derived leagues built after their source league. |
 | `apps/web/src/components/LeagueSwitcher.tsx:35` | Shows `kind !== 'special'`. |
-| `apps/meta/scripts/bake.ts` | `OPEN_EQUIVALENT_CUP`, `legalFor`, writes `public/legal/<league>.json`. |
+| `apps/meta/scripts/bake.ts` | `siteLeagues` (the site's leagues only), `OPEN_EQUIVALENT_CUP`, `legalFor`, writes `public/legal/<league>.json`. |
 | `.gitignore` | `apps/meta/public/legal/`. |
 | `workers/counter/src/battles.ts:12` | `BattleSource` gains `'broadcast'`. |
-| `workers/counter/src/meta.ts` | `band` becomes `source`; band filtering removed; `totals` override; tournament block types. |
-| `workers/counter/src/teams.ts` | Same two changes. |
+| `workers/counter/src/meta.ts` | `source` added beside `band` (Task 8), `band` and its filter removed (Task 13); `totals` override; tournament block types. |
+| `workers/counter/src/teams.ts` | The same `source`, `totals` and later `band` removal. |
 | `workers/counter/src/index.ts` | Tables, ingest routes, event read routes, `source` plumbing. |
 | `workers/counter/wrangler.toml` | Nothing. `/api/*` already runs the worker first. Listed so it is not searched for twice. |
 | `apps/meta/src/api.ts`, `route.ts`, `useMeta.ts`, `App.tsx`, `rank.ts` | Source select, sequential blend. |
@@ -741,7 +753,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 3: The meta bake ships `legal/<league>.json`
+### Task 3: The meta bake keeps the site's own leagues and ships `legal/<league>.json`
 
 **Files:**
 - Modify: `apps/meta/scripts/bake.ts`
@@ -755,12 +767,24 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
   - `OPEN_EQUIVALENT_CUP: Record<string, string>`, exactly `{ great: 'championshipseries' }`.
   - `interface LegalFile { cup: string | null; banned: string[] }`
   - `legalFor(leagueId: string, leagueRanks: readonly { speciesId: string }[], cupRanks: readonly { speciesId: string }[] | null): LegalFile`
-  - The file `apps/meta/public/legal/<league>.json` per site league.
+  - `siteLeagues<T extends { kind: string }>(leagues: readonly T[]): T[]`, the one filter every
+    loop in `main()` runs through.
+  - The file `apps/meta/public/legal/<league>.json` per SITE league.
+
+**Why the filter is part of this task.** Task 2 puts `championshipseries` into
+`apps/web/public/data/leagues.json`. `bake.ts:296` reads that file and `:318` writes it to the
+site verbatim, and `App.tsx:488` maps every league in it into the league switcher, so without a
+filter the live site grows a fourth league, "Tournament", whose worker reads return nothing
+(`blendedCup` is null for it) and whose baked `baseline`, `ranks`, `matrix` and `legal` files are
+dead weight. Spec, Phase 0 "App": "the meta site lists no such league and ignores it"; Phase 0
+"Meta bake": "The bake writes only the site's leagues (`kind: 'standard'`) to the site's
+`leagues.json` and loops only those for baseline, ranks, matrix and legal files; the Tournament
+league is the app's, never the site's."
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `apps/meta/test/bake.test.ts`, and add `OPEN_EQUIVALENT_CUP, legalFor` to its import from
-`../scripts/bake.js`:
+Append to `apps/meta/test/bake.test.ts`, and add `OPEN_EQUIVALENT_CUP, legalFor, siteLeagues` to
+its import from `../scripts/bake.js` (`bake` is already imported):
 
 ```ts
 describe('legalFor', () => {
@@ -800,7 +824,37 @@ describe('legalFor', () => {
     ]);
   });
 });
+
+describe('siteLeagues', () => {
+  it('keeps the open leagues and drops the app-only cup leagues', () => {
+    const leagues = [
+      { id: 'great', meta: 'great', kind: 'standard' },
+      { id: 'ultra', meta: 'ultra', kind: 'standard' },
+      { id: 'championshipseries', meta: 'great', kind: 'cup' },
+      { id: 'remix', meta: 'remix', kind: 'special' },
+    ];
+    expect(siteLeagues(leagues).map((l) => l.id)).toEqual(['great', 'ultra']);
+  });
+});
+
+describe('bake, over a league list carrying a cup league', () => {
+  it('builds a baseline for the site leagues only', () => {
+    const baked = bake({
+      ...input,
+      leagues: [
+        { id: 'great', meta: 'great', kind: 'standard' },
+        { id: 'championshipseries', meta: 'great', kind: 'cup' },
+      ],
+    });
+    expect(Object.keys(baked.baselines)).toEqual(['great']);
+  });
+});
 ```
+
+The file-writing half of the filter (the site's `leagues.json` and the `legal` loop naming only
+the standard leagues) is checked by hand in Step 8, because `main()` touches the disk and this
+suite only exercises the pure functions. Add `kind: 'standard'` to the existing `input.leagues`
+fixture at the top of the file so every test above keeps passing.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
@@ -854,9 +908,54 @@ export function legalFor(
 }
 ```
 
-- [ ] **Step 4: Write the files in `main()`**
+- [ ] **Step 4: Filter the league list to the site's own leagues**
 
-In `apps/meta/scripts/bake.ts`'s `main()`, after the `ranks`/`matrix` loop writes its files, add:
+Still in `apps/meta/scripts/bake.ts`, next to `legalFor`:
+
+```ts
+/**
+ * The leagues this SITE has. The data build also ships the app's tournament cup leagues
+ * (League.kind 'cup') and, behind PICKTHREE_SPECIAL_CUPS, PvPoke's special formats; neither is a
+ * population of shared battles, so neither belongs in the site's league switcher, its baselines,
+ * its matrix slices or its legality files. The Tournament league is a ruleset to build a team
+ * for, which is the app's job, and it is deliberately not the Tournaments source on this site.
+ */
+export function siteLeagues<T extends { kind: string }>(leagues: readonly T[]): T[] {
+  return leagues.filter((l) => l.kind === 'standard');
+}
+```
+
+`bake`'s `input.leagues` type gains `kind: string`, and `bake` runs its own loop over
+`siteLeagues(input.leagues)` rather than over every league handed to it: the rule belongs in the
+tested pure function, not only in `main()`.
+
+In `main()`, apply it once, right after the league list is read, and let every loop below use the
+filtered list:
+
+```ts
+  let allLeagues: { id: string; meta: string; kind: string }[];
+  try {
+    allLeagues = await readJson(DATA, 'leagues.json');
+  } catch {
+    throw new Error(`No game data at ${DATA}. Run "npm run data:build" at the repo root first.`);
+  }
+  // One filter, used for the site's own leagues.json and for every per-league loop below.
+  const leagues = siteLeagues(allLeagues);
+```
+
+and make the `engineLeagues` read at `:333` go through it too:
+
+```ts
+  const engineLeagues = siteLeagues(await readJson<EngineLeague[]>(DATA, 'leagues.json'));
+```
+
+`EngineLeague` is `@pickthree/engine`'s `League`, which already carries `kind`, so that call needs
+no new type. `await writeFile(join(OUT, 'leagues.json'), JSON.stringify(leagues))` at `:318` now
+writes the filtered list, which is what `App.tsx` maps into the switcher.
+
+- [ ] **Step 5: Write the legal files in `main()`**
+
+In `main()`, after the `ranks`/`matrix` loop writes its files, add:
 
 ```ts
   await mkdir(join(OUT, 'legal'), { recursive: true });
@@ -876,12 +975,12 @@ In `apps/meta/scripts/bake.ts`'s `main()`, after the `ranks`/`matrix` loop write
   }
 ```
 
-Note: `engineLeagues` is read from `leagues.json`, which now includes `championshipseries`. That
-league's own `legal/championshipseries.json` comes out as `{ cup: null, banned: [] }`, which is
-right: the site has no such league and never asks for it, and nothing is banned inside a cup
-relative to itself.
+`engineLeagues` is the filtered list from Step 4, so this loop writes `legal/great.json`,
+`legal/ultra.json` and `legal/master.json` and nothing else. There is deliberately no
+`legal/championshipseries.json`: the site has no such league, and a file for it would be a page
+of dead weight that invites someone to wire the league in.
 
-- [ ] **Step 5: Ignore the new output directory**
+- [ ] **Step 6: Ignore the new output directory**
 
 In `.gitignore`, under the "generated by the apps/meta bake" block, after
 `apps/meta/public/matrix/`:
@@ -890,33 +989,41 @@ In `.gitignore`, under the "generated by the apps/meta bake" block, after
 apps/meta/public/legal/
 ```
 
-- [ ] **Step 6: Run the test to verify it passes**
+- [ ] **Step 7: Run the test to verify it passes**
 
 Run: `npx vitest run --project meta test/bake.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Run the real bake and read the file**
+- [ ] **Step 8: Run the real bake, and check what the site was given**
 
 Run:
 
 ```bash
 npm -w @pickthree/meta run build
 node -e "const fs=require('fs');const g=JSON.parse(fs.readFileSync('apps/meta/public/legal/great.json'));console.log('cup',g.cup,'banned',g.banned.length,'mimikyu?',g.banned.includes('mimikyu'));const u=JSON.parse(fs.readFileSync('apps/meta/public/legal/ultra.json'));console.log('ultra',JSON.stringify(u));"
+node -e "const fs=require('fs');console.log('site leagues',JSON.parse(fs.readFileSync('apps/meta/public/leagues.json')).map(l=>l.id).join(', '));console.log('app leagues',JSON.parse(fs.readFileSync('apps/web/public/data/leagues.json')).map(l=>l.id).join(', '));console.log('baked dirs',['baseline','ranks','matrix','legal'].map(d=>d+': '+fs.readdirSync('apps/meta/public/'+d).join(' ')).join(' | '));"
 ```
 
 Expected: `cup championshipseries`, a nonzero banned count, `mimikyu? true`, and
-`ultra {"cup":null,"banned":[]}`.
+`ultra {"cup":null,"banned":[]}`. Then, and this is the whole point of Step 4:
+`site leagues great, ultra, master` while `app leagues` also carries `championshipseries`, and no
+`championshipseries` file under `baseline`, `ranks`, `matrix` or `legal`.
 
-- [ ] **Step 8: Whole suite, lint, typecheck**
+- [ ] **Step 9: Open the site and count the leagues**
+
+Run `npm -w @pickthree/meta run dev` and confirm the league switcher offers exactly Great, Ultra
+and Master. A fourth chip here is finding 2 of the plan review coming back.
+
+- [ ] **Step 10: Whole suite, lint, typecheck**
 
 Run: `npm test && npm run lint && npm run typecheck`
 Expected: clean.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add apps/meta/scripts/bake.ts apps/meta/test/bake.test.ts .gitignore
-git commit -m "Meta bake: ship the Play! legality list as legal/<league>.json
+git commit -m "Meta bake: the site's own leagues, and the Play! legality list
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -2806,42 +2913,59 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 8: Retire the rank band filter and add the totals override
+### Task 8: Add the source parameter and the totals override, with the band filter still working
 
 **Files:**
-- Modify: `workers/counter/src/meta.ts` (`ReadParams`, `readParams`, `bandRows`, `summarize`,
+- Modify: `workers/counter/src/meta.ts` (`ReadParams`, `readParams`, `summarize`,
   `speciesDetail`, `MetaSummaryV1`, `SpeciesDetailV1`)
 - Modify: `workers/counter/src/teams.ts` (`teamBoard`, `TeamsV1`)
-- Modify: `workers/counter/src/index.ts` (the three `*V1` methods pass `source`)
+- Modify: `workers/counter/src/index.ts` (the three `*V1` methods take the new `ReadParams`)
 - Test: `workers/counter/test/meta.test.ts`, `workers/counter/test/teams.test.ts`,
   `workers/counter/test/routes.test.ts`
+
+**Why the band filter survives this task.** The spec's plan order says phase 1 "can land dark
+since nothing reads `source=` yet", and the amended Testing bullet spells out what dark has to
+mean: "Through phase 1 the `band=` filter keeps working as today, so the deployed site's rank
+band select is not a silent no-op between the phase 1 and phase 2 deploys; it is retired in phase
+2 with the select." Task 10 Step 10 deploys through `counter.yml`, which builds `apps/meta` from
+the same commit, and at that commit the site still renders the Rank band select and still sends
+`band=`. If the worker had stopped honouring it there, picking Legend on the live site would
+change nothing and say nothing until the phase 2 deploy landed. So this task ADDS `source`; Task
+13 retires `band` in the same commit that replaces the select with the Source select.
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
 - Produces:
-  - `export const SOURCES: readonly ['all', 'ladder', 'tournament']`
-  - `ReadParams { league: string; since: string; until: string; source: string }`
+  - `export const SOURCES: readonly string[]`, exactly `['all', 'ladder', 'tournament']`
+  - `ReadParams { league: string; since: string; until: string; source: string; band: string }`
   - `interface Totals { battles: number; devices: number; sources: Record<string, number> }`
     exported from `meta.ts`.
-  - `summarize(opts)` and `teamBoard(opts)` take `source: string` in place of `band: string`, and
-    an optional `totals?: Totals` that replaces the three computed counts.
-  - `MetaSummaryV1`, `TeamsV1`, `SpeciesDetailV1` carry `source: string` in place of
-    `band: string`. `bands` (the breakdown) is untouched on both.
-  - `bandRows` is deleted.
+  - `summarize(opts)`, `speciesDetail(opts)` and `teamBoard(opts)` gain `source: string`, keep
+    `band?: string` (defaulting to `'all'`, so the tournament read model in Tasks 9 and 10 can
+    leave it out entirely), and gain an optional `totals?: Totals` that replaces the three
+    computed counts.
+  - `MetaSummaryV1`, `TeamsV1` and `SpeciesDetailV1` gain `source: string` ALONGSIDE their
+    existing `band: string`. While `band` still filters, the response still says which band it
+    filtered to; Task 13 drops the field with the filter.
+  - `bandRows` stays exactly as it is.
 
 - [ ] **Step 1: Write the failing tests**
 
-In `workers/counter/test/meta.test.ts`: delete the `describe('bandRows', ...)` block and its
-import, change every `band: 'all'` in the helpers to `source: 'all'`, and add:
+In `workers/counter/test/meta.test.ts`: keep the `describe('bandRows', ...)` block and its import
+untouched, add `source: 'all'` next to the existing `band: 'all'` in the helpers, and add:
 
 ```ts
-describe('the retired band filter', () => {
-  it('counts every band in the window whatever source is asked for', () => {
+describe('the band filter, still live through phase 1', () => {
+  it('still narrows to one band, and now also echoes the source it was asked for', () => {
     const rows = [row({ band: 'ace' }), row({ band: 'legend' }), row({ band: null })];
-    const s = run(rows, { source: 'ladder' });
-    expect(s.battles).toBe(3);
-    expect(s.bands).toEqual({ ace: 1, legend: 1, unknown: 1 });
-    expect(s.source).toBe('ladder');
+    const all = run(rows, { source: 'all' });
+    expect(all.battles).toBe(3);
+    expect(all.source).toBe('all');
+    const legend = run(rows, { source: 'all', band: 'legend' });
+    expect(legend.battles).toBe(1);
+    expect(legend.band).toBe('legend');
+    // The breakdown is every band in the window, not the filtered one: unchanged behaviour.
+    expect(legend.bands).toEqual({ ace: 1, legend: 1, unknown: 1 });
   });
 });
 
@@ -2859,8 +2983,8 @@ describe('the totals override', () => {
 });
 ```
 
-In `workers/counter/test/teams.test.ts`: change `band: 'all'` to `source: 'all'` throughout, delete
-any band-filtering test, and add:
+In `workers/counter/test/teams.test.ts`: add `source: 'all'` next to the existing `band: 'all'`
+throughout, keep every band-filtering test as it is, and add:
 
 ```ts
   it('takes the totals override for a population whose rows are mirrored', () => {
@@ -2884,10 +3008,19 @@ describe('the source parameter', () => {
     expect(((await ladder.json()) as { source: string }).source).toBe('ladder');
   });
 
-  it('serves an old band= link as source=all rather than refusing it', async () => {
+  it('keeps honouring band= while the live site still sends it', async () => {
     const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend');
     expect(res.status).toBe(200);
-    expect(((await res.json()) as { source: string }).source).toBe('all');
+    const body = (await res.json()) as { source: string; band: string };
+    expect(body.band).toBe('legend');
+    expect(body.source).toBe('all');
+  });
+
+  it('ignores band= once a source other than all is named', async () => {
+    const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend&source=tournament');
+    const body = (await res.json()) as { source: string; band: string };
+    expect(body.source).toBe('tournament');
+    expect(body.band).toBe('all');
   });
 
   it('falls back to all for a source it does not know', async () => {
@@ -2904,7 +3037,7 @@ Expected: FAIL, `s.source` undefined and `totals` not accepted.
 
 - [ ] **Step 3: Change `meta.ts`**
 
-Replace `ReadParams` and `readParams`:
+Extend `ReadParams` and `readParams`, keeping the band block:
 
 ```ts
 /** The three populations a read may ask for. `prior` is the site's own view and never reaches
@@ -2916,24 +3049,37 @@ export interface ReadParams {
   since: string;
   until: string;
   source: string;
+  /**
+   * The rank band filter, kept working through phase 1 because the deployed site still renders
+   * the select that sends it. Phase 2 retires both together (Task 13). Ignored once `source`
+   * names something other than `all`: a tournament broadcast reports no rank band, so narrowing
+   * that population by one would silently answer with nothing.
+   */
+  band: string;
 }
 ```
 
-and, in `readParams`, replace the band block with:
+and, in `readParams`, keep the existing band block and add the source one, with the precedence
+normalised here so no reader downstream has to know the rule:
 
 ```ts
-  // Rank bands are self-reported and are no longer a filter anywhere; the breakdown stays in the
-  // response. An old link carrying band= is simply served as source=all, since `band` is now
-  // read by nothing.
+  const bandRaw = url.searchParams.get('band') ?? 'all';
+  const asked = (BANDS as readonly string[]).includes(bandRaw) ? bandRaw : 'all';
   const sourceRaw = url.searchParams.get('source') ?? 'all';
   const source = SOURCES.includes(sourceRaw) ? sourceRaw : 'all';
-  return { league, since: new Date(since).toISOString(), until: new Date(until).toISOString(), source };
+  return {
+    league,
+    since: new Date(since).toISOString(),
+    until: new Date(until).toISOString(),
+    source,
+    band: source === 'all' ? asked : 'all',
+  };
 ```
 
-Delete `bandRows` and its `BANDS` use in the filter (keep the `BANDS` import: `speciesDetail`
-still builds the band breakdown from it). In `summarize`:
+`bandRows` stays exactly as it is. In `summarize`:
 
-- rename the `band` option and field to `source`,
+- add a `source: string` option and field, keeping `band`, which becomes optional
+  (`band?: string`, read as `opts.band ?? 'all'`) so Tasks 9 and 10 can build a call without one,
 - add `totals?: Totals` to the options and the interface:
 
 ```ts
@@ -2947,10 +3093,12 @@ export interface Totals {
 }
 ```
 
-- replace `const inBand = bandRows(rows, band);` with `const inBand = rows;`,
-- and at the return, use the override when given:
+- leave `const inBand = bandRows(rows, band);` alone,
+- and at the return, use the override when given, and echo both parameters:
 
 ```ts
+    source,
+    band,
     battles: opts.totals ? opts.totals.battles : counted.length,
     tanked: inBand.length - counted.length,
     devices: opts.totals ? opts.totals.devices : devices.size,
@@ -2958,22 +3106,20 @@ export interface Totals {
     sources: opts.totals ? opts.totals.sources : sources,
 ```
 
-In `speciesDetail`, rename `band` to `source` the same way and replace
-`bandRows(rows, band).filter(...)` with `rows.filter(...)`. The `bands` array it returns is
-unchanged. Add to `SpeciesDetailV1` and `MetaSummaryV1`: `source: string` in place of
-`band: string`, and update the doc comment on `bands` to say it is a breakdown and no longer a
-filter.
+In `speciesDetail`, add `source` the same way and keep `bandRows(rows, band)`. The `bands` array
+it returns is unchanged. Add `source: string` to `SpeciesDetailV1` and `MetaSummaryV1` beside the
+existing `band: string`.
 
 - [ ] **Step 4: Change `teams.ts`**
 
-Rename `band` to `source` in `teamBoard`'s options and in `TeamsV1`, drop the `bandRows` import
-and call (`const counted = rows.filter((r) => !r.tanked);`), and accept the same
-`totals?: Totals` override for `battles`, `devices` and `sources`.
+Add `source: string` to `teamBoard`'s options and to `TeamsV1`, keep `band` (optional, defaulting
+to `'all'`) and its `bandRows` call, and accept the same `totals?: Totals` override for
+`battles`, `devices` and `sources`.
 
 - [ ] **Step 5: Change `index.ts`**
 
-The three `*V1` methods take `{ league, since, until, source }` instead of `band`. No other change:
-they already spread `p`.
+Nothing, beyond the compiler following the new `ReadParams`. The three `*V1` methods already
+spread `p`, so `source` and `band` both ride through.
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
@@ -3013,13 +3159,15 @@ function row(over: Partial<BattleRow> = {}): BattleRow {
 const ROWS = [row(), row({ device: 'd2', band: 'legend', result: 'loss' }), row({ tanked: true })];
 
 /**
- * The band axis is retired, so `source=ladder` has to be the response `band=all` used to give.
- * Everything but the echoed request parameter is compared: that one field is the only thing a
- * rename can legitimately change, and comparing it would only assert the rename against itself.
+ * `source=ladder` has to be the response `band=all` used to give. Everything but the echoed
+ * request parameters is compared: those two fields are the only thing this change can
+ * legitimately move, and comparing them would only assert the change against itself. This file
+ * outlives phase 1: Task 13 drops `band` from the response and this test then destructures one
+ * field instead of two, with every other expectation untouched. That is the point of it.
  */
 describe('source=ladder is the old band=all response', () => {
-  it('differs from a fixed expectation in nothing but the echoed parameter', () => {
-    const { source, ...rest } = summarize({
+  it('differs from a fixed expectation in nothing but the echoed parameters', () => {
+    const { source, band, ...rest } = summarize({
       league: 'great',
       ...WINDOW,
       source: 'ladder',
@@ -3028,6 +3176,7 @@ describe('source=ladder is the old band=all response', () => {
       now: NOW,
     });
     expect(source).toBe('ladder');
+    expect(band).toBe('all');
     expect(rest).toEqual({
       league: 'great',
       ...WINDOW,
@@ -3068,16 +3217,16 @@ Expected: PASS.
 - [ ] **Step 8: Lint, typecheck, whole suite**
 
 Run: `npm test && npm run lint && npm run typecheck`
-Expected: FAIL in `apps/meta` typecheck, because `api.ts` still declares `band` on the three wire
-shapes. Change those three `band: string` fields to `source: string` in `apps/meta/src/api.ts`,
-and in `apps/meta/test/stubs/stubFetch.ts`'s three constants, leaving `search()` and the hooks
-alone for now (Task 11 does the client side). Re-run until clean.
+Expected: clean. `apps/meta/src/api.ts` mirrors the three wire shapes, so ADD `source: string`
+beside each existing `band: string` there and in `apps/meta/test/stubs/stubFetch.ts`'s three
+constants (`source: 'all'`). Nothing on the client reads either field yet; Task 11 does the
+client side and Task 13 removes `band`.
 
 - [ ] **Step 9: Commit**
 
 ```bash
 git add workers/counter/src/meta.ts workers/counter/src/teams.ts workers/counter/src/index.ts workers/counter/test apps/meta/src/api.ts apps/meta/test/stubs/stubFetch.ts
-git commit -m "Counter: the band axis stops filtering and becomes a source parameter
+git commit -m "Counter: a source parameter beside the band filter, and a totals override
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -5020,10 +5169,12 @@ export function useLegal(league: string, deps?: Deps): Loaded<Legal> {
 }
 ```
 
-In `App.tsx`: delete `BAND_LABELS` and the rank band `Select` from the filter row (a control that
-no longer filters anything must not stay on screen; Task 13 puts the Source select in its place),
-call `useLegal(activeLeague, deps)` next to `useBaseline`, and pass `query.source` where
-`query.band` went.
+In `App.tsx`: delete `BAND_LABELS` and the rank band `Select` from the filter row, call
+`useLegal(activeLeague, deps)` next to `useBaseline`, and pass `query.source` where `query.band`
+went. The select goes here because `Query` no longer carries a band for it to write, and the
+filter row is a Window select alone until Task 13 adds the Source select. That gap is never
+deployed: the only two deploy points in this plan are Task 10's explicit `counter:deploy` and
+Task 15's `git push`, and every phase 2 task between them commits locally. Do not push mid-phase.
 
 - [ ] **Step 7: Teach the stub about `/legal/`**
 
@@ -5295,19 +5446,24 @@ function ranking(over: Partial<SpeciesRanking>): SpeciesRanking {
 }
 
 describe('sourceHeaderLine', () => {
+  // `say` and `tournamentSay` are inputs here, not recomputed: this file tests the SENTENCE,
+  // and rank.test.ts tests the curves that produce those two numbers. So the counts below are
+  // chosen to be the ones that actually produce the say they sit next to.
+  // measuredSay(148, 9) = min(148/448, 9/14) = 0.330; tournamentSay(105, 1) = min(105/205, 1/3)
+  // = 0.333. The spec's own worked example prints the same three percentages beside 480 battles
+  // and 9 devices, which would really be 62%; see the plan's Self-review, "Still open".
   it('states all three weights and both populations under All', () => {
-    // aL = 480 / 780 capped by 9 / 14, aT = min(105/205, 1/3).
     const r = ranking({
       source: 'all',
       say: 0.33,
       tournamentSay: 1 / 3,
-      battles: 480,
+      battles: 148,
       devices: 9,
       tournamentBattles: 105,
       events: 1,
     });
     expect(sourceHeaderLine(r, ZERO)).toBe(
-      'PvPoke 45%, tournaments 22%, GBL 33%. From 480 shared battles by 9 devices and 105 tournament battles from 1 event.',
+      'PvPoke 45%, tournaments 22%, GBL 33%. From 148 shared battles by 9 devices and 105 tournament battles from 1 event.',
     );
   });
 
@@ -5652,20 +5808,30 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 13: The Source select, and the two list screens
+### Task 13: The Source select, and the retirement of the rank band
 
 **Files:**
 - Modify: `apps/meta/src/App.tsx` (the filter row, and one new prop for Teams)
 - Modify: `apps/meta/src/screens/Pokemon.tsx`
 - Modify: `apps/meta/src/screens/Teams.tsx`
+- Modify: `workers/counter/src/meta.ts`, `workers/counter/src/teams.ts` (the band retirement
+  Task 8 deliberately deferred)
+- Modify: `apps/meta/src/api.ts`, `apps/meta/test/stubs/stubFetch.ts` (drop the mirrored `band`)
 - Test: `apps/meta/test/app.test.tsx`, `apps/meta/test/pokemon.test.tsx`,
-  `apps/meta/test/teams.test.tsx`
+  `apps/meta/test/teams.test.tsx`, `workers/counter/test/meta.test.ts`,
+  `workers/counter/test/teams.test.ts`, `workers/counter/test/routes.test.ts`,
+  `workers/counter/test/sourceShape.test.ts`
+
+**Why the retirement is here and not in Task 8.** The select and the filter behind it go in the
+same commit, so the live site never carries a control that does nothing. See Task 8's own "Why
+the band filter survives this task" and Decision 1.
 
 **Interfaces:**
 - Consumes: `SOURCES`, `SourceKey` (Task 11); `sourceHeaderLine` (Task 12); the new `SpeciesRow`
   fields (Task 12); `TeamsV1.sources` (Task 8).
 - Produces: `SOURCE_LABELS: Record<SourceKey, string>` in `App.tsx`; `Teams` takes a new
-  `sources: Record<string, number>` prop.
+  `sources: Record<string, number>` prop; `bandRows` and the `band` field are gone from
+  `workers/counter` and from the three wire shapes.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -5779,7 +5945,53 @@ In `apps/meta/test/teams.test.tsx`, add:
 Run: `npx vitest run --project meta test/app.test.tsx test/pokemon.test.tsx test/teams.test.tsx`
 Expected: FAIL, no combobox named Source.
 
-- [ ] **Step 3: Put the Source select in `App.tsx`**
+- [ ] **Step 3: Retire the rank band on the worker, in this same commit**
+
+Task 8 kept `band` filtering so the deployed site's select would not be a no-op between deploys.
+The select goes away below, so the filter goes away here, together.
+
+In `workers/counter/src/meta.ts`:
+
+- drop `band` from `ReadParams` and from `readParams` (the `BANDS` import stays: `speciesDetail`
+  still builds the band breakdown from it), so the returned object is
+  `{ league, since, until, source }`,
+- delete `bandRows`, replacing its two call sites: `const inBand = bandRows(rows, band);` becomes
+  `const inBand = rows;` in `summarize`, and `bandRows(rows, band).filter((r) => !r.tanked)`
+  becomes `rows.filter((r) => !r.tanked)` in `speciesDetail`,
+- drop `band` from `summarize`'s and `speciesDetail`'s options and from `MetaSummaryV1` and
+  `SpeciesDetailV1`, and update the doc comment on `bands` to say it is a breakdown and no
+  longer a filter.
+
+In `workers/counter/src/teams.ts`: the same three, for `teamBoard` and `TeamsV1`.
+
+In `apps/meta/src/api.ts` and `apps/meta/test/stubs/stubFetch.ts`: drop the mirrored `band` field
+from the three wire shapes and the three empty constants.
+
+Then the tests, which is where this step is actually verified:
+
+- `workers/counter/test/meta.test.ts`: delete the `describe('bandRows', ...)` block and its
+  import, delete the "band filter, still live through phase 1" block Task 8 added, and remove
+  `band: 'all'` from the helpers.
+- `workers/counter/test/teams.test.ts`: the same removals.
+- `workers/counter/test/routes.test.ts`: replace Task 8's two band cases with the one the spec
+  asks for at this point:
+
+```ts
+  it('serves an old band= link as source=all rather than refusing it', async () => {
+    const res = await get('/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z&band=legend');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { source: string; band?: string };
+    expect(body.source).toBe('all');
+    expect(body.band).toBeUndefined();
+  });
+```
+
+- `workers/counter/test/sourceShape.test.ts`: destructure `source` alone instead of
+  `{ source, band }`, and drop the `expect(band).toBe('all')` line. Every other expectation in
+  that file stays exactly as written, which is the whole reason it exists: it proves the ladder
+  response survived both halves of this change unchanged.
+
+- [ ] **Step 4: Put the Source select in `App.tsx`**
 
 Replace the deleted `BAND_LABELS` with:
 
@@ -5823,7 +6035,7 @@ projections alone rather than records it is not weighting:
 
 and use `observed` where `teamsData.data` fed `buildBoard`.
 
-- [ ] **Step 4: Make `Pokemon.tsx` source-aware**
+- [ ] **Step 5: Make `Pokemon.tsx` source-aware**
 
 Replace its `headerLine` with a call to `sourceHeaderLine`, extend the explainer, and make the two
 row lines read the source:
@@ -5918,7 +6130,7 @@ Widen the list cut so a tournament pick is never dropped:
 and replace the header sentence with
 `{sourceHeaderLine(ranking, "PvPoke's list. No shared battles in this window yet.")}`.
 
-- [ ] **Step 5: Make `Teams.tsx` source-aware**
+- [ ] **Step 6: Make `Teams.tsx` source-aware**
 
 Replace its local `headerLine` with
 `sourceHeaderLine(ranking, "Projected against PvPoke's meta group. No shared battles in this window yet.")`
@@ -5941,28 +6153,28 @@ function sourcesLine(sources: Record<string, number>): string | null {
 rendered as `{ranking.source === 'all' && sourcesLine(sources) ? <p className="fine">{sourcesLine(sources)}</p> : null}`
 (assign it to a local first rather than calling it twice).
 
-- [ ] **Step 6: Run the tests**
+- [ ] **Step 7: Run the tests**
 
-Run: `npx vitest run --project meta`
+Run: `npx vitest run --project meta && npx vitest run --project counter`
 Expected: PASS.
 
-- [ ] **Step 7: See it**
+- [ ] **Step 8: See it**
 
 Run `npm -w @pickthree/meta run dev` and switch the Source select through all four values on
 `/great` and `/great/pokemon`. With the deployed worker holding Baltimore (Task 10), All should
 read roughly `PvPoke 67%, tournaments 33%.` and Tournaments should list real picks. Record what
 the header line actually said in the task report.
 
-- [ ] **Step 8: Lint, typecheck, whole suite**
+- [ ] **Step 9: Lint, typecheck, whole suite**
 
 Run: `npm test && npm run lint && npm run typecheck`
 Expected: clean.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add apps/meta/src apps/meta/test
-git commit -m "Meta site: the Source select, and the two lists read it
+git add apps/meta/src apps/meta/test workers/counter/src workers/counter/test
+git commit -m "Meta site: the Source select replaces the rank band, front and back
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -6377,7 +6589,9 @@ Tasks 6 and 10. The read routes' `source` parameter, the `tournament` block on `
 `/api/v1/species/<id>`, the merged team board, and the two event routes are Tasks 8 to 10. The
 spec's whole worker testing list maps onto Tasks 5, 6, 9 and 10, with one restatement recorded in
 "Decisions" above: "banned species report null" is a site behaviour, tested in Task 12 and Task
-14, because the worker holds no legality data.
+14, because the worker holds no legality data. The `band=` filter is untouched through this whole
+phase (Task 8) and retires in Task 13 with the select, which is the spec's amended Testing bullet
+and Decision 1.
 
 **Phase 2.** The Source select and its four labels (Task 13), the two new constants and the
 sequential blend with its four views (Task 12), the banned-species rule (Task 12), the header line
@@ -6385,11 +6599,42 @@ in every branch (Task 12), the species page's tournaments row, roster line, move
 unresolved-forms line and banned copy (Task 14), the team board's source counts (Task 13), and
 `meta:screens` green (Task 15).
 
-**Plan order.** Phase 0 is standalone and shippable after Task 4. Phase 1 lands dark and is
-deployed at the end of Task 10, which is the point at which the extraction repo ingests Baltimore.
-Phase 2 renders it.
+**Plan order.** Phase 0 is standalone and shippable after Task 4. Phase 1 lands dark, in the
+strong sense: the worker gains `source` without any live behaviour changing, because `band=`
+keeps filtering for the select that is still on screen. It is deployed at the end of Task 10,
+which is the point at which the extraction repo ingests Baltimore. Phase 2 renders it, and
+retires the band axis front and back in Task 13's single commit.
+
+**Deploy points.** Exactly two: Task 10's explicit `npm run counter:deploy`, and Task 15's
+`git push` (which fires `counter.yml` and `pages.yml`). Every other task commits locally. This
+matters: `counter.yml` builds `apps/meta` from the same commit it deploys the worker from, so a
+mid-phase push would ship a half-built site. Do not push between them.
 
 **Not built, and deliberately:** the tournament page, hand-entered results, any weighting by
 bracket depth, country on the roster, and feeding measured data back into pick3's recommendations.
 All are the spec's "Out of scope". `bracket_depth` is stored and served (Tasks 6, 9) and reaches
 no weight.
+
+**Review round 1, both findings fixed (spec commit a39f962, plan commit after f8d6943).**
+
+1. *Phase 1 did not land dark.* Task 8 retired the band filter while the deployed site still
+   rendered the rank band select, so from Task 10's deploy until Task 15's push, picking Legend
+   would have done nothing silently. Task 8 now adds `source` beside a still-working `band`;
+   Task 13 gained Step 3, which retires the filter in the same commit as the select. Decision 1,
+   the File Structure rows, Task 11's Step 6 and this section were updated to match.
+2. *The Tournament league leaked into the meta site's league switcher.* Task 3 only had a note
+   saying the site never asks for it; nothing enforced it, and `bake.ts` copies `leagues.json`
+   straight through to a switcher that maps every entry. Task 3 now exports `siteLeagues`, filters
+   once in `main()`, runs `bake`'s own loop through it, and checks the built output and the live
+   switcher in Steps 8 and 9.
+
+**Still open for the validator, raised rather than acted on.** The spec's worked header-line
+example pairs percentages with counts that do not generate them: `measuredSay(480, 9)` is
+`min(480/780, 9/14) = 0.62`, so 480 shared battles by 9 devices is "GBL 62%", not the "GBL 33%"
+the sentence states. The three percentages in that sentence (45 / 22 / 33) are self-consistent
+with each other given `aL = 0.33` and `aT = 0.33`; it is only the battle and device counts beside
+them that do not produce `aL = 0.33`. Nothing in the plan is wrong because of it (the generator
+expressions are what implement follows, and `headerCopy.ts` reads `say` rather than recomputing
+it), but the plan quotes the sentence as the fixed copy example and Task 12's test used it as a
+fixture with a comment claiming the arithmetic. That comment and fixture are corrected below; the
+spec's own example is the validator's to amend or to keep as deliberately illustrative.
