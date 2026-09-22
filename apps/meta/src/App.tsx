@@ -11,6 +11,7 @@ import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.j
 import type { Baseline } from './baseline.js';
 import { speciesOf, type StaticData } from './data.js';
 import { epochFor, type Epoch } from './epochs.js';
+import type { Legal } from './legal.js';
 import { PICK3 } from './links.js';
 import { rankSpecies, type SpeciesRanking } from './rank.js';
 import {
@@ -190,6 +191,7 @@ function renderView(
   rankingError: boolean,
   epoch: Epoch | null,
   sources: Record<string, number>,
+  legal: Legal | null,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} />;
@@ -219,6 +221,7 @@ function renderView(
         meta={meta}
         baseline={baseline}
         ranking={ranking}
+        legal={legal}
         now={now}
         href={href}
       />
@@ -559,6 +562,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           rankingError,
           epoch,
           teamsData.data?.sources ?? {},
+          legal.data,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>

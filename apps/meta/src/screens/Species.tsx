@@ -11,9 +11,11 @@
 import type { ReactNode } from 'react';
 import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
-import { Bar, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
+import { Bar, ConfidenceTag, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pctFloor, plural } from '../format.js';
+import { sourceHeaderLine } from '../headerCopy.js';
+import type { Legal } from '../legal.js';
 import { countersLink, PICK3 } from '../links.js';
 import type { SpeciesRanking } from '../rank.js';
 import type { Query, View } from '../route.js';
@@ -51,23 +53,6 @@ function joinAnd(names: string[]): string {
     return names[0]!;
   }
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]!}`;
-}
-
-/**
- * Fix round 1 (task 14): the same "how far along it is" figure Pokemon.tsx and Teams.tsx print
- * above their own lists (rank.ts's `rankSpecies`), duplicated here rather than exported from
- * either, the same way Teams.tsx already duplicates its own copy of it. Without this line the
- * blended standing below ("#N of what players face") had no context: a species can lead that
- * list on a say of a few percent, almost entirely PvPoke's own prior, and a reader has no way to
- * tell that apart from a say near 100% without this figure sitting next to it.
- */
-function sayHeaderLine(ranking: SpeciesRanking): string {
-  if (ranking.battles === 0) {
-    return 'No shared battles in this window yet.';
-  }
-  const pctVal = Math.round(ranking.say * 100);
-  const devices = `${count(ranking.devices)} ${plural(ranking.devices, 'device', 'devices')}`;
-  return `${pctVal}% measured, from ${battlesText(ranking.battles)} shared by ${devices}`;
 }
 
 /** A move id and the battles behind it, aggregated across every complete set the worker
@@ -169,6 +154,48 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
   );
 }
 
+/** Sets from RK9 roster entries, not from battles: a roster says what a player brought. Over
+ *  KNOWN sets only, with the count stated, because a missing moveset is left out of the
+ *  denominator and is never counted as "ran the recommended set". */
+function TournamentMovesCard({
+  block,
+  entry,
+  data,
+}: {
+  block: NonNullable<SpeciesDetailV1['tournament']>;
+  entry: BaselineSpecies | null;
+  data: StaticData;
+}) {
+  if (block.movesets.length === 0) {
+    return null;
+  }
+  const recommended =
+    entry !== null ? `${entry.fastMove}|${[...entry.chargedMoves].sort().join('+')}` : null;
+  return (
+    <section className="card">
+      <h2>Moves at tournaments</h2>
+      <p className="sub">
+        {`From ${count(block.movesetsKnown)} known ${plural(block.movesetsKnown, 'set', 'sets')} of ${count(block.broughtBy)} ${plural(block.broughtBy, 'roster entry', 'roster entries')}`}
+      </p>
+      <div className="pick-moves">
+        {block.movesets.map((set) => {
+          const key = `${set.fast}|${[...set.charged].sort().join('+')}`;
+          const names = [set.fast, ...set.charged].map((id) => data.moves.get(id)?.name ?? id);
+          return (
+            <span className="pick-move" key={key}>
+              <span className="pick-move-name">{joinAnd(names)}</span>
+              <span className="fine pick-move-share">
+                {`${count(set.entries)} ${plural(set.entries, 'entry', 'entries')}`}
+              </span>
+              {key === recommended ? <span className="fine">PvPoke&apos;s set</span> : null}
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 /**
  * Fix round 3 ("FIX 1"): this card used to compute a share and a point change from any two
  * weeks at all, with no floor, so a species faced once in a two-battle week and not at all in a
@@ -241,17 +268,60 @@ function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
   );
 }
 
+/** The tournaments figures, under the ladder ones in the same card: the same species, a
+ *  different population, and never merged into one number. A banned species says so instead of
+ *  showing zeros, because zero says nobody picked it, which is false. */
+function tournamentRow(block: SpeciesDetailV1['tournament'], banned: boolean): ReactNode {
+  if (banned) {
+    return <p className="fine">Banned at tournaments</p>;
+  }
+  if (!block || block.picks === 0) {
+    return null;
+  }
+  const decided = block.wins + block.losses;
+  return (
+    <>
+      <p className="sub">
+        {`Tournaments: ${count(block.picks)} ${plural(block.picks, 'pick', 'picks')}, ${count(block.game1Picks)} in game one, players went ${block.wins}-${block.losses}`}{' '}
+        {decided > 0 ? <ConfidenceTag n={decided} /> : null}
+      </p>
+      {block.unresolvedForms > 0 ? (
+        <p className="fine">
+          {`Form not confirmed for ${count(block.unresolvedForms)} ${plural(block.unresolvedForms, 'pick', 'picks')}.`}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+/** The roster join, which is the one thing only tournaments can say: what a player BROUGHT, as
+ * against what they picked. "Never picked" always means never picked on stream, and the
+ * sentence says so rather than leaving a reader to assume a whole event was watched. */
+function rosterLine(block: SpeciesDetailV1['tournament']): string | null {
+  if (!block || block.rosterSize === 0 || block.broughtBy === 0) {
+    return null;
+  }
+  const seen = `Brought by ${count(block.broughtBy)} of ${count(block.rosterSize)} ${plural(block.rosterSize, 'player', 'players')} seen on stream`;
+  if (block.pickedOnStream === 0) {
+    return `${seen}, never picked on stream.`;
+  }
+  return `${seen}, picked in ${count(block.pickedOnStream)} of their streamed ${plural(block.pickedOnStream, 'battle', 'battles')}.`;
+}
+
 function RecordCard({
   detail,
   league,
   speciesId,
+  banned,
 }: {
   detail: SpeciesDetailV1;
   league: string;
   speciesId: string;
+  banned: boolean;
 }) {
   const rate = winRate(detail.wins, detail.losses);
   const decided = detail.wins + detail.losses;
+  const roster = rosterLine(detail.tournament);
   return (
     <section className="card">
       <h2>Reporters&apos; record against it</h2>
@@ -270,6 +340,8 @@ function RecordCard({
           ) : null}
         </>
       )}
+      {tournamentRow(detail.tournament, banned)}
+      {roster ? <p className="fine">{roster}</p> : null}
       {/* D4: pick3's own outlined pair (.btn-pair, both .btn.btn-secondary): neither link is
        * more "primary" than the other, they are two different destinations on pick3. */}
       <div className="btn-pair">
@@ -435,11 +507,15 @@ export function Species(p: {
    * is loading or one of its own three sources failed; the header simply omits the blended
    * standing rather than guessing at a rank it does not have. */
   ranking: SpeciesRanking | null;
+  /** The league's Play! ban list, or null while it is loading. A banned species is marked as
+   *  banned rather than shown with zeros. */
+  legal: Legal | null;
   now: Date;
   href: (view: View) => string;
 }): ReactNode {
-  const { league, speciesId, data, detail, meta, baseline, ranking, href } = p;
+  const { league, speciesId, data, detail, meta, baseline, ranking, legal, href } = p;
   const species = speciesOf(data, speciesId);
+  const banned = legal?.banned.has(speciesId) ?? false;
 
   // The species name itself is App.tsx's sticky header title now, not a heading printed here, so
   // this row is just the visual identity (sprite and types) that title sits above.
@@ -499,6 +575,10 @@ export function Species(p: {
     ? `#${row.rank} of what players face - ${row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}`
     : null;
 
+  // Used both by the zero-sightings branch's own tournaments card and by RecordCard, computed
+  // once here rather than twice.
+  const roster = rosterLine(d.tournament);
+
   return (
     <main>
       <section>
@@ -507,16 +587,31 @@ export function Species(p: {
          * players face" on a say of a few percent, almost entirely PvPoke's own prior, and this
          * is the only thing on the page that tells a reader the two apart. Same convention
          * Pokemon.tsx and Teams.tsx use for their own header line. */}
-        {ranking ? <p className="sub">{sayHeaderLine(ranking)}</p> : null}
+        {ranking ? (
+          <p className="sub">
+            {sourceHeaderLine(ranking, 'No shared battles in this window yet.')}
+          </p>
+        ) : null}
         <p className="sub">{headerText}</p>
         {standingText ? <p className="sub">{standingText}</p> : null}
       </section>
       {d.sightings === 0 ? (
-        <p className="sub">No shared battles mention it in this window.</p>
+        <>
+          <p className="sub">No shared battles mention it in this window.</p>
+          {/* Task 14: tournament data can exist even when this window has zero ladder sightings,
+           * so this branch must not hide it the way it used to hide every card. */}
+          {d.tournament || banned ? (
+            <section className="card">
+              <h2>At tournaments</h2>
+              {tournamentRow(d.tournament, banned)}
+              {roster ? <p className="fine">{roster}</p> : null}
+            </section>
+          ) : null}
+        </>
       ) : (
         <>
           <WeeklyCard weekly={d.weekly} />
-          <RecordCard detail={d} league={league} speciesId={speciesId} />
+          <RecordCard detail={d} league={league} speciesId={speciesId} banned={banned} />
           <BandsCard bands={d.bands} />
           <AlongsideCard
             alongside={d.alongside}
@@ -528,6 +623,9 @@ export function Species(p: {
         </>
       )}
       <MovesetCard detail={d} data={data} />
+      {d.tournament && !banned ? (
+        <TournamentMovesCard block={d.tournament} entry={baselineEntry} data={data} />
+      ) : null}
       {baselineEntry ? <PvPokeCard entry={baselineEntry} data={data} /> : null}
     </main>
   );

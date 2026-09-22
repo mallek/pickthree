@@ -1,8 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { SpeciesDetailV1 } from '../src/api.js';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
+import { resetLegal, type Legal } from '../src/legal.js';
 import { THIN_BAND_MAX } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
@@ -11,6 +13,7 @@ const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
 beforeEach(() => {
   resetStatic();
   resetBaselines();
+  resetLegal();
   window.history.replaceState(null, '', '/great/p/azumarill');
 });
 
@@ -45,6 +48,28 @@ const species = {
 };
 
 const meta = { battles: 1000, devices: 120 };
+
+/** Renders the species page for azumarill (the id `beforeEach` puts in the URL), merging
+ *  `detail` onto the fixture above and passing `legal` through to the ban list stub, in the
+ *  shape `Legal` itself uses (a `Set`), converted to the array `stubFetch`'s own option wants.
+ *  Waits for the page's own name to appear, so every caller's own assertions after the await can
+ *  read synchronously. */
+async function renderSpecies(
+  opts: { detail?: Partial<SpeciesDetailV1>; legal?: Legal | null } = {},
+): Promise<void> {
+  const legalOpt = opts.legal
+    ? { legal: { cup: opts.legal.cup, banned: [...opts.legal.banned] } }
+    : {};
+  render(
+    <App
+      deps={{
+        fetcher: stubFetch({ species: { ...species, ...opts.detail }, meta, ...legalOpt }),
+        now,
+      }}
+    />,
+  );
+  await screen.findByText('Azumarill');
+}
 
 describe('Species', () => {
   it('names it, its types and how often it turned up', async () => {
@@ -415,12 +440,14 @@ describe('Species', () => {
   // Task 14 fix round 1 (IMPORTANT 5): a blended rank without the say figure next to it can
   // mislead (a row can lead the blended list on a say of a few percent, almost entirely PvPoke's
   // own prior). Pokemon.tsx and Teams.tsx both print this figure above their own lists; Species
-  // now does too, in the same words.
+  // now does too, through the same `sourceHeaderLine` helper (Task 14), so this pins the same
+  // "shared battles" word order pokemon.test.tsx and teams.test.tsx pin for the `all` source,
+  // rather than the old inline copy's "battles shared" order.
   it("gives the same 'how far along it is' figure Pokemon and Teams print", async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
     // measuredSay(1000, 120) rounds to 77% (min(1000/1300, 120/125) = 1000/1300 = 0.7692...).
     expect(
-      await screen.findByText('77% measured, from 1,000 battles shared by 120 devices'),
+      await screen.findByText('77% measured, from 1,000 shared battles by 120 devices'),
     ).toBeInTheDocument();
   });
 
@@ -428,5 +455,77 @@ describe('Species', () => {
     const empty = { battles: 0, devices: 0 };
     render(<App deps={{ fetcher: stubFetch({ species, meta: empty }), now }} />);
     expect(await screen.findByText('No shared battles in this window yet.')).toBeInTheDocument();
+  });
+
+  const BLOCK = {
+    picks: 34,
+    game1Picks: 21,
+    wins: 12,
+    losses: 18,
+    byDepth: [4, 6, 8, 6, 4, 3, 2, 1, 0],
+    unresolvedForms: 3,
+    broughtBy: 4,
+    rosterSize: 16,
+    pickedOnStream: 34,
+    movesets: [
+      { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], entries: 3 },
+      { fast: 'BUBBLE', charged: ['ICE_BEAM'], entries: 1 },
+    ],
+    movesetsKnown: 4,
+  };
+
+  it('prints the tournaments row with picks, game one picks and the record', async () => {
+    await renderSpecies({ detail: { tournament: BLOCK } });
+    expect(
+      screen.getByText('Tournaments: 34 picks, 21 in game one, players went 12-18'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Form not confirmed for 3 picks.')).toBeInTheDocument();
+  });
+
+  it('prints the roster join as one sentence', async () => {
+    await renderSpecies({ detail: { tournament: BLOCK } });
+    expect(
+      screen.getByText(
+        'Brought by 4 of 16 players seen on stream, picked in 34 of their streamed battles.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('says never picked on stream in those words, not zero', async () => {
+    await renderSpecies({ detail: { tournament: { ...BLOCK, picks: 0, pickedOnStream: 0 } } });
+    expect(
+      screen.getByText('Brought by 4 of 16 players seen on stream, never picked on stream.'),
+    ).toBeInTheDocument();
+  });
+
+  it('lists the sets from the roster, over known sets only, marking PvPoke own', async () => {
+    await renderSpecies({ detail: { tournament: BLOCK } });
+    const card = (
+      await screen.findByRole('heading', { name: 'Moves at tournaments' })
+    ).closest('section')!;
+    expect(within(card).getByText('From 4 known sets of 4 roster entries')).toBeInTheDocument();
+    // Only BLOCK's first set (BUBBLE, Ice Beam + Play Rough) matches the baseline's recommended
+    // set; the second (BUBBLE, Ice Beam alone) does not, so exactly one of the two roster sets
+    // carries the marker. Scoped to this card: the page's separate "PvPoke's set" card (its own
+    // heading, unrelated to the roster) carries that same text too.
+    expect(within(card).getAllByText("PvPoke's set").length).toBe(1);
+  });
+
+  it('says banned instead of a zeroed row for a species the cup bans', async () => {
+    await renderSpecies({
+      detail: { tournament: { ...BLOCK, picks: 0 } },
+      legal: { league: 'great', cup: 'championshipseries', banned: new Set(['azumarill']) },
+    });
+    // The ban list is its own fetch, a tick behind the species detail `renderSpecies` already
+    // waited on, so this first assertion has to be a `find`, not a `get`.
+    expect(await screen.findByText('Banned at tournaments')).toBeInTheDocument();
+    expect(screen.queryByText(/Tournaments: /)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Moves at tournaments' })).not.toBeInTheDocument();
+  });
+
+  it('shows no tournaments row at all under GBL, where the block is null', async () => {
+    await renderSpecies({ detail: { tournament: null } });
+    expect(screen.queryByText(/Tournaments: /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/seen on stream/)).not.toBeInTheDocument();
   });
 });
