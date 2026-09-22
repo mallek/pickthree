@@ -4,7 +4,9 @@
  */
 
 export type WindowKey = 'meta' | '30' | '7';
-export type BandKey = 'all' | 'below' | 'ace' | 'veteran' | 'expert' | 'legend';
+/** Which population a view is built from. `prior` is PvPoke's curated list alone and needs no
+ *  worker call at all: it is served from the bake. */
+export type SourceKey = 'all' | 'prior' | 'ladder' | 'tournament';
 
 export type View =
   | { name: 'teams'; league: string }
@@ -14,15 +16,18 @@ export type View =
 
 export interface Query {
   w: WindowKey;
-  band: BandKey;
+  source: SourceKey;
 }
 
 export const WINDOWS: readonly WindowKey[] = ['meta', '30', '7'];
-export const BANDS: readonly BandKey[] = ['all', 'below', 'ace', 'veteran', 'expert', 'legend'];
-export const DEFAULT_QUERY: Query = { w: 'meta', band: 'all' };
+export const SOURCES: readonly SourceKey[] = ['all', 'prior', 'ladder', 'tournament'];
+export const DEFAULT_QUERY: Query = { w: 'meta', source: 'all' };
 
 /** The window key was `season` before meta epochs existed. An old link keeps working. */
 const LEGACY_WINDOWS: Record<string, WindowKey> = { season: 'meta' };
+
+/** `band=` was the rank band filter, retired with the band axis (the 2026-09-21 tournament data
+ *  spec). It is not mapped to anything: every old link lands on All, which is what it showed. */
 
 const SPECIES = /^[a-z0-9_]+$/;
 
@@ -32,8 +37,11 @@ function readQuery(search: string): Query {
   const w = WINDOWS.includes(raw as WindowKey)
     ? (raw as WindowKey)
     : (LEGACY_WINDOWS[raw] ?? DEFAULT_QUERY.w);
-  const band = p.get('band');
-  return { w, band: BANDS.includes(band as BandKey) ? (band as BandKey) : DEFAULT_QUERY.band };
+  const source = p.get('source');
+  return {
+    w,
+    source: SOURCES.includes(source as SourceKey) ? (source as SourceKey) : DEFAULT_QUERY.source,
+  };
 }
 
 export function parseLocation(
@@ -73,8 +81,8 @@ export function hrefFor(view: View, query: Query): string {
   if (query.w !== DEFAULT_QUERY.w) {
     p.set('w', query.w);
   }
-  if (query.band !== DEFAULT_QUERY.band) {
-    p.set('band', query.band);
+  if (query.source !== DEFAULT_QUERY.source) {
+    p.set('source', query.source);
   }
   const search = p.toString();
   return search ? `${path}?${search}` : path;

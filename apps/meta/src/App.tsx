@@ -14,13 +14,11 @@ import { epochFor, type Epoch } from './epochs.js';
 import { PICK3 } from './links.js';
 import { rankSpecies, type SpeciesRanking } from './rank.js';
 import {
-  BANDS,
   DEFAULT_QUERY,
   WINDOWS,
   hrefFor,
   parseLocation,
   withLeague,
-  type BandKey,
   type Query,
   type View,
   type WindowKey,
@@ -37,6 +35,7 @@ import {
   useBaseline,
   useEpochs,
   useGenerated,
+  useLegal,
   useMetaSummary,
   useRanks,
   useSlice,
@@ -51,15 +50,6 @@ const WINDOW_LABELS: Record<WindowKey, string> = {
   meta: 'This meta',
   '30': '30 days',
   '7': '7 days',
-};
-
-const BAND_LABELS: Record<BandKey, string> = {
-  all: 'All ranks',
-  below: 'Below Ace',
-  ace: 'Ace',
-  veteran: 'Veteran',
-  expert: 'Expert',
-  legend: 'Legend',
 };
 
 const THEME_LABELS: Record<ThemeChoice, string> = {
@@ -346,19 +336,23 @@ export function App(props?: { deps?: Deps }): ReactNode {
     { league: activeLeague, seasons, epochs: epochsData.data ?? [] },
     now,
   );
-  const meta = useMetaSummary(activeLeague, w, query.band, deps);
+  const meta = useMetaSummary(activeLeague, w, deps);
   const baseline = useBaseline(activeLeague, deps);
+  // The Play! ban list, fetched lazily like the baseline. Nothing reads it yet: it is wired
+  // through here so a future task (the legality list on the client) has it in hand, the same way
+  // useEpochs was called unconditionally before anything rendered from it.
+  useLegal(activeLeague, deps);
   // Called unconditionally, same as meta and baseline above, to keep hook order stable across
   // views: on a non-species view there is no id to look up, so this fetches an empty one (the
   // stub, and the real worker, both answer it harmlessly) rather than skipping the hook.
   const speciesId = view.name === 'species' ? view.speciesId : '';
-  const detail = useSpeciesDetail(activeLeague, speciesId, w, query.band, deps);
+  const detail = useSpeciesDetail(activeLeague, speciesId, w, query.source, deps);
 
   // Task 12: the team board. `ranking` and `board` are computed once here, not inside Teams
   // itself, so Teams and Pokemon (Task 13) read the exact same blended weights and never quietly
   // disagree about them. Every hook below is called unconditionally, same as meta and baseline
   // above, to keep hook order stable across views even though only the Teams view reads them.
-  const teamsData = useTeams(activeLeague, w, query.band, deps);
+  const teamsData = useTeams(activeLeague, w, query.source, deps);
   const slice = useSlice(activeLeague, deps);
   const ranks = useRanks(activeLeague, deps);
   const generated = useGenerated(activeLeague, deps);
@@ -488,6 +482,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
         options={leagues.map((l) => ({ value: l.id, label: l.short }))}
       />
     ) : null;
+    // The filter row is a Window select alone until Task 13 adds the Source select beside it:
+    // `Query` carries `source` now (Task 11), but nothing writes to it from the UI yet.
     const filters: ReactNode = showFilters ? (
       <div className="filter-row">
         <Select
@@ -496,13 +492,6 @@ export function App(props?: { deps?: Deps }): ReactNode {
           value={query.w}
           onChange={(wk) => refine({ ...query, w: wk })}
           options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
-        />
-        <Select
-          label="Rank band"
-          hideLabel
-          value={query.band}
-          onChange={(b) => refine({ ...query, band: b })}
-          options={BANDS.map((k) => ({ value: k, label: BAND_LABELS[k] }))}
         />
       </div>
     ) : null;

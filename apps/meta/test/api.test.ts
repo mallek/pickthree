@@ -7,9 +7,10 @@ import {
   resolveWindow,
   speciesUrl,
   teamsUrl,
+  workerSource,
 } from '../src/api.js';
 import type { Season } from '../src/data.js';
-import type { BandKey } from '../src/route.js';
+import type { SourceKey } from '../src/route.js';
 
 const seasons: Season[] = [
   { id: 27, name: 'Season 27', start: '2026-06-02T13:00:00-07:00' },
@@ -44,14 +45,20 @@ describe('resolveWindow (fixed windows)', () => {
 describe('urls', () => {
   const w = resolveWindow('7', ctxBase, now);
 
-  it('builds the meta url, leaving an "all" band out', () => {
-    expect(metaUrl('great', w, 'all')).toBe(
-      '/api/v1/meta?league=great&since=2026-09-11T12%3A10%3A00.000Z&until=2026-09-18T12%3A10%3A00.000Z',
+  it('never asks the worker to narrow the summary: one cached response serves all four views', () => {
+    expect(metaUrl('great', w)).toBe(
+      `/api/v1/meta?league=great&since=${encodeURIComponent(w.since)}&until=${encodeURIComponent(w.until)}`,
     );
   });
 
-  it('adds the band when one is chosen', () => {
-    expect(metaUrl('great', w, 'legend')).toContain('&band=legend');
+  it('maps the PvPoke view onto the all read, since PvPoke needs no worker call', () => {
+    expect(workerSource('prior')).toBe('all');
+    expect(workerSource('all')).toBe('all');
+    expect(workerSource('ladder')).toBe('ladder');
+    expect(workerSource('tournament')).toBe('tournament');
+    expect(teamsUrl('great', w, 'prior')).toBe(teamsUrl('great', w, 'all'));
+    expect(teamsUrl('great', w, 'tournament')).toContain('source=tournament');
+    expect(speciesUrl('great', 'azumarill', w, 'ladder')).toContain('source=ladder');
   });
 
   it('builds the species url', () => {
@@ -66,19 +73,19 @@ describe('fetchMeta', () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ league: 'great', battles: 3 }), { status: 200 }),
     );
-    await expect(fetchMeta('great', w, 'all', { fetcher })).resolves.toMatchObject({ battles: 3 });
+    await expect(fetchMeta('great', w, { fetcher })).resolves.toMatchObject({ battles: 3 });
   });
 
   it('throws a readable error when the worker refuses', async () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: 'bad window' }), { status: 400 }),
     );
-    await expect(fetchMeta('great', w, 'all', { fetcher })).rejects.toThrow('bad window');
+    await expect(fetchMeta('great', w, { fetcher })).rejects.toThrow('bad window');
   });
 
   it('throws when the network fails, without swallowing the reason', async () => {
     const fetcher = vi.fn().mockRejectedValue(new TypeError('offline'));
-    await expect(fetchMeta('great', w, 'all', { fetcher })).rejects.toThrow('offline');
+    await expect(fetchMeta('great', w, { fetcher })).rejects.toThrow('offline');
   });
 });
 
@@ -154,7 +161,7 @@ describe('teamsUrl', () => {
     expect(teamsUrl('great', w, 'all')).toBe(
       `/api/v1/teams?league=great&since=${encodeURIComponent(w.since)}&until=${encodeURIComponent(w.until)}`,
     );
-    expect(teamsUrl('great', w, 'ace')).toContain('band=ace');
+    expect(teamsUrl('great', w, 'ladder')).toContain('source=ladder');
   });
 });
 
@@ -167,7 +174,9 @@ describe('fetchTeams', () => {
         status: 200,
       }),
     );
-    const band: BandKey = 'all';
-    await expect(fetchTeams('great', w, band, { fetcher })).resolves.toMatchObject({ battles: 3 });
+    const source: SourceKey = 'all';
+    await expect(fetchTeams('great', w, source, { fetcher })).resolves.toMatchObject({
+      battles: 3,
+    });
   });
 });

@@ -48,9 +48,22 @@ describe('parseLocation', () => {
     expect(at('/great/nonsense').view).toEqual({ name: 'teams', league: 'great' });
   });
 
-  it('reads the filters and rejects values it does not know', () => {
-    expect(at('/great', '?w=7&band=legend').query).toEqual({ w: '7', band: 'legend' });
-    expect(at('/great', '?w=99&band=grandmaster').query).toEqual(DEFAULT_QUERY);
+  it('reads the source parameter and defaults to all', () => {
+    expect(parseLocation('/great/pokemon', '?source=tournament', ['great']).query.source).toBe(
+      'tournament',
+    );
+    expect(parseLocation('/great/pokemon', '', ['great']).query.source).toBe('all');
+    expect(parseLocation('/great/pokemon', '?source=rumour', ['great']).query.source).toBe('all');
+  });
+
+  it('lands an old band= link on All rather than 404ing it', () => {
+    const { query } = parseLocation('/great/pokemon', '?band=legend', ['great']);
+    expect(query.source).toBe('all');
+    expect(hrefFor({ name: 'pokemon', league: 'great' }, query)).toBe('/great/pokemon');
+  });
+
+  it('rejects a window value it does not know', () => {
+    expect(at('/great', '?w=99').query).toEqual(DEFAULT_QUERY);
   });
 
   it('tolerates a trailing slash', () => {
@@ -83,7 +96,7 @@ describe('hrefFor', () => {
   });
 
   it('round trips every view with its filters', () => {
-    const query = { w: '30', band: 'ace' } as const;
+    const query = { w: '30', source: 'ladder' } as const;
     for (const view of [
       { name: 'teams', league: 'ultra' },
       { name: 'pokemon', league: 'ultra' },
@@ -94,6 +107,15 @@ describe('hrefFor', () => {
       const [path, search] = href.split('?');
       expect(parseLocation(path!, search ? `?${search}` : '', LEAGUES)).toEqual({ view, query });
     }
+  });
+
+  it('writes source into the href only when it is not the default', () => {
+    expect(hrefFor({ name: 'pokemon', league: 'great' }, { w: 'meta', source: 'all' })).toBe(
+      '/great/pokemon',
+    );
+    expect(hrefFor({ name: 'pokemon', league: 'great' }, { w: '7', source: 'ladder' })).toBe(
+      '/great/pokemon?w=7&source=ladder',
+    );
   });
 });
 

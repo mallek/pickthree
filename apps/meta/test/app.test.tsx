@@ -75,27 +75,26 @@ describe('App', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/about'));
   });
 
-  // The window and the rank band are two native selects side by side. The control changing
-  // shape does not change what matters here: each keeps its choice in the url and reads it back.
-  it('keeps the filters in the url and reads them back', async () => {
-    window.history.replaceState(null, '', '/great?w=7&band=legend');
+  // The window is the one native select in the filter row until Task 13 adds a Source select
+  // beside it. The underlying `source` query key already round-trips through the url (Task 11):
+  // an old `band=` link is dead and lands on the default (`all`), which writes nothing back.
+  it('keeps the window filter in the url and reads it back, and drops a dead band= link', async () => {
+    window.history.replaceState(null, '', '/great?w=7&source=ladder');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByRole('combobox', { name: 'Window' })).toHaveValue('7');
-    expect(await screen.findByRole('combobox', { name: 'Rank band' })).toHaveValue('legend');
+    await waitFor(() => expect(window.location.search).toBe('?w=7&source=ladder'));
   });
 
-  // The two filter captions were taken off the screen, not deleted: their own value already
-  // says what each field is, and the captions cost a row above the fold on a phone. The test
-  // above is what pins the accessible name surviving (it finds both by that name); this pins the
-  // other half, that the name is off the screen rather than printed.
-  it('keeps the filter labels for a screen reader and off the screen', async () => {
+  // The filter caption was taken off the screen, not deleted: the select's own value already
+  // says what the field is, and the caption costs a row above the fold on a phone. The test
+  // above is what pins the accessible name surviving (it finds the select by that name); this
+  // pins the other half, that the name is off the screen rather than printed.
+  it('keeps the filter label for a screen reader and off the screen', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    for (const name of ['Window', 'Rank band']) {
-      const select = await screen.findByRole('combobox', { name });
-      const caption = select.closest('.field')?.querySelector('.field-l');
-      expect(caption?.textContent).toBe(name);
-      expect(caption?.classList.contains('vh')).toBe(true);
-    }
+    const select = await screen.findByRole('combobox', { name: 'Window' });
+    const caption = select.closest('.field')?.querySelector('.field-l');
+    expect(caption?.textContent).toBe('Window');
+    expect(caption?.classList.contains('vh')).toBe(true);
   });
 
   it('answers the back button', async () => {
@@ -195,9 +194,11 @@ describe('App, deep links', () => {
     expect(window.location.pathname).toBe('/master/p/registeel');
   });
 
-  it('keeps the league and both filters together across the old teams path', async () => {
+  it('keeps the league and the window filter together across the old teams path, dropping the dead band', async () => {
     // The old /<league>/teams path (kept working by parseLocation) canonicalises to the league
-    // root, but the filters in its query string ride along untouched.
+    // root, and the window filter in its query string rides along untouched. `band=` is dead
+    // (Task 11 retired the rank band axis): an old link carrying it lands on the default source,
+    // `all`, which writes nothing back into the url.
     window.history.replaceState(null, '', '/ultra/teams?w=7&band=ace');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(await screen.findByRole('radio', { name: 'Ultra' })).toHaveAttribute(
@@ -210,9 +211,8 @@ describe('App, deep links', () => {
     // is what is left to identify the screen itself.
     expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Window' })).toHaveValue('7');
-    expect(screen.getByRole('combobox', { name: 'Rank band' })).toHaveValue('ace');
     await waitFor(() => expect(window.location.pathname).toBe('/ultra'));
-    expect(window.location.search).toBe('?w=7&band=ace');
+    expect(window.location.search).toBe('?w=7');
   });
 
   it('canonicalises the old teams path to the league root', async () => {
@@ -290,28 +290,26 @@ describe('App, filter history', () => {
     const replaceSpy = vi.spyOn(window.history, 'replaceState');
     await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Window' }), '7');
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
-    await waitFor(() => expect(window.location.search).toContain('band=ace'));
     expect(pushSpy).not.toHaveBeenCalled();
-    expect(replaceSpy).toHaveBeenCalledTimes(2);
+    expect(replaceSpy).toHaveBeenCalledTimes(1);
     pushSpy.mockRestore();
     replaceSpy.mockRestore();
   });
 
-  it('leaves the page in one back press no matter how many filters changed first', async () => {
+  it('leaves the page in one back press no matter how many filter changes came first', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
     await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Window' }), '7');
     await waitFor(() => expect(window.location.search).toContain('w=7'));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rank band' }), 'ace');
-    await waitFor(() => expect(window.location.search).toContain('band=ace'));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Window' }), '30');
+    await waitFor(() => expect(window.location.search).toContain('w=30'));
     // Neither filter click pushed a history entry, so a single real navigation still undoes in
-    // a single back press, landing on the page with its filters (not on an intermediate filter
+    // a single back press, landing on the page with its filter (not on an intermediate filter
     // state, which pushing would have created).
     await userEvent.click(screen.getByRole('link', { name: 'About' }));
     await waitFor(() => expect(window.location.pathname).toBe('/about'));
     window.history.back();
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
-    expect(window.location.search).toBe('?w=7&band=ace');
+    expect(window.location.search).toBe('?w=30');
   });
 });

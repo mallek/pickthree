@@ -21,6 +21,8 @@ export interface StubOptions {
   sliceStatus?: number;
   /** The commit stamped on the slice, for the mismatch banner. Defaults to the baseline's. */
   sliceCommit?: string;
+  /** The Play! ban list. Defaults to a made-up open cup with one banned species. */
+  legal?: { cup: string | null; banned: string[] };
 }
 
 export const EMPTY_META: MetaSummaryV1 = {
@@ -254,6 +256,9 @@ export function stubFetch(opts: StubOptions): typeof fetch {
         pvpokeDate: '2026-09-10',
         order: RANK_ORDER,
       });
+    }
+    if (url.startsWith('/legal/')) {
+      return json(opts.legal ?? { cup: 'championshipseries', banned: ['mimikyu'] });
     }
     if (url.startsWith('/baseline/')) {
       const name = url.slice('/baseline/'.length).replace('.json', '');

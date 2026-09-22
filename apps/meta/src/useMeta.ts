@@ -15,7 +15,8 @@ import {
 import { loadBaseline, type Baseline } from './baseline.js';
 import { loadStatic, type StaticData } from './data.js';
 import { loadEpochs, type Epoch } from './epochs.js';
-import type { BandKey } from './route.js';
+import { loadLegal, type Legal } from './legal.js';
+import type { SourceKey } from './route.js';
 import { loadGenerated, loadRanks, loadSlice, type GeneratedFile, type Slice } from './slice.js';
 
 export interface Deps {
@@ -115,7 +116,7 @@ export function useGenerated(league: string, deps?: Deps): Loaded<GeneratedFile>
 export function useTeams(
   league: string,
   w: ApiWindow,
-  band: BandKey,
+  source: SourceKey,
   deps?: Deps,
 ): Loaded<TeamsV1> {
   const ctx = useContext(DepsContext);
@@ -126,18 +127,13 @@ export function useTeams(
       if (fetcher) {
         opts.fetcher = fetcher;
       }
-      return fetchTeams(league, w, band, opts);
+      return fetchTeams(league, w, source, opts);
     },
-    [league, w.since, w.until, band, fetcher],
+    [league, w.since, w.until, source, fetcher],
   );
 }
 
-export function useMetaSummary(
-  league: string,
-  w: ApiWindow,
-  band: BandKey,
-  deps?: Deps,
-): Loaded<MetaSummaryV1> {
+export function useMetaSummary(league: string, w: ApiWindow, deps?: Deps): Loaded<MetaSummaryV1> {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
   return useAsync(
@@ -146,10 +142,17 @@ export function useMetaSummary(
       if (fetcher) {
         opts.fetcher = fetcher;
       }
-      return fetchMeta(league, w, band, opts);
+      return fetchMeta(league, w, opts);
     },
-    [league, w.since, w.until, band, fetcher],
+    [league, w.since, w.until, fetcher],
   );
+}
+
+/** The league's Play! ban list, fetched lazily like the baseline. */
+export function useLegal(league: string, deps?: Deps): Loaded<Legal> {
+  const ctx = useContext(DepsContext);
+  const fetcher = deps?.fetcher ?? ctx.fetcher;
+  return useAsync(() => loadLegal(league, fetcher), [league, fetcher]);
 }
 
 /**
@@ -163,7 +166,7 @@ export function useSpeciesDetail(
   league: string,
   id: string,
   w: ApiWindow,
-  band: BandKey,
+  source: SourceKey,
   deps?: Deps,
 ): Loaded<SpeciesDetailV1> {
   const ctx = useContext(DepsContext);
@@ -177,8 +180,8 @@ export function useSpeciesDetail(
       if (fetcher) {
         opts.fetcher = fetcher;
       }
-      return fetchSpecies(league, id, w, band, opts);
+      return fetchSpecies(league, id, w, source, opts);
     },
-    [league, id, w.since, w.until, band, fetcher],
+    [league, id, w.since, w.until, source, fetcher],
   );
 }

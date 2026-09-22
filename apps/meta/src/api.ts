@@ -8,7 +8,7 @@
  */
 import type { Season } from './data.js';
 import { epochFor, type Epoch } from './epochs.js';
-import type { BandKey, WindowKey } from './route.js';
+import type { SourceKey, WindowKey } from './route.js';
 
 export interface SpeciesStats {
   speciesId: string;
@@ -201,24 +201,36 @@ export function resolveWindow(key: WindowKey, ctx: WindowContext, now: Date): Ap
   };
 }
 
-function search(league: string, w: ApiWindow, band: BandKey): string {
+/** The population the worker is asked for. `prior` is the site's own view of the same `all`
+ *  response (PvPoke's list is baked), so it never becomes its own request: one cached `all`
+ *  response serves All and PvPoke alike. */
+export function workerSource(source: SourceKey): 'all' | 'ladder' | 'tournament' {
+  return source === 'prior' ? 'all' : source;
+}
+
+function search(league: string, w: ApiWindow, source: SourceKey | null): string {
   const p = new URLSearchParams({ league, since: w.since, until: w.until });
-  if (band !== 'all') {
-    p.set('band', band);
+  if (source !== null) {
+    const asked = workerSource(source);
+    if (asked !== 'all') {
+      p.set('source', asked);
+    }
   }
   return p.toString();
 }
 
-export function metaUrl(league: string, w: ApiWindow, band: BandKey): string {
-  return `/api/v1/meta?${search(league, w, band)}`;
+/** Always the `all` response: it carries the ladder numbers AND the tournament block, which is
+ *  everything all four views need, so switching source costs no request and no cache entry. */
+export function metaUrl(league: string, w: ApiWindow): string {
+  return `/api/v1/meta?${search(league, w, null)}`;
 }
 
-export function speciesUrl(league: string, id: string, w: ApiWindow, band: BandKey): string {
-  return `/api/v1/species/${encodeURIComponent(id)}?${search(league, w, band)}`;
+export function speciesUrl(league: string, id: string, w: ApiWindow, source: SourceKey): string {
+  return `/api/v1/species/${encodeURIComponent(id)}?${search(league, w, source)}`;
 }
 
-export function teamsUrl(league: string, w: ApiWindow, band: BandKey): string {
-  return `/api/v1/teams?${search(league, w, band)}`;
+export function teamsUrl(league: string, w: ApiWindow, source: SourceKey): string {
+  return `/api/v1/teams?${search(league, w, source)}`;
 }
 
 async function get<T>(
@@ -243,27 +255,26 @@ async function get<T>(
 export function fetchMeta(
   league: string,
   w: ApiWindow,
-  band: BandKey,
   opts: { signal?: AbortSignal; fetcher?: typeof fetch } = {},
 ): Promise<MetaSummaryV1> {
-  return get<MetaSummaryV1>(metaUrl(league, w, band), opts);
+  return get<MetaSummaryV1>(metaUrl(league, w), opts);
 }
 
 export function fetchSpecies(
   league: string,
   id: string,
   w: ApiWindow,
-  band: BandKey,
+  source: SourceKey,
   opts: { signal?: AbortSignal; fetcher?: typeof fetch } = {},
 ): Promise<SpeciesDetailV1> {
-  return get<SpeciesDetailV1>(speciesUrl(league, id, w, band), opts);
+  return get<SpeciesDetailV1>(speciesUrl(league, id, w, source), opts);
 }
 
 export function fetchTeams(
   league: string,
   w: ApiWindow,
-  band: BandKey,
+  source: SourceKey,
   opts: { signal?: AbortSignal; fetcher?: typeof fetch } = {},
 ): Promise<TeamsV1> {
-  return get<TeamsV1>(teamsUrl(league, w, band), opts);
+  return get<TeamsV1>(teamsUrl(league, w, source), opts);
 }
