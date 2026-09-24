@@ -384,3 +384,83 @@
    .app -> .page: meta's root container was renamed rather than converted (the two solve vertical
    rhythm differently, and .app is a root container no component references, so there was no
    false-friend hazard in leaving the names apart). See apps/meta/src/app.css for .page. */
+
+/* Foundation (docs/superpowers/specs/2026-09-24-design-foundation-design.md). Every rule below
+   uses tokens only, and every class starts with ui- so nothing collides with the apps' own. */
+
+/* Buttons: primary, secondary, text, danger. */
+.ui-btn {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border-radius: var(--r-control);
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  max-width: 100%;
+}
+.ui-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ui-btn:focus-visible,
+.ui-icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ui-btn-primary {
+  background: linear-gradient(135deg, var(--accent-hi), var(--accent));
+  color: var(--on-accent);
+}
+.ui-btn-secondary {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.ui-btn-text {
+  background: transparent;
+  color: var(--accent-text);
+  padding: 0 8px;
+}
+.ui-btn-danger {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Icon buttons: one shape everywhere. */
+.ui-icon-btn {
+  position: relative;
+  width: var(--tap);
+  height: var(--tap);
+  flex: none;
+  border-radius: var(--r-control);
+  border: 1px solid var(--divider);
+  background: var(--surface);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ui-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.ui-icon-btn.active::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}

@@ -9,3 +9,5 @@ export { Seg } from './components/Seg.tsx';
 export { Select } from './components/Select.tsx';
 export { typeColor, typeInk } from './type.ts';
 export { applyTheme, nextTheme, storedTheme, THEME_KEY, type ThemeChoice } from './theme.ts';
+export { Button, type ButtonVariant } from './components/Button.tsx';
+export { IconButton } from './components/IconButton.tsx';
