@@ -127,7 +127,8 @@ engine type names only the fields the blend reads.
   The existing PvPoke path keeps `metaRanks` untouched; only the community path uses `ranksOf`, so
   it matches the site even where `overall` repeats a species.
 - **Ban list**: not shipped today. `legalFor` and `OPEN_EQUIVALENT_CUP` move from
-  `apps/meta/scripts/bake.ts` into `packages/data`, and pick3's data build writes
+  `apps/meta/scripts/bake.ts` into `@pickthree/engine/meta` (apps/meta does not depend on
+  `packages/data`), and pick3's data build writes
   `public/data/legal/<league>.json` beside `rankings/`. The meta bake imports the same function.
   The worker's copy of `OPEN_EQUIVALENT_CUP` stays where it is (the contract is asserted on both
   sides, as today).
@@ -162,7 +163,8 @@ New, in `packages/engine/src/yourmeta/` beside `buildFacingProfile`, returning t
   line.
 
 With a community source and a summary carrying no battles and no events, both says are 0 and the
-weights are PvPoke's normalised prior: same order as PvPoke. Engaged or not is decided by the
+weights are PvPoke's normalised prior, in PvPoke's order (teams may still differ from PvPoke mode,
+since the profile is engaged and drafting is weighted). Engaged or not is decided by the
 source, not by the data, so the line still names the source and says "0% measured".
 
 ### One facing input
@@ -331,7 +333,9 @@ Engine (vitest, fixture data):
   with a log under 15 battles, produce exactly main's output on the fixture collection (teams,
   scores, order, assumptions except the new `source` field). Captured as a snapshot before the
   change lands.
-- **Zero data**: a community summary with no battles and no events gives PvPoke's team order.
+- **Zero data**: a community summary with no battles and no events gives PvPoke's weights, in
+  PvPoke's order. The teams can still differ from PvPoke mode, because an engaged profile drafts by
+  weight and PvPoke mode drafts by plain count; that difference is decision 5 working, not drift.
 - **Weighted drafting**: a hand-built matrix where the heaviest column is beaten only by a trio
   with low plain coverage; with weights that trio reaches the finalists, without them it does not.
 - **Exposure and top ten by weight** in weighted mode; first columns in unweighted mode.
