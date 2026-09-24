@@ -316,6 +316,39 @@ await shot('08c-leagues-sheet', false);
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
 
+console.log('leagues sheet opened from Settings still covers Settings');
+await page.click('.cog.head-cog');
+await page.waitForSelector('.sheet[role="dialog"]');
+await new Promise((r) => setTimeout(r, 300));
+await page.click('.sheet .league-more');
+await page.waitForSelector('.ui-sheet');
+await new Promise((r) => setTimeout(r, 300));
+const nestedSheetCheck = await page.evaluate(() => {
+  const done = [...document.querySelectorAll('.sheet .between button.btn-ghost')].find(
+    (b) => b.textContent?.trim() === 'Done',
+  );
+  if (!done) {
+    return { ok: false, reason: "could not find Settings' own Done button" };
+  }
+  const b = done.getBoundingClientRect();
+  const x = b.left + b.width / 2;
+  const y = b.top + b.height / 2;
+  const top = document.elementFromPoint(x, y);
+  const coveredByLeagues = top !== null && (top.closest('.ui-overlay') !== null || top.closest('.ui-sheet') !== null);
+  return {
+    ok: coveredByLeagues,
+    reason: `topmost at Settings' Done is ${top?.className ?? top?.tagName ?? 'nothing'}, not the Leagues overlay or sheet`,
+  };
+});
+if (!nestedSheetCheck.ok) {
+  throw new Error(`Leagues sheet nested in Settings: ${nestedSheetCheck.reason}`);
+}
+await shot('08d-leagues-sheet-in-settings', false);
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
+await page.click('.sheet .between button.btn-ghost');
+await page.waitForSelector('.sheet', { hidden: true });
+
 console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.set-card', { timeout: 60_000 });

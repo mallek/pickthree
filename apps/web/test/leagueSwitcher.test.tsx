@@ -36,11 +36,15 @@ function Probe() {
   return null;
 }
 
-/** Boot fires `boot-ready` (data) and the settings/collection load independently; a click right
- * after `boot === 'ready'` can race the still-pending settings load, which would otherwise
- * overwrite a setting changed in that window once it finally resolves. Waiting for
- * `settingsLoaded` too is what a real session already does before the league row renders
- * anything interactive; it also makes these tests deterministic instead of order-dependent. */
+/** Boot fires `boot-ready` (data) and the settings/collection load independently in
+ * state/store.tsx; a click right after `boot === 'ready'` can race the still-pending settings
+ * load, which would otherwise overwrite a setting changed in that window once it finally
+ * resolves. That race is real but practically invisible in the app itself, since `boot-ready`
+ * (the fake host here resolves in a microtask; the real one fetches game data) takes hundreds of
+ * milliseconds, long past when the settings load has already finished; a test's synchronous fake
+ * host closes that gap to nothing, which is what makes the race show up here. Waiting for
+ * `settingsLoaded` too, not a change to store.tsx (a separate follow-up), is what keeps these
+ * tests deterministic instead of order-dependent. */
 async function waitUntilReady() {
   await waitFor(() => {
     expect(latest?.boot).toBe('ready');
