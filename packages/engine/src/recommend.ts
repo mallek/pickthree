@@ -19,13 +19,19 @@ import { MatrixView } from './search/matrixView.js';
 import {
   DEFAULT_TRIO_OPTIONS,
   generateTrios,
+  weightedTrioOptions,
   type Structure,
   type TeamStyle,
 } from './search/trios.js';
 import { scoreTeam, type TeamScore } from './score/score.js';
 import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
 import { specimenVerdict, type Verdict } from './verdicts/worth.js';
-import { profileFor, type FacingInput, type FacingSource } from './yourmeta/facing.js';
+import {
+  heaviestColumns,
+  profileFor,
+  type FacingInput,
+  type FacingSource,
+} from './yourmeta/facing.js';
 import { facingLine, type FacingProfile } from './yourmeta/profile.js';
 
 export { profileFor } from './yourmeta/facing.js';
@@ -149,6 +155,16 @@ export function assumptionsFor(
   };
 }
 
+/**
+ * The ten opponents "top ten" means for scoreTeam: the ten heaviest columns for an engaged facing
+ * profile, and undefined (the first ten columns) otherwise, which keeps PvPoke mode unchanged.
+ */
+export function topTenFor(view: MatrixView, profile: FacingProfile): string[] | undefined {
+  return profile.engaged
+    ? heaviestColumns(view, profile.weights, 10).map((o) => view.opponents[o] as string)
+    : undefined;
+}
+
 /** A simulated, scored team with its explanation attached. */
 export function teamFrom(
   t: TeamSim,
@@ -211,15 +227,15 @@ export function recommend(
   progress('candidates', 1, 1);
 
   const typesOf = { types: (id: string) => index.mustSpecies(id).types };
-  const { drafts, scored } = generateTrios(
-    pool,
-    view,
-    typesOf,
-    { ...DEFAULT_TRIO_OPTIONS, finalists: opts.finalists, style: opts.style },
-    (d, t) => progress('trios', d, t),
+  const profile = profileFor(deps.data, view, opts.facing);
+  const baseTrio = { ...DEFAULT_TRIO_OPTIONS, finalists: opts.finalists, style: opts.style };
+  const trioOpts = profile.engaged
+    ? weightedTrioOptions(baseTrio, view, profile.weights)
+    : baseTrio;
+  const { drafts, scored } = generateTrios(pool, view, typesOf, trioOpts, (d, t) =>
+    progress('trios', d, t),
   );
 
-  const profile = profileFor(deps.data, view, opts.facing);
   const opponents = [...deps.data.meta, ...profile.outsiders];
   const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),
@@ -229,7 +245,8 @@ export function recommend(
   const ranks = metaRanks(deps.data.rankings);
   const facing = new Map([...profile.weights, ...profile.outsiderWeights]);
   const extra = profile.outsiders.map((o) => o.speciesId);
-  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra) }));
+  const topTen = topTenFor(view, profile);
+  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra, topTen) }));
   scored2.sort((a, b) => b.score.total - a.score.total);
   const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {

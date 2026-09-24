@@ -130,6 +130,8 @@ export function scoreTeam(
   facing?: Map<string, number>,
   /** Opponents simulated on top of the matrix columns (your most-faced outsiders). */
   extraOpponents: string[] = [],
+  /** The ten opponents "top ten" means. Absent means the first ten columns, as always. */
+  top?: readonly string[],
 ): TeamScore {
   const covered = new Set<string>();
   for (const s of t.slots) {
@@ -176,8 +178,10 @@ export function scoreTeam(
   // Safety and consistency are matrix-only per the spec, unlike coverage, so appended outsiders
   // (beyond view.opponents) never count toward hard losses here.
   const sw = t.slots[1];
-  const hardLosses = sw.results.slice(0, view.opponents.length).filter((r) => r.rating < 300).length;
-  const topUncovered = view.opponents.slice(0, 10).filter((id) => !covered.has(id)).length;
+  const hardLosses = sw.results
+    .slice(0, view.opponents.length)
+    .filter((r) => r.rating < 300).length;
+  const topUncovered = (top ?? view.opponents.slice(0, 10)).filter((id) => !covered.has(id)).length;
   const safety = Math.max(0, 100 - hardLosses * 20 - topUncovered * 10);
 
   // Cost normalized against the finalist set.

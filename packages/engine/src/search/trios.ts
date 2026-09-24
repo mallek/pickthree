@@ -1,6 +1,7 @@
 import type { PokemonType } from '../gamedata/types.js';
 import type { Candidate, Role } from './candidates.js';
 import type { MatrixView } from './matrixView.js';
+import { heaviestColumns } from '../yourmeta/facing.js';
 
 export type Structure = 'ABB' | 'ABC';
 export type TeamStyle = 'any' | 'balanced' | 'abb';
@@ -32,6 +33,13 @@ export interface TrioOptions {
   exposureDepth: number;
   /** Minimum ABB drafts to keep in the finalists when any exist. */
   minAbb: number;
+  /**
+   * Per matrix column, how often it is faced. Absent means today's unweighted draft, which is what
+   * keeps PvPoke mode byte-identical; present only for an engaged facing profile.
+   */
+  weights?: readonly number[];
+  /** Column indexes that count toward exposure. Absent means the first exposureDepth columns. */
+  exposureColumns?: readonly number[];
 }
 
 export const DEFAULT_TRIO_OPTIONS: TrioOptions = {
@@ -41,6 +49,23 @@ export const DEFAULT_TRIO_OPTIONS: TrioOptions = {
   exposureDepth: 15,
   minAbb: 5,
 };
+
+/** Draft options for an engaged facing profile: weighted coverage, exposure by weight. */
+export function weightedTrioOptions(
+  base: TrioOptions,
+  view: MatrixView,
+  weights: ReadonlyMap<string, number>,
+): TrioOptions {
+  return {
+    ...base,
+    weights: view.opponents.map((id) => weights.get(id) ?? 0),
+    exposureColumns: heaviestColumns(
+      view,
+      weights,
+      Math.min(base.exposureDepth, view.opponents.length),
+    ),
+  };
+}
 
 export interface Prepared {
   c: Candidate;
@@ -112,8 +137,22 @@ export function evaluateTrio(
     });
   }
   const coverage = covered.filter(Boolean).length;
+  let coverShare = n === 0 ? 0 : coverage / n;
+  if (opts.weights) {
+    let got = 0;
+    let all = 0;
+    opts.weights.forEach((w, o) => {
+      all += w;
+      if (covered[o]) {
+        got += w;
+      }
+    });
+    coverShare = all === 0 ? 0 : got / all;
+  }
+  const exposureCols =
+    opts.exposureColumns ?? Array.from({ length: Math.min(opts.exposureDepth, n) }, (_, o) => o);
   const exposure: string[] = [];
-  for (let o = 0; o < Math.min(opts.exposureDepth, n); o++) {
+  for (const o of exposureCols) {
     if (!covered[o]) {
       exposure.push(view.opponents[o] as string);
     }
@@ -122,7 +161,7 @@ export function evaluateTrio(
   const totalWins = members.reduce((acc, m) => acc + m.win11.filter(Boolean).length, 0);
   const uniqueWins = coverCount.filter((k) => k === 1).length;
   const abcScore =
-    totalWins === 0 ? 0 : (coverage / n) * (0.5 + 0.5 * (uniqueWins / Math.max(1, coverage)));
+    totalWins === 0 ? 0 : coverShare * (0.5 + 0.5 * (uniqueWins / Math.max(1, coverage)));
 
   let typeOverlap = 0;
   for (let i = 0; i < 3; i++) {
@@ -153,7 +192,7 @@ export function evaluateTrio(
     const structure: Structure =
       abbScore >= opts.abbThreshold && counters.length >= 3 ? 'ABB' : 'ABC';
     const draftScore =
-      0.45 * (coverage / n) +
+      0.45 * coverShare +
       0.2 * (roleFit / 100) +
       0.2 * Math.max(abbScore * (structure === 'ABB' ? 1 : 0.6), abcScore) +
       0.15 * (1 - exposure.length / Math.min(opts.exposureDepth, n)) -
