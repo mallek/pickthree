@@ -897,3 +897,67 @@
   color: var(--muted);
   font-size: 18px;
 }
+
+/* States: loading, empty, error. */
+.ui-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+  padding: 24px 0;
+}
+.ui-loading-label {
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.ui-loading-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bar);
+  overflow: hidden;
+}
+.ui-loading-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+.ui-loading-bar.indeterminate span {
+  width: 35%;
+  animation: ui-sweep 1.2s ease-in-out infinite;
+}
+@keyframes ui-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-loading-bar.indeterminate span {
+    animation: none;
+  }
+}
+.ui-empty,
+.ui-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 12px;
+  text-align: center;
+  font-size: var(--fs-body);
+  color: var(--muted);
+}
+.ui-empty p,
+.ui-error p {
+  margin: 0;
+}
+.ui-error {
+  padding: 12px 14px;
+  border-radius: var(--r-control);
+  background: var(--warn-tint);
+  color: var(--warn);
+  text-align: left;
+  align-items: flex-start;
+}
