@@ -56,7 +56,9 @@ Dark and light at 390px, every foundation component in every state, one page per
       default and disabled, a long label; pressed is the `:active` press-in shared with chips,
       live on tap and not in a static capture), Chip (unselected/selected, a long label; chips
       have no disabled state), Tag (every `tone`), TypeChip (all 18 types, plus the small size),
-      LeagueSwitcher (three leagues, with the overflow, four leagues with the overflow, compact),
+      LeagueSwitcher (three leagues, with the overflow, the current cup in the overflow slot, a
+      current cup with a long name that collapses the leagues to shields-only, compact, compact
+      with the current cup, and a `LeagueList` sheet page),
       Header (both variants), Sheet (root page, and a second frame pushed to depth 2 with its
       back control), ConfirmSheet (default and danger), Toast (one with its once-only action,
       one without), loading/empty/error states, at 390px, in both themes
@@ -88,6 +90,7 @@ Dark and light at 390px, every foundation component in every state, one page per
 | ConfirmSheet: a fast double tap could run `onConfirm` twice before the parent unmounted it | `onConfirm` runs at most once per mount, with a test | 874887f |
 | The gallery measured in the fallback font and without the apps' `box-sizing: border-box` (a full-width control measured 2px wider than in the apps) | Inter loaded as in apps/web; border-box sizing in `gallery.css` | 874887f |
 | Tap-target check flagged visually hidden inputs behind a styled label and skipped `summary`, switches and checkboxes | Skips 1 by 1 or clipped elements and inputs inside a label of at least 44 by 44; `summary`, `[role="switch"]` and `[role="checkbox"]` added | 668fcc2 |
+| The four-leagues-drop-shields fix (previous row) still cut it close, and does not generalize past a single extra cup: the league row now shows only the open leagues (Great, Ultra, Master, always with shields and names) plus a "..." overflow that opens a `LeagueList` sheet of every league and cup; the current cup shows in the overflow slot instead of "...". At 390px even one cup's name next to three full league names does not fit (measured: a 350px row, three full names plus "Tournament" needs about 381px), so `LeagueSwitcher` measures the fit in a layout effect and, when clipped, hides the open leagues' names (shields only, kept in the accessibility tree) to free the room; only if the cup's name still does not fit does it ellipsize in its own slot | New `LeagueList` component; `LeagueSwitcher`'s `more.current`; `packages/ui/base.css`'s league-row/league-more rules rebuilt as a content-driven grid so the three leagues never lose a letter to an even flex split; `apps/web/src/components/LeagueSwitcher.tsx` filters to `kind === 'standard'` for the row and opens a `Sheet` with every league for the overflow | (this change) |
 
 ## Visible changes in the live apps
 
@@ -101,9 +104,7 @@ These are the changes from Piece 1 (Foundation) that are now visible in `apps/we
 - Chips and league segments grow to 44px.
 - Meta's Window and Source selects now print their labels.
 - Buttons and chips press in slightly (`scale(0.97)`) while held.
-- In apps/web, where the Tournament league makes four segments, the full-width league row at
-  390px drops its shields so every name fits whole; the compact rows keep them. Three-league rows
-  are unchanged.
+- Cups (Tournament) move behind a "..." button; the league row always shows its shields.
 
 ## Sign-off
 
