@@ -1,0 +1,64 @@
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+}
+.g-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px var(--gutter) 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.g-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.g-section > h2 {
+  margin: 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.g-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.g-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+.g-swatch {
+  border-radius: var(--r-control);
+  border: 1px solid var(--divider);
+  padding: 36px 8px 8px;
+  font-size: var(--fs-label);
+  color: var(--text);
+  background: var(--surface);
+}
+.g-note {
+  margin: 0;
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.g-frame {
+  position: relative;
+  min-height: 300px;
+  border: 1px dashed var(--divider);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  transform: translateZ(0);
+}
+.g-frame .ui-overlay,
+.g-frame .ui-sheet,
+.g-frame .ui-toast {
+  position: absolute;
+}

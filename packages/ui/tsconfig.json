@@ -10,5 +10,5 @@
     "types": ["vite/client"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "gallery/**/*.ts", "gallery/**/*.tsx"]
 }

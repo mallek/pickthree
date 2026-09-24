@@ -12,7 +12,9 @@
     "./brand/*": "./brand/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "gallery": "vite --config vite.gallery.config.ts",
+    "gallery:build": "vite build --config vite.gallery.config.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.9.1",

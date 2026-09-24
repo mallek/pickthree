@@ -7,6 +7,7 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
+      'packages/ui/gallery-dist/**',
       '**/node_modules/**',
       'packages/sim-pvpoke/vendor/**',
       'packages/sim-pvpoke/src/globals-shim.js',
