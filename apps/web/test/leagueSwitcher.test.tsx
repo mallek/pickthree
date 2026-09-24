@@ -36,6 +36,18 @@ function Probe() {
   return null;
 }
 
+/** Boot fires `boot-ready` (data) and the settings/collection load independently; a click right
+ * after `boot === 'ready'` can race the still-pending settings load, which would otherwise
+ * overwrite a setting changed in that window once it finally resolves. Waiting for
+ * `settingsLoaded` too is what a real session already does before the league row renders
+ * anything interactive; it also makes these tests deterministic instead of order-dependent. */
+async function waitUntilReady() {
+  await waitFor(() => {
+    expect(latest?.boot).toBe('ready');
+    expect(latest?.settingsLoaded).toBe(true);
+  });
+}
+
 describe('LeagueSwitcher', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
@@ -56,7 +68,7 @@ describe('LeagueSwitcher', () => {
         <LeagueSwitcher />
       </AppProvider>,
     );
-    await waitFor(() => expect(latest?.boot).toBe('ready'));
+    await waitUntilReady();
     expect(screen.getByRole('radio', { name: 'Great League' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Ultra League' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Master League' })).toBeInTheDocument();
@@ -77,7 +89,7 @@ describe('LeagueSwitcher', () => {
         <LeagueSwitcher />
       </AppProvider>,
     );
-    await waitFor(() => expect(latest?.boot).toBe('ready'));
+    await waitUntilReady();
     fireEvent.click(screen.getByRole('button', { name: 'More leagues and cups' }));
     const sheet = await screen.findByRole('dialog');
     expect(within(sheet).getByText('Leagues')).toBeInTheDocument();
@@ -103,11 +115,12 @@ describe('LeagueSwitcher', () => {
         <LeagueSwitcher />
       </AppProvider>,
     );
-    await waitFor(() => expect(latest?.boot).toBe('ready'));
+    await waitUntilReady();
     fireEvent.click(screen.getByRole('button', { name: 'More leagues and cups' }));
     const sheet = await screen.findByRole('dialog');
+    const radio = within(sheet).getByRole('radio', { name: 'Tournament' });
     await act(async () => {
-      fireEvent.click(within(sheet).getByRole('radio', { name: 'Tournament' }));
+      fireEvent.click(radio);
     });
     await waitFor(() => expect(latest?.settings.league).toBe('championshipseries'));
     const overflow = screen.getByRole('button', { name: 'Tournament League, More leagues and cups' });
