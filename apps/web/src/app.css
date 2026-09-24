@@ -595,7 +595,8 @@ a {
    reservation is dead space here. */
 .landing {
   /* The landing's tally pink, the only hue on the page that is neither the accent nor a type
-     colour. Scoped here rather than added to tokens.css: nothing outside this page uses it. */
+     colour. It is now the shared --measured token (tokens.css); --tally stays as the landing's
+     local alias so its rules keep reading as the tally. */
   --tally: var(--measured);
   --cta-1: #7c5edb;
   --cta-2: #6a4ac9;

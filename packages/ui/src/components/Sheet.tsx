@@ -57,12 +57,18 @@ export function Sheet({
         tabIndex={-1}
         ref={dialog}
         onKeyDown={(e) => {
+          // Escape and Tab stop here: React events bubble through the React tree, so a sheet
+          // opened from inside another modal layer would otherwise close or trap for it too.
           if (e.key === 'Escape') {
             e.preventDefault();
+            e.stopPropagation();
             onClose();
             return;
           }
-          trapTab(e, dialog.current);
+          if (e.key === 'Tab') {
+            trapTab(e, dialog.current);
+            e.stopPropagation();
+          }
         }}
       >
         <div className="ui-grabber">

@@ -168,6 +168,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 /* Off the screen, still in the accessibility tree: for text a screen reader needs and a sighted
    reader does not, such as a select's label when its own value already says what it is. */
@@ -420,7 +421,7 @@
   outline-offset: 2px;
 }
 .ui-btn-primary {
-  background: linear-gradient(135deg, var(--accent-hi), var(--accent));
+  background: linear-gradient(135deg, var(--accent-hi), var(--accent-lo));
   color: var(--on-accent);
 }
 .ui-btn-secondary {
@@ -495,6 +496,13 @@
   outline-offset: 2px;
 }
 
+/* Pressed: buttons and chips press in slightly while held. No color change, so it reads the
+   same over every fill and in both themes. */
+.ui-btn:active:not(:disabled),
+.chip:active {
+  transform: scale(0.97);
+}
+
 /* Tags: read-only labels, compact, never button-like. */
 .ui-tag {
   display: inline-flex;
@@ -531,13 +539,74 @@
   color: var(--warn);
 }
 
-/* League switcher: 44px segments, and the optional overflow segment. */
+/* League switcher: 44px segments, and the optional overflow segment. Segments may shrink below
+   their content so a long row never runs under the overflow button: with four or more leagues in
+   a narrow row the shields step aside first, and a name ellipsizes only as a last resort. Three
+   leagues keep their shields at every width. */
 .league-switcher button {
   min-height: var(--tap);
+  min-width: 0;
 }
-/* Selects: a 44px target wherever they sit; each app still styles the rest. */
+.ui-league-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.league-switcher:has(> button:nth-child(4)) {
+  container-type: inline-size;
+}
+/* Four or more: each segment starts from its own name's width and shares out what is left, so a
+   long name ("Tournament") gets the room a short one ("Ultra") does not need. */
+.league-switcher:has(> button:nth-child(4)) > button {
+  flex: 1 1 auto;
+}
+@container (max-width: 400px) {
+  .league-switcher:has(> button:nth-child(4)) .league-shield {
+    display: none;
+  }
+}
+/* Selects: a 44px target wherever they sit, a label above, the platform's own picker under a
+   chevron. The Select component's classes; 16px text so iOS never zooms into it. */
 .field select {
   min-height: var(--tap);
+}
+.field-l {
+  font-size: 12px;
+  color: var(--muted);
+}
+.select-wrap {
+  position: relative;
+  min-width: 0;
+}
+.select-wrap select {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 36px 0 14px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--divider);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  appearance: none;
+  -webkit-appearance: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.select-wrap svg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.select-wrap select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 .league-row {
   display: flex;
@@ -867,8 +936,12 @@
 /* Toast: one line, an optional action. */
 .ui-toast {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centered by auto margins between the gutters, not by left: 50%, which would cap the box at
+     the half of the screen right of center and wrap one line of feedback onto three or four. */
+  left: var(--gutter);
+  right: var(--gutter);
+  margin: 0 auto;
+  width: fit-content;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
   z-index: 12;
   display: flex;

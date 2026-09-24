@@ -181,69 +181,23 @@ section > .stat-n,
   position: relative;
 }
 
-/* Painted height measures 32px (16px shield + 8px top/bottom padding); the touch target extends
-   to 40px, the site's own floor. Vertical only: the three segments already tile edge to edge, so
-   a sideways extension would just overlap the divider between them for no gain. */
+/* The segments paint at 44px (base.css's min-height: var(--tap)), so this 4px extension above and
+   below is margin on a target that already meets the floor. Vertical only: the segments tile edge
+   to edge, so a sideways extension would just overlap the divider between them for no gain. */
 .league-switcher button::after {
   content: '';
   position: absolute;
   inset: -4px 0;
 }
 
-/* Filters: two native selects side by side, the window and the rank band. A select is the
-   one control that holds six options in a row of phone width without wrapping or scrolling, and
-   it opens the platform's own picker. Styled on pick3's field: 44px tall, surface, 1px border,
-   16px text so iOS never zooms into it. */
+/* Filters: two native selects side by side, the window and the source. A select is the one
+   control that holds six options in a row of phone width without wrapping or scrolling, and it
+   opens the platform's own picker. The select itself (label, 44px box, chevron) is the shared
+   Select, styled in packages/ui/base.css. */
 .filter-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-}
-
-.field {
-  min-width: 0;
-}
-
-.field-l {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.select-wrap {
-  position: relative;
-  min-width: 0;
-}
-
-.select-wrap select {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 36px 0 14px;
-  border-radius: 12px;
-  border: 1px solid var(--divider);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 500;
-  appearance: none;
-  -webkit-appearance: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.select-wrap svg {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-  pointer-events: none;
-}
-
-.select-wrap select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 /* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the

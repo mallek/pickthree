@@ -18,7 +18,10 @@
   --warn: #f2c46b;
   --warn-tint: #3a3224;
   --on-accent: #161826;
+  /* The primary button runs a gradient from --accent-hi to --accent-lo; --on-accent clears 4.5:1
+     on both stops in both themes (test/contrast.test.ts). */
   --accent-hi: #aca2e8;
+  --accent-lo: #9184d9;
   --bar: #3a3d52;
   --glow: rgba(111, 207, 151, 0.2);
   --hit: #f07178;
@@ -75,6 +78,7 @@
     --warn-tint: #f5ead4;
     --on-accent: #ffffff;
     --accent-hi: #5748b8;
+    --accent-lo: #7466bc;
     --bar: #dcdcea;
     --glow: rgba(47, 158, 95, 0.2);
     --hit: #c8323b;
@@ -131,6 +135,7 @@
   --warn-tint: #f5ead4;
   --on-accent: #ffffff;
   --accent-hi: #5748b8;
+  --accent-lo: #7466bc;
   --bar: #dcdcea;
   --glow: rgba(47, 158, 95, 0.2);
   --hit: #c8323b;

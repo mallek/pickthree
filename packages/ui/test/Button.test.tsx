@@ -12,6 +12,22 @@ describe('Button', () => {
     }
   });
 
+  it('marks only the primary gradient for the static contrast test', () => {
+    render(
+      <>
+        <Button variant="primary">Analyze</Button>
+        <Button variant="secondary">Change team</Button>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Analyze' })).toHaveAttribute(
+      'data-audit-contrast',
+      'static',
+    );
+    expect(screen.getByRole('button', { name: 'Change team' })).not.toHaveAttribute(
+      'data-audit-contrast',
+    );
+  });
+
   it('calls onClick', async () => {
     const onClick = vi.fn();
     render(<Button onClick={onClick}>Log a battle</Button>);

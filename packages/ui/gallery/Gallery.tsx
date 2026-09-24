@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Button,
   Chip,
@@ -20,6 +20,7 @@ import {
   Term,
   Toast,
   TypeChips,
+  type SheetNav,
   type SheetPage,
 } from '../src/index.ts';
 
@@ -52,6 +53,27 @@ const TOKENS = [
   'danger',
 ];
 
+const TYPES = [
+  'normal',
+  'fire',
+  'water',
+  'electric',
+  'grass',
+  'ice',
+  'fighting',
+  'poison',
+  'ground',
+  'flying',
+  'psychic',
+  'bug',
+  'rock',
+  'ghost',
+  'dragon',
+  'dark',
+  'steel',
+  'fairy',
+];
+
 const LEAGUES = [
   { value: 'great', label: 'Great' },
   { value: 'ultra', label: 'Ultra' },
@@ -73,6 +95,24 @@ const SETTINGS: SheetPage = {
       About
     </Button>
   ),
+};
+
+/** Pushes About once on mount, so the second Sheet frame opens at depth 2 with its back control
+ * named for Settings. The ref keeps StrictMode's second effect run from pushing it twice. */
+function PushAbout({ nav }: { nav: SheetNav }) {
+  const pushed = useRef(false);
+  useEffect(() => {
+    if (!pushed.current) {
+      pushed.current = true;
+      nav.push(ABOUT);
+    }
+  }, [nav]);
+  return null;
+}
+const SETTINGS_AT_ABOUT: SheetPage = {
+  id: 'settings',
+  title: 'Settings',
+  render: (nav) => <PushAbout nav={nav} />,
 };
 
 export function Gallery() {
@@ -152,7 +192,7 @@ export function Gallery() {
       </Section>
 
       <Section name="TypeChip">
-        <TypeChips types={['fairy', 'steel', 'psychic', 'ice', 'ghost', 'dragon']} />
+        <TypeChips types={TYPES} />
         <TypeChips types={['fighting', 'water']} small />
       </Section>
 
@@ -270,6 +310,10 @@ export function Gallery() {
         <div className="g-frame">
           <Sheet root={SETTINGS} onClose={() => undefined} />
         </div>
+        <p className="g-note">Pushed to depth 2: back is named for the page below.</p>
+        <div className="g-frame">
+          <Sheet root={SETTINGS_AT_ABOUT} onClose={() => undefined} />
+        </div>
       </Section>
 
       <Section name="ConfirmSheet">
@@ -297,7 +341,7 @@ export function Gallery() {
       </Section>
 
       <Section name="Toast">
-        <div className="g-frame" style={{ minHeight: 120 }}>
+        <div className="g-frame g-frame-toast">
           <Toast
             message="Win logged. 13 with this team."
             actionLabel="Undo"
@@ -305,6 +349,9 @@ export function Gallery() {
             onDismiss={() => undefined}
             duration={0}
           />
+        </div>
+        <div className="g-frame g-frame-toast">
+          <Toast message="Link copied" onDismiss={() => undefined} duration={0} />
         </div>
       </Section>
 

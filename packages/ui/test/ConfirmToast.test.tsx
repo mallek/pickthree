@@ -65,6 +65,25 @@ describe('ConfirmSheet', () => {
     expect(screen.getByRole('button', { name: 'Forget' })).toHaveClass('ui-btn-danger');
   });
 
+  it('runs onConfirm at most once, even on a fast double tap', () => {
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmSheet
+        title="Remove this battle?"
+        line="It leaves your log."
+        confirmLabel="Remove"
+        cancelLabel="Keep it"
+        tone="danger"
+        onConfirm={onConfirm}
+        onCancel={() => undefined}
+      />,
+    );
+    const remove = screen.getByRole('button', { name: 'Remove' });
+    fireEvent.click(remove);
+    fireEvent.click(remove);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
   it('Escape cancels', async () => {
     const onCancel = vi.fn();
     render(

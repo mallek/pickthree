@@ -30,6 +30,12 @@ interface ChoiceOption<T extends string> {
   srLabel?: string;
 }
 
+/** The league toggle: a full-width radiogroup with the game's own shield colors. `dataLeague` is
+ * a pass-through `data-league` attribute on the wrapper (apps/web's screenshot automation reads it
+ * to confirm the active league before capturing); omit it and no attribute renders. `more` adds
+ * an optional overflow segment ("...") after the leagues, outside the radiogroup, for more
+ * leagues and cups. With four or more leagues in a narrow row the shields step aside first so
+ * every name stays whole; a name ellipsizes only when even that is not enough. */
 export function LeagueSwitcher<T extends string>({
   options,
   value,
@@ -67,7 +73,7 @@ export function LeagueSwitcher<T extends string>({
           onClick={() => onChange(o.value)}
         >
           <LeagueShield id={o.value} />
-          {o.label}
+          <span className="ui-league-label">{o.label}</span>
         </button>
       ))}
     </div>

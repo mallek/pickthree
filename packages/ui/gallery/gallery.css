@@ -1,3 +1,10 @@
+/* Both apps size every box by its border (their app.css opens with this); the gallery does too,
+   so a width: 100% control measures here what it measures there. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
   background: var(--bg);
@@ -61,4 +68,14 @@ body {
 .g-frame .ui-sheet,
 .g-frame .ui-toast {
   position: absolute;
+}
+/* In an app a toast sits between the viewport's gutters; the frame already sits inside the
+   page's gutters, so here it runs edge to edge of the frame, the same width it gets in an app. The
+   frame is tall enough to hold it above its 80px bottom offset. */
+.g-frame-toast {
+  min-height: 150px;
+}
+.g-frame-toast .ui-toast {
+  left: 0;
+  right: 0;
 }
