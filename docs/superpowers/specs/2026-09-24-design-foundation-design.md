@@ -68,7 +68,7 @@ the file's existing three blocks (dark default, `prefers-color-scheme: light`,
 | --- | --- | --- | --- |
 | Canvas | `--bg`, `--bg-outside`, `--canvas-atmos` | page ground | |
 | Surface | `--surface`, `--surface2`, `--divider` | cards, sheets, rows | |
-| Interaction | `--accent`, `--accent-text`, `--accent-tint`, `--accent-tint2`, `--accent-hi`, `--on-accent` | anything tappable, selection, focus, navigation | decoration |
+| Interaction | `--accent`, `--accent-text`, `--accent-tint`, `--accent-tint2`, `--accent-hi`, `--accent-lo` (new, the primary gradient's second stop), `--on-accent` | anything tappable, selection, focus, navigation | decoration |
 | Measured | `--measured` (new, from the landing's `--tally`, `#f9598c` dark) | community numbers, your shared-battle count | a pill, chip, border or fill |
 | Outcome | `--win`, `--loss`, `--tanked` (new), `--warn`, `--warn-tint` | win, loss, tanked, verdicts, warnings | interaction |
 | Danger | `--danger`, `--danger-tint` (new) | actions that destroy data: Forget, sharing off, Remove | anything reversible |
@@ -240,8 +240,8 @@ was fixed, and Travis's sign-off line. Screenshots for the record are copied int
 - Tokens, components, gallery, audit tooling and the audit template are merged.
 - `ui:audit` passes on the gallery in both themes; `docs/design/audits/gallery.md` records it.
 - Travis signs off on the gallery screenshots.
-- No page is redesigned in this piece. Where an existing component changes (`Chip` size, `Tag`
-  replacing `TypeChip`), `web:screens` and `meta:screens` still pass and the change is visible in
+- No page is redesigned in this piece. Where an existing component changes (`Chip` size; `TypeChip`
+  stays the type tag, `Tag` covers the other read-only labels), `web:screens` and `meta:screens` still pass and the change is visible in
   the gallery record.
 
 ## Coordination with source-weighted recommendations

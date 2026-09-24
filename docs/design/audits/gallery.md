@@ -14,7 +14,9 @@ Dark and light at 390px, every foundation component in every state, one page per
 ## Automated checks
 
 - [x] `npm run ui:audit` clean for the gallery, 2026-09-24: `gallery audit: clean in dark and
-      light` (0 findings, exit 0)
+      light` (0 findings, exit 0), re-run after the final fix wave with the two checks it added:
+      clipped content inside an element, and axe's undecided (`incomplete`) contrast nodes
+      reported as "contrast unverified"
 - [x] no console errors (the gallery's own favicon 404 was fixed in Task 12; `ui:audit` fails on
       any console error and passed)
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
@@ -26,13 +28,16 @@ Dark and light at 390px, every foundation component in every state, one page per
       outcome colors, red only for destroying data): the gallery's own sections (Button, Chip,
       Tag, TypeChip, Toast, ConfirmSheet, Header, Sheet, etc.) draw every color from
       `packages/ui/tokens.css`; `check-colors` enforces no literal outside it
-- [x] at most four text levels, one page title: the gallery page has one `<h1>` and per-section
-      `<h2>` labels at a lower level; each example card carries its own label, not a competing
-      title
-- [x] one filled primary button: `Button` section shows exactly one filled `variant="primary"`
-      example among secondary, ghost and danger variants
-- [x] chips tapped, tags read: `Chip` section demonstrates the pressable chip (selected/
-      unselected/disabled), `Tag`/`TypeChip` sections demonstrate the read-only label, kept
+- [x] at most four text levels, one page title: the gallery has no page title of its own, only
+      per-section `<h2>` labels at label size; each example carries its own label, not a
+      competing title
+- [x] one filled primary button: `Button` section shows one enabled filled `variant="primary"`
+      example (plus its disabled state) among the secondary, text and danger variants. Its white
+      or dark text sits on a gradient axe cannot measure, so `packages/ui/test/contrast.test.ts`
+      checks `--on-accent` against both gradient stops in dark and light (all clear 4.5:1), and
+      the button carries `data-audit-contrast="static"` so the audit leaves it to that test
+- [x] chips tapped, tags read: `Chip` section demonstrates the pressable chip (selected,
+      unselected, a long label), `Tag`/`TypeChip` sections demonstrate the read-only label, kept
       visually distinct
 - [x] the right header variant: `Header` section shows both variants (top-level and `sub`, with
       its back control) side by side
@@ -47,16 +52,22 @@ Dark and light at 390px, every foundation component in every state, one page per
 
 ## Functionality
 
-- [x] every component in every state is present: Button (primary/secondary/ghost/danger,
-      default/pressed/disabled), Chip (unselected/selected/disabled), Tag (every `tone`),
-      TypeChip (every type), Header (both variants), Sheet, ConfirmSheet, Toast (with and
-      without its once-only action), loading/empty/error states, at 390px, in both themes
+- [x] every component in every state is present: Button (primary/secondary/text/danger,
+      default and disabled, a long label; pressed is the `:active` press-in shared with chips,
+      live on tap and not in a static capture), Chip (unselected/selected, a long label; chips
+      have no disabled state), Tag (every `tone`), TypeChip (all 18 types, plus the small size),
+      LeagueSwitcher (three leagues, with the overflow, four leagues with the overflow, compact),
+      Header (both variants), Sheet (root page, and a second frame pushed to depth 2 with its
+      back control), ConfirmSheet (default and danger), Toast (one with its once-only action,
+      one without), loading/empty/error states, at 390px, in both themes
 - [x] every control does what its label says: exercised through the `ui` vitest project
       (component behavior tests) plus the visual pass in both screenshots
 - [x] tests cover each component: `npx vitest run --project ui` covers every component shown in
-      the gallery (11 files, 49 tests as of the last full run)
-- back returns to the origin, input layout rule, icon buttons named, product rules: not
-  applicable, the gallery is a props-only showcase with no navigation, inputs, or app data
+      the gallery (12 files, 60 tests as of the final fix wave)
+- [x] icon buttons named: every IconButton in the gallery is rendered with a `label` (Settings,
+      Filters on, Open meta.pick3.gg, Share this team), which is its accessible name
+- back returns to the origin, input layout rule, product rules: not applicable, the gallery is
+  a props-only showcase with no navigation, inputs, or app data
 
 ## Findings and fixes
 
@@ -69,6 +80,14 @@ Dark and light at 390px, every foundation component in every state, one page per
 | `.ui-btn-danger` background tint gave 4.18:1 (dark) / 4.28:1 (light), short of 4.5:1 | Reduced `--danger-tint` alpha (dark 0.16 to 0.08, light 0.12 to 0.04) in `packages/ui/tokens.css` | f3cac98 |
 | `.tchip` type-chip fill failed 4.5:1 for 8 of 18 type colors in light mode | Introduced a `--tchip-fill` token (16% dark, 4% light) so `.tchip`'s background reads `var(--tchip-fill)`, fixing light without changing dark's already-passing contrast | 4c18df2 |
 | `.ui-tag-win` / `.ui-tag-loss` fill gave 3.78:1 / 3.84:1 in light against an unpredictable ground | Anchored the tint to `--surface` at a fixed 5% instead of `transparent` at 16% (light win 4.59:1, loss 4.75:1) | f3cac98 |
+| Toast was at most half the viewport wide (`left: 50%` with a translate): 195px at 390px, the message on three or four lines, Undo out of view | Centered between the gutters with auto margins and `width: fit-content`; "Win logged. 13 with this team." plus Undo is one line, 309px wide at 390px. Gallery frames are tall enough, and a second toast shows the no-action form | 874887f |
+| A ConfirmSheet inside a Sheet page: Escape cancelled the confirm and then closed the whole Sheet; Tab ran both focus traps | Sheet and ConfirmSheet stop Escape and Tab after handling them; tests for the nested Escape and the Sheet's Tab wrap-around | 874887f |
+| Four leagues plus the overflow did not fit at 390px: 339px of content in a 306px box, "Tournament" cut under the "..." button, and the audit passed because the overflow stayed inside `.league-row` | Segments may shrink and size by their names when there are four or more; the shields step aside only below the width four leagues need (360px, 300px compact), and a name ellipsizes only as a last resort. Three leagues unchanged. The audit now reports clipped content inside any element | 874887f, 8702511, 668fcc2 |
+| axe's undecided contrast nodes counted as passes; the primary button's white on the `#796cbf` gradient end was 4.46:1 in light | The audit reports them as "contrast unverified". New `--accent-lo` token for the gradient's second stop (dark unchanged at `#9184d9`, light `#7466bc`, 4.81:1); a unit test checks both stops in both themes, and the primary button is marked `data-audit-contrast="static"` | 874887f, 668fcc2 |
+| The shared Select was unstyled outside meta: its label, box and chevron rules lived only in meta's app.css | Moved into `packages/ui/base.css`, tokens only; meta renders the same | 874887f |
+| ConfirmSheet: a fast double tap could run `onConfirm` twice before the parent unmounted it | `onConfirm` runs at most once per mount, with a test | 874887f |
+| The gallery measured in the fallback font and without the apps' `box-sizing: border-box` (a full-width control measured 2px wider than in the apps) | Inter loaded as in apps/web; border-box sizing in `gallery.css` | 874887f |
+| Tap-target check flagged visually hidden inputs behind a styled label and skipped `summary`, switches and checkboxes | Skips 1 by 1 or clipped elements and inputs inside a label of at least 44 by 44; `summary`, `[role="switch"]` and `[role="checkbox"]` added | 668fcc2 |
 
 ## Visible changes in the live apps
 
@@ -81,6 +100,10 @@ These are the changes from Piece 1 (Foundation) that are now visible in `apps/we
 - The danger button and win/loss tags get lighter fill changes.
 - Chips and league segments grow to 44px.
 - Meta's Window and Source selects now print their labels.
+- Buttons and chips press in slightly (`scale(0.97)`) while held.
+- In apps/web, where the Tournament league makes four segments, the full-width league row at
+  390px drops its shields so every name fits whole; the compact rows keep them. Three-league rows
+  are unchanged.
 
 ## Sign-off
 
