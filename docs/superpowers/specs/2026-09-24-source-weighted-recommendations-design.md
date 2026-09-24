@@ -1,6 +1,6 @@
 # Source-weighted recommendations: one picker for who you expect to face
 
-Date: 2026-09-24. Status: design approved in brainstorming, awaiting spec review.
+Date: 2026-09-24. Status: spec approved 2026-09-24 (with design program coordination edits); plan next.
 
 pick3's own team recommendations (Teams, Analysis, Build, Counters) today weight opponents by
 PvPoke's rank, or by the player's own battle log once it has 15 battles. meta.pick3.gg meanwhile
@@ -344,8 +344,9 @@ Web (vitest, jsdom):
 - `communityMeta.ts`: URL shape, one request for GBL/Tournaments/All, cache, bucket expiry, and
   fallback on offline, non-2xx, malformed body and timeout.
 - Settings migration: no `facing` and blend on gives `log`; blend off gives `prior`.
-- Teams header: Source, Window, Team style render; Window disabled for PvPoke and Your log;
-  Filters chip count and visibility; fallback label.
+- Teams header: Source and Window (labeled selects) and the Filters control render, with no Team
+  style chip; Window disabled for PvPoke and Your log; Filters count includes a non-Any Team
+  style; fallback label.
 - Teams Filters sheet: the moved filters toggle the same settings they did.
 - `communityCores` sends a window.
 - Fixtures: a synthetic `MetaSummaryV1` under `fixtures/`, never a real response.
