@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "check-tokens": "node scripts/check-tokens.mjs",
+    "check-colors": "node scripts/color-literals.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
