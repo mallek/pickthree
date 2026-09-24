@@ -5,6 +5,7 @@ export { LEAGUE_COLORS, LeagueShield, LeagueSwitcher } from './components/League
 export { Chevron } from './components/Chevron.tsx';
 export { HeaderShell } from './components/HeaderShell.tsx';
 export { Chip } from './components/Chip.tsx';
+export { Tag, type TagTone } from './components/Tag.tsx';
 export { Seg } from './components/Seg.tsx';
 export { Select } from './components/Select.tsx';
 export { typeColor, typeInk } from './type.ts';

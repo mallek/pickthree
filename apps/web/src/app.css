@@ -336,22 +336,6 @@ a {
   background: var(--warn-tint);
   color: var(--warn);
 }
-.chip {
-  flex: none;
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--divider);
-  background: transparent;
-  font-weight: 500;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.chip.on {
-  border-color: var(--accent);
-  background: var(--accent-tint);
-  color: var(--accent-text);
-}
 .chips {
   display: flex;
   gap: 6px;

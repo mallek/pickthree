@@ -464,3 +464,64 @@
   border-radius: 50%;
   background: var(--accent);
 }
+
+/* Chips: tappable filter pills (Tier 1 now; were two copies in the apps). */
+.chip {
+  flex: none;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  font-size: var(--fs-support);
+  white-space: nowrap;
+}
+.chip.on {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Tags: read-only labels, compact, never button-like. */
+.ui-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
+  vertical-align: middle;
+  background: var(--surface2);
+  color: var(--muted);
+}
+.ui-tag-accent {
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+.ui-tag-win {
+  background: color-mix(in srgb, var(--win) 16%, transparent);
+  color: var(--win);
+}
+.ui-tag-loss {
+  background: color-mix(in srgb, var(--loss) 16%, transparent);
+  color: var(--loss);
+}
+.ui-tag-tanked {
+  background: var(--surface2);
+  color: var(--tanked);
+}
+.ui-tag-warn {
+  background: var(--warn-tint);
+  color: var(--warn);
+}

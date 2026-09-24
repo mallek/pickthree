@@ -646,27 +646,6 @@ a.rank-row {
   margin-right: auto;
 }
 
-.chip {
-  flex: none;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--divider);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 500;
-  font-size: 12px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.chip.on {
-  border-color: var(--accent);
-  background: var(--accent-tint);
-  color: var(--accent-text);
-}
-
 /* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small
    (apps/web/src/app.css): the share (or, below the measured threshold, the sighting count) as
    the big number, the record as a small muted line under it. */

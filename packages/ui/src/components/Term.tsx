@@ -9,6 +9,7 @@ export function Term({ term, children }: { term: string; children: ReactNode }) 
       <button
         type="button"
         className="term"
+        data-inline-control=""
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
