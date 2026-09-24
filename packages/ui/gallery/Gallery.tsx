@@ -25,6 +25,23 @@ import {
   type SheetPage,
 } from '../src/index.ts';
 
+/**
+ * A mock phone frame for a demo that stays permanently "open" (Sheet, ConfirmSheet): gallery.css
+ * scopes `.ui-sheet`/`.ui-overlay` to `position: absolute` inside `.g-frame` so several of these
+ * can sit open on one long page without pinning to the real viewport and covering each other.
+ * That CSS is a descendant selector, so it only matches once the sheet is an actual DOM
+ * descendant of this element; `render` gets the frame's own node to pass as the sheet's portal
+ * `container`, and only runs once that node exists (one extra render on mount).
+ */
+function Frame({ className, render }: { className?: string; render: (el: HTMLDivElement) => ReactNode }) {
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  return (
+    <div className={`g-frame${className ? ` ${className}` : ''}`} ref={setEl}>
+      {el ? render(el) : null}
+    </div>
+  );
+}
+
 function Section({ name, children }: { name: string; children: ReactNode }) {
   return (
     <section className="g-section" data-gallery={name}>
@@ -345,37 +362,39 @@ export function Gallery() {
       </Section>
 
       <Section name="Sheet">
-        <div className="g-frame">
-          <Sheet root={SETTINGS} onClose={() => undefined} />
-        </div>
+        <Frame render={(el) => <Sheet root={SETTINGS} onClose={() => undefined} container={el} />} />
         <p className="g-note">Pushed to depth 2: back is named for the page below.</p>
-        <div className="g-frame">
-          <Sheet root={SETTINGS_AT_ABOUT} onClose={() => undefined} />
-        </div>
+        <Frame render={(el) => <Sheet root={SETTINGS_AT_ABOUT} onClose={() => undefined} container={el} />} />
       </Section>
 
       <Section name="ConfirmSheet">
-        <div className="g-frame">
-          <ConfirmSheet
-            title="Start fresh in Great League?"
-            line="Your current battles move to Earlier seasons. Nothing is deleted."
-            confirmLabel="Start fresh"
-            cancelLabel="Keep this season"
-            onConfirm={() => undefined}
-            onCancel={() => undefined}
-          />
-        </div>
-        <div className="g-frame">
-          <ConfirmSheet
-            title="Forget my collection and log?"
-            line="This removes your collection, battle log and settings from this device."
-            confirmLabel="Forget"
-            cancelLabel="Keep everything"
-            tone="danger"
-            onConfirm={() => undefined}
-            onCancel={() => undefined}
-          />
-        </div>
+        <Frame
+          render={(el) => (
+            <ConfirmSheet
+              title="Start fresh in Great League?"
+              line="Your current battles move to Earlier seasons. Nothing is deleted."
+              confirmLabel="Start fresh"
+              cancelLabel="Keep this season"
+              onConfirm={() => undefined}
+              onCancel={() => undefined}
+              container={el}
+            />
+          )}
+        />
+        <Frame
+          render={(el) => (
+            <ConfirmSheet
+              title="Forget my collection and log?"
+              line="This removes your collection, battle log and settings from this device."
+              confirmLabel="Forget"
+              cancelLabel="Keep everything"
+              tone="danger"
+              onConfirm={() => undefined}
+              onCancel={() => undefined}
+              container={el}
+            />
+          )}
+        />
       </Section>
 
       <Section name="Toast">

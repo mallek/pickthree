@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { trapTab, useReturnFocus } from './focus.ts';
 
 /**
@@ -7,6 +8,9 @@ import { trapTab, useReturnFocus } from './focus.ts';
  * accident. `danger` is only for actions that destroy data (Forget, sharing off, Remove); Start
  * fresh moves battles and deletes nothing, so it keeps the default tone. onConfirm runs at most
  * once per mount, so a fast double tap cannot remove two battles before the parent unmounts it.
+ * Rendered through a portal to `document.body` by default, same reason as `Sheet`: opened from
+ * inside a caller's own stacking context, its z-index would otherwise only compete inside that
+ * context. `container` overrides the portal target, for the gallery's own mock phone frames.
  */
 export function ConfirmSheet({
   title,
@@ -16,6 +20,7 @@ export function ConfirmSheet({
   tone = 'default',
   onConfirm,
   onCancel,
+  container,
 }: {
   title: string;
   line: string;
@@ -24,6 +29,7 @@ export function ConfirmSheet({
   tone?: 'default' | 'danger';
   onConfirm: () => void;
   onCancel: () => void;
+  container?: Element;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
@@ -34,7 +40,7 @@ export function ConfirmSheet({
   useEffect(() => {
     cancel.current?.focus();
   }, []);
-  return (
+  return createPortal(
     <>
       <div className="ui-overlay" onClick={onCancel} aria-hidden="true" />
       <div
@@ -88,6 +94,7 @@ export function ConfirmSheet({
           </button>
         </div>
       </div>
-    </>
+    </>,
+    container ?? document.body,
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Chevron } from './Chevron.tsx';
 import { trapTab, useReturnFocus } from './focus.ts';
 
@@ -18,16 +19,24 @@ export interface SheetPage {
 /**
  * A bottom sheet with pages: grabber, back (named for the page below, only once a page is
  * pushed), title, Done. Done, Escape and the overlay close the whole sheet from any depth; focus
- * stays inside while it is open and returns to the opener when it closes.
+ * stays inside while it is open and returns to the opener when it closes. Rendered through a
+ * portal to `document.body` by default: a caller that opens the sheet from inside its own
+ * stacking context (a sticky header, for one) would otherwise trap the sheet's z-index inside
+ * that context, where a later sibling with a lower z-index (the app's fixed tab bar) can still
+ * paint on top of it. `container` overrides the portal target; the gallery is the one caller that
+ * needs this, so several open sheets can sit in their own mock phone frames on one long page
+ * instead of all pinning to the real viewport and covering each other.
  */
 export function Sheet({
   root,
   onClose,
   doneLabel = 'Done',
+  container,
 }: {
   root: SheetPage;
   onClose: () => void;
   doneLabel?: string;
+  container?: Element;
 }) {
   const [stack, setStack] = useState<SheetPage[]>([root]);
   const dialog = useRef<HTMLDivElement>(null);
@@ -46,7 +55,7 @@ export function Sheet({
     close: onClose,
     depth: stack.length - 1,
   };
-  return (
+  return createPortal(
     <>
       <div className="ui-overlay" onClick={onClose} aria-hidden="true" />
       <div
@@ -94,6 +103,7 @@ export function Sheet({
           {top.render(nav)}
         </div>
       </div>
-    </>
+    </>,
+    container ?? document.body,
   );
 }
