@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { writeBundle } from '@pickthree/sim-pvpoke';
+import { readEpochs } from '@pickthree/engine/meta';
 import { writeGameData } from './build-gamedata.js';
+import { writeLegal } from './build-legal.js';
 import { writeManifest } from './build-manifest.js';
 import { writeMatrix } from './build-matrix.js';
 import { writeLeagueRankings } from './build-rankings.js';
@@ -11,7 +13,7 @@ import { DERIVES_FROM, readLeagues } from './leagues.js';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { readRawGameMaster } from './build-gamedata.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
-import { GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
+import { EPOCHS_PATH, GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
 import { readSeasons, SEASONS_PATH } from './seasons.js';
 
 async function main(): Promise<void> {
@@ -57,9 +59,19 @@ async function main(): Promise<void> {
     league.metaSize = meta.length;
     console.log(`${league.id}: meta ${meta.length} (from ${from}, ${legal.size} legal)`);
   }
+  const legal = writeLegal(
+    OUTPUT_DIR,
+    leagues.map((l) => l.id),
+  );
+  console.log(`legal: ${legal.map((l) => `${l.league} ${l.banned} banned`).join(', ')}`);
   fs.writeFileSync(path.join(OUTPUT_DIR, 'leagues.json'), JSON.stringify(leagues));
   readSeasons(); // validates before we ship it
   fs.copyFileSync(SEASONS_PATH, path.join(OUTPUT_DIR, 'seasons.json'));
+  // Validated, not copied: a malformed reset list must fail the build, as it fails the meta bake.
+  fs.writeFileSync(
+    path.join(OUTPUT_DIR, 'epochs.json'),
+    JSON.stringify(readEpochs(JSON.parse(fs.readFileSync(EPOCHS_PATH, 'utf8')))),
+  );
   const meta = { length: leagues[0]?.metaSize ?? 0 };
   writeBundle(path.join(OUTPUT_DIR, 'vendor', 'pvpoke-sim.js'));
   // The vendored simulator reads PvPoke's own game master format, so ship it alongside.
