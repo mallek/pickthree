@@ -40,3 +40,6 @@ apps/meta/screenshots/
 
 # wrangler dev local state, created by any "wrangler dev" run
 workers/counter/.wrangler/
+
+# Agent worktrees
+.claude/worktrees/
