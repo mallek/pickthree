@@ -612,7 +612,7 @@ a {
 .landing {
   /* The landing's tally pink, the only hue on the page that is neither the accent nor a type
      colour. Scoped here rather than added to tokens.css: nothing outside this page uses it. */
-  --tally: #f9598c;
+  --tally: var(--measured);
   --cta-1: #7c5edb;
   --cta-2: #6a4ac9;
   /* The veil that knocks the trio's type colour back. Dark on a night sky, white on a pale one:
@@ -701,7 +701,6 @@ a {
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) .landing {
-    --tally: #c81f5f;
     --disc-veil: rgba(255, 255, 255, 0.4);
   }
   :root:not([data-theme='dark']) .landing-scene {
@@ -720,7 +719,6 @@ a {
   }
 }
 :root[data-theme='light'] .landing {
-  --tally: #c81f5f;
   --disc-veil: rgba(255, 255, 255, 0.4);
 }
 :root[data-theme='light'] .landing-scene {
