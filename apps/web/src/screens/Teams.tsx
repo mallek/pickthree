@@ -93,7 +93,7 @@ export function Teams() {
   };
   const f = s.settings.filters;
   const logCount = useLogCount();
-  const key = filterKey(s.settings, s.logVersion);
+  const key = filterKey(s.settings, s.logVersion, s.community);
   const stale = s.recommendedWith !== key;
 
   useEffect(() => {

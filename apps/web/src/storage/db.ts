@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { BattleSet, ImportReport, Specimen } from '@pickthree/engine';
+import type { BattleSet, FacingSource, ImportReport, Specimen } from '@pickthree/engine';
+import type { WindowKey } from '@pickthree/engine/meta';
 import type { ThemeChoice } from '@pickthree/ui';
 
 export interface StoredCollection {
@@ -39,10 +40,21 @@ export interface Settings {
   };
   /** Battle log settings. Absent in older saves means the blend is on and nothing is fresh. */
   yourMeta?: {
-    /** Weight Teams, Counters and Build by the log once it has enough battles. Default true. */
+    /**
+     * Weight Teams, Counters and Build by the log once it has enough battles. Default true.
+     * Read only for migration; the Source picker replaced it.
+     */
     blend?: boolean;
     /** League id to ISO time: battles before it belong to earlier seasons. */
     freshFrom?: Record<string, string>;
+  };
+  /**
+   * Whose opponents Teams, Counters and Build weight. Absent in older saves: the source reads as
+   * Your log unless yourMeta.blend was false (then PvPoke), and the window as This meta.
+   */
+  facing?: {
+    source?: FacingSource;
+    window?: WindowKey;
   };
 }
 
