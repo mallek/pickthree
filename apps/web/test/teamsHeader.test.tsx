@@ -104,6 +104,24 @@ describe('Teams header', () => {
     expect(screen.queryByText(/Team style:/)).toBeNull();
   });
 
+  it('does not grey community sources or show the no-data line before the league list is known', async () => {
+    // A cold start with a saved collection routes straight to Teams while boot is still loading
+    // (store.tsx), so the league list (s.data) is null for that stretch. A host whose ready()
+    // never resolves holds the app in exactly that state.
+    const host = fakeHost({ ready: () => new Promise<never>(() => {}) });
+    render(
+      <AppProvider host={host}>
+        <Probe />
+        <Teams />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(latest?.state.collection).not.toBeNull());
+    expect(latest?.state.data).toBeNull();
+    expect(screen.queryByText('No community data for this league')).toBeNull();
+    const gbl = screen.getByRole('option', { name: /GBL/ }) as HTMLOptionElement;
+    expect(gbl.disabled).toBe(false);
+  });
+
   it('disables Window for PvPoke and Your log, enables it for GBL', async () => {
     await mount(fakeHost());
     const source = screen.getByLabelText('Source') as HTMLSelectElement;
