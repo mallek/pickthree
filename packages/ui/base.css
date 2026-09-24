@@ -835,3 +835,65 @@
   flex-direction: column;
   gap: 16px;
 }
+
+/* Confirm: the question as the title, one line on what happens, two buttons. */
+.ui-confirm {
+  padding: 0 var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 20px);
+  gap: 10px;
+  text-align: center;
+}
+.ui-confirm-title {
+  margin: 4px 0 0;
+  font-size: var(--fs-section);
+  font-weight: 600;
+  text-wrap: balance;
+}
+.ui-confirm-line {
+  margin: 0;
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.ui-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Toast: one line, an optional action. */
+.ui-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+  padding: 4px 4px 4px 16px;
+  max-width: calc(100vw - 2 * var(--gutter));
+  border-radius: var(--r-control);
+  background: var(--surface2);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-support);
+}
+.ui-toast-msg {
+  min-width: 0;
+  flex: 1;
+}
+.ui-toast-action,
+.ui-toast-x {
+  min-height: var(--tap);
+  min-width: var(--tap);
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ui-toast-x {
+  color: var(--muted);
+  font-size: 18px;
+}

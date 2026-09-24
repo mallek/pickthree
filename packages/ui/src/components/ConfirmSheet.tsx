@@ -1,0 +1,78 @@
+import { useEffect, useId, useRef } from 'react';
+import { trapTab, useReturnFocus } from './focus.ts';
+
+/**
+ * The in-app confirm, in place of window.confirm: the question as the title, one line on what
+ * happens, two buttons that say what they do. Focus starts on Cancel so Enter never confirms by
+ * accident. `danger` is only for actions that destroy data (Forget, sharing off, Remove); Start
+ * fresh moves battles and deletes nothing, so it keeps the default tone.
+ */
+export function ConfirmSheet({
+  title,
+  line,
+  confirmLabel,
+  cancelLabel,
+  tone = 'default',
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  line: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  tone?: 'default' | 'danger';
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const lineId = useId();
+  useReturnFocus();
+  useEffect(() => {
+    cancel.current?.focus();
+  }, []);
+  return (
+    <>
+      <div className="ui-overlay" onClick={onCancel} aria-hidden="true" />
+      <div
+        className="ui-sheet ui-confirm"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={lineId}
+        ref={box}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+            return;
+          }
+          trapTab(e, box.current);
+        }}
+      >
+        <div className="ui-grabber">
+          <span />
+        </div>
+        <h3 id={titleId} className="ui-confirm-title">
+          {title}
+        </h3>
+        <p id={lineId} className="ui-confirm-line">
+          {line}
+        </p>
+        <div className="ui-confirm-actions">
+          <button ref={cancel} type="button" className="ui-btn ui-btn-secondary" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            className={`ui-btn ${tone === 'danger' ? 'ui-btn-danger' : 'ui-btn-primary'}`}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}

@@ -19,3 +19,5 @@ export { MeasuredLine, MeasuredValue } from './components/Measured.tsx';
 export { ProgressCard, progressPercent } from './components/ProgressCard.tsx';
 export { Sheet, type SheetNav, type SheetPage } from './components/Sheet.tsx';
 export { trapTab, useReturnFocus } from './components/focus.ts';
+export { ConfirmSheet } from './components/ConfirmSheet.tsx';
+export { Toast } from './components/Toast.tsx';
