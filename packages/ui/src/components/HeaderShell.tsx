@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
  * The shell every sticky page header shares: a back slot (or spacer, so the title stays
  * centred) on the left, the title and an optional subtitle in the middle, an actions slot on the
  * right (or spacer), and an optional extra row underneath that scrolls with the header. It owns
- * layout only; each app's own Header decides what fills `back` and `actions`, and the two headers
- * stay visibly different by design (see the spec's "header split" section).
+ * layout only; `Header` (top and sub) is what both sites now render on top of it (design
+ * foundation, 2026-09-24).
  */
 export function HeaderShell({
   back,
