@@ -1114,7 +1114,17 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       const { facing } = await facingNow();
       const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
         optionsFrom(s.settings);
-      const community = await communityCores(s.settings, s.leagueInfo.id);
+      const choice = facingSettings(s.settings);
+      const info = s.data?.leagues.find((l) => l.id === s.leagueInfo!.id);
+      const boardWindow = info
+        ? communityRequest(
+            info,
+            isCommunity(choice.source) ? choice.window : 'meta',
+            s.data?.seasons ?? [],
+            s.data?.epochs ?? [],
+          )
+        : null;
+      const community = await communityCores(s.settings, s.leagueInfo.id, boardWindow);
       if (!scope.current()) {
         dispatch({ type: 'drop', what: 'suggest' });
         return;
