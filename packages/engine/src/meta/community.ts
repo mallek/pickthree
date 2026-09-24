@@ -16,9 +16,12 @@ import { blendWeights } from '../yourmeta/blend.js';
 export const HALF_SAY_BATTLES = 300;
 /** Contributing devices at which measured play earns half the say. */
 export const HALF_SAY_DEVICES = 5;
-/** Tournament battles at which tournament play earns half the say of its own term. */
+/** Tournament battles at which tournament play earns half the say of its own term. 100 because
+ *  a tournament battle carries two full teams and a verified result, roughly three ladder
+ *  records of information. A half-say point, not a gate. */
 export const HALF_SAY_TOURNAMENT_BATTLES = 100;
-/** Events at which the same term earns half the say. */
+/** Events at which the same term earns half the say. 2 because one event is one local meta, the
+ *  same reason one phone is held to a sixth of the say. Also a half-say point, not a gate. */
 export const HALF_SAY_EVENTS = 2;
 /** A species is listed once PvPoke ranks it or it was faced or picked at least this often. */
 export const LISTED_MIN = 1;
@@ -72,7 +75,9 @@ export interface CommunityWeights {
   tournamentSay: number;
 }
 
-/** PvPoke's overall order with repeats dropped: a species' rank is its first appearance. */
+/** PvPoke's overall order with repeats dropped: a species' rank is its first appearance. First
+ *  entry wins a duplicate, the same rule gamedata/metaRank.ts's positions() and metaRanks()
+ *  keep, so a species' rank here names the same PvPoke entry pick3 ranks it by. */
 export function ranksOf(overall: readonly { speciesId: string }[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -133,6 +138,9 @@ export function communityWeights(
     ranks: new Map(ids.map((id) => [id, rankOf.get(id) ?? null] as const)),
   };
   const options = { minBattles: 0, halfLife: HALF_SAY_BATTLES, unrankedPrior: 0 };
+  // PvPoke's prior alone: `share: 0` makes blendWeights return (1 - 0) * prior, which is the
+  // normalised prior and nothing else. Asked for explicitly rather than recomputed here, so the
+  // normalisation can never drift from the one the blend below uses.
   const prior = blendWeights({ ...blendInput, sightings: new Map(), battles: 0 }, { ...options, share: 0 });
   const afterTournament = blendWeights(
     {
@@ -142,10 +150,16 @@ export function communityWeights(
     },
     { ...options, halfLife: HALF_SAY_TOURNAMENT_BATTLES, share: aT },
   );
+  // A banned species has no tournament share, not a zero one: zero says nobody picked it, which
+  // is false; the plain prior says it was not observable in this population.
   const p1 = new Map(
     ids.map((id) => [id, (opts.banned.has(id) ? prior.get(id) : afterTournament.get(id)) ?? 0] as const),
   );
 
+  // The second blend, written out rather than passed back through blendWeights, because its
+  // prior term is p1 and blendWeights only knows how to build a prior from PvPoke ranks. The
+  // arithmetic is blendWeights' own last line, and with aT = 0 (so p1 = prior) it reduces to
+  // exactly the single ladder blend.
   let ladderTotal = 0;
   for (const id of ids) {
     ladderTotal += seen.get(id) ?? 0;

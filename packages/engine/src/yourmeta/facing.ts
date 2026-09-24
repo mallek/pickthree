@@ -6,6 +6,8 @@ import { communityProfile } from './community.js';
 import { buildFacingProfile, plainWeights, type FacingProfile } from './profile.js';
 import type { LoggedBattle } from './types.js';
 
+export { heaviestColumns } from '../search/heaviest.js';
+
 /** Who the player expects to face: the Source picker's five choices. */
 export type FacingSource = 'prior' | 'log' | 'ladder' | 'tournament' | 'all';
 export type CommunityKind = 'ladder' | 'tournament' | 'all';
@@ -64,17 +66,4 @@ export function profileFor(
     reason: input.unavailable ? 'unavailable' : 'prior',
     source: 'prior',
   };
-}
-
-/** The k heaviest matrix columns, heaviest first; ties keep column order. */
-export function heaviestColumns(
-  view: MatrixView,
-  weights: ReadonlyMap<string, number>,
-  k: number,
-): number[] {
-  return view.opponents
-    .map((id, o) => ({ o, w: weights.get(id) ?? 0 }))
-    .sort((a, b) => b.w - a.w || a.o - b.o)
-    .slice(0, k)
-    .map((x) => x.o);
 }

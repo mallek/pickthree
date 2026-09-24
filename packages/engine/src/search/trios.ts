@@ -1,7 +1,7 @@
 import type { PokemonType } from '../gamedata/types.js';
 import type { Candidate, Role } from './candidates.js';
+import { heaviestColumns } from './heaviest.js';
 import type { MatrixView } from './matrixView.js';
-import { heaviestColumns } from '../yourmeta/facing.js';
 
 export type Structure = 'ABB' | 'ABC';
 export type TeamStyle = 'any' | 'balanced' | 'abb';
@@ -11,7 +11,10 @@ export interface TrioDraft {
   roles: [Role, Role, Role];
   /** Meta opponents at least one member beats (1-1 shields). */
   coverage: number;
-  /** Top-of-meta opponents nobody beats. */
+  /**
+   * Opponents nobody beats, among the columns that count toward exposure: with an engaged facing
+   * profile the heaviest columns by weight, otherwise the first exposureDepth columns.
+   */
   exposure: string[];
   /** Opponents that beat the lead (leads scenario). */
   leadCounters: string[];

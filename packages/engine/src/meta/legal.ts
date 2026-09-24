@@ -4,9 +4,10 @@
  * pooling it into a Great League ranking would be nonsense). Ultra and Master have no Play!
  * format and get a null cup and an empty ban list.
  *
- * The same map exists in workers/counter/src/tournament.ts as OPEN_EQUIVALENT_CUP, for the same
- * reason api.ts writes the wire shapes down twice: this app does not depend on that workspace,
- * and a rule written on both sides is the contract. Both copies are asserted by their own test.
+ * The counter worker keeps its own copy in workers/counter/src/tournament.ts: neither workspace
+ * depends on the other, so the rule is written down on both sides and that pair is the contract.
+ * Each copy is asserted by its own test (test/meta/legal.test.ts here, test/tournament.test.ts
+ * in the worker).
  */
 export const OPEN_EQUIVALENT_CUP: Record<string, string> = { great: 'championshipseries' };
 
