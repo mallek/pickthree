@@ -9,6 +9,7 @@ import {
   FilterButton,
   Header,
   IconButton,
+  LeagueList,
   LeagueSwitcher,
   Loading,
   MeasuredLine,
@@ -80,7 +81,12 @@ const LEAGUES = [
   { value: 'master', label: 'Master' },
 ];
 
-const LEAGUES_FOUR = [...LEAGUES, { value: 'championshipseries', label: 'Tournament' }];
+const LEAGUE_LIST_OPTIONS = [
+  { value: 'great', label: 'Great League' },
+  { value: 'ultra', label: 'Ultra League' },
+  { value: 'master', label: 'Master League' },
+  { value: 'championshipseries', label: 'Tournament' },
+];
 
 const ABOUT: SheetPage = {
   id: 'about',
@@ -206,13 +212,45 @@ export function Gallery() {
           more={{ label: 'More leagues and cups', onClick: () => undefined }}
         />
         <LeagueSwitcher
-          label="League, four and more"
-          value={league}
+          label="League, current cup"
+          value="championshipseries"
           onChange={setLeague}
-          options={LEAGUES_FOUR}
-          more={{ label: 'More leagues and cups', onClick: () => undefined }}
+          options={LEAGUES}
+          more={{
+            label: 'More leagues and cups',
+            onClick: () => undefined,
+            current: { id: 'championshipseries', label: 'Tournament', srLabel: 'Tournament' },
+          }}
+        />
+        <LeagueSwitcher
+          label="League, current cup with a long name"
+          value="championshipseries"
+          onChange={setLeague}
+          options={LEAGUES}
+          more={{
+            label: 'More leagues and cups',
+            onClick: () => undefined,
+            current: {
+              id: 'championshipseries',
+              label: 'Championship Series',
+              srLabel: 'Championship Series',
+            },
+          }}
         />
         <LeagueSwitcher label="League, compact" value={league} onChange={setLeague} options={LEAGUES} compact />
+        <LeagueSwitcher
+          label="League, compact with current cup"
+          value="championshipseries"
+          onChange={setLeague}
+          options={LEAGUES}
+          compact
+          more={{
+            label: 'More leagues and cups',
+            onClick: () => undefined,
+            current: { id: 'championshipseries', label: 'Tournament', srLabel: 'Tournament' },
+          }}
+        />
+        <LeagueList label="Leagues" value={league} onChange={setLeague} options={LEAGUE_LIST_OPTIONS} />
       </Section>
 
       <Section name="Select">

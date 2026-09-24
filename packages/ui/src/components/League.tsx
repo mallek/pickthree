@@ -1,3 +1,6 @@
+import { useLayoutEffect, useRef, useState } from 'react';
+import type { ChoiceOption } from './Select.tsx';
+
 export const LEAGUE_COLORS: Record<string, string> = {
   great: '#3F7DE8',
   ultra: '#F2B01E',
@@ -20,7 +23,7 @@ export function LeagueShield({ id, size = 16 }: { id: string; size?: number }) {
   );
 }
 
-interface ChoiceOption<T extends string> {
+interface LeagueChoiceOption<T extends string> {
   value: T;
   /** The visible text on the button. */
   label: string;
@@ -30,12 +33,17 @@ interface ChoiceOption<T extends string> {
   srLabel?: string;
 }
 
-/** The league toggle: a full-width radiogroup with the game's own shield colors. `dataLeague` is
- * a pass-through `data-league` attribute on the wrapper (apps/web's screenshot automation reads it
- * to confirm the active league before capturing); omit it and no attribute renders. `more` adds
- * an optional overflow segment ("...") after the leagues, outside the radiogroup, for more
- * leagues and cups. With four or more leagues in a narrow row the shields step aside first so
- * every name stays whole; a name ellipsizes only when even that is not enough. */
+/** The league toggle: a full-width radiogroup with the game's own shield colors, plus an
+ * optional overflow segment ("...") outside the radio group for more leagues and cups.
+ * `dataLeague` is a pass-through `data-league` attribute on the wrapper (apps/web's screenshot
+ * automation reads it to confirm the active league before capturing); omit it and no attribute
+ * renders. The radiogroup holds only the open leagues; a cup lives behind the overflow. When the
+ * current league is a cup, `more.current` swaps the "..." for that cup's shield and short name,
+ * styled selected, so the row still names what is in play; tapping it still opens the sheet. If
+ * the cup's name would not fit next to the open leagues' names, the open leagues' names hide
+ * (shields only, kept in the accessibility tree) to give the cup slot the room; only if that is
+ * still not enough does the cup name ellipsize in its own slot. No caret on the overflow button:
+ * it costs width the name needs. */
 export function LeagueSwitcher<T extends string>({
   options,
   value,
@@ -45,16 +53,70 @@ export function LeagueSwitcher<T extends string>({
   dataLeague,
   more,
 }: {
-  options: ChoiceOption<T>[];
+  options: LeagueChoiceOption<T>[];
   value: T;
   onChange: (v: T) => void;
   label: string;
   compact?: boolean;
   dataLeague?: string;
   /** An overflow segment after the leagues ("..."), for more leagues and cups. The app decides
-   * what it opens. It sits outside the radio group: it is an action, not a choice. */
-  more?: { label: string; onClick: () => void } | undefined;
+   * what it opens. It sits outside the radio group: it is an action, not a choice. `current`
+   * shows the current cup in the slot instead of "...", still opening the same sheet. */
+  more?:
+    | {
+        label: string;
+        onClick: () => void;
+        current?: { id: string; label: string; srLabel?: string };
+      }
+    | undefined;
 }) {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const cupLabelRef = useRef<HTMLSpanElement | null>(null);
+  const optionLabelRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const [collapsed, setCollapsed] = useState(false);
+  optionLabelRefs.current = [];
+
+  const current = more?.current;
+  // Whether the cup's name fits next to the open leagues' full names decides whether those names
+  // hide. Measured, not guessed: a layout effect runs before paint, so there is no visible flash.
+  useLayoutEffect(() => {
+    if (!current) {
+      setCollapsed(false);
+      return undefined;
+    }
+    const cupLabel = cupLabelRef.current;
+    const row = rowRef.current;
+    if (!cupLabel || !row) {
+      return undefined;
+    }
+    const isClipped = (el: HTMLSpanElement) => el.scrollWidth > el.clientWidth;
+    const measure = () => {
+      // Read the fit as it would be with the open leagues' names showing, whatever the current
+      // collapsed state is, so the decision never feeds on its own effect (which would let the
+      // row flip back and forth between the two layouts). The equal-width league buttons only
+      // ever divide the room the radiogroup as a whole is given, so a name too tight to sit next
+      // to the cup shows up as one of the open leagues clipping, not only the cup itself: either
+      // one means the row as shown does not fit and the names should hide.
+      const labels = optionLabelRefs.current;
+      const hadVh = labels.map((el) => el?.classList.contains('vh') ?? false);
+      labels.forEach((el) => el?.classList.remove('vh'));
+      const clipped = isClipped(cupLabel) || labels.some((el) => el !== null && isClipped(el));
+      labels.forEach((el, i) => {
+        if (hadVh[i] === true) {
+          el?.classList.add('vh');
+        }
+      });
+      setCollapsed(clipped);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, [current?.id, current?.label, current?.srLabel]);
+
   const group = (
     <div
       className={`league-switcher${compact ? ' compact' : ''}`}
@@ -62,7 +124,7 @@ export function LeagueSwitcher<T extends string>({
       aria-label={label}
       {...(dataLeague === undefined ? {} : { 'data-league': dataLeague })}
     >
-      {options.map((o) => (
+      {options.map((o, i) => (
         <button
           key={o.value}
           type="button"
@@ -73,7 +135,14 @@ export function LeagueSwitcher<T extends string>({
           onClick={() => onChange(o.value)}
         >
           <LeagueShield id={o.value} />
-          <span className="ui-league-label">{o.label}</span>
+          <span
+            ref={(el) => {
+              optionLabelRefs.current[i] = el;
+            }}
+            className={collapsed ? 'ui-league-label vh' : 'ui-league-label'}
+          >
+            {o.label}
+          </span>
         </button>
       ))}
     </div>
@@ -82,21 +151,72 @@ export function LeagueSwitcher<T extends string>({
     return group;
   }
   return (
-    <div className="league-row">
+    <div ref={rowRef} className={`league-row${collapsed ? ' collapsed' : ''}`}>
       {group}
-      <button
-        type="button"
-        className="league-more"
-        aria-label={more.label}
-        aria-haspopup="dialog"
-        onClick={more.onClick}
-      >
-        <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true">
-          <circle cx="5" cy="12" r="2" fill="currentColor" />
-          <circle cx="12" cy="12" r="2" fill="currentColor" />
-          <circle cx="19" cy="12" r="2" fill="currentColor" />
-        </svg>
-      </button>
+      {current ? (
+        <button
+          type="button"
+          className="league-more on"
+          title={current.label}
+          aria-label={`${current.srLabel ?? current.label} League, ${more.label}`}
+          aria-haspopup="dialog"
+          onClick={more.onClick}
+        >
+          <LeagueShield id={current.id} />
+          <span ref={cupLabelRef} className="ui-league-label">
+            {current.label}
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="league-more"
+          aria-label={more.label}
+          aria-haspopup="dialog"
+          onClick={more.onClick}
+        >
+          <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true">
+            <circle cx="5" cy="12" r="2" fill="currentColor" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" />
+            <circle cx="19" cy="12" r="2" fill="currentColor" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** A full page of leagues and cups for a `Sheet`: one radiogroup, one row per option, each a
+ * 44px-or-taller full-width button with the shield and the full title. `LeagueSwitcher` holds the
+ * open leagues and a peek at the current cup; this is the whole list, for choosing among all of
+ * them (`apps/web`'s "Leagues" sheet page). */
+export function LeagueList<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: ChoiceOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+  label: string;
+}) {
+  return (
+    <div className="ui-league-list" role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={o.value === value}
+          disabled={o.disabled ?? false}
+          className={`ui-league-row${o.value === value ? ' on' : ''}`}
+          onClick={() => onChange(o.value)}
+        >
+          <LeagueShield id={o.value} />
+          <span className="ui-league-row-label">{o.label}</span>
+        </button>
+      ))}
     </div>
   );
 }

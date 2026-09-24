@@ -1,7 +1,7 @@
 export { Term } from './components/Term.tsx';
 export { initialOf, SpeciesToken } from './components/SpeciesToken.tsx';
 export { TypeChip, TypeChips } from './components/TypeChip.tsx';
-export { LEAGUE_COLORS, LeagueShield, LeagueSwitcher } from './components/League.tsx';
+export { LEAGUE_COLORS, LeagueShield, LeagueSwitcher, LeagueList } from './components/League.tsx';
 export { Chevron } from './components/Chevron.tsx';
 export { HeaderShell } from './components/HeaderShell.tsx';
 export { Header, type HeaderBack } from './components/Header.tsx';

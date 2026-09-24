@@ -539,10 +539,12 @@
   color: var(--warn);
 }
 
-/* League switcher: 44px segments, and the optional overflow segment. Segments may shrink below
-   their content so a long row never runs under the overflow button: with four or more leagues in
-   a narrow row the shields step aside first, and a name ellipsizes only as a last resort. Three
-   leagues keep their shields at every width. */
+/* League switcher: 44px segments, and the optional overflow segment. The radiogroup holds only
+   the open leagues (Great, Ultra, Master), so its three segments always keep their shields and
+   names. A cup lives behind the overflow; when it is current, its slot sizes to its content
+   (below) instead of the fixed "..." width, and the open leagues' names hide first (LeagueSwitcher
+   measures the fit and adds `.collapsed`) to give it room, ellipsizing only if that is still not
+   enough. */
 .league-switcher button {
   min-height: var(--tap);
   min-width: 0;
@@ -552,26 +554,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.league-switcher:has(> button:nth-child(4)) {
-  container-type: inline-size;
-}
-/* Four or more: each segment starts from its own name's width and shares out what is left, so a
-   long name ("Tournament") gets the room a short one ("Ultra") does not need. */
-.league-switcher:has(> button:nth-child(4)) > button {
-  flex: 1 1 auto;
-}
-/* Four leagues with shields and whole names measure 351px, or 293px with apps/web's compact rule
-   (12px text, 4px padding), so the shields step aside only below those widths. */
-@container (max-width: 360px) {
-  .league-switcher:not(.compact):has(> button:nth-child(4)) .league-shield {
-    display: none;
-  }
-}
-@container (max-width: 300px) {
-  .league-switcher.compact:has(> button:nth-child(4)) .league-shield {
-    display: none;
-  }
 }
 /* Selects: a 44px target wherever they sit, a label above, the platform's own picker under a
    chevron. The Select component's classes; 16px text so iOS never zooms into it. */
@@ -620,10 +602,29 @@
   min-width: 0;
 }
 .league-row .league-switcher {
-  flex: 1;
+  /* A grid instead of the standalone rule's flex row: with a cup in the overflow slot, an equal
+     flex share of the radiogroup's own width does not guarantee any one league keeps its full
+     name (the widest name can still lose out to its neighbours). Grid's minmax floor gives every
+     column its own content width first, so no league ever loses a letter to this arithmetic; extra
+     room past that still splits evenly (1fr), and it can still grow into leftover row width the
+     way the flex version did for the plain "..." case. `width` resets the standalone rule's 100%,
+     which would otherwise become this item's flex-basis and always claim the full row. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(max-content, 1fr);
+  width: auto;
+  flex: 1 0 auto;
   min-width: 0;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+/* With a cup in the slot, any room past both sides' own content is left as-is rather than
+   stretching the leagues wider: growing them would just as happily eat the room collapsing was
+   meant to hand the cup, since a bigger equal-width share still shows up as extra padding rather
+   than more text. Without a current cup (plain "...") the radiogroup still grows to fill the row,
+   same as it always has. */
+.league-row:has(.league-more.on) .league-switcher {
+  flex-grow: 0;
 }
 .league-more {
   flex: none;
@@ -642,6 +643,62 @@
 .league-more:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+/* The current cup in the overflow slot: sizes to its content (shield + name) instead of the
+   fixed "..." width, shrinking before the radiogroup gives up any of its three equal segments,
+   and styled selected like a chosen league. Its label keeps the shared ellipsis rule above, so a
+   name that still does not fit once the open leagues' names are hidden trails off in its own
+   slot rather than pushing the row wider. */
+.league-more:has(.ui-league-label) {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+  padding: 0 10px;
+  gap: 6px;
+}
+.league-more.on {
+  color: var(--text);
+  background: var(--accent-tint);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* LeagueList: every league and cup, one full-width row per option, for the "Leagues" sheet page. */
+.ui-league-list {
+  display: flex;
+  flex-direction: column;
+}
+.ui-league-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 10px;
+  border: 0;
+  border-top: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+.ui-league-list .ui-league-row:first-child {
+  border-top: 0;
+}
+.ui-league-row.on {
+  background: var(--accent-tint);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  border-radius: var(--r-control);
+}
+.ui-league-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.ui-league-row-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Filter button. */
