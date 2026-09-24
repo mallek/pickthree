@@ -117,7 +117,7 @@ so pick3 and meta render the same component.
 | 1 | `Button` | new | `variant: 'primary' \| 'secondary' \| 'text' \| 'danger'`. Primary is filled violet; at most one per screen. |
 | 2 | `IconButton` | new | One shape (`--r-control`, 44px) for settings, share, the meta cross-link, filters. Requires `label` for screen readers. |
 | 3 | `Chip` | exists, resized | A tappable filter pill, 44px tap target. |
-| 4 | `Tag` | new | A read-only label at `--fs-label`. `kind: 'type' \| 'fit' \| 'verdict' \| 'outcome' \| 'neutral'`. `TypeChip` becomes `Tag kind="type"` and keeps its export name as an alias. Never has a hover or pressed state. |
+| 4 | `Tag` | new | A read-only label at `--fs-label`. `tone: 'neutral' \| 'accent' \| 'win' \| 'loss' \| 'tanked' \| 'warn'`. `TypeChip` stays the type tag. Never has a hover or pressed state. |
 | 5 | `LeagueSwitcher` | exists, extended | Adds an optional overflow segment ("...") that opens a sheet listing more leagues and cups. Shields and the selected outline unchanged. |
 | 6 | `Select` | exists, extended | A visible label is now required (for example "Window", "Source"). |
 | 7 | `FilterButton` | new | "Filters" plus a count of active filters, sliders icon. Opens a `Sheet` the app fills. |
@@ -159,7 +159,8 @@ them has moved, then removed in the piece that moves the last one.
 ## Section 4: the component gallery
 
 A small Vite page at `packages/ui/gallery/` renders every component in every state (default,
-pressed, selected, disabled, empty, error, long text, 390px width) in both themes, side by side.
+pressed, selected, disabled, empty, error, long text, 390px width) in one theme at a time
+(`?theme=dark` or `?theme=light`); the audit captures both.
 
 - `npm -w @pickthree/ui run gallery` serves it for development.
 - It is never part of either app's build, so it changes nothing in production and nothing in the
@@ -189,8 +190,8 @@ Audit mode is added to the existing capture scripts (`apps/web/scripts/screens.m
 Plus static checks in vitest:
 
 - no color literal (hex, `rgb()`, `hsl()`) in `apps/web/src/app.css`, `apps/meta/src/app.css`
-  or `packages/ui/base.css`. apps/web has 35 today; they are listed in a baseline allowlist
-  that may only shrink, and each piece removes the ones on its pages.
+  or `packages/ui/base.css`. they are listed in `scripts/color-literal-baseline.json`, which may
+  only shrink, and each piece removes the ones on its pages.
 - `npm run lint`, `npm run typecheck`, `npm test` pass.
 
 ### Aesthetics checklist

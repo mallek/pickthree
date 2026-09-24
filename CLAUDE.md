@@ -10,6 +10,7 @@ Later specs: `docs/superpowers/specs/2026-09-14-adaptive-import-design.md` (CSV 
 ```
 apps/web/             Vite + React SPA, Web Worker, IndexedDB, PWA, deployed to GitHub Pages
 apps/meta/            Vite + React SPA for meta.pick3.gg, served by the counter worker
+packages/ui/          shared tokens, components (props only), component gallery; both apps import it
 packages/engine/      pure TypeScript recommendation engine, no DOM, most tests live here
 packages/sim-pvpoke/  vendored PvPoke battle files (pinned commit) + GameMaster shim + adapter
 packages/data/        build pipeline producing static JSON, sprites, and the matchup matrix
@@ -113,6 +114,11 @@ npm run lint && npm run typecheck
 npm run web:screens                # puppeteer screenshots of every screen (preview server on :4173)
 npm -w @pickthree/meta run dev     # Vite dev server on :5174, /api proxied to the worker
 npm run meta:screens                # puppeteer pass over the built meta site (preview on :4174)
+npm -w @pickthree/ui run gallery   # component gallery on :5175 (?theme=dark|light)
+npm run ui:audit                   # audit the gallery in dark and light at 390px
+npm run web:audit                  # web captures in both themes plus the audit (enforced screens fail)
+npm run meta:audit                 # same for meta.pick3.gg
+npm run check-colors               # color literals outside tokens.css match the shrink-only baseline
 npm run fixtures:make              # regenerate synthetic CSVs; fixtures:derive for alternate layouts
 npx tsx packages/engine/scripts/bench.ts   # engine timing on the fixture
 ```
@@ -142,3 +148,8 @@ Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/p
   the keyed `/api/v1/events` routes. The screen name is the only identity stored; a roster's first
   name, last name and country are never extracted. Never commit a real tournament payload:
   `fixtures/make-tournament.ts` generates a synthetic event with invented screen names.
+- UI is built from `packages/ui` and its tokens: violet for interaction, pink only for measured data
+  (text with its mark, never a pill), outcome colors for results, red only for destroying data.
+  No new color literals outside `tokens.css`. Spec: `docs/superpowers/specs/2026-09-24-design-foundation-design.md`.
+- A redesigned page is done only when it passes the audit (automated checks, the aesthetics and
+  functionality checklists) and Travis signs its record in `docs/design/audits/`.
