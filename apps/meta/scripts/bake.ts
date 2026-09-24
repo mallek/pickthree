@@ -13,6 +13,7 @@ import {
   matrixIndex,
   OPEN_EQUIVALENT_CUP,
   ranksOf,
+  readEpochs,
   type LegalFile,
   type MatchupMatrix,
 } from '@pickthree/engine/meta';
@@ -34,7 +35,7 @@ import {
   type Species,
 } from '@pickthree/engine';
 
-export { legalFor, OPEN_EQUIVALENT_CUP, ranksOf, type LegalFile };
+export { legalFor, OPEN_EQUIVALENT_CUP, ranksOf, readEpochs, type LegalFile };
 
 export type SpeciesFile = Record<string, [string, number, string]>;
 export type MovesFile = Record<string, [string, string]>;
@@ -160,46 +161,6 @@ export const MATRIX_TOP = 250;
 export const COLD_POOL = 60;
 /** Generated teams emitted per league. */
 export const COLD_TEAMS = 24;
-
-export interface Epoch {
-  /** ISO time with an offset, the same rule seasons.json keeps. */
-  at: string;
-  note: string;
-  /** Absent means every league. */
-  leagues?: string[];
-  /** The PvPoke commit the measured side of this epoch expects. */
-  pvpokeCommit?: string;
-}
-
-const ISO_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/;
-
-/** The hand-kept meta epoch list, validated and sorted by time. Mirrors readSeasons. */
-export function readEpochs(raw: unknown): Epoch[] {
-  if (!Array.isArray(raw)) {
-    throw new Error('epochs.json: expected an array');
-  }
-  const out: Epoch[] = raw.map((entry, i) => {
-    const e = entry as Partial<Epoch>;
-    if (typeof e.at !== 'string' || !ISO_WITH_OFFSET.test(e.at) || Number.isNaN(Date.parse(e.at))) {
-      throw new Error(`epochs.json: entry ${i} "at" must be an ISO time with an offset or Z`);
-    }
-    if (typeof e.note !== 'string' || e.note.length === 0) {
-      throw new Error(`epochs.json: entry ${i} needs a note`);
-    }
-    if (e.leagues !== undefined && !Array.isArray(e.leagues)) {
-      throw new Error(`epochs.json: entry ${i} "leagues" must be an array when present`);
-    }
-    const made: Epoch = { at: e.at, note: e.note };
-    if (e.leagues) {
-      made.leagues = [...e.leagues];
-    }
-    if (typeof e.pvpokeCommit === 'string') {
-      made.pvpokeCommit = e.pvpokeCommit;
-    }
-    return made;
-  });
-  return out.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
-}
 
 /**
  * PvPoke's own prior for how often each meta opponent is actually faced, normalised to sum to 1.
