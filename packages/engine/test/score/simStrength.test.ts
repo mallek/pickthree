@@ -151,16 +151,27 @@ describe('the meta subpath', () => {
     // A short list on purpose: this is the contract, and growing it should be deliberate.
     expect(Object.keys(mod).sort()).toEqual([
       'DEFAULT_BLEND_OPTIONS',
+      'HALF_SAY_BATTLES',
+      'HALF_SAY_DEVICES',
+      'HALF_SAY_EVENTS',
+      'HALF_SAY_TOURNAMENT_BATTLES',
+      'LISTED_MIN',
       'MatrixView',
+      'OPEN_EQUIVALENT_CUP',
       'PROJECTION_SLOPE',
       'bestStrength',
       'blendShare',
       'blendWeights',
+      'communityWeights',
       'expectedWinRate',
       'facingWeight',
+      'legalFor',
       'matrixIndex',
+      'measuredSay',
+      'ranksOf',
       'strengthContext',
       'strengthOf',
+      'tournamentSay',
     ]);
   });
 });
