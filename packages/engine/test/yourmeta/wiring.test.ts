@@ -106,6 +106,31 @@ describe.skipIf(!ready)('your meta wiring', () => {
       plain.entries.map((e) => e.speciesId),
     );
   });
+
+  it('counters take a community facing from the counters data alone', () => {
+    const counters = { matrix: data.matrix, rankings: data.rankings, meta: data.meta };
+    const r = metaCounters(counters, specimens, index, {
+      limit: 10,
+      facing: {
+        kind: 'community',
+        source: 'ladder',
+        summary: {
+          battles: 600,
+          devices: 12,
+          species: [{ speciesId: inMeta, sightings: 400 }],
+          tournament: null,
+        },
+        window: {
+          since: '2026-09-17T00:00:00.000Z',
+          until: '2026-09-24T00:00:00.000Z',
+          label: '7 days',
+        },
+      },
+    });
+    expect(r.entries).toHaveLength(10);
+    expect(r.blended).toBe(true);
+    expect(r.facing.startsWith('Weighted by')).toBe(true);
+  });
 });
 
 describe.skipIf(!ready)('who beats an outsider, simulated on device', () => {

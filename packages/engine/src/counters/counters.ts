@@ -7,10 +7,9 @@ import {
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
 import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js';
-import type { MatchupMatrix, RankingCategory, RankingEntry } from '../gamedata/types.js';
+import type { MatchupMatrix, MetaEntry, RankingCategory, RankingEntry } from '../gamedata/types.js';
 import { MatrixView } from '../search/matrixView.js';
 import { simulateMatrix, type MatrixSimDeps } from '../sim/matrixSim.js';
-import type { StaticData } from '../recommend.js';
 import { profileFor, type FacingInput } from '../yourmeta/facing.js';
 import { facingLine } from '../yourmeta/profile.js';
 
@@ -154,6 +153,10 @@ function ownedBuilds(
 export interface CountersData {
   matrix: MatchupMatrix;
   rankings: Record<RankingCategory, RankingEntry[]>;
+  /** PvPoke's meta group: a community facing weights against it. */
+  meta: MetaEntry[];
+  /** The Play! ban list for this league. Absent means none shipped. */
+  banned?: string[];
 }
 
 /**
@@ -190,7 +193,7 @@ export function metaCounters(
   const view = new MatrixView(data.matrix);
   const ranks = metaRanks(data.rankings);
   // One opponent is "who beats X", not "who beats what I face": weights never apply to it.
-  const profile = profileFor(data as StaticData, view, opts.vs ? { kind: 'prior' } : opts.facing);
+  const profile = profileFor(data, view, opts.vs ? { kind: 'prior' } : opts.facing);
   const groups = opponentGroups(view, ranks, profile.engaged ? profile.weights : undefined);
   const byRank = [...groups].sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
   let target = opts.vs ? groups.find((g) => g.speciesId === opts.vs) : undefined;

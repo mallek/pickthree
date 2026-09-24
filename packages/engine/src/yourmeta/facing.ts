@@ -27,7 +27,7 @@ export type FacingInput =
   | { kind: 'community'; source: CommunityKind; summary: CommunitySummary; window: FacingWindow };
 
 export function profileFor(
-  data: StaticData,
+  data: Pick<StaticData, 'meta' | 'rankings' | 'banned'>,
   view: MatrixView,
   facing: FacingInput | undefined,
 ): FacingProfile {
