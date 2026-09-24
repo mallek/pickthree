@@ -200,7 +200,9 @@ type Action =
   | { type: 'forget' }
   | { type: 'sets'; sets: BattleSet[] }
   | { type: 'community-done'; key: string; payload: CommunityPayload | null }
-  | { type: 'community-clear' };
+  | { type: 'community-clear' }
+  /** A facing-weighted run came back for a league or source no longer in play: clear its flag. */
+  | { type: 'drop'; what: 'rec' | 'counters' | 'analyze' | 'suggest' };
 
 const initial: AppState = {
   boot: 'loading',
@@ -314,6 +316,20 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, community: { key: a.key, payload: a.payload } };
     case 'community-clear':
       return s.community === null ? s : { ...s, community: null };
+    case 'drop':
+      // Nothing is shown and nothing is marked done, so the screen's effect runs again for
+      // whatever is in play now.
+      switch (a.what) {
+        case 'rec':
+          return { ...s, recommending: false, progress: null };
+        case 'counters':
+          return { ...s, countersLoading: false, countersProgress: null };
+        case 'analyze':
+          return { ...s, analyzing: false, progress: null };
+        case 'suggest':
+          return { ...s, suggesting: false };
+      }
+      return s;
     case 'rec-error':
       return { ...s, recommending: false, recommendError: a.message, progress: null };
     case 'counters-start':
@@ -514,6 +530,41 @@ export function filterKey(
     community: isCommunity(choice.source) ? (community?.key ?? null) : null,
     generatedAt: isCommunity(choice.source) ? (community?.payload?.generatedAt ?? null) : null,
   });
+}
+
+/**
+ * What a facing-weighted result belongs to: the league, the source and, for a community source,
+ * the window. A result that comes back after any of them changed is dropped, never shown.
+ */
+function facingScope(settings: Settings): string {
+  const choice = facingSettings(settings);
+  return JSON.stringify([
+    settings.league ?? 'great',
+    choice.source,
+    isCommunity(choice.source) ? choice.window : null,
+  ]);
+}
+
+/** The league an action started in, and whether that league and facing are still in play. */
+function scopeOf(ref: { current: AppState }): { league: string; current: () => boolean } {
+  const settings = ref.current.settings;
+  const scope = facingScope(settings);
+  return {
+    league: settings.league ?? 'great',
+    current: () => facingScope(ref.current.settings) === scope,
+  };
+}
+
+/** The community request these settings name at `now`; null when no community read applies. */
+function requestFor(s: AppState, now: Date): CommunityRequest | null {
+  const choice = facingSettings(s.settings);
+  if (!isCommunity(choice.source)) {
+    return null;
+  }
+  const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
+  return league
+    ? communityRequest(league, choice.window, s.data?.seasons ?? [], s.data?.epochs ?? [], now)
+    : null;
 }
 
 interface Actions {
@@ -792,14 +843,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     payload: CommunityPayload | null;
   }> => {
     const s = stateRef.current;
-    const choice = facingSettings(s.settings);
-    if (!isCommunity(choice.source)) {
+    if (!isCommunity(facingSettings(s.settings).source)) {
       return { request: null, payload: null };
     }
-    const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
-    const request = league
-      ? communityRequest(league, choice.window, s.data?.seasons ?? [], s.data?.epochs ?? [])
-      : null;
+    const now = new Date();
+    const request = requestFor(s, now);
     if (!request) {
       // A league with no community data: drop the last league's read so a result keyed with no
       // community read is not stale against it forever.
@@ -807,7 +855,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       return { request: null, payload: null };
     }
     const payload = await loadCommunity(request);
-    dispatch({ type: 'community-done', key: request.key, payload });
+    // A league or window switch while the read was out: it belongs to neither, so it is not kept.
+    // Same clock reading, so only a changed league or window can make the keys differ.
+    if (requestFor(stateRef.current, now)?.key === request.key) {
+      dispatch({ type: 'community-done', key: request.key, payload });
+    }
     return { request, payload };
   }, []);
 
@@ -846,21 +898,35 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     // The provisional key: rec-start sets `recommending`, so the Teams effect does not fire again
     // while the community read is in flight. rec-done replaces it with the final key.
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'rec-start', key: filterKey(s.settings, s.logVersion, s.community) });
     try {
       const { facing, community } = await facingNow();
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'rec' });
+        return;
+      }
       const key = filterKey(s.settings, s.logVersion, community);
       const recommendation = await h.recommend(
         s.collection.specimens,
         { ...optionsFrom(s.settings), facing },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
+        scope.league,
       );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'rec' });
+        return;
+      }
       dispatch({ type: 'rec-done', recommendation, key });
       if (recommendation.teams.length > 0) {
         void recordPick3();
       }
     } catch (e) {
       recordError('recommend', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'rec' });
+        return;
+      }
       dispatch({ type: 'rec-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, [facingNow]);
@@ -899,18 +965,32 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       if (s.countersLoading || !s.leagueInfo) {
         return;
       }
+      const scope = scopeOf(stateRef);
       dispatch({ type: 'counters-start', vs });
       try {
         const { facing } = await facingNow();
+        if (!scope.current()) {
+          dispatch({ type: 'drop', what: 'counters' });
+          return;
+        }
         // No collection just means nothing gets an owned mark.
         const counters = await h.counters(
           s.collection?.specimens ?? [],
           { facing, ...(vs ? { vs } : {}) },
           (p) => dispatch({ type: 'counters-progress', progress: p }),
+          scope.league,
         );
+        if (!scope.current()) {
+          dispatch({ type: 'drop', what: 'counters' });
+          return;
+        }
         dispatch({ type: 'counters-done', counters });
       } catch (e) {
         recordError('counters', e);
+        if (!scope.current()) {
+          dispatch({ type: 'drop', what: 'counters' });
+          return;
+        }
         dispatch({
           type: 'counters-done',
           counters: {
@@ -956,9 +1036,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (s.analyzing || !picks[0] || !picks[1] || !picks[2] || !s.leagueInfo) {
       return false;
     }
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'analyze-start' });
     try {
       const { facing } = await facingNow();
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return false;
+      }
       const base = optionsFrom(s.settings);
       const analysis = await h.analyze(
         [picks[0], picks[1], picks[2]],
@@ -970,7 +1055,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
         },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
+        scope.league,
       );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return false;
+      }
       // Put the picks in the order the analysis chose: a specimen pick matches by specimen id,
       // a species pick by species (the three are always different species).
       const remaining: (TeamPick | null)[] = [picks[0], picks[1], picks[2]];
@@ -991,6 +1081,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       return true;
     } catch (e) {
       recordError('order', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return false;
+      }
       dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
       return false;
     }
@@ -1007,21 +1101,35 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (s.suggesting || s.analyzing || pinned === 0 || pinned === 3 || !s.leagueInfo) {
       return;
     }
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'suggest-start' });
     try {
       const { facing } = await facingNow();
       const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
         optionsFrom(s.settings);
       const community = await communityCores(s.settings, s.leagueInfo.id);
-      const suggestion = await h.suggestTeammates(picks, s.collection?.specimens ?? [], {
-        facing,
-        ...(community ? { community } : {}),
-        ...(allowXl !== undefined ? { allowXl } : {}),
-        ...(allowShadow !== undefined ? { allowShadow } : {}),
-        ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
-        ...(budgetStardust !== undefined ? { budgetStardust } : {}),
-        ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
-      });
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
+      }
+      const suggestion = await h.suggestTeammates(
+        picks,
+        s.collection?.specimens ?? [],
+        {
+          facing,
+          ...(community ? { community } : {}),
+          ...(allowXl !== undefined ? { allowXl } : {}),
+          ...(allowShadow !== undefined ? { allowShadow } : {}),
+          ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
+          ...(budgetStardust !== undefined ? { budgetStardust } : {}),
+          ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
+        },
+        scope.league,
+      );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
+      }
       dispatch({ type: 'suggest-done', suggestion });
       // Applied here, from the value in hand: stateRef only catches up on the next render, so
       // reading the offer back out of state in the same tick would find nothing.
@@ -1031,6 +1139,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       }
     } catch (e) {
       recordError('suggest', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
+      }
       dispatch({ type: 'suggest-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, [facingNow]);
@@ -1052,9 +1164,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (s.analyzing || !picks[0] || !picks[1] || !picks[2] || !s.leagueInfo) {
       return;
     }
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'analyze-start' });
     try {
       const { facing } = await facingNow();
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return;
+      }
       const base = optionsFrom(s.settings);
       const analysis = await h.analyze(
         [picks[0], picks[1], picks[2]],
@@ -1067,11 +1184,20 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
         },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
+        scope.league,
       );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return;
+      }
       dispatch({ type: 'analyze-done', analysis });
       navigate({ screen: 'custom' });
     } catch (e) {
       recordError('analyze', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return;
+      }
       dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
     }
   }, [navigate, facingNow]);
