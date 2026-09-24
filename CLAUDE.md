@@ -39,7 +39,8 @@ Dependency direction: `apps/web -> engine -> BattleSimulator interface <- sim-pv
 1. `packages/data/pvpoke.lock.json` pins a PvPoke commit. `data:fetch` clones it into `packages/data/.pvpoke` (gitignored).
 2. `build.ts` writes `apps/web/public/data/` (gitignored, rebuilt in CI, cached by lock hash):
    `pokemon.json`, `moves.json`, `gamemaster.json` (PvPoke's own, the vendored sim reads it), `leagues.json`,
-   per-league `rankings/`, `meta/`, `overrides/`, `matrix/`, `sprites/<id>.webp`, `vendor/pvpoke-sim.js`, `data-manifest.json`.
+   per-league `rankings/`, `meta/`, `overrides/`, `matrix/`, `sprites/<id>.webp`, `vendor/pvpoke-sim.js`, `data-manifest.json`,
+   `legal/`, `epochs.json`.
 3. The matchup matrix (ADR 002) is every ranked species vs PvPoke's meta group in 3 shield scenarios, integer ratings,
    at PvPoke default IVs. It is what lets a phone prune candidates without simulating on import.
 4. Leagues come from PvPoke `formats.json` + `cups/*.json`; `engine/gamedata/league.ts` mirrors PvPoke's cup include/exclude rules.
@@ -73,6 +74,8 @@ teammates/  pin one or two, fill the rest from the matrix; no team simulation, A
 yourmeta/   battle log -> season window -> facing profile (blended weights + outsiders) -> recommend, analyze, counters
 ```
 
+`yourmeta/facing.ts`: one `FacingInput` (PvPoke, your log, or a community source) for every entry point; an engaged profile also weights drafting.
+
 `host/ComputeHost.ts` is the interface the UI talks to (importCsv, recommend, verdicts, counters, scanList, analyze, manual).
 Tests implement it in-process; the web app implements it with a worker. Every result carries an `Assumptions` block.
 
@@ -86,10 +89,11 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `sw.ts`: app shell precached, `/data/*` stale-while-revalidate, `/data/sprites/*` cache-first, Web Share Target POST `/share` parks the CSV in a cache and the app imports it on `/?share=1`. Updates are prompt-mode via `update.ts` and `UpdateToast`.
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.
 - CSP is a meta tag in `index.html`. `connect-src` allows only self and the counter worker; fonts come from Google Fonts.
+- `communityMeta.ts` reads the community meta for the Teams Source picker; `state/facing.ts` turns the choice into the engine's `FacingInput`. Team filters live in the Teams Filters sheet (`screens/Filters.tsx`).
 
 ### Meta site (`apps/meta`, meta.pick3.gg)
 
-- Two sources, one number, blended continuously rather than flipped: PvPoke's curated meta group (baked at build time, `scripts/bake.ts`, from the same pinned commit as `apps/web/public/data`) and measured play from shared battle logs. `src/rank.ts`'s `measuredSay` computes `a`, the smaller of a battles curve and a devices curve, and every weight is `(1 - a) * pvpokePrior + a * measuredShare`; nothing ever switches over. `HALF_SAY_BATTLES` (300) and `HALF_SAY_DEVICES` (5) are the blend's half-say points, not gates, so a league one battle short of either still counts for something.
+- Two sources, one number, blended continuously rather than flipped: PvPoke's curated meta group (baked at build time, `scripts/bake.ts`, from the same pinned commit as `apps/web/public/data`) and measured play from shared battle logs. `src/rank.ts`'s `measuredSay` computes `a`, the smaller of a battles curve and a devices curve, and every weight is `(1 - a) * pvpokePrior + a * measuredShare`; nothing ever switches over. `HALF_SAY_BATTLES` (300) and `HALF_SAY_DEVICES` (5) are the blend's half-say points, not gates, so a league one battle short of either still counts for something. The blend, the window resolution and the ban-list lookup now live in `@pickthree/engine/meta` (`community.ts`, `window.ts`, `legal.ts`), re-exported where `apps/meta` needs them, so pick3's own Source picker and meta.pick3.gg agree by construction.
 - `workers/counter` exposes the read side at `/api/v1/meta`, `/api/v1/species/:id` and `/api/v1/teams` (the team board: run and faced battle counts kept apart, cores and complete teams both), rounded to 10 minute buckets so concurrent readers share a cache entry.
 - The bake also ships a matchup slice per league (`/matrix/<league>.json`, PvPoke's meta group as columns) and a PvPoke rank order (`/ranks/<league>.json`); the client runs the actual projection arithmetic against them (`@pickthree/engine/meta`'s `strengthContext`/`expectedWinRate`), so a team's projected win rate is worked out on device, from real matchup data, not looked up from a table. `/baseline/<league>-teams.json` ships a baked set of generated teams for the cold start, before anyone has shared a battle. The bake also writes `/legal/<league>.json` (the Play! ban list per site league), which lets a page print "banned" instead of a zero.
 - Tournament results (official Play! Pokemon broadcasts, read off the stream and joined to the published rosters) enter the ranking as a third term, blended in sequence: `apps/meta/src/rank.ts`'s `tournamentSay` blends tournament pick share into PvPoke's side of the number first, on its own curve (`HALF_SAY_TOURNAMENT_BATTLES` 100, `HALF_SAY_EVENTS` 2), before the ladder term (`measuredSay`) blends over the top, unchanged. `workers/counter` stores tournament records in their own `events`, `tournament_battles` and `roster_entries` tables, never the ladder `battles` table, written only through the keyed `/api/v1/events` routes. The read routes take a `source` parameter (`all`, `prior`, `ladder`, `tournament`), rendered by the Source select, which replaced the retired rank-band filter.
@@ -130,14 +134,15 @@ Design reference: docs/design/ (Claude Design export). Plans: docs/superpowers/p
 - Never hard-code one CSV format. The importer resolves columns by meaning; new layouts come from field reports and get a fixture.
 - Vendored PvPoke files under `packages/sim-pvpoke/vendor/` are verbatim. Do not edit them; fix the shim or adapter instead. Bumps go through `pvpoke.lock.json` and the golden test.
 - PvPoke rankings are an input, not truth. Every result carries its assumptions.
-- The collection never leaves the device. The outbound calls are the anonymous hit counter, opt-out error reports, opt-out battle records for the community meta, and one read of the community team board for Suggest teammates, all free of collection data. That read fetches the whole board and never names the pinned Pokemon in the query, so the request says which league the player is in and nothing else; it follows the same sharing switch and fails silent. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
+- The collection never leaves the device. The outbound calls are the anonymous hit counter, opt-out error reports, opt-out battle records for the community meta, and one read of the community team board for Suggest teammates, all free of collection data. That read fetches the whole board and never names the pinned Pokemon in the query, so the request says which league the player is in and nothing else; it follows the same sharing switch and fails silent. A community source the player picks on Teams (GBL, Tournaments, All) reads `/api/v1/meta` for the league and window; that choice is its own consent, so it does not follow the sharing switch. Automatic reads, like the Suggest teammates board, still do. Keep the CSP meta tag tight; do not widen `connect-src` without a reason.
 - The battle log is shared as anonymous records for the community meta (league, season, time, species, your team's movesets when known, result, rank band, random device id) unless the player switches sharing off in Settings; never the collection, IVs, specimen ids, names or the opponents' movesets. Only the live site sends (never automation or a dev server). Export and import are files the player handles. Spec: `docs/superpowers/specs/2026-09-17-community-meta-capture-design.md`.
 - Screens with a text input put the input at the top, its results directly under it, the slots those results fill under that, and optional shortcuts last (hidden while searching or picking). Results are a compact token grid in a fixed-height box that scrolls on its own. The phone keyboard covers everything below the input.
 - Stage explicit paths when committing. Never `git add -A`.
 - meta.pick3.gg blends PvPoke's curated list, tournament pick share and measured ladder play on a
   stated, visible weight, never presents a projection as a measured result, and never hides
-  measured numbers for being small. The 300, 5, 100 and 2 constants stay in `apps/meta/src/rank.ts`
-  as the blends' half-say points rather than as gates. Tournament win rates never feed the blend.
+  measured numbers for being small. The 300, 5, 100 and 2 constants live in `@pickthree/engine/meta`
+  (`meta/community.ts`) beside `communityWeights`, re-exported from `apps/meta/src/rank.ts`, as the
+  blends' half-say points rather than as gates. Tournament win rates never feed the blend.
 - Tournament records live in their own tables in the counter worker and are written only through
   the keyed `/api/v1/events` routes. The screen name is the only identity stored; a roster's first
   name, last name and country are never extracted. Never commit a real tournament payload:
