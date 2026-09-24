@@ -2110,6 +2110,11 @@ button.counter-row {
   padding: 6px 4px;
   font-size: 12px;
 }
+/* The overflow slot matches the compact size too when it is showing a current cup, same as it
+   already matches the full-size league buttons' font. */
+.league-row:has(> .league-switcher.compact) .league-more:has(.ui-league-label) {
+  font-size: 12px;
+}
 
 /* collection: search with a settings cog, verdict pills, tap-to-cycle sort */
 .search-row {

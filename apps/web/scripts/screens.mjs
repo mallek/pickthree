@@ -292,6 +292,30 @@ await page.click('.page-head > .chips:not(.league-cups) .chip:nth-child(3)');
 await new Promise((r) => setTimeout(r, 300));
 await shot('09-counters-own', false);
 
+console.log('leagues sheet sits above the tab bar');
+await page.click('.page-head .league-more');
+await page.waitForSelector('.ui-sheet');
+await new Promise((r) => setTimeout(r, 300));
+const sheetCheck = await page.evaluate(() => {
+  const rows = [...document.querySelectorAll('.ui-league-row')];
+  const last = rows[rows.length - 1];
+  if (!last) {
+    return { ok: false, reason: 'no rows in the Leagues sheet' };
+  }
+  const b = last.getBoundingClientRect();
+  const x = b.left + b.width / 2;
+  const y = b.top + b.height / 2;
+  const top = document.elementFromPoint(x, y);
+  const ok = top !== null && (top === last || last.contains(top));
+  return { ok, reason: `topmost at the last row's center is ${top?.className ?? top?.tagName ?? 'nothing'}, not the row itself` };
+});
+if (!sheetCheck.ok) {
+  throw new Error(`Leagues sheet: ${sheetCheck.reason} (the tab bar or another layer is painting over it)`);
+}
+await shot('08c-leagues-sheet', false);
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
+
 console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.set-card', { timeout: 60_000 });
