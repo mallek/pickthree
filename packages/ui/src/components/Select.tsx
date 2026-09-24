@@ -1,9 +1,10 @@
 import { useId } from 'react';
 import { Chevron } from './Chevron.tsx';
 
-interface ChoiceOption<T extends string> {
+export interface ChoiceOption<T extends string> {
   value: T;
   label: string;
+  disabled?: boolean;
 }
 
 /** A labelled native select. The label is always visible, so a reader knows what the field is a
@@ -13,11 +14,13 @@ export function Select<T extends string>({
   value,
   onChange,
   label,
+  disabled = false,
 }: {
   options: ChoiceOption<T>[];
   value: T;
   onChange: (v: T) => void;
   label: string;
+  disabled?: boolean;
 }) {
   const id = useId();
   return (
@@ -27,6 +30,7 @@ export function Select<T extends string>({
         <select
           id={id}
           value={value}
+          disabled={disabled}
           onChange={(e) => {
             const next = options.find((o) => o.value === e.target.value);
             if (next) {
@@ -35,7 +39,7 @@ export function Select<T extends string>({
           }}
         >
           {options.map((o) => (
-            <option key={o.value} value={o.value}>
+            <option key={o.value} value={o.value} disabled={o.disabled ?? false}>
               {o.label}
             </option>
           ))}

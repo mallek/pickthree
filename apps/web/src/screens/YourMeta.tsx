@@ -22,6 +22,7 @@ import { dateLabel } from '../format.ts';
 import { shareLink } from '../share.ts';
 import { teamLink } from '../teamLink.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { facingSettings } from '../state/facing.ts';
 
 type Sort = 'faced' | 'losses';
 
@@ -237,7 +238,7 @@ export function YourMeta() {
     () => yourMetaStats({ sets: s.sets, seasons, freshFrom, fallback }),
     [s.sets, seasons, freshFrom, fallback],
   );
-  const blendOn = s.settings.yourMeta?.blend !== false;
+  const blendOn = facingSettings(s.settings).source === 'log';
   const min = DEFAULT_PROFILE_OPTIONS.minBattles;
   const stale = seasonListStale(seasons);
   const [sort, setSort] = useSticky<Sort>('meta.sort', 'faced');
@@ -257,7 +258,7 @@ export function YourMeta() {
         <LeagueSwitcher compact />
         <p className="log-status meta" style={{ margin: 0 }}>
           {!blendOn
-            ? 'Your log is switched off in Settings.'
+            ? 'Pick "Your log" as the Source on Teams to weight teams by these battles.'
             : logCount >= min
               ? `Weighting Teams and Counters by ${logCount} battles this season.`
               : `${logCount} of ${min} battles until your log weights Teams and Counters.`}

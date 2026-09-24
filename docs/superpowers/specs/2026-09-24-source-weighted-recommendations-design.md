@@ -1,6 +1,6 @@
 # Source-weighted recommendations: one picker for who you expect to face
 
-Date: 2026-09-24. Status: spec approved 2026-09-24 (with design program coordination edits); plan next.
+Date: 2026-09-24. Status: implemented 2026-09-24, plan docs/superpowers/plans/2026-09-24-source-weighted-recommendations.md.
 
 pick3's own team recommendations (Teams, Analysis, Build, Counters) today weight opponents by
 PvPoke's rank, or by the player's own battle log once it has 15 battles. meta.pick3.gg meanwhile

@@ -1,6 +1,7 @@
 import {
   type BattleSet,
   type CountersResult,
+  type FacingInput,
   type Faceoff,
   type ImportReport,
   type Layout,
@@ -22,6 +23,7 @@ import {
   type TeamRef,
   type Verdict,
 } from '@pickthree/engine';
+import type { Epoch } from '@pickthree/engine/meta';
 import {
   createContext,
   useCallback,
@@ -36,6 +38,12 @@ import { applyTheme } from '@pickthree/ui';
 import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { communityCores } from '../community.ts';
+import {
+  communityRequest,
+  loadCommunity,
+  type CommunityPayload,
+  type CommunityRequest,
+} from '../communityMeta.ts';
 import { arrivedFromShare } from '../share.ts';
 import { recordError, setErrorReportsEnabled } from '../diag.ts';
 import {
@@ -51,7 +59,8 @@ import { describeLayoutLine, emptyLayoutValue } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
 import { parseLogFile, serializeLog } from '../storage/logFile.ts';
-import { newId, yourMetaFrom } from './yourMeta.ts';
+import { facingInput, facingSettings, isCommunity, logBattles } from './facing.ts';
+import { newId } from './yourMeta.ts';
 
 /**
  * A layout the resolver was unsure about, or one it had to work out from values while a header
@@ -95,6 +104,8 @@ export interface DataInfo {
   /** Released, non-mega species for adding by hand. */
   allSpecies: string[];
   seasons: Season[];
+  /** Meta resets, for the community read's This meta window. */
+  epochs: Epoch[];
   /** Move id to display name and type, for the `@word` search term. */
   moves: Record<string, { name: string; type: PokemonType }>;
 }
@@ -111,6 +122,7 @@ export interface AppState {
   settingsLoaded: boolean;
   route: Route;
   sheetOpen: boolean;
+  filtersOpen: boolean;
   importing: boolean;
   importError: string | null;
   recommendation: Recommendation | null;
@@ -148,6 +160,8 @@ export interface AppState {
   setsLoaded: boolean;
   /** Bumps on every log change so cached results know they are stale. */
   logVersion: number;
+  /** The community read for the current league and window: key league|since|until. */
+  community: { key: string; payload: CommunityPayload | null } | null;
 }
 
 type Action =
@@ -162,13 +176,14 @@ type Action =
   | { type: 'loaded'; collection: StoredCollection | null; settings: Settings }
   | { type: 'route'; route: Route }
   | { type: 'sheet'; open: boolean }
+  | { type: 'filters'; open: boolean }
   | { type: 'import-start' }
   | { type: 'import-done'; collection: StoredCollection }
   | { type: 'import-error'; message: string }
   | { type: 'settings'; settings: Settings }
   | { type: 'rec-start'; key: string }
   | { type: 'rec-progress'; progress: ProgressEvent }
-  | { type: 'rec-done'; recommendation: Recommendation }
+  | { type: 'rec-done'; recommendation: Recommendation; key: string }
   | { type: 'rec-error'; message: string }
   | { type: 'verdicts-start' }
   | { type: 'verdicts-done'; verdicts: Record<string, Verdict> }
@@ -185,7 +200,11 @@ type Action =
   | { type: 'analyze-done'; analysis: TeamAnalysis }
   | { type: 'analyze-error'; message: string }
   | { type: 'forget' }
-  | { type: 'sets'; sets: BattleSet[] };
+  | { type: 'sets'; sets: BattleSet[] }
+  | { type: 'community-done'; key: string; payload: CommunityPayload | null }
+  | { type: 'community-clear' }
+  /** A facing-weighted run came back for a league or source no longer in play: clear its flag. */
+  | { type: 'drop'; what: 'rec' | 'counters' | 'analyze' | 'suggest' };
 
 const initial: AppState = {
   boot: 'loading',
@@ -198,6 +217,7 @@ const initial: AppState = {
   settingsLoaded: false,
   route: { screen: 'welcome' },
   sheetOpen: false,
+  filtersOpen: false,
   importing: false,
   importError: null,
   recommendation: null,
@@ -225,6 +245,7 @@ const initial: AppState = {
   sets: [],
   setsLoaded: false,
   logVersion: 0,
+  community: null,
 };
 
 function reducer(s: AppState, a: Action): AppState {
@@ -255,9 +276,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'loaded':
       return { ...s, collection: a.collection, settings: a.settings, settingsLoaded: true };
     case 'route':
-      return { ...s, route: a.route, sheetOpen: false };
+      return { ...s, route: a.route, sheetOpen: false, filtersOpen: false };
     case 'sheet':
       return { ...s, sheetOpen: a.open };
+    case 'filters':
+      return { ...s, filtersOpen: a.open };
     case 'import-start':
       return { ...s, importing: true, importError: null };
     case 'import-done':
@@ -274,7 +297,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'import-error':
       return { ...s, importing: false, importError: a.message };
     case 'settings':
-      return { ...s, settings: a.settings };
+      // Counters carry the facing they were scored under but no key for it, so a new league,
+      // source or community window clears them and the screen scores them again.
+      return facingScope(a.settings) === facingScope(s.settings)
+        ? { ...s, settings: a.settings }
+        : { ...s, settings: a.settings, counters: null };
     case 'rec-start':
       return {
         ...s,
@@ -286,7 +313,32 @@ function reducer(s: AppState, a: Action): AppState {
     case 'rec-progress':
       return { ...s, progress: a.progress };
     case 'rec-done':
-      return { ...s, recommending: false, recommendation: a.recommendation, progress: null };
+      // The final key: with a community source it carries the read's generatedAt, known only now.
+      return {
+        ...s,
+        recommending: false,
+        recommendation: a.recommendation,
+        progress: null,
+        recommendedWith: a.key,
+      };
+    case 'community-done':
+      return { ...s, community: { key: a.key, payload: a.payload } };
+    case 'community-clear':
+      return s.community === null ? s : { ...s, community: null };
+    case 'drop':
+      // Nothing is shown and nothing is marked done, so the screen's effect runs again for
+      // whatever is in play now.
+      switch (a.what) {
+        case 'rec':
+          return { ...s, recommending: false, progress: null };
+        case 'counters':
+          return { ...s, countersLoading: false, countersProgress: null };
+        case 'analyze':
+          return { ...s, analyzing: false, progress: null };
+        case 'suggest':
+          return { ...s, suggesting: false };
+      }
+      return s;
     case 'rec-error':
       return { ...s, recommending: false, recommendError: a.message, progress: null };
     case 'counters-start':
@@ -472,12 +524,56 @@ export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
   };
 }
 
-export function filterKey(settings: Settings, logVersion = 0): string {
+export function filterKey(
+  settings: Settings,
+  logVersion = 0,
+  community: AppState['community'] = null,
+): string {
+  const choice = facingSettings(settings);
   return JSON.stringify({
     league: settings.league ?? 'great',
     logVersion,
     ...optionsFrom(settings),
+    source: choice.source,
+    window: isCommunity(choice.source) ? choice.window : null,
+    community: isCommunity(choice.source) ? (community?.key ?? null) : null,
+    generatedAt: isCommunity(choice.source) ? (community?.payload?.generatedAt ?? null) : null,
   });
+}
+
+/**
+ * What a facing-weighted result belongs to: the league, the source and, for a community source,
+ * the window. A result that comes back after any of them changed is dropped, never shown.
+ */
+function facingScope(settings: Settings): string {
+  const choice = facingSettings(settings);
+  return JSON.stringify([
+    settings.league ?? 'great',
+    choice.source,
+    isCommunity(choice.source) ? choice.window : null,
+  ]);
+}
+
+/** The league an action started in, and whether that league and facing are still in play. */
+function scopeOf(ref: { current: AppState }): { league: string; current: () => boolean } {
+  const settings = ref.current.settings;
+  const scope = facingScope(settings);
+  return {
+    league: settings.league ?? 'great',
+    current: () => facingScope(ref.current.settings) === scope,
+  };
+}
+
+/** The community request these settings name at `now`; null when no community read applies. */
+function requestFor(s: AppState, now: Date): CommunityRequest | null {
+  const choice = facingSettings(s.settings);
+  if (!isCommunity(choice.source)) {
+    return null;
+  }
+  const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
+  return league
+    ? communityRequest(league, choice.window, s.data?.seasons ?? [], s.data?.epochs ?? [], now)
+    : null;
 }
 
 interface Actions {
@@ -485,6 +581,8 @@ interface Actions {
   back(): void;
   openSheet(): void;
   closeSheet(): void;
+  openFilters(): void;
+  closeFilters(): void;
   importCsv(text: string, fileName: string | null): Promise<boolean>;
   runRecommend(): Promise<void>;
   loadVerdicts(): Promise<void>;
@@ -544,6 +642,12 @@ interface Actions {
   exportLog(): Promise<string>;
   /** Adds sets from an export file. Throws the file parser's sentence on a bad file. */
   importLog(text: string): Promise<{ added: number; skipped: number }>;
+  /**
+   * The community read for the league and window in play, once per key (league|since|until).
+   * Null when the source is not a community one, the league has no community data, or the read
+   * failed.
+   */
+  ensureCommunity(): Promise<CommunityPayload | null>;
 }
 
 const StateCtx = createContext<AppState | null>(null);
@@ -607,6 +711,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
               leagues: r.leagues,
               allSpecies: r.allSpecies,
               seasons: r.seasons,
+              epochs: r.epochs,
               moves: r.moves,
             },
           });
@@ -739,10 +844,62 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [navigate],
   );
 
-  const yourMeta = useCallback(() => {
+  /**
+   * The community read for the current league and window, once per key, with the request it was
+   * made for (one clock reading, so the window the engine is told matches the data). Both null
+   * when the source is not a community one.
+   */
+  const readCommunity = useCallback(async (): Promise<{
+    request: CommunityRequest | null;
+    payload: CommunityPayload | null;
+  }> => {
     const s = stateRef.current;
-    return yourMetaFrom(s.sets, s.data?.seasons ?? [], s.settings, s.settings.league ?? 'great');
+    if (!isCommunity(facingSettings(s.settings).source)) {
+      return { request: null, payload: null };
+    }
+    const now = new Date();
+    const request = requestFor(s, now);
+    if (!request) {
+      // A league with no community data: drop the last league's read so a result keyed with no
+      // community read is not stale against it forever.
+      dispatch({ type: 'community-clear' });
+      return { request: null, payload: null };
+    }
+    const payload = await loadCommunity(request);
+    // A league or window switch while the read was out: it belongs to neither, so it is not kept.
+    // Same clock reading, so only a changed league or window can make the keys differ.
+    if (requestFor(stateRef.current, now)?.key === request.key) {
+      dispatch({ type: 'community-done', key: request.key, payload });
+    }
+    return { request, payload };
   }, []);
+
+  /** The community read for the current league and window, once per key; null when none applies. */
+  const ensureCommunity = useCallback(
+    async (): Promise<CommunityPayload | null> => (await readCommunity()).payload,
+    [readCommunity],
+  );
+
+  /** The engine's facing input right now, reading the community first when the source needs it. */
+  const facingNow = useCallback(async (): Promise<{
+    facing: FacingInput;
+    community: AppState['community'];
+  }> => {
+    const s = stateRef.current;
+    const league = s.settings.league ?? 'great';
+    const choice = facingSettings(s.settings);
+    const { request, payload } = await readCommunity();
+    const facing = facingInput({
+      choice,
+      battles:
+        choice.source === 'log'
+          ? logBattles(s.sets, s.data?.seasons ?? [], s.settings, league)
+          : [],
+      request,
+      payload,
+    });
+    return { facing, community: request ? { key: request.key, payload } : null };
+  }, [readCommunity]);
 
   const runRecommend = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
@@ -750,23 +907,40 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (!s.collection || s.recommending || !s.leagueInfo) {
       return;
     }
-    const key = filterKey(s.settings, s.logVersion);
-    dispatch({ type: 'rec-start', key });
+    // The provisional key: rec-start sets `recommending`, so the Teams effect does not fire again
+    // while the community read is in flight. rec-done replaces it with the final key.
+    const scope = scopeOf(stateRef);
+    dispatch({ type: 'rec-start', key: filterKey(s.settings, s.logVersion, s.community) });
     try {
+      const { facing, community } = await facingNow();
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'rec' });
+        return;
+      }
+      const key = filterKey(s.settings, s.logVersion, community);
       const recommendation = await h.recommend(
         s.collection.specimens,
-        { ...optionsFrom(s.settings), yourMeta: yourMeta() },
+        { ...optionsFrom(s.settings), facing },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
+        scope.league,
       );
-      dispatch({ type: 'rec-done', recommendation });
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'rec' });
+        return;
+      }
+      dispatch({ type: 'rec-done', recommendation, key });
       if (recommendation.teams.length > 0) {
         void recordPick3();
       }
     } catch (e) {
       recordError('recommend', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'rec' });
+        return;
+      }
       dispatch({ type: 'rec-error', message: e instanceof Error ? e.message : String(e) });
     }
-  }, []);
+  }, [facingNow]);
 
   const loadVerdicts = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
@@ -795,34 +969,52 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
-  const loadCounters = useCallback(async (vs: string | null = null) => {
-    const h = hostRef.current as WorkerHost;
-    const s = stateRef.current;
-    if (s.countersLoading || !s.leagueInfo) {
-      return;
-    }
-    dispatch({ type: 'counters-start', vs });
-    try {
-      // No collection just means nothing gets an owned mark.
-      const counters = await h.counters(
-        s.collection?.specimens ?? [],
-        { yourMeta: yourMeta(), ...(vs ? { vs } : {}) },
-        (p) => dispatch({ type: 'counters-progress', progress: p }),
-      );
-      dispatch({ type: 'counters-done', counters });
-    } catch (e) {
-      recordError('counters', e);
-      dispatch({
-        type: 'counters-done',
-        counters: {
-          entries: [],
-          facing: 'Counters could not be computed',
-          blended: false,
-          battles: 0,
-        },
-      });
-    }
-  }, []);
+  const loadCounters = useCallback(
+    async (vs: string | null = null) => {
+      const h = hostRef.current as WorkerHost;
+      const s = stateRef.current;
+      if (s.countersLoading || !s.leagueInfo) {
+        return;
+      }
+      const scope = scopeOf(stateRef);
+      dispatch({ type: 'counters-start', vs });
+      try {
+        const { facing } = await facingNow();
+        if (!scope.current()) {
+          dispatch({ type: 'drop', what: 'counters' });
+          return;
+        }
+        // No collection just means nothing gets an owned mark.
+        const counters = await h.counters(
+          s.collection?.specimens ?? [],
+          { facing, ...(vs ? { vs } : {}) },
+          (p) => dispatch({ type: 'counters-progress', progress: p }),
+          scope.league,
+        );
+        if (!scope.current()) {
+          dispatch({ type: 'drop', what: 'counters' });
+          return;
+        }
+        dispatch({ type: 'counters-done', counters });
+      } catch (e) {
+        recordError('counters', e);
+        if (!scope.current()) {
+          dispatch({ type: 'drop', what: 'counters' });
+          return;
+        }
+        dispatch({
+          type: 'counters-done',
+          counters: {
+            entries: [],
+            facing: 'Counters could not be computed',
+            blended: false,
+            battles: 0,
+          },
+        });
+      }
+    },
+    [facingNow],
+  );
 
   const scanListPending = useRef(false);
   const loadScanList = useCallback(async () => {
@@ -855,20 +1047,31 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (s.analyzing || !picks[0] || !picks[1] || !picks[2] || !s.leagueInfo) {
       return false;
     }
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'analyze-start' });
     try {
+      const { facing } = await facingNow();
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return false;
+      }
       const base = optionsFrom(s.settings);
       const analysis = await h.analyze(
         [picks[0], picks[1], picks[2]],
         s.collection?.specimens ?? [],
         {
           order: 'best',
-          yourMeta: yourMeta(),
+          facing,
           ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
         },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
+        scope.league,
       );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return false;
+      }
       // Put the picks in the order the analysis chose: a specimen pick matches by specimen id,
       // a species pick by species (the three are always different species).
       const remaining: (TeamPick | null)[] = [picks[0], picks[1], picks[2]];
@@ -889,10 +1092,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       return true;
     } catch (e) {
       recordError('order', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return false;
+      }
       dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
       return false;
     }
-  }, []);
+  }, [facingNow]);
   /**
    * Teammates for whatever is already on the board. Matrix only in the worker, so it is quick
    * enough to be a button; nothing is simulated here beyond a pin PvPoke does not rank.
@@ -905,20 +1112,45 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (s.suggesting || s.analyzing || pinned === 0 || pinned === 3 || !s.leagueInfo) {
       return;
     }
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'suggest-start' });
     try {
+      const { facing } = await facingNow();
       const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
         optionsFrom(s.settings);
-      const community = await communityCores(s.settings, s.leagueInfo.id);
-      const suggestion = await h.suggestTeammates(picks, s.collection?.specimens ?? [], {
-        yourMeta: yourMeta(),
-        ...(community ? { community } : {}),
-        ...(allowXl !== undefined ? { allowXl } : {}),
-        ...(allowShadow !== undefined ? { allowShadow } : {}),
-        ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
-        ...(budgetStardust !== undefined ? { budgetStardust } : {}),
-        ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
-      });
+      const choice = facingSettings(s.settings);
+      const info = s.data?.leagues.find((l) => l.id === s.leagueInfo!.id);
+      const boardWindow = info
+        ? communityRequest(
+            info,
+            isCommunity(choice.source) ? choice.window : 'meta',
+            s.data?.seasons ?? [],
+            s.data?.epochs ?? [],
+          )
+        : null;
+      const community = await communityCores(s.settings, s.leagueInfo.id, boardWindow);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
+      }
+      const suggestion = await h.suggestTeammates(
+        picks,
+        s.collection?.specimens ?? [],
+        {
+          facing,
+          ...(community ? { community } : {}),
+          ...(allowXl !== undefined ? { allowXl } : {}),
+          ...(allowShadow !== undefined ? { allowShadow } : {}),
+          ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
+          ...(budgetStardust !== undefined ? { budgetStardust } : {}),
+          ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
+        },
+        scope.league,
+      );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
+      }
       dispatch({ type: 'suggest-done', suggestion });
       // Applied here, from the value in hand: stateRef only catches up on the next render, so
       // reading the offer back out of state in the same tick would find nothing.
@@ -928,9 +1160,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       }
     } catch (e) {
       recordError('suggest', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
+      }
       dispatch({ type: 'suggest-error', message: e instanceof Error ? e.message : String(e) });
     }
-  }, []);
+  }, [facingNow]);
 
   /** Swap one of the other offered cores in. The pins stay where they are. */
   const takeSuggestion = useCallback((which: number) => {
@@ -949,8 +1185,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (s.analyzing || !picks[0] || !picks[1] || !picks[2] || !s.leagueInfo) {
       return;
     }
+    const scope = scopeOf(stateRef);
     dispatch({ type: 'analyze-start' });
     try {
+      const { facing } = await facingNow();
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return;
+      }
       const base = optionsFrom(s.settings);
       const analysis = await h.analyze(
         [picks[0], picks[1], picks[2]],
@@ -958,19 +1200,28 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         {
           // The cards' order is the order: what you see is what gets scored.
           order: 'given',
-          yourMeta: yourMeta(),
+          facing,
           ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
         },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
+        scope.league,
       );
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return;
+      }
       dispatch({ type: 'analyze-done', analysis });
       navigate({ screen: 'custom' });
     } catch (e) {
       recordError('analyze', e);
+      if (!scope.current()) {
+        dispatch({ type: 'drop', what: 'analyze' });
+        return;
+      }
       dispatch({ type: 'analyze-error', message: e instanceof Error ? e.message : String(e) });
     }
-  }, [navigate]);
+  }, [navigate, facingNow]);
 
   const faceoff = useCallback(async (team: TeamRef, opponent: string): Promise<Faceoff | null> => {
     const h = hostRef.current as WorkerHost;
@@ -1271,6 +1522,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       back,
       openSheet: () => dispatch({ type: 'sheet', open: true }),
       closeSheet: () => dispatch({ type: 'sheet', open: false }),
+      openFilters: () => dispatch({ type: 'filters', open: true }),
+      closeFilters: () => dispatch({ type: 'filters', open: false }),
       importCsv,
       runRecommend,
       loadVerdicts,
@@ -1299,6 +1552,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       startFresh,
       exportLog,
       importLog,
+      ensureCommunity,
     }),
     [
       navigate,
@@ -1331,6 +1585,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       startFresh,
       exportLog,
       importLog,
+      ensureCommunity,
     ],
   );
 

@@ -2,6 +2,7 @@ import { facingWeight, type MetaRank } from '../gamedata/metaRank.js';
 import type { MetaEntry, RankingEntry } from '../gamedata/types.js';
 import { blendWeights } from './blend.js';
 import type { LoggedBattle } from './types.js';
+import type { CommunityKind, FacingSource, FacingWindow } from './facing.js';
 
 export interface ProfileOptions {
   minBattles: number;
@@ -31,7 +32,21 @@ export interface ProfileInput {
   blend: boolean;
 }
 
-export type ProfileReason = 'engaged' | 'off' | 'too-few';
+export type ProfileReason = 'engaged' | 'off' | 'too-few' | 'prior' | 'unavailable' | 'community';
+
+/** What a community profile was built from, for the assumptions sentence. */
+export interface CommunityFacts {
+  source: CommunityKind;
+  window: FacingWindow;
+  battles: number;
+  devices: number;
+  events: number;
+  tournamentBattles: number;
+  /** The ladder term's share of the say, 0 to 1. */
+  say: number;
+  /** The tournament term's share of the say, 0 to 1. */
+  tournamentSay: number;
+}
 
 export interface FacingProfile {
   /** Weight per matrix column id. */
@@ -45,6 +60,10 @@ export interface FacingProfile {
   sightings: number;
   engaged: boolean;
   reason: ProfileReason;
+  /** Which population the weights come from. */
+  source: FacingSource;
+  /** Present on a community profile. */
+  community?: CommunityFacts;
 }
 
 /** Not tanked, most recent first, at most `window`. */
@@ -95,6 +114,7 @@ export function buildFacingProfile(
     sightings: total,
     engaged: false,
     reason,
+    source: 'log',
   });
   if (!input.blend) {
     return plain('off');
@@ -150,7 +170,44 @@ export function buildFacingProfile(
     sightings: total,
     engaged: true,
     reason: 'engaged',
+    source: 'log',
   };
+}
+
+const COMMUNITY_HEAD: Record<CommunityKind, string> = {
+  ladder: 'Weighted by GBL play',
+  tournament: 'Weighted by tournaments',
+  all: 'Weighted by all play',
+};
+
+function num(n: number): string {
+  return n.toLocaleString('en-US');
+}
+
+/** "This meta (since Sep 2)", "30 days", "7 days". */
+function windowPhrase(w: FacingWindow): string {
+  if (w.label !== 'This meta') {
+    return w.label;
+  }
+  const since = new Date(w.since).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+  return `This meta (since ${since})`;
+}
+
+function communityLine(c: CommunityFacts): string {
+  const head = COMMUNITY_HEAD[c.source];
+  const when = windowPhrase(c.window);
+  if (c.source === 'ladder') {
+    return `${head}: ${num(c.battles)} battles from ${num(c.devices)} devices, ${when}, ${Math.round(c.say * 100)}% measured`;
+  }
+  if (c.source === 'tournament') {
+    return `${head}: ${num(c.events)} events, ${num(c.tournamentBattles)} battles, ${when}, ${Math.round(c.tournamentSay * 100)}% measured`;
+  }
+  const measured = 1 - (1 - c.say) * (1 - c.tournamentSay);
+  return `${head}: PvPoke, ${num(c.events)} events and ${num(c.battles)} GBL battles, ${when}, ${Math.round(measured * 100)}% measured`;
 }
 
 /** The assumptions sentence. `mode` is 'teams' (outsiders simulated) or 'counters' (counted only). */
@@ -159,6 +216,15 @@ export function facingLine(
   mode: 'teams' | 'counters' = 'teams',
   minBattles: number = DEFAULT_PROFILE_OPTIONS.minBattles,
 ): string {
+  if (p.reason === 'prior') {
+    return 'PvPoke weights only';
+  }
+  if (p.reason === 'unavailable') {
+    return 'PvPoke weights (community data unavailable)';
+  }
+  if (p.reason === 'community' && p.community) {
+    return communityLine(p.community);
+  }
   if (p.reason === 'off') {
     return 'PvPoke weights only (your log is switched off)';
   }

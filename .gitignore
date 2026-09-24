@@ -43,3 +43,6 @@ workers/counter/.wrangler/
 
 packages/ui/gallery-dist/
 packages/ui/screenshots/
+
+# Agent worktrees
+.claude/worktrees/

@@ -118,7 +118,7 @@ describe.skipIf(!haveStaticData())('counters against one opponent', () => {
     const r = metaCounters(data, specimens, index, {
       limit: 10,
       vs: target,
-      yourMeta: { battles, blend: true },
+      facing: { kind: 'log', battles },
     });
     expect(r.blended).toBe(false);
     expect(r.battles).toBe(0);

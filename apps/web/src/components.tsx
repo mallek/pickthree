@@ -14,7 +14,7 @@ import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
-import { yourMetaFrom } from './state/yourMeta.ts';
+import { logBattles } from './state/facing.ts';
 import { Chevron, HeaderShell, SpeciesToken, TypeChip } from '@pickthree/ui';
 
 export { Chip, Seg, Term, TypeChip } from '@pickthree/ui';
@@ -502,8 +502,13 @@ export function Progress({ stage, done, total }: { stage: string; done: number; 
 /** Counted battles (not tanked, this season, after any fresh mark) for the league in play. */
 export function useLogCount(): number {
   const s = useAppState();
-  const m = yourMetaFrom(s.sets, s.data?.seasons ?? [], s.settings, s.settings.league ?? 'great');
-  return countedBattles(m.battles, DEFAULT_PROFILE_OPTIONS.window).length;
+  const battles = logBattles(
+    s.sets,
+    s.data?.seasons ?? [],
+    s.settings,
+    s.settings.league ?? 'great',
+  );
+  return countedBattles(battles, DEFAULT_PROFILE_OPTIONS.window).length;
 }
 
 const COG_PATH =

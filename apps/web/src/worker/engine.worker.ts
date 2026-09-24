@@ -19,6 +19,7 @@ import {
   ImportError,
   type StaticData,
   type BattleSimulator,
+  type CountersData,
   type Verdict,
   type DataManifest,
   type League,
@@ -29,6 +30,7 @@ import {
   type Season,
   type Species,
 } from '@pickthree/engine';
+import type { Epoch } from '@pickthree/engine/meta';
 import { PvPokeSimulator, type PvPokeRuntime } from '@pickthree/sim-pvpoke/browser';
 import type { LeagueInfo, WorkerRequest, WorkerResponse } from '../host/protocol.ts';
 
@@ -52,6 +54,8 @@ interface Env {
   sim: BattleSimulator;
   index: GameDataIndex;
   seasons: Season[];
+  /** Meta resets, for the community read's This meta window. */
+  epochs: Epoch[];
   /** PvPoke's own game master, for the default-IV stand-ins the matchup matrix was built from. */
   gamemaster: unknown;
 }
@@ -61,6 +65,8 @@ interface LeagueBundle {
   rankings: StaticData['rankings'];
   meta: MetaEntry[];
   matrix: MatchupMatrix;
+  /** The Play! ban list; empty when none shipped for this league. */
+  banned: string[];
 }
 
 let ready: Promise<Env> | null = null;
@@ -78,13 +84,14 @@ type BootStep = (step: string, done: number) => void;
 
 async function boot(step: BootStep): Promise<Env> {
   step('fetching game data', 0);
-  const [species, moves, manifest, leagues, gamemaster, seasons] = await Promise.all([
+  const [species, moves, manifest, leagues, gamemaster, seasons, epochs] = await Promise.all([
     json<Species[]>('/data/pokemon.json'),
     json<Move[]>('/data/moves.json'),
     json<DataManifest>('/data/data-manifest.json'),
     json<League[]>('/data/leagues.json'),
     json<unknown>('/data/gamemaster.json'),
     json<Season[]>('/data/seasons.json').catch(() => [] as Season[]),
+    json<Epoch[]>('/data/epochs.json').catch(() => [] as Epoch[]),
   ]);
   // The vendored PvPoke bundle reads the game master from this global when its shimmed ajax
   // callback is flushed (see packages/sim-pvpoke/src/globals-shim.js).
@@ -108,7 +115,7 @@ async function boot(step: BootStep): Promise<Env> {
   const sim = new PvPokeSimulator(runtime);
   const index = new GameDataIndex(species, moves);
   step('ready', 4);
-  return { species, moves, manifest, leagues, sim, index, seasons, gamemaster };
+  return { species, moves, manifest, leagues, sim, index, seasons, epochs, gamemaster };
 }
 
 function ensureReady(step: BootStep): Promise<Env> {
@@ -127,7 +134,7 @@ function bundleFor(env: Env, id: string): Promise<LeagueBundle> {
       return Promise.reject(new Error(`Unknown league ${id}`));
     }
     p = (async () => {
-      const [overall, leads, switches, closers, chargers, meta, matrix] = await Promise.all([
+      const [overall, leads, switches, closers, chargers, meta, matrix, legal] = await Promise.all([
         json<RankingEntry[]>(`/data/rankings/${id}/overall.json`),
         json<RankingEntry[]>(`/data/rankings/${id}/leads.json`),
         json<RankingEntry[]>(`/data/rankings/${id}/switches.json`),
@@ -135,8 +142,17 @@ function bundleFor(env: Env, id: string): Promise<LeagueBundle> {
         json<RankingEntry[]>(`/data/rankings/${id}/chargers.json`),
         json<MetaEntry[]>(`/data/meta/${id}.json`),
         json<MatchupMatrix>(`/data/matrix/${id}.json`),
+        json<{ banned: string[] }>(`/data/legal/${id}.json`).catch(() => ({
+          banned: [] as string[],
+        })),
       ]);
-      return { league, rankings: { overall, leads, switches, closers, chargers }, meta, matrix };
+      return {
+        league,
+        rankings: { overall, leads, switches, closers, chargers },
+        meta,
+        matrix,
+        banned: legal.banned,
+      };
     })();
     bundles.set(id, p);
     p.catch(() => bundles.delete(id));
@@ -154,6 +170,17 @@ async function dataFor(env: Env, id: string): Promise<StaticData> {
     meta: b.meta,
     matrix: b.matrix,
     manifest: env.manifest,
+    banned: b.banned,
+  };
+}
+
+/** What counters and the scan list read: the matrix, rankings, meta group and any ban list. */
+function countersData(data: StaticData): CountersData {
+  return {
+    matrix: data.matrix,
+    rankings: data.rankings,
+    meta: data.meta,
+    ...(data.banned ? { banned: data.banned } : {}),
   };
 }
 
@@ -200,6 +227,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
             .filter((sp) => sp.released && !sp.tags.includes('mega'))
             .map((sp) => sp.speciesId),
           seasons: env.seasons,
+          epochs: env.epochs,
           moves: Object.fromEntries(
             env.moves.map((m) => [m.moveId, { name: m.name, type: m.type }]),
           ),
@@ -248,7 +276,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     }
     if (msg.kind === 'counters') {
       const counters = metaCounters(
-        { matrix: data.matrix, rankings: data.rankings },
+        countersData(data),
         msg.specimens,
         env.index,
         { buildOptions: buildOptionsFor(data.league), ...msg.options },
@@ -262,7 +290,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       return;
     }
     if (msg.kind === 'scanlist') {
-      const list = scanList({ matrix: data.matrix, rankings: data.rankings }, env.index, {
+      const list = scanList(countersData(data), env.index, {
         cpCap: data.league.cp,
         buildOptions: buildOptionsFor(data.league),
         ...msg.options,

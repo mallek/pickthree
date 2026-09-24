@@ -31,7 +31,7 @@ import { MatrixView } from '../search/matrixView.js';
 import { withSimulatedRows, type MatrixFighter } from '../sim/matrixSim.js';
 import { bestBuild } from '../verdicts/worth.js';
 import { coverLines, weakPinLine } from './lines.js';
-import type { YourMetaInput } from '../yourmeta/types.js';
+import type { FacingInput } from '../yourmeta/facing.js';
 
 export type Character = 'safest' | 'cheapest' | 'antimeta' | 'community';
 
@@ -60,7 +60,7 @@ export interface SuggestOptions extends BuildOptions {
   /** Specimens the player benched in Settings. */
   excludedSpecimenIds: string[];
   community?: CommunityPairing[];
-  yourMeta?: YourMetaInput;
+  facing?: FacingInput;
   /** PvPoke's game master, for the default-IV stand-ins the matrix was built from. */
   gameMaster?: unknown;
 }
@@ -289,7 +289,7 @@ export function suggestTeammates(
 
   const pool = [...mine, ...chase].filter((c) => !pinnedSpecies.has(c.build.speciesId));
 
-  const profile = profileFor(deps.data, view, opts.yourMeta);
+  const profile = profileFor(deps.data, view, opts.facing);
   const facing = new Map([...profile.weights, ...profile.outsiderWeights]);
   const ctx = strengthContext(view, facing);
   // Anti-meta scores against the heaviest opponents only, so it answers "what do I actually run

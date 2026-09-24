@@ -4,8 +4,9 @@
  * This is the app's first outbound READ. The other three calls out (the hit counter, error
  * reports, battle records) all push. Two rules keep it honest:
  *
- *  - The whole board is fetched, never a query naming the pin. The request says which league the
- *    player is in and nothing else, so it cannot leak a favorite, let alone a collection.
+ *  - The whole board is fetched, never a query naming the pin. The request says which league and
+ *    window the player is in and nothing else, so it cannot leak a favorite, let alone a
+ *    collection.
  *  - It fails silent. Offline, blocked, rate limited or empty, the community chip is simply
  *    absent and the other characters are untouched, because the board only ever reorders cores
  *    the matrix already produced.
@@ -44,30 +45,32 @@ export function coresFrom(body: TeamsV1): CommunityPairing[] {
 export async function communityCores(
   settings: Settings,
   league: string,
+  window: { since: string; until: string } | null,
 ): Promise<CommunityPairing[] | null> {
   // A player who turned sharing off is not contributing, so they are not fetching either.
-  if (!shareEnabled(settings) || !shareEligible()) {
+  if (!shareEnabled(settings) || !shareEligible() || !window) {
     return null;
   }
-  const hit = cache.get(league);
+  const key = `${league}|${window.since}|${window.until}`;
+  const hit = cache.get(key);
   if (hit !== undefined) {
     return hit;
   }
   try {
-    const res = await fetch(
-      `${COUNTER_ORIGIN}/api/v1/teams?league=${encodeURIComponent(league)}`,
-      { cache: 'no-store' },
-    );
+    const q = new URLSearchParams({ league, since: window.since, until: window.until });
+    const res = await fetch(`${COUNTER_ORIGIN}/api/v1/teams?${q.toString()}`, {
+      cache: 'no-store',
+    });
     if (!res.ok) {
-      cache.set(league, null);
+      cache.set(key, null);
       return null;
     }
     const cores = coresFrom((await res.json()) as TeamsV1);
-    cache.set(league, cores);
+    cache.set(key, cores);
     return cores;
   } catch {
     // The chip is a garnish, never an error.
-    cache.set(league, null);
+    cache.set(key, null);
     return null;
   }
 }

@@ -60,6 +60,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
       leagues: [GREAT],
       allSpecies: ['tinkaton', 'azumarill', 'clodsire', 'medicham', 'dragonite_shadow'],
       seasons: SEASONS,
+      epochs: [],
       moves: {
         MUD_SHOT: { name: 'Mud Shot', type: 'ground' },
         PLAY_ROUGH: { name: 'Play Rough', type: 'fairy' },
@@ -90,6 +91,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
         metaName: '',
         metaSize: 3,
         facing: 'PvPoke weights only (0 of 15 battles logged)',
+        source: 'prior',
         pvpokeCommit: 'abc',
         pvpokeDate: '2026-09-10',
         gamemasterTimestamp: '',
