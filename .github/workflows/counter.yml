@@ -38,7 +38,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/web/public/data
-          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/seasons.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/sim-pvpoke/src/**') }}
+          key: data-${{ hashFiles('packages/data/pvpoke.lock.json', 'packages/data/seasons.json', 'packages/data/src/**', 'packages/engine/src/gamedata/**', 'packages/engine/src/meta/**', 'packages/sim-pvpoke/src/**', 'apps/meta/epochs.json') }}
       - run: npm run data:fetch
         if: steps.data.outputs.cache-hit != 'true'
       - run: npm run data:build
