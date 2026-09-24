@@ -13,9 +13,9 @@ Your Teams (`apps/web/src/screens/Teams.tsx`, route `#/teams`).
 
 ### 2. Screenshots
 
-- ![Teams, default](img/p01-teams.png)
-- ![Teams, chip row scrolled right](img/p01-teams-chips-scrolled.png)
-- Reference, not a pick3 screen: ![meta.pick3.gg Teams](img/p01-ref-meta-teams.png).
+- ![Teams, default](img/p01-teams.webp)
+- ![Teams, chip row scrolled right](img/p01-teams-chips-scrolled.webp)
+- Reference, not a pick3 screen: ![meta.pick3.gg Teams](img/p01-ref-meta-teams.webp).
   Included because the Window select ("This meta") and Source select ("All") on the meta site
   are coming to this screen. This is what started the cohesion work.
 
@@ -163,9 +163,9 @@ Build Your Team (`apps/web/src/screens/Build.tsx`, route `#/build`). Move picker
 
 ### 2. Screenshots
 
-- ![Build, empty](img/p02-build-empty.png)
-- ![Build, picking a Closer, keyboard up](img/p02-build-search.png)
-- ![Build, filled, scrolled down](img/p02-build-filled.png)
+- ![Build, empty](img/p02-build-empty.webp)
+- ![Build, picking a Closer, keyboard up](img/p02-build-search.webp)
+- ![Build, filled, scrolled down](img/p02-build-filled.webp)
 
 ### 3. Purpose
 
@@ -286,11 +286,11 @@ recommended team, `#/custom` for a hand-built or shared one.
 A custom team (the "< Build" back link and the rating card only show for custom teams). The
 screenshots skip some of the page; the gaps are filled from the code below.
 
-- ![Top: team strip, rating card, first Pokemon](img/p03-analysis-1.png)
-- ![Pokemon card: moves, shield strategy, build cost](img/p03-analysis-2.png)
-- ![Glossary line, Team structure, When to switch](img/p03-analysis-3.png)
-- ![When to switch, Key wins, Key threats](img/p03-analysis-4.png)
-- ![Why this team, Alternatives, Assumptions](img/p03-analysis-5.png)
+- ![Top: team strip, rating card, first Pokemon](img/p03-analysis-1.webp)
+- ![Pokemon card: moves, shield strategy, build cost](img/p03-analysis-2.webp)
+- ![Glossary line, Team structure, When to switch](img/p03-analysis-3.webp)
+- ![When to switch, Key wins, Key threats](img/p03-analysis-4.webp)
+- ![Why this team, Alternatives, Assumptions](img/p03-analysis-5.webp)
 
 ### 3. Purpose
 
@@ -426,9 +426,9 @@ Your Meta (`apps/web/src/screens/YourMeta.tsx`, route `#/meta`).
 
 ### 2. Screenshots
 
-- ![Top: progress, explainer, current team, meta link](img/p04-yourmeta-1.png)
-- ![Most faced list](img/p04-yourmeta-2.png)
-- ![Most faced continued, Your teams](img/p04-yourmeta-3.png)
+- ![Top: progress, explainer, current team, meta link](img/p04-yourmeta-1.webp)
+- ![Most faced list](img/p04-yourmeta-2.webp)
+- ![Most faced continued, Your teams](img/p04-yourmeta-3.webp)
 
 ### 3. Purpose
 
@@ -549,7 +549,7 @@ Log a Battle (`apps/web/src/screens/LogBattle.tsx`, route `#/meta-log`). In-batt
 
 ### 2. Screenshots
 
-- ![One opponent added, in-battle card open](img/p05-logbattle.png)
+- ![One opponent added, in-battle card open](img/p05-logbattle.webp)
 
 ### 3. Purpose
 
@@ -675,7 +675,7 @@ Counters tab (whole meta).
 
 ### 2. Screenshots
 
-- ![Who Beats Tinkaton](img/p06-who-beats.png)
+- ![Who Beats Tinkaton](img/p06-who-beats.webp)
 
 ### 3. Purpose
 
@@ -777,7 +777,7 @@ and code as page 6; only the differences and additions are listed here.
 
 ### 2. Screenshots
 
-- ![Counters, whole meta](img/p07-counters.png)
+- ![Counters, whole meta](img/p07-counters.webp)
 
 ### 3. Purpose
 
@@ -854,9 +854,9 @@ detail it opens (`screens/Specimen.tsx`, route `#/collection/<id>`).
 
 ### 2. Screenshots
 
-- ![Collection list](img/p08-collection.png)
-- ![List settings popover open](img/p08-collection-settings.png)
-- ![Pokemon detail (Delphox)](img/p08-specimen.png)
+- ![Collection list](img/p08-collection.webp)
+- ![List settings popover open](img/p08-collection-settings.webp)
+- ![Pokemon detail (Delphox)](img/p08-specimen.webp)
 
 ### 3. Purpose
 
@@ -984,9 +984,9 @@ Not a route.
 
 ### 2. Screenshots
 
-- ![Team filters, budget, exclusions, league](img/p09-settings-1.png)
-- ![Your Meta, Community Meta](img/p09-settings-2.png)
-- ![Appearance, about, diagnostics, counter](img/p09-settings-3.png)
+- ![Team filters, budget, exclusions, league](img/p09-settings-1.webp)
+- ![Your Meta, Community Meta](img/p09-settings-2.webp)
+- ![Appearance, about, diagnostics, counter](img/p09-settings-3.webp)
 
 ### 3. Purpose
 
@@ -1110,8 +1110,8 @@ drill-in.
 
 ### 2. Screenshots
 
-- ![Teams board](img/p10-meta-teams.png) (inside the in-app browser, opened from pick3)
-- ![A core row expanded](img/p10-meta-teams-open.png)
+- ![Teams board](img/p10-meta-teams.webp) (inside the in-app browser, opened from pick3)
+- ![A core row expanded](img/p10-meta-teams-open.webp)
 
 ### 3. Purpose
 
@@ -1225,11 +1225,11 @@ Pokemon ("What you face," `apps/meta/src/screens/Pokemon.tsx`) and the Species d
 
 ### 2. Screenshots
 
-- ![What you face list](img/p11-meta-pokemon-1.png)
-- ![Species top: sprite, blend line, weekly chart](img/p11-meta-pokemon-2.png)
-- ![Record against it, Who beats it, Build a team](img/p11-meta-pokemon-3.png)
-- ![By rank, Seen next to](img/p11-meta-pokemon-4.png)
-- ![Moves reporters ran, tournaments, PvPoke's set](img/p11-meta-pokemon-5.png)
+- ![What you face list](img/p11-meta-pokemon-1.webp)
+- ![Species top: sprite, blend line, weekly chart](img/p11-meta-pokemon-2.webp)
+- ![Record against it, Who beats it, Build a team](img/p11-meta-pokemon-3.webp)
+- ![By rank, Seen next to](img/p11-meta-pokemon-4.webp)
+- ![Moves reporters ran, tournaments, PvPoke's set](img/p11-meta-pokemon-5.webp)
 
 ### 3. Purpose
 

@@ -25,8 +25,8 @@ anything that conflicts with a "Must keep" or a product rule, and open questions
 
 ### Design 1: Common components, Foundation tab
 
-Screenshots: `img/intake/d01-foundation-dark-1.png`, `d01-foundation-dark-2.png`,
-`d01-foundation-light-1.png`, `d01-foundation-light-2.png`.
+Screenshots: `img/intake/d01-foundation-dark-1.webp`, `d01-foundation-dark-2.webp`,
+`d01-foundation-light-1.webp`, `d01-foundation-light-2.webp`.
 
 The component page has tabs: Foundation, Controls, Cards, Navigation, Feedback. Only
 Foundation is shown so far.
@@ -81,7 +81,7 @@ Foundation is shown so far.
 
 ### Design 2: Common components, Controls tab
 
-Screenshots: `img/intake/d02-controls-1.png`, `d02-controls-2.png`.
+Screenshots: `img/intake/d02-controls-1.webp`, `d02-controls-2.webp`.
 
 **What it sets**
 
@@ -131,7 +131,7 @@ Screenshots: `img/intake/d02-controls-1.png`, `d02-controls-2.png`.
 
 ### Design 3: Common components, Cards tab
 
-Screenshot: `img/intake/d03-cards.png`.
+Screenshot: `img/intake/d03-cards.webp`.
 
 **What it sets**
 
@@ -192,7 +192,7 @@ Screenshot: `img/intake/d03-cards.png`.
 
 ### Design 4: Common components, Navigation tab
 
-Screenshot: `img/intake/d04-navigation.png`.
+Screenshot: `img/intake/d04-navigation.webp`.
 
 **What it sets**
 
@@ -232,7 +232,7 @@ Screenshot: `img/intake/d04-navigation.png`.
 
 ### Design 5: Common components, Feedback tab
 
-Screenshot: `img/intake/d05-feedback.png`.
+Screenshot: `img/intake/d05-feedback.webp`.
 
 **What it sets**
 
@@ -323,7 +323,7 @@ Next step from the design session: formalize the states of the five tabs, then a
 
 ### Page 1: Your Teams, first pass
 
-Screenshots: `img/intake/p01-teams-v1-1.png`, `p01-teams-v1-2.png`.
+Screenshots: `img/intake/p01-teams-v1-1.webp`, `p01-teams-v1-2.webp`.
 
 **What changed**
 
@@ -394,7 +394,7 @@ Screenshots: `img/intake/p01-teams-v1-1.png`, `p01-teams-v1-2.png`.
 
 ### Page 1: Your Teams, second pass
 
-Screenshots: `img/intake/p01-teams-v2-1.png`, `p01-teams-v2-2.png`. Travis gave the design
+Screenshots: `img/intake/p01-teams-v2-1.webp`, `p01-teams-v2-2.webp`. Travis gave the design
 session some freedom to make it look good.
 
 **What changed from the first pass**
@@ -498,7 +498,7 @@ Take from the designs:
 
 ### Page 2: Build Your Team, first pass ("Battle Workbench")
 
-Screenshots: `img/intake/p02-build-v1-1.png`, `p02-build-v1-2.png`. The design session's
+Screenshots: `img/intake/p02-build-v1-1.webp`, `p02-build-v1-2.webp`. The design session's
 framing: focus on choosing a Pokémon while keeping the current lineup and role context
 visible.
 
@@ -560,7 +560,7 @@ visible.
 
 ### Page 2: Build Your Team, second idea (picking a slot)
 
-Screenshots: `img/intake/p02-build-v2-1.png`, `p02-build-v2-2.png`. Keyboard not up yet; the
+Screenshots: `img/intake/p02-build-v2-1.webp`, `p02-build-v2-2.webp`. Keyboard not up yet; the
 design session is working on the keyboard-up state.
 
 **What it shows**
@@ -650,7 +650,7 @@ design session is working on the keyboard-up state.
 
 ### Page 3: Team Analysis, first pass (progressive disclosure)
 
-Screenshots: `img/intake/p03-analysis-v1-1.png` to `-4.png`. The design session: "one score,
+Screenshots: `img/intake/p03-analysis-v1-1.webp` to `-4.webp`. The design session: "one score,
 immediate battle plan, key matchups, then expandable Pokémon details, alternatives,
 assumptions, and the full matchup grid."
 
@@ -737,7 +737,7 @@ structure)
 
 ## Landing page (already redesigned, the reference)
 
-Screenshots: `img/intake/landing-1.png`, `landing-2.png`. Travis: already done, and he loves
+Screenshots: `img/intake/landing-1.webp`, `landing-2.webp`. Travis: already done, and he loves
 it. "That's what started this." It's the source of the design language the component pages
 carry into the app ("the welcoming home-page style, tightened for dense battle data").
 
@@ -762,7 +762,7 @@ and have not had a design pass.
 
 ### Settings sheet, first pass
 
-Screenshot: `img/intake/sheet-settings-v1.png`.
+Screenshot: `img/intake/sheet-settings-v1.webp`.
 
 **What it shows**
 
@@ -805,7 +805,7 @@ Screenshot: `img/intake/sheet-settings-v1.png`.
 
 ### Move picker sheet, first pass
 
-Screenshots: `img/intake/sheet-moves-v1-1.png`, `sheet-moves-v1-2.png`. Checked against
+Screenshots: `img/intake/sheet-moves-v1-1.webp`, `sheet-moves-v1-2.webp`. Checked against
 `apps/web/src/components/MovePicker.tsx`.
 
 **What it shows**
@@ -860,8 +860,8 @@ Screenshots: `img/intake/sheet-moves-v1-1.png`, `sheet-moves-v1-2.png`. Checked 
 
 ### Settings sub-pages and the confirm sheet, first pass (2026-09-24)
 
-Screenshots: `img/intake/sheet-yourdata-v1.png`, `sheet-community-v1.png`,
-`sheet-about-v1.png`, `sheet-confirm-v1.png`. Your data and Community render dimmed in the
+Screenshots: `img/intake/sheet-yourdata-v1.webp`, `sheet-community-v1.webp`,
+`sheet-about-v1.webp`, `sheet-confirm-v1.webp`. Your data and Community render dimmed in the
 screenshots (a capture or transition artifact, not a design choice). Appearance not shown.
 
 **Navigation inside the sheet:** "< Settings," a centered title, Done. As briefed.
@@ -912,8 +912,8 @@ noted there.
 
 ### Page 4: Your Meta, first pass
 
-Screenshots: `img/intake/p04-yourmeta-v1-1.png` (under 15), `-2.png` (lists),
-`-3.png` (15 or more, log active).
+Screenshots: `img/intake/p04-yourmeta-v1-1.webp` (under 15), `-2.webp` (lists),
+`-3.webp` (15 or more, log active).
 
 **What it shows**
 
