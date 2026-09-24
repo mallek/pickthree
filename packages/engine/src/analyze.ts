@@ -37,7 +37,7 @@ import {
 } from './search/trios.js';
 import { scoreTeam, type Fit } from './score/score.js';
 import { bestBuild } from './verdicts/worth.js';
-import type { YourMetaInput } from './yourmeta/types.js';
+import type { FacingInput } from './yourmeta/facing.js';
 
 /** One member of a hand-built team. */
 export interface TeamPick {
@@ -59,7 +59,7 @@ export interface TeamPick {
 export interface AnalyzeOptions extends BuildOptions {
   /** given: run the picks as lead, safe switch, closer. best: try all six orders, keep the best. */
   order: 'given' | 'best';
-  yourMeta?: YourMetaInput;
+  facing?: FacingInput;
 }
 
 export const DEFAULT_ANALYZE_OPTIONS: AnalyzeOptions = {
@@ -283,7 +283,7 @@ export function analyzeTeam(
   const orderings = opts.order === 'given' ? [ALL_ORDERINGS[0]!] : ALL_ORDERINGS;
   const drafts = orderings.map((o) => evaluateTrio(prepared, view, DEFAULT_TRIO_OPTIONS, [o]));
 
-  const profile = profileFor(deps.data, view, opts.yourMeta);
+  const profile = profileFor(deps.data, view, opts.facing);
   const opponents = [...deps.data.meta, ...profile.outsiders];
   const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),

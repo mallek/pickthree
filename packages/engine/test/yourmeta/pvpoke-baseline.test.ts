@@ -25,7 +25,7 @@ describe.skipIf(!ready)('PvPoke baseline', () => {
   const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
   const deps = { data, sim };
   // Tasks 5 and 6 replace {} with { facing: { kind: 'prior' } }. Nothing else in this file changes.
-  const prior = {};
+  const prior = { facing: { kind: 'prior' as const } };
 
   it('recommend', () => {
     const rec = recommend(specimens, { ...prior }, deps);

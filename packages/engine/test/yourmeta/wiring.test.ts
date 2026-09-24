@@ -54,21 +54,17 @@ describe.skipIf(!ready)('your meta wiring', () => {
 
   it('with the switch off the recommendation is what it was before the log existed', () => {
     const plain = recommend(specimens, { results: 5 }, deps);
-    const off = recommend(
-      specimens,
-      { results: 5, yourMeta: { battles: log(outsider, inMeta, 40), blend: false } },
-      deps,
-    );
+    const off = recommend(specimens, { results: 5, facing: { kind: 'prior' } }, deps);
     expect(off.teams.map((t) => t.id)).toEqual(plain.teams.map((t) => t.id));
     expect(off.teams.map((t) => t.score.total)).toEqual(plain.teams.map((t) => t.score.total));
-    expect(plain.assumptions.facing).toBe('PvPoke weights only (0 of 15 battles logged)');
-    expect(off.assumptions.facing).toBe('PvPoke weights only (your log is switched off)');
+    expect(plain.assumptions.facing).toBe('PvPoke weights only');
+    expect(off.assumptions.facing).toBe('PvPoke weights only');
   });
 
   it('with enough battles the outsider reaches the sims and the assumptions say so', () => {
     const rec = recommend(
       specimens,
-      { results: 5, yourMeta: { battles: log(outsider, inMeta, 30), blend: true } },
+      { results: 5, facing: { kind: 'log', battles: log(outsider, inMeta, 30) } },
       deps,
     );
     expect(rec.assumptions.facing).toBe(
@@ -94,11 +90,11 @@ describe.skipIf(!ready)('your meta wiring', () => {
   it('counters use the blended weights and carry the line', () => {
     const plain = metaCounters(data, specimens, index, { limit: 10 });
     expect(plain.blended).toBe(false);
-    expect(plain.facing).toBe('PvPoke weights only (0 of 15 battles logged)');
+    expect(plain.facing).toBe('PvPoke weights only');
     expect(plain.entries).toHaveLength(10);
     const blended = metaCounters(data, specimens, index, {
       limit: 10,
-      yourMeta: { battles: log(outsider, inMeta, 30), blend: true },
+      facing: { kind: 'log', battles: log(outsider, inMeta, 30) },
     });
     expect(blended.blended).toBe(true);
     expect(blended.battles).toBe(30);

@@ -25,8 +25,10 @@ import {
 import { scoreTeam, type TeamScore } from './score/score.js';
 import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
 import { specimenVerdict, type Verdict } from './verdicts/worth.js';
-import { buildFacingProfile, facingLine, type FacingProfile } from './yourmeta/profile.js';
-import type { YourMetaInput } from './yourmeta/types.js';
+import { profileFor, type FacingInput, type FacingSource } from './yourmeta/facing.js';
+import { facingLine, type FacingProfile } from './yourmeta/profile.js';
+
+export { profileFor } from './yourmeta/facing.js';
 
 export interface StaticData {
   species: Species[];
@@ -37,6 +39,8 @@ export interface StaticData {
   meta: MetaEntry[];
   matrix: MatchupMatrix;
   manifest: DataManifest;
+  /** The Play! ban list for this league (legal/<league>.json). Absent means none shipped. */
+  banned?: string[];
 }
 
 export interface RecommendOptions extends BuildOptions {
@@ -46,8 +50,8 @@ export interface RecommendOptions extends BuildOptions {
   excludedSpecimenIds: string[];
   /** How many teams to return. */
   results: number;
-  /** The player's battle log for this league and season, and the blend switch. */
-  yourMeta?: YourMetaInput;
+  /** Whose opponents to weight. Absent means PvPoke. */
+  facing?: FacingInput;
 }
 
 export const DEFAULT_RECOMMEND_OPTIONS: RecommendOptions = {
@@ -69,6 +73,7 @@ export interface Assumptions {
   metaName: string;
   metaSize: number;
   facing: string;
+  source: FacingSource;
   pvpokeCommit: string;
   pvpokeDate: string;
   gamemasterTimestamp: string;
@@ -136,26 +141,12 @@ export function assumptionsFor(
     metaName: `PvPoke ${data.league.title} meta group`,
     metaSize: data.meta.length,
     facing: profile ? facingLine(profile) : 'PvPoke weights only',
+    source: profile?.source ?? 'prior',
     pvpokeCommit: data.manifest.pvpokeCommit,
     pvpokeDate: data.manifest.pvpokeDate,
     gamemasterTimestamp: data.manifest.gamemasterTimestamp,
     dataBuiltAt: data.manifest.builtAt,
   };
-}
-
-/** The facing profile for a run: PvPoke weights unless the log is present and engaged. */
-export function profileFor(
-  data: StaticData,
-  view: MatrixView,
-  yourMeta: YourMetaInput | undefined,
-): FacingProfile {
-  return buildFacingProfile({
-    battles: yourMeta?.battles ?? [],
-    opponents: view.opponents,
-    ranks: metaRanks(data.rankings),
-    rankings: data.rankings.overall,
-    blend: yourMeta?.blend ?? true,
-  });
 }
 
 /** A simulated, scored team with its explanation attached. */
@@ -228,7 +219,7 @@ export function recommend(
     (d, t) => progress('trios', d, t),
   );
 
-  const profile = profileFor(deps.data, view, opts.yourMeta);
+  const profile = profileFor(deps.data, view, opts.facing);
   const opponents = [...deps.data.meta, ...profile.outsiders];
   const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),

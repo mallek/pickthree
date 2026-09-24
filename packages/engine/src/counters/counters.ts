@@ -10,8 +10,9 @@ import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js'
 import type { MatchupMatrix, RankingCategory, RankingEntry } from '../gamedata/types.js';
 import { MatrixView } from '../search/matrixView.js';
 import { simulateMatrix, type MatrixSimDeps } from '../sim/matrixSim.js';
-import { buildFacingProfile, facingLine } from '../yourmeta/profile.js';
-import type { YourMetaInput } from '../yourmeta/types.js';
+import type { StaticData } from '../recommend.js';
+import { profileFor, type FacingInput } from '../yourmeta/facing.js';
+import { facingLine } from '../yourmeta/profile.js';
 
 export interface CounterMatchup {
   opponent: string;
@@ -44,7 +45,7 @@ export interface CountersOptions {
   /** How many of the best anti-meta species to return. */
   limit: number;
   buildOptions: BuildOptions;
-  yourMeta?: YourMetaInput;
+  facing?: FacingInput;
   /**
    * Score against this one opponent instead of the whole meta. The log does not apply: the
    * question is "who beats X", not "who beats what I face".
@@ -188,13 +189,8 @@ export function metaCounters(
   const opts: CountersOptions = { ...DEFAULT_COUNTERS_OPTIONS, ...options };
   const view = new MatrixView(data.matrix);
   const ranks = metaRanks(data.rankings);
-  const profile = buildFacingProfile({
-    battles: opts.vs ? [] : (opts.yourMeta?.battles ?? []),
-    opponents: view.opponents,
-    ranks,
-    rankings: data.rankings.overall,
-    blend: opts.vs ? false : (opts.yourMeta?.blend ?? true),
-  });
+  // One opponent is "who beats X", not "who beats what I face": weights never apply to it.
+  const profile = profileFor(data as StaticData, view, opts.vs ? { kind: 'prior' } : opts.facing);
   const groups = opponentGroups(view, ranks, profile.engaged ? profile.weights : undefined);
   const byRank = [...groups].sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
   let target = opts.vs ? groups.find((g) => g.speciesId === opts.vs) : undefined;
