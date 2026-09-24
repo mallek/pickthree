@@ -19,14 +19,22 @@ import { MatrixView } from './search/matrixView.js';
 import {
   DEFAULT_TRIO_OPTIONS,
   generateTrios,
+  weightedTrioOptions,
   type Structure,
   type TeamStyle,
 } from './search/trios.js';
 import { scoreTeam, type TeamScore } from './score/score.js';
 import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
 import { specimenVerdict, type Verdict } from './verdicts/worth.js';
-import { buildFacingProfile, facingLine, type FacingProfile } from './yourmeta/profile.js';
-import type { YourMetaInput } from './yourmeta/types.js';
+import {
+  heaviestColumns,
+  profileFor,
+  type FacingInput,
+  type FacingSource,
+} from './yourmeta/facing.js';
+import { facingLine, type FacingProfile } from './yourmeta/profile.js';
+
+export { profileFor } from './yourmeta/facing.js';
 
 export interface StaticData {
   species: Species[];
@@ -37,6 +45,8 @@ export interface StaticData {
   meta: MetaEntry[];
   matrix: MatchupMatrix;
   manifest: DataManifest;
+  /** The Play! ban list for this league (legal/<league>.json). Absent means none shipped. */
+  banned?: string[];
 }
 
 export interface RecommendOptions extends BuildOptions {
@@ -46,8 +56,8 @@ export interface RecommendOptions extends BuildOptions {
   excludedSpecimenIds: string[];
   /** How many teams to return. */
   results: number;
-  /** The player's battle log for this league and season, and the blend switch. */
-  yourMeta?: YourMetaInput;
+  /** Whose opponents to weight. Absent means PvPoke. */
+  facing?: FacingInput;
 }
 
 export const DEFAULT_RECOMMEND_OPTIONS: RecommendOptions = {
@@ -69,6 +79,7 @@ export interface Assumptions {
   metaName: string;
   metaSize: number;
   facing: string;
+  source: FacingSource;
   pvpokeCommit: string;
   pvpokeDate: string;
   gamemasterTimestamp: string;
@@ -136,6 +147,7 @@ export function assumptionsFor(
     metaName: `PvPoke ${data.league.title} meta group`,
     metaSize: data.meta.length,
     facing: profile ? facingLine(profile) : 'PvPoke weights only',
+    source: profile?.source ?? 'prior',
     pvpokeCommit: data.manifest.pvpokeCommit,
     pvpokeDate: data.manifest.pvpokeDate,
     gamemasterTimestamp: data.manifest.gamemasterTimestamp,
@@ -143,19 +155,14 @@ export function assumptionsFor(
   };
 }
 
-/** The facing profile for a run: PvPoke weights unless the log is present and engaged. */
-export function profileFor(
-  data: StaticData,
-  view: MatrixView,
-  yourMeta: YourMetaInput | undefined,
-): FacingProfile {
-  return buildFacingProfile({
-    battles: yourMeta?.battles ?? [],
-    opponents: view.opponents,
-    ranks: metaRanks(data.rankings),
-    rankings: data.rankings.overall,
-    blend: yourMeta?.blend ?? true,
-  });
+/**
+ * The ten opponents "top ten" means for scoreTeam: the ten heaviest columns for an engaged facing
+ * profile, and undefined (the first ten columns) otherwise, which keeps PvPoke mode unchanged.
+ */
+export function topTenFor(view: MatrixView, profile: FacingProfile): string[] | undefined {
+  return profile.engaged
+    ? heaviestColumns(view, profile.weights, 10).map((o) => view.opponents[o] as string)
+    : undefined;
 }
 
 /** A simulated, scored team with its explanation attached. */
@@ -220,15 +227,15 @@ export function recommend(
   progress('candidates', 1, 1);
 
   const typesOf = { types: (id: string) => index.mustSpecies(id).types };
-  const { drafts, scored } = generateTrios(
-    pool,
-    view,
-    typesOf,
-    { ...DEFAULT_TRIO_OPTIONS, finalists: opts.finalists, style: opts.style },
-    (d, t) => progress('trios', d, t),
+  const profile = profileFor(deps.data, view, opts.facing);
+  const baseTrio = { ...DEFAULT_TRIO_OPTIONS, finalists: opts.finalists, style: opts.style };
+  const trioOpts = profile.engaged
+    ? weightedTrioOptions(baseTrio, view, profile.weights)
+    : baseTrio;
+  const { drafts, scored } = generateTrios(pool, view, typesOf, trioOpts, (d, t) =>
+    progress('trios', d, t),
   );
 
-  const profile = profileFor(deps.data, view, opts.yourMeta);
   const opponents = [...deps.data.meta, ...profile.outsiders];
   const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),
@@ -238,7 +245,8 @@ export function recommend(
   const ranks = metaRanks(deps.data.rankings);
   const facing = new Map([...profile.weights, ...profile.outsiderWeights]);
   const extra = profile.outsiders.map((o) => o.speciesId);
-  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra) }));
+  const topTen = topTenFor(view, profile);
+  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra, topTen) }));
   scored2.sort((a, b) => b.score.total - a.score.total);
   const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {

@@ -176,6 +176,7 @@ describe('facingLine', () => {
     weights: new Map<string, number>(),
     outsiderWeights: new Map<string, number>(),
     sightings: 0,
+    source: 'log' as const,
   };
   it('describes each state', () => {
     expect(facingLine({ ...base, outsiders: [], battles: 40, engaged: false, reason: 'off' })).toBe(

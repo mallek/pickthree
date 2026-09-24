@@ -23,3 +23,6 @@ export {
   type Strength,
   type StrengthContext,
 } from '../score/simStrength.js';
+export * from './community.js';
+export * from './legal.js';
+export * from './window.js';

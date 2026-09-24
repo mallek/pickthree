@@ -48,12 +48,6 @@ export interface Season {
   start: string;
 }
 
-/** What the app hands the engine: the battles that count right now, and the switch. */
-export interface YourMetaInput {
-  battles: LoggedBattle[];
-  blend: boolean;
-}
-
 export const SET_SIZE = 5;
 
 /** Order-independent identity of a team, so the same three logged in any order roll up. */

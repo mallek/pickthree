@@ -45,6 +45,7 @@ import type {
   TeamPick,
   Verdict,
 } from '@pickthree/engine';
+import type { Epoch } from '@pickthree/engine/meta';
 
 export type WorkerRequest =
   | { id: number; kind: 'ready' }
@@ -125,6 +126,8 @@ export type WorkerResult =
       allSpecies: string[];
       /** Go Battle League seasons, oldest first. Empty when the data build predates the list. */
       seasons: Season[];
+      /** Meta reset list (meta.pick3.gg's epochs.json). Empty when the data build predates it. */
+      epochs: Epoch[];
       /** Move id to display name and type, for the `@word` search term. */
       moves: Record<string, { name: string; type: PokemonType }>;
     }

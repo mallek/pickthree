@@ -1,4 +1,4 @@
-/* global document */
+/* global document, window */
 /**
  * Drives the built app in the locally installed Chrome, imports the sample collection, and
  * screenshots every screen at phone size.
@@ -58,6 +58,28 @@ page.on('requestfailed', (r) => {
   }
 });
 
+// Automation never reads the live worker: the community meta is answered from the synthetic
+// fixture, and every other worker call is refused, as before (counter.ts and diag.ts already
+// check navigator.webdriver). CDP-wide request interception (page.setRequestInterception) pauses
+// every request in the browser, including the ones the compute worker makes for the static game
+// data, and those never get resolved because interception is only handled on the page session, so
+// the app hangs forever waiting on its own boot. Patching window.fetch on the document instead
+// only touches the main thread's fetches, leaving the dedicated worker's fetches alone.
+const communitySample = fs.readFileSync(
+  path.join(here, '..', '..', '..', 'fixtures', 'community-meta-sample.json'),
+  'utf8',
+);
+await page.evaluateOnNewDocument((sample) => {
+  const native = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+    if (url.startsWith('https://pickthree-counter.travis-c82.workers.dev/api/v1/meta')) {
+      return Promise.resolve(new Response(sample, { status: 200, headers: { 'content-type': 'application/json' } }));
+    }
+    return native(input, init);
+  };
+}, communitySample);
+
 async function shot(name, fullPage = true) {
   await new Promise((r) => setTimeout(r, 350));
   const file = path.join(outDir, `${name}.png`);
@@ -116,6 +138,37 @@ console.log(`  teams rendered at ${Date.now() - t0} ms`);
 await shot('02-teams');
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
 console.log(`  ${stats}`);
+
+console.log('teams, community source');
+await page.evaluate(() => {
+  const select = [...document.querySelectorAll('label')]
+    .find((l) => l.textContent?.startsWith('Source'))
+    ?.querySelector('select');
+  if (select) {
+    select.value = 'ladder';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+});
+await page.waitForFunction(() => !document.querySelector('.progress'), { timeout: 60_000 });
+await shot('teams-community');
+// Back to Your log, the default, so no later shot is community-weighted. The recommendation
+// lags the select a tick, so wait for quiet, give the new run time to start, then wait again.
+await page.evaluate(() => {
+  const select = [...document.querySelectorAll('label')]
+    .find((l) => l.textContent?.startsWith('Source'))
+    ?.querySelector('select');
+  if (select) {
+    select.value = 'log';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+});
+for (let i = 0; i < 2; i++) {
+  await page.waitForFunction(
+    () => document.querySelector('.team-card') && !document.querySelector('.progress'),
+    { timeout: 120_000 },
+  );
+  await new Promise((r) => setTimeout(r, 750));
+}
 
 console.log('ultra league');
 await page.click('.league-switcher button:nth-child(2)');

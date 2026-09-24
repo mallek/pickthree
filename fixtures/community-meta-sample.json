@@ -1,0 +1,58 @@
+{
+  "league": "great",
+  "since": "2026-09-02T00:00:00.000Z",
+  "until": "2026-09-24T00:10:00.000Z",
+  "source": "all",
+  "battles": 1240,
+  "tanked": 31,
+  "devices": 18,
+  "bands": {},
+  "sources": { "ladder": 1240 },
+  "species": [
+    {
+      "speciesId": "medicham",
+      "sightings": 410,
+      "wins": 200,
+      "losses": 210,
+      "runs": 0,
+      "runWins": 0,
+      "runLosses": 0
+    },
+    {
+      "speciesId": "lanturn",
+      "sightings": 330,
+      "wins": 170,
+      "losses": 160,
+      "runs": 0,
+      "runWins": 0,
+      "runLosses": 0
+    },
+    {
+      "speciesId": "azumarill",
+      "sightings": 120,
+      "wins": 60,
+      "losses": 60,
+      "runs": 0,
+      "runWins": 0,
+      "runLosses": 0
+    }
+  ],
+  "teams": [],
+  "previous": null,
+  "tournament": {
+    "events": 3,
+    "battles": 212,
+    "eventsOther": 0,
+    "species": [
+      {
+        "speciesId": "medicham",
+        "picks": 90,
+        "game1Picks": 40,
+        "wins": 45,
+        "losses": 45,
+        "unresolvedForms": 0
+      }
+    ]
+  },
+  "generatedAt": "2026-09-24T00:05:00.000Z"
+}

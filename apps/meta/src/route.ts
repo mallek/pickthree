@@ -2,8 +2,9 @@
  * Real paths, not a hash: this is a public site other people link to. The worker's static-asset
  * SPA fallback is what makes /great/p/azumarill load index.html.
  */
+import type { WindowKey } from '@pickthree/engine/meta';
 
-export type WindowKey = 'meta' | '30' | '7';
+export type { WindowKey } from '@pickthree/engine/meta';
 /** Which population a view is built from. `prior` is PvPoke's curated list alone and needs no
  *  worker call at all: it is served from the bake. */
 export type SourceKey = 'all' | 'prior' | 'ladder' | 'tournament';

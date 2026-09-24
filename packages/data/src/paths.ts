@@ -16,3 +16,6 @@ export const RANKINGS_DIR = path.join(PVPOKE_DIR, 'src', 'data', 'rankings');
 export const GROUPS_DIR = path.join(PVPOKE_DIR, 'src', 'data', 'groups');
 export const OVERRIDES_DIR = path.join(PVPOKE_DIR, 'src', 'data', 'overrides');
 export const PVPOKE_JS_DIR = path.join(PVPOKE_DIR, 'src', 'js');
+
+/** The hand-kept meta reset list meta.pick3.gg owns; pick3 ships a validated copy. */
+export const EPOCHS_PATH = path.join(REPO_ROOT, 'apps', 'meta', 'epochs.json');

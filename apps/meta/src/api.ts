@@ -6,9 +6,15 @@
  * does not depend on that workspace, and a format written on both sides is the contract. They must
  * match workers/counter/src/meta.ts exactly.
  */
-import type { Season } from './data.js';
-import { epochFor, type Epoch } from './epochs.js';
-import type { SourceKey, WindowKey } from './route.js';
+import {
+  BUCKET_MS,
+  MAX_SPAN_DAYS,
+  resolveWindow,
+  type ApiWindow,
+  type WindowContext,
+} from '@pickthree/engine/meta';
+import type { SourceKey } from './route.js';
+export { BUCKET_MS, MAX_SPAN_DAYS, resolveWindow, type ApiWindow, type WindowContext };
 
 export interface SpeciesStats {
   speciesId: string;
@@ -127,75 +133,6 @@ export interface SpeciesDetailV1 {
   movesets: MovesetStats[];
   tournament: SpeciesTournamentBlock | null;
   generatedAt: string;
-}
-
-export interface WindowContext {
-  league: string;
-  seasons: readonly Season[];
-  epochs: readonly Epoch[];
-}
-
-export interface ApiWindow {
-  since: string;
-  until: string;
-  label: string;
-  key: WindowKey;
-  /** The epoch the window came from, when it came from one. */
-  epoch: Epoch | null;
-}
-
-/** Ten minute buckets, so every reader in a slice asks the edge for the same url. */
-export const BUCKET_MS = 600_000;
-const DAY_MS = 86_400_000;
-/** The most days the worker will answer for (MAX_SPAN_DAYS in workers/counter/src/meta.ts). The
- *  client clamps first rather than letting an old epoch produce a request that is refused. */
-export const MAX_SPAN_DAYS = 400;
-
-/** Rounds up to the next ten minute boundary. An exact boundary stays where it is. */
-function bucketUp(now: Date): number {
-  return Math.ceil(now.getTime() / BUCKET_MS) * BUCKET_MS;
-}
-
-function seasonStart(seasons: readonly Season[], at: number): number | null {
-  let best: number | null = null;
-  for (const s of seasons) {
-    const start = Date.parse(s.start);
-    if (Number.isFinite(start) && start <= at && (best === null || start > best)) {
-      best = start;
-    }
-  }
-  return best;
-}
-
-export function resolveWindow(key: WindowKey, ctx: WindowContext, now: Date): ApiWindow {
-  const until = bucketUp(now);
-  if (key !== 'meta') {
-    const days = key === '7' ? 7 : 30;
-    return {
-      since: new Date(until - days * DAY_MS).toISOString(),
-      until: new Date(until).toISOString(),
-      label: `${days} days`,
-      key,
-      epoch: null,
-    };
-  }
-  const epoch = epochFor(ctx.epochs, ctx.league, new Date(until));
-  // An epoch first, the season start second: the season is still the right answer for a league
-  // no epoch has ever named, and it is what a record stamps.
-  const start = epoch ? Date.parse(epoch.at) : seasonStart(ctx.seasons, until);
-  if (start === null || !Number.isFinite(start)) {
-    // Nothing covers this moment, so measure the last 30 days and keep the chip honest.
-    const fallback = resolveWindow('30', ctx, now);
-    return { ...fallback, label: 'This meta', key: 'meta' };
-  }
-  const floor = until - MAX_SPAN_DAYS * DAY_MS;
-  return {
-    since: new Date(Math.max(start, floor)).toISOString(),
-    until: new Date(until).toISOString(),
-    label: 'This meta',
-    key,
-    epoch,
-  };
 }
 
 /** The population the worker is asked for. `prior` is the site's own view of the same `all`

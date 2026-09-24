@@ -6,7 +6,17 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { facingWeight, MatrixView, matrixIndex, type MatchupMatrix } from '@pickthree/engine/meta';
+import {
+  facingWeight,
+  legalFor,
+  MatrixView,
+  matrixIndex,
+  OPEN_EQUIVALENT_CUP,
+  ranksOf,
+  readEpochs,
+  type LegalFile,
+  type MatchupMatrix,
+} from '@pickthree/engine/meta';
 import {
   GameDataIndex,
   PROJECTION_ANCHOR,
@@ -24,6 +34,8 @@ import {
   type Rankings,
   type Species,
 } from '@pickthree/engine';
+
+export { legalFor, OPEN_EQUIVALENT_CUP, ranksOf, readEpochs, type LegalFile };
 
 export type SpeciesFile = Record<string, [string, number, string]>;
 export type MovesFile = Record<string, [string, string]>;
@@ -54,47 +66,6 @@ export interface Baked {
 
 /** The most moves of one kind a baseline entry carries. */
 const MOVE_LIMIT = 4;
-
-/**
- * The tournament cup each site league's Play! events are played under. Only events on this cup
- * enter that league's blend (Sao Paulo's laic2027 bans four types and fifteen named species;
- * pooling it into a Great League ranking would be nonsense). Ultra and Master have no Play!
- * format and get a null cup and an empty ban list.
- *
- * The same map exists in workers/counter/src/tournament.ts as OPEN_EQUIVALENT_CUP, for the same
- * reason api.ts writes the wire shapes down twice: this app does not depend on that workspace,
- * and a rule written on both sides is the contract. Both copies are asserted by their own test.
- */
-export const OPEN_EQUIVALENT_CUP: Record<string, string> = { great: 'championshipseries' };
-
-export interface LegalFile {
-  /** The open-equivalent tournament cup, or null when the league has no Play! format. */
-  cup: string | null;
-  /** Species the league's ranking lists that the cup does not: what "banned" means on a page. */
-  banned: string[];
-}
-
-/** The league's ranked species minus the cup's, in the league's own ranking order. */
-export function legalFor(
-  leagueId: string,
-  leagueRanks: readonly { speciesId: string }[],
-  cupRanks: readonly { speciesId: string }[] | null,
-): LegalFile {
-  const cup = OPEN_EQUIVALENT_CUP[leagueId] ?? null;
-  if (cup === null || cupRanks === null) {
-    return { cup: null, banned: [] };
-  }
-  const allowed = new Set(cupRanks.map((r) => r.speciesId));
-  const banned: string[] = [];
-  const seen = new Set<string>();
-  for (const r of leagueRanks) {
-    if (!allowed.has(r.speciesId) && !seen.has(r.speciesId)) {
-      seen.add(r.speciesId);
-      banned.push(r.speciesId);
-    }
-  }
-  return { cup, banned };
-}
 
 /**
  * The leagues this SITE has. The data build also ships the app's tournament cup leagues
@@ -190,60 +161,6 @@ export const MATRIX_TOP = 250;
 export const COLD_POOL = 60;
 /** Generated teams emitted per league. */
 export const COLD_TEAMS = 24;
-
-export interface Epoch {
-  /** ISO time with an offset, the same rule seasons.json keeps. */
-  at: string;
-  note: string;
-  /** Absent means every league. */
-  leagues?: string[];
-  /** The PvPoke commit the measured side of this epoch expects. */
-  pvpokeCommit?: string;
-}
-
-const ISO_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/;
-
-/** The hand-kept meta epoch list, validated and sorted by time. Mirrors readSeasons. */
-export function readEpochs(raw: unknown): Epoch[] {
-  if (!Array.isArray(raw)) {
-    throw new Error('epochs.json: expected an array');
-  }
-  const out: Epoch[] = raw.map((entry, i) => {
-    const e = entry as Partial<Epoch>;
-    if (typeof e.at !== 'string' || !ISO_WITH_OFFSET.test(e.at) || Number.isNaN(Date.parse(e.at))) {
-      throw new Error(`epochs.json: entry ${i} "at" must be an ISO time with an offset or Z`);
-    }
-    if (typeof e.note !== 'string' || e.note.length === 0) {
-      throw new Error(`epochs.json: entry ${i} needs a note`);
-    }
-    if (e.leagues !== undefined && !Array.isArray(e.leagues)) {
-      throw new Error(`epochs.json: entry ${i} "leagues" must be an array when present`);
-    }
-    const made: Epoch = { at: e.at, note: e.note };
-    if (e.leagues) {
-      made.leagues = [...e.leagues];
-    }
-    if (typeof e.pvpokeCommit === 'string') {
-      made.pvpokeCommit = e.pvpokeCommit;
-    }
-    return made;
-  });
-  return out.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
-}
-
-/** PvPoke's overall ranking as an ordered id list. First entry wins a duplicate, the same rule
- *  metaRank.ts's positions() keeps, so rank numbers agree with pick3's. */
-export function ranksOf(overall: readonly { speciesId: string }[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const e of overall) {
-    if (!seen.has(e.speciesId)) {
-      seen.add(e.speciesId);
-      out.push(e.speciesId);
-    }
-  }
-  return out;
-}
 
 /**
  * PvPoke's own prior for how often each meta opponent is actually faced, normalised to sum to 1.
