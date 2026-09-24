@@ -655,8 +655,10 @@
    fixed "..." width, shrinking before the radiogroup gives up any of its three equal segments,
    and styled selected like a chosen league. Its label keeps the shared ellipsis rule above, so a
    name that still does not fit once the open leagues' names are hidden trails off in its own
-   slot rather than pushing the row wider. `font` matches `.league-switcher button` exactly (both
-   default to the platform's own button font otherwise, not the page's). */
+   slot rather than pushing the row wider. `font: inherit` here is the same reset
+   `.league-switcher button` uses (both would otherwise render in the platform's own button font,
+   not the page's); no explicit `font-size`, so the cup's name inherits the same size the league
+   names do from their shared ancestor rather than a size of its own that could drift from theirs. */
 .league-more:has(.ui-league-label) {
   flex: 0 1 auto;
   width: auto;
@@ -664,7 +666,6 @@
   padding: 0 10px;
   gap: 6px;
   font: inherit;
-  font-size: 13px;
   font-weight: 500;
 }
 .league-more.on {
@@ -902,12 +903,18 @@
   border-top: 1px solid var(--divider);
 }
 
-/* Sheets: overlay, a bottom sheet with pages, and the confirm variant (Task 9). */
+/* Sheets: overlay, a bottom sheet with pages, and the confirm variant (Task 9). Each layer's
+   overlay shares its sheet's own z-index (11), not one below it: with several of these portaled
+   to document.body (a Sheet opened from inside another, or a ConfirmSheet opened from inside a
+   Sheet's own page), DOM order alone then decides which pair sits on top, since the later one is
+   always appended after. A dedicated lower z-index for the overlay let an *earlier* pair's sheet
+   (same 11) still out-rank a *later* pair's overlay (a stray 10), leaving whatever opened first
+   undimmed and tappable behind the dialog that is supposed to be modal over it. */
 .ui-overlay {
   position: fixed;
   inset: 0;
   background: var(--overlay);
-  z-index: 10;
+  z-index: 11;
 }
 .ui-sheet {
   position: fixed;

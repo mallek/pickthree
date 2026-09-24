@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
@@ -127,5 +130,39 @@ describe('Sheet', () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(screen.getByRole('dialog', { name: 'Log' })).toBeInTheDocument();
+  });
+});
+
+describe('Sheet and ConfirmSheet layering', () => {
+  // Both portal to document.body (or a caller's own `container`). With more than one open at
+  // once, jsdom has no real paint order to assert on, so what actually decides which one sits on
+  // top is DOM order at equal z-index, not jsdom: the one mounted later is always appended after,
+  // so it always wins the tie, whatever the nesting (a Sheet opened from inside another, a
+  // ConfirmSheet opened from inside a Sheet's own page, or the reverse). That only holds if
+  // `.ui-overlay` shares its `.ui-sheet`'s own z-index rather than sitting a step below it: an
+  // *earlier* sheet at the base z-index could otherwise still outrank a *later* overlay one below
+  // it, leaving whatever opened first undimmed and tappable behind the dialog that opened over it.
+  // This reads the real stylesheet, not jsdom, because jsdom does not apply it.
+  const css = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '../base.css'),
+    'utf8',
+  ).replace(/\r\n/g, '\n');
+
+  function zIndex(selector: string): string {
+    const at = css.indexOf(`${selector} {`);
+    if (at === -1) {
+      throw new Error(`no rule for ${selector}`);
+    }
+    const end = css.indexOf('}', at);
+    const body = css.slice(at, end);
+    const m = /z-index:\s*(\S+);/.exec(body);
+    if (!m?.[1]) {
+      throw new Error(`${selector} sets no z-index`);
+    }
+    return m[1];
+  }
+
+  it('gives the overlay the same z-index as the sheet it belongs to', () => {
+    expect(zIndex('.ui-overlay')).toBe(zIndex('.ui-sheet'));
   });
 });
