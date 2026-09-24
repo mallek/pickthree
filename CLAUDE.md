@@ -85,7 +85,7 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `host/WorkerHost.ts` implements `ComputeHost` over `worker/engine.worker.ts` using the request/response union in `host/protocol.ts` (progress, partial, result, error).
 - The worker boots once (game data + gamemaster + PvPoke bundle) and fetches a league bundle (rankings, meta, matrix) lazily per league.
 - `storage/db.ts`: IndexedDB `pickthree` v2 with `collection`, `settings` and `battles` (one record per set, indexed by league) stores. Settings fields added later are optional with a documented default for old saves.
-- Screens in `screens/`: Welcome (import, scan list), Report, Teams, TeamDetail, Collection, Specimen, Counters, Build, AddPokemon, YourMeta, NewSet, LogBattle, Sheet (settings: filters, league, your meta, appearance, diagnostics).
+- Screens in `screens/`: Welcome (import, scan list), Report, Teams, TeamDetail, Collection, Specimen, Counters, Build, AddPokemon, YourMeta, NewSet, LogBattle, Sheet (settings: league, your meta, sharing, appearance, diagnostics), Filters (the Teams filter sheet: team style, build filters, excluded Pokemon).
 - `sw.ts`: app shell precached, `/data/*` stale-while-revalidate, `/data/sprites/*` cache-first, Web Share Target POST `/share` parks the CSV in a cache and the app imports it on `/?share=1`. Updates are prompt-mode via `update.ts` and `UpdateToast`.
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.
 - CSP is a meta tag in `index.html`. `connect-src` allows only self and the counter worker; fonts come from Google Fonts.
