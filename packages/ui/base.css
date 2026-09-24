@@ -601,3 +601,84 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Measured community data: pink text with a mark, never a pill. */
+.ui-measured {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+.ui-measured-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--measured);
+}
+.ui-measured-num b {
+  font-size: 20px;
+  line-height: 1.1;
+}
+.ui-measured small {
+  font-size: var(--fs-label);
+  color: var(--muted);
+}
+.ui-measured-bars {
+  fill: var(--measured);
+  flex: none;
+}
+.ui-measured-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space);
+  margin: 0;
+  font-size: var(--fs-support);
+  color: var(--measured);
+}
+.ui-measured-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--measured);
+  flex: none;
+  transform: translateY(-1px);
+}
+
+/* Progress card: personal progress, violet; the contribution line stays pink and apart. */
+.ui-progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--divider);
+  background: var(--surface);
+}
+.ui-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space);
+  font-size: var(--fs-body);
+}
+.ui-progress-count {
+  font-weight: 700;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+}
+.ui-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bar);
+  overflow: hidden;
+}
+.ui-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.ui-progress-line {
+  margin: 0;
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
