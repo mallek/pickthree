@@ -753,3 +753,85 @@
   padding: 0 14px 14px;
   border-top: 1px solid var(--divider);
 }
+
+/* Sheets: overlay, a bottom sheet with pages, and the confirm variant (Task 9). */
+.ui-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 10;
+}
+.ui-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 560px;
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  box-shadow: var(--shadow-lg);
+  z-index: 11;
+  outline: none;
+  animation: ui-sheet-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes ui-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-sheet {
+    animation: none;
+  }
+}
+.ui-grabber {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+}
+.ui-grabber span {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--faint);
+  display: block;
+}
+.ui-sheet-head {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(0, auto) minmax(72px, 1fr);
+  align-items: center;
+  padding: 0 12px 8px;
+  border-bottom: 1px solid var(--divider);
+}
+.ui-sheet-title {
+  margin: 0;
+  font-size: var(--fs-section);
+  font-weight: 600;
+  text-align: center;
+}
+.ui-sheet-done {
+  justify-self: end;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ui-sheet-body {
+  overflow-y: auto;
+  padding: 16px var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

@@ -1,0 +1,93 @@
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Chevron } from './Chevron.tsx';
+import { trapTab, useReturnFocus } from './focus.ts';
+
+export interface SheetNav {
+  push: (page: SheetPage) => void;
+  pop: () => void;
+  close: () => void;
+  depth: number;
+}
+
+export interface SheetPage {
+  id: string;
+  title: string;
+  render: (nav: SheetNav) => ReactNode;
+}
+
+/**
+ * A bottom sheet with pages: grabber, back (named for the page below, only once a page is
+ * pushed), title, Done. Done, Escape and the overlay close the whole sheet from any depth; focus
+ * stays inside while it is open and returns to the opener when it closes.
+ */
+export function Sheet({
+  root,
+  onClose,
+  doneLabel = 'Done',
+}: {
+  root: SheetPage;
+  onClose: () => void;
+  doneLabel?: string;
+}) {
+  const [stack, setStack] = useState<SheetPage[]>([root]);
+  const dialog = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useReturnFocus();
+  const top = stack[stack.length - 1] ?? root;
+  // Focus the sheet on open and again on every page change: the control that pushed or popped
+  // the page is gone, and focus left on the body would take Escape and Tab out of the sheet.
+  useEffect(() => {
+    dialog.current?.focus();
+  }, [top.id]);
+  const below = stack.length > 1 ? stack[stack.length - 2] : undefined;
+  const nav: SheetNav = {
+    push: (page) => setStack((s) => [...s, page]),
+    pop: () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)),
+    close: onClose,
+    depth: stack.length - 1,
+  };
+  return (
+    <>
+      <div className="ui-overlay" onClick={onClose} aria-hidden="true" />
+      <div
+        className="ui-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        ref={dialog}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onClose();
+            return;
+          }
+          trapTab(e, dialog.current);
+        }}
+      >
+        <div className="ui-grabber">
+          <span />
+        </div>
+        <div className="ui-sheet-head">
+          {below ? (
+            <button type="button" className="back" onClick={nav.pop}>
+              <Chevron dir="left" />
+              {below.title}
+            </button>
+          ) : (
+            <span className="back-spacer" />
+          )}
+          <h3 id={titleId} className="ui-sheet-title">
+            {top.title}
+          </h3>
+          <button type="button" className="ui-sheet-done" onClick={onClose}>
+            {doneLabel}
+          </button>
+        </div>
+        <div className="ui-sheet-body" key={top.id}>
+          {top.render(nav)}
+        </div>
+      </div>
+    </>
+  );
+}
