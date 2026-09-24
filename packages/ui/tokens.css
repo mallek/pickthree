@@ -31,7 +31,7 @@
   --measured: #f9598c;
   --tanked: #a3a7bb;
   --danger: #f07178;
-  --danger-tint: rgba(240, 113, 120, 0.16);
+  --danger-tint: rgba(240, 113, 120, 0.08);
   --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(124, 94, 219, 0.22), transparent 70%);
 }
 
@@ -86,7 +86,7 @@
     --measured: #c81f5f;
     --tanked: #5f6374;
     --danger: #c8323b;
-    --danger-tint: rgba(200, 50, 59, 0.12);
+    --danger-tint: rgba(200, 50, 59, 0.04);
     --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(121, 108, 191, 0.16), transparent 70%);
   }
 }
@@ -141,7 +141,7 @@
   --measured: #c81f5f;
   --tanked: #5f6374;
   --danger: #c8323b;
-  --danger-tint: rgba(200, 50, 59, 0.12);
+  --danger-tint: rgba(200, 50, 59, 0.04);
   --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(121, 108, 191, 0.16), transparent 70%);
 }
 

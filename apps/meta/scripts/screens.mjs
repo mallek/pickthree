@@ -40,11 +40,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { auditPage, forEachTheme, prepareAudit } from '../../../scripts/audit.mjs';
+
+const AUDIT = process.argv.includes('--audit');
+/** Screens held to the audit: a finding here fails the run. Each page redesign adds its own
+ * screen names as it passes (design foundation, section 5). */
+const AUDIT_ENFORCED = new Set([]);
+const auditFindings = [];
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '..', 'screenshots');
 const publicDir = path.resolve(here, '..', 'public');
-const base = process.argv[2] ?? 'http://localhost:4174';
+const base = process.argv.slice(2).find((a) => !a.startsWith('--')) ?? 'http://localhost:4174';
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 
 fs.mkdirSync(outDir, { recursive: true });
@@ -536,6 +543,9 @@ const t0 = Date.now();
 for (const run of RUNS) {
   console.log(`== ${run.name} (${run.battles} battles, ${run.devices} devices) ==`);
   const page = await browser.newPage();
+  if (AUDIT) {
+    await prepareAudit(page);
+  }
   await page.setViewport({
     width: 390,
     height: 844,
@@ -593,6 +603,18 @@ for (const run of RUNS) {
     await page.screenshot({ path: viewportFile, fullPage: false });
     console.log(`    ${run.name}-${name}.png (${Date.now() - t0} ms)`);
 
+    if (AUDIT) {
+      await forEachTheme(page, async (theme) => {
+        await page.screenshot({
+          path: path.join(outDir, `${run.name}-${name}-audit-${theme}.png`),
+          fullPage: true,
+        });
+        for (const f of await auditPage(page)) {
+          auditFindings.push({ name, line: `[${run.name} ${name} ${theme}] ${f}` });
+        }
+      });
+    }
+
     const needles = run.needles[name];
     if (needles) {
       const bodyText = await page.evaluate(() => document.body.innerText);
@@ -635,6 +657,23 @@ for (const run of RUNS) {
 
 await browser.close();
 console.log(`done in ${Date.now() - t0} ms`);
+if (AUDIT) {
+  const enforced = auditFindings.filter((f) => AUDIT_ENFORCED.has(f.name));
+  const reported = auditFindings.filter((f) => !AUDIT_ENFORCED.has(f.name));
+  if (reported.length > 0) {
+    console.log(`\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`);
+    for (const f of reported) {
+      console.log(`  ${f.line}`);
+    }
+  }
+  if (enforced.length > 0) {
+    console.log('\nAudit findings on audited screens:');
+    for (const f of enforced) {
+      console.log(`  ${f.line}`);
+    }
+    process.exitCode = 1;
+  }
+}
 if (errors.length > 0) {
   console.log('\nBrowser errors:');
   for (const e of errors) {

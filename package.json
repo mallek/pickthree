@@ -30,6 +30,9 @@
     "fixtures:tournament": "tsx fixtures/make-tournament.ts",
     "web:screens": "node scripts/with-preview.mjs web 4173 -- node apps/web/scripts/screens.mjs",
     "meta:screens": "node scripts/with-preview.mjs meta 4174 -- node apps/meta/scripts/screens.mjs",
+    "ui:audit": "node scripts/ui-audit.mjs",
+    "web:audit": "node scripts/with-preview.mjs web 4173 -- node apps/web/scripts/screens.mjs --audit",
+    "meta:audit": "node scripts/with-preview.mjs meta 4174 -- node apps/meta/scripts/screens.mjs --audit",
     "counter:deploy": "npm -w @pickthree/counter run deploy",
     "brand:lockup": "node apps/web/scripts/lockup.mjs"
   },
@@ -37,6 +40,7 @@
     "@cloudflare/workers-types": "5.20260908.1",
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.3",
+    "axe-core": "4.13.0",
     "eslint": "10.10.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.12.0",

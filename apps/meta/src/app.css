@@ -171,7 +171,8 @@ section > .stat-n,
    packages/ui/base.css) so the one control that picks a league reads the same on both sites,
    geometry and all. Task 3's token unification means meta needs no visual override at all: its
    --surface2 stand-in for the "on" background is the real --accent-tint, its idle-segment ink
-   is the real --faint, and its 10px radius is the shared --r-md. */
+   is the real --muted (Task 12's audit found --faint under 4.5:1 against the page here), and
+   its 10px radius is the shared --r-md. */
 
 /* .league-switcher button needs its own stacking context back: base's rule does not set
    position, but meta's own ::after touch-target extension below is absolutely positioned and

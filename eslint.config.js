@@ -41,4 +41,10 @@ export default tseslint.config(
     files: ['eslint.config.js'],
     rules: { 'no-restricted-syntax': 'off' },
   },
+  {
+    // The audit's whole job is finding a real em dash on screen, so it has to hold the
+    // character itself to compare against, same reason eslint.config.js above is exempt.
+    files: ['scripts/audit.mjs'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
 );

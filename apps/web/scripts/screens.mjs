@@ -17,10 +17,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { auditPage, forEachTheme, prepareAudit } from '../../../scripts/audit.mjs';
+
+const AUDIT = process.argv.includes('--audit');
+/** Screens held to the audit: a finding here fails the run. Each page redesign adds its own
+ * screen names as it passes (design foundation, section 5). */
+const AUDIT_ENFORCED = new Set([]);
+const auditFindings = [];
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '..', 'screenshots');
-const base = process.argv[2] ?? 'http://localhost:4173';
+const base = process.argv.slice(2).find((a) => !a.startsWith('--')) ?? 'http://localhost:4173';
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 
 fs.mkdirSync(outDir, { recursive: true });
@@ -36,6 +43,9 @@ const browser = await puppeteer.launch({
   args: ['--no-first-run', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : [])],
 });
 const page = await browser.newPage();
+if (AUDIT) {
+  await prepareAudit(page);
+}
 await page.setViewport({
   width: 390,
   height: 844,
@@ -60,9 +70,20 @@ page.on('requestfailed', (r) => {
 
 async function shot(name, fullPage = true) {
   await new Promise((r) => setTimeout(r, 350));
-  const file = path.join(outDir, `${name}.png`);
-  await page.screenshot({ path: file, fullPage });
-  console.log(`  ${name}.png`);
+  if (!AUDIT) {
+    const file = path.join(outDir, `${name}.png`);
+    await page.screenshot({ path: file, fullPage });
+    console.log(`  ${name}.png`);
+    return;
+  }
+  await forEachTheme(page, async (theme) => {
+    const file = path.join(outDir, `${name}-${theme}.png`);
+    await page.screenshot({ path: file, fullPage });
+    console.log(`  ${name}-${theme}.png`);
+    for (const f of await auditPage(page)) {
+      auditFindings.push({ name, line: `[${name} ${theme}] ${f}` });
+    }
+  });
 }
 
 const t0 = Date.now();
@@ -493,6 +514,23 @@ await shot('07-teams-light', false);
 
 await browser.close();
 console.log(`done in ${Date.now() - t0} ms`);
+if (AUDIT) {
+  const enforced = auditFindings.filter((f) => AUDIT_ENFORCED.has(f.name));
+  const reported = auditFindings.filter((f) => !AUDIT_ENFORCED.has(f.name));
+  if (reported.length > 0) {
+    console.log(`\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`);
+    for (const f of reported) {
+      console.log(`  ${f.line}`);
+    }
+  }
+  if (enforced.length > 0) {
+    console.log('\nAudit findings on audited screens:');
+    for (const f of enforced) {
+      console.log(`  ${f.line}`);
+    }
+    process.exitCode = 1;
+  }
+}
 if (errors.length > 0) {
   console.log('\nBrowser errors:');
   for (const e of errors) {
