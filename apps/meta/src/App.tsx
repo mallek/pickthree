@@ -517,14 +517,12 @@ export function App(props?: { deps?: Deps }): ReactNode {
       <div className="filter-row">
         <Select
           label="Window"
-          hideLabel
           value={query.w}
           onChange={(wk) => refine({ ...query, w: wk })}
           options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
         />
         <Select
           label="Source"
-          hideLabel
           value={query.source}
           onChange={(s) => refine({ ...query, source: s })}
           options={SOURCES.map((k) => ({ value: k, label: SOURCE_LABELS[k] }))}

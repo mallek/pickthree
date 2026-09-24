@@ -8,6 +8,7 @@ export { Chip } from './components/Chip.tsx';
 export { Tag, type TagTone } from './components/Tag.tsx';
 export { Seg } from './components/Seg.tsx';
 export { Select } from './components/Select.tsx';
+export { FilterButton } from './components/FilterButton.tsx';
 export { typeColor, typeInk } from './type.ts';
 export { applyTheme, nextTheme, storedTheme, THEME_KEY, type ThemeChoice } from './theme.ts';
 export { Button, type ButtonVariant } from './components/Button.tsx';

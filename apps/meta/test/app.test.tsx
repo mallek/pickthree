@@ -85,16 +85,14 @@ describe('App', () => {
     await waitFor(() => expect(window.location.search).toBe('?w=7&source=ladder'));
   });
 
-  // The filter caption was taken off the screen, not deleted: the select's own value already
-  // says what the field is, and the caption costs a row above the fold on a phone. The test
-  // above is what pins the accessible name surviving (it finds the select by that name); this
-  // pins the other half, that the name is off the screen rather than printed.
-  it('keeps the filter label for a screen reader and off the screen', async () => {
+  // The filter captions are printed: "This meta" and "All" alone did not say they choose a
+  // window and a source (design foundation, 2026-09-24).
+  it('prints the filter label above the select', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     const select = await screen.findByRole('combobox', { name: 'Window' });
     const caption = select.closest('.field')?.querySelector('.field-l');
     expect(caption?.textContent).toBe('Window');
-    expect(caption?.classList.contains('vh')).toBe(true);
+    expect(caption?.classList.contains('vh')).toBe(false);
   });
 
   it('offers the four sources in place of the retired rank band filter', async () => {

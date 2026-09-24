@@ -30,9 +30,6 @@ interface ChoiceOption<T extends string> {
   srLabel?: string;
 }
 
-/** The league toggle: a full-width radiogroup with the game's own shield colours. `dataLeague`
- * is a pass-through `data-league` attribute on the wrapper (apps/web's screenshot automation
- * reads it to confirm the active league before capturing); omit it and no attribute is rendered. */
 export function LeagueSwitcher<T extends string>({
   options,
   value,
@@ -40,6 +37,7 @@ export function LeagueSwitcher<T extends string>({
   label,
   compact,
   dataLeague,
+  more,
 }: {
   options: ChoiceOption<T>[];
   value: T;
@@ -47,8 +45,11 @@ export function LeagueSwitcher<T extends string>({
   label: string;
   compact?: boolean;
   dataLeague?: string;
+  /** An overflow segment after the leagues ("..."), for more leagues and cups. The app decides
+   * what it opens. It sits outside the radio group: it is an action, not a choice. */
+  more?: { label: string; onClick: () => void } | undefined;
 }) {
-  return (
+  const group = (
     <div
       className={`league-switcher${compact ? ' compact' : ''}`}
       role="radiogroup"
@@ -69,6 +70,27 @@ export function LeagueSwitcher<T extends string>({
           {o.label}
         </button>
       ))}
+    </div>
+  );
+  if (!more) {
+    return group;
+  }
+  return (
+    <div className="league-row">
+      {group}
+      <button
+        type="button"
+        className="league-more"
+        aria-label={more.label}
+        aria-haspopup="dialog"
+        onClick={more.onClick}
+      >
+        <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true">
+          <circle cx="5" cy="12" r="2" fill="currentColor" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+          <circle cx="19" cy="12" r="2" fill="currentColor" />
+        </svg>
+      </button>
     </div>
   );
 }
