@@ -243,6 +243,22 @@ was fixed, and Travis's sign-off line. Screenshots for the record are copied int
   replacing `TypeChip`), `web:screens` and `meta:screens` still pass and the change is visible in
   the gallery record.
 
+## Coordination with source-weighted recommendations
+
+`2026-09-24-source-weighted-recommendations-design.md` runs in parallel in its own worktree. It
+owns the engine, the data plumbing and where each setting lives; this program owns the look.
+Settled with Travis, 2026-09-24:
+
+1. **Filters live on the screen.** Team filters and Team style go in a Filters sheet opened from
+   the Teams screen, never the Settings sheet.
+2. **"Use your log" is retired** into that spec's Source picker. The Settings Your data page
+   drops the toggle and keeps Start fresh, Export log and Import log.
+3. **No Team style chip.** The pill row goes; Team style lives in the Filters sheet.
+
+Sequencing: this piece (foundation) runs alongside it. Pieces 2 (Teams) and 4 (Settings) start
+after it lands and build on its code. Shared touch points: `Select` (label now required), `Chip`
+(44px), `apps/web/scripts/screens.mjs` and CLAUDE.md.
+
 ## Carried to later pieces
 
 Open decisions, to settle in the spec for the piece that needs them:

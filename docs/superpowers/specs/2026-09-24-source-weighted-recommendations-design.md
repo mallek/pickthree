@@ -42,9 +42,10 @@ phone, and all arithmetic still runs on device.
    available with community sharing off. The read carries league, window and source, which is
    what any meta.pick3.gg visitor sends. Automatic reads (Suggest teammates) still follow the
    sharing switch. CLAUDE.md's collection rule is amended to say so.
-10. **The Teams chip row slims** to Source, Window, Team style, and a "Filters: N" chip shown only
-    when a moved filter is on. No XL, No Shadows, No Elite TM, Budget builds and Exclude move into
-    the Settings sheet's Filters section.
+10. **The Teams chip row slims** to Source, Window, and a "Filters: N" control. No XL, No
+    Shadows, No Elite TM, Budget builds, Exclude and Team style move into a **Filters sheet on the
+    Teams screen**, not the Settings sheet (Travis, 2026-09-24; see "Coordination with the design
+    cohesion pass").
 11. **The Suggest teammates read is fixed in passing.** `communityCores` has never sent
     `since`/`until`, so the worker has answered 400 since launch. It now sends the resolved window.
 
@@ -242,17 +243,17 @@ The chip row becomes:
   "GBL (offline)".
 - **Window** select: This meta, 30 days, 7 days. Disabled (greyed, not hidden, so the row does not
   jump) for PvPoke and Your log.
-- **Team style** chip: unchanged.
-- **Filters: N** chip: shown only when N > 0, where N counts No XL, No Shadows, No Elite TM, Budget
-  builds and a non-empty Exclude list. Opens the Settings sheet at Filters.
+- **Filters: N** control: always shown, N counts No XL, No Shadows, No Elite TM, Budget builds, a
+  non-empty Exclude list and a Team style other than Any. Opens the Teams screen's own Filters
+  sheet (Team style, the four switches, the budget cap, the Exclude list).
 
 The Your log chip that navigated to Your Meta is absorbed into Source; Your Meta stays reachable
 from its existing entry points.
 
 ### Settings sheet
 
-The Filters section gains No XL, No Shadows, No Elite TM and Budget builds as switches, beside the
-existing budget cap and Exclude list. The "blend my log" switch is removed. Your Meta's own screen
+The team filters leave the Settings sheet for the Teams Filters sheet above. The "blend my log"
+switch is removed. Your Meta's own screen
 line that describes the switch is reworded to point at the Source picker.
 
 ### Fetch: `apps/web/src/communityMeta.ts`
@@ -290,6 +291,26 @@ Teams header is the only place to change it. Each screen's existing assumptions 
 community source is picked, "This meta" otherwise. It keeps its own gate (the sharing switch) and
 its own silence; only the URL changes.
 
+## Coordination with the design cohesion pass
+
+Settled with Travis, 2026-09-24, against `2026-09-24-design-foundation-design.md` (the design
+program). This spec owns the engine, the data plumbing and where each setting lives; the design
+program owns how the Teams header, the Filters sheet and the Settings sheet look.
+
+1. **Filters live on the screen.** The team filters and Team style go in a Filters sheet opened
+   from the Teams screen, not in the Settings sheet. The redesigned Settings hub (Your data,
+   Community, Appearance, About) has no Filters section.
+2. **"Use your log" is retired here**, folded into the Source picker. The design program's Your
+   data page drops the toggle and keeps Start fresh, Export log and Import log.
+3. **No Team style chip.** The design program removes the pill row; Team style moves into the
+   Filters sheet. Source and Window stay visible as labeled selects.
+
+Shared-code notes for running both in parallel worktrees: the foundation makes `Select`'s visible
+label required (pass "Source" and "Window"), resizes `Chip` to a 44px tap target, and adds an
+audit mode to `apps/web/scripts/screens.mjs`; both branches edit that script and CLAUDE.md, so
+expect small merges there. The design program's Teams and Settings pieces start after this spec
+lands and build on its code.
+
 ## Rule changes (CLAUDE.md)
 
 - Collection rule: add "A community source the player picks (GBL, Tournaments, All) reads the
@@ -325,7 +346,7 @@ Web (vitest, jsdom):
 - Settings migration: no `facing` and blend on gives `log`; blend off gives `prior`.
 - Teams header: Source, Window, Team style render; Window disabled for PvPoke and Your log;
   Filters chip count and visibility; fallback label.
-- Sheet: the moved filters toggle the same settings they did.
+- Teams Filters sheet: the moved filters toggle the same settings they did.
 - `communityCores` sends a window.
 - Fixtures: a synthetic `MetaSummaryV1` under `fixtures/`, never a real response.
 

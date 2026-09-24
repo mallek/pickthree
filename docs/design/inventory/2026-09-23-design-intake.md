@@ -972,3 +972,11 @@ Screenshots: `img/intake/p04-yourmeta-v1-1.png` (under 15), `-2.png` (lists),
   tanked out. Fine if intended; the strip already shows T.
 - Amber "Outside PvPoke's 48" is still loud on every such row.
 - The meta-merge question isn't touched: community stays a link out. That keeps options open.
+
+---
+
+## Coordination with source-weighted recommendations (2026-09-24)
+
+Travis: filters live on the screen. Team filters and Team style go in a Teams Filters sheet, not
+Settings. "Use your log" is retired into the Source picker, so the Settings Your data design drops
+that toggle. No Team style chip. Recorded in both specs.
