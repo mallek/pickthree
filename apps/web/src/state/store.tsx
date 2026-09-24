@@ -122,6 +122,7 @@ export interface AppState {
   settingsLoaded: boolean;
   route: Route;
   sheetOpen: boolean;
+  filtersOpen: boolean;
   importing: boolean;
   importError: string | null;
   recommendation: Recommendation | null;
@@ -175,6 +176,7 @@ type Action =
   | { type: 'loaded'; collection: StoredCollection | null; settings: Settings }
   | { type: 'route'; route: Route }
   | { type: 'sheet'; open: boolean }
+  | { type: 'filters'; open: boolean }
   | { type: 'import-start' }
   | { type: 'import-done'; collection: StoredCollection }
   | { type: 'import-error'; message: string }
@@ -215,6 +217,7 @@ const initial: AppState = {
   settingsLoaded: false,
   route: { screen: 'welcome' },
   sheetOpen: false,
+  filtersOpen: false,
   importing: false,
   importError: null,
   recommendation: null,
@@ -273,9 +276,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'loaded':
       return { ...s, collection: a.collection, settings: a.settings, settingsLoaded: true };
     case 'route':
-      return { ...s, route: a.route, sheetOpen: false };
+      return { ...s, route: a.route, sheetOpen: false, filtersOpen: false };
     case 'sheet':
       return { ...s, sheetOpen: a.open };
+    case 'filters':
+      return { ...s, filtersOpen: a.open };
     case 'import-start':
       return { ...s, importing: true, importError: null };
     case 'import-done':
@@ -572,6 +577,8 @@ interface Actions {
   back(): void;
   openSheet(): void;
   closeSheet(): void;
+  openFilters(): void;
+  closeFilters(): void;
   importCsv(text: string, fileName: string | null): Promise<boolean>;
   runRecommend(): Promise<void>;
   loadVerdicts(): Promise<void>;
@@ -1501,6 +1508,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       back,
       openSheet: () => dispatch({ type: 'sheet', open: true }),
       closeSheet: () => dispatch({ type: 'sheet', open: false }),
+      openFilters: () => dispatch({ type: 'filters', open: true }),
+      closeFilters: () => dispatch({ type: 'filters', open: false }),
       importCsv,
       runRecommend,
       loadVerdicts,

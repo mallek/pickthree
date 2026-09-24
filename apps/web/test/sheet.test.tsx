@@ -20,7 +20,7 @@ describe('Settings sheet, Your meta section', () => {
     latest = null;
   });
 
-  it('is titled Settings and flips the blend switch', async () => {
+  it('is titled Settings and no longer carries the moved filters or the blend switch', async () => {
     render(
       <AppProvider host={fakeHost()}>
         <Probe />
@@ -29,16 +29,8 @@ describe('Settings sheet, Your meta section', () => {
     );
     await waitFor(() => expect(latest?.state.boot).toBe('ready'));
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
-    const toggle = screen.getByRole('button', { name: /Use your log/ });
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await act(async () => {
-      fireEvent.click(toggle);
-    });
-    expect(latest?.state.settings.yourMeta?.blend).toBe(false);
-    expect(screen.getByRole('button', { name: /Use your log/ })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
+    expect(screen.queryByRole('button', { name: /Use your log/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /No XL/ })).toBeNull();
     expect(screen.getByRole('button', { name: /Start fresh in Great League/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export log' })).toBeInTheDocument();
     expect(screen.getByText('Import log')).toBeInTheDocument();
@@ -52,9 +44,10 @@ describe('Settings sheet, Your meta section', () => {
       </AppProvider>,
     );
     await waitFor(() => expect(latest?.state.boot).toBe('ready'));
-    expect(
-      screen.getByRole('link', { name: 'Open meta.pick3.gg' }),
-    ).toHaveAttribute('href', 'https://meta.pick3.gg');
+    expect(screen.getByRole('link', { name: 'Open meta.pick3.gg' })).toHaveAttribute(
+      'href',
+      'https://meta.pick3.gg',
+    );
     expect(
       screen.getByText(/most-faced Pokémon and teams, built from shared battle logs/),
     ).toBeInTheDocument();

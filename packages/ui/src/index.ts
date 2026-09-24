@@ -6,6 +6,6 @@ export { Chevron } from './components/Chevron.tsx';
 export { HeaderShell } from './components/HeaderShell.tsx';
 export { Chip } from './components/Chip.tsx';
 export { Seg } from './components/Seg.tsx';
-export { Select } from './components/Select.tsx';
+export { Select, type ChoiceOption } from './components/Select.tsx';
 export { typeColor, typeInk } from './type.ts';
 export { applyTheme, nextTheme, storedTheme, THEME_KEY, type ThemeChoice } from './theme.ts';

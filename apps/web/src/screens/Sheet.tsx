@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import type { ThemeChoice } from '@pickthree/ui';
-import { PokemonToken, Seg, useLogCount, useName } from '../components.tsx';
+import { Seg } from '../components.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
 import { BAND_LABELS, BANDS, shareEnabled, type Band } from '../metaShare.ts';
-import { dateLabel, num } from '../format.ts';
+import { dateLabel } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
 import { Diagnostics } from '../components/Diagnostics.tsx';
@@ -14,7 +14,6 @@ export function Sheet() {
   const {
     closeSheet,
     updateSettings,
-    toggleExcluded,
     forget,
     navigate,
     startFresh,
@@ -23,9 +22,7 @@ export function Sheet() {
     setShareEnabled,
     setShareBand,
   } = useActions();
-  const name = useName();
   const league = useLeague();
-  const logCount = useLogCount();
   const trainers = useTrainerCount();
   const fileRef = useRef<HTMLInputElement>(null);
   const [logNote, setLogNote] = useState<string | null>(null);
@@ -69,18 +66,6 @@ export function Sheet() {
       }
     }
   };
-  const f = s.settings.filters;
-  const toggle = (k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'): void =>
-    updateSettings((cur) => ({ ...cur, filters: { ...cur.filters, [k]: !cur.filters[k] } }));
-  const defs: { k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'; label: string; sub: string }[] = [
-    { k: 'noXl', label: 'No XL', sub: 'Skip builds that need XL Candy (levels above 40)' },
-    { k: 'noShadow', label: 'No Shadows', sub: 'Skip Shadow Pokémon' },
-    { k: 'noEliteTm', label: 'No Elite TM', sub: 'Skip movesets that need an Elite TM' },
-    { k: 'budget', label: 'Budget builds', sub: 'Hide builds above your Stardust budget' },
-  ];
-  const excluded = s.settings.excludedSpecimenIds
-    .map((id) => s.collection?.specimens.find((sp) => sp.id === id))
-    .filter((sp): sp is NonNullable<typeof sp> => Boolean(sp));
   const themes: ThemeChoice[] = ['system', 'dark', 'light'];
   return (
     <>
@@ -96,107 +81,12 @@ export function Sheet() {
           </button>
         </div>
         <div className="sheet-body">
-          <div className={s.collection ? undefined : 'dimmed'}>
-            {!s.collection ? (
-              <span className="meta" style={{ display: 'block', paddingBottom: 6 }}>
-                Filters apply once you have a collection.
-              </span>
-            ) : null}
-            {defs.map((d) => (
-              <button
-                type="button"
-                className="toggle"
-                key={d.k}
-                onClick={() => toggle(d.k)}
-                aria-pressed={f[d.k]}
-              >
-                <span>
-                  <span style={{ display: 'block', fontSize: 15 }}>{d.label}</span>
-                  <span className="meta">{d.sub}</span>
-                </span>
-                <span className={`switch${f[d.k] ? ' on' : ''}`} />
-              </button>
-            ))}
-            <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
-              <div className="between">
-                <span>Stardust budget per Pokémon</span>
-                <span
-                  style={{
-                    fontWeight: 500,
-                    color: 'var(--accent-text)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {num(f.budgetCap)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={20_000}
-                max={500_000}
-                step={10_000}
-                value={f.budgetCap}
-                onChange={(e) =>
-                  updateSettings((cur) => ({
-                    ...cur,
-                    filters: { ...cur.filters, budgetCap: Number(e.target.value) },
-                  }))
-                }
-                aria-label="Stardust budget"
-              />
-              <span className="meta">
-                Applies when Budget builds is on. Builds costing more are left out.
-              </span>
-            </div>
-          </div>
-          <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
-            <span>Excluded Pokémon</span>
-            {excluded.length === 0 ? (
-              <span className="small muted">
-                None yet. Open any Pokémon in your collection to exclude it from team suggestions.
-              </span>
-            ) : null}
-            <div className="pills">
-              {excluded.map((sp) => (
-                <button
-                  type="button"
-                  className="x-chip"
-                  key={sp.id}
-                  onClick={() => toggleExcluded(sp.id)}
-                >
-                  <PokemonToken speciesId={sp.speciesId} size={20} showInitial={false} />
-                  {name(sp.speciesId)}
-                  <span className="muted">&times;</span>
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>League</span>
             <LeagueSwitcher />
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Your Meta</span>
-            <button
-              type="button"
-              className="toggle"
-              onClick={() =>
-                updateSettings((cur) => ({
-                  ...cur,
-                  yourMeta: { ...cur.yourMeta, blend: !(cur.yourMeta?.blend !== false) },
-                }))
-              }
-              aria-pressed={s.settings.yourMeta?.blend !== false}
-            >
-              <span>
-                <span style={{ display: 'block', fontSize: 15 }}>Use your log</span>
-                <span className="meta">
-                  Weights Teams, Counters and Build by what you actually face. Kicks in at 15
-                  battles. {logCount} logged this season.
-                </span>
-              </span>
-              <span className={`switch${s.settings.yourMeta?.blend !== false ? ' on' : ''}`} />
-            </button>
             <button
               type="button"
               className="btn btn-secondary"

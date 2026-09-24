@@ -1,4 +1,6 @@
-import type { TeamRecommendation } from '@pickthree/engine';
+import type { FacingSource, TeamRecommendation } from '@pickthree/engine';
+import type { WindowKey } from '@pickthree/engine/meta';
+import { Select } from '@pickthree/ui';
 import { useEffect } from 'react';
 import {
   Chip,
@@ -15,7 +17,10 @@ import {
 } from '../components.tsx';
 import { costLine } from '../format.ts';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { communityLeague, WINDOW_LABELS } from '../communityMeta.ts';
+import { facingSettings, isCommunity } from '../state/facing.ts';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
+import type { Settings } from '../storage/db.ts';
 
 export function TeamCard({
   team,
@@ -80,9 +85,27 @@ export function TeamCard({
   );
 }
 
+export const SOURCE_LABELS: Record<FacingSource, string> = {
+  prior: 'PvPoke',
+  log: 'Your log',
+  ladder: 'GBL',
+  tournament: 'Tournaments',
+  all: 'All',
+};
+
+/** Active team filters: the four switches, a non-empty exclude list, a Team style other than Any. */
+export function filterCount(settings: Settings): number {
+  const f = settings.filters;
+  return (
+    [f.noXl, f.noShadow, f.noEliteTm, f.budget].filter(Boolean).length +
+    (settings.excludedSpecimenIds.length > 0 ? 1 : 0) +
+    (f.style !== 'any' ? 1 : 0)
+  );
+}
+
 export function Teams() {
   const s = useAppState();
-  const { navigate, runRecommend, updateSettings, openSheet, setPick } = useActions();
+  const { navigate, runRecommend, updateSettings, openFilters, setPick } = useActions();
   /** Tapping a team loads it into Build as your specimens at the recommended stage. */
   const editInBuild = (t: TeamRecommendation): void => {
     t.slots.forEach((slot, i) => {
@@ -91,7 +114,6 @@ export function Teams() {
     });
     navigate({ screen: 'build' });
   };
-  const f = s.settings.filters;
   const logCount = useLogCount();
   const key = filterKey(s.settings, s.logVersion, s.community);
   const stale = s.recommendedWith !== key;
@@ -126,19 +148,25 @@ export function Teams() {
     );
   }
 
-  const styleLabel =
-    f.style === 'any'
-      ? 'Team style: Any'
-      : f.style === 'abb'
-        ? 'Team style: ABB line'
-        : 'Team style: Balanced';
-  const cycleStyle = (): void => {
-    const next = f.style === 'any' ? 'balanced' : f.style === 'balanced' ? 'abb' : 'any';
-    updateSettings((cur) => ({ ...cur, filters: { ...cur.filters, style: next } }));
-  };
-  const toggle = (k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'): void =>
-    updateSettings((cur) => ({ ...cur, filters: { ...cur.filters, [k]: !cur.filters[k] } }));
   const teams = s.recommendation?.teams ?? [];
+  const choice = facingSettings(s.settings);
+  const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
+  const hasCommunity = league ? communityLeague(league) !== null : false;
+  const fellBack =
+    isCommunity(choice.source) &&
+    s.recommendation?.assumptions.facing.startsWith('PvPoke weights (community data unavailable)');
+  const logLabel = logCount >= 15 ? 'Your log' : `Your log: ${logCount} of 15`;
+  const sourceOptions = (Object.keys(SOURCE_LABELS) as FacingSource[]).map((value) => ({
+    value,
+    label:
+      value === 'log'
+        ? logLabel
+        : value === choice.source && fellBack
+          ? `${SOURCE_LABELS[value]} (offline)`
+          : SOURCE_LABELS[value],
+    disabled: isCommunity(value) && !hasCommunity,
+  }));
+  const filters = filterCount(s.settings);
 
   return (
     <div className="screen">
@@ -152,31 +180,32 @@ export function Teams() {
           </span>
         </div>
         <LeagueSwitcher />
-        <div className="chips">
-          <Chip on={f.style !== 'any'} onClick={cycleStyle}>
-            {styleLabel}
-          </Chip>
-          <Chip on={f.noXl} onClick={() => toggle('noXl')}>
-            No XL
-          </Chip>
-          <Chip on={f.noShadow} onClick={() => toggle('noShadow')}>
-            No Shadows
-          </Chip>
-          <Chip on={f.noEliteTm} onClick={() => toggle('noEliteTm')}>
-            No Elite TM
-          </Chip>
-          <Chip on={f.budget} onClick={() => toggle('budget')}>
-            Budget builds
-          </Chip>
-          <Chip onClick={openSheet}>
-            {s.settings.excludedSpecimenIds.length > 0
-              ? `Exclude Pokémon · ${s.settings.excludedSpecimenIds.length}`
-              : 'Exclude Pokémon'}
-          </Chip>
-          <Chip on={logCount >= 15} onClick={() => navigate({ screen: 'meta' })}>
-            {logCount >= 15 ? `Your log: ${logCount} battles` : `Your log: ${logCount} of 15`}
+        <div className="row" style={{ gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <Select<FacingSource>
+            label="Source"
+            value={choice.source}
+            options={sourceOptions}
+            onChange={(source) =>
+              updateSettings((cur) => ({ ...cur, facing: { ...cur.facing, source } }))
+            }
+          />
+          <Select<WindowKey>
+            label="Window"
+            value={choice.window}
+            disabled={!isCommunity(choice.source) || !hasCommunity}
+            options={(['meta', '30', '7'] as const).map((w) => ({
+              value: w,
+              label: WINDOW_LABELS[w],
+            }))}
+            onChange={(window) =>
+              updateSettings((cur) => ({ ...cur, facing: { ...cur.facing, window } }))
+            }
+          />
+          <Chip on={filters > 0} onClick={openFilters}>
+            {filters > 0 ? `Filters: ${filters}` : 'Filters'}
           </Chip>
         </div>
+        {!hasCommunity ? <span className="meta">No community data for this league</span> : null}
       </div>
       <div className="scroll" style={{ gap: 14 }}>
         <button type="button" className="action-row" onClick={() => navigate({ screen: 'build' })}>
