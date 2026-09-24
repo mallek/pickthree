@@ -151,6 +151,24 @@ await page.evaluate(() => {
 });
 await page.waitForFunction(() => !document.querySelector('.progress'), { timeout: 60_000 });
 await shot('teams-community');
+// Back to Your log, the default, so no later shot is community-weighted. The recommendation
+// lags the select a tick, so wait for quiet, give the new run time to start, then wait again.
+await page.evaluate(() => {
+  const select = [...document.querySelectorAll('label')]
+    .find((l) => l.textContent?.startsWith('Source'))
+    ?.querySelector('select');
+  if (select) {
+    select.value = 'log';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+});
+for (let i = 0; i < 2; i++) {
+  await page.waitForFunction(
+    () => document.querySelector('.team-card') && !document.querySelector('.progress'),
+    { timeout: 120_000 },
+  );
+  await new Promise((r) => setTimeout(r, 750));
+}
 
 console.log('ultra league');
 await page.click('.league-switcher button:nth-child(2)');
