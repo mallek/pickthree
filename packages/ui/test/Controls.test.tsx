@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { FilterButton, LeagueList, LeagueSwitcher, Select } from '../src/index.ts';
@@ -6,24 +6,74 @@ import { FilterButton, LeagueList, LeagueSwitcher, Select } from '../src/index.t
 /**
  * jsdom never lays out real pixels, so scrollWidth and clientWidth are both 0 by default (never
  * clipped). To exercise LeagueSwitcher's fit measurement, stub Element.prototype for the
- * duration of `fn`, then restore the original descriptors so other tests see jsdom's real (0/0)
- * behaviour again.
+ * duration of the test, then restore the original descriptors so other tests see jsdom's real
+ * (0/0) behaviour again. The getters are spies (`scrollWidthSpy`/`clientWidthSpy`), so a test can
+ * prove the layout effect actually read the DOM rather than just happening to match jsdom's
+ * always-not-clipped default.
  */
-function withMeasuredWidths<T>(scrollWidth: number, clientWidth: number, fn: () => T): T {
+function stubWidths(scrollWidth: number, clientWidth: number) {
+  const scrollWidthSpy = vi.fn(() => scrollWidth);
+  const clientWidthSpy = vi.fn(() => clientWidth);
   const scrollDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
   const clientDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth');
-  Object.defineProperty(Element.prototype, 'scrollWidth', { configurable: true, get: () => scrollWidth });
-  Object.defineProperty(Element.prototype, 'clientWidth', { configurable: true, get: () => clientWidth });
+  Object.defineProperty(Element.prototype, 'scrollWidth', { configurable: true, get: scrollWidthSpy });
+  Object.defineProperty(Element.prototype, 'clientWidth', { configurable: true, get: clientWidthSpy });
+  return {
+    scrollWidthSpy,
+    clientWidthSpy,
+    restore: () => {
+      if (scrollDesc) {
+        Object.defineProperty(Element.prototype, 'scrollWidth', scrollDesc);
+      }
+      if (clientDesc) {
+        Object.defineProperty(Element.prototype, 'clientWidth', clientDesc);
+      }
+    },
+  };
+}
+
+function withMeasuredWidths<T>(scrollWidth: number, clientWidth: number, fn: () => T): T {
+  const stub = stubWidths(scrollWidth, clientWidth);
   try {
     return fn();
   } finally {
-    if (scrollDesc) {
-      Object.defineProperty(Element.prototype, 'scrollWidth', scrollDesc);
-    }
-    if (clientDesc) {
-      Object.defineProperty(Element.prototype, 'clientWidth', clientDesc);
-    }
+    stub.restore();
   }
+}
+
+/**
+ * Stubs `document.fonts` with a minimal `loadingdone`/`ready` implementation a test can fire by
+ * hand, for LeagueSwitcher's font-arrives-late re-measurement. jsdom has no `document.fonts` at
+ * all, so this defines it on the instance for the duration of the test only.
+ */
+function stubFonts() {
+  const listeners: Array<() => void> = [];
+  const fakeFonts = {
+    addEventListener: (event: string, cb: () => void) => {
+      if (event === 'loadingdone') {
+        listeners.push(cb);
+      }
+    },
+    removeEventListener: (event: string, cb: () => void) => {
+      const i = listeners.indexOf(cb);
+      if (i >= 0) {
+        listeners.splice(i, 1);
+      }
+    },
+    ready: Promise.resolve(),
+  } as unknown as FontFaceSet;
+  const original = Object.getOwnPropertyDescriptor(document, 'fonts');
+  Object.defineProperty(document, 'fonts', { configurable: true, value: fakeFonts });
+  return {
+    fireLoadingDone: () => listeners.forEach((l) => l()),
+    restore: () => {
+      if (original) {
+        Object.defineProperty(document, 'fonts', original);
+      } else {
+        Reflect.deleteProperty(document, 'fonts');
+      }
+    },
+  };
 }
 
 describe('Select', () => {
@@ -98,9 +148,10 @@ describe('LeagueSwitcher', () => {
     expect(onMore).toHaveBeenCalledTimes(1);
   });
 
-  it('fits the cup name next to the open leagues and keeps their names', () => {
-    let container: HTMLElement | null = null;
-    withMeasuredWidths(80, 80, () => {
+  it('fits the cup name next to the open leagues, keeps their names, and proves it measured', () => {
+    const stub = stubWidths(80, 80);
+    let container: HTMLElement;
+    try {
       ({ container } = render(
         <LeagueSwitcher
           label="League"
@@ -114,10 +165,58 @@ describe('LeagueSwitcher', () => {
           }}
         />,
       ));
-    });
-    expect(container!.querySelector('.league-row')).not.toHaveClass('collapsed');
+    } finally {
+      stub.restore();
+    }
+    // Not a coincidence with jsdom's always-0 default: the layout effect read the real DOM.
+    expect(stub.scrollWidthSpy).toHaveBeenCalled();
+    expect(stub.clientWidthSpy).toHaveBeenCalled();
+    expect(container.querySelector('.league-row')).not.toHaveClass('collapsed');
     const label = screen.getByRole('radio', { name: 'Great' }).querySelector('.ui-league-label');
     expect(label).not.toHaveClass('vh');
+  });
+
+  it('re-measures once the web font finishes loading, and does not oscillate', () => {
+    let scrollWidth = 80;
+    const clientWidth = 80;
+    const scrollDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
+    const clientDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth');
+    Object.defineProperty(Element.prototype, 'scrollWidth', { configurable: true, get: () => scrollWidth });
+    Object.defineProperty(Element.prototype, 'clientWidth', { configurable: true, get: () => clientWidth });
+    const fonts = stubFonts();
+    try {
+      const { container } = render(
+        <LeagueSwitcher
+          label="League"
+          value="great"
+          onChange={() => undefined}
+          options={options}
+          more={{
+            label: 'More leagues and cups',
+            onClick: () => undefined,
+            current: { id: 'championshipseries', label: 'Tournament', srLabel: 'Tournament' },
+          }}
+        />,
+      );
+      // The fallback font's metrics said the cup's name fit.
+      expect(container.querySelector('.league-row')).not.toHaveClass('collapsed');
+      // The real font (once it loads) needs more room than the row has.
+      scrollWidth = 400;
+      act(() => fonts.fireLoadingDone());
+      expect(container.querySelector('.league-row')).toHaveClass('collapsed');
+      // Fonts can report `loadingdone` more than once; reading the same layout again must not
+      // flip the decision back.
+      act(() => fonts.fireLoadingDone());
+      expect(container.querySelector('.league-row')).toHaveClass('collapsed');
+    } finally {
+      fonts.restore();
+      if (scrollDesc) {
+        Object.defineProperty(Element.prototype, 'scrollWidth', scrollDesc);
+      }
+      if (clientDesc) {
+        Object.defineProperty(Element.prototype, 'clientWidth', clientDesc);
+      }
+    }
   });
 
   it('collapses the open leagues to shields only when the cup name is clipped', () => {

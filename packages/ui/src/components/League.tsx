@@ -70,11 +70,10 @@ export function LeagueSwitcher<T extends string>({
       }
     | undefined;
 }) {
-  const rowRef = useRef<HTMLDivElement | null>(null);
+  const groupRef = useRef<HTMLDivElement | null>(null);
+  const moreRef = useRef<HTMLButtonElement | null>(null);
   const cupLabelRef = useRef<HTMLSpanElement | null>(null);
-  const optionLabelRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const [collapsed, setCollapsed] = useState(false);
-  optionLabelRefs.current = [];
 
   const current = more?.current;
   // Whether the cup's name fits next to the open leagues' full names decides whether those names
@@ -85,46 +84,73 @@ export function LeagueSwitcher<T extends string>({
       return undefined;
     }
     const cupLabel = cupLabelRef.current;
-    const row = rowRef.current;
-    if (!cupLabel || !row) {
+    const group = groupRef.current;
+    if (!cupLabel || !group) {
       return undefined;
     }
-    const isClipped = (el: HTMLSpanElement) => el.scrollWidth > el.clientWidth;
+    const isClipped = (el: Element) => el.scrollWidth > el.clientWidth;
     const measure = () => {
       // Read the fit as it would be with the open leagues' names showing, whatever the current
       // collapsed state is, so the decision never feeds on its own effect (which would let the
       // row flip back and forth between the two layouts). The equal-width league buttons only
       // ever divide the room the radiogroup as a whole is given, so a name too tight to sit next
       // to the cup shows up as one of the open leagues clipping, not only the cup itself: either
-      // one means the row as shown does not fit and the names should hide.
-      const labels = optionLabelRefs.current;
-      const hadVh = labels.map((el) => el?.classList.contains('vh') ?? false);
-      labels.forEach((el) => el?.classList.remove('vh'));
-      const clipped = isClipped(cupLabel) || labels.some((el) => el !== null && isClipped(el));
+      // one means the row as shown does not fit and the names should hide. Queried fresh each
+      // time (not a per-button ref array) so a change in `options` never leaves a stale list.
+      const labels = [...group.querySelectorAll<HTMLElement>('.ui-league-label')];
+      const hadVh = labels.map((el) => el.classList.contains('vh'));
+      labels.forEach((el) => el.classList.remove('vh'));
+      const clipped = isClipped(cupLabel) || labels.some((el) => isClipped(el));
       labels.forEach((el, i) => {
         if (hadVh[i] === true) {
-          el?.classList.add('vh');
+          el.classList.add('vh');
         }
       });
       setCollapsed(clipped);
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') {
-      return undefined;
+    let disposed = false;
+    const safeMeasure = () => {
+      if (!disposed) {
+        measure();
+      }
+    };
+    // The row itself does not resize when only its content does (a font swap widening a label,
+    // the group or the cup slot changing what they need); observing those two directly, not the
+    // row, is what catches that. ResizeObserver is missing in some test environments (jsdom).
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(safeMeasure);
+      ro.observe(group);
+      if (moreRef.current) {
+        ro.observe(moreRef.current);
+      }
     }
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(row);
-    return () => ro.disconnect();
+    // The web font arriving after the first paint is the other way a measurement goes stale
+    // (the fallback font's metrics decided "fits", the real font's do not): re-read once more
+    // fonts finish loading, and once `ready` settles, whichever fires. document.fonts does not
+    // exist in every test environment either.
+    const fonts = document.fonts as FontFaceSet | undefined;
+    fonts?.addEventListener('loadingdone', safeMeasure);
+    if (fonts) {
+      void fonts.ready.then(safeMeasure);
+    }
+    return () => {
+      disposed = true;
+      ro?.disconnect();
+      fonts?.removeEventListener('loadingdone', safeMeasure);
+    };
   }, [current?.id, current?.label, current?.srLabel]);
 
   const group = (
     <div
+      ref={groupRef}
       className={`league-switcher${compact ? ' compact' : ''}`}
       role="radiogroup"
       aria-label={label}
       {...(dataLeague === undefined ? {} : { 'data-league': dataLeague })}
     >
-      {options.map((o, i) => (
+      {options.map((o) => (
         <button
           key={o.value}
           type="button"
@@ -135,14 +161,7 @@ export function LeagueSwitcher<T extends string>({
           onClick={() => onChange(o.value)}
         >
           <LeagueShield id={o.value} />
-          <span
-            ref={(el) => {
-              optionLabelRefs.current[i] = el;
-            }}
-            className={collapsed ? 'ui-league-label vh' : 'ui-league-label'}
-          >
-            {o.label}
-          </span>
+          <span className={collapsed ? 'ui-league-label vh' : 'ui-league-label'}>{o.label}</span>
         </button>
       ))}
     </div>
@@ -151,10 +170,11 @@ export function LeagueSwitcher<T extends string>({
     return group;
   }
   return (
-    <div ref={rowRef} className={`league-row${collapsed ? ' collapsed' : ''}`}>
+    <div className={`league-row${collapsed ? ' collapsed' : ''}`}>
       {group}
       {current ? (
         <button
+          ref={moreRef}
           type="button"
           className="league-more on"
           title={current.label}

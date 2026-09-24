@@ -549,6 +549,11 @@
   min-height: var(--tap);
   min-width: 0;
 }
+/* Collapsed to a shield: still a 44px tap target, not whatever a shield plus its padding comes
+   to on its own (29px, measured). */
+.league-row.collapsed .league-switcher button {
+  min-width: var(--tap);
+}
 .ui-league-label {
   min-width: 0;
   overflow: hidden;
@@ -602,29 +607,31 @@
   min-width: 0;
 }
 .league-row .league-switcher {
-  /* A grid instead of the standalone rule's flex row: with a cup in the overflow slot, an equal
-     flex share of the radiogroup's own width does not guarantee any one league keeps its full
-     name (the widest name can still lose out to its neighbours). Grid's minmax floor gives every
-     column its own content width first, so no league ever loses a letter to this arithmetic; extra
-     room past that still splits evenly (1fr), and it can still grow into leftover row width the
-     way the flex version did for the plain "..." case. `width` resets the standalone rule's 100%,
-     which would otherwise become this item's flex-basis and always claim the full row. */
+  /* A grid instead of the standalone rule's flex row, but only once a cup is in the overflow slot
+     (below): an equal flex share of the radiogroup's own width does not guarantee any one league
+     keeps its full name (the widest name can still lose out to its neighbours), so a cup's grid
+     gives every column its own content width first and no league ever loses a letter to that
+     arithmetic. Without a cup, `minmax(0, 1fr)` is the old, always-shrinkable behavior: three
+     leagues plus "..." must still fit at a 320px phone, which the max-content floor cannot
+     guarantee (nothing left to take the difference), so it ellipsizes a league name instead of
+     overflowing the row. `width` resets the standalone rule's 100%, which would otherwise become
+     this item's flex-basis and always claim the full row. */
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(max-content, 1fr);
+  grid-auto-columns: minmax(0, 1fr);
   width: auto;
-  flex: 1 0 auto;
+  flex: 1 1 0%;
   min-width: 0;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-/* With a cup in the slot, any room past both sides' own content is left as-is rather than
-   stretching the leagues wider: growing them would just as happily eat the room collapsing was
-   meant to hand the cup, since a bigger equal-width share still shows up as extra padding rather
-   than more text. Without a current cup (plain "...") the radiogroup still grows to fill the row,
-   same as it always has. */
 .league-row:has(.league-more.on) .league-switcher {
-  flex-grow: 0;
+  grid-auto-columns: minmax(max-content, 1fr);
+  /* Cannot shrink below the three leagues' own content once a cup needs the room guarantee above;
+     the cup slot below is what gives way instead. It still grows to fill any room left over past
+     both sides' content, same as the plain "..." row always has, so the row never sits short of
+     its own width with empty space trailing the cup. */
+  flex: 1 0 auto;
 }
 .league-more {
   flex: none;
@@ -648,13 +655,17 @@
    fixed "..." width, shrinking before the radiogroup gives up any of its three equal segments,
    and styled selected like a chosen league. Its label keeps the shared ellipsis rule above, so a
    name that still does not fit once the open leagues' names are hidden trails off in its own
-   slot rather than pushing the row wider. */
+   slot rather than pushing the row wider. `font` matches `.league-switcher button` exactly (both
+   default to the platform's own button font otherwise, not the page's). */
 .league-more:has(.ui-league-label) {
   flex: 0 1 auto;
   width: auto;
   min-width: 0;
   padding: 0 10px;
   gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
 }
 .league-more.on {
   color: var(--text);
