@@ -69,7 +69,7 @@ export async function auditPage(page) {
   findings.push(...small);
 
   const text = await page.evaluate(() => document.body.innerText);
-  if (text.includes('—')) {
+  if (text.includes('\u2014')) {
     findings.push('copy: an em dash is on screen');
   }
   if (/\bPokemon\b/.test(text)) {

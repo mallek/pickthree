@@ -32,7 +32,7 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--t);
-  background: color-mix(in srgb, var(--c) 4%, transparent);
+  background: color-mix(in srgb, var(--c) var(--tchip-fill), transparent);
   border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
   line-height: 1.3;
   vertical-align: middle;
