@@ -297,7 +297,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'import-error':
       return { ...s, importing: false, importError: a.message };
     case 'settings':
-      return { ...s, settings: a.settings };
+      // Counters carry the facing they were scored under but no key for it, so a new league,
+      // source or community window clears them and the screen scores them again.
+      return facingScope(a.settings) === facingScope(s.settings)
+        ? { ...s, settings: a.settings }
+        : { ...s, settings: a.settings, counters: null };
     case 'rec-start':
       return {
         ...s,

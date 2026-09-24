@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Counters } from '../src/screens/Counters.tsx';
-import { AppProvider } from '../src/state/store.tsx';
+import { AppProvider, useActions } from '../src/state/store.tsx';
 import { resetDbForTests } from '../src/storage/db.ts';
 import { fakeHost, GREAT, EMPTY_COUNTERS } from './fakeHost.ts';
 
@@ -101,5 +101,41 @@ describe('Counters screen, league from a link', () => {
       'aria-checked',
       'true',
     );
+  });
+});
+
+describe('Counters screen, facing', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    window.matchMedia = vi
+      .fn()
+      .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+  });
+
+  it('scores counters again when the Source changes, with the new facing', async () => {
+    let actions: ReturnType<typeof useActions> | null = null;
+    function Probe() {
+      actions = useActions();
+      return null;
+    }
+    const host = fakeHost();
+    const calls = (host.counters as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    render(
+      <AppProvider host={host}>
+        <Probe />
+        <Counters />
+      </AppProvider>,
+    );
+    // The default source is Your log.
+    await waitFor(() => expect(calls.length).toBe(1));
+    expect((calls[0]![1] as { facing: { kind: string } }).facing.kind).toBe('log');
+    // Another screen (Teams) switches the Source; Counters must not keep the old weighting.
+    await act(async () => {
+      actions!.updateSettings((cur) => ({ ...cur, facing: { source: 'prior', window: 'meta' } }));
+    });
+    await waitFor(() => expect(calls.length).toBe(2));
+    expect((calls[1]![1] as { facing: { kind: string } }).facing.kind).toBe('prior');
   });
 });
