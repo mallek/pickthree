@@ -561,8 +561,15 @@
 .league-switcher:has(> button:nth-child(4)) > button {
   flex: 1 1 auto;
 }
-@container (max-width: 400px) {
-  .league-switcher:has(> button:nth-child(4)) .league-shield {
+/* Four leagues with shields and whole names measure 351px, or 293px with apps/web's compact rule
+   (12px text, 4px padding), so the shields step aside only below those widths. */
+@container (max-width: 360px) {
+  .league-switcher:not(.compact):has(> button:nth-child(4)) .league-shield {
+    display: none;
+  }
+}
+@container (max-width: 300px) {
+  .league-switcher.compact:has(> button:nth-child(4)) .league-shield {
     display: none;
   }
 }
