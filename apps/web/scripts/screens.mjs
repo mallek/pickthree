@@ -37,6 +37,7 @@ const AUDIT_ENFORCED = new Set([
   'build-suggestions',
   '13-build',
   '13b-build-moves',
+  'build-cost',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -707,12 +708,37 @@ for (let i = 0; i < buildQueries.length; i++) {
     i + 1,
   );
 }
-// The total to build sits under the cards; scroll it into view so the shot shows it.
 if (!(await page.$('.build-cost'))) {
-  throw new Error('build a team: no total to build under a full lineup');
+  throw new Error('build a team: no cost line under a full lineup');
 }
-await page.$eval('.build-cost', (el) => el.scrollIntoView({ block: 'center' }));
-await shot('13-build', false, { mustShow: '.build-cost' });
+// Each role pill reads on one line, clear of the text column ("Safe Switch" is the longest).
+const pills = await page.$$eval('.pick-role-pill', (els) =>
+  els.map((el) => {
+    const lines = new Set([...el.getClientRects()].map((r) => Math.round(r.top))).size;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const textLines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+    // Inside the card, and at least 4px clear of the text column to its right.
+    const card = el.closest('.pick-card').getBoundingClientRect();
+    const text = el.closest('.pick-card').querySelector('.pick-card-body').getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    return {
+      text: el.textContent,
+      oneLine: lines === 1 && textLines === 1,
+      fits: box.left >= card.left + 4 && box.right <= text.left - 4,
+      width: Math.round(box.width),
+    };
+  }),
+);
+const badPill = pills.find((p) => !p.oneLine || !p.fits);
+if (pills.length !== 3 || badPill) {
+  throw new Error(`build a team: a role pill wraps or spills: ${JSON.stringify(pills)}`);
+}
+console.log(`  role pills ${pills.map((p) => `${p.text} ${p.width}px`).join(', ')}`);
+// Full page from the top, as the Teams shots are: nothing sits half under the sticky header, and
+// the cost line under the cards is in the shot.
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('13-build', true, { mustShow: '.build-cost' });
 // Drag the first card's grip onto the third slot: the order changes and becomes "Keep my order".
 const namesBefore = await page.$$eval('.pick-card.filled .pick-name', (els) =>
   els.map((e) => e.firstChild?.textContent?.trim() ?? ''),
@@ -828,6 +854,66 @@ if (!page.url().endsWith('#/build/team')) {
   throw new Error(`shared team landed at ${page.url()}`);
 }
 await shot('14c-shared-team', false);
+
+console.log('build from your own pokemon: the total to build');
+// After the custom-team shots, so they keep their own team. Three of your own Pokémon from the
+// Suggested grid (its "yours" tokens), so the cost line prints a real total.
+await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.pick-card');
+while (await page.$('.pick-x')) {
+  await page.click('.pick-x');
+  await new Promise((r) => setTimeout(r, 100));
+}
+const ownPicks = [];
+for (let i = 0; i < 3; i++) {
+  await page.$eval('.pick-card.empty', (el) => el.click());
+  await page.waitForSelector('.build-choose .recent-token', { timeout: 15_000 });
+  // Verdicts decide which tokens are yours; they may land a moment after the grid does.
+  const picked = await page
+    .waitForFunction(
+      (taken) => {
+        const token = [...document.querySelectorAll('.build-choose .recent-token')].find(
+          (el) =>
+            [...el.querySelectorAll('.ui-tag')].some((t) => t.textContent?.trim() === 'yours') &&
+            !taken.includes(el.getAttribute('aria-label')),
+        );
+        if (!token) {
+          return null;
+        }
+        const label = token.getAttribute('aria-label');
+        // Through the DOM: a click event alone keeps the search's focus, as a tap on the grid does.
+        token.click();
+        return label;
+      },
+      { timeout: 60_000 },
+      ownPicks,
+    )
+    .then((h) => h.jsonValue())
+    .catch(() => null);
+  if (!picked) {
+    throw new Error(`build cost: no "yours" token left in the Suggested grid for slot ${i + 1}`);
+  }
+  ownPicks.push(picked);
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('.pick-card.filled').length === n,
+    { timeout: 15_000 },
+    i + 1,
+  );
+}
+console.log(`  built ${ownPicks.join(', ')}`);
+try {
+  await page.waitForFunction(
+    () => document.querySelector('.build-cost')?.textContent?.includes('Total to build'),
+    { timeout: 60_000 },
+  );
+} catch {
+  const costText = await page.$eval('.build-cost', (e) => e.textContent).catch(() => null);
+  throw new Error(`build cost: the total never appeared (cost line: ${costText})`);
+}
+// Full page from the top, like 13-build: the lineup and its total in one shot, nothing under the
+// sticky header.
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('build-cost', true, { mustShow: '.build-cost' });
 
 console.log('add a pokemon by hand');
 await page.goto(`${base}/#/add`, { waitUntil: 'networkidle0' });

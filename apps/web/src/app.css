@@ -1778,15 +1778,19 @@ textarea.paste {
 }
 .pick-role-pill {
   font-size: 11px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.2;
   text-align: center;
-  padding: 4px 10px;
+  /* One line. "Safe Switch" comes out a little wider than the 88px sprite column; centred, it
+     reaches a few px into the column's padding on the left and the empty column gap on the right,
+     well clear of the text column, which keeps its full width. */
+  white-space: nowrap;
+  flex: none;
+  padding: 4px 8px;
   border-radius: 999px;
   background: var(--bg);
   color: var(--text);
-  max-width: 88px;
 }
 .pick-card-body {
   display: flex;
