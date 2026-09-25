@@ -14,6 +14,11 @@ export interface HeaderBack {
  * right. `mark` is meta.pick3.gg's small site mark beside a top title; pick3 leaves it out.
  * Back should return to where the reader came from (the app decides how); a jump somewhere else
  * is a labeled action, not the back control.
+ *
+ * The top variant has no padding of its own: it sits inside the page's padded head container
+ * (web's `.page-head`, the gallery's `.g-page`), which owns the gutter and the safe-area inset.
+ * meta.pick3.gg's head must pad the same way when it adopts `variant="top"`. The sub variant is
+ * standalone and pads itself.
  */
 export function Header({
   variant,

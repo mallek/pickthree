@@ -177,6 +177,27 @@ const summaryBorder = await page.evaluate(() => {
 if (summaryBorder !== '0px') {
   throw new Error(`teams: the row summary has a border (${summaryBorder}); it should have no box`);
 }
+// The top header shares the page head's gutter: the title's left edge and the last icon button's
+// right edge line up with the league row under them. The row, not the radiogroup inside it: the
+// "..." overflow button sits to the right of .league-switcher, inside .league-row.
+const headEdges = await page.evaluate(() => {
+  const title = document.querySelector('.page-head .ui-top-title h2');
+  const buttons = document.querySelectorAll('.page-head .ui-top-actions > *');
+  const last = buttons[buttons.length - 1];
+  const league =
+    document.querySelector('.page-head .league-row') ?? document.querySelector('.page-head .league-switcher');
+  if (!title || !last || !league) {
+    return null;
+  }
+  const l = league.getBoundingClientRect();
+  return {
+    left: title.getBoundingClientRect().left - l.left,
+    right: last.getBoundingClientRect().right - l.right,
+  };
+});
+if (!headEdges || Math.abs(headEdges.left) > 1 || Math.abs(headEdges.right) > 1) {
+  throw new Error(`teams: the header is off the league row's edges: ${JSON.stringify(headEdges)}`);
+}
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
 console.log(`  ${stats}`);
 
