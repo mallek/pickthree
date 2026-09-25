@@ -102,6 +102,26 @@ describe('Build a team', () => {
     ms: 1,
   };
 
+  const move = (moveId: string, name: string): MoveChoice => ({
+    moveId,
+    name,
+    type: 'fairy',
+    tm: 'tm',
+    energy: 50,
+    energyGain: 8,
+    turns: 1,
+    countFromFast: null,
+    counts: null,
+    effects: [],
+    altType: null,
+  });
+  /** Tinkaton's move pool: one fast move and two charged, both recommended. */
+  const pool: MovePool = {
+    fast: [move('FAIRY_WIND', 'Fairy Wind')],
+    charged: [move('PLAY_ROUGH', 'Play Rough'), move('HEAVY_SLAM', 'Heavy Slam')],
+    recommended: { fast: 'FAIRY_WIND', charged: ['PLAY_ROUGH', 'HEAVY_SLAM'] },
+  };
+
   /** Open the first empty slot, search for `query` and tap the result named `label`. */
   async function pickFirst(query: string, label: string): Promise<void> {
     const [empty] = await screen.findAllByRole('button', { name: /, empty$/ });
@@ -267,24 +287,6 @@ describe('Build a team', () => {
   });
 
   it('keeps the teammate list through a move change, without asking again', async () => {
-    const move = (moveId: string, name: string): MoveChoice => ({
-      moveId,
-      name,
-      type: 'fairy',
-      tm: 'tm',
-      energy: 50,
-      energyGain: 8,
-      turns: 1,
-      countFromFast: null,
-      counts: null,
-      effects: [],
-      altType: null,
-    });
-    const pool: MovePool = {
-      fast: [move('FAIRY_WIND', 'Fairy Wind')],
-      charged: [move('PLAY_ROUGH', 'Play Rough'), move('HEAVY_SLAM', 'Heavy Slam')],
-      recommended: { fast: 'FAIRY_WIND', charged: ['PLAY_ROUGH', 'HEAVY_SLAM'] },
-    };
     const suggestTeammates = vi.fn(async () => offer);
     render(
       <AppProvider host={fakeHost({ suggestTeammates, movePool: vi.fn(async () => pool) })}>
@@ -299,6 +301,27 @@ describe('Build a team', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.getByRole('button', { name: 'Add Azumarill' })).toBeInTheDocument();
     expect(suggestTeammates).toHaveBeenCalledTimes(1);
+  });
+
+  it('says Moves changed only while the moves differ from the recommendation', async () => {
+    render(
+      <AppProvider host={fakeHost({ movePool: vi.fn(async () => pool) })}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    fireEvent.click(await screen.findByRole('button', { name: 'Tinkaton moves' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Heavy Slam/ }));
+    await screen.findByText('Moves changed');
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to recommended' }));
+    await waitFor(() => expect(screen.queryByText('Moves changed')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Reset to recommended' })).toBeDisabled();
+    // Untick Play Rough and tick it again: the same pair in the other order is no change either.
+    fireEvent.click(screen.getByRole('checkbox', { name: /Play Rough/ }));
+    await screen.findByText('Moves changed');
+    fireEvent.click(screen.getByRole('checkbox', { name: /Play Rough/ }));
+    await waitFor(() => expect(screen.queryByText('Moves changed')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Reset to recommended' })).toBeDisabled();
   });
 
   it('opens and closes the moves sheet for a filled slot', async () => {
@@ -410,24 +433,6 @@ describe('Build a team', () => {
   });
 
   it('shows the move pool once it arrives, and each move change at once', async () => {
-    const move = (moveId: string, name: string): MoveChoice => ({
-      moveId,
-      name,
-      type: 'fairy',
-      tm: 'tm',
-      energy: 50,
-      energyGain: 8,
-      turns: 1,
-      countFromFast: null,
-      counts: null,
-      effects: [],
-      altType: null,
-    });
-    const pool: MovePool = {
-      fast: [move('FAIRY_WIND', 'Fairy Wind')],
-      charged: [move('PLAY_ROUGH', 'Play Rough'), move('HEAVY_SLAM', 'Heavy Slam')],
-      recommended: { fast: 'FAIRY_WIND', charged: ['PLAY_ROUGH', 'HEAVY_SLAM'] },
-    };
     let resolvePool: (p: MovePool) => void = () => {};
     // The first pool waits for the test; later ones (a move change re-keys the pool by its fast
     // move) come straight back, as the worker's would.

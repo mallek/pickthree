@@ -33,7 +33,7 @@ import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { facingScope, suggestKey, useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { lineupCost } from '../components/lineupCost.ts';
-import { MovePicker } from '../components/MovePicker.tsx';
+import { MovePicker, sameIds } from '../components/MovePicker.tsx';
 import { TeammateSuggestions } from '../components/TeammateSuggestions.tsx';
 
 const SLOT_LABELS = ['Lead', 'Safe Switch', 'Closer'] as const;
@@ -342,7 +342,15 @@ export function Build() {
     );
   };
 
+  /** A move change; moves that match the recommendation are no change, so the pick drops them. */
   const setMoves = (i: number, p: TeamPick, next: MoveIds): void => {
+    const recommended = poolFor(p)?.recommended;
+    if (recommended && sameIds(next, recommended)) {
+      const plain = { ...p };
+      delete plain.moves;
+      setPick(i, plain);
+      return;
+    }
     setPick(i, { ...p, moves: next });
   };
 

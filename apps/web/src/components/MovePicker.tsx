@@ -2,11 +2,12 @@ import type { MoveChoice, MoveIds, MovePool } from '@pickthree/engine';
 import { Button, Tag, Term } from '@pickthree/ui';
 import { countsText, EffectIcons, TmBadge, TypeChip } from '../components.tsx';
 
-function sameIds(a: MoveIds, b: MoveIds): boolean {
+/** The same moves: one fast move, and the same charged moves in any order. */
+export function sameIds(a: MoveIds, b: MoveIds): boolean {
   return (
     a.fast === b.fast &&
     a.charged.length === b.charged.length &&
-    a.charged.every((id, i) => id === b.charged[i])
+    a.charged.every((id) => b.charged.includes(id))
   );
 }
 
@@ -105,9 +106,9 @@ export function MovePicker({
       </div>
       <span className="move-picker-kind">Charged moves: pick one or two</span>
       <Term term="How move counts work">
-        The numbers after a charged move, like 4-4-3, are how many fast moves it takes to reach
-        that charged move the first, second and third time. Leftover energy carries over, so the
-        counts can step down.
+        The numbers after a charged move, like 4-4-3, are how many fast moves it takes to reach that
+        charged move the first, second and third time. Leftover energy carries over, so the counts
+        can step down.
       </Term>
       {waiting ? <p className="meta">Untick one to pick another</p> : null}
       <div className="move-opts">
