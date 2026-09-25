@@ -432,6 +432,31 @@ await new Promise((r) => setTimeout(r, 300));
 await page.evaluate(() => window.scrollTo(0, 0));
 await shot('03-team-detail');
 
+console.log('team analysis, "+N more" owns its whole target');
+// The sample lead has more than six safe types. Its toggle's 44px box must be the topmost thing at
+// its own top and bottom edges: nothing painted over it, and it over nothing.
+const moreHits = await page.evaluate(() => {
+  const more = document.querySelector('.more-chip');
+  if (!more) {
+    return null;
+  }
+  more.scrollIntoView({ block: 'center' });
+  const r = more.getBoundingClientRect();
+  const x = r.left + r.width / 2;
+  const chips = more.parentElement?.querySelector('.tchips')?.getBoundingClientRect();
+  return {
+    owns: [r.top + 1, r.bottom - 1].every((y) => {
+      const top = document.elementFromPoint(x, y);
+      return top !== null && (top === more || more.contains(top));
+    }),
+    clear: chips !== undefined && chips.bottom <= r.top + 0.5,
+  };
+});
+if (!moreHits || !moreHits.owns || !moreHits.clear) {
+  throw new Error(`"+N more": its target is covered or overlaps the chips: ${JSON.stringify(moreHits)}`);
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+
 console.log('team analysis jumps land under the sticky header');
 for (const [label, id] of [
   ['Battle plan', 'plan'],
@@ -439,26 +464,53 @@ for (const [label, id] of [
   ['Pokémon', 'pokemon'],
   ['Details', 'details'],
 ]) {
-  await page.$$eval(
+  // From the top of the page each time: the heading starts well below the header (below the
+  // fold for all but Battle plan), so landing just under the header proves the jump moved it.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const where = (target) =>
+    page.evaluate((t) => {
+      const heading = document.getElementById(t);
+      const hdr = document.querySelector('.hdr');
+      if (!heading || !hdr) {
+        return null;
+      }
+      return { top: heading.getBoundingClientRect().top, hdr: hdr.getBoundingClientRect().bottom };
+    }, target);
+  const before = await where(id);
+  const clicked = await page.$$eval(
     '.analysis-jumps .ui-btn',
-    (els, l) => els.find((e) => e.textContent?.trim() === l)?.click(),
+    (els, l) => {
+      const b = els.find((e) => e.textContent?.trim() === l);
+      b?.click();
+      return Boolean(b);
+    },
     label,
   );
-  await new Promise((r) => setTimeout(r, 500));
-  const landed = await page.evaluate((target) => {
-    const heading = document.getElementById(target);
-    const hdr = document.querySelector('.hdr');
-    if (!heading || !hdr) {
-      return null;
+  if (!clicked) {
+    throw new Error(`jump row: no "${label}" button`);
+  }
+  // Until the heading stops moving (the automation asks for reduced motion, so the jump should be
+  // instant, but a smooth scroll would still settle here), for up to three seconds.
+  let landed = await where(id);
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+    const next = await where(id);
+    const settled = next && landed && Math.abs(next.top - landed.top) < 0.5;
+    landed = next;
+    if (settled) {
+      break;
     }
-    return { top: heading.getBoundingClientRect().top, hdr: hdr.getBoundingClientRect().bottom };
-  }, id);
-  if (!landed || landed.top < landed.hdr) {
+  }
+  // Just under the header: not behind it, not past a too-large scroll margin (about 8px today).
+  const gap = landed ? landed.top - landed.hdr : NaN;
+  if (!before || !landed || before.top - before.hdr <= 24 || !(gap >= 0 && gap <= 24)) {
     throw new Error(
-      `jump to ${label}: heading at ${landed?.top}px, header ends at ${landed?.hdr}px`,
+      `jump to ${label}: heading from ${before?.top}px to ${landed?.top}px, header ends at ${landed?.hdr}px`,
     );
   }
-  console.log(`  ${label}: heading ${(landed.top - landed.hdr).toFixed(1)}px under the header`);
+  console.log(
+    `  ${label}: from ${(before.top - before.hdr).toFixed(0)}px to ${gap.toFixed(1)}px under the header`,
+  );
 }
 await page.evaluate(() => window.scrollTo(0, 0));
 
@@ -527,6 +579,10 @@ console.log(`  battling with ${strip.trim()}`);
 console.log('team analysis, not found');
 await page.goto(`${base}/#/teams/does-not-exist`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.ui-empty', { timeout: 30_000 });
+const notFoundLine = await page.$eval('.ui-empty', (e) => e.textContent ?? '');
+if (!notFoundLine.includes('not in the current results')) {
+  throw new Error(`team analysis, not found: the wrong empty state: ${notFoundLine}`);
+}
 await shot('analysis-not-found', false, { mustShow: '.ui-empty' });
 
 console.log('collection');
@@ -928,8 +984,10 @@ console.log('shared team link');
 await page.goto(`${base}/#/t/great/azumarill.BUBBLE.ICE_BEAM.PLAY_ROUGH+tinkaton+clodsire`, {
   waitUntil: 'networkidle0',
 });
-await page.waitForSelector('.custom-note, .ui-error', { timeout: 120_000 });
-const sharedError = await page.$eval('.ui-error', (e) => e.textContent).catch(() => null);
+// SharedTeam shows its own failures as `.scroll .error` before it hands off; the analysis shows
+// `.ui-error`. Either one fails the step with its reason.
+await page.waitForSelector('.custom-note, .ui-error, .scroll .error', { timeout: 120_000 });
+const sharedError = await page.$eval('.ui-error, .scroll .error', (e) => e.textContent).catch(() => null);
 if (sharedError) {
   throw new Error(`shared team failed: ${sharedError}`);
 }

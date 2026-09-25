@@ -5,7 +5,7 @@
  * "Pokemon". Drives a puppeteer page that is already on the screen to check.
  * axe-core is injected into the page for the check only; it never ships in either app.
  */
-/* global document, window, getComputedStyle, HTMLElement */
+/* global document, window, getComputedStyle, HTMLElement, SVGElement */
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -195,11 +195,17 @@ export async function auditPage(page) {
       // from its stack, while the canvas body paints is still what sits behind it. A stack that
       // runs out with no opaque layer gets that canvas.
       const bodyBg = C.getOwnBackgroundColor(getComputedStyle(document.body));
+      const GRAPHIC = new Set(['IMG', 'CANVAS', 'VIDEO', 'OBJECT', 'IFRAME', 'EMBED', 'PICTURE']);
       const cutAtOpaque = (stack) => {
         const out = [];
         for (const e of stack) {
           const cs = getComputedStyle(e);
           if (cs.backgroundImage !== 'none') {
+            return null;
+          }
+          // A graphic paints with no background color, so the skip below would lose it; text
+          // over an image, an svg or a canvas stays unverified.
+          if (e instanceof SVGElement || GRAPHIC.has(e.tagName)) {
             return null;
           }
           const bg = C.getOwnBackgroundColor(cs);

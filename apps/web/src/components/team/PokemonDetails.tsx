@@ -108,12 +108,20 @@ export function PokemonDetails({
                   </div>
                   <div className="strategy-row">
                     <span>Safe</span>
-                    <span className="tchips">
-                      {(openSafe.has(i) ? detail.resistances : detail.resistances.slice(0, 6)).map(
-                        (t) => (
+                    <span className="safe-types">
+                      <span className="tchips">
+                        {(openSafe.has(i)
+                          ? detail.resistances
+                          : detail.resistances.slice(0, 6)
+                        ).map((t) => (
                           <TypeChip key={t} type={t} small />
-                        ),
-                      )}
+                        ))}
+                        {detail.resistances.length === 0 ? (
+                          <span className="small muted">
+                            none, everything hits neutral or better
+                          </span>
+                        ) : null}
+                      </span>
                       {detail.resistances.length > 6 ? (
                         <button
                           type="button"
@@ -135,9 +143,6 @@ export function PokemonDetails({
                             {openSafe.has(i) ? 'fewer' : `+${detail.resistances.length - 6} more`}
                           </span>
                         </button>
-                      ) : null}
-                      {detail.resistances.length === 0 ? (
-                        <span className="small muted">none, everything hits neutral or better</span>
                       ) : null}
                     </span>
                   </div>
@@ -186,7 +191,7 @@ export function PokemonDetails({
                             ? `Level ${sp.level.max} to ${c.build.level}${SEP}`
                             : `Already at level${SEP}`}
                           <CostBreakdown cost={c.cost} />
-                          {c.cost.secondMoveUnlock ? `${SEP}second move unlock` : ''}
+                          {c.cost.secondMoveUnlock ? `${SEP}second\u00a0move\u00a0unlock` : ''}
                           {c.cost.estimated ? ' (evolution candy estimated)' : ''}
                         </span>
                       </div>

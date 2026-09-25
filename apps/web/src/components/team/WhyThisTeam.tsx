@@ -11,6 +11,9 @@ export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
   const lead = team.slots[0];
   const back = team.slots.slice(1);
   const structureTerm = team.structure === 'ABB' ? 'ABB line' : 'Balanced ABC';
+  // Every number in the breakdown is whole, like the headline it explains.
+  const f = team.score.factors;
+  const round = Math.round;
   return (
     <div className="stack" style={{ gap: 16 }}>
       <p>{team.explanation.why}</p>
@@ -89,10 +92,10 @@ export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
         )}
       </div>
       <p className="meta">
-        Battle strength {Math.round(team.score.battle)} is coverage, consistency and safety (
-        {team.score.factors.coverage}, {team.score.factors.consistency}, {team.score.factors.safety}
-        ). The total, {team.score.total}, also counts cost ({team.score.factors.cost}) and
-        accessibility ({team.score.factors.accessibility}).
+        Battle strength {round(team.score.battle)} is coverage, consistency and safety (
+        {round(f.coverage)}, {round(f.consistency)}, {round(f.safety)}). The total,{' '}
+        {round(team.score.total)}, also counts cost ({round(f.cost)}) and accessibility (
+        {round(f.accessibility)}).
       </p>
     </div>
   );

@@ -6,6 +6,7 @@ import { Matchups } from '../src/components/team/Matchups.tsx';
 import { PokemonDetails } from '../src/components/team/PokemonDetails.tsx';
 import { ScoreCard } from '../src/components/team/ScoreCard.tsx';
 import { WhyThisTeam } from '../src/components/team/WhyThisTeam.tsx';
+import { SEP } from '../src/format.ts';
 import { AppProvider } from '../src/state/store.tsx';
 import { fakeHost } from './fakeHost.ts';
 import { makeTeam } from './teamFixture.ts';
@@ -67,7 +68,14 @@ describe('BattlePlan', () => {
       { ...team.explanation.switchPlan[0]!, opponent: 'x3', line: 'Third switch.' },
     ];
     wrap(<BattlePlan team={team} />);
-    for (const t of ['Lead why.', 'Form note.', 'First switch.', 'Second switch.', 'Closer why.', 'Keep a shield.']) {
+    for (const t of [
+      'Lead why.',
+      'Form note.',
+      'First switch.',
+      'Second switch.',
+      'Closer why.',
+      'Keep a shield.',
+    ]) {
       expect(screen.getByText(t)).toBeInTheDocument();
     }
     expect(screen.queryByText('Third switch.')).not.toBeInTheDocument();
@@ -118,14 +126,26 @@ describe('PokemonDetails', () => {
       'fairy',
       'dark',
     ];
-    wrap(<PokemonDetails team={team} hypothetical={[]} open={[true, true, false]} onToggle={() => undefined} />);
+    wrap(
+      <PokemonDetails
+        team={team}
+        hypothetical={[]}
+        open={[true, true, false]}
+        onToggle={() => undefined}
+      />,
+    );
     const more = screen.getAllByRole('button', { name: '+2 more' });
+    // Its own line under the chips, not wrapped in among them, so its 44px target overlaps none.
+    for (const b of more) {
+      expect(b.closest('.tchips')).toBeNull();
+      expect(b.parentElement?.querySelector('.tchips')).not.toBeNull();
+    }
     fireEvent.click(more[0]!);
     expect(screen.getAllByRole('button', { name: 'fewer' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: '+2 more' })).toHaveLength(1);
   });
 
-  it('separates the move count from the "Move counts" term with a space', () => {
+  it('sets the "Move counts" term off from the move count with a separator', () => {
     const team = makeTeam();
     wrap(
       <PokemonDetails
@@ -138,7 +158,7 @@ describe('PokemonDetails', () => {
     const button = screen.getByRole('button', { name: 'Move counts' });
     const sub = button.closest('.move-sub');
     expect(sub).not.toBeNull();
-    expect(sub!.textContent).toBe('4-4-3 Fast Move Move counts');
+    expect(sub!.textContent).toBe(`4-4-3 Fast Move${SEP}Move counts`);
   });
 
   it('builds the To build cost line from the shared costParts: SEP joins, zero XL/Elite omitted, unlock and estimated suffixes', () => {
@@ -165,8 +185,10 @@ describe('PokemonDetails', () => {
     );
     const toBuild = screen.getByText('To build').nextElementSibling as HTMLElement;
     expect(toBuild.textContent).toBe(
-      'Level 20 to 25 · 25,000 Stardust · 50 Candy · 10 XL Candy · 2 Elite TM · second move unlock (evolution candy estimated)',
+      'Level 20 to 25 · 25,000 Stardust · 50 Candy · 10 XL Candy · 2 Elite TM · second move unlock (evolution candy estimated)',
     );
+    // "second move unlock" never breaks, so "unlock" cannot wrap onto a line alone.
+    expect(toBuild.textContent).toContain('second\u00a0move\u00a0unlock');
   });
 });
 

@@ -30,8 +30,12 @@ const JUMPS = [
   { label: 'Details', id: 'details' },
 ] as const;
 
+/** Smooth unless the player asked for reduced motion. */
 function scrollToId(id: string): void {
-  document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
 }
 
 export function TeamDetail({ id }: { id: string }) {

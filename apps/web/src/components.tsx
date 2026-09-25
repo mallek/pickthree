@@ -8,7 +8,7 @@ import {
   type VerdictLabel,
 } from '@pickthree/engine';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { metaTags, shortName, speciesDisplayName } from './format.ts';
+import { metaTags, SEP, shortName, speciesDisplayName } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
@@ -397,7 +397,7 @@ export function MoveRows({
   charged: MoveChoice[];
   /** Optional per-charged-move line, e.g. "extra damage on 31 of 48". */
   reads?: Record<string, string>;
-  /** Rendered once, right beside the first charged move's move-count text. */
+  /** Rendered once, after the first charged move's move-count text, set off by a separator. */
   countNote?: ReactNode;
 }) {
   return (
@@ -437,7 +437,12 @@ export function MoveRows({
                   {count ? (
                     <span>
                       {count}
-                      {note ? <>&nbsp;{note}</> : null}
+                      {note ? (
+                        <>
+                          {SEP}
+                          {note}
+                        </>
+                      ) : null}
                     </span>
                   ) : (
                     note

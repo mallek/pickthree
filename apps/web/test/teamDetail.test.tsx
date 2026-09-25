@@ -229,13 +229,51 @@ describe('Team Analysis', () => {
     expect(document.getElementById('details')).toHaveTextContent('Why this team');
   });
 
+  it('jumps without the smooth scroll when the player asks for reduced motion', async () => {
+    const spy = vi.fn();
+    Element.prototype.scrollIntoView = spy;
+    const reduce = (q: string) => ({ matches: q.includes('reduce') }) as MediaQueryList;
+    vi.stubGlobal('matchMedia', vi.fn(reduce));
+    await mountRecommended('a');
+    fireEvent.click(screen.getByRole('button', { name: 'Matchups' }));
+    expect(spy).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: false }) as MediaQueryList),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Matchups' }));
+    expect(spy).toHaveBeenLastCalledWith({ block: 'start', behavior: 'smooth' });
+  });
+
+  it('rounds every number in the score breakdown, as the headline does', async () => {
+    const team = makeTeam({ id: 'a', battle: 88.4, total: 71.7 });
+    team.score.factors = {
+      coverage: 98.5,
+      consistency: 56.3,
+      safety: 100,
+      cost: 0.4,
+      accessibility: 59.5,
+    };
+    await mountRecommended('a', [team]);
+    expect(document.getElementById('details')!.parentElement).toHaveTextContent(
+      'Battle strength 88 is coverage, consistency and safety (99, 56, 100). The total, 72, also counts cost (0) and accessibility (60).',
+    );
+  });
+
   it('Assumptions keep each "·" with the label before it', async () => {
     await mountRecommended('a');
     const head = screen.getByRole('button', { name: 'Assumptions and detail' });
     fireEvent.click(head);
     expect(head).toHaveAttribute('aria-expanded', 'true');
     const body = document.querySelector('.assump-body')!;
-    for (const label of ['Shields', 'Opponent meta', 'IVs', 'Level cap', 'Total build']) {
+    for (const label of [
+      'Shields',
+      'Opponent meta',
+      'Opponent weights',
+      'IVs',
+      'Level cap',
+      'Total build',
+    ]) {
       expect(body.textContent).toContain(`${label}\u00a0· `);
     }
     expect(body.textContent).toContain('W wins\u00a0· L loses\u00a0· ~ close');

@@ -100,6 +100,58 @@ try {
       `[self-check] expected exactly one measured contrast finding on #fail, got: ${JSON.stringify(selfCheck)}`,
     );
   }
+
+  // Text over a graphic: #555 on a white card measures as a pass, but each paragraph's first line
+  // sits on a black image (#img) or a black inline svg (#svg), a real failure. A graphic paints no
+  // background color, so the audit must not measure past it: both stay "contrast unverified".
+  const black = encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='black'/></svg>",
+  );
+  await page.setContent(`<!doctype html>
+<html lang="en"><head><title>audit self-check, graphics</title><style>
+  body { margin: 0; font: 16px/24px sans-serif; background: #ffffff; }
+  .card { position: relative; background: #ffffff; width: 390px; margin-bottom: 100px; }
+  .card img, .card svg { position: absolute; left: 0; top: 0; width: 390px; height: 24px; display: block; }
+  p { position: relative; margin: 0; color: #555555; }
+</style></head><body>
+  <div class="card"><img alt="" src="data:image/svg+xml;utf8,${black}"><p id="img">First line of text<br>second line of text</p></div>
+  <div class="card"><svg viewBox="0 0 10 10" preserveAspectRatio="none"><rect width="10" height="10" fill="black"/></svg><p id="svg">First line of text<br>second line of text</p></div>
+</body></html>`);
+  const graphics = await auditPage(page);
+  const graphicsExpected =
+    graphics.length === 2 &&
+    graphics.some((f) => f.startsWith('contrast unverified: #img ')) &&
+    graphics.some((f) => f.startsWith('contrast unverified: #svg '));
+  if (!graphicsExpected) {
+    failures.push(
+      `[self-check] expected #img and #svg left unverified, got: ${JSON.stringify(graphics)}`,
+    );
+  }
+
+  // A paragraph whose second line runs past the bottom of a 100%-high body (and a 100%-high root
+  // wrapper) on a long page: body and the wrapper drop out of that line's stack, but body's
+  // background still paints the canvas behind it. #edge (#aaaaaa on white, 2.32:1) must come back
+  // as a measured finding, not as unverified and not as a pass.
+  await page.setContent(`<!doctype html>
+<html lang="en"><head><title>audit self-check, page edge</title><style>
+  html, body, #root { height: 100%; }
+  body { margin: 0; font: 16px/24px sans-serif; background: #ffffff; }
+  p { margin: 0; }
+</style></head><body><div id="root">
+  <div style="height: 816px"></div>
+  <p id="edge" style="color: #aaaaaa">First line of text<br>second line of text</p>
+  <div style="height: 400px"></div>
+</div></body></html>`);
+  const edge = await auditPage(page);
+  const edgeExpected =
+    edge.length === 1 &&
+    edge[0]?.startsWith('contrast: #edge ') === true &&
+    edge[0].includes('needs 4.5:1');
+  if (!edgeExpected) {
+    failures.push(
+      `[self-check] expected exactly one measured contrast finding on #edge, got: ${JSON.stringify(edge)}`,
+    );
+  }
   await page.close();
 } finally {
   await browser.close();
