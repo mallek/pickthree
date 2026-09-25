@@ -18,6 +18,9 @@ const ready = haveStaticData() && fs.existsSync(gmPath);
  * PvPoke mode's output on the fixture, recorded before source weighting landed. Every change in
  * the source-weighted plan must leave this snapshot untouched: selecting PvPoke reproduces today.
  * The assumptions sentence is left out on purpose; its wording is tested on its own.
+ * Exception (2026-09-25): teams now sort by battle strength first. diversify() keeps the
+ * strongest sibling of near-duplicate trios, so one recommended team changed and thus the
+ * analyze snapshot that reads teams[0] changed as well.
  */
 describe.skipIf(!ready)('PvPoke baseline', () => {
   const data = loadStaticData();
