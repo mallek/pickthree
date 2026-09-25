@@ -168,6 +168,15 @@ await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.ui-expand-head', { timeout: 120_000 });
 console.log(`  teams rendered at ${Date.now() - t0} ms`);
 await shot('02-teams');
+// The collapsed row's summary sits inside the ExpandRow head with no box of its own. A shared
+// class name once pulled Your Meta's bordered .team-row rule onto it.
+const summaryBorder = await page.evaluate(() => {
+  const el = document.querySelector('.ui-expand-head .team-summary');
+  return el ? window.getComputedStyle(el).borderTopWidth : null;
+});
+if (summaryBorder !== '0px') {
+  throw new Error(`teams: the row summary has a border (${summaryBorder}); it should have no box`);
+}
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
 console.log(`  ${stats}`);
 
@@ -404,7 +413,16 @@ console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.set-card', { timeout: 60_000 });
 await page.waitForSelector('.faced-row');
-await shot('20-your-meta', false);
+// Full page, so the set list ("Your teams") is in the capture, and its rows keep their own grid:
+// the Teams summary once shared the .team-row name and turned these rows into a flex line.
+await shot('20-your-meta');
+const setRowDisplay = await page.evaluate(() => {
+  const row = document.querySelector('.team-row');
+  return row ? window.getComputedStyle(row).display : 'grid';
+});
+if (setRowDisplay !== 'grid') {
+  throw new Error(`your meta: a set row is display ${setRowDisplay}, not grid`);
+}
 
 console.log('who beats one opponent');
 const facedHref = await page.$eval('.faced-row', (a) => a.getAttribute('href'));

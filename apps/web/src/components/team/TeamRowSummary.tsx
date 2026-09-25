@@ -10,17 +10,17 @@ export function TeamRowSummary({ team }: { team: TeamRecommendation }) {
   const name = useName();
   const ids = team.slots.map((s) => s.candidate.build.speciesId);
   return (
-    <span className="team-row">
-      <span className="team-row-sprites" aria-hidden="true">
+    <span className="team-summary">
+      <span className="team-summary-sprites" aria-hidden="true">
         {ids.map((id, i) => (
           <PokemonToken key={`${id}-${i}`} speciesId={id} size={36} showInitial={false} />
         ))}
       </span>
-      <span className="team-row-text">
-        <span className="team-row-names" data-testid="team-row-names">
+      <span className="team-summary-text">
+        <span className="team-summary-names" data-testid="team-summary-names">
           {ids.map(name).join(' · ')}
         </span>
-        <span className="team-row-line">
+        <span className="team-summary-line">
           {`${team.score.fit} fit · ${team.score.difficulty} · ${num(team.cost.stardust)} Stardust`}
         </span>
       </span>

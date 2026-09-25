@@ -51,7 +51,7 @@ describe('TeamRowSummary', () => {
   it('names the three Pokémon and says fit, difficulty and Stardust in one line', async () => {
     await mount(<TeamRowSummary team={makeTeam()} />);
     expect(screen.getByText('Strong fit · Moderate · 263,900 Stardust')).toBeInTheDocument();
-    expect(screen.getByTestId('team-row-names').textContent).toMatch(/snorlax/i);
+    expect(screen.getByTestId('team-summary-names').textContent).toMatch(/snorlax/i);
   });
 
   it('holds no buttons or links, so it can sit inside the row toggle', async () => {

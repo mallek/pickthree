@@ -176,7 +176,7 @@ export function Teams() {
           <FilterButton count={filters} onClick={openFilters} />
         </div>
         {!hasCommunity ? <span className="meta">No community data for this league</span> : null}
-        <p className="meta teams-summary">{facingSummary(choice, logCount, Boolean(fellBack))}</p>
+        <p className="meta teams-weighting">{facingSummary(choice, logCount, Boolean(fellBack))}</p>
       </div>
       <div className="scroll teams-list">
         <button type="button" className="action-row" onClick={() => navigate({ screen: 'build' })}>

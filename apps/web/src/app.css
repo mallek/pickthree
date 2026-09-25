@@ -3069,31 +3069,31 @@ input[type='range'] {
 }
 
 /* Teams: the collapsed row summary and the open card body (design core flow, piece 2). */
-.team-row {
+.team-summary {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
 }
-.team-row-sprites {
+.team-summary-sprites {
   display: flex;
   flex: none;
 }
-.team-row-sprites > * + * {
+.team-summary-sprites > * + * {
   margin-left: -10px;
 }
-.team-row-text {
+.team-summary-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
-.team-row-names {
+.team-summary-names {
   font-weight: 600;
   font-size: var(--fs-body);
   overflow-wrap: anywhere;
 }
-.team-row-line {
+.team-summary-line {
   font-size: var(--fs-support);
   color: var(--muted);
 }
@@ -3112,7 +3112,7 @@ input[type='range'] {
   align-items: flex-end;
   flex-wrap: wrap;
 }
-.teams-summary {
+.teams-weighting {
   margin: 0;
 }
 .teams-list {

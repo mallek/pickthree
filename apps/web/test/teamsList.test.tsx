@@ -76,7 +76,7 @@ describe('Teams list', () => {
     const toggles = screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-expanded'));
     expect(toggles[0]).toHaveAttribute('aria-expanded', 'true');
     expect(toggles[1]).toHaveAttribute('aria-expanded', 'false');
-    const names = screen.getAllByTestId('team-row-names').map((el) => el.textContent);
+    const names = screen.getAllByTestId('team-summary-names').map((el) => el.textContent);
     expect(names[0]).toMatch(/Medicham/);
     expect(names[1]).toMatch(/mimikyu/);
   });
