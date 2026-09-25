@@ -30,7 +30,7 @@ import { costLine, ivLine, SEP, topPct } from '../format.ts';
 import { Button, ErrorState, Header, IconButton, Sheet, Tag, typeColor } from '@pickthree/ui';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
-import { suggestKey, useActions, useAppState } from '../state/store.tsx';
+import { facingScope, suggestKey, useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { lineupCost } from '../components/lineupCost.ts';
 import { MovePicker } from '../components/MovePicker.tsx';
@@ -418,10 +418,11 @@ export function Build() {
   const allIn = s.picks.every(Boolean);
   const ready = allIn && s.boot === 'ready' && !s.analyzing;
   const pinned = s.picks.filter(Boolean).length;
-  const boardKey = suggestKey(s.picks, league);
+  // The board and the facing it is scored against: a new Source or Window is a new question.
+  const boardKey = `${suggestKey(s.picks, league)}|${facingScope(s.settings)}`;
   const lastAsked = useRef<string | null>(null);
-  // A list or an error for the board on screen. Every pick change clears the list in the store,
-  // even one that leaves the same board (a move change, or the same Pokémon picked again).
+  // A list or an error for the board on screen. A pick change that changes the board clears the
+  // list; a move change keeps it.
   const answered = s.suggestion !== null || s.suggestError !== null;
   // Runs on its own whenever the board has one or two picks and has no answer since the last ask.
   // A run in flight finishes (and is dropped if the board moved on); this effect then asks again.
@@ -430,7 +431,7 @@ export function Build() {
       pinned === 0 ||
       pinned === 3 ||
       s.boot !== 'ready' ||
-      !s.leagueInfo ||
+      s.leagueInfo?.id !== league ||
       s.analyzing ||
       s.suggesting ||
       (lastAsked.current === boardKey && answered)
@@ -443,6 +444,7 @@ export function Build() {
     boardKey,
     answered,
     pinned,
+    league,
     s.boot,
     s.leagueInfo,
     s.analyzing,

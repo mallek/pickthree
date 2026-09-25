@@ -267,6 +267,8 @@ function reducer(s: AppState, a: Action): AppState {
         counters: null,
         scanList: null,
         analysis: null,
+        suggestion: null,
+        suggestError: null,
         sets: [],
         setsLoaded: false,
       };
@@ -298,11 +300,11 @@ function reducer(s: AppState, a: Action): AppState {
     case 'import-error':
       return { ...s, importing: false, importError: a.message };
     case 'settings':
-      // Counters carry the facing they were scored under but no key for it, so a new league,
-      // source or community window clears them and the screen scores them again.
+      // Counters and teammate suggestions carry the facing they were scored under but no key for
+      // it, so a new league, source or community window clears them and the screen asks again.
       return facingScope(a.settings) === facingScope(s.settings)
         ? { ...s, settings: a.settings }
-        : { ...s, settings: a.settings, counters: null };
+        : { ...s, settings: a.settings, counters: null, suggestion: null, suggestError: null };
     case 'rec-start':
       return {
         ...s,
@@ -554,7 +556,7 @@ export function filterKey(
  * What a facing-weighted result belongs to: the league, the source and, for a community source,
  * the window. A result that comes back after any of them changed is dropped, never shown.
  */
-function facingScope(settings: Settings): string {
+export function facingScope(settings: Settings): string {
   const choice = facingSettings(settings);
   return JSON.stringify([
     settings.league ?? 'great',
@@ -1126,7 +1128,17 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     const s = stateRef.current;
     const picks = s.picks;
     const pinned = picks.filter(Boolean).length;
-    if (s.suggesting || s.analyzing || pinned === 0 || pinned === 3 || !s.leagueInfo) {
+    // Right after a league switch the old league's bundle is still in leagueInfo until the
+    // provider's league effect clears it; asking then would frame the new league's board against
+    // the old league's community read.
+    const leagueInfo = s.leagueInfo;
+    if (
+      s.suggesting ||
+      s.analyzing ||
+      pinned === 0 ||
+      pinned === 3 ||
+      leagueInfo?.id !== (s.settings.league ?? 'great')
+    ) {
       return;
     }
     const scope = scopeOf(stateRef);
@@ -1144,7 +1156,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
         optionsFrom(s.settings);
       const choice = facingSettings(s.settings);
-      const info = s.data?.leagues.find((l) => l.id === s.leagueInfo!.id);
+      const info = s.data?.leagues.find((l) => l.id === leagueInfo.id);
       const boardWindow = info
         ? communityRequest(
             info,
@@ -1153,7 +1165,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
             s.data?.epochs ?? [],
           )
         : null;
-      const community = await communityCores(s.settings, s.leagueInfo.id, boardWindow);
+      const community = await communityCores(s.settings, leagueInfo.id, boardWindow);
       if (stale()) {
         dispatch({ type: 'drop', what: 'suggest' });
         return;

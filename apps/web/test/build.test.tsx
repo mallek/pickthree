@@ -4,10 +4,19 @@ import type { MoveChoice, MovePool } from '@pickthree/engine';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Build } from '../src/screens/Build.tsx';
-import { AppProvider } from '../src/state/store.tsx';
+import { AppProvider, useActions } from '../src/state/store.tsx';
 import { resetHistoryForTests } from '../src/state/history.ts';
 import { resetDbForTests } from '../src/storage/db.ts';
-import { fakeHost } from './fakeHost.ts';
+import { fakeHost, GREAT } from './fakeHost.ts';
+
+const ULTRA = {
+  ...GREAT,
+  id: 'ultra',
+  title: 'Ultra League',
+  short: 'Ultra',
+  cp: 2500,
+  meta: 'ultra',
+};
 
 describe('Build a team', () => {
   beforeEach(() => {
@@ -158,6 +167,68 @@ describe('Build a team', () => {
     // The same board as before: the store cleared its list, so Build has to ask again.
     await pickFirst('tink', 'Tinkaton');
     await screen.findByRole('button', { name: 'Add Azumarill' });
+    expect(suggestTeammates).toHaveBeenCalledTimes(2);
+  });
+
+  it('takes the old league teammates down the moment the league changes', async () => {
+    const suggestTeammates = vi.fn(async () => offer);
+    const base = fakeHost();
+    const bootReply = await base.ready();
+    // Great answers at once; Ultra's bundle is still on its way, so Build cannot ask again yet.
+    const leagueInfo = vi.fn((id: string) =>
+      id === 'great' ? base.leagueInfo('great') : new Promise<never>(() => {}),
+    );
+    render(
+      <AppProvider
+        host={fakeHost({
+          suggestTeammates,
+          leagueInfo,
+          ready: vi.fn(async () => ({ ...bootReply, leagues: [GREAT, ULTRA] })),
+        })}
+      >
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await screen.findByRole('button', { name: 'Add Azumarill' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Ultra League' }));
+    await waitFor(() => expect(leagueInfo).toHaveBeenCalledWith('ultra'));
+    expect(screen.queryByRole('button', { name: 'Add Azumarill' })).not.toBeInTheDocument();
+    // Nor does it ask for Ultra on Great's bundle while Ultra's is still loading.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('button', { name: 'Add Azumarill' })).not.toBeInTheDocument();
+    expect(suggestTeammates).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again when the facing source changes on the same board', async () => {
+    const clodsireFirst = {
+      ...offer,
+      suggestions: [{ ...offer.suggestions[0]!, fills: [offer.suggestions[0]!.fills[1]!] }],
+    };
+    const suggestTeammates = vi.fn().mockResolvedValueOnce(offer).mockResolvedValue(clodsireFirst);
+    function SourcePrior() {
+      const { updateSettings } = useActions();
+      return (
+        <button
+          type="button"
+          onClick={() => updateSettings({ facing: { source: 'prior', window: 'meta' } })}
+        >
+          PvPoke only
+        </button>
+      );
+    }
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates })}>
+        <Build />
+        <SourcePrior />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await screen.findByRole('button', { name: 'Add Azumarill' });
+    fireEvent.click(screen.getByRole('button', { name: 'PvPoke only' }));
+    // The rows framed against the old source go at once, and the new source's list replaces them.
+    expect(screen.queryByRole('button', { name: 'Add Azumarill' })).not.toBeInTheDocument();
+    await screen.findByRole('button', { name: 'Add Clodsire' });
     expect(suggestTeammates).toHaveBeenCalledTimes(2);
   });
 
