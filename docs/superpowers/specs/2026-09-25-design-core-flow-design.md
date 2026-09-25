@@ -63,12 +63,18 @@ Today's `TeamCard` in `screens/Teams.tsx` is replaced by `TeamCardBody` inside a
 
 - **Header:** `Header variant="top"`, title "Your Teams", actions: the meta cross-link and
   settings as `IconButton`s. The "N Pokémon" count is removed (it is on Collection).
-- **Controls, in order:** the league switcher (done in piece 1's follow-up); the Source and
-  Window `Select`s (from the source-weighted work); a `FilterButton` with the active-filter count
-  (`filterCount`) opening the existing Filters sheet, in place of today's "Filters: N" chip.
-  "No community data for this league" stays when it applies.
-- **Summary line** under the controls, supporting text: what the list is weighted by, from the
-  facing choice (for example "Current meta · Your log weighting").
+- **Controls, in order:** the league switcher (done in piece 1's follow-up); then one row: the
+  Source `Select` filling the width, and the filters as an icon button with the active-filter
+  count (`filterCount`) as a badge, opening the existing Filters sheet. "No community data for
+  this league" stays when it applies. (Travis, 2026-09-25, from rendered options: "I like showing
+  only the source and the filter icon with the number. That looks the cleanest." This replaces
+  the earlier Source and Window selects side by side with a labeled `FilterButton` under them.)
+- **Window** moves into the Filters sheet, at its top. It stays visible, disabled with a one-line
+  note ("Applies when Source is GBL, Tournaments or All") when the source is PvPoke or Your log.
+  A non-default window counts in `filterCount` only while a community source is picked, so a
+  hidden choice always shows on the badge.
+- **No summary line** under the controls: the Source value says what the list is weighted by,
+  "(offline)" marks a community fallback, and the progress card counts the log's battles.
 - **Build your own team** stays as a row near the top.
 - **The team list:** sorted by battle strength. Every team is an `ExpandRow` with
   `TeamRowSummary` as its summary; the first row starts open. The open body is `TeamCardBody`
