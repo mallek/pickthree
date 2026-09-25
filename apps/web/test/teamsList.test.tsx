@@ -233,6 +233,26 @@ describe('Teams list', () => {
     expect(within(empty).getByRole('button', { name: /^Filters/ })).toBeInTheDocument();
   });
 
+  it('shows the error state with its message when recommend fails, and does not loop', async () => {
+    // recordError's device summary reads matchMedia, which jsdom does not implement.
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    const host = fakeHost();
+    host.recommend = vi.fn(async () => {
+      throw new Error('The league data did not load.');
+    }) as unknown as typeof host.recommend;
+    await mount(host);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveClass('ui-error');
+    expect(alert).toHaveTextContent('The league data did not load.');
+    // Teams offers no retry control on the error card: the card is the line alone, and the run
+    // is not retried on its own (a league switch clears the error and runs again).
+    expect(within(alert).queryByRole('button')).toBeNull();
+    expect(rowHeads()).toHaveLength(0);
+    await new Promise((r) => setTimeout(r, 50));
+    expect((host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+    vi.unstubAllGlobals();
+  });
+
   it('keeps the footer counts', async () => {
     await mount(hostWith([makeTeam({ id: 'a' })]));
     expect(await screen.findByText(/combinations scored/)).toBeInTheDocument();

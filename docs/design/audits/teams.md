@@ -44,9 +44,11 @@ How the two new states are captured (`apps/web/scripts/screens.mjs`):
 Not captured: the error state. A recommendation error has no clean trigger in the built app
 without a test hook, and none was added. `ErrorState` (the shared component Teams renders on a
 failed run) is covered by the gallery's audit (`docs/design/audits/gallery.md`, the
-loading/empty/error states). No jsdom test renders the Teams error state either, so on this page
-it is the one state with neither a capture nor a test; it renders the same `ErrorState` as the
-gallery.
+loading/empty/error states). On Teams, `teamsList.test.tsx`'s "shows the error state with its
+message when recommend fails, and does not loop" covers it: when `host.recommend` rejects, the
+`ErrorState` alert shows the run's message, the list has no rows, and the run is not retried on
+its own. Teams offers no retry control on that card (it renders the line alone); switching
+league clears the error and runs again.
 
 ## Automated checks
 
