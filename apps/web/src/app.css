@@ -1958,6 +1958,58 @@ textarea.paste {
 .custom-note {
   border-left: 3px solid var(--accent);
 }
+/* Team Analysis: the score card headlines battle strength and carries the one primary action. */
+.score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+.score-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.score-num {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text);
+}
+.score-of {
+  color: var(--muted);
+}
+.score-order {
+  font-size: var(--fs-body);
+}
+.score-card .ui-btn {
+  width: 100%;
+}
+/* Team Analysis: the battle plan, three steps written only from engine strings. */
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+.plan-step {
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+}
+.plan-title {
+  font-size: 11px;
+  color: var(--accent-text);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.plan-line {
+  font-size: var(--fs-body);
+}
 /* Team detail: the three members at a glance, above everything else. */
 .team-strip-card {
   gap: 12px;

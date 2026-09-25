@@ -1,0 +1,81 @@
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
+import { BattlePlan } from '../src/components/team/BattlePlan.tsx';
+import { ScoreCard } from '../src/components/team/ScoreCard.tsx';
+import { AppProvider } from '../src/state/store.tsx';
+import { fakeHost } from './fakeHost.ts';
+import { makeTeam } from './teamFixture.ts';
+
+const wrap = (ui: ReactNode) => render(<AppProvider host={fakeHost()}>{ui}</AppProvider>);
+
+describe('ScoreCard', () => {
+  it('headlines battle strength, not the total, with one primary action', () => {
+    const team = makeTeam({ battle: 81.6, total: 64 });
+    const take = vi.fn();
+    wrap(<ScoreCard team={team} custom={null} onTakeToBattle={take} />);
+    expect(screen.getByText('82')).toBeInTheDocument();
+    expect(screen.queryByText('64')).not.toBeInTheDocument();
+    expect(screen.getByText(/^Run it in this order:/)).toBeInTheDocument();
+    screen.getByRole('button', { name: 'Take to battle' }).click();
+    expect(take).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll('.ui-btn-primary')).toHaveLength(1);
+  });
+
+  it('adds the custom notes: best recommended, assumed IVs, chosen moves, unranked, orders', () => {
+    const team = makeTeam({ battle: 70, total: 60 });
+    const best = makeTeam({ battle: 88, total: 70 });
+    const analysis = {
+      team,
+      orders: [
+        { slots: ['a', 'b', 'c'], names: ['A', 'B', 'C'], battle: 70, total: 60, fit: 'Solid' },
+        { slots: ['c', 'b', 'a'], names: ['C', 'B', 'A'], battle: 55, total: 50, fit: 'Weak' },
+      ],
+      hypothetical: ['azumarill'],
+      chosenMoves: ['tinkaton'],
+      unranked: ['clodsire'],
+      assumptions: {} as never,
+      ms: 0,
+    } as unknown as import('@pickthree/engine').TeamAnalysis;
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={{ analysis, best, shared: false, leagueTitle: 'Great League' }}
+        onTakeToBattle={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/Your best recommended team rates/)).toHaveTextContent('88');
+    expect(screen.getByText(/not in your collection/)).toBeInTheDocument();
+    expect(screen.getByText(/ran the moves you chose/)).toBeInTheDocument();
+    expect(screen.getByText(/PvPoke does not rank/)).toBeInTheDocument();
+    expect(screen.getByText(/tried all six orders/)).toHaveTextContent('70');
+  });
+});
+
+describe('BattlePlan', () => {
+  it('writes the three steps from engine strings only', () => {
+    const team = makeTeam();
+    team.explanation.roleWhy = { lead: 'Lead why.', switch: 'Switch why.', closer: 'Closer why.' };
+    team.explanation.slotDetail[0]!.formNote = 'Form note.';
+    team.explanation.slotDetail[2]!.keepShield = { delta: 3, line: 'Keep a shield.' };
+    team.explanation.switchPlan = [
+      { ...team.explanation.switchPlan[0]!, line: 'First switch.' },
+      { ...team.explanation.switchPlan[0]!, opponent: 'x2', line: 'Second switch.' },
+      { ...team.explanation.switchPlan[0]!, opponent: 'x3', line: 'Third switch.' },
+    ];
+    wrap(<BattlePlan team={team} />);
+    for (const t of ['Lead why.', 'Form note.', 'First switch.', 'Second switch.', 'Closer why.', 'Keep a shield.']) {
+      expect(screen.getByText(t)).toBeInTheDocument();
+    }
+    expect(screen.queryByText('Third switch.')).not.toBeInTheDocument();
+  });
+
+  it('leaves out what the engine did not write', () => {
+    const team = makeTeam();
+    team.explanation.slotDetail[0]!.formNote = null;
+    team.explanation.slotDetail[2]!.keepShield = null;
+    team.explanation.switchPlan = [];
+    wrap(<BattlePlan team={team} />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+  });
+});
