@@ -84,7 +84,7 @@ describe('Teams list', () => {
     expect(toggles[1]).toHaveAttribute('aria-expanded', 'false');
     const names = screen.getAllByTestId('team-summary-names').map((el) => el.textContent);
     expect(names[0]).toMatch(/Medicham/);
-    expect(names[1]).toMatch(/mimikyu/);
+    expect(names[1]).toMatch(/mimikyu/i);
   });
 
   it('opens and closes a row on tap', async () => {

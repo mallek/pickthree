@@ -472,7 +472,6 @@ export const GLOSSARY: Record<string, string> = {
   'XL Candy': 'Candy needed to power up past level 40. You collect it from catches and trades.',
   'IV rank':
     "How your Pokémon's hidden stats compare with every possible spread of that species at the league's CP cap.",
-  line: 'A team built so the back line beats whatever counters the lead.',
   'back line': 'Your Safe Switch and Closer together.',
   'ABB line': 'A team built so the back line beats whatever counters the lead.',
   'Balanced ABC':
