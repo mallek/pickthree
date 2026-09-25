@@ -56,13 +56,10 @@ export function Build() {
     loadVerdicts,
     movePool,
     suggestTeammates,
-    takeSuggestion,
   } = useActions();
   /** True after pick3 ordered the cards, until a drag or a pick changes them. */
   const [orderedByPick3, setOrderedByPick3] = useState(false);
   const [finding, setFinding] = useState(false);
-  /** Which offered core is in the slots, so the chips can show which one is showing. */
-  const [taken, setTaken] = useState(0);
   const name = useName();
   const short = useShortName();
   const species = useSpecies();
@@ -428,13 +425,18 @@ export function Build() {
   const canSuggest =
     pinned > 0 && pinned < 3 && s.boot === 'ready' && Boolean(s.leagueInfo) && !s.analyzing;
   const askForTeammates = async (): Promise<void> => {
-    setTaken(0);
     setOrderedByPick3(false);
     await suggestTeammates();
   };
-  const swapSuggestion = (i: number): void => {
-    setTaken(i);
-    takeSuggestion(i);
+  const onBoard = s.picks
+    .map((p) => pickInfo(p)?.speciesId)
+    .filter((id): id is string => id !== undefined);
+  const addTeammate = (pick: TeamPick): void => {
+    const slot = s.picks.findIndex((p) => p === null);
+    if (slot === -1) {
+      return;
+    }
+    setPick(slot, pick);
     setOrderedByPick3(false);
   };
   const sheetPick = movesSlot !== null ? s.picks[movesSlot] : null;
@@ -628,7 +630,9 @@ export function Build() {
             {s.suggesting ? 'Looking...' : 'Suggest teammates'}
           </button>
         ) : null}
-        {pinned > 0 ? <TeammateSuggestions taken={taken} onTake={swapSuggestion} /> : null}
+        {pinned === 1 || pinned === 2 ? (
+          <TeammateSuggestions filled={pinned} onBoard={onBoard} onAdd={addTeammate} />
+        ) : null}
         <div className="order-row">
           <button
             type="button"

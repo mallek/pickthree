@@ -1,90 +1,85 @@
-import { useEffect, useRef } from 'react';
-import { PokemonToken, useName, useShortName } from '../components.tsx';
+import type { SuggestResult, TeamPick } from '@pickthree/engine';
+import { ErrorState, Tag } from '@pickthree/ui';
+import { PokemonToken, useName } from '../components.tsx';
 import { useAppState } from '../state/store.tsx';
 
+export interface TeammateOffer {
+  speciesId: string;
+  pick: TeamPick;
+  standIn: boolean;
+  line: string;
+}
+
 /**
- * Teammates for the one or two Pokemon already on the board.
- *
- * The first offer is already in the slots by the time this renders, so the chips are for
- * changing your mind. Every line here is a reason out of the matchup matrix; the verdict is
- * Analyze's job, one tap later, which is why no score appears on this panel.
- *
- * Spec: docs/superpowers/specs/2026-09-19-suggest-teammates-design.md
+ * Each offer's first fill, one per species, none already on the board. Only the first fill's
+ * reason is framed against the pins alone; a second fill's reason names the first, so it is left
+ * for the next run, once the player has added a teammate.
  */
-export function TeammateSuggestions({ taken, onTake }: { taken: number; onTake(i: number): void }) {
-  const s = useAppState();
-  const short = useShortName();
-  const name = useName();
-  const offer = s.suggestion;
-  const box = useRef<HTMLDivElement>(null);
-  // The board fills above the fold; the reasons are what the player pressed the button for, so
-  // bring them into view rather than leaving them under the tab bar.
-  useEffect(() => {
-    // Guarded: jsdom has no scrollIntoView, and neither do some older mobile browsers.
-    const el = box.current;
-    if (offer && typeof el?.scrollIntoView === 'function') {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+export function teammateOffers(result: SuggestResult, onBoard: string[]): TeammateOffer[] {
+  const seen = new Set(onBoard);
+  const out: TeammateOffer[] = [];
+  for (const sug of result.suggestions) {
+    const f = sug.fills[0];
+    if (!f || seen.has(f.speciesId)) {
+      continue;
     }
-  }, [offer]);
+    seen.add(f.speciesId);
+    out.push({ speciesId: f.speciesId, pick: f.pick, standIn: f.standIn, line: f.line });
+  }
+  return out;
+}
+
+/**
+ * Teammates for the one or two Pokémon on the board, found on their own from the matchup matrix.
+ * Nothing here fills a slot until the player taps a row; the verdict is Analyze's job.
+ *
+ * Spec: docs/superpowers/specs/2026-09-25-design-core-flow-design.md, "Build Your Team".
+ */
+export function TeammateSuggestions({
+  filled,
+  onBoard,
+  onAdd,
+}: {
+  filled: 1 | 2;
+  onBoard: string[];
+  onAdd(pick: TeamPick): void;
+}) {
+  const s = useAppState();
+  const name = useName();
   if (s.suggestError) {
-    return <div className="error">{s.suggestError}</div>;
+    return <ErrorState line={s.suggestError} />;
   }
-  if (!offer || offer.suggestions.length === 0) {
-    return null;
+  const offers = s.suggestion ? teammateOffers(s.suggestion, onBoard) : [];
+  if (offers.length === 0) {
+    return s.suggesting ? <p className="meta">Finding teammates...</p> : null;
   }
-  const picked = offer.suggestions[taken] ?? offer.suggestions[0];
   return (
-    <div className="stack" style={{ gap: 8 }} ref={box}>
-      {offer.pinLine ? (
-        <p className="small" style={{ margin: 0 }}>
-          {offer.pinLine}
-        </p>
-      ) : null}
-      {offer.suggestions.length > 1 ? (
-        <div className="recent-row">
-          {offer.suggestions.map((sug, i) => (
-            <button
-              type="button"
-              key={sug.label}
-              className={`chip${i === taken ? ' on' : ''}`}
-              aria-pressed={i === taken}
-              onClick={() => onTake(i)}
-            >
-              {sug.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {picked ? (
-        <div className="stack" style={{ gap: 6 }}>
-          {picked.fills.map((f) => (
-            <div key={f.speciesId} className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
-              <PokemonToken speciesId={f.speciesId} size={28} />
-              <div className="stack" style={{ gap: 2 }}>
-                <span className="small">
-                  {short(f.speciesId)}
-                  {f.standIn ? <span className="tag"> not caught</span> : null}
-                </span>
-                <span className="meta faint" aria-label={`Why ${name(f.speciesId)}`}>
-                  {f.line}
-                </span>
-              </div>
-            </div>
-          ))}
-          {picked.chase ? (
-            <p className="meta faint" style={{ margin: 0 }}>
-              You are one Pokemon away from this one. It runs at an assumed good IV spread until
-              you catch it.
-            </p>
-          ) : null}
-          {picked.sightings !== null ? (
-            <p className="meta faint" style={{ margin: 0 }}>
-              {picked.sightings} shared {picked.sightings === 1 ? 'battle' : 'battles'} ran this
-              trio.
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+    <section className="mate-list" aria-label="Suggested teammates">
+      <h3 className="mate-head">
+        {filled === 1 ? 'Best with your first pick' : 'Best with your first two'}
+      </h3>
+      {s.suggestion?.pinLine ? <p className="meta">{s.suggestion.pinLine}</p> : null}
+      {offers.map((o) => (
+        <button
+          type="button"
+          key={o.speciesId}
+          className="mate-row"
+          aria-label={`Add ${name(o.speciesId)}`}
+          onClick={() => onAdd(o.pick)}
+        >
+          <PokemonToken speciesId={o.speciesId} size={40} />
+          <span className="mate-text">
+            <span className="mate-name">
+              {name(o.speciesId)}
+              {o.standIn ? null : <Tag>yours</Tag>}
+            </span>
+            <span className="meta">{o.line}</span>
+          </span>
+          <span className="mate-add" aria-hidden="true">
+            + Add
+          </span>
+        </button>
+      ))}
+    </section>
   );
 }

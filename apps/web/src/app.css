@@ -3147,3 +3147,43 @@ input[type='range'] {
 .teams-footer {
   text-align: center;
 }
+
+/* Suggested teammates: a list of full-width rows, each a species, its reason and + Add. */
+.mate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mate-head {
+  font-size: 17px;
+}
+.mate-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  text-align: left;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.mate-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mate-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mate-add {
+  flex: none;
+  color: var(--accent-text);
+  font-weight: 600;
+}

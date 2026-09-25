@@ -510,18 +510,6 @@ export function suggestKey(picks: AppState['picks'], league: string): string {
   return `${league}|${ids.join(',')}`;
 }
 
-/** The offered fills dropped into their slots, leaving every pinned slot untouched. */
-function withFills(
-  picks: AppState['picks'],
-  fills: { slot: 0 | 1 | 2; pick: TeamPick }[],
-): AppState['picks'] {
-  const next = [...picks] as AppState['picks'];
-  for (const fill of fills) {
-    next[fill.slot] = fill.pick;
-  }
-  return next;
-}
-
 export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
   const f = settings.filters;
   return {
@@ -614,8 +602,6 @@ interface Actions {
    * returns fast; Analyze does the real simulation on whatever it puts there.
    */
   suggestTeammates(): Promise<void>;
-  /** Put one of the offered cores into the empty slots, leaving the pins alone. */
-  takeSuggestion(which: number): void;
   /** Legal moves for one team member, with the recommendation, in the league in play. */
   movePool(
     speciesId: string,
@@ -1190,16 +1176,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, [facingNow]);
 
-  /** Swap one of the other offered cores in. The pins stay where they are. */
-  const takeSuggestion = useCallback((which: number) => {
-    const s = stateRef.current;
-    const offer = s.suggestion?.suggestions[which];
-    if (!offer) {
-      return;
-    }
-    dispatch({ type: 'picks', picks: withFills(s.picks, offer.fills), shared: false });
-  }, []);
-
   const analyze = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
@@ -1556,7 +1532,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       findOrder,
       analyze,
       suggestTeammates,
-      takeSuggestion,
       movePool,
       faceoff,
       addManual,
@@ -1589,7 +1564,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       findOrder,
       analyze,
       suggestTeammates,
-      takeSuggestion,
       movePool,
       faceoff,
       addManual,
