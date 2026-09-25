@@ -22,8 +22,8 @@ export function BattlePlan({ team }: { team: TeamRecommendation }) {
       {steps.map((st) => (
         <li className="plan-step" key={st.title}>
           <span className="plan-title">{st.title}</span>
-          {st.lines.map((l) => (
-            <span className="plan-line" key={l}>
+          {st.lines.map((l, i) => (
+            <span className="plan-line" key={i}>
               {l}
             </span>
           ))}

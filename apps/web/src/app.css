@@ -1981,6 +1981,9 @@ textarea.paste {
 .score-of {
   color: var(--muted);
 }
+.score-line {
+  font-size: var(--fs-body);
+}
 .score-order {
   font-size: var(--fs-body);
 }
