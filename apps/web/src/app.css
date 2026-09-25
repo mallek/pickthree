@@ -2033,6 +2033,13 @@ textarea.paste {
   opacity: 0.55;
   pointer-events: none;
 }
+/* The Filters sheet's Window select and, while it does not apply, its one-line note. */
+.filters-window {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
 .more-btn.flush {
   padding-left: 0;
 }
