@@ -294,6 +294,20 @@ export function Gallery() {
             ]}
           />
         </div>
+        <p className="g-note">Disabled: the value and chevron go muted, the label stays.</p>
+        <div className="g-row">
+          <Select
+            label="Window"
+            value="meta"
+            disabled
+            onChange={() => undefined}
+            options={[
+              { value: 'meta', label: 'This meta' },
+              { value: '30', label: '30 days' },
+              { value: '7', label: '7 days' },
+            ]}
+          />
+        </div>
       </Section>
 
       <Section name="FilterButton">

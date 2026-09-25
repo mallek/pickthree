@@ -612,6 +612,18 @@
   color: var(--muted);
   pointer-events: none;
 }
+/* Disabled: the value and chevron go muted and faint, the label above stays as it is. Opacity
+   stays 1 (Safari fades a disabled select and paints its text from -webkit-text-fill-color),
+   so the field reads as present but not in play. */
+.select-wrap select:disabled {
+  opacity: 1;
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
+  cursor: not-allowed;
+}
+.select-wrap select:disabled + svg {
+  color: var(--faint);
+}
 .select-wrap select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
