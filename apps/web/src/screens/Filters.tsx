@@ -61,7 +61,11 @@ export function Filters() {
                   updateSettings((cur) => ({ ...cur, facing: { ...cur.facing, window } }))
                 }
               />
-              {windowOff ? (
+              {/* Why it does not apply: a league without community data first, since no Source
+                  choice would help there. */}
+              {!hasCommunity ? (
+                <span className="meta">No community data for this league</span>
+              ) : windowOff ? (
                 <span className="meta">Applies when Source is GBL, Tournaments or All</span>
               ) : null}
             </div>

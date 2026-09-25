@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Filters } from '../src/screens/Filters.tsx';
 import { AppProvider, useActions, useAppState, type AppState } from '../src/state/store.tsx';
 import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
-import { fakeHost } from './fakeHost.ts';
+import type { League } from '@pickthree/engine';
+import { fakeHost, GREAT } from './fakeHost.ts';
 
 let latest: { state: AppState; actions: ReturnType<typeof useActions> } | null = null;
 function Probe() {
@@ -13,9 +14,34 @@ function Probe() {
   return null;
 }
 
-async function mountSheet(): Promise<void> {
+const SPECIAL: League = {
+  id: 'special1',
+  title: 'Special Cup',
+  short: 'Special',
+  cp: 1500,
+  cup: 'special1',
+  meta: 'special1',
+  kind: 'special',
+  minCp: 1410,
+  include: [],
+  exclude: [],
+  metaSize: 0,
+};
+
+/** A fakeHost that also lists a special-cup league, which has no community data. */
+function hostWithSpecial() {
+  const host = fakeHost();
+  const originalReady = host.ready;
+  host.ready = (async () => {
+    const r = await originalReady();
+    return { ...r, leagues: [GREAT, SPECIAL] };
+  }) as typeof host.ready;
+  return host;
+}
+
+async function mountSheet(host = fakeHost()): Promise<void> {
   render(
-    <AppProvider host={fakeHost()}>
+    <AppProvider host={host}>
       <Probe />
       <Filters />
     </AppProvider>,
@@ -27,6 +53,7 @@ async function mountSheet(): Promise<void> {
 }
 
 const WINDOW_NOTE = 'Applies when Source is GBL, Tournaments or All';
+const NO_DATA_NOTE = 'No community data for this league';
 
 describe('Teams Filters sheet', () => {
   beforeEach(() => {
@@ -80,10 +107,24 @@ describe('Teams Filters sheet', () => {
     await mountSheet();
     expect(screen.getByLabelText('Window')).toBeDisabled();
     expect(screen.getByText(WINDOW_NOTE)).toBeInTheDocument();
+    expect(screen.queryByText(NO_DATA_NOTE)).toBeNull();
     await act(async () => {
       latest!.actions.updateSettings((cur) => ({ ...cur, facing: { source: 'prior', window: 'meta' } }));
     });
     expect(screen.getByLabelText('Window')).toBeDisabled();
     expect(screen.getByText(WINDOW_NOTE)).toBeInTheDocument();
+  });
+
+  it('names the league, not the Source, when the league has no community data', async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      league: 'special1',
+      facing: { source: 'ladder', window: 'meta' },
+    });
+    await mountSheet(hostWithSpecial());
+    await waitFor(() => expect(latest?.state.data).not.toBeNull());
+    expect(screen.getByLabelText('Window')).toBeDisabled();
+    expect(screen.getByText(NO_DATA_NOTE)).toBeInTheDocument();
+    expect(screen.queryByText(WINDOW_NOTE)).toBeNull();
   });
 });
