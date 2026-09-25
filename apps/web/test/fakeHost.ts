@@ -112,6 +112,14 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
     scanList: vi.fn(),
     analyze: vi.fn(),
     movePool: vi.fn(),
+    // Build asks for teammates on its own once a slot is filled; by default it finds none.
+    suggestTeammates: vi.fn(async () => ({
+      pinLine: '',
+      suggestions: [],
+      assumptions: {} as never,
+      stats: { standIns: 0, poolSize: 0, cores: 0, simulatedRows: 0 },
+      ms: 0,
+    })),
     manual: vi.fn(),
     faceoff: vi.fn(async (team: { species: string[] }, _s: unknown, opponent: string) => ({
       opponent,

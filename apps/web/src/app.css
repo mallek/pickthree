@@ -1799,14 +1799,42 @@ textarea.paste {
 .pick-v b {
   font-weight: 600;
 }
-.order-row {
+/* Build Your Team: the page, the choosing line over the search, the lineup head, the total. */
+.build-scroll {
+  gap: 16px;
+}
+.build-choose {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
-.order-row .btn-ghost {
-  align-self: flex-start;
-  border: 1px solid var(--divider);
+.build-choosing {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+.build-lineup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.build-lineup p {
+  margin: 0;
+}
+.build-lineup-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.build-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--r-xl);
+  background: var(--surface);
 }
 /* One line per move: F or C, the name, its type. */
 .pick-moves {
@@ -1814,7 +1842,7 @@ textarea.paste {
   padding-top: 10px;
   border-top: 1px solid var(--divider);
 }
-.pick-moves .tag {
+.pick-moves .ui-tag {
   align-self: flex-start;
 }
 /* Remove at the top, drag grip beneath, in one column on the card's right edge. */

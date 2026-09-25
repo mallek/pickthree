@@ -14,9 +14,10 @@ import {
   useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react';
 import {
-  Header,
+  CogGlyph,
   PokemonToken,
   Progress,
   TypeChip,
@@ -26,16 +27,23 @@ import {
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
-import { ivLine, topPct } from '../format.ts';
-import { typeColor } from '@pickthree/ui';
+import { costLine, ivLine, topPct } from '../format.ts';
+import { Button, ErrorState, Header, IconButton, Sheet, Tag, typeColor } from '@pickthree/ui';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
-import { useActions, useAppState } from '../state/store.tsx';
+import { suggestKey, useActions, useAppState } from '../state/store.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { lineupCost } from '../components/lineupCost.ts';
 import { MovePicker } from '../components/MovePicker.tsx';
 import { TeammateSuggestions } from '../components/TeammateSuggestions.tsx';
 
 const SLOT_LABELS = ['Lead', 'Safe Switch', 'Closer'] as const;
+/** Each slot's job in one line, shortened from GLOSSARY in components.tsx. */
+const ROLE_JOBS = [
+  'Opens the battle and usually decides the first shield exchange',
+  'Comes in when the lead matchup goes badly',
+  'Finishes the battle after shields are gone',
+] as const;
 const ORDER: Record<VerdictLabel, number> = {
   'Ready to use': 0,
   'Worth building': 1,
@@ -48,7 +56,8 @@ const ORDER: Record<VerdictLabel, number> = {
 export function Build() {
   const s = useAppState();
   const {
-    navigate,
+    back,
+    openSheet,
     setPick,
     setPicks,
     findOrder,
@@ -329,19 +338,9 @@ export function Build() {
       <span className="pick-moves">
         {line(ids.fast, 'F')}
         {ids.charged.map((id) => line(id, 'C'))}
-        {p.moves ? <span className="tag">moves changed</span> : null}
+        {p.moves ? <Tag>Moves changed</Tag> : null}
       </span>
     );
-  };
-
-  const movesLine = (p: TeamPick, pool: MovePool | null): string => {
-    if (!pool) {
-      return 'Recommended moves';
-    }
-    const ids = p.moves ?? pool.recommended;
-    const all = [...pool.fast, ...pool.charged];
-    const label = (id: string): string => all.find((m) => m.moveId === id)?.name ?? id;
-    return [label(ids.fast), ...ids.charged.map(label)].join(', ');
   };
 
   const setMoves = (i: number, p: TeamPick, next: MoveIds): void => {
@@ -417,47 +416,97 @@ export function Build() {
     }
   };
 
-  const ready = s.picks.every(Boolean) && s.boot === 'ready' && !s.analyzing;
-  /** The button is for a board that has something to build around and somewhere to put it. */
+  const allIn = s.picks.every(Boolean);
+  const ready = allIn && s.boot === 'ready' && !s.analyzing;
   const pinned = s.picks.filter(Boolean).length;
-  // leagueInfo as well as boot: the suggestion needs the league bundle, and a button that is
-  // pressable before it arrives just swallows the tap.
-  const canSuggest =
-    pinned > 0 && pinned < 3 && s.boot === 'ready' && Boolean(s.leagueInfo) && !s.analyzing;
-  const askForTeammates = async (): Promise<void> => {
-    setOrderedByPick3(false);
-    await suggestTeammates();
-  };
-  const onBoard = s.picks
-    .map((p) => pickInfo(p)?.speciesId)
-    .filter((id): id is string => id !== undefined);
+  const boardKey = suggestKey(s.picks, league);
+  const lastAsked = useRef<string | null>(null);
+  // A list or an error for the board on screen. Every pick change clears the list in the store,
+  // even one that leaves the same board (a move change, or the same Pokémon picked again).
+  const answered = s.suggestion !== null || s.suggestError !== null;
+  // Runs on its own whenever the board has one or two picks and has no answer since the last ask.
+  // A run in flight finishes (and is dropped if the board moved on); this effect then asks again.
+  useEffect(() => {
+    if (
+      pinned === 0 ||
+      pinned === 3 ||
+      s.boot !== 'ready' ||
+      !s.leagueInfo ||
+      s.analyzing ||
+      s.suggesting ||
+      (lastAsked.current === boardKey && answered)
+    ) {
+      return;
+    }
+    lastAsked.current = boardKey;
+    void suggestTeammates();
+  }, [
+    boardKey,
+    answered,
+    pinned,
+    s.boot,
+    s.leagueInfo,
+    s.analyzing,
+    s.suggesting,
+    suggestTeammates,
+  ]);
+
+  /** + Add on a suggested teammate: it takes the first empty slot, and no search opens. */
   const addTeammate = (pick: TeamPick): void => {
     const slot = s.picks.findIndex((p) => p === null);
-    if (slot === -1) {
+    if (slot < 0) {
       return;
     }
     setPick(slot, pick);
     setOrderedByPick3(false);
   };
+  const onBoard = s.picks.map((p) => pickInfo(p)?.speciesId).filter((id): id is string => !!id);
+  const cost = lineupCost(s.picks, (id) => s.verdicts[id]?.cost ?? null);
   const sheetPick = movesSlot !== null ? s.picks[movesSlot] : null;
   const sheetInfo = sheetPick ? pickInfo(sheetPick) : null;
   const sheetPool = sheetPick ? poolFor(sheetPick) : null;
+  // The ui Sheet keeps the root page it opened with, so its render reads the latest body from
+  // here: the pool arrives after the sheet opens, and each move change must show at once.
+  const sheetBody = useRef<() => ReactNode>(() => null);
+  sheetBody.current = () => {
+    if (movesSlot === null || !sheetPick) {
+      return null;
+    }
+    return sheetPool ? (
+      <MovePicker
+        pool={sheetPool}
+        value={sheetPick.moves ?? sheetPool.recommended}
+        onChange={(next) => setMoves(movesSlot, sheetPick, next)}
+      />
+    ) : (
+      <Progress stage="moves" done={0} total={0} />
+    );
+  };
 
   return (
     <div className="screen">
       <Header
+        variant="sub"
         title="Build Your Team"
-        onBack={() => navigate({ screen: 'teams' })}
-        backLabel="Teams"
+        back={{ label: 'Back', onClick: () => back({ screen: 'teams' }) }}
+        actions={
+          <IconButton label="Settings" onClick={openSheet}>
+            <CogGlyph />
+          </IconButton>
+        }
       />
-      <div className="scroll" style={{ gap: 16 }}>
+      <div className="scroll build-scroll">
         <LeagueSwitcher compact />
         {target !== null ? (
-          <div className="stack" style={{ gap: 8 }}>
+          <div className="build-choose">
+            <p className="build-choosing">
+              <b>Choosing {SLOT_LABELS[target]}</b>
+              <span className="meta">{ROLE_JOBS[target]}</span>
+            </p>
             <input
               ref={searchRef}
               className="search"
-              placeholder={`Search any Pokemon for ${SLOT_LABELS[target]}`}
+              placeholder={`Search any Pokémon for ${SLOT_LABELS[target]}`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               // Tapping away closes the search; grid taps keep focus so they still land.
@@ -493,7 +542,7 @@ export function Build() {
             ) : null}
             {!s.collection ? (
               <p className="small muted" style={{ margin: 0 }}>
-                No collection imported. Import a CSV to include your own Pokemon here.
+                No collection imported. Import a CSV to include your own Pokémon here.
               </p>
             ) : null}
             {s.collection && Object.keys(s.verdicts).length === 0 ? (
@@ -501,6 +550,20 @@ export function Build() {
             ) : null}
           </div>
         ) : null}
+
+        <div className="build-lineup">
+          <div className="build-lineup-head">
+            <h3>Your lineup</h3>
+            <Button variant="text" disabled={!ready} onClick={() => void findBest()}>
+              {finding ? 'Finding...' : 'Find best order'}
+            </Button>
+          </div>
+          <p className="meta">
+            {orderedByPick3
+              ? 'Ordered by pick3. Drag a card to change it.'
+              : 'Tap a card to change its moves'}
+          </p>
+        </div>
 
         <div className="pick-cards">
           {s.picks.map((p, i) => {
@@ -535,7 +598,7 @@ export function Build() {
                   </span>
                   <span className="pick-card-body">
                     <span className="pick-role">{role}</span>
-                    <span className="small muted">Tap to pick a Pokemon.</span>
+                    <span className="small muted">Tap to pick a Pokémon.</span>
                   </span>
                 </div>
               );
@@ -620,74 +683,45 @@ export function Build() {
           })}
         </div>
 
-        {canSuggest ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={s.suggesting}
-            onClick={() => void askForTeammates()}
-          >
-            {s.suggesting ? 'Looking...' : 'Suggest teammates'}
-          </button>
+        {allIn ? (
+          <div className="build-cost" data-testid="build-cost">
+            {cost.total ? (
+              <>
+                <span className="meta">Total to build</span>
+                <span>{costLine(cost.total)}</span>
+              </>
+            ) : cost.notCaught === 3 ? (
+              <span className="meta">
+                None of these are yours yet, so there is nothing to price.
+              </span>
+            ) : null}
+            {cost.notCaught > 0 && cost.notCaught < 3 ? (
+              <span className="meta">Not counting {cost.notCaught} you have not caught</span>
+            ) : null}
+            {cost.unpriced > 0 ? (
+              <span className="meta">Not counting {cost.unpriced} not priced yet</span>
+            ) : null}
+          </div>
         ) : null}
-        {pinned === 1 || pinned === 2 ? (
-          <TeammateSuggestions filled={pinned} onBoard={onBoard} onAdd={addTeammate} />
+
+        {/* Shortcuts last, and hidden while a slot's search is open: the keyboard covers them. */}
+        {target === null && (pinned === 1 || pinned === 2) ? (
+          <TeammateSuggestions filled={pinned as 1 | 2} onBoard={onBoard} onAdd={addTeammate} />
         ) : null}
-        <div className="order-row">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={!ready}
-            onClick={() => void findBest()}
-          >
-            {finding ? 'Finding the best order...' : 'Find the best order'}
-          </button>
-          <span className="meta">
-            {orderedByPick3
-              ? 'Ordered by pick3. Drag a card to change it.'
-              : 'pick3 tries all six orders and moves the cards. Or drag them yourself.'}
-          </span>
-        </div>
-        {s.analyzeError ? <div className="error">{s.analyzeError}</div> : null}
+
+        {s.analyzeError ? <ErrorState line={s.analyzeError} /> : null}
         {s.analyzing && s.progress ? (
           <Progress stage={s.progress.stage} done={s.progress.done} total={s.progress.total} />
         ) : null}
-        <button type="button" className="btn" disabled={!ready} onClick={() => void analyze()}>
+        <Button variant="primary" disabled={!ready} onClick={() => void analyze()}>
           {s.analyzing && !finding ? 'Analyzing...' : 'Analyze this team'}
-        </button>
-        <p className="meta faint" style={{ margin: 0 }}>
-          The cards run in the order shown. Tap a card to change its moves; changes last only for
-          this team. Your own Pokemon run with their real IVs at the level pick3 would build them
-          to.
-        </p>
+        </Button>
       </div>
       {movesSlot !== null && sheetPick && sheetInfo ? (
-        <>
-          <div className="overlay" onClick={closeMoves} aria-hidden="true" />
-          <div className="sheet" role="dialog" aria-label={`${sheetInfo.title} moves`}>
-            <div className="grabber">
-              <span />
-            </div>
-            <div className="between" style={{ padding: '4px 20px 8px' }}>
-              <h3 style={{ fontSize: 19 }}>{sheetInfo.title}</h3>
-              <button type="button" className="btn-ghost" onClick={closeMoves}>
-                Done
-              </button>
-            </div>
-            <div className="sheet-body">
-              <span className="meta">{movesLine(sheetPick, sheetPool)}</span>
-              {sheetPool ? (
-                <MovePicker
-                  pool={sheetPool}
-                  value={sheetPick.moves ?? sheetPool.recommended}
-                  onChange={(next) => setMoves(movesSlot, sheetPick, next)}
-                />
-              ) : (
-                <Progress stage="moves" done={0} total={0} />
-              )}
-            </div>
-          </div>
-        </>
+        <Sheet
+          onClose={closeMoves}
+          root={{ id: 'moves', title: sheetInfo.title, render: () => sheetBody.current() }}
+        />
       ) : null}
     </div>
   );
