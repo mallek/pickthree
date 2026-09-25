@@ -26,9 +26,11 @@ describe('Build a team', () => {
     resetHistoryForTests();
   });
 
-  // A failed assertion must not leave a stubbed global (matchMedia) to later tests.
+  // A failed assertion must not leave a stubbed global (matchMedia) or a spy (history.back) to
+  // later tests.
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('fills the first empty slot from the search grid and removes it with the badge', async () => {
@@ -407,6 +409,40 @@ describe('Build a team', () => {
     );
   });
 
+  it('heads the list by how many are on the board', async () => {
+    const clodsireFirst = {
+      ...offer,
+      suggestions: [{ ...offer.suggestions[0]!, fills: [offer.suggestions[0]!.fills[1]!] }],
+    };
+    const suggestTeammates = vi.fn().mockResolvedValueOnce(offer).mockResolvedValue(clodsireFirst);
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates })}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await screen.findByRole('heading', { name: 'Best with your first pick' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Azumarill' }));
+    await screen.findByRole('heading', { name: 'Best with your first two' });
+    expect(screen.getByRole('button', { name: 'Add Clodsire' })).toBeInTheDocument();
+  });
+
+  it('hides the suggestions while a slot search is open', async () => {
+    const suggestTeammates = vi.fn(async () => offer);
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates })}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await screen.findByRole('button', { name: 'Add Azumarill' });
+    fireEvent.click(screen.getByRole('button', { name: 'Safe Switch, empty' }));
+    const search = await screen.findByPlaceholderText('Search any Pokémon for Safe Switch');
+    expect(screen.queryByRole('region', { name: 'Suggested teammates' })).not.toBeInTheDocument();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    await screen.findByRole('region', { name: 'Suggested teammates' });
+  });
+
   it('with none of yours, says there is nothing to price', async () => {
     // fakeHost has no collection, so every search pick is a species pick, not yours.
     render(
@@ -430,6 +466,25 @@ describe('Build a team', () => {
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.hash).toBe('#/teams'));
+  });
+
+  it('Back goes back through history when pick3 has a screen behind Build', async () => {
+    window.location.hash = '#/teams';
+    render(
+      <AppProvider host={fakeHost()}>
+        <Build />
+      </AppProvider>,
+    );
+    await screen.findByRole('button', { name: 'Back' });
+    // A second pick3 entry on top of Teams, stamped by the provider's hashchange listener.
+    window.location.hash = '#/build';
+    await waitFor(() =>
+      expect((window.history.state as { pick3Depth?: number } | null)?.pick3Depth).toBe(1),
+    );
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(historyBack).toHaveBeenCalledTimes(1);
+    expect(window.location.hash).toBe('#/build');
   });
 
   it('shows the move pool once it arrives, and each move change at once', async () => {
