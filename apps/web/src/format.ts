@@ -47,13 +47,18 @@ export function num(n: number): string {
  */
 export const SEP = '\u00a0· ';
 
+/** A number and its unit held together with non-breaking spaces: "88 XL Candy" never splits. */
+function amount(n: string, unit: string): string {
+  return `${n}\u00a0${unit.replaceAll(' ', '\u00a0')}`;
+}
+
 export function costLine(c: Cost): string {
-  const parts = [`${num(c.stardust)} Stardust`, `${num(c.candy)} Candy`];
+  const parts = [amount(num(c.stardust), 'Stardust'), amount(num(c.candy), 'Candy')];
   if (c.xlCandy > 0) {
-    parts.push(`${num(c.xlCandy)} XL Candy`);
+    parts.push(amount(num(c.xlCandy), 'XL Candy'));
   }
   if (c.eliteTm > 0) {
-    parts.push(`${c.eliteTm} Elite TM`);
+    parts.push(amount(String(c.eliteTm), 'Elite TM'));
   }
   return parts.join(SEP);
 }
@@ -150,8 +155,8 @@ export function layoutLine(layout: Layout | undefined): string | null {
     layout.format === 'poke-genie' || layout.format === 'calcy-iv'
       ? 'a scan export'
       : layout.hasHeader
-          ? 'a sheet'
-          : 'a sheet with no header row';
+        ? 'a sheet'
+        : 'a sheet with no header row';
   return `Read as ${label}: ${layout.columnCount} columns, ${layout.columns.length} used.`;
 }
 

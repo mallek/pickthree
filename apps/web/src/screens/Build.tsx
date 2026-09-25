@@ -357,6 +357,7 @@ export function Build() {
   const closeMoves = (): void => setMovesSlot(null);
   const removePick = (i: number): void => {
     setPick(i, null);
+    setOrderedByPick3(false);
     if (movesSlot === i) {
       setMovesSlot(null);
     }
@@ -551,11 +552,14 @@ export function Build() {
               {finding ? 'Finding...' : 'Find best order'}
             </Button>
           </div>
-          <p className="meta">
-            {orderedByPick3
-              ? 'Ordered by pick3. Drag a card to change it.'
-              : 'Tap a card to change its moves'}
-          </p>
+          {/* No hint on an empty board: there is no card to tap yet. */}
+          {pinned > 0 ? (
+            <p className="meta">
+              {orderedByPick3
+                ? 'Ordered by pick3. Drag a card to change it.'
+                : 'Tap a card to change its moves'}
+            </p>
+          ) : null}
         </div>
 
         <div className="pick-cards">

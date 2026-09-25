@@ -71,7 +71,7 @@ describe('TeamCardBody', () => {
     expect(screen.getByText('Snorlax needs to bait one shield.')).toBeInTheDocument();
     // Whitespace left as rendered: the default normalizer would fold the non-breaking spaces away.
     expect(
-      screen.getByText(/263,900 Stardust\u00a0· 255 Candy\u00a0· 1 Elite TM/, {
+      screen.getByText(/263,900\u00a0Stardust\u00a0· 255\u00a0Candy\u00a0· 1\u00a0Elite\u00a0TM/, {
         normalizer: getDefaultNormalizer({ collapseWhitespace: false }),
       }),
     ).toBeInTheDocument();

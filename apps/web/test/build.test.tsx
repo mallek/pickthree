@@ -376,8 +376,35 @@ describe('Build a team', () => {
     ).toBeTruthy();
     expect(find.compareDocumentPosition(firstCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(find).toBeDisabled();
-    expect(screen.getByText('Tap a card to change its moves')).toBeInTheDocument();
+    // No card to tap on an empty board, so no hint yet; one pick brings it.
+    expect(screen.queryByText('Tap a card to change its moves')).not.toBeInTheDocument();
     expect(screen.queryByText(/The cards run in the order shown/)).not.toBeInTheDocument();
+    await pickFirst('tink', 'Tinkaton');
+    await screen.findByText('Tap a card to change its moves');
+  });
+
+  it('drops the Ordered by pick3 hint once a card is removed', async () => {
+    // Best order puts Clodsire first; the analysis names each slot's build by species.
+    const analyze = vi.fn(async () => ({
+      team: {
+        slots: ['clodsire', 'tinkaton', 'azumarill'].map((speciesId) => ({
+          candidate: { build: { speciesId, specimenId: null } },
+        })),
+      },
+    }));
+    render(
+      <AppProvider host={fakeHost({ analyze })}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await pickFirst('azu', 'Azumarill');
+    await pickFirst('clod', 'Clodsire');
+    fireEvent.click(screen.getByRole('button', { name: 'Find best order' }));
+    await screen.findByText('Ordered by pick3. Drag a card to change it.');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Clodsire' }));
+    await screen.findByText('Tap a card to change its moves');
+    expect(screen.queryByText(/Ordered by pick3/)).not.toBeInTheDocument();
   });
 
   it('names the slot being chosen and what that role does', async () => {

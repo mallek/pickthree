@@ -1,5 +1,5 @@
 /**
- * The community team board, read for the Suggest teammates chip.
+ * The community team board, read for Build's teammate suggestions.
  *
  * This is the app's first outbound READ. The other three calls out (the hit counter, error
  * reports, battle records) all push. Two rules keep it honest:
