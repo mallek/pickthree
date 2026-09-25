@@ -52,15 +52,40 @@ function amount(n: string, unit: string): string {
   return `${n}\u00a0${unit.replaceAll(' ', '\u00a0')}`;
 }
 
-export function costLine(c: Cost): string {
-  const parts = [amount(num(c.stardust), 'Stardust'), amount(num(c.candy), 'Candy')];
+export interface CostPart {
+  /** The formatted number alone, e.g. "12,500" or "1". */
+  amount: string;
+  /** The unit label alone, e.g. "Stardust", "XL Candy", "Elite TM". */
+  unit: string;
+  /** amount and unit joined with non-breaking spaces, ready to drop straight into a string. */
+  text: string;
+  /** Set when the unit has a GLOSSARY entry, so a caller can wrap just the unit word in a Term
+   * instead of re-deriving which parts of a cost carry one. */
+  term?: 'XL Candy' | 'Elite TM';
+}
+
+function costPart(n: string, unit: string, term?: 'XL Candy' | 'Elite TM'): CostPart {
+  return { amount: n, unit, text: amount(n, unit), ...(term ? { term } : {}) };
+}
+
+/** Stardust, Candy, then XL Candy and Elite TM when the build needs them, zero ones omitted. The
+ * one place this ordering and these zero-checks live: `costLine` and `PokemonDetails`'
+ * `CostBreakdown` both build on this instead of keeping their own copy. */
+export function costParts(c: Cost): CostPart[] {
+  const parts: CostPart[] = [costPart(num(c.stardust), 'Stardust'), costPart(num(c.candy), 'Candy')];
   if (c.xlCandy > 0) {
-    parts.push(amount(num(c.xlCandy), 'XL Candy'));
+    parts.push(costPart(num(c.xlCandy), 'XL Candy', 'XL Candy'));
   }
   if (c.eliteTm > 0) {
-    parts.push(amount(String(c.eliteTm), 'Elite TM'));
+    parts.push(costPart(String(c.eliteTm), 'Elite TM', 'Elite TM'));
   }
-  return parts.join(SEP);
+  return parts;
+}
+
+export function costLine(c: Cost): string {
+  return costParts(c)
+    .map((p) => p.text)
+    .join(SEP);
 }
 
 export function topPct(r: IvRankResult): number {

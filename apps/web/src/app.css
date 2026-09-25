@@ -2024,6 +2024,17 @@ textarea.paste {
   flex-wrap: wrap;
   gap: 8px;
 }
+/* .mini/.mini.threat are fixed-width (150px/170px) for their original home, TeamDetail's
+   horizontal-scroll rows. Here they sit in a two-column grid or a wrapping grid instead, so let
+   them fill their column and match each other rather than keep TeamDetail's scroll-row widths. */
+.matchup-cols .mini {
+  width: auto;
+}
+.matchup-grid .mini {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 140px;
+}
 /* Team Analysis: the Pokémon strip's expand-row summary. */
 .pd-summary {
   display: flex;

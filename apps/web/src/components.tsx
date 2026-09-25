@@ -440,7 +440,7 @@ export function MoveRows({
                   {count ? (
                     <span>
                       {count}
-                      {note}
+                      {note ? <>&nbsp;{note}</> : null}
                     </span>
                   ) : (
                     note
@@ -487,6 +487,8 @@ export const GLOSSARY: Record<string, string> = {
   'XL Candy': 'Candy needed to power up past level 40. You collect it from catches and trades.',
   'IV rank':
     "How your Pokémon's hidden stats compare with every possible spread of that species at the league's CP cap.",
+  'Move counts':
+    'A move count like “4-4-3” is how many fast moves reach the charged move on its first, second and third use.',
   'back line': 'Your Safe Switch and Closer together.',
   'ABB line': 'A team built so the back line beats whatever counters the lead.',
   'Balanced ABC':

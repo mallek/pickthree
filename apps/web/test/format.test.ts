@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { costLine, initialOf, scanAge, speciesDisplayName, topPct } from '../src/format.ts';
+import { costLine, costParts, initialOf, scanAge, speciesDisplayName, topPct } from '../src/format.ts';
 import { hashFor, parseHash } from '../src/state/store.tsx';
 
 describe('format helpers', () => {
@@ -40,6 +40,37 @@ describe('format helpers', () => {
     expect(costLine(base)).toBe('214,000\u00a0Stardust\u00a0· 231\u00a0Candy');
     expect(costLine({ ...base, xlCandy: 12, eliteTm: 1 })).toBe(
       '214,000\u00a0Stardust\u00a0· 231\u00a0Candy\u00a0· 12\u00a0XL\u00a0Candy\u00a0· 1\u00a0Elite\u00a0TM',
+    );
+  });
+
+  it('breaks a cost into parts costLine also builds on, one per component', () => {
+    const base = {
+      stardust: 214000,
+      candy: 231,
+      xlCandy: 0,
+      eliteTm: 0,
+      evolutionCandy: 0,
+      secondMoveUnlock: false,
+      powerUpSteps: 0,
+      estimated: false,
+      weight: 0,
+    };
+    expect(costParts(base)).toEqual([
+      { amount: '214,000', unit: 'Stardust', text: '214,000\u00a0Stardust' },
+      { amount: '231', unit: 'Candy', text: '231\u00a0Candy' },
+    ]);
+    expect(costParts({ ...base, xlCandy: 12, eliteTm: 1 })).toEqual([
+      { amount: '214,000', unit: 'Stardust', text: '214,000\u00a0Stardust' },
+      { amount: '231', unit: 'Candy', text: '231\u00a0Candy' },
+      { amount: '12', unit: 'XL Candy', text: '12\u00a0XL\u00a0Candy', term: 'XL Candy' },
+      { amount: '1', unit: 'Elite TM', text: '1\u00a0Elite\u00a0TM', term: 'Elite TM' },
+    ]);
+    // costLine is costParts' texts, SEP-joined: the two never drift apart.
+    const full = { ...base, xlCandy: 12, eliteTm: 1 };
+    expect(costLine(full)).toBe(
+      costParts(full)
+        .map((p) => p.text)
+        .join('\u00a0· '),
     );
   });
 

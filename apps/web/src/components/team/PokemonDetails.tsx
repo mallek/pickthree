@@ -1,6 +1,6 @@
 import type { Cost, TeamRecommendation } from '@pickthree/engine';
 import { ExpandRow, Tag, Term } from '@pickthree/ui';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
   GLOSSARY,
   MetaTags,
@@ -11,46 +11,30 @@ import {
   TypeChips,
   useName,
 } from '../../components.tsx';
-import { ivLine, num, SEP, topPct } from '../../format.ts';
+import { costParts, ivLine, SEP, topPct } from '../../format.ts';
 
 const ORDER = ['First', 'Second', 'Third'];
 
-const MOVE_COUNT_NOTE = (
-  <Term term="Move counts">
-    A move count like &ldquo;4-4-3&rdquo; is how many fast moves reach the charged move on its
-    first, second and third use.
-  </Term>
-);
+const MOVE_COUNT_NOTE = <Term term="Move counts">{GLOSSARY['Move counts']}</Term>;
 
-/** Stardust, Candy, XL Candy and Elite TM, in that order, with the last two words wired to their
- * glossary term right where they are printed rather than in a shared paragraph. */
+/** Stardust, Candy, XL Candy and Elite TM, in that order, from the one shared `costParts` that
+ * `costLine` also builds on, with the last two words wired to their glossary term right where
+ * they are printed instead of in a shared paragraph. */
 function CostBreakdown({ cost }: { cost: Cost }) {
-  const parts: ReactNode[] = [
-    `${num(cost.stardust)}\u00a0Stardust`,
-    `${num(cost.candy)}\u00a0Candy`,
-  ];
-  if (cost.xlCandy > 0) {
-    parts.push(
-      <span key="xl">
-        {num(cost.xlCandy)}&nbsp;
-        <Term term="XL Candy">{GLOSSARY['XL Candy']}</Term>
-      </span>,
-    );
-  }
-  if (cost.eliteTm > 0) {
-    parts.push(
-      <span key="etm">
-        {cost.eliteTm}&nbsp;
-        <Term term="Elite TM">{GLOSSARY['Elite TM']}</Term>
-      </span>,
-    );
-  }
   return (
     <>
-      {parts.map((p, i) => (
-        <span key={i}>
+      {costParts(cost).map((p, i) => (
+        <span key={p.unit}>
           {i > 0 ? SEP : null}
-          {p}
+          {p.term ? (
+            <>
+              {p.amount}
+              {'\u00a0'}
+              <Term term={p.term}>{GLOSSARY[p.term]}</Term>
+            </>
+          ) : (
+            p.text
+          )}
         </span>
       ))}
     </>

@@ -124,6 +124,50 @@ describe('PokemonDetails', () => {
     expect(screen.getAllByRole('button', { name: 'fewer' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: '+2 more' })).toHaveLength(1);
   });
+
+  it('separates the move count from the "Move counts" term with a space', () => {
+    const team = makeTeam();
+    wrap(
+      <PokemonDetails
+        team={team}
+        hypothetical={[]}
+        open={[true, false, false]}
+        onToggle={() => undefined}
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Move counts' });
+    const sub = button.closest('.move-sub');
+    expect(sub).not.toBeNull();
+    expect(sub!.textContent).toBe('4-4-3 Fast Move Move counts');
+  });
+
+  it('builds the To build cost line from the shared costParts: SEP joins, zero XL/Elite omitted, unlock and estimated suffixes', () => {
+    const team = makeTeam();
+    const slot = team.slots[0]!;
+    slot.candidate.cost = {
+      stardust: 25000,
+      candy: 50,
+      xlCandy: 10,
+      eliteTm: 2,
+      evolutionCandy: 0,
+      secondMoveUnlock: true,
+      powerUpSteps: 5,
+      estimated: true,
+      weight: 999999,
+    };
+    wrap(
+      <PokemonDetails
+        team={team}
+        hypothetical={[]}
+        open={[true, false, false]}
+        onToggle={() => undefined}
+      />,
+    );
+    const toBuild = screen.getByText('To build').nextElementSibling as HTMLElement;
+    expect(toBuild.textContent).toBe(
+      'Level 20 to 25 · 25,000 Stardust · 50 Candy · 10 XL Candy · 2 Elite TM · second move unlock (evolution candy estimated)',
+    );
+  });
 });
 
 describe('WhyThisTeam', () => {
