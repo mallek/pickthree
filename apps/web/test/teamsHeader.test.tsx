@@ -189,3 +189,35 @@ describe('Teams header', () => {
     expect(screen.getByRole('option', { name: 'GBL (offline)' })).toBeInTheDocument();
   });
 });
+
+describe('Teams without a collection', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetCommunityMetaCache();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  it('keeps the page title, the meta link and Settings above the ways in, with no league or controls', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+        <Teams />
+      </AppProvider>,
+    );
+    await waitFor(() => {
+      expect(latest?.state.boot).toBe('ready');
+      expect(latest?.state.settingsLoaded).toBe(true);
+    });
+    expect(latest?.state.collection).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Your Teams' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /meta\.pick3\.gg/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import a CSV' })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'League' })).toBeNull();
+    expect(screen.queryByLabelText('Source')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(latest!.state.sheetOpen).toBe(true);
+  });
+});

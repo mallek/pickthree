@@ -54,6 +54,26 @@ export function facingSummary(choice: FacingChoice, logCount: number, fellBack: 
   return `${WINDOW_LABELS[choice.window]} · ${SOURCE_LABELS[choice.source]} weighting`;
 }
 
+/** The tab's own header: its title, the meta.pick3.gg link and Settings. */
+function TeamsHeader({ openSheet }: { openSheet: () => void }) {
+  return (
+    <Header
+      variant="top"
+      title="Your Teams"
+      actions={
+        <>
+          <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
+            <MetaGlyph />
+          </IconButton>
+          <IconButton label="Settings" onClick={openSheet}>
+            <CogGlyph />
+          </IconButton>
+        </>
+      }
+    />
+  );
+}
+
 export function Teams() {
   const s = useAppState();
   const { navigate, runRecommend, updateSettings, openFilters, openSheet, setPick } = useActions();
@@ -104,6 +124,9 @@ export function Teams() {
   if (!s.collection) {
     return (
       <div className="screen">
+        <div className="page-head">
+          <TeamsHeader openSheet={openSheet} />
+        </div>
         <NoCollection navigate={navigate} />
       </div>
     );
@@ -137,20 +160,7 @@ export function Teams() {
   return (
     <div className="screen">
       <div className="page-head">
-        <Header
-          variant="top"
-          title="Your Teams"
-          actions={
-            <>
-              <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
-                <MetaGlyph />
-              </IconButton>
-              <IconButton label="Settings" onClick={openSheet}>
-                <CogGlyph />
-              </IconButton>
-            </>
-          }
-        />
+        <TeamsHeader openSheet={openSheet} />
         <LeagueSwitcher />
         <div className="row teams-controls">
           <Select<FacingSource>
