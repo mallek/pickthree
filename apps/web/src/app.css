@@ -519,30 +519,6 @@ a {
   margin-top: 2px;
 }
 
-/* progress */
-.progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 24px 0;
-}
-.progress-label {
-  font-size: 14px;
-  color: var(--muted);
-}
-.progress-bar {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--surface2);
-  overflow: hidden;
-}
-.progress-bar span {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transition: width 0.2s;
-}
-
 /* welcome */
 .hero {
   font-size: 30px;

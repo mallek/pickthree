@@ -170,7 +170,7 @@ await page.evaluate(() => {
     select.dispatchEvent(new Event('change', { bubbles: true }));
   }
 });
-await page.waitForFunction(() => !document.querySelector('.progress'), { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.ui-loading'), { timeout: 60_000 });
 await shot('teams-community');
 // Back to Your log, the default, so no later shot is community-weighted. The recommendation
 // lags the select a tick, so wait for quiet, give the new run time to start, then wait again.
@@ -185,7 +185,7 @@ await page.evaluate(() => {
 });
 for (let i = 0; i < 2; i++) {
   await page.waitForFunction(
-    () => document.querySelector('.team-card') && !document.querySelector('.progress'),
+    () => document.querySelector('.team-card') && !document.querySelector('.ui-loading'),
     { timeout: 120_000 },
   );
   await new Promise((r) => setTimeout(r, 750));
@@ -197,7 +197,7 @@ await page.waitForFunction(
   () =>
     document.querySelector('.league-switcher[data-league="ultra"]') &&
     document.querySelector('.team-card') &&
-    !document.querySelector('.progress'),
+    !document.querySelector('.ui-loading'),
   { timeout: 120_000 },
 );
 console.log(`  ultra teams rendered at ${Date.now() - t0} ms`);
@@ -214,7 +214,7 @@ const settled = async () => {
       () =>
         document.querySelector('.league-switcher[data-league="great"]') &&
         document.querySelector('.team-card') &&
-        !document.querySelector('.progress'),
+        !document.querySelector('.ui-loading'),
       { timeout: 120_000 },
     );
     await new Promise((r) => setTimeout(r, 750));
