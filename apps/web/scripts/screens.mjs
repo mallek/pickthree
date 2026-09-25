@@ -38,6 +38,12 @@ const AUDIT_ENFORCED = new Set([
   '13-build',
   '13b-build-moves',
   'build-cost',
+  '03-team-detail',
+  '14-custom-team',
+  '14b-custom-unranked',
+  '14c-shared-team',
+  'analysis-confirm',
+  'analysis-not-found',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -420,14 +426,46 @@ await page.waitForSelector('.assump', { timeout: 60_000 }).catch(async () => {
   const text = await page.$eval('.screen', (e) => e.textContent.slice(0, 200));
   throw new Error(`team detail did not render: ${text}`);
 });
+await assertTitleCentred('team analysis');
 await page.click('.assump-head');
 await new Promise((r) => setTimeout(r, 300));
+await page.evaluate(() => window.scrollTo(0, 0));
 await shot('03-team-detail');
 
+console.log('team analysis jumps land under the sticky header');
+for (const [label, id] of [
+  ['Battle plan', 'plan'],
+  ['Matchups', 'matchups'],
+  ['Pokémon', 'pokemon'],
+  ['Details', 'details'],
+]) {
+  await page.$$eval(
+    '.analysis-jumps .ui-btn',
+    (els, l) => els.find((e) => e.textContent?.trim() === l)?.click(),
+    label,
+  );
+  await new Promise((r) => setTimeout(r, 500));
+  const landed = await page.evaluate((target) => {
+    const heading = document.getElementById(target);
+    const hdr = document.querySelector('.hdr');
+    if (!heading || !hdr) {
+      return null;
+    }
+    return { top: heading.getBoundingClientRect().top, hdr: hdr.getBoundingClientRect().bottom };
+  }, id);
+  if (!landed || landed.top < landed.hdr) {
+    throw new Error(
+      `jump to ${label}: heading at ${landed?.top}px, header ends at ${landed?.hdr}px`,
+    );
+  }
+  console.log(`  ${label}: heading ${(landed.top - landed.hdr).toFixed(1)}px under the header`);
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+
 console.log('edit in build');
-// Back from a recommended team loads it into Build for edits. Through the DOM: the sticky
-// header sits under the update toast's spot, and a geometry click has missed here before.
-await page.$eval('.hdr .back', (el) => el.click());
+// Edit team loads a recommended team into Build for edits. Through the DOM: the sticky header
+// sits under the update toast's spot, and a geometry click has missed here before.
+await page.$eval('.analysis-edit .ui-btn-text', (el) => el.click());
 try {
   await page.waitForFunction(() => document.location.hash === '#/build', { timeout: 15_000 });
   await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length === 3, {
@@ -444,12 +482,40 @@ try {
   throw e;
 }
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.take-to-battle', { timeout: 60_000 });
+await page.waitForSelector('.score-card .ui-btn-primary', { timeout: 60_000 });
 
 console.log('take to battle');
-// The sample log has an open set with another team, so the confirm dialog appears.
-page.once('dialog', (d) => void d.accept());
-await page.click('.take-to-battle');
+// The sample log has an open set with another team, so the switch-teams sheet opens. Keep it
+// first (the set stays, the analysis stays), then again and Switch.
+await page.click('.score-card .ui-btn-primary');
+await page.waitForSelector('.ui-confirm', { timeout: 10_000 }).catch(() => {
+  throw new Error('take to battle: no switch-teams sheet opened over the running set');
+});
+await new Promise((r) => setTimeout(r, 300));
+await shot('analysis-confirm', false, { mustShow: '.ui-confirm' });
+/** Clicks the switch-teams sheet's button with this label; false when there is none. */
+const confirmButton = (label) =>
+  page.$$eval(
+    '.ui-confirm .ui-btn',
+    (els, l) => {
+      const b = els.find((e) => e.textContent?.trim() === l);
+      b?.click();
+      return Boolean(b);
+    },
+    label,
+  );
+if (!(await confirmButton('Keep it'))) {
+  throw new Error('switch-teams sheet: no "Keep it" button');
+}
+await page.waitForSelector('.ui-confirm', { hidden: true });
+if (!page.url().endsWith(teamHref)) {
+  throw new Error(`Keep it left the analysis for ${page.url()}`);
+}
+await page.click('.score-card .ui-btn-primary');
+await page.waitForSelector('.ui-confirm', { timeout: 10_000 });
+if (!(await confirmButton('Switch'))) {
+  throw new Error('switch-teams sheet: no "Switch" button');
+}
 await page.waitForFunction(() => document.location.hash === '#/meta/log', { timeout: 30_000 });
 await page.waitForSelector('.team-strip', { timeout: 30_000 });
 const strip = await page.$eval('.team-strip', (e) => e.textContent ?? '');
@@ -457,6 +523,11 @@ if (!strip.trim()) {
   throw new Error('take to battle: empty team strip on Log a battle');
 }
 console.log(`  battling with ${strip.trim()}`);
+
+console.log('team analysis, not found');
+await page.goto(`${base}/#/teams/does-not-exist`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.ui-empty', { timeout: 30_000 });
+await shot('analysis-not-found', false, { mustShow: '.ui-empty' });
 
 console.log('collection');
 await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
@@ -857,8 +928,8 @@ console.log('shared team link');
 await page.goto(`${base}/#/t/great/azumarill.BUBBLE.ICE_BEAM.PLAY_ROUGH+tinkaton+clodsire`, {
   waitUntil: 'networkidle0',
 });
-await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
-const sharedError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
+await page.waitForSelector('.custom-note, .ui-error', { timeout: 120_000 });
+const sharedError = await page.$eval('.ui-error', (e) => e.textContent).catch(() => null);
 if (sharedError) {
   throw new Error(`shared team failed: ${sharedError}`);
 }
@@ -871,7 +942,7 @@ if (!sharedNote.includes('Shared team link')) {
 if (!page.url().endsWith('#/build/team')) {
   throw new Error(`shared team landed at ${page.url()}`);
 }
-await shot('14c-shared-team', false);
+await shot('14c-shared-team');
 
 console.log('build from your own pokemon: the total to build');
 // After the custom-team shots, so they keep their own team. Three of your own Pokémon from the

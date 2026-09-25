@@ -1,5 +1,5 @@
 import { teamKey, type TeamMoves, type TeamRef } from '@pickthree/engine';
-import { Button, ConfirmSheet, Empty, Header, IconButton, Term } from '@pickthree/ui';
+import { Button, Chevron, ConfirmSheet, Empty, Header, IconButton, Term } from '@pickthree/ui';
 import { useState } from 'react';
 import {
   CogGlyph,
@@ -286,7 +286,9 @@ export function TeamDetail({ id }: { id: string }) {
         </section>
 
         <div className="stack" style={{ gap: 4 }}>
-          <h3 style={{ marginBottom: 4 }}>Alternatives you own</h3>
+          <h3 className="analysis-section" style={{ marginBottom: 4 }}>
+            Alternatives you own
+          </h3>
           {team.explanation.alternatives.map((alt) => (
             <div className="alt-row" key={`${alt.slot}-${alt.candidate.build.specimenId}`}>
               <PokemonToken
@@ -316,27 +318,34 @@ export function TeamDetail({ id }: { id: string }) {
             aria-expanded={open}
           >
             <span>Assumptions and detail</span>
-            <span className={`chev${open ? ' open' : ''}`}>&#8964;</span>
+            <Chevron dir={open ? 'up' : 'down'} />
           </button>
           {open && a ? (
             <div className="assump-body">
               <div>
-                <b>Shields</b> · Lead: {a.shields.lead}. Switch: {a.shields.switch}. Closer:{' '}
-                {a.shields.closer}. A <Term term="shield">{GLOSSARY['shield']}</Term> blocks one
-                charged move.
+                <b>Shields</b>
+                {SEP}Lead: {a.shields.lead}. Switch: {a.shields.switch}. Closer: {a.shields.closer}.
+                A <Term term="shield">{GLOSSARY['shield']}</Term> blocks one charged move.
               </div>
               <div>
-                <b>Opponent meta</b> · {a.metaName}, {a.metaSize} Pokémon, PvPoke data from{' '}
-                {a.pvpokeDate}
+                <b>Opponent meta</b>
+                {SEP}
+                {a.metaName}, {a.metaSize} Pokémon, PvPoke data from {a.pvpokeDate}
               </div>
               <div>
-                <b>Opponent weights</b> · {a.facing}
+                <b>Opponent weights</b>
+                {SEP}
+                {a.facing}
               </div>
               <div>
-                <b>IVs</b> · {a.ivs}
+                <b>IVs</b>
+                {SEP}
+                {a.ivs}
               </div>
               <div>
-                <b>Level cap</b> · {a.levelCap}
+                <b>Level cap</b>
+                {SEP}
+                {a.levelCap}
               </div>
               <div className="stack" style={{ gap: 6 }}>
                 <b>Matchup grid</b>
@@ -380,23 +389,23 @@ export function TeamDetail({ id }: { id: string }) {
                   ))}
                 </div>
                 {opps.length > 12 ? (
-                  <button
-                    type="button"
-                    className={`more-btn flush${allOpps ? ' on' : ''}`}
-                    aria-expanded={allOpps}
+                  <Button
+                    variant="text"
+                    ariaExpanded={allOpps}
                     onClick={() => setAllOpps((x) => !x)}
                   >
                     {allOpps ? 'Show fewer' : `Show all ${opps.length} meta Pokémon`}
-                    <span className="more-caret">{allOpps ? '⌃' : '⌄'}</span>
-                  </button>
+                  </Button>
                 ) : null}
                 <span className="meta">
-                  W wins · L loses · ~ close, decided by shields. Most common opponents first.
+                  W wins{SEP}L loses{SEP}~ close, decided by shields. Most common opponents first.
                   Ratings out of 1000 in each slot&apos;s scenario.
                 </span>
               </div>
               <div>
-                <b>Total build</b> · {costLine(team.cost)}
+                <b>Total build</b>
+                {SEP}
+                {costLine(team.cost)}
               </div>
             </div>
           ) : null}
@@ -405,7 +414,7 @@ export function TeamDetail({ id }: { id: string }) {
       {confirming ? (
         <ConfirmSheet
           title="Switch teams?"
-          line={`You are running ${confirming.running} (${confirming.played} logged). Switch to this team?`}
+          line={`You are running ${confirming.running} (${confirming.played}\u00a0logged). Switch to this team?`}
           confirmLabel="Switch"
           cancelLabel="Keep it"
           onConfirm={() => {

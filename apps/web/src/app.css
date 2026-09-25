@@ -213,6 +213,13 @@ a {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
   pointer-events: none;
 }
+/* Every PokemonToken's wrapper, plain or Shadow: an inline flex box is exactly the token's height,
+   where a bare inline span grew a line box under it as a flex item, so plain tokens sat lower
+   than Shadow ones in a row. Its baseline is still the token's, for tokens inside a line of text. */
+.token-wrap {
+  display: inline-flex;
+  flex: none;
+}
 /* Shadow Pokemon: the game's purple flame, as a glow rising inside the circle plus a violet halo.
    This sits on an outer wrapper around the token now, not on `.token.is-shadow` itself:
    SpeciesToken (packages/ui) only ever renders `class="token"`, never an `is-shadow` modifier, so
@@ -220,7 +227,6 @@ a {
    its own, so it reads identically to the old `.token.is-shadow` box-shadow/::before. */
 .token-shadow-wrap {
   position: relative;
-  display: inline-block;
   border-radius: 50%;
   box-shadow: 0 0 10px 2px rgba(150, 80, 255, 0.55);
 }
@@ -489,7 +495,7 @@ a {
 }
 .strategy-note {
   font-size: 11px;
-  color: var(--faint);
+  color: var(--muted);
   margin-top: 2px;
 }
 
@@ -1286,9 +1292,11 @@ textarea.paste {
   padding: 10px 0;
   border-top: 1px solid var(--divider);
 }
+/* The same card as the ExpandRows above it on Team Analysis (packages/ui `.ui-expand`). */
 .assump {
   background: var(--surface);
-  border-radius: var(--r-lg);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-card);
   overflow: hidden;
 }
 .assump-head {
@@ -2002,6 +2010,7 @@ textarea.paste {
    them fill their column and match each other rather than keep TeamDetail's scroll-row widths. */
 .matchup-cols .mini {
   width: auto;
+  flex: 1;
 }
 .matchup-grid .mini {
   width: auto;
@@ -2054,20 +2063,35 @@ textarea.paste {
   display: flex;
   justify-content: center;
 }
-/* Team Analysis: the jump row, four text buttons, one line. */
+/* Team Analysis: the jump row, four text buttons, one line. No side padding, so the four fit a
+   phone's width and the first and last labels sit on the page gutter; each keeps its 44px height
+   and is wider than 44px on its label alone. */
 .analysis-jumps {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 4px;
 }
+.analysis-jumps .ui-btn {
+  padding-inline: 0;
+}
 /* A jumped-to heading lands under the sticky header, not behind it. The offset is the sub
    header's own box (packages/ui/base.css `.hdr`): its top padding, one tap-tall row of back and
    icon buttons, its bottom padding and border, then the page's own gap under it. Change it with
    `.hdr`. */
 .analysis-section {
+  font-size: var(--fs-section);
+  font-weight: 600;
   --hdr-box: calc(env(safe-area-inset-top, 0px) + 14px + var(--tap) + 8px + 1px);
   scroll-margin-top: calc(var(--hdr-box) + var(--space));
+}
+/* Team Analysis: a heading inside a section (Wins, Key threats, When to switch, Team structure),
+   one step under the section's own heading. */
+.analysis-sub {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.2;
 }
 /* The header keeps the shared, symmetric 12px padding, so its title stays centred on the page and
    the extra row stays even. Only the actions move in, to end on the page gutter like the content
@@ -2130,8 +2154,13 @@ textarea.paste {
 }
 .ogrid-rank {
   flex: none;
-  color: var(--faint);
+  color: var(--muted);
   font-size: 10px;
+}
+/* A win's W sits on the violet tint, where the Assumptions block's muted text falls short of
+   4.5:1; the full text color clears it in both themes. */
+.ogrid .cell.w {
+  color: var(--text);
 }
 
 /* add a Pokémon by hand */
@@ -2192,14 +2221,31 @@ textarea.paste {
   gap: 4px;
   margin-bottom: 14px;
 }
-.more-btn.flush {
-  padding-left: 0;
-}
+/* "+N more" among a Pokémon's safe types: the pill (an .mtag inside) sits in the row like the
+   type chips, the button around it is the 44px target. The negative margin leaves it taking only
+   a small type chip's 15px in the row, as Build's Find best order does, so the row neither grows
+   nor stretches the chips beside it. */
 .more-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  margin-block: calc((15px - var(--tap)) / 2);
+  padding: 0;
   border: 0;
+  background: transparent;
   font: inherit;
   font-size: 11px;
   cursor: pointer;
+}
+.more-chip .mtag {
+  align-self: center;
+}
+/* The target reaches up past the row gap into the chips above it; the chips paint over that
+   overhang (positioned, the button is not), so they stay readable and on top. */
+.strategy-row .tchip {
+  position: relative;
 }
 .counter-row.counter-row {
   font: inherit;

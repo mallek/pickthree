@@ -82,7 +82,7 @@ export function PokemonDetails({
                 </span>
               }
             >
-              <div className="stack" style={{ gap: 8 }}>
+              <div className="stack" style={{ gap: 8, paddingTop: 12 }}>
                 <TypeChips types={detail.types} small />
                 <MetaTags speciesId={c.build.speciesId} />
                 <div className="small muted">{slot.roleWhy}</div>
@@ -117,7 +117,8 @@ export function PokemonDetails({
                       {detail.resistances.length > 6 ? (
                         <button
                           type="button"
-                          className="mtag more-chip"
+                          className="more-chip"
+                          aria-expanded={openSafe.has(i)}
                           onClick={() =>
                             setOpenSafe((cur) => {
                               const next = new Set(cur);
@@ -130,7 +131,9 @@ export function PokemonDetails({
                             })
                           }
                         >
-                          {openSafe.has(i) ? 'fewer' : `+${detail.resistances.length - 6} more`}
+                          <span className="mtag">
+                            {openSafe.has(i) ? 'fewer' : `+${detail.resistances.length - 6} more`}
+                          </span>
                         </button>
                       ) : null}
                       {detail.resistances.length === 0 ? (

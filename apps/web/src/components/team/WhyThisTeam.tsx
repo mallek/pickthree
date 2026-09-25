@@ -16,7 +16,7 @@ export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
       <p>{team.explanation.why}</p>
       <div className="stack">
         <div className="between">
-          <h3>Team structure</h3>
+          <h4 className="analysis-sub">Team structure</h4>
           <Term term={structureTerm}>{GLOSSARY[structureTerm]}</Term>
         </div>
         {team.structure === 'ABB' ? (
@@ -60,8 +60,7 @@ export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
                 <span className="role">Back line</span>
               </div>
               <div style={{ fontSize: 14 }}>
-                Both your <Term term="back line">{GLOSSARY['back line']}</Term> Pokémon beat
-                these.
+                Both your <Term term="back line">{GLOSSARY['back line']}</Term> Pokémon beat these.
                 <span className="meta" style={{ display: 'block', marginTop: 4 }}>
                   {team.explanation.structureLine}
                 </span>
@@ -91,9 +90,9 @@ export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
       </div>
       <p className="meta">
         Battle strength {Math.round(team.score.battle)} is coverage, consistency and safety (
-        {team.score.factors.coverage}, {team.score.factors.consistency},{' '}
-        {team.score.factors.safety}). The total, {team.score.total}, also counts cost (
-        {team.score.factors.cost}) and accessibility ({team.score.factors.accessibility}).
+        {team.score.factors.coverage}, {team.score.factors.consistency}, {team.score.factors.safety}
+        ). The total, {team.score.total}, also counts cost ({team.score.factors.cost}) and
+        accessibility ({team.score.factors.accessibility}).
       </p>
     </div>
   );

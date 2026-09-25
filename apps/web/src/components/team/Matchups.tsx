@@ -17,8 +17,8 @@ function MatchupCard({ m, testId, threat }: { m: KeyMatchup; testId: string; thr
 
 const NO_THREATS = (
   <p className="small muted">
-    Nothing in the meta group beats all three of these in the simulated scenarios. Real battles
-    vary with shields and energy.
+    Nothing in the meta group beats all three of these in the simulated scenarios. Real battles vary
+    with shields and energy.
   </p>
 );
 
@@ -36,13 +36,15 @@ export function Matchups({ team, leadName }: { team: TeamRecommendation; leadNam
       {expanded ? (
         <>
           <div className="stack">
-            <h3>Key wins</h3>
+            <h4 className="analysis-sub">Key wins</h4>
             <div className="matchup-grid">
               {e.keyWins.map((w) => (
                 <MatchupCard m={w} testId="key-win" key={w.opponent} />
               ))}
             </div>
-            <h3 style={{ marginTop: 8 }}>Key threats</h3>
+            <h4 className="analysis-sub" style={{ marginTop: 8 }}>
+              Key threats
+            </h4>
             {e.keyThreats.length === 0 ? (
               NO_THREATS
             ) : (
@@ -54,10 +56,12 @@ export function Matchups({ team, leadName }: { team: TeamRecommendation; leadNam
             )}
           </div>
           <div className="stack" style={{ gap: 4 }}>
-            <h3 style={{ marginBottom: 4 }}>When to switch</h3>
+            <h4 className="analysis-sub" style={{ marginBottom: 4 }}>
+              When to switch
+            </h4>
             <p className="meta">
-              What beats your {leadName} lead and who answers it. Unanswered threats first, then
-              the ones you meet most.
+              What beats your {leadName} lead and who answers it. Unanswered threats first, then the
+              ones you meet most.
             </p>
             {e.switchPlan.length === 0 ? (
               <p className="small muted">
@@ -86,11 +90,11 @@ export function Matchups({ team, leadName }: { team: TeamRecommendation; leadNam
       ) : (
         <div className="matchup-cols">
           <div className="stack" style={{ gap: 6 }}>
-            <h3>Wins</h3>
+            <h4 className="analysis-sub">Wins</h4>
             {firstWin ? <MatchupCard m={firstWin} testId="key-win" /> : null}
           </div>
           <div className="stack" style={{ gap: 6 }}>
-            <h3>Threat</h3>
+            <h4 className="analysis-sub">Threat</h4>
             {firstThreat ? <MatchupCard m={firstThreat} testId="key-threat" threat /> : NO_THREATS}
           </div>
         </div>

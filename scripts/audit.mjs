@@ -189,6 +189,12 @@ export async function auditPage(page) {
       const rootStyle = getComputedStyle(document.documentElement);
       const bodyPaintsCanvas =
         C.getOwnBackgroundColor(rootStyle).alpha === 0 && rootStyle.backgroundImage === 'none';
+      // The layers that paint behind one line: every element with a background, down to the first
+      // opaque one. Transparent elements paint nothing, so they are left out of the comparison: a
+      // line past the bottom of body's 100%-high box has body and a 100%-high wrapper missing
+      // from its stack, while the canvas body paints is still what sits behind it. A stack that
+      // runs out with no opaque layer gets that canvas.
+      const bodyBg = C.getOwnBackgroundColor(getComputedStyle(document.body));
       const cutAtOpaque = (stack) => {
         const out = [];
         for (const e of stack) {
@@ -197,7 +203,10 @@ export async function auditPage(page) {
             return null;
           }
           const bg = C.getOwnBackgroundColor(cs);
-          if (bg.alpha > 0 && !(e === document.body && bodyPaintsCanvas)) {
+          if (bg.alpha === 0) {
+            continue;
+          }
+          if (!(e === document.body && bodyPaintsCanvas)) {
             const box = e.getBoundingClientRect();
             if (cs.display !== 'inline' && !textRects.every((r) => contains(box, r))) {
               return null;
@@ -208,13 +217,19 @@ export async function auditPage(page) {
             return out;
           }
         }
+        if (bodyPaintsCanvas && bodyBg.alpha === 1 && !out.includes(document.body)) {
+          out.push(document.body);
+          return out;
+        }
         return null;
       };
+      if (stacks.some((s) => s[0] !== el)) {
+        return null;
+      }
       const layers = stacks.map(cutAtOpaque);
       const first = layers[0];
       if (
         !first ||
-        first[0] !== el ||
         layers.some((l) => !l || l.length !== first.length || l.some((e, i) => e !== first[i]))
       ) {
         return null;

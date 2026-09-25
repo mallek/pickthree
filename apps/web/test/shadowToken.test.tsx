@@ -48,6 +48,17 @@ describe('Shadow token', () => {
     expect(wrap?.getAttribute('data-audit-contrast')).toBe('static');
   });
 
+  it('wraps plain and Shadow tokens alike, in a box as tall as the token', async () => {
+    // A bare inline span around the token grew a line box (3.5px at 32px) as a flex item, so a
+    // Shadow token, whose wrapper was sized, sat higher than its plain neighbours in a row.
+    for (const id of ['ninetales', 'ninetales_shadow']) {
+      const { container, unmount } = await mount(<PokemonToken speciesId={id} />);
+      expect(container.querySelector('.token')?.parentElement?.classList).toContain('token-wrap');
+      unmount();
+    }
+    expect(block(app, '.token-wrap {')).toMatch(/display:\s*inline-flex/);
+  });
+
   it('leaves a plain token with the audit', async () => {
     const { container } = await mount(<PokemonToken speciesId="ninetales" />);
     expect(container.querySelector('.token-shadow-wrap')).toBeNull();

@@ -229,6 +229,18 @@ describe('Team Analysis', () => {
     expect(document.getElementById('details')).toHaveTextContent('Why this team');
   });
 
+  it('Assumptions keep each "·" with the label before it', async () => {
+    await mountRecommended('a');
+    const head = screen.getByRole('button', { name: 'Assumptions and detail' });
+    fireEvent.click(head);
+    expect(head).toHaveAttribute('aria-expanded', 'true');
+    const body = document.querySelector('.assump-body')!;
+    for (const label of ['Shields', 'Opponent meta', 'IVs', 'Level cap', 'Total build']) {
+      expect(body.textContent).toContain(`${label}\u00a0· `);
+    }
+    expect(body.textContent).toContain('W wins\u00a0· L loses\u00a0· ~ close');
+  });
+
   it('tapping a strip Pokémon opens its row and scrolls to it, leaving the first row open', async () => {
     const spy = vi.fn();
     Element.prototype.scrollIntoView = spy;
@@ -269,6 +281,8 @@ describe('Team Analysis', () => {
     expect(dialog).toHaveTextContent(
       'You are running Tinkaton, Azumarill, Clodsire (3 logged). Switch to this team?',
     );
+    // The count never wraps away from its unit.
+    expect(dialog.textContent).toContain('(3\u00a0logged)');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Keep it' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     await act(async () => {});

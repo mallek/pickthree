@@ -208,7 +208,7 @@ export function PokemonToken({
   const audit = shadow ? { 'data-audit-contrast': 'static' } : {};
   return (
     <span
-      className={shadow ? 'token-shadow-wrap' : undefined}
+      className={shadow ? 'token-wrap token-shadow-wrap' : 'token-wrap'}
       style={shadow ? { width: size, height: size } : undefined}
       {...audit}
     >
