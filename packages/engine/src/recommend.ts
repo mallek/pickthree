@@ -128,6 +128,17 @@ export interface EngineDeps {
   simOptions?: SimOptions;
 }
 
+/**
+ * The order recommended teams are listed in: battle strength first (what a player wants out of
+ * the list), then the total score, so of two equally strong teams the cheaper, easier one leads.
+ */
+export function compareTeamScores(
+  a: Pick<TeamScore, 'battle' | 'total'>,
+  b: Pick<TeamScore, 'battle' | 'total'>,
+): number {
+  return b.battle - a.battle || b.total - a.total;
+}
+
 export function assumptionsFor(
   data: StaticData,
   opts: BuildOptions,
@@ -247,7 +258,7 @@ export function recommend(
   const extra = profile.outsiders.map((o) => o.speciesId);
   const topTen = topTenFor(view, profile);
   const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra, topTen) }));
-  scored2.sort((a, b) => b.score.total - a.score.total);
+  scored2.sort((a, b) => compareTeamScores(a.score, b.score));
   const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
     const team = teamFrom(t, score, pool, view, index, ranks);

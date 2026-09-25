@@ -5,7 +5,7 @@ import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { toSpecimens } from '../src/collection/specimen.js';
 import { parseCollectionCsv } from '../src/csv/parse.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
-import { recommend, verdictsFor } from '../src/recommend.js';
+import { compareTeamScores, recommend, verdictsFor } from '../src/recommend.js';
 import { REPO_ROOT, haveStaticData, loadFixtureCsv, loadStaticData } from './fixtures.js';
 
 const gmPath = path.join(
@@ -58,7 +58,7 @@ describe.skipIf(!ready)('recommend end to end', () => {
         expect(slot.sim.results.length).toBe(data.meta.length);
       }
     }
-    const sorted = [...rec.teams].sort((a, b) => b.score.total - a.score.total);
+    const sorted = [...rec.teams].sort((a, b) => compareTeamScores(a.score, b.score));
     expect(rec.teams.map((t) => t.id)).toEqual(sorted.map((t) => t.id));
     const first = rec.teams[0]!;
     console.log(
