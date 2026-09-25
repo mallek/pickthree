@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global document */
 /**
  * Builds the component gallery, serves it, and audits it in dark and light at 390px. Writes
  * packages/ui/screenshots/gallery-<theme>.png (gitignored) and exits 1 on any finding or console
@@ -49,6 +50,23 @@ try {
     for (const f of await auditPage(page)) {
       failures.push(`[${theme}] ${f}`);
     }
+    // Every Select's chevron sits on its box's vertical middle. It once sat 8px low: the
+    // Chevron's own inline rotate replaced base.css's translateY(-50%) centering.
+    const chevrons = await page.evaluate(() =>
+      [...document.querySelectorAll('.select-wrap')].map((wrap) => {
+        const select = wrap.querySelector('select')?.getBoundingClientRect();
+        const svg = wrap.querySelector('svg')?.getBoundingClientRect();
+        return select && svg ? svg.top + svg.height / 2 - (select.top + select.height / 2) : null;
+      }),
+    );
+    if (chevrons.length === 0) {
+      failures.push(`[${theme}] chevron: the gallery shows no Select to measure`);
+    }
+    chevrons.forEach((off, i) => {
+      if (off === null || Math.abs(off) > 1) {
+        failures.push(`[${theme}] chevron: select ${i + 1}'s chevron is ${off?.toFixed(1)}px off its middle`);
+      }
+    });
     await page.close();
   }
 

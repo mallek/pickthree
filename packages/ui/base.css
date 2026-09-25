@@ -583,6 +583,7 @@
   min-width: 0;
 }
 .select-wrap select {
+  display: block;
   width: 100%;
   min-height: var(--tap);
   padding: 0 36px 0 14px;
@@ -599,11 +600,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Centered with auto margins, not translateY(-50%): Chevron turns itself with an inline
+   transform (rotate), which replaced the translate and left the chevron half its height low.
+   The select is a block so the wrap is exactly its height (no line-box gap under it). */
 .select-wrap svg {
   position: absolute;
   right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
   color: var(--muted);
   pointer-events: none;
 }
