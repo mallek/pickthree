@@ -194,14 +194,12 @@ a {
   bottom: 0;
 }
 
-/* token: the shared base (border-radius, place-items, flex, position) lives in
-   packages/ui/base.css. `display` stays here since it is not the same value as meta's (see the
-   comment on .token in base.css). */
+/* token: the shared base (border-radius, place-items, flex, position, the letter's color and
+   outline) lives in packages/ui/base.css. `display` stays here since it is not the same value as
+   meta's (see the comment on .token in base.css). */
 .token {
   display: inline-grid;
-  color: rgba(255, 255, 255, 0.92);
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .token.has-sprite {
   overflow: hidden;

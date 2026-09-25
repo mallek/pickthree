@@ -334,6 +334,15 @@
   place-items: center;
   flex: none;
   position: relative;
+  /* The letter a token shows without a sprite: a 1px outline on all four sides, plus a soft drop,
+     so it reads on the palest type colors (Steel, Electric) as well as the darkest. */
+  color: var(--token-letter);
+  text-shadow:
+    1px 0 0 var(--token-halo),
+    -1px 0 0 var(--token-halo),
+    0 1px 0 var(--token-halo),
+    0 -1px 0 var(--token-halo),
+    0 1px 3px var(--token-halo);
 }
 /* .brand: pick3's own wordmark row is only this thin; meta's override in its own app.css adds
    the safe-area padding, the divider and the space-between layout it needs for the rest of the

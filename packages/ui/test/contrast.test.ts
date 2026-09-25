@@ -77,3 +77,56 @@ describe('primary button contrast', () => {
     }
   }
 });
+
+// A species token's letter (no sprite) sits on a type-colored disc, split diagonally for two
+// types: a gradient axe cannot measure. The letter carries a thin --token-halo outline, so what it
+// must clear is its outline, whatever the disc: for every type color (either half of any disc),
+// the letter and the outline are each composited onto that color and compared, in every theme
+// block. The type colors come from the shared :root block.
+function rgba(body: string, name: string): [number, number, number, number] {
+  const m = new RegExp(
+    `--${name}\\s*:\\s*rgba\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*([0-9.]+)\\)\\s*;`,
+  ).exec(body);
+  if (!m) {
+    throw new Error(`--${name} is not an rgba() in this block`);
+  }
+  return [Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4])];
+}
+
+/** `color` painted at its alpha over the opaque `ground`, as a six-digit hex. */
+function over([r, g, b, a]: [number, number, number, number], ground: string): string {
+  const channels = [r, g, b].map((top, k) => {
+    const under = parseInt(ground.slice(1 + 2 * k, 3 + 2 * k), 16);
+    return Math.round(a * top + (1 - a) * under)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${channels.join('')}`;
+}
+
+const shared = block(tokens, '\n:root {');
+const typeColors = [...shared.matchAll(/--type-([a-z]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;/g)].map(
+  (m) => [m[1] ?? '', m[2] ?? ''] as const,
+);
+
+describe('species token letter contrast', () => {
+  it('reads all 18 type colors from the shared block', () => {
+    expect(typeColors).toHaveLength(18);
+  });
+
+  it('draws the letter and its four-sided outline from the tokens', () => {
+    const token = block(base, '.token {');
+    expect(token).toContain('color: var(--token-letter)');
+    expect(token.match(/var\(--token-halo\)/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+  });
+
+  for (const [theme, body] of Object.entries(themes)) {
+    for (const [type, color] of typeColors) {
+      it(`the letter clears 4.5:1 on its outline over ${type} in ${theme}`, () => {
+        const letter = over(rgba(body, 'token-letter'), color);
+        const outline = over(rgba(body, 'token-halo'), color);
+        expect(ratio(letter, outline)).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+});

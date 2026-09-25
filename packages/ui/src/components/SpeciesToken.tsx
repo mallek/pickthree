@@ -37,17 +37,19 @@ export function SpeciesToken({
   const [broken, setBroken] = useState(false);
   const c1 = typeColor(types[0] ?? '');
   const c2 = typeColor(types[1] ?? types[0] ?? '');
-  const background =
-    types[1] === undefined || types[1] === types[0]
-      ? c1
-      : `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)`;
+  const split = types[1] !== undefined && types[1] !== types[0];
+  const background = split ? `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)` : c1;
   const picture = Boolean(src) && !broken;
+  // A split disc is a gradient axe cannot measure; the letter's contrast against its outline over
+  // every type color is checked by test/contrast.test.ts instead. A flat disc stays with the audit.
+  const audit = split ? { 'data-audit-contrast': 'static' } : {};
   return (
     <span
       className={`token${picture ? ' has-sprite' : ''}`}
       role="img"
       aria-label={name}
       title={name}
+      {...audit}
       style={{ width: size, height: size, background, fontSize: Math.round(size * 0.36) }}
     >
       {picture ? (
