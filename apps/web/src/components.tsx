@@ -15,7 +15,7 @@ import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { logBattles } from './state/facing.ts';
-import { Chevron, HeaderShell, SpeciesToken, TypeChip } from '@pickthree/ui';
+import { Button, Chevron, HeaderShell, Loading, SpeciesToken, TypeChip } from '@pickthree/ui';
 
 export { Chip, Seg, Term, TypeChip } from '@pickthree/ui';
 
@@ -247,7 +247,7 @@ export function Mark({ height = 22 }: { height?: number }) {
   );
 }
 
-const META = 'https://meta.pick3.gg';
+export const META_URL = 'https://meta.pick3.gg';
 
 /** Three ascending bars, suggesting rankings: the glyph for the `MetaButton` below. Not the pick3
  * mark. On pick3's own header the pick3 mark means "home", so wearing it on a link that leaves
@@ -255,7 +255,7 @@ const META = 'https://meta.pick3.gg';
  * in. Drawn in `currentColor` at the same stroke weight and size as this app's other head-row
  * icons (ShareButton, HeadCog: 20px, 1.8 stroke, round caps and joins), so it takes pick3's own
  * ink rather than meta's violet and looks native here. */
-function MetaGlyph() {
+export function MetaGlyph() {
   return (
     <svg
       width="20"
@@ -290,7 +290,7 @@ export function MetaButton() {
   return (
     <a
       className="head-cog meta-button"
-      href={META}
+      href={META_URL}
       aria-label="meta, the community meta"
       title="meta, the community meta"
     >
@@ -491,15 +491,7 @@ export function Progress({ stage, done, total }: { stage: string; done: number; 
     'counters-sim': 'Simulating the top 300 species against it on this phone',
     'simulate-picks': 'Simulating an unranked pick against the meta on this phone',
   };
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  return (
-    <div className="progress" role="status">
-      <div className="progress-label">{labels[stage] ?? stage}</div>
-      <div className="progress-bar">
-        <span style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
+  return <Loading label={labels[stage] ?? stage} done={done} total={total} />;
 }
 
 /** Counted battles (not tanked, this season, after any fresh mark) for the league in play. */
@@ -527,6 +519,16 @@ export function HeadCog() {
         <path d={COG_PATH} />
       </svg>
     </button>
+  );
+}
+
+/** The settings gear, as a bare decorative glyph for an IconButton. */
+export function CogGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="12" r="3" />
+      <path d={COG_PATH} />
+    </svg>
   );
 }
 
@@ -587,18 +589,18 @@ export function NoCollection({
         <span className="small muted">
           Species, IVs from the appraisal screen, and CP. Three or more and pick3 builds teams.
         </span>
-        <button type="button" className="btn" onClick={() => navigate({ screen: 'add' })}>
+        <Button variant="secondary" onClick={() => navigate({ screen: 'add' })}>
           Add a Pokémon
-        </button>
+        </Button>
       </div>
       <div className="choice-card">
         <b>Build a team from any Pokémon</b>
         <span className="small muted">
           Pick any three and get the full breakdown at realistic top-10% IVs. Nothing to enter.
         </span>
-        <button type="button" className="btn" onClick={() => navigate({ screen: 'build' })}>
+        <Button variant="secondary" onClick={() => navigate({ screen: 'build' })}>
           Build a team
-        </button>
+        </Button>
       </div>
       <div className="choice-card">
         <b>Import your collection</b>
@@ -606,13 +608,9 @@ export function NoCollection({
           A CSV from whatever IV checker you use, or a sheet of your own. Every Pokémon comes in at
           once.
         </span>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => navigate({ screen: 'import' })}
-        >
+        <Button variant="primary" onClick={() => navigate({ screen: 'import' })}>
           Import a CSV
-        </button>
+        </Button>
       </div>
     </div>
   );
