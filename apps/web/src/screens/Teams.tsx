@@ -38,13 +38,20 @@ export const SOURCE_LABELS: Record<FacingSource, string> = {
   all: 'All',
 };
 
-/** Active team filters: the four switches, a non-empty exclude list, a Team style other than Any. */
+/**
+ * Active team filters: the four switches, a non-empty exclude list, a Team style other than Any,
+ * and a Window other than This meta while a community source is picked (Window lives in the
+ * Filters sheet, so a choice there always shows on the badge; it does not apply to PvPoke or
+ * Your log, so it does not count then).
+ */
 export function filterCount(settings: Settings): number {
   const f = settings.filters;
+  const choice = facingSettings(settings);
   return (
     [f.noXl, f.noShadow, f.noEliteTm, f.budget].filter(Boolean).length +
     (settings.excludedSpecimenIds.length > 0 ? 1 : 0) +
-    (f.style !== 'any' ? 1 : 0)
+    (f.style !== 'any' ? 1 : 0) +
+    (isCommunity(choice.source) && choice.window !== 'meta' ? 1 : 0)
   );
 }
 

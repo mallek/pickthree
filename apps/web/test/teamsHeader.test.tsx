@@ -84,6 +84,18 @@ describe('filterCount', () => {
       }),
     ).toBe(3);
   });
+
+  it('counts a window other than This meta only while a community source is picked', () => {
+    const on = (source: 'ladder' | 'tournament' | 'all' | 'log' | 'prior', window: 'meta' | '30' | '7') =>
+      filterCount({ ...DEFAULT_SETTINGS, facing: { source, window } });
+    expect(on('ladder', '7')).toBe(1);
+    expect(on('tournament', '30')).toBe(1);
+    expect(on('all', '7')).toBe(1);
+    expect(on('ladder', 'meta')).toBe(0);
+    // Window does not apply to PvPoke or Your log, so a leftover choice does not count.
+    expect(on('log', '7')).toBe(0);
+    expect(on('prior', '30')).toBe(0);
+  });
 });
 
 describe('Teams header', () => {
