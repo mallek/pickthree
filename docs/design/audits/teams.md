@@ -44,11 +44,15 @@ How the two new states are captured (`apps/web/scripts/screens.mjs`):
 Not captured: the error state. A recommendation error has no clean trigger in the built app
 without a test hook, and none was added. `ErrorState` (the shared component Teams renders on a
 failed run) is covered by the gallery's audit (`docs/design/audits/gallery.md`, the
-loading/empty/error states). On Teams, `teamsList.test.tsx`'s "shows the error state with its
-message when recommend fails, and does not loop" covers it: when `host.recommend` rejects, the
-`ErrorState` alert shows the run's message, the list has no rows, and the run is not retried on
-its own. Teams offers no retry control on that card (it renders the line alone); switching
-league clears the error and runs again.
+loading/empty/error states). On Teams, `teamsList.test.tsx` covers it: when `host.recommend`
+rejects, the `ErrorState` alert shows the run's message and a "Try again" button (secondary, not
+filled), and the list has no rows ("shows the error card with its message and a Try again that
+runs again"). Try again runs the recommendation again. A changed setting (Source, Window,
+Filters) also runs again after a failure ("runs again when a setting changes after a failed
+run"), while unchanged settings never retry on their own ("does not run again on its own after
+a failed run with unchanged settings"). With a community source, the community read that lands
+after the failed run starts makes exactly one follow-up run, then nothing ("with a community
+source, a failed run is followed by at most one more, not a loop").
 
 ## Automated checks
 
@@ -72,7 +76,7 @@ league clears the error and runs again.
       change: exit 0.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
       check-tokens`, all re-run 2026-09-25: lint exit 0; typecheck exit 0 across all seven
-      workspaces; `npm test` 127 files, 1,066 tests passed; `check-colors` exit 0 (no literal
+      workspaces; `npm test` 127 files, 1,070 tests passed; `check-colors` exit 0 (no literal
       added, baseline untouched); `check-tokens`: ok.
 
 ## Aesthetics
@@ -161,7 +165,9 @@ league clears the error and runs again.
       sheet and Done closes it (`teams-filters-sheet`), the Source select changes the weighting
       line (`teams-community`), the Empty card's Filters action carries the active count
       ("Filters 1", `teams-empty`), Settings opens the settings sheet with or without a
-      collection (`teamsHeader.test.tsx`), Build your own team is a link to Build.
+      collection (`teamsHeader.test.tsx`), Build your own team is a link to Build. After a
+      failed run, the error card's Try again runs again, and Source, Window and Filters still
+      run the recommendation when they change (`teamsList.test.tsx`, the error-state tests).
 - [x] back returns to the origin with filters and scroll, for the Teams side: open rows live in
       `useSticky('teams.open')`, keyed by the recommendation object, and scroll in
       `useScrollMemory('teams.scroll')`, so leaving Teams (View analysis, another tab) and
@@ -222,7 +228,8 @@ league clears the error and runs again.
 | M1: Teams without a collection had no title and no way to Settings. | The same page head with `Header variant="top"` renders above `NoCollection`, without the league or controls rows; new test in `teamsHeader.test.tsx`. | `54884a2` |
 | M2: full-page captures painted the fixed tab bar across the first open row, over its explanation. | Full-page shots pass `captureBeyondViewport: false`, so Chrome sizes the viewport to the page and the bar lands at the bottom. Capture only; the DOM checks are unchanged. | `5025582` |
 | M4, M5: `GLOSSARY['line']` duplicated `'ABB line'` with no reader; a test matched `/mimikyu/` only through the id fallback. | Entry deleted; `/mimikyu/i`. | `f14451f` |
-| I5: this record ticked items the captures or code contradicted. | Rewritten from the fix wave's fresh run and captures (this commit). | (this change) |
+| I5: this record ticked items the captures or code contradicted. | Rewritten from the fix wave's fresh run and captures. | `c71df52` |
+| Re-review N1: after a failed run the error card was a dead end. The Teams effect was gated on `!recommendError`, so Source, Window and Filters changed their settings but never ran again until a league switch or a reload, and the card had no retry. | The error card has a "Try again" button (`runRecommend`; `rec-start` clears the error), and the effect runs when the error is set only if the key is stale, so a changed setting runs again and unchanged settings never loop. Four tests, including the community-source case (one follow-up run, then none). Test hygiene (N3): the list tests unstub globals in an `afterEach`. | `60d1121`, `b256663`, `45fd024` |
 
 Visible changes outside Teams, from this branch:
 - The active tab-bar item (icon and label) moves from `--accent` to `--accent-text` on every
