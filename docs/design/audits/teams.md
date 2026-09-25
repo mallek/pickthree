@@ -293,4 +293,6 @@ Visible changes outside Teams, from this branch:
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-25 (reviewed the live build and this record on GitHub: "looks good").
+  Signed with the M3 contribution line as shipped (pink, with its dot); a measured count or a
+  plain-text variant stays open for later.
