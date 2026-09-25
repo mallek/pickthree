@@ -16,6 +16,7 @@ export function Button({
   href,
   type = 'button',
   disabled,
+  ariaExpanded,
 }: {
   variant?: ButtonVariant;
   children: ReactNode;
@@ -23,6 +24,8 @@ export function Button({
   href?: string | undefined;
   type?: 'button' | 'submit';
   disabled?: boolean | undefined;
+  /** For a button that expands or collapses a section in place, such as "Show all" / "Show less". */
+  ariaExpanded?: boolean | undefined;
 }) {
   const className = `ui-btn ui-btn-${variant}`;
   const audit = variant === 'primary' ? { 'data-audit-contrast': 'static' } : {};
@@ -34,7 +37,14 @@ export function Button({
     );
   }
   return (
-    <button type={type} className={className} onClick={onClick} disabled={disabled} {...audit}>
+    <button
+      type={type}
+      className={className}
+      onClick={onClick}
+      disabled={disabled}
+      aria-expanded={ariaExpanded}
+      {...audit}
+    >
       {children}
     </button>
   );

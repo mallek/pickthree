@@ -2013,6 +2013,28 @@ textarea.paste {
 .plan-line {
   font-size: var(--fs-body);
 }
+/* Team Analysis: Matchups, collapsed to one win and one threat side by side, expanded to a grid. */
+.matchup-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.matchup-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Team Analysis: the Pokémon strip's expand-row summary. */
+.pd-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pd-summary-name {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+}
 /* Team detail: the three members at a glance, above everything else. */
 .team-strip-card {
   gap: 12px;

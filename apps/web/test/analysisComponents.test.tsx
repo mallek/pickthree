@@ -1,8 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { BattlePlan } from '../src/components/team/BattlePlan.tsx';
+import { Matchups } from '../src/components/team/Matchups.tsx';
+import { PokemonDetails } from '../src/components/team/PokemonDetails.tsx';
 import { ScoreCard } from '../src/components/team/ScoreCard.tsx';
+import { WhyThisTeam } from '../src/components/team/WhyThisTeam.tsx';
 import { AppProvider } from '../src/state/store.tsx';
 import { fakeHost } from './fakeHost.ts';
 import { makeTeam } from './teamFixture.ts';
@@ -77,5 +80,59 @@ describe('BattlePlan', () => {
     team.explanation.switchPlan = [];
     wrap(<BattlePlan team={team} />);
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
+  });
+});
+
+describe('Matchups', () => {
+  it('shows one key win and one key threat, then everything behind Show all', () => {
+    const team = makeTeam(); // needs >= 2 keyWins, >= 2 keyThreats, >= 1 switchPlan entry
+    wrap(<Matchups team={team} leadName="Tinkaton" />);
+    expect(screen.getAllByTestId('key-win')).toHaveLength(1);
+    expect(screen.getAllByTestId('key-threat')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getAllByTestId('key-win')).toHaveLength(team.explanation.keyWins.length);
+    expect(screen.getByText('When to switch')).toBeInTheDocument();
+  });
+});
+
+describe('PokemonDetails', () => {
+  it('one expandable row per Pokémon; safe types past six open per row', () => {
+    const team = makeTeam();
+    team.explanation.slotDetail[0]!.resistances = [
+      'fire',
+      'water',
+      'grass',
+      'ice',
+      'bug',
+      'steel',
+      'fairy',
+      'dark',
+    ];
+    team.explanation.slotDetail[1]!.resistances = [
+      'fire',
+      'water',
+      'grass',
+      'ice',
+      'bug',
+      'steel',
+      'fairy',
+      'dark',
+    ];
+    wrap(<PokemonDetails team={team} hypothetical={[]} open={[true, true, false]} onToggle={() => undefined} />);
+    const more = screen.getAllByRole('button', { name: '+2 more' });
+    fireEvent.click(more[0]!);
+    expect(screen.getAllByRole('button', { name: 'fewer' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: '+2 more' })).toHaveLength(1);
+  });
+});
+
+describe('WhyThisTeam', () => {
+  it('says the headline is battle strength and lists the factors', () => {
+    const team = makeTeam({ battle: 80, total: 66 });
+    wrap(<WhyThisTeam team={team} />);
+    expect(
+      screen.getByText(/Battle strength 80 is coverage, consistency and safety/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/The total, 66, also counts cost/)).toBeInTheDocument();
   });
 });

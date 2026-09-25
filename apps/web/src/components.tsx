@@ -394,11 +394,14 @@ export function MoveRows({
   fast,
   charged,
   reads,
+  countNote,
 }: {
   fast: MoveChoice;
   charged: MoveChoice[];
   /** Optional per-charged-move line, e.g. "extra damage on 31 of 48". */
   reads?: Record<string, string>;
+  /** Rendered once, right beside the first charged move's move-count text. */
+  countNote?: ReactNode;
 }) {
   return (
     <div className="moves">
@@ -415,9 +418,10 @@ export function MoveRows({
           </span>
         </span>
       </div>
-      {charged.map((m) => {
+      {charged.map((m, mi) => {
         const count = countsText(fast.name, m.counts);
         const read = reads?.[m.moveId];
+        const note = mi === 0 ? countNote : null;
         return (
           <div className="move-row" key={m.moveId}>
             <span className="move-kind">Charged</span>
@@ -431,9 +435,16 @@ export function MoveRows({
                 </span>
                 <TmBadge tm={m.tm} />
               </span>
-              {count || read ? (
+              {count || read || note ? (
                 <span className="move-sub">
-                  {count ? <span>{count}</span> : null}
+                  {count ? (
+                    <span>
+                      {count}
+                      {note}
+                    </span>
+                  ) : (
+                    note
+                  )}
                   {read ? <span>{read}</span> : null}
                 </span>
               ) : null}
