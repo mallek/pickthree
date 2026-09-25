@@ -113,4 +113,4 @@ These are the changes from Piece 1 (Foundation) that are now visible in `apps/we
 
 ## Sign-off
 
-- [ ] Travis, 2026-09-24
+- [x] Travis, 2026-09-25 (reviewed the pushed build and this record on GitHub: "Looks good.")
