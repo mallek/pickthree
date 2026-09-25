@@ -34,7 +34,7 @@ selects side by side, a labeled Filters button under them, and a weighting line.
 | `teams-community`: Source set to GBL, the community ladder (full page) | ![](img/teams-community-dark.webp) | ![](img/teams-community-light.webp) |
 | `19-teams-ultra`: Ultra League selected | ![](img/19-teams-ultra-dark.webp) | ![](img/19-teams-ultra-light.webp) |
 | `teams-cup`: the Tournament cup, reached through the league row's "..." overflow | ![](img/teams-cup-dark.webp) | ![](img/teams-cup-light.webp) |
-| `teams-filters-sheet`: the Filters sheet open over the list, Window at its top (disabled with its note, since the source is Your log) | ![](img/teams-filters-sheet-dark.webp) | ![](img/teams-filters-sheet-light.webp) |
+| `teams-filters-sheet`: the Filters sheet open over the list, Window at its top, disabled because the source is Your log: its value and chevron muted, its label as it was, the Source note under it | ![](img/teams-filters-sheet-dark.webp) | ![](img/teams-filters-sheet-light.webp) |
 | `teams-no-collection`: no collection saved yet | ![](img/teams-no-collection-dark.webp) | ![](img/teams-no-collection-light.webp) |
 | `teams-loading`: a run in progress (Ultra, first stage) | ![](img/teams-loading-dark.webp) | ![](img/teams-loading-light.webp) |
 | `teams-empty`: no team fits the filters (every specimen excluded) | ![](img/teams-empty-dark.webp) | ![](img/teams-empty-light.webp) |
@@ -86,7 +86,7 @@ source, a failed run is followed by at most one more, not a loop").
       change: exit 0.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
       check-tokens`, all re-run 2026-09-25: lint exit 0; typecheck exit 0 across all seven
-      workspaces; `npm test` 127 files, 1,074 tests passed; `check-colors` exit 0 (no literal
+      workspaces; `npm test` 127 files, 1,078 tests passed; `check-colors` exit 0 (no literal
       added, baseline untouched); `check-tokens`: ok.
 
 ## Aesthetics
@@ -146,8 +146,11 @@ source, a failed run is followed by at most one more, not a loop").
       the Source row. The one exception is "No community data for this league", shown only for
       a league without community data. In `teams-no-collection` the one line is "No collection
       yet. Pick a way in." In `teams-filters-sheet` the sheet opens on its title ("Filters")
-      and the "Window" field label, and the Window note ("Applies when Source is GBL,
-      Tournaments or All") sits under the select only while Window does not apply.
+      and the "Window" field label. While Window does not apply, a one-line note sits under the
+      select: "Applies when Source is GBL, Tournaments or All" for PvPoke or Your log (as in the
+      capture), or "No community data for this league" for a league without community data
+      (`filters.test.tsx` covers both). The disabled select shows its value and chevron muted
+      (the shared `.select-wrap select:disabled` rule), its label unchanged.
 - [x] light as readable as dark: every state above is a matched dark/light pair; `web:audit`'s
       per-theme contrast pass is clean on all nine in both themes.
 
@@ -178,7 +181,8 @@ source, a failed run is followed by at most one more, not a loop").
       sheet and Done closes it (`teams-filters-sheet`; `teamsHeader.test.tsx`'s "names the
       filter count on the icon and opens the Filters sheet"), the Source select switches the
       weighting (`teams-community` reads "GBL"), Window in the Filters sheet writes the window
-      for a community source and is disabled with its note otherwise (`filters.test.tsx`), the
+      for a community source and is disabled with the matching note otherwise
+      (`filters.test.tsx`), the
       filter icon and the Empty card's Filters action carry the active count ("1",
       `teams-empty`), Settings opens the settings sheet with or without a
       collection (`teamsHeader.test.tsx`), Build your own team is a link to Build. After a
@@ -253,12 +257,15 @@ source, a failed run is followed by at most one more, not a loop").
 | Re-review N1: after a failed run the error card was a dead end. The Teams effect was gated on `!recommendError`, so Source, Window and Filters changed their settings but never ran again until a league switch or a reload, and the card had no retry. | The error card has a "Try again" button (`runRecommend`; `rec-start` clears the error), and the effect runs when the error is set only if the key is stale, so a changed setting runs again and unchanged settings never loop. Four tests, including the community-source case (one follow-up run, then none). Test hygiene (N3): the list tests unstub globals in an `afterEach`. | `60d1121`, `b256663`, `45fd024` |
 | Every select's chevron sat 8px below its box's vertical middle, in both apps (visible in every earlier capture). Root cause: `Chevron` turns itself with an inline `transform: rotate(90deg)`, which replaced `.select-wrap svg`'s `translateY(-50%)` centering in `packages/ui/base.css`. | The chevron is centered with `top: 0; bottom: 0; margin: auto 0` (no transform to collide with), and the select is a block so its wrap is exactly its height. `ui:audit` now fails if any gallery select's chevron center is more than 1px off the select's center (it reported 8.0px before the fix). Checked in `teams-filters-sheet` and meta.pick3.gg's Window and Source selects. | `514e550` |
 | Controls redesign (Travis, 2026-09-25, spec `b26b682`): Source and Window side by side, a labeled Filters button under them and a weighting line took four lines of controls. | One row: Source filling the width and `FilterButton`'s new icon-only form with a count badge (`91b4e00`, `92c0889`); Window at the top of the Filters sheet, disabled with a note when it does not apply (`e6520b9`); a non-default Window counts on the badge while a community source is picked (`f72891c`). The badge hangs over the button's corner on purpose, so `scripts/audit.mjs`'s clipping check now skips overflow that a descendant marked `data-audit-overhang` alone explains; anything wider still reports. | `91b4e00`, `92c0889`, `e6520b9`, `f72891c` |
+| Controls review: the Window note read "Applies when Source is GBL, Tournaments or All" even when a community source was picked and the league had no community data; the "has community data" rule was written out twice (Teams, Filters); the disabled Window select used the browser's own greyed look. | A league without data now reads "No community data for this league" (`filters.test.tsx`, both notes); `hasCommunityData` in `apps/web/src/state/facing.ts` serves both screens (with the unknown-league rule and its comment, three unit tests); `packages/ui/base.css` gains `.select-wrap select:disabled` (value in `--muted`, chevron in `--faint`, opacity kept at 1 so the label and field stay put), shown in the gallery. | `aecbd2e`, `7f04f12`, `7513306` |
 
 Visible changes outside Teams, from this branch:
 - Every select's chevron, in both apps (meta.pick3.gg's Window and Source included), moves up
   8px to its box's vertical middle.
 - `packages/ui` gains `FilterButton`'s icon-only form; the labeled form (the Empty card's action)
   is unchanged.
+- Every disabled select, in both apps, shows its value muted and its chevron faint, instead of
+  the browser's own disabled look.
 - The active tab-bar item (icon and label) moves from `--accent` to `--accent-text` on every
   screen in the app: paler in dark, darker in light.
 - Every `.btn-ghost` gets the same `--accent-text` shift: the sheet Done buttons (Filters and
