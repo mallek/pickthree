@@ -74,9 +74,10 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
     expect(r.team.slots).toHaveLength(3);
     expect(r.orders).toHaveLength(6);
     for (let i = 1; i < r.orders.length; i++) {
-      expect(r.orders[i]!.total).toBeLessThanOrEqual(r.orders[i - 1]!.total);
+      expect(r.orders[i]!.battle).toBeLessThanOrEqual(r.orders[i - 1]!.battle);
     }
-    expect(r.orders[0]!.total).toBe(r.team.score.total);
+    expect(r.orders[0]!.battle).toBe(Math.round(r.team.score.battle));
+    expect(r.orders[0]!.slots).toEqual(r.team.slots.map((s) => s.candidate.build.speciesId));
     expect(r.hypothetical).toEqual(['swampert']);
     expect(r.team.explanation.switchPlan).toBeDefined();
     expect(r.team.explanation.slotDetail).toHaveLength(3);

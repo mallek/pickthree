@@ -16,6 +16,7 @@ import { cpFor } from './math/cp.js';
 import { allSpreads } from './math/ivrank.js';
 import {
   assumptionsFor,
+  compareTeamScores,
   DEFAULT_RECOMMEND_OPTIONS,
   profileFor,
   teamFrom,
@@ -74,6 +75,8 @@ export interface OrderTried {
   /** Species ids as lead, safe switch, closer. */
   slots: [string, string, string];
   names: [string, string, string];
+  /** Battle strength, the headline number, rounded. Orders are sorted by it. */
+  battle: number;
   total: number;
   fit: Fit;
 }
@@ -299,7 +302,7 @@ export function analyzeTeam(
   const extra = profile.outsiders.map((o) => o.speciesId);
   const topTen = topTenFor(view, profile);
   const scored = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra, topTen) }));
-  scored.sort((a, b) => b.score.total - a.score.total);
+  scored.sort((a, b) => compareTeamScores(a.score, b.score));
   const best = scored[0];
   if (!best) {
     throw new Error('Nothing to analyze.');
@@ -313,6 +316,7 @@ export function analyzeTeam(
     return {
       slots,
       names: slots.map((id) => fullName(id, index)) as [string, string, string],
+      battle: Math.round(score.battle),
       total: score.total,
       fit: score.fit,
     };
