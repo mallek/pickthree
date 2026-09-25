@@ -79,10 +79,12 @@ describe('primary button contrast', () => {
 });
 
 // A species token's letter (no sprite) sits on a type-colored disc, split diagonally for two
-// types: a gradient axe cannot measure. The letter carries a thin --token-halo outline, so what it
-// must clear is its outline, whatever the disc: for every type color (either half of any disc),
-// the letter and the outline are each composited onto that color and compared, in every theme
-// block. The type colors come from the shared :root block.
+// types: a gradient axe cannot measure, so this is the only check those discs get (SpeciesToken
+// marks them data-audit-contrast="static"). The letter carries a thin --token-halo outline, and
+// text paints over its own text-shadows, so the letter's backdrop is the outline laid over the
+// disc: for every type color (either half of any disc), the outline is composited onto that color,
+// the letter onto the outline, and the two compared. The discs, the letter and the outline are
+// the same in every theme, so all of them come from the shared :root block.
 function rgba(body: string, name: string): [number, number, number, number] {
   const m = new RegExp(
     `--${name}\\s*:\\s*rgba\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*([0-9.]+)\\)\\s*;`,
@@ -114,19 +116,28 @@ describe('species token letter contrast', () => {
     expect(typeColors).toHaveLength(18);
   });
 
-  it('draws the letter and its four-sided outline from the tokens', () => {
-    const token = block(base, '.token {');
-    expect(token).toContain('color: var(--token-letter)');
-    expect(token.match(/var\(--token-halo\)/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+  it('keeps the letter and the outline theme-constant, in the shared block only', () => {
+    for (const body of Object.values(themes)) {
+      expect(body).not.toMatch(/--token-(letter|halo)\s*:/);
+    }
+    expect(() => rgba(shared, 'token-letter')).not.toThrow();
+    expect(() => rgba(shared, 'token-halo')).not.toThrow();
   });
 
-  for (const [theme, body] of Object.entries(themes)) {
-    for (const [type, color] of typeColors) {
-      it(`the letter clears 4.5:1 on its outline over ${type} in ${theme}`, () => {
-        const letter = over(rgba(body, 'token-letter'), color);
-        const outline = over(rgba(body, 'token-halo'), color);
-        expect(ratio(letter, outline)).toBeGreaterThanOrEqual(4.5);
-      });
+  it('draws the letter from --token-letter with a 1px --token-halo stroke on all four sides', () => {
+    const token = block(base, '.token {').replace(/\s+/g, ' ');
+    expect(token).toContain('color: var(--token-letter)');
+    for (const stroke of ['1px 0 0', '-1px 0 0', '0 1px 0', '0 -1px 0']) {
+      expect(token).toMatch(new RegExp(`[:,] ${stroke} var\\(--token-halo\\)`));
     }
+  });
+
+  const letter = rgba(shared, 'token-letter');
+  const halo = rgba(shared, 'token-halo');
+  for (const [type, color] of typeColors) {
+    it(`the letter clears 4.5:1 on its outline over ${type}`, () => {
+      const outline = over(halo, color);
+      expect(ratio(over(letter, outline), outline)).toBeGreaterThanOrEqual(4.5);
+    });
   }
 });

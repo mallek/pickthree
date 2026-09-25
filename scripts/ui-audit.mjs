@@ -2,7 +2,8 @@
 /**
  * Builds the component gallery, serves it, and audits it in dark and light at 390px. Writes
  * packages/ui/screenshots/gallery-<theme>.png (gitignored) and exits 1 on any finding or console
- * error.
+ * error. Then checks the audit itself on a tiny fixed page (the self-check below) and exits 1 if
+ * the audit's own contrast measuring misses a known failure or flags a known pass.
  *
  *   npm run ui:audit
  */
@@ -50,6 +51,38 @@ try {
     }
     await page.close();
   }
+
+  // Self-check for the audit's own contrast measuring (audit.mjs, measureBelowOpaque): two
+  // two-line paragraphs on opaque sheets, each over a page block that ends between its lines, so
+  // axe finds different stacks under the two lines and leaves both undecided. The audit must
+  // measure both: #fail (#aaaaaa on white, 2.32:1) as a hard finding, #pass (#333333) as clean.
+  // Anything else, including either one left "unverified", means that path has regressed.
+  const page = await browser.newPage();
+  await page.setViewport({ width: 390, height: 844 });
+  await prepareAudit(page);
+  await page.setContent(`<!doctype html>
+<html lang="en"><head><title>audit self-check</title><style>
+  body { margin: 0; font: 16px/24px sans-serif; }
+  .behind { position: absolute; left: 0; width: 390px; height: 24px; background: #000000; }
+  .sheet { position: fixed; left: 0; width: 390px; height: 120px; background: #ffffff; }
+  p { margin: 0; }
+</style></head><body>
+  <div class="behind" style="top: 0"></div>
+  <div class="behind" style="top: 200px"></div>
+  <div class="sheet" style="top: 0"><p id="fail" style="color: #aaaaaa">First line of text<br>second line of text</p></div>
+  <div class="sheet" style="top: 200px"><p id="pass" style="color: #333333">First line of text<br>second line of text</p></div>
+</body></html>`);
+  const selfCheck = await auditPage(page);
+  const expected =
+    selfCheck.length === 1 &&
+    selfCheck[0]?.startsWith('contrast: #fail ') === true &&
+    selfCheck[0].includes('needs 4.5:1');
+  if (!expected) {
+    failures.push(
+      `[self-check] expected exactly one measured contrast finding on #fail, got: ${JSON.stringify(selfCheck)}`,
+    );
+  }
+  await page.close();
 } finally {
   await browser.close();
   await server.close();

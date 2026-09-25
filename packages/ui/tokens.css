@@ -37,12 +37,6 @@
   --danger-tint: rgba(240, 113, 120, 0.08);
   --tchip-fill: 16%;
   --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(124, 94, 219, 0.22), transparent 70%);
-  /* A species token's letter (no sprite: Pokémon pictures off, or one that failed to load) and the
-     thin outline that keeps it readable on every type color, light or dark. The discs are the
-     same in both themes, so these are too; the letter clears 4.5:1 on its outline over each type
-     color (test/contrast.test.ts). */
-  --token-letter: rgba(255, 255, 255, 0.92);
-  --token-halo: rgba(0, 0, 0, 0.75);
 }
 
 @media (prefers-color-scheme: light) {
@@ -100,8 +94,6 @@
     --danger-tint: rgba(200, 50, 59, 0.04);
     --tchip-fill: 4%;
     --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(121, 108, 191, 0.16), transparent 70%);
-    --token-letter: rgba(255, 255, 255, 0.92);
-    --token-halo: rgba(0, 0, 0, 0.75);
   }
 }
 
@@ -159,8 +151,6 @@
   --danger-tint: rgba(200, 50, 59, 0.04);
   --tchip-fill: 4%;
   --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(121, 108, 191, 0.16), transparent 70%);
-  --token-letter: rgba(255, 255, 255, 0.92);
-  --token-halo: rgba(0, 0, 0, 0.75);
 }
 
 /* Type colors are constant across themes. */
@@ -201,6 +191,12 @@
   --type-dark: #705746;
   --type-steel: #b7b7ce;
   --type-fairy: #d685ad;
+  /* A species token's letter (no sprite: Pokémon pictures off, or one that failed to load) and the
+     thin outline that keeps it readable on every type color. The discs are the same in both
+     themes, so these are too; the letter clears 4.5:1 on its outline over each type color
+     (test/contrast.test.ts). */
+  --token-letter: rgba(255, 255, 255, 0.92);
+  --token-halo: rgba(0, 0, 0, 0.75);
 
   /* text colour for a type chip: same hue, lightness pushed to clear 6.5:1 on the dark card */
   --type-normal-ink: #aead83;

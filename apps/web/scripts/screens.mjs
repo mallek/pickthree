@@ -32,6 +32,8 @@ const AUDIT_ENFORCED = new Set([
   'teams-no-collection',
 ]);
 const auditFindings = [];
+/** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
+const captured = new Set();
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '..', 'screenshots');
@@ -99,6 +101,7 @@ await page.evaluateOnNewDocument((sample) => {
 }, communitySample);
 
 async function shot(name, fullPage = true) {
+  captured.add(name);
   await new Promise((r) => setTimeout(r, 350));
   if (!AUDIT) {
     const file = path.join(outDir, `${name}.png`);
@@ -686,6 +689,12 @@ if (AUDIT) {
     for (const f of enforced) {
       console.log(`  ${f.line}`);
     }
+    process.exitCode = 1;
+  }
+  // A renamed or dropped shot would otherwise take its enforcement with it, silently.
+  const neverCaptured = [...AUDIT_ENFORCED].filter((name) => !captured.has(name));
+  if (neverCaptured.length > 0) {
+    console.log(`\nAudited screens never captured: ${neverCaptured.join(', ')}`);
     process.exitCode = 1;
   }
 }
