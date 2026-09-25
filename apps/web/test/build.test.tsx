@@ -429,6 +429,8 @@ describe('Build a team', () => {
     await pickFirst('tink', 'Tinkaton');
     fireEvent.click(await screen.findByRole('button', { name: 'Add Azumarill' }));
     await screen.findByRole('button', { name: 'Remove Azumarill' });
+    // + Add opens no search: the next empty slot stays shut.
+    expect(screen.queryByPlaceholderText(/Search any Pokémon/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Closer, empty' })).toBeInTheDocument();
     await pickFirst('clod', 'Clodsire');
     await waitFor(() =>

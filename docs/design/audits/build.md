@@ -18,19 +18,23 @@ and shows those instead; nothing on this branch touched sprite rendering itself.
 ## Screenshots
 
 Dark and light at 390px, one pair per state, converted to WebP (600px wide, quality 72) the same
-way the Teams images were, from `apps/web/screenshots/<name>-{dark,light}.png` (2026-09-25 run).
+way the Teams images were, from `apps/web/screenshots/<name>-{dark,light}.png` (2026-09-25 run,
+re-captured in the final fix wave at `32959a7`: `build-empty` and `build-choosing` lost the lineup
+hint, which now waits for a card, and `build-cost`'s total keeps "88 XL Candy" on one line;
+`13b-build-moves` dark differs by a few bytes with nothing visible changed, and the other images
+came out byte for byte the same).
 `build-empty`, `13-build` and `build-cost` are full-page; `build-choosing`, `build-suggestions` and
 `13b-build-moves` are viewport shots (the last two mid-flow, where a full-page shot would include
 nothing new below the fold).
 
 | State | Dark | Light |
 | --- | --- | --- |
-| `build-empty`: three dashed empty slots, Find best order and Analyze both disabled | ![](img/build-empty-dark.webp) | ![](img/build-empty-light.webp) |
+| `build-empty`: three dashed empty slots, no lineup hint (there is no card to tap yet), Find best order and Analyze both disabled | ![](img/build-empty-dark.webp) | ![](img/build-empty-light.webp) |
 | `build-choosing`: the Lead slot's search open, "Choosing Lead" with the role's job above it, the Suggested grid ("yours" tags on owned species) | ![](img/build-choosing-dark.webp) | ![](img/build-choosing-light.webp) |
 | `build-suggestions`: one pick made (Skarmory), "Best with your first pick" with two + Add rows, each a reason against the pin alone | ![](img/build-suggestions-dark.webp) | ![](img/build-suggestions-light.webp) |
 | `13-build`: all three slots filled with species picks (none owned), "None of these are yours yet, so there is nothing to price.", Analyze enabled (full page) | ![](img/13-build-dark.webp) | ![](img/13-build-light.webp) |
 | `13b-build-moves`: the move sheet open on Azumarill, two charged moves ticked, the third disabled with "Untick one to pick another" and a "Changed" tag on the swapped move | ![](img/13b-build-moves-dark.webp) | ![](img/13b-build-moves-light.webp) |
-| `build-cost`: all three slots filled with owned specimens (Galarian Corsola, Clodsire, Feraligatr), "Total to build" with a real Stardust/Candy/XL Candy/Elite TM total (full page) | ![](img/build-cost-dark.webp) | ![](img/build-cost-light.webp) |
+| `build-cost`: all three slots filled with owned specimens (Galarian Corsola, Clodsire, Feraligatr), "Total to build" with a real Stardust/Candy/XL Candy/Elite TM total, each number kept with its unit across the wrap (full page) | ![](img/build-cost-dark.webp) | ![](img/build-cost-light.webp) |
 
 Not captured: the analyze error state (`ErrorState` on a failed `analyze()`), the "Finding the best
 order..." transient, the verdicts-loading progress bar under the grid, and dragging a card. None of
@@ -41,11 +45,12 @@ confirms the grip and drag effect were kept, not rebuilt).
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run
-      2026-09-25 against commit `976a834`: exit 0. Zero findings on all six enforced Build screens
-      (`build-empty`, `build-choosing`, `build-suggestions`, `13-build`, `13b-build-moves`,
-      `build-cost`), in both themes. 978 findings remain on screens not yet redesigned, none
-      failing the run.
-- [x] the run's own guards, all passed in this run (per Task 5's fixes):
+      2026-09-25 against commit `976a834` and again in the final fix wave against `32959a7`: exit
+      0 both times. Zero findings on all six enforced Build screens (`build-empty`,
+      `build-choosing`, `build-suggestions`, `13-build`, `13b-build-moves`, `build-cost`), in both
+      themes. 978 findings remain on screens not yet redesigned, none failing the run.
+- [x] the run's own guards, all passed in both runs (per Task 5's fixes; the values below are the
+      same in each):
   - the header's title left edge and last icon-button's right edge sit within the tolerance of the
     league row's edges (`build-empty`: `{"left":2,"right":0}`);
   - `assertTitleCentred()` holds on Build (checked on `21-log-battle` too, since the fix moved the
@@ -55,15 +60,18 @@ confirms the grip and drag effect were kept, not rebuilt).
   - suggestions never fill a slot on their own (`build-suggestions`: exactly one `.pick-card.filled`
     after Skarmory is picked and `.mate-row` appears);
   - `build-cost`'s `.build-cost` box contains a real "Total to build" line, not a placeholder.
-- [x] no console errors: the run printed no "Browser errors" section.
+- [x] no console errors: neither run printed a "Browser errors" section.
 - [x] `npm run ui:audit` re-run 2026-09-25: "gallery audit: clean in dark and light" (unaffected by
-      this task; run as the standing smoke check).
+      this task; run as the standing smoke check). Not re-run in the final fix wave: nothing under
+      `packages/ui` changed there.
 - [x] `npm run meta:screens` re-run 2026-09-25: exit 0, a smoke check for `packages/ui/base.css`'s
-      `.pick-move-k` color change, which also reaches meta.pick3.gg's Species page.
+      `.pick-move-k` color change, which also reaches meta.pick3.gg's Species page. Not re-run in
+      the final fix wave: nothing under `packages/ui` or `apps/meta` changed there.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all re-run 2026-09-25 at `976a834`: lint exit 0; typecheck exit 0 across all
-      workspaces; `npm test` 131 files, 1,131 tests passed; `check-colors` exit 0 (baseline
-      untouched); `check-tokens`: ok.
+      check-tokens`, all re-run 2026-09-25 at `976a834` and again in the final fix wave (code at
+      `32959a7`): lint exit 0; typecheck exit 0 across all workspaces; `npm test` 131 files, 1,131
+      tests passed, then 1,138 after the wave's seven new Build tests; `check-colors` exit 0
+      (baseline untouched); `check-tokens`: ok.
 
 ## Aesthetics
 
@@ -75,27 +83,35 @@ confirms the grip and drag effect were kept, not rebuilt).
       branch (visible and legible on Melmetal's steel disc, Corsola's and Clodsire's split discs,
       and Skarmory's Steel/Flying disc, in both themes). No pink appears on this page: Build has no
       measured data of its own, only PvPoke-assumed IVs and your own specimen stats.
-- [x] at most four text levels, one page title: one page title, "Build Your Team", in every
-      capture (`Header variant="sub"`). Levels visible across the captures: the page title;
-      section heads and card/species names (both bold, unified at `--fs-section`/600 for the
-      section heads per Task 5's fix, and 19px/700 for a card's own species name); body and
-      explanation text (the role's job line, the move lines, the IV/level line); and small muted
-      text (the role pill, "yours" and "Changed" tags, the "TM" badge, the hint lines). No fifth
-      level found in any capture.
+- [x] at most four text levels, one page title, **with one kept exception for Travis to rule on
+      at sign-off**: one page title, "Build Your Team", in every capture (`Header variant="sub"`).
+      Levels visible across the captures: the page title; section heads ("Your lineup", "Choosing
+      Lead", "Best with your first pick"), unified at `--fs-section` (17px)/600 per Task 5's fix;
+      body and explanation text (the role's job line, the move lines, the IV/level line); and
+      small muted text (the role pill, "yours" and "Changed" tags, the "TM" badge, the hint
+      lines). The exception: a card's own species name is 19px/700 (`.pick-name`,
+      `apps/web/src/app.css`), a size of its own, visibly larger than "Your lineup" in `13-build`,
+      `13b-build-moves`, `build-suggestions` and `build-cost`, and not on the foundation's scale
+      (24/17/15/13, plus 11 for labels). It is kept as today's card, since the spec has Build keep
+      today's cards; counted on its own it would be a fifth level. The alternative is one rule,
+      `.pick-name { font-size: var(--fs-section); font-weight: 600 }`, and a recapture of those
+      four screens.
 - [x] one filled primary button: `Build.tsx` renders exactly one `Button variant="primary"`
       ("Analyze this team", disabled until all three slots are filled) and exactly one other named
       `Button`, `variant="text"` ("Find best order", also disabled until full); the move sheet's
-      "Reset to recommended" is the same text variant. "+ Add" on a suggestion row is a plain
-      text-style link (`.mate-add`: `color: var(--accent-text)`, no background), not a button
-      variant. Confirmed in every capture that shows one of these: `build-empty` (both disabled),
+      "Reset to recommended" is the same text variant. On a suggestion row the whole row is the
+      button (`TeammateSuggestions.tsx`, `aria-label="Add <name>"`), a surface card and not a
+      button variant; "+ Add" is its visible cue only (`.mate-add`, `aria-hidden`,
+      `color: var(--accent-text)`, no background), as the spec asks ("the whole row is the
+      button, the + its visible cue"). Confirmed in every capture that shows one of these: `build-empty` (both disabled),
       `13-build` and `build-cost` (both enabled).
 - [x] chips tapped, tags read: the type chips (Water, Ground, Fairy, Steel, and so on) are
       read-only labels on every card and offer row, never pressable. The "yours" and "Changed"
       tags are the neutral `ui` `Tag` (global constraint 7; the grid's "yours" was a raw
       `<span className="tag">` until the Task 4 review's I2, fixed in `4020159`). The role pill
       (LEAD / SAFE SWITCH / CLOSER) is a read-only label on the card, not a control. No pressable
-      chip row exists on Build; "+ Add" is the only tap target inside a suggestion row, and it
-      fills the slot rather than toggling a chip.
+      chip row exists on Build; a suggestion row is one tap target as a whole (its "+ Add" is a
+      cue, not a separate control), and it fills the slot rather than toggling a chip.
 - [x] the right header variant: every capture uses `Header variant="sub"` (a labeled back link,
       centered title, and a `Settings` `IconButton` on the right), matching Build's own row in the
       inventory ("Available actions": "Back", "Cog: Settings sheet"). The title's left edge and
@@ -139,7 +155,10 @@ confirms the grip and drag effect were kept, not rebuilt).
   - Per-team move overrides that do not touch the collection: the "Changed" tag on Hydro Pump in
     `13b-build-moves`, tested by `MovePicker.test.tsx`'s "shows the recommended set and tags what
     differs from it" and `build.test.tsx`'s "shows the move pool once it arrives, and each move
-    change at once".
+    change at once". The card's "Moves changed" tag shows only while the moves differ from the
+    recommendation: Reset to recommended, or the recommended charged pair ticked again in the
+    other order, clears it (`build.test.tsx`'s "says Moves changed only while the moves differ
+    from the recommendation", final fix wave I2).
   - Search input at the top, results under it, slots under that (the mobile input rule): see the
     dedicated line below.
   - Suggested picks when the search is empty (recent opponents plus top meta, your own specimen
@@ -149,20 +168,25 @@ confirms the grip and drag effect were kept, not rebuilt).
     one-line reason ("Beats Shadow Ninetales, Galarian Corsola, Corviknight and 15 more that
     Skarmory loses to.") and no numeric score; the verdict belongs to Analyze, unchanged.
 - [x] every control does what its label says: league tabs switch league and move pools (unchanged
-      code, not re-tested here); an empty slot opens its search (`build-choosing`); a filled card
-      opens the move sheet (`13b-build-moves`; `build.test.tsx`'s "opens and closes the moves sheet
-      for a filled slot" and "opens the move sheet from a card, with Analyze as the one primary
-      button"); "+ Add" fills the first empty slot without opening a search
-      (`build.test.tsx`'s "+ Add fills the first empty slot and the list goes once all three are
-      in"); Find best order and Analyze are disabled until the team is full
-      (`build-empty`) and enabled once it is (`13-build`, `build-cost`).
+      code), and a switch takes the old league's teammate rows down at once, with no new ask
+      until the new league's bundle has loaded (`build.test.tsx`'s "takes the old league
+      teammates down the moment the league changes", final fix wave I1); an empty slot opens its
+      search (`build-choosing`); a filled card opens the move sheet (`13b-build-moves`;
+      `build.test.tsx`'s "opens and closes the moves sheet for a filled slot" and "opens the move
+      sheet from a card, with Analyze as the one primary button"); "+ Add" fills the first empty
+      slot without opening a search (`build.test.tsx`'s "+ Add fills the first empty slot and the
+      list goes once all three are in", which asserts that no search input is open after the add);
+      Find best order and Analyze are disabled until the team is full (`build-empty`) and enabled
+      once it is (`13-build`, `build-cost`).
 - [x] back returns to the origin with filters and scroll, for the flows this task touched: the
       inventory's original rule ("Back '<Teams>': always goes to Teams") is superseded by Ruling 5
       (back is labeled "Back" and the origin varies): `history.ts`'s `markEntry`/`canGoBack` track
       how many pick3 screens sit behind the current one in this tab, and `Actions.back(fallback)`
       uses real browser back when there is somewhere to go, falling back to Teams only when there
-      is not. `build.test.tsx`'s "Back returns to Teams when Build was the first screen" and
-      `history.test.ts`'s four tests (including "keeps a marked entry's pick3Depth through
+      is not. `build.test.tsx`'s "Back returns to Teams when Build was the first screen" (the
+      fallback), "Back goes back through history when pick3 has a screen behind Build" (the origin
+      path: `canGoBack()` true, `window.history.back()` called) and `history.test.ts`'s four
+      tests (including "keeps a marked entry's pick3Depth through
       clearShareMarker", the Task 1 review's fix) cover it. Build carries no filters or scroll
       position of its own to preserve.
 - [x] input layout rule: applicable here (Build has a text input, unlike Teams). `build-choosing`
@@ -171,14 +195,15 @@ confirms the grip and drag effect were kept, not rebuilt).
       (`TeammateSuggestions`) are the shortcut content and are hidden whenever a slot's search is
       open (`Build.tsx`: `{target === null && (pinned === 1 || pinned === 2) ? <TeammateSuggestions
       .../> : null}`, with the comment "Shortcuts last, and hidden while a slot's search is open:
-      the keyboard covers them.") per Ruling 3. This gating has no capture or unit test of its own;
-      it is confirmed by reading the code, not by a passing assertion, so it is ticked on the
-      strength of the `must keep` line ("Search input at the top... the mobile input rule") that
-      the same code satisfies elsewhere, not on a dedicated check. Flagged again under Findings.
+      the keyboard covers them.") per Ruling 3. `build.test.tsx`'s "hides the suggestions while a
+      slot search is open" opens Safe Switch's search with a list up, finds no "Suggested
+      teammates" region, presses Escape and finds it again.
 - [x] icon buttons named; focus visible: the header's `Settings` `IconButton` carries the label
       "Settings" (`Header.tsx`, unchanged); the X on a filled card empties the slot (unchanged,
-      pre-existing `aria-label`); "+ Add" carries `aria-label="Add <name>"` (Task 3's report and
-      review, confirmed by an accessibility check in the review); the shared `Button`/`IconButton`
+      pre-existing `aria-label`); a suggestion row is one button named "Add <name>" by its
+      `aria-label`, with the visible "+ Add" cue `aria-hidden` (Task 3's report and review,
+      confirmed by an accessibility check in the review, and the name every `build.test.tsx`
+      suggestion test clicks by); the shared `Button`/`IconButton`
       focus-visible outline is the one audited on other pages (gallery record), unchanged here.
 - [x] product rules: assumptions shown ("Not yours; top-10% IVs assumed", "from your X",
       "None of these are yours yet, so there is nothing to price." and the unbuildable-count line
@@ -187,11 +212,11 @@ confirms the grip and drag effect were kept, not rebuilt).
       community read, is the same league-only board fetch used on Teams, gated the same way);
       `connect-src` unchanged (no CSP edit on this branch); sharing copy is not applicable to
       Build (no sharing toggle lives on this screen).
-- [x] tests cover the new behavior: `apps/web/test/build.test.tsx` (15 cases),
-      `apps/web/test/lineupCost.test.ts` (4), `apps/web/test/MovePicker.test.tsx` (9),
-      `apps/web/test/teammateSuggestions.test.tsx` (3), `apps/web/test/history.test.ts` (4),
-      `apps/web/test/shadowToken.test.tsx` (5) and `packages/ui/test/Sheet.test.tsx` (8, one new
-      for this branch).
+- [x] tests cover the new behavior: `apps/web/test/build.test.tsx` (22 cases: 15, plus 7 from the
+      final fix wave), `apps/web/test/lineupCost.test.ts` (4), `apps/web/test/MovePicker.test.tsx`
+      (9), `apps/web/test/teammateSuggestions.test.tsx` (3), `apps/web/test/history.test.ts` (4),
+      `apps/web/test/shadowToken.test.tsx` (22: 4 fixed cases plus 18 generated, one per type) and
+      `packages/ui/test/Sheet.test.tsx` (8, one new for this branch).
 - [x] the new behaviors (this plan's Rulings, see below for the rulings themselves):
   - Ruling 1 (suggestions list = each offer's first fill): `teammateOffers` dedupes by species and
     excludes anything already on the board, tested by all three cases in
@@ -199,13 +224,15 @@ confirms the grip and drag effect were kept, not rebuilt).
     each, neither already picked).
   - Ruling 2 (heading text by fill count): `filled === 1 ? 'Best with your first pick' :
     'Best with your first two'` (`TeammateSuggestions.tsx`). The one-fill heading is captured
-    (`build-suggestions`); the two-fill heading has no capture and no test of its own (none of the
-    six enforced screens reaches two pins before the third fills the board). Traced in code only;
-    flagged under Findings.
+    (`build-suggestions`); the two-fill heading has no capture (none of the six enforced screens
+    reaches two pins before the third fills the board) and is covered by `build.test.tsx`'s
+    "heads the list by how many are on the board", which picks Tinkaton, adds Azumarill and finds
+    "Best with your first two" over the next list.
   - Ruling 3 (suggestions hidden while a slot's search is open; + Add opens no search): the
-    `target === null` gate above; `build.test.tsx`'s "+ Add fills the first empty slot and the
-    list goes once all three are in" confirms + Add does not open a search, but no test asserts
-    the list disappears while a search is open. Traced in code only; flagged under Findings.
+    `target === null` gate above, tested by `build.test.tsx`'s "hides the suggestions while a slot
+    search is open"; "+ Add fills the first empty slot and the list goes once all three are in"
+    asserts that no search input is open after + Add. This ruling departs from one spec
+    sentence; see Ruling 3 under "Rulings applied" below.
   - Ruling 4 (total cost counts your own Pokémon only): `build-cost` shows a real total for three
     owned picks; `13-build` shows "None of these are yours yet, so there is nothing to price." for
     zero; `lineupCost.test.ts`'s four cases (including the mixed priced/unbuildable/unpriced case
@@ -238,10 +265,14 @@ confirms the grip and drag effect were kept, not rebuilt).
 | Seen in the captures, not caught by axe: the sub header sat off the gutter; "Find best order" sat 8px inside the gutter and its 44px target pushed the hint line down; filled cards and the cost box had no border (most visible in light); the three section heads did not share one size and weight. | `.hdr` padding-right (later replaced, see the next row); `margin-block: -12px` and no right padding on the "Find best order" button; a 1px `--divider` border and `--r-card` radius on filled/empty cards and `.build-cost`; section heads unified at `--fs-section`/600. | `366a2a5` |
 | Coordinator's look at the first captures: the "SAFE SWITCH" role pill wrapped to two lines in the 88px sprite column; `13-build`'s picks were unchanged species with nothing to price, so no total was captured; `13-build` was a viewport shot with text under the sticky header. | Pill set `white-space: nowrap` (later revised, see below); a new enforced `build-cost` capture fills three slots from owned specimens and asserts a real "Total to build" line; `13-build` shot full page from the top instead of scrolled/cropped. | `9385554` |
 | Review round 2: the `.hdr` padding-right fix moved every sub header's title 4px off centre (equal `1fr` side columns, unequal padding); a "·" separator could start a line in the cost box and the card's IV line; the role pill had no wrap fallback for a wider font; the Shadow glow contrast loop composited layers in the wrong order and could not fail. | The offset moved from `.hdr` to `.hdr-actions { margin-right: calc(var(--gutter) - 12px) }`, keeping the grid symmetric; a new `assertTitleCentred()` guards Build and `21-log-battle`. `format.ts` exports `SEP` (a non-breaking space plus "· "); `costLine`'s default join uses it, reaching Teams, Team Analysis and Build; Build's card line applies the same non-breaking space before "top", "Lv" and "from your". The pill becomes `width: max-content; max-width: 104px` (drops `nowrap`), one line today, wrapping instead of overlapping at a larger size. The glow layers are composited in true CSS paint order (first-listed layer on top), with a comment noting the halo dominates and the loop is a smoke check, not the real guard (the marker test and the halo/letter tokens are). | `976a834` |
-
-Not fixed, still open (Ruling 2's two-fill heading text, Ruling 3's hide-while-searching gate): both
-read correctly in the source and neither is contradicted by any test, but neither has a capture or
-a dedicated assertion of its own. See the two matching lines under Functionality above.
+| Final review I1: `league-start` cleared everything derived from a league except the teammate list, so after a league switch the old league's rows stayed up with a working + Add. Found while writing the test: Build's effect runs before the provider's league effect, so it also asked straight away for the new league while `leagueInfo` still held the old league's bundle (and its community read). | `league-start` clears `suggestion` and `suggestError`; `suggestTeammates` and Build's effect both wait until `leagueInfo.id` matches the league in settings. Test: "takes the old league teammates down the moment the league changes" (Ultra's bundle held pending: the rows go, and no second ask). | `39c913d` |
+| Final review M11: a Source or Window change on the same board kept the old list up, framed against the previous source, until the board changed. | The `settings` reducer clears the list and its error when the facing scope changes (as it already did for counters), and Build's ask key carries `facingScope(settings)`. Test: "asks again when the facing source changes on the same board". | `39c913d` |
+| Final review I2: the card said "Moves changed" after Reset to recommended, or after the recommended charged pair was ticked again in the other order, while the sheet showed no change. | `MovePicker`'s `sameIds` compares charged moves as a set (and is exported); Build's `setMoves` drops `moves` from the pick when they match the pool's recommendation. Test: "says Moves changed only while the moves differ from the recommendation". | `9b72236` |
+| Final review M1 and M2: the two-pick heading, suggestions hidden while a search is open, and `back()`'s origin path had no test. | Three `build.test.tsx` cases: "heads the list by how many are on the board", "hides the suggestions while a slot search is open", "Back goes back through history when pick3 has a screen behind Build". | `32146c4` |
+| Final review M3, M4: stale comments in `Build.tsx` (every pick change clears the list) and `community.ts` (the retired Suggest teammates chip). | Reworded: "A pick change that changes the board clears the list; a move change keeps it." (landed with the key change in `39c913d`) and "read for Build's teammate suggestions". | `39c913d`, `32959a7` |
+| Final review M5: `build-cost`'s total wrapped "88 XL" / "Candy". | `costLine` holds each number and its unit together with non-breaking spaces ("88 XL Candy", "1 Elite TM"); it reaches Teams and Team Analysis the same way `SEP` did. `format.test.ts` and `teamComponents.test.tsx` updated; `build-cost` recaptured. | `32959a7` |
+| Final review M6: "Tap a card to change its moves" showed on an empty board, and "Ordered by pick3" stayed up after a card was removed. | The hint shows only with at least one pick; `removePick` resets the ordered flag. Tests: the lineup test now expects no hint on an empty board and the hint after a pick; "drops the Ordered by pick3 hint once a card is removed". `build-empty` and `build-choosing` recaptured. | `32959a7` |
+| Final review I3, I4, M7, M8, M9, M10: record claims. I3: "+ Add opens no search" was credited to a test that did not check it. I4: the text-levels tick merged 17px/600 and 19px/700. M7: `shadowToken.test.tsx` has 22 cases, not 5. M8: + Add was described as a link, but the whole row is the button. M9: Ruling 3 departs from a spec sentence without saying so. M10: Build's `.meta` stays 12px. | I3: the test now asserts no search input is open after + Add. I4: the tick names the 19px card name as a kept exception for Travis (see Aesthetics). M7: counts corrected. M8: wording corrected in Aesthetics and Functionality. M9: stated under Ruling 3 below. M10: deferred, see Open items. | this record's commit |
 
 ## Rulings applied on this piece (from the plan, costs as written)
 
@@ -252,7 +283,11 @@ a dedicated assertion of its own. See the two matching lines under Functionality
    first two" (two). [Cost if wrong: one string.]
 3. **Suggestions hide while a slot's search is open**, per the mobile input rule; + Add fills the
    first empty slot and opens no search. [Cost if wrong: show them under an open search, one
-   condition.]
+   condition.] **This departs from one spec sentence**: the spec's "Adding fills the first empty
+   slot; 'Choosing' moves to the next empty one." Because + Add opens no search, "Choosing" does
+   not move; the next empty slot waits for a tap, and the list re-runs against the new board.
+   The ruling follows CLAUDE.md's input rule (shortcuts hidden while searching, and the phone
+   keyboard covers everything under an input); signing this record accepts the departure.
 4. **Total cost counts your own Pokémon only**; a species pick has no build cost, and the line
    under the total says how many are not counted. [Cost if wrong: a stand-in cost estimate, an
    engine call.]
@@ -282,6 +317,13 @@ Visible changes outside Build, from this branch:
   `TeamDetail`'s own hand-written `'Level X to Y · '` wrapper text around `costLine`, and
   `TeamRowSummary`/`Specimen`/`Teams`'s own `' · '` joins, still use plain spaces and can still
   break a line on a dot; open for the Analysis plan.
+- Each number in a cost line keeps its unit (final fix wave, M5): `costLine` joins the number and
+  unit words with non-breaking spaces, so "88 XL Candy" and "1 Elite TM" never split across a
+  wrap. Like `SEP`, this reaches `TeamCardBody` (Teams) and `TeamDetail` (Team Analysis) as well
+  as Build. It is visible on Teams: in `teams-second-open` the first open card's cost line used to
+  break "2 Elite" / "TM" and now moves "2 Elite TM" to the next line whole. The signed Teams
+  record's images were left as signed (not recaptured); `web:audit` stayed clean on every
+  enforced Teams screen.
 - F/C move letters and empty-slot numbers move from `--faint` to `--muted`; `.pick-move-k`'s color
   reaches meta.pick3.gg's Species page (a byte-for-byte port of the same class), checked clean by
   `meta:screens`.
@@ -301,6 +343,13 @@ Open items for Travis (not fixed on this branch):
 - **`TeamDetail`'s own " · " spacing** still uses plain spaces around its hand-written cost-line
   wrapper text, so a dot can start a line there even though `costLine` itself now keeps its dots
   with their words. Left for the Analysis plan.
+- **Build's supporting text stays at 12px (final review M10), deferred.** The foundation spec
+  ("Type") moves `.meta` from 12px to `--fs-support` (13px) when its page is redesigned. Build's
+  hint, job line, Suggested label, reasons and cost lines are all still `.meta` at 12px, the same
+  as on the signed Teams page. The 13px supporting size lands in one app-wide pass later, not page
+  by page, so Build and Teams move together.
+- **The 19px card name (final review I4)**: see the text-levels line under Aesthetics; keep it as
+  today's card, or set `.pick-name` to `--fs-section`/600 and recapture four screens.
 
 ## Sign-off
 
