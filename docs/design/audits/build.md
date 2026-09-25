@@ -83,8 +83,8 @@ confirms the grip and drag effect were kept, not rebuilt).
       branch (visible and legible on Melmetal's steel disc, Corsola's and Clodsire's split discs,
       and Skarmory's Steel/Flying disc, in both themes). No pink appears on this page: Build has no
       measured data of its own, only PvPoke-assumed IVs and your own specimen stats.
-- [x] at most four text levels, one page title, **with one kept exception for Travis to rule on
-      at sign-off**: one page title, "Build Your Team", in every capture (`Header variant="sub"`).
+- [x] at most four text levels, one page title, **with one exception Travis kept
+      (2026-09-25, "keep the 19px name")**: one page title, "Build Your Team", in every capture (`Header variant="sub"`).
       Levels visible across the captures: the page title; section heads ("Your lineup", "Choosing
       Lead", "Best with your first pick"), unified at `--fs-section` (17px)/600 per Task 5's fix;
       body and explanation text (the role's job line, the move lines, the IV/level line); and
@@ -348,8 +348,9 @@ Open items for Travis (not fixed on this branch):
   hint, job line, Suggested label, reasons and cost lines are all still `.meta` at 12px, the same
   as on the signed Teams page. The 13px supporting size lands in one app-wide pass later, not page
   by page, so Build and Teams move together.
-- **The 19px card name (final review I4)**: see the text-levels line under Aesthetics; keep it as
-  today's card, or set `.pick-name` to `--fs-section`/600 and recapture four screens.
+- **The 19px card name (final review I4)**: decided. Travis, 2026-09-25: "keep the 19px name".
+  `.pick-name` stays 19px/700 as each card's title; the text-levels line under Aesthetics stands
+  with that exception.
 
 ## Sign-off
 
