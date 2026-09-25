@@ -474,6 +474,9 @@ export const GLOSSARY: Record<string, string> = {
     "How your Pokémon's hidden stats compare with every possible spread of that species at the league's CP cap.",
   line: 'A team built so the back line beats whatever counters the lead.',
   'back line': 'Your Safe Switch and Closer together.',
+  'ABB line': 'A team built so the back line beats whatever counters the lead.',
+  'Balanced ABC':
+    'Three Pokémon that each cover different threats, so no single opponent beats the whole team.',
 };
 
 export function Progress({ stage, done, total }: { stage: string; done: number; total: number }) {
