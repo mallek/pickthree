@@ -206,10 +206,14 @@ export function PokemonToken({
   const types = sp ? sp.types.filter((t) => t !== 'none') : ['normal'];
   const src = spritesOn ? `/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp` : undefined;
   const shadow = speciesId.endsWith('_shadow');
+  // axe cannot see past the wrapper's ::before glow, so a Shadow letter's contrast is checked by
+  // test/shadowToken.test.tsx for every type instead of by the page audit.
+  const audit = shadow ? { 'data-audit-contrast': 'static' } : {};
   return (
     <span
       className={shadow ? 'token-shadow-wrap' : undefined}
       style={shadow ? { width: size, height: size } : undefined}
+      {...audit}
     >
       <SpeciesToken
         name={title ?? name}

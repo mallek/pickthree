@@ -153,11 +153,13 @@ export async function auditPage(page) {
     // axe leaves text undecided ("partially overlaps other elements") when the element stacks
     // under its lines differ anywhere, even BEHIND an opaque surface: a sheet's paragraph over a
     // page whose rows end halfway down it, or a paragraph straddling the bottom of body's
-    // 100%-high box on a long page. Only the layers down to the first opaque background paint
-    // behind the text, so when those match under every line, hold flat colors only and cover
-    // every line, the contrast is computed here with axe's own color math, against the same
-    // thresholds. Anything else (an image or gradient, opacity, a blend or filter, a text shadow,
-    // stacks that really differ) stays unverified.
+    // 100%-high box on a long page. A one-line element straddling that edge comes back as
+    // "partially obscured" instead (body's box does not cover the line), and gets the same
+    // treatment, body's background counting as the canvas it paints. Only the layers down to the
+    // first opaque background paint behind the text, so when those match under every line, hold
+    // flat colors only and cover every line, the contrast is computed here with axe's own color
+    // math, against the same thresholds. Anything else (an image or gradient, opacity, a blend or
+    // filter, a text shadow, stacks that really differ) stays unverified.
     const C = window.axe.commons.color;
     const D = window.axe.commons.dom;
     const contains = (outer, r) =>
@@ -181,6 +183,12 @@ export async function auditPage(page) {
       if (textRects.length === 0 || stacks.length === 0) {
         return null;
       }
+      // With no background of its own on the root, body's background paints the whole canvas
+      // (CSS 2, "The background"), not just body's box: a 100%-high body on a long page still
+      // sits under text far below its own bottom edge.
+      const rootStyle = getComputedStyle(document.documentElement);
+      const bodyPaintsCanvas =
+        C.getOwnBackgroundColor(rootStyle).alpha === 0 && rootStyle.backgroundImage === 'none';
       const cutAtOpaque = (stack) => {
         const out = [];
         for (const e of stack) {
@@ -189,7 +197,7 @@ export async function auditPage(page) {
             return null;
           }
           const bg = C.getOwnBackgroundColor(cs);
-          if (bg.alpha > 0) {
+          if (bg.alpha > 0 && !(e === document.body && bodyPaintsCanvas)) {
             const box = e.getBoundingClientRect();
             if (cs.display !== 'inline' && !textRects.every((r) => contains(box, r))) {
               return null;
@@ -235,7 +243,12 @@ export async function auditPage(page) {
           continue;
         }
         const key = n.any[0] && n.any[0].data && n.any[0].data.messageKey;
-        const measured = el && key === 'elmPartiallyObscuring' ? measureBelowOpaque(el) : null;
+        // Obscuring: the stacks under the lines differ. Obscured: a layer with a background under
+        // the text does not cover all of it (body's box, on a long page). Both are re-measured.
+        const measured =
+          el && (key === 'elmPartiallyObscuring' || key === 'elmPartiallyObscured')
+            ? measureBelowOpaque(el)
+            : null;
         if (!measured) {
           unverified.push(`contrast unverified: ${n.target.join(' ')} ${message(n)}`);
         } else if (measured.ratio < measured.required) {

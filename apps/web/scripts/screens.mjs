@@ -32,6 +32,11 @@ const AUDIT_ENFORCED = new Set([
   'teams-no-collection',
   'teams-loading',
   'teams-empty',
+  'build-empty',
+  'build-choosing',
+  'build-suggestions',
+  '13-build',
+  '13b-build-moves',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -609,6 +614,39 @@ while (await page.$('.pick-x')) {
   await page.click('.pick-x');
   await new Promise((r) => setTimeout(r, 100));
 }
+await shot('build-empty', false);
+// The sub header lines up with the page under it: the back chevron's drawn left edge (its path,
+// not the svg box, which pads it) and the settings button's right edge sit on the league row's
+// edges, as on Teams. The path's box leaves out half the stroke, so the chevron reads about 1px
+// left of what is measured; 2.5px of slack on that side covers it.
+const buildEdges = await page.evaluate(() => {
+  const chevron = document.querySelector('.hdr .back svg path');
+  const buttons = document.querySelectorAll('.hdr .hdr-actions > *');
+  const last = buttons[buttons.length - 1];
+  const league =
+    document.querySelector('.build-scroll .league-row') ??
+    document.querySelector('.build-scroll .league-switcher');
+  if (!chevron || !last || !league) {
+    return null;
+  }
+  const l = league.getBoundingClientRect();
+  return {
+    left: chevron.getBoundingClientRect().left - l.left,
+    right: last.getBoundingClientRect().right - l.right,
+  };
+});
+console.log(`  build header edges ${JSON.stringify(buildEdges)}`);
+if (!buildEdges || Math.abs(buildEdges.left) > 2.5 || Math.abs(buildEdges.right) > 1) {
+  throw new Error(`build: the header is off the league row's edges: ${JSON.stringify(buildEdges)}`);
+}
+// The Lead slot's search, open with nothing typed: the choosing line, the input and the suggested
+// grid under it.
+await page.$eval('.pick-card.empty', (el) => el.click());
+await page.waitForSelector('.search');
+await page.waitForSelector('.recent-token', { timeout: 15_000 });
+await shot('build-choosing', false, { mustShow: '.build-choose .recent-token' });
+await page.keyboard.press('Escape');
+await page.waitForSelector('.search', { hidden: true });
 {
   await page.$eval('.pick-card.empty', (el) => el.click());
   await page.waitForSelector('.search');
@@ -616,14 +654,15 @@ while (await page.$('.pick-x')) {
   await page.waitForSelector('.recent-token', { timeout: 15_000 });
   await page.click('.recent-token');
   await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length === 1);
-  // The button only exists with something pinned and a slot still empty.
-  const suggest = await page.waitForSelector('::-p-text(Suggest teammates)', { timeout: 15_000 });
-  await suggest.click();
-  await page.waitForFunction(
-    () => document.querySelectorAll('.pick-card.filled').length === 3,
-    { timeout: 30_000 },
-  );
-  await shot('12c-suggest-teammates', false);
+  // Suggestions run on their own with one pick on the board, and never fill a slot.
+  await page.waitForSelector('.mate-row', { timeout: 30_000 });
+  const filledWithSuggestions = await page.$$eval('.pick-card.filled', (els) => els.length);
+  if (filledWithSuggestions !== 1) {
+    throw new Error(
+      `suggest teammates: ${filledWithSuggestions} slots filled; suggestions must not fill slots`,
+    );
+  }
+  await shot('build-suggestions', false, { mustShow: '.mate-row' });
 }
 
 console.log('build a team');
@@ -668,7 +707,12 @@ for (let i = 0; i < buildQueries.length; i++) {
     i + 1,
   );
 }
-await shot('13-build', false);
+// The total to build sits under the cards; scroll it into view so the shot shows it.
+if (!(await page.$('.build-cost'))) {
+  throw new Error('build a team: no total to build under a full lineup');
+}
+await page.$eval('.build-cost', (el) => el.scrollIntoView({ block: 'center' }));
+await shot('13-build', false, { mustShow: '.build-cost' });
 // Drag the first card's grip onto the third slot: the order changes and becomes "Keep my order".
 const namesBefore = await page.$$eval('.pick-card.filled .pick-name', (els) =>
   els.map((e) => e.firstChild?.textContent?.trim() ?? ''),
@@ -695,18 +739,40 @@ if (namesAfter[2] !== namesBefore[0]) {
 }
 console.log(`  dragged ${namesBefore[0]} to the third slot`);
 // Swap one move on the first slot: the sheet lists the legal pool with the recommendation
-// ticked; tapping an unticked charged move bumps the one picked first.
-await page.click('.pick-card.filled');
-await page.waitForSelector('.move-opt[role="checkbox"]', { timeout: 60_000 });
-await page.$$eval('.move-opt[role="checkbox"]:not(.on)', (rows) => rows[0]?.click());
+// ticked. Nothing is bumped: with two charged moves ticked the others are disabled, so untick one
+// first, then tick the first one that is free.
+await page.$eval('.pick-card.filled', (el) => el.click());
+await page.waitForSelector('.ui-sheet[role="dialog"] .move-opt[role="checkbox"]', {
+  timeout: 60_000,
+});
+const ticked = await page.$$eval('.move-opt[role="checkbox"].on', (rows) => rows.length);
+if (ticked === 2) {
+  await page.$$eval('.move-opt[role="checkbox"].on', (rows) => rows[1]?.click());
+  await page.waitForFunction(
+    () => document.querySelectorAll('.move-opt[role="checkbox"].on').length === 1,
+  );
+}
+const swapped = await page.$$eval('.move-opt[role="checkbox"]:not(.on):not(:disabled)', (rows) => {
+  const row = rows[0];
+  row?.click();
+  return row ? (row.querySelector('.move-name')?.textContent ?? '') : null;
+});
+if (swapped === null) {
+  throw new Error('move sheet: no charged move free to tick after unticking one');
+}
+await page.waitForFunction(
+  () => document.querySelectorAll('.move-opt[role="checkbox"].on').length === 2,
+);
+console.log(`  ticked ${swapped}`);
 await new Promise((r) => setTimeout(r, 300));
-await shot('13b-build-moves', false);
-await page.click('.sheet .btn-ghost');
+await shot('13b-build-moves', false, { mustShow: '.ui-sheet .move-opt' });
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
 // Centre it first: near the bottom edge the fixed tab bar would take the click instead.
-await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
-await page.click('.scroll > .btn');
-await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
-const analyzeError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
+await page.$eval('.scroll > .ui-btn-primary', (el) => el.scrollIntoView({ block: 'center' }));
+await page.click('.scroll > .ui-btn-primary');
+await page.waitForSelector('.custom-note, .ui-error', { timeout: 120_000 });
+const analyzeError = await page.$eval('.ui-error', (e) => e.textContent).catch(() => null);
 if (analyzeError) {
   throw new Error(`analyze failed: ${analyzeError}`);
 }
@@ -729,10 +795,10 @@ await page.click('.recent-token');
 await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length >= 3);
 const tUnranked = Date.now();
 // Centre it first: near the bottom edge the fixed tab bar would take the click instead.
-await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
-await page.click('.scroll > .btn');
-await page.waitForSelector('.custom-note, .scroll .error', { timeout: 120_000 });
-const unrankedError = await page.$eval('.scroll .error', (e) => e.textContent).catch(() => null);
+await page.$eval('.scroll > .ui-btn-primary', (el) => el.scrollIntoView({ block: 'center' }));
+await page.click('.scroll > .ui-btn-primary');
+await page.waitForSelector('.custom-note, .ui-error', { timeout: 120_000 });
+const unrankedError = await page.$eval('.ui-error', (e) => e.textContent).catch(() => null);
 if (unrankedError) {
   throw new Error(`analyze with an unranked pick failed: ${unrankedError}`);
 }
