@@ -69,8 +69,11 @@ Today's `TeamCard` in `screens/Teams.tsx` is replaced by `TeamCardBody` inside a
   this league" stays when it applies. (Travis, 2026-09-25, from rendered options: "I like showing
   only the source and the filter icon with the number. That looks the cleanest." This replaces
   the earlier Source and Window selects side by side with a labeled `FilterButton` under them.)
+- **Source options:** PvPoke, Your meta, GBL, Tournaments, All. The option that weights by the
+  player's own battle log is labeled "Your meta" ("Your meta: N of 15" until the log reaches 15
+  battles). (Travis, 2026-09-25: "Instead of your log. I think we say your meta".)
 - **Window** moves into the Filters sheet, at its top. It stays visible, disabled with a one-line
-  note ("Applies when Source is GBL, Tournaments or All") when the source is PvPoke or Your log.
+  note ("Applies when Source is GBL, Tournaments or All") when the source is PvPoke or Your meta.
   A non-default window counts in `filterCount` only while a community source is picked, so a
   hidden choice always shows on the badge.
 - **No summary line** under the controls: the Source value says what the list is weighted by,
