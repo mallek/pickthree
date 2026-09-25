@@ -352,6 +352,10 @@ Open items for Travis (not fixed on this branch):
   `.pick-name` stays 19px/700 as each card's title; the text-levels line under Aesthetics stands
   with that exception.
 
+- **Pinned for later (Travis, 2026-09-25):** the shuffle icon next to "Find best order" from the
+  design pass ("Find best order (shuffle icon) in the section header", design intake, Page 2,
+  first pass). Not in this page's scope; a small follow-up.
+
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-25 (reviewed the live build and this record on GitHub: "looks good").
