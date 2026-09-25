@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { render, screen, waitFor } from '@testing-library/react';
+import { getDefaultNormalizer, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ReactNode } from 'react';
 import { TeamCardBody } from '../src/components/team/TeamCardBody.tsx';
@@ -69,7 +69,12 @@ describe('TeamCardBody', () => {
     );
     expect(screen.getByText('Moderate to play')).toBeInTheDocument();
     expect(screen.getByText('Snorlax needs to bait one shield.')).toBeInTheDocument();
-    expect(screen.getByText(/263,900 Stardust · 255 Candy · 1 Elite TM/)).toBeInTheDocument();
+    // Whitespace left as rendered: the default normalizer would fold the non-breaking spaces away.
+    expect(
+      screen.getByText(/263,900 Stardust\u00a0· 255 Candy\u00a0· 1 Elite TM/, {
+        normalizer: getDefaultNormalizer({ collapseWhitespace: false }),
+      }),
+    ).toBeInTheDocument();
   });
 
   it('names the ABB line structure the same way', async () => {

@@ -57,10 +57,13 @@ describe('Shadow token', () => {
 
 // The letter's contrast, checked the plain way. Today the disc paints over the glow (both are
 // positioned, the glow first), so the letter's backdrop is the disc alone, which
-// packages/ui/test/contrast.test.ts already covers. This checks the worse case too, as if the
-// glow sat on top of the disc: every glow layer at full strength, composited onto every type
-// color, then the letter's --token-halo outline, then the letter. The letter, the outline and the
-// type colors are theme-constant (the shared :root block), so one pass covers dark and light.
+// packages/ui/test/contrast.test.ts already covers. This also checks the case where the glow sits
+// on top of the disc: the three glow layers stacked at full strength on every type color, then the
+// letter's --token-halo outline, then the letter. The halo dominates, though: it is 75% black,
+// so whatever lies under it contributes at most a quarter, and even a white ground clears about
+// 9:1. The glow loop is a smoke check; the real guards are the static marker above and the halo
+// and letter tokens (contrast.test.ts). The letter, the outline and the type colors are
+// theme-constant (the shared :root block), so one pass covers dark and light.
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p: string) => readFileSync(join(here, p), 'utf8').replace(/\r\n/g, '\n');
 const tokens = read('../../../packages/ui/tokens.css');
@@ -137,13 +140,17 @@ describe('Shadow token letter contrast', () => {
   });
 
   it('paints the glow under the disc: no z-index on the glow', () => {
+    // A fix that makes the glow visible must revisit this assertion and the model below together.
     expect(glowRule).not.toMatch(/z-index/);
   });
 
   for (const [type, color] of typeColors) {
     it(`the letter clears 4.5:1 on its outline over ${type}, under the glow or not`, () => {
       const disc = hexRgb(color);
-      for (const ground of [disc, ...glows.map((g) => over(g, disc))]) {
+      // CSS paints the first background layer on top, so the stack is built from the last layer
+      // up: where all three radial layers meet at full strength, over the disc.
+      const glowed = glows.reduceRight((ground, layer) => over(layer, ground), disc);
+      for (const ground of [disc, glowed]) {
         const outline = over(halo, ground);
         expect(ratio(over(letter, outline), outline)).toBeGreaterThanOrEqual(4.5);
       }

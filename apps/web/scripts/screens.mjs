@@ -140,6 +140,22 @@ async function shot(name, fullPage = true, { mustShow } = {}) {
   });
 }
 
+/** A sub header's title stays centred on the page, whatever sits in its side slots. */
+async function assertTitleCentred(where) {
+  const offset = await page.evaluate(() => {
+    const title = document.querySelector('.hdr .hdr-title > span');
+    if (!title) {
+      return null;
+    }
+    const r = title.getBoundingClientRect();
+    return r.left + r.width / 2 - window.innerWidth / 2;
+  });
+  console.log(`  ${where} header title off centre by ${offset?.toFixed(1)}px`);
+  if (offset === null || Math.abs(offset) > 1) {
+    throw new Error(`${where}: the header title is off centre by ${offset}px`);
+  }
+}
+
 const t0 = Date.now();
 console.log('welcome');
 await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
@@ -602,6 +618,7 @@ if (cardVerdicts !== 3) {
 }
 await new Promise((r) => setTimeout(r, 300));
 await shot('21-log-battle', false);
+await assertTitleCentred('log a battle');
 
 console.log('new set');
 await page.goto(`${base}/#/meta/new`, { waitUntil: 'networkidle0' });
@@ -640,6 +657,7 @@ console.log(`  build header edges ${JSON.stringify(buildEdges)}`);
 if (!buildEdges || Math.abs(buildEdges.left) > 2.5 || Math.abs(buildEdges.right) > 1) {
   throw new Error(`build: the header is off the league row's edges: ${JSON.stringify(buildEdges)}`);
 }
+await assertTitleCentred('build');
 // The Lead slot's search, open with nothing typed: the choosing line, the input and the suggested
 // grid under it.
 await page.$eval('.pick-card.empty', (el) => el.click());

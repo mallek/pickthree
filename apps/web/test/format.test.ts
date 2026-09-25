@@ -34,9 +34,11 @@ describe('format helpers', () => {
       estimated: false,
       weight: 0,
     };
-    expect(costLine(base)).toBe('214,000 Stardust · 231 Candy');
+    // A non-breaking space before each dot keeps it with the word before it; the line can still
+    // break after the dot.
+    expect(costLine(base)).toBe('214,000 Stardust\u00a0· 231 Candy');
     expect(costLine({ ...base, xlCandy: 12, eliteTm: 1 })).toBe(
-      '214,000 Stardust · 231 Candy · 12 XL Candy · 1 Elite TM',
+      '214,000 Stardust\u00a0· 231 Candy\u00a0· 12 XL Candy\u00a0· 1 Elite TM',
     );
   });
 

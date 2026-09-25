@@ -148,12 +148,6 @@ a {
 }
 
 /* header */
-/* The right-hand actions end on the page gutter, like the content under them. The left keeps the
-   shared 12px: the back button's own padding and its chevron's inset already put the chevron on
-   the gutter. */
-.hdr {
-  padding-right: var(--gutter);
-}
 .hdr-extra {
   grid-column: 1 / -1;
   padding-top: 6px;
@@ -1782,11 +1776,13 @@ textarea.paste {
   text-transform: uppercase;
   line-height: 1.2;
   text-align: center;
-  /* One line. "Safe Switch" comes out a little wider than the 88px sprite column; centred, it
-     reaches a few px into the column's padding on the left and the empty column gap on the right,
-     well clear of the text column, which keeps its full width. */
-  white-space: nowrap;
-  flex: none;
+  /* One line at today's size: "Safe Switch" comes out a little wider than the 88px sprite column;
+     centred, it reaches a few px into the column's padding on the left and the empty column gap on
+     the right, clear of the text column, which keeps its full width. The cap (88 plus 8 a side)
+     makes a larger font wrap the pill instead of running it into the text. `max-content` lets it
+     be wider than the column at all; a flex item would otherwise wrap at the column's width. */
+  width: max-content;
+  max-width: 104px;
   padding: 4px 8px;
   border-radius: 999px;
   background: var(--bg);
@@ -1986,8 +1982,13 @@ textarea.paste {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The header keeps the shared, symmetric 12px padding, so its title stays centred on the page and
+   the extra row stays even. Only the actions move in, to end on the page gutter like the content
+   under them. The back button needs nothing: its own padding and its chevron's inset already put
+   the chevron on the gutter. */
 .hdr-actions {
   gap: 4px;
+  margin-right: calc(var(--gutter) - 12px);
 }
 
 /* The round link to the sister site, meta.pick3.gg: `.head-cog`'s own 36px circle (see below),

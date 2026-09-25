@@ -26,7 +26,7 @@ import {
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
-import { costLine, ivLine, topPct } from '../format.ts';
+import { costLine, ivLine, SEP, topPct } from '../format.ts';
 import { Button, ErrorState, Header, IconButton, Sheet, Tag, typeColor } from '@pickthree/ui';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
@@ -618,9 +618,14 @@ export function Build() {
                       {sp ? (
                         <>
                           <b>{ivLine(sp.ivs)}</b>
-                          {build ? ` · top ${topPct(build.ivRank)}%` : ''} · Lv {sp.level.max}
+                          {build ? `${SEP}top ${topPct(build.ivRank)}%` : ''}
+                          {SEP}
+                          {'Lv\u00a0'}
+                          {sp.level.max}
                           {build && build.stageOffset > 0 ? (
-                            <span className="muted"> · from your {name(sp.speciesId)}</span>
+                            <span className="muted">
+                              {SEP}from your {name(sp.speciesId)}
+                            </span>
                           ) : null}
                         </>
                       ) : (

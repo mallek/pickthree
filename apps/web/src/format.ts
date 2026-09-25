@@ -41,6 +41,12 @@ export function num(n: number): string {
   return n.toLocaleString('en-US');
 }
 
+/**
+ * The " · " between facts on one line, with a non-breaking space before the dot: a wrap keeps
+ * the dot with the word before it ("Lv 14 ·" then the next line), never at a line's start.
+ */
+export const SEP = '\u00a0· ';
+
 export function costLine(c: Cost): string {
   const parts = [`${num(c.stardust)} Stardust`, `${num(c.candy)} Candy`];
   if (c.xlCandy > 0) {
@@ -49,7 +55,7 @@ export function costLine(c: Cost): string {
   if (c.eliteTm > 0) {
     parts.push(`${c.eliteTm} Elite TM`);
   }
-  return parts.join(' · ');
+  return parts.join(SEP);
 }
 
 export function topPct(r: IvRankResult): number {
