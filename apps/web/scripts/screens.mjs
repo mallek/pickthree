@@ -1,4 +1,4 @@
-/* global document, window */
+/* global document, window, indexedDB */
 /**
  * Drives the built app in the locally installed Chrome, imports the sample collection, and
  * screenshots every screen at phone size.
@@ -30,6 +30,8 @@ const AUDIT_ENFORCED = new Set([
   'teams-cup',
   'teams-filters-sheet',
   'teams-no-collection',
+  'teams-loading',
+  'teams-empty',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -100,18 +102,31 @@ await page.evaluateOnNewDocument((sample) => {
   };
 }, communitySample);
 
-async function shot(name, fullPage = true) {
+/**
+ * `mustShow`: a selector that has to be on the page when each shot is taken, for states that do
+ * not last (a loading card), so a shot that missed its state fails instead of passing quietly.
+ */
+async function shot(name, fullPage = true, { mustShow } = {}) {
   captured.add(name);
   await new Promise((r) => setTimeout(r, 350));
+  // A full-page shot resizes the viewport to the page instead of stitching past it, so the fixed
+  // tab bar lands at the true bottom rather than across the middle of the page.
+  const options = fullPage ? { fullPage, captureBeyondViewport: false } : { fullPage };
+  const take = async (file) => {
+    await page.screenshot({ path: file, ...options });
+    if (mustShow && !(await page.$(mustShow))) {
+      throw new Error(`${name}: ${mustShow} was gone when the shot was taken`);
+    }
+  };
   if (!AUDIT) {
     const file = path.join(outDir, `${name}.png`);
-    await page.screenshot({ path: file, fullPage });
+    await take(file);
     console.log(`  ${name}.png`);
     return;
   }
   await forEachTheme(page, async (theme) => {
     const file = path.join(outDir, `${name}-${theme}.png`);
-    await page.screenshot({ path: file, fullPage });
+    await take(file);
     console.log(`  ${name}-${theme}.png`);
     for (const f of await auditPage(page)) {
       auditFindings.push({ name, line: `[${name} ${theme}] ${f}` });
@@ -254,6 +269,27 @@ for (let i = 0; i < 2; i++) {
 
 console.log('ultra league');
 await page.click('.league-switcher button:nth-child(2)');
+// The Teams loading card. Ultra's run takes a few seconds, less than two shots and their audits,
+// so the compute worker is held at a debugger pause while the card is shot and let go after. The
+// pause is automation only, through the worker's CDP session; the app has no hook for it. Pause
+// only once the league bundle has landed (data-league flips to ultra): a worker paused while its
+// bundle fetch is in flight never finishes the run after it resumes.
+await page.waitForFunction(
+  () =>
+    document.querySelector('.league-switcher[data-league="ultra"]') &&
+    document.querySelector('.teams-list .ui-loading'),
+  { timeout: 30_000, polling: 'mutation' },
+);
+const computeWorkers = page.workers();
+for (const w of computeWorkers) {
+  await w.client.send('Debugger.enable');
+  await w.client.send('Debugger.pause');
+}
+await shot('teams-loading', false, { mustShow: '.teams-list .ui-loading' });
+for (const w of computeWorkers) {
+  await w.client.send('Debugger.resume');
+  await w.client.send('Debugger.disable');
+}
 await page.waitForFunction(
   () =>
     document.querySelector('.league-switcher[data-league="ultra"]') &&
@@ -300,6 +336,58 @@ const settled = async () => {
     await new Promise((r) => setTimeout(r, 750));
   }
 };
+await settled();
+
+console.log('teams, empty');
+// Deterministic: exclude every specimen in the saved settings, reload, shoot the Empty card, then
+// put the saved settings back exactly as they were and reload again.
+const savedSettings = await page.evaluate(
+  () =>
+    new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction(['settings', 'collection'], 'readwrite');
+        const settings = tx.objectStore('settings');
+        const getSettings = settings.get('current');
+        const getCollection = tx.objectStore('collection').get('current');
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => reject(tx.error);
+        getCollection.onsuccess = () => {
+          const before = getSettings.result;
+          const ids = (getCollection.result?.specimens ?? []).map((sp) => sp.id);
+          settings.put({ ...before, excludedSpecimenIds: ids });
+          resolve(before);
+        };
+      };
+    }),
+);
+if (!savedSettings) {
+  throw new Error('teams, empty: no saved settings to restore afterwards');
+}
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForSelector('.teams-list .ui-empty', { timeout: 120_000 });
+await shot('teams-empty', false);
+await page.evaluate(
+  (before) =>
+    new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').put(before);
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    }),
+  savedSettings,
+);
+await page.reload({ waitUntil: 'networkidle0' });
 await settled();
 
 console.log('team detail');
