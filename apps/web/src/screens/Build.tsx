@@ -14,7 +14,6 @@ import {
   useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
 } from 'react';
 import {
   CogGlyph,
@@ -461,27 +460,11 @@ export function Build() {
     setOrderedByPick3(false);
   };
   const onBoard = s.picks.map((p) => pickInfo(p)?.speciesId).filter((id): id is string => !!id);
-  const cost = lineupCost(s.picks, (id) => s.verdicts[id]?.cost ?? null);
+  // undefined while a verdict is on its way, null once it came back with no cost.
+  const cost = lineupCost(s.picks, (id) => s.verdicts[id]?.cost);
   const sheetPick = movesSlot !== null ? s.picks[movesSlot] : null;
   const sheetInfo = sheetPick ? pickInfo(sheetPick) : null;
   const sheetPool = sheetPick ? poolFor(sheetPick) : null;
-  // The ui Sheet keeps the root page it opened with, so its render reads the latest body from
-  // here: the pool arrives after the sheet opens, and each move change must show at once.
-  const sheetBody = useRef<() => ReactNode>(() => null);
-  sheetBody.current = () => {
-    if (movesSlot === null || !sheetPick) {
-      return null;
-    }
-    return sheetPool ? (
-      <MovePicker
-        pool={sheetPool}
-        value={sheetPick.moves ?? sheetPool.recommended}
-        onChange={(next) => setMoves(movesSlot, sheetPick, next)}
-      />
-    ) : (
-      <Progress stage="moves" done={0} total={0} />
-    );
-  };
 
   return (
     <div className="screen">
@@ -531,7 +514,7 @@ export function Build() {
                 >
                   <PokemonToken speciesId={p.speciesId} size={36} />
                   <span>{short(p.speciesId)}</span>
-                  {p.mine ? <span className="tag">yours</span> : null}
+                  {p.mine ? <Tag>yours</Tag> : null}
                 </button>
               ))}
             </div>
@@ -701,6 +684,11 @@ export function Build() {
             {cost.unpriced > 0 ? (
               <span className="meta">Not counting {cost.unpriced} not priced yet</span>
             ) : null}
+            {cost.unbuildable > 0 ? (
+              <span className="meta">
+                Not counting {cost.unbuildable} that cannot be built here
+              </span>
+            ) : null}
           </div>
         ) : null}
 
@@ -720,7 +708,20 @@ export function Build() {
       {movesSlot !== null && sheetPick && sheetInfo ? (
         <Sheet
           onClose={closeMoves}
-          root={{ id: 'moves', title: sheetInfo.title, render: () => sheetBody.current() }}
+          root={{
+            id: 'moves',
+            title: sheetInfo.title,
+            render: () =>
+              sheetPool ? (
+                <MovePicker
+                  pool={sheetPool}
+                  value={sheetPick.moves ?? sheetPool.recommended}
+                  onChange={(next) => setMoves(movesSlot, sheetPick, next)}
+                />
+              ) : (
+                <Progress stage="moves" done={0} total={0} />
+              ),
+          }}
         />
       ) : null}
     </div>

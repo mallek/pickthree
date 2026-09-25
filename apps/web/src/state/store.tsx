@@ -370,7 +370,18 @@ function reducer(s: AppState, a: Action): AppState {
     case 'pick': {
       const picks = [...s.picks] as AppState['picks'];
       picks[a.slot] = a.pick;
-      return { ...s, picks, analyzeError: null, sharedTeam: false, suggestion: null };
+      // A move change leaves the board the suggestions were for (suggestKey ignores moves), so
+      // the answer stands; any other change clears both the list and its error.
+      const league = s.settings.league ?? 'great';
+      const sameBoard = suggestKey(s.picks, league) === suggestKey(picks, league);
+      return {
+        ...s,
+        picks,
+        analyzeError: null,
+        sharedTeam: false,
+        suggestion: sameBoard ? s.suggestion : null,
+        suggestError: sameBoard ? s.suggestError : null,
+      };
     }
     case 'picks':
       return { ...s, picks: a.picks, analyzeError: null, sharedTeam: a.shared };

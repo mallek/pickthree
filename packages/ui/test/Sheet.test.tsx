@@ -131,6 +131,42 @@ describe('Sheet', () => {
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(screen.getByRole('dialog', { name: 'Log' })).toBeInTheDocument();
   });
+
+  it('the root page follows the current root prop; a pushed page keeps its own', async () => {
+    function Live() {
+      const [n, setN] = useState(0);
+      return (
+        <Sheet
+          onClose={() => undefined}
+          root={{
+            id: 'count',
+            title: `Count ${n}`,
+            render: (nav) => (
+              <>
+                <button type="button" onClick={() => setN(n + 1)}>
+                  Add one
+                </button>
+                <span>{`n is ${n}`}</span>
+                <button type="button" onClick={() => nav.push(about)}>
+                  About
+                </button>
+              </>
+            ),
+          }}
+        />
+      );
+    }
+    render(<Live />);
+    await userEvent.click(screen.getByRole('button', { name: 'Add one' }));
+    expect(screen.getByText('n is 1')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Count 1' })).toBeInTheDocument();
+    // Not remounted: focus stays on the control the reader used.
+    expect(screen.getByRole('button', { name: 'Add one' })).toHaveFocus();
+    await userEvent.click(screen.getByRole('button', { name: 'About' }));
+    expect(screen.getByRole('dialog', { name: 'About' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Count 1' }));
+    expect(screen.getByText('n is 1')).toBeInTheDocument();
+  });
 });
 
 describe('Sheet and ConfirmSheet layering', () => {

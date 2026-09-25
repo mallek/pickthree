@@ -19,7 +19,8 @@ export interface SheetPage {
 /**
  * A bottom sheet with pages: grabber, back (named for the page below, only once a page is
  * pushed), title, Done. Done, Escape and the overlay close the whole sheet from any depth; focus
- * stays inside while it is open and returns to the opener when it closes. Rendered through a
+ * stays inside while it is open and returns to the opener when it closes. The root page follows
+ * the `root` prop on every render; a pushed page is kept as it was pushed. Rendered through a
  * portal to `document.body` by default: a caller that opens the sheet from inside its own
  * stacking context (a sticky header, for one) would otherwise trap the sheet's z-index inside
  * that context, where a later sibling with a lower z-index (the app's fixed tab bar) can still
@@ -38,22 +39,23 @@ export function Sheet({
   doneLabel?: string;
   container?: Element;
 }) {
-  const [stack, setStack] = useState<SheetPage[]>([root]);
+  // Only the pushed pages are state: the root page is read from the prop on every render.
+  const [pushed, setPushed] = useState<SheetPage[]>([]);
   const dialog = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useReturnFocus();
-  const top = stack[stack.length - 1] ?? root;
+  const top = pushed[pushed.length - 1] ?? root;
   // Focus the sheet on open and again on every page change: the control that pushed or popped
   // the page is gone, and focus left on the body would take Escape and Tab out of the sheet.
   useEffect(() => {
     dialog.current?.focus();
   }, [top.id]);
-  const below = stack.length > 1 ? stack[stack.length - 2] : undefined;
+  const below = pushed.length === 0 ? undefined : (pushed[pushed.length - 2] ?? root);
   const nav: SheetNav = {
-    push: (page) => setStack((s) => [...s, page]),
-    pop: () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)),
+    push: (page) => setPushed((s) => [...s, page]),
+    pop: () => setPushed((s) => (s.length > 0 ? s.slice(0, -1) : s)),
     close: onClose,
-    depth: stack.length - 1,
+    depth: pushed.length,
   };
   return createPortal(
     <>

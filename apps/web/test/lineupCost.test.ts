@@ -28,13 +28,25 @@ describe('lineupCost', () => {
   });
 
   it('has no total when none are yours', () => {
-    const r = lineupCost([theirs('a'), theirs('b'), theirs('c')], () => null);
-    expect(r).toEqual({ total: null, notCaught: 3, unpriced: 0 });
+    const r = lineupCost([theirs('a'), theirs('b'), theirs('c')], () => undefined);
+    expect(r).toEqual({ total: null, notCaught: 3, unpriced: 0, unbuildable: 0 });
   });
 
-  it('counts a Pokémon of yours whose cost is not known yet', () => {
-    const r = lineupCost([mine('a'), mine('b'), mine('c')], (id) => (id === 'a' ? cost(1) : null));
+  it('counts a Pokémon of yours whose verdict has not arrived as not priced yet', () => {
+    const r = lineupCost([mine('a'), mine('b'), mine('c')], (id) =>
+      id === 'a' ? cost(1) : undefined,
+    );
     expect(r.total?.stardust).toBe(1);
     expect(r.unpriced).toBe(2);
+    expect(r.unbuildable).toBe(0);
+  });
+
+  it('counts a verdict that came back with no cost as unbuildable, not as waiting', () => {
+    const r = lineupCost([mine('a'), mine('b'), mine('c')], (id) =>
+      id === 'a' ? cost(1) : id === 'b' ? null : undefined,
+    );
+    expect(r.total?.stardust).toBe(1);
+    expect(r.unbuildable).toBe(1);
+    expect(r.unpriced).toBe(1);
   });
 });

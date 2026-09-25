@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import type { MoveChoice, MovePool } from '@pickthree/engine';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Build } from '../src/screens/Build.tsx';
 import { AppProvider } from '../src/state/store.tsx';
 import { resetHistoryForTests } from '../src/state/history.ts';
@@ -15,6 +15,11 @@ describe('Build a team', () => {
     resetDbForTests();
     window.location.hash = '';
     resetHistoryForTests();
+  });
+
+  // A failed assertion must not leave a stubbed global (matchMedia) to later tests.
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('fills the first empty slot from the search grid and removes it with the badge', async () => {
@@ -154,6 +159,75 @@ describe('Build a team', () => {
     await pickFirst('tink', 'Tinkaton');
     await screen.findByRole('button', { name: 'Add Azumarill' });
     expect(suggestTeammates).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks once for a board whose answer has no teammates', async () => {
+    const host = fakeHost();
+    render(
+      <AppProvider host={host}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await waitFor(() => expect(host.suggestTeammates).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(host.suggestTeammates).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks once for a board whose ask failed, and again once the board changes back', async () => {
+    // recordError's device summary reads matchMedia, which jsdom does not implement.
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    const suggestTeammates = vi.fn(async () => {
+      throw new Error('worker gone');
+    });
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates })}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    expect(await screen.findByRole('alert')).toHaveTextContent('worker gone');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(suggestTeammates).toHaveBeenCalledTimes(1);
+    // A different board clears the error; the same board again is a fresh ask, not the old error.
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Tinkaton' }));
+    await pickFirst('tink', 'Tinkaton');
+    await waitFor(() => expect(suggestTeammates).toHaveBeenCalledTimes(2));
+  });
+
+  it('keeps the teammate list through a move change, without asking again', async () => {
+    const move = (moveId: string, name: string): MoveChoice => ({
+      moveId,
+      name,
+      type: 'fairy',
+      tm: 'tm',
+      energy: 50,
+      energyGain: 8,
+      turns: 1,
+      countFromFast: null,
+      counts: null,
+      effects: [],
+      altType: null,
+    });
+    const pool: MovePool = {
+      fast: [move('FAIRY_WIND', 'Fairy Wind')],
+      charged: [move('PLAY_ROUGH', 'Play Rough'), move('HEAVY_SLAM', 'Heavy Slam')],
+      recommended: { fast: 'FAIRY_WIND', charged: ['PLAY_ROUGH', 'HEAVY_SLAM'] },
+    };
+    const suggestTeammates = vi.fn(async () => offer);
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates, movePool: vi.fn(async () => pool) })}>
+        <Build />
+      </AppProvider>,
+    );
+    await pickFirst('tink', 'Tinkaton');
+    await screen.findByRole('button', { name: 'Add Azumarill' });
+    fireEvent.click(screen.getByRole('button', { name: 'Tinkaton moves' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Heavy Slam/ }));
+    await screen.findByText('Moves changed');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getByRole('button', { name: 'Add Azumarill' })).toBeInTheDocument();
+    expect(suggestTeammates).toHaveBeenCalledTimes(1);
   });
 
   it('opens and closes the moves sheet for a filled slot', async () => {
