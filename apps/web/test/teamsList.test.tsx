@@ -48,6 +48,21 @@ function rowHeads(): HTMLButtonElement[] {
   return [...document.querySelectorAll<HTMLButtonElement>('.ui-expand-head')];
 }
 
+/** A host whose every recommend run fails, as a worker error would. */
+function failingHost() {
+  // recordError's device summary reads matchMedia, which jsdom does not implement.
+  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+  const host = fakeHost();
+  host.recommend = vi.fn(async () => {
+    throw new Error('The league data did not load.');
+  }) as unknown as typeof host.recommend;
+  return host;
+}
+
+function calls(host: ReturnType<typeof fakeHost>): number {
+  return (host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls.length;
+}
+
 async function mount(host: ReturnType<typeof fakeHost>) {
   render(
     <AppProvider host={host}>
@@ -238,23 +253,70 @@ describe('Teams list', () => {
     expect(within(empty).getByRole('button', { name: /^Filters/ })).toBeInTheDocument();
   });
 
-  it('shows the error state with its message when recommend fails, and does not loop', async () => {
-    // recordError's device summary reads matchMedia, which jsdom does not implement.
-    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
-    const host = fakeHost();
-    host.recommend = vi.fn(async () => {
-      throw new Error('The league data did not load.');
-    }) as unknown as typeof host.recommend;
+  it('shows the error card with its message and a Try again that runs again', async () => {
+    const host = failingHost();
     await mount(host);
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveClass('ui-error');
     expect(alert).toHaveTextContent('The league data did not load.');
-    // Teams offers no retry control on the error card: the card is the line alone, and the run
-    // is not retried on its own (a league switch clears the error and runs again).
-    expect(within(alert).queryByRole('button')).toBeNull();
     expect(rowHeads()).toHaveLength(0);
-    await new Promise((r) => setTimeout(r, 50));
-    expect((host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+    expect(calls(host)).toBe(1);
+    fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(calls(host)).toBe(2));
+  });
+
+  it('runs again when a setting changes after a failed run', async () => {
+    const host = failingHost();
+    await mount(host);
+    await screen.findByRole('alert');
+    expect(calls(host)).toBe(1);
+    await act(async () => {
+      latest!.actions.updateSettings((cur) => ({
+        ...cur,
+        facing: { ...cur.facing, source: 'prior' },
+      }));
+    });
+    await waitFor(() => expect(calls(host)).toBe(2));
+  });
+
+  it('does not run again on its own after a failed run with unchanged settings', async () => {
+    const host = failingHost();
+    await mount(host);
+    await screen.findByRole('alert');
+    await new Promise((r) => setTimeout(r, 100));
+    expect(calls(host)).toBe(1);
+  });
+
+  it('with a community source, a failed run is followed by at most one more, not a loop', async () => {
+    // The community read lands after rec-start and changes s.community, so the key the failed
+    // run started under goes stale once. The follow-up run starts under the final key, and its
+    // failure leaves nothing stale.
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, facing: { source: 'ladder', window: 'meta' } });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          ({
+            ok: true,
+            json: async () => ({
+              battles: 400,
+              devices: 12,
+              species: [{ speciesId: 'medicham', sightings: 40 }],
+              generatedAt: '2026-09-24T00:05:00.000Z',
+            }),
+          }) as unknown as Response,
+      ),
+    );
+    const host = failingHost();
+    await mount(host);
+    await screen.findByRole('alert');
+    await waitFor(() => expect(latest?.state.community).not.toBeNull());
+    await new Promise((r) => setTimeout(r, 150));
+    // Exactly one follow-up: the first run's key went stale when the read landed.
+    expect(calls(host)).toBe(2);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(calls(host)).toBe(2);
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
   it('keeps the footer counts', async () => {

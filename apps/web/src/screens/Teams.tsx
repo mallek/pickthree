@@ -117,7 +117,9 @@ export function Teams() {
       s.leagueInfo &&
       s.collection &&
       !s.recommending &&
-      !s.recommendError &&
+      // After a failed run, only a changed setting runs again (Try again is the other way): with
+      // the same settings, recommendedWith still equals the key, so a failure never loops.
+      (!s.recommendError || stale) &&
       (s.recommendation === null || stale)
     ) {
       void runRecommend();
@@ -210,7 +212,16 @@ export function Teams() {
         {s.boot === 'loading' ? <Progress stage="boot" done={0} total={0} /> : null}
         {s.recommending && s.progress ? <Progress {...s.progress} /> : null}
         {s.recommending && !s.progress ? <Progress stage="eligibility" done={0} total={0} /> : null}
-        {s.recommendError ? <ErrorState line={s.recommendError} /> : null}
+        {s.recommendError ? (
+          <ErrorState
+            line={s.recommendError}
+            action={
+              <Button variant="secondary" onClick={() => void runRecommend()}>
+                Try again
+              </Button>
+            }
+          />
+        ) : null}
         {!s.recommending && s.recommendation && teams.length === 0 ? (
           <Empty
             line="No team fits these filters. Loosen one to see recommendations again."
