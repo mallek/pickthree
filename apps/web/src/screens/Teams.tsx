@@ -73,6 +73,12 @@ export function Teams() {
   const toggle = (id: string, i: number): void =>
     setOpen((cur) => ({ ...cur, [id]: !(cur[id] ?? i === 0) }));
 
+  // A fresh recommendation is a fresh list: start over with only its first row open, rather than
+  // carrying open/closed state that named yesterday's team ids.
+  useEffect(() => {
+    setOpen({});
+  }, [s.recommendedWith]);
+
   useEffect(() => {
     if (
       s.boot === 'ready' &&

@@ -154,7 +154,7 @@ await shot('01-report');
 
 console.log('teams');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.team-card', { timeout: 120_000 });
+await page.waitForSelector('.ui-expand-head', { timeout: 120_000 });
 console.log(`  teams rendered at ${Date.now() - t0} ms`);
 await shot('02-teams');
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
@@ -185,7 +185,7 @@ await page.evaluate(() => {
 });
 for (let i = 0; i < 2; i++) {
   await page.waitForFunction(
-    () => document.querySelector('.team-card') && !document.querySelector('.ui-loading'),
+    () => document.querySelector('.ui-expand-head') && !document.querySelector('.ui-loading'),
     { timeout: 120_000 },
   );
   await new Promise((r) => setTimeout(r, 750));
@@ -196,7 +196,7 @@ await page.click('.league-switcher button:nth-child(2)');
 await page.waitForFunction(
   () =>
     document.querySelector('.league-switcher[data-league="ultra"]') &&
-    document.querySelector('.team-card') &&
+    document.querySelector('.ui-expand-head') &&
     !document.querySelector('.ui-loading'),
   { timeout: 120_000 },
 );
@@ -213,7 +213,7 @@ const settled = async () => {
     await page.waitForFunction(
       () =>
         document.querySelector('.league-switcher[data-league="great"]') &&
-        document.querySelector('.team-card') &&
+        document.querySelector('.ui-expand-head') &&
         !document.querySelector('.ui-loading'),
       { timeout: 120_000 },
     );
@@ -223,7 +223,8 @@ const settled = async () => {
 await settled();
 
 console.log('team detail');
-const teamHref = await page.$eval('.team-card .team-details', (a) => a.getAttribute('href'));
+// The first row is open by default, so its "View analysis" link is in the DOM already.
+const teamHref = await page.$eval('.teams-actions a', (a) => a.getAttribute('href'));
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.assump', { timeout: 60_000 }).catch(async () => {
   const text = await page.$eval('.screen', (e) => e.textContent.slice(0, 200));
@@ -605,10 +606,10 @@ await shot('17-added', false);
 
 console.log('settings sheet');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
-// Teams now carries two `.head-cog` buttons (the meta link, then the settings cog); `.cog` picks
-// the settings one specifically.
-await page.waitForSelector('.cog.head-cog');
-await page.click('.cog.head-cog');
+// Teams carries two IconButtons (the meta link, then Settings); the aria-label picks the
+// settings one specifically.
+await page.waitForSelector('button[aria-label="Settings"]');
+await page.click('button[aria-label="Settings"]');
 await page.waitForSelector('.sheet');
 await new Promise((r) => setTimeout(r, 400));
 await shot('06-sheet', false);
@@ -619,7 +620,7 @@ await page.emulateMediaFeatures([
   { name: 'prefers-reduced-motion', value: 'reduce' },
 ]);
 await page.goto(`${base}/?light=1#/teams`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.team-card', { timeout: 60_000 });
+await page.waitForSelector('.ui-expand-head', { timeout: 60_000 });
 await shot('07-teams-light', false);
 
 await browser.close();

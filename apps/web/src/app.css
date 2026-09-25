@@ -1231,21 +1231,6 @@ textarea.paste {
   transform: rotate(180deg);
 }
 
-/* team card */
-.team-card {
-  gap: 14px;
-  width: 100%;
-  text-align: left;
-  border: 0;
-  cursor: pointer;
-}
-.team-card.first {
-  box-shadow: var(--shadow-md);
-}
-.team-details {
-  text-decoration: none;
-  padding: 4px 0 4px 8px;
-}
 .diff {
   text-align: right;
   display: flex;

@@ -1,11 +1,11 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Recommendation, TeamRecommendation } from '@pickthree/engine';
 import { facingSummary, Teams } from '../src/screens/Teams.tsx';
 import { AppProvider, hashFor, useActions, useAppState, type AppState } from '../src/state/store.tsx';
-import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
 import { emptyLayoutValue } from '../src/format.ts';
 import { resetCommunityMetaCache } from '../src/communityMeta.ts';
 import { fakeHost } from './fakeHost.ts';
@@ -76,6 +76,9 @@ describe('Teams list', () => {
     const toggles = screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-expanded'));
     expect(toggles[0]).toHaveAttribute('aria-expanded', 'true');
     expect(toggles[1]).toHaveAttribute('aria-expanded', 'false');
+    const names = screen.getAllByTestId('team-row-names').map((el) => el.textContent);
+    expect(names[0]).toMatch(/Medicham/);
+    expect(names[1]).toMatch(/mimikyu/);
   });
 
   it('opens and closes a row on tap', async () => {
@@ -86,6 +89,31 @@ describe('Teams list', () => {
     expect(second).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(second);
     expect(second).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('reopens only the first row when a fresh recommendation replaces the list', async () => {
+    const host = hostWith([
+      makeTeam({ id: 'a' }),
+      makeTeam({ id: 'b', species: ['mimikyu', 'melmetal', 'greninja'] }),
+    ]);
+    await mount(host);
+    await screen.findAllByText(/Stardust/);
+    const toggles = () => screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-expanded'));
+    fireEvent.click(toggles()[0]!);
+    expect(toggles()[0]).toHaveAttribute('aria-expanded', 'false');
+    const calls = (host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls.length;
+    await act(async () => {
+      latest!.actions.updateSettings((cur) => ({
+        ...cur,
+        facing: { ...cur.facing, source: 'prior' },
+      }));
+    });
+    await waitFor(() =>
+      expect((host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
+        calls,
+      ),
+    );
+    await waitFor(() => expect(toggles()[0]).toHaveAttribute('aria-expanded', 'true'));
   });
 
   it('View analysis and Edit team go to their places without toggling the row', async () => {
@@ -101,6 +129,21 @@ describe('Teams list', () => {
   it('shows the progress card under 15 logged battles', async () => {
     await mount(hostWith([makeTeam({ id: 'a' })]));
     expect(await screen.findByRole('progressbar', { name: 'Make these teams personal' })).toBeInTheDocument();
+  });
+
+  it('shows the contribution line on the progress card when battle sharing is on', async () => {
+    await mount(hostWith([makeTeam({ id: 'a' })]));
+    await screen.findByRole('progressbar', { name: 'Make these teams personal' });
+    expect(
+      screen.getByText('Anonymous logs also improve the live meta.'),
+    ).toBeInTheDocument();
+  });
+
+  it('hides the contribution line on the progress card when battle sharing is off', async () => {
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, share: { enabled: false } });
+    await mount(hostWith([makeTeam({ id: 'a' })]));
+    await screen.findByRole('progressbar', { name: 'Make these teams personal' });
+    expect(screen.queryByText('Anonymous logs also improve the live meta.')).toBeNull();
   });
 
   it('hides the progress card at 15 or more logged battles', async () => {

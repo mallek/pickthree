@@ -63,16 +63,17 @@ await shot('a5-build-picker-empty', false);
 await go('#/add', '.search');
 await shot('a6-add', false);
 await go('#/teams', '.tabs');
-await page.click('.cog.head-cog');
+await page.click('button[aria-label="Settings"]');
 await page.waitForSelector('.sheet');
 await shot('a7-sheet-empty');
 
 console.log('with the sample');
 await go('?sample=1#/', '.kicker');
 await shot('b0-report');
-await go('#/teams', '.team-card');
+await go('#/teams', '.ui-expand-head');
 await shot('b1-teams');
-const teamHref = await page.$eval('.team-card', (a) => a.getAttribute('href'));
+// The first row is open by default, so its "View analysis" link is in the DOM already.
+const teamHref = await page.$eval('.teams-actions a', (a) => a.getAttribute('href'));
 await go(teamHref, '.assump');
 await page.click('.assump-head');
 await shot('b2-team-detail');
@@ -86,14 +87,14 @@ await shot('b5-counters');
 await go('#/build', '.pick-slot');
 await shot('b6-build', false);
 await go('#/teams', '.tabs');
-await page.click('.cog.head-cog');
+await page.click('button[aria-label="Settings"]');
 await page.waitForSelector('.sheet');
 await shot('b7-sheet');
 await page.emulateMediaFeatures([
   { name: 'prefers-color-scheme', value: 'light' },
   { name: 'prefers-reduced-motion', value: 'reduce' },
 ]);
-await go('#/teams', '.team-card');
+await go('#/teams', '.ui-expand-head');
 await shot('c0-teams-light', false);
 await go('#/collection', '.verdict');
 await shot('c1-collection-light', false);
