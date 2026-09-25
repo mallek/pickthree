@@ -47,21 +47,12 @@ export function TeamDetail({ id }: { id: string }) {
   const metaRank = useMetaRank();
   const custom = id === 'custom';
   const team = custom ? s.analysis?.team : s.recommendation?.teams.find((t) => t.id === id);
-  /** A team link's analysis came from outside pick3: its way out is Teams, never Build. */
   const shared = custom && s.sharedTeam;
-  const fallback: Route = custom && !shared ? { screen: 'build' } : { screen: 'teams' };
   /**
-   * Back returns to the screen before, or the fallback when there is none. A team link skips the
-   * history: the entry behind it is the link's landing, which would run the analysis again and
-   * come straight back here.
+   * Where Back goes when pick3 has nothing behind this screen: Build for a hand-built team, Teams
+   * for a recommended one and for a team link opened fresh (its landing replaced its own entry).
    */
-  const goBack = (): void => {
-    if (shared) {
-      navigate(fallback);
-    } else {
-      back(fallback);
-    }
-  };
+  const fallback: Route = custom && !shared ? { screen: 'build' } : { screen: 'teams' };
 
   /** A link to this team, species and moves only, for the share sheet or the clipboard. */
   const share = async (): Promise<void> => {
@@ -91,7 +82,7 @@ export function TeamDetail({ id }: { id: string }) {
     <Header
       variant="sub"
       title="Team Analysis"
-      back={{ label: 'Back', onClick: goBack }}
+      back={{ label: 'Back', onClick: () => back(fallback) }}
       actions={
         <>
           {team ? (

@@ -3,6 +3,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Recommendation, TeamAnalysis, TeamRecommendation } from '@pickthree/engine';
+import { SharedTeam } from '../src/screens/SharedTeam.tsx';
 import { TeamDetail } from '../src/screens/TeamDetail.tsx';
 import {
   AppProvider,
@@ -108,11 +109,8 @@ function analysisOf(team: TeamRecommendation): TeamAnalysis {
   } as unknown as TeamAnalysis;
 }
 
-/**
- * Boot the store, analyze three species picks into `team`, and show the custom analysis.
- * `shared` marks the picks as arrived by team link, as the link's landing does.
- */
-async function mountCustom(team: TeamRecommendation, shared = false) {
+/** Boot the store, analyze three species picks into `team`, and show the custom analysis. */
+async function mountCustom(team: TeamRecommendation) {
   const host = fakeHost({ analyze: vi.fn(async () => analysisOf(team)) });
   render(
     <AppProvider host={host}>
@@ -130,7 +128,7 @@ async function mountCustom(team: TeamRecommendation, shared = false) {
         kind: 'species',
         id: x.candidate.build.speciesId,
       })) as AppState['picks'],
-      shared,
+      false,
     );
   });
   await act(async () => {
@@ -273,10 +271,28 @@ describe('Team Analysis', () => {
     );
     fireEvent.click(within(dialog).getByRole('button', { name: 'Keep it' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    await new Promise((r) => setTimeout(r, 50));
+    await act(async () => {});
     expect(latest!.state.sets).toHaveLength(1);
     expect(latest!.state.sets[0]!.closed).toBe(false);
     expect(window.location.hash).not.toBe(hashFor({ screen: 'meta-log' }));
+  });
+
+  it('Take to battle with this team already running opens Log a battle, no sheet, no new set', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['medicham', 'azumarill', 'dragonite_shadow'] },
+      battles: [],
+      closed: false,
+    });
+    await mountRecommended('a');
+    await waitFor(() => expect(latest!.state.sets).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Take to battle' }));
+    await waitFor(() => expect(window.location.hash).toBe(hashFor({ screen: 'meta-log' })));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(latest!.state.sets).toHaveLength(1);
+    expect(latest!.state.sets[0]).toMatchObject({ id: 's1', closed: false });
   });
 
   it('Switch closes the running set, starts this team and opens Log a battle', async () => {
@@ -321,20 +337,81 @@ describe('Team Analysis', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.hash).toBe('#/build'));
   });
+});
 
-  it("Back from a team link's analysis goes to Teams, not back to the link's landing", async () => {
-    // Opened from a team link: its landing sits behind this screen in history, and going back
-    // to it would rerun the link and land here again.
-    const link = hashFor({
-      screen: 'shared',
-      league: 'great',
-      members: 'medicham+azumarill+dragonite_shadow',
-    });
-    window.history.replaceState(null, '', link);
-    await mountCustom(TEAM, true);
-    const card = await screen.findByRole('region', { name: 'Battle score' });
-    expect(card).toHaveTextContent('Shared team link.');
+/** The two screens a team link passes through, routed as App routes them. */
+function LinkRoutes() {
+  const r = useAppState().route;
+  if (r.screen === 'shared') {
+    return <SharedTeam league={r.league} members={r.members} />;
+  }
+  if (r.screen === 'custom') {
+    return <TeamDetail id="custom" />;
+  }
+  return null;
+}
+
+describe('Team Analysis from a team link', () => {
+  const LINKED = makeTeam({ id: 'custom', species: ['tinkaton', 'azumarill', 'clodsire'] });
+  let analyze: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetHistoryForTests();
+    latest = null;
+    await saveEmptyCollection();
+    // recordError's device summary reads matchMedia, which jsdom does not implement.
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    analyze = vi.fn(async () => analysisOf(LINKED));
+    // The link is the first page opened in this tab.
+    window.history.replaceState(
+      null,
+      '',
+      hashFor({ screen: 'shared', league: 'great', members: 'tinkaton+azumarill+clodsire' }),
+    );
+    render(
+      <AppProvider host={fakeHost({ analyze })}>
+        <Probe />
+        <LinkRoutes />
+      </AppProvider>,
+    );
+    await screen.findByRole('region', { name: 'Battle score' });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('replaces the landing with the analysis, keeping it the first screen', () => {
+    expect(window.location.hash).toBe('#/build/team');
+    expect((window.history.state as { pick3Depth?: number }).pick3Depth).toBe(0);
+    expect(canGoBack()).toBe(false);
+    expect(analyze).toHaveBeenCalledTimes(1);
+  });
+
+  it('Back lands on Teams: not off the site, not back through the link', async () => {
+    expect(screen.getByRole('region', { name: 'Battle score' })).toHaveTextContent(
+      'Shared team link.',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.hash).toBe('#/teams'));
+    await waitFor(() => expect(latest!.state.route.screen).toBe('teams'));
+    expect(analyze).toHaveBeenCalledTimes(1);
+  });
+
+  it('after Edit team and Analyze again, Back returns to Build', async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Edit team' }));
+    await waitFor(() => expect(latest!.state.route.screen).toBe('build'));
+    await act(async () => {
+      await latest!.actions.analyze();
+    });
+    await waitFor(() => expect(latest!.state.route.screen).toBe('custom'));
+    expect(window.location.hash).toBe('#/build/team');
+    expect(canGoBack()).toBe(true);
+    fireEvent.click(await screen.findByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    await waitFor(() => expect(latest!.state.route.screen).toBe('build'));
+    expect(analyze).toHaveBeenCalledTimes(2);
   });
 });

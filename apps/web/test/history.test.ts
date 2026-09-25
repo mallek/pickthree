@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { clearShareMarker } from '../src/share.ts';
-import { canGoBack, markEntry, resetHistoryForTests } from '../src/state/history.ts';
+import { canGoBack, markEntry, replaceEntry, resetHistoryForTests } from '../src/state/history.ts';
 
 describe('pick3 history depth', () => {
   beforeEach(() => {
@@ -29,6 +29,20 @@ describe('pick3 history depth', () => {
     resetHistoryForTests();
     markEntry();
     expect(canGoBack()).toBe(true);
+  });
+
+  it('replaceEntry swaps the address and keeps the depth, so a first screen stays first', () => {
+    window.history.replaceState(null, '', '#/t/great/tinkaton+azumarill+clodsire');
+    markEntry();
+    const length = window.history.length;
+    replaceEntry('#/build/team');
+    expect(window.location.hash).toBe('#/build/team');
+    expect(window.history.length).toBe(length);
+    expect((window.history.state as { pick3Depth: number }).pick3Depth).toBe(0);
+    // A later markEntry (a stray hashchange, a reload) reads the depth back, not one more.
+    resetHistoryForTests();
+    markEntry();
+    expect(canGoBack()).toBe(false);
   });
 
   it("keeps a marked entry's pick3Depth through clearShareMarker", () => {

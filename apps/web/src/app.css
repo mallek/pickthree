@@ -2061,9 +2061,13 @@ textarea.paste {
   justify-content: space-between;
   gap: 4px;
 }
-/* A jumped-to heading lands under the sticky header, not behind it. */
+/* A jumped-to heading lands under the sticky header, not behind it. The offset is the sub
+   header's own box (packages/ui/base.css `.hdr`): its top padding, one tap-tall row of back and
+   icon buttons, its bottom padding and border, then the page's own gap under it. Change it with
+   `.hdr`. */
 .analysis-section {
-  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 76px);
+  --hdr-box: calc(env(safe-area-inset-top, 0px) + 14px + var(--tap) + 8px + 1px);
+  scroll-margin-top: calc(var(--hdr-box) + var(--space));
 }
 /* The header keeps the shared, symmetric 12px padding, so its title stays centred on the page and
    the extra row stays even. Only the actions move in, to end on the page gutter like the content

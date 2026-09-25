@@ -7,8 +7,8 @@ describe('MetaButton', () => {
     render(<MetaButton />);
     const link = screen.getByRole('link', { name: 'meta, the community meta' });
     expect(link).toHaveAttribute('href', 'https://meta.pick3.gg');
-    // Icon-only, matching pick3's own head-row buttons (HeadCog, ShareButton): no visible text,
-    // so the aria-label above is the one source of the accessible name.
+    // Icon-only, matching pick3's own head-row buttons (HeadCog, the ShareGlyph IconButton): no
+    // visible text, so the aria-label above is the one source of the accessible name.
     expect(link).toHaveClass('head-cog');
     expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   });

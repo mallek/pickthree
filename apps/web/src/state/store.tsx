@@ -38,7 +38,7 @@ import { applyTheme } from '@pickthree/ui';
 import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { communityCores } from '../community.ts';
-import { canGoBack, markEntry } from './history.ts';
+import { canGoBack, markEntry, replaceEntry } from './history.ts';
 import {
   communityRequest,
   loadCommunity,
@@ -588,7 +588,11 @@ function requestFor(s: AppState, now: Date): CommunityRequest | null {
 }
 
 interface Actions {
-  navigate(route: Route): void;
+  /**
+   * Go to a screen. `replace` swaps the current history entry for it instead of adding one, for a
+   * screen that hands off and should not be gone back to (a team link's landing).
+   */
+  navigate(route: Route, opts?: { replace?: boolean }): void;
   /** Back to the screen before this one; the fallback when pick3 has nothing behind it. */
   back(fallback?: Route): void;
   openSheet(): void;
@@ -796,9 +800,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     applyTheme(state.settings.theme);
   }, [state.settings.theme]);
 
-  const navigate = useCallback((route: Route) => {
+  const navigate = useCallback((route: Route, opts?: { replace?: boolean }) => {
     const h = hashFor(route);
-    if (window.location.hash !== h) {
+    if (opts?.replace) {
+      // No hashchange follows a replaceState, so route here; the entry keeps its pick3 depth.
+      replaceEntry(h);
+      dispatch({ type: 'route', route });
+    } else if (window.location.hash !== h) {
       window.location.hash = h;
     } else {
       dispatch({ type: 'route', route });
@@ -1233,7 +1241,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         return;
       }
       dispatch({ type: 'analyze-done', analysis });
-      navigate({ screen: 'custom' });
+      // A team link's landing hands off to the analysis and leaves no entry behind: going back
+      // to it would run the link again and land straight back here.
+      navigate({ screen: 'custom' }, { replace: stateRef.current.route.screen === 'shared' });
     } catch (e) {
       recordError('analyze', e);
       if (!scope.current()) {
