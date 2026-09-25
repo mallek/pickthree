@@ -3107,13 +3107,15 @@ input[type='range'] {
   margin: 0;
   font-size: var(--fs-body);
 }
+/* One row: the Source select fills the width, the filter icon sits at the right, their bottoms
+   aligned (the select carries its label above). */
 .teams-controls {
+  display: flex;
   gap: var(--space);
   align-items: flex-end;
-  flex-wrap: wrap;
 }
-.teams-weighting {
-  margin: 0;
+.teams-controls > .field {
+  flex: 1;
 }
 .teams-list {
   gap: 12px;

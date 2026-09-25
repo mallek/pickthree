@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Recommendation, TeamRecommendation } from '@pickthree/engine';
-import { facingSummary, Teams } from '../src/screens/Teams.tsx';
+import { Teams } from '../src/screens/Teams.tsx';
 import { AppProvider, hashFor, useActions, useAppState, type AppState } from '../src/state/store.tsx';
 import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
 import { emptyLayoutValue } from '../src/format.ts';
@@ -328,21 +328,5 @@ describe('Teams list', () => {
     await mount(hostWith([makeTeam({ id: 'a' })]));
     expect(screen.getByRole('heading', { level: 2, name: 'Your Teams' })).toBeInTheDocument();
     expect(screen.queryByText(/^\d+ Pokémon$/)).toBeNull();
-  });
-});
-
-describe('facingSummary', () => {
-  it('describes what the list is weighted by', () => {
-    expect(facingSummary({ source: 'prior', window: 'meta' }, 0, false)).toBe('PvPoke weighting');
-    expect(facingSummary({ source: 'log', window: 'meta' }, 20, false)).toBe('Your log weighting');
-    expect(facingSummary({ source: 'log', window: 'meta' }, 9, false)).toBe(
-      'PvPoke weighting until your log reaches 15 battles',
-    );
-    expect(facingSummary({ source: 'ladder', window: '7' }, 0, false)).toBe(
-      '7 days · GBL weighting',
-    );
-    expect(facingSummary({ source: 'all', window: 'meta' }, 0, true)).toBe(
-      'PvPoke weighting (community data unavailable)',
-    );
   });
 });

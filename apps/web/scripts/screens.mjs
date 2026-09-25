@@ -229,7 +229,7 @@ await page.waitForFunction(
 );
 
 console.log('teams, filters sheet');
-await page.click('.teams-controls .ui-filter-btn');
+await page.click('.teams-controls .ui-filter-icon');
 await page.waitForSelector('.sheet[aria-label="Filters"]');
 await new Promise((r) => setTimeout(r, 400));
 await shot('teams-filters-sheet', false);

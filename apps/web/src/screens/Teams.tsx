@@ -1,5 +1,4 @@
 import type { FacingSource, Recommendation, TeamRecommendation } from '@pickthree/engine';
-import type { WindowKey } from '@pickthree/engine/meta';
 import {
   Button,
   Empty,
@@ -25,9 +24,9 @@ import {
 import { TeamCardBody } from '../components/team/TeamCardBody.tsx';
 import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
-import { communityLeague, WINDOW_LABELS } from '../communityMeta.ts';
+import { communityLeague } from '../communityMeta.ts';
 import { shareEnabled } from '../metaShare.ts';
-import { facingSettings, isCommunity, type FacingChoice } from '../state/facing.ts';
+import { facingSettings, isCommunity } from '../state/facing.ts';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
 import type { Settings } from '../storage/db.ts';
 
@@ -47,20 +46,6 @@ export function filterCount(settings: Settings): number {
     (settings.excludedSpecimenIds.length > 0 ? 1 : 0) +
     (f.style !== 'any' ? 1 : 0)
   );
-}
-
-/** One supporting line under the controls: what the team list is weighted by. */
-export function facingSummary(choice: FacingChoice, logCount: number, fellBack: boolean): string {
-  if (fellBack) {
-    return 'PvPoke weighting (community data unavailable)';
-  }
-  if (choice.source === 'prior') {
-    return 'PvPoke weighting';
-  }
-  if (choice.source === 'log') {
-    return logCount >= 15 ? 'Your log weighting' : 'PvPoke weighting until your log reaches 15 battles';
-  }
-  return `${WINDOW_LABELS[choice.window]} · ${SOURCE_LABELS[choice.source]} weighting`;
 }
 
 /** The tab's own header: its title, the meta.pick3.gg link and Settings. */
@@ -175,7 +160,7 @@ export function Teams() {
       <div className="page-head">
         <TeamsHeader openSheet={openSheet} />
         <LeagueSwitcher />
-        <div className="row teams-controls">
+        <div className="teams-controls">
           <Select<FacingSource>
             label="Source"
             value={choice.source}
@@ -184,22 +169,9 @@ export function Teams() {
               updateSettings((cur) => ({ ...cur, facing: { ...cur.facing, source } }))
             }
           />
-          <Select<WindowKey>
-            label="Window"
-            value={choice.window}
-            disabled={!isCommunity(choice.source) || !hasCommunity}
-            options={(['meta', '30', '7'] as const).map((w) => ({
-              value: w,
-              label: WINDOW_LABELS[w],
-            }))}
-            onChange={(window) =>
-              updateSettings((cur) => ({ ...cur, facing: { ...cur.facing, window } }))
-            }
-          />
-          <FilterButton count={filters} onClick={openFilters} />
+          <FilterButton iconOnly count={filters} onClick={openFilters} />
         </div>
         {!hasCommunity ? <span className="meta">No community data for this league</span> : null}
-        <p className="meta teams-weighting">{facingSummary(choice, logCount, Boolean(fellBack))}</p>
       </div>
       <div className="scroll teams-list">
         <button type="button" className="action-row" onClick={() => navigate({ screen: 'build' })}>

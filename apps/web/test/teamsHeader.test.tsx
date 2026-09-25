@@ -96,12 +96,29 @@ describe('Teams header', () => {
     await saveEmptyCollection();
   });
 
-  it('shows labeled Source and Window selects and a Filters control, and no Team style chip', async () => {
+  it('shows one row: the Source select and the filter icon, no Window select and no weighting line', async () => {
     await mount(fakeHost());
     expect(screen.getByLabelText('Source')).toBeInTheDocument();
-    expect(screen.getByLabelText('Window')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Filters/ })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Window')).toBeNull();
+    expect(screen.queryByText(/weighting/)).toBeNull();
+    const filters = screen.getByRole('button', { name: 'Filters' });
+    expect(filters).toHaveClass('ui-filter-icon');
+    expect(filters.closest('.teams-controls')).toBe(
+      screen.getByLabelText('Source').closest('.teams-controls'),
+    );
     expect(screen.queryByText(/Team style:/)).toBeNull();
+  });
+
+  it('names the filter count on the icon and opens the Filters sheet', async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      filters: { ...DEFAULT_SETTINGS.filters, noXl: true },
+    });
+    await mount(fakeHost());
+    const filters = await screen.findByRole('button', { name: 'Filters, 1 on' });
+    expect(latest!.state.filtersOpen).toBe(false);
+    fireEvent.click(filters);
+    expect(latest!.state.filtersOpen).toBe(true);
   });
 
   it('does not grey community sources or show the no-data line before the league list is known', async () => {
@@ -120,21 +137,6 @@ describe('Teams header', () => {
     expect(screen.queryByText('No community data for this league')).toBeNull();
     const gbl = screen.getByRole('option', { name: /GBL/ }) as HTMLOptionElement;
     expect(gbl.disabled).toBe(false);
-  });
-
-  it('disables Window for PvPoke and Your log, enables it for GBL', async () => {
-    await mount(fakeHost());
-    const source = screen.getByLabelText('Source') as HTMLSelectElement;
-    const windowSel = screen.getByLabelText('Window') as HTMLSelectElement;
-    await act(async () => {
-      fireEvent.change(source, { target: { value: 'log' } });
-    });
-    expect(windowSel).toBeDisabled();
-    await act(async () => {
-      fireEvent.change(source, { target: { value: 'ladder' } });
-    });
-    expect(windowSel).not.toBeDisabled();
-    expect(latest!.state.settings.facing?.source).toBe('ladder');
   });
 
   it('greys the community sources for a league with no community data', async () => {
