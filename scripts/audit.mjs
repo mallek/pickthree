@@ -135,14 +135,104 @@ export async function auditPage(page) {
     const failed = res.violations.flatMap((v) =>
       v.nodes.map((n) => `contrast: ${n.target.join(' ')} ${message(n)}`),
     );
-    const unverified = res.incomplete.flatMap((v) =>
-      v.nodes
-        .filter((n) => {
-          const el = document.querySelector(n.target.join(' '));
-          return !(el && el.closest('[data-audit-contrast="static"]'));
-        })
-        .map((n) => `contrast unverified: ${n.target.join(' ')} ${message(n)}`),
-    );
+
+    // axe leaves text undecided ("partially overlaps other elements") when the element stacks
+    // under its lines differ anywhere, even BEHIND an opaque surface: a sheet's paragraph over a
+    // page whose rows end halfway down it, or a paragraph straddling the bottom of body's
+    // 100%-high box on a long page. Only the layers down to the first opaque background paint
+    // behind the text, so when those match under every line, hold flat colors only and cover
+    // every line, the contrast is computed here with axe's own color math, against the same
+    // thresholds. Anything else (an image or gradient, opacity, a blend or filter, a text shadow,
+    // stacks that really differ) stays unverified.
+    const C = window.axe.commons.color;
+    const D = window.axe.commons.dom;
+    const contains = (outer, r) =>
+      r.left >= outer.left - 0.5 &&
+      r.right <= outer.right + 0.5 &&
+      r.top >= outer.top - 0.5 &&
+      r.bottom <= outer.bottom + 0.5;
+    const measureBelowOpaque = (el) => {
+      for (let e = el; e; e = e.parentElement) {
+        const cs = getComputedStyle(e);
+        if (cs.opacity !== '1' || cs.mixBlendMode !== 'normal' || cs.filter !== 'none') {
+          return null;
+        }
+      }
+      const style = getComputedStyle(el);
+      if (style.textShadow !== 'none') {
+        return null;
+      }
+      const textRects = D.getVisibleChildTextRects(el);
+      const stacks = D.getTextElementStack(el).map((s) => D.reduceToElementsBelowFloating(s, el));
+      if (textRects.length === 0 || stacks.length === 0) {
+        return null;
+      }
+      const cutAtOpaque = (stack) => {
+        const out = [];
+        for (const e of stack) {
+          const cs = getComputedStyle(e);
+          if (cs.backgroundImage !== 'none') {
+            return null;
+          }
+          const bg = C.getOwnBackgroundColor(cs);
+          if (bg.alpha > 0) {
+            const box = e.getBoundingClientRect();
+            if (cs.display !== 'inline' && !textRects.every((r) => contains(box, r))) {
+              return null;
+            }
+          }
+          out.push(e);
+          if (bg.alpha === 1) {
+            return out;
+          }
+        }
+        return null;
+      };
+      const layers = stacks.map(cutAtOpaque);
+      const first = layers[0];
+      if (
+        !first ||
+        first[0] !== el ||
+        layers.some((l) => !l || l.length !== first.length || l.some((e, i) => e !== first[i]))
+      ) {
+        return null;
+      }
+      let bg = C.getOwnBackgroundColor(getComputedStyle(first[first.length - 1]));
+      for (let i = first.length - 2; i >= 0; i--) {
+        bg = C.flattenColors(C.getOwnBackgroundColor(getComputedStyle(first[i])), bg);
+      }
+      const fgRaw = new C.Color();
+      fgRaw.parseString(style.color);
+      const fg = fgRaw.alpha < 1 ? C.flattenColors(fgRaw, bg) : fgRaw;
+      const px = parseFloat(style.fontSize);
+      const pt = Math.ceil(px * 72) / 96;
+      const bold = parseFloat(style.fontWeight) >= 700 || style.fontWeight === 'bold';
+      const required = (bold && pt >= 14) || pt >= 18 ? 3 : 4.5;
+      return { ratio: C.getContrast(bg, fg), required, fg: fg.toHexString(), bg: bg.toHexString() };
+    };
+
+    const unverified = [];
+    const incomplete = res.incomplete.flatMap((v) => v.nodes);
+    window.axe.setup(document);
+    try {
+      for (const n of incomplete) {
+        const el = document.querySelector(n.target.join(' '));
+        if (el && el.closest('[data-audit-contrast="static"]')) {
+          continue;
+        }
+        const key = n.any[0] && n.any[0].data && n.any[0].data.messageKey;
+        const measured = el && key === 'elmPartiallyObscuring' ? measureBelowOpaque(el) : null;
+        if (!measured) {
+          unverified.push(`contrast unverified: ${n.target.join(' ')} ${message(n)}`);
+        } else if (measured.ratio < measured.required) {
+          failed.push(
+            `contrast: ${n.target.join(' ')} ${measured.ratio.toFixed(2)}:1 (${measured.fg} on ${measured.bg}), needs ${measured.required}:1`,
+          );
+        }
+      }
+    } finally {
+      window.axe.teardown();
+    }
     return [...failed, ...unverified];
   });
   findings.push(...contrast);

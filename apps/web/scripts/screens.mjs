@@ -22,7 +22,15 @@ import { auditPage, forEachTheme, prepareAudit } from '../../../scripts/audit.mj
 const AUDIT = process.argv.includes('--audit');
 /** Screens held to the audit: a finding here fails the run. Each page redesign adds its own
  * screen names as it passes (design foundation, section 5). */
-const AUDIT_ENFORCED = new Set([]);
+const AUDIT_ENFORCED = new Set([
+  '02-teams',
+  'teams-second-open',
+  'teams-community',
+  '19-teams-ultra',
+  'teams-cup',
+  'teams-filters-sheet',
+  'teams-no-collection',
+]);
 const auditFindings = [];
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -132,10 +140,10 @@ await page.evaluate(() =>
 );
 await shot('10-scan-list', false);
 
-console.log('empty state');
+console.log('teams without a collection');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.choice-card');
-await shot('18-empty-state', false);
+await shot('teams-no-collection', false);
 
 console.log('counters without a collection');
 await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
@@ -159,6 +167,26 @@ console.log(`  teams rendered at ${Date.now() - t0} ms`);
 await shot('02-teams');
 const stats = await page.$eval('.scroll > p.meta', (p) => p.textContent).catch(() => '');
 console.log(`  ${stats}`);
+
+console.log('teams, second row open');
+await page.$$eval('.ui-expand-head', (heads) => heads[1]?.click());
+await page.waitForFunction(
+  () => document.querySelectorAll('.ui-expand-head')[1]?.getAttribute('aria-expanded') === 'true',
+);
+await shot('teams-second-open');
+// Close it again, so every later shot starts from the default: only the first row open.
+await page.$$eval('.ui-expand-head', (heads) => heads[1]?.click());
+await page.waitForFunction(
+  () => document.querySelectorAll('.ui-expand-head')[1]?.getAttribute('aria-expanded') === 'false',
+);
+
+console.log('teams, filters sheet');
+await page.click('.teams-controls .ui-filter-btn');
+await page.waitForSelector('.sheet[aria-label="Filters"]');
+await new Promise((r) => setTimeout(r, 400));
+await shot('teams-filters-sheet', false);
+await page.$eval('.sheet[aria-label="Filters"] .between button.btn-ghost', (el) => el.click());
+await page.waitForSelector('.sheet[aria-label="Filters"]', { hidden: true });
 
 console.log('teams, community source');
 await page.evaluate(() => {
@@ -202,6 +230,25 @@ await page.waitForFunction(
 );
 console.log(`  ultra teams rendered at ${Date.now() - t0} ms`);
 await shot('19-teams-ultra', false);
+
+console.log('tournament cup');
+await page.click('.page-head .league-more');
+await page.waitForSelector('.ui-sheet .ui-league-row');
+await page.$$eval('.ui-sheet .ui-league-row', (rows) =>
+  rows.find((r) => r.textContent?.trim() === 'Tournament')?.click(),
+);
+await page.waitForSelector('.ui-sheet', { hidden: true });
+for (let i = 0; i < 2; i++) {
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.league-switcher[data-league="championshipseries"]') &&
+      document.querySelector('.ui-expand-head') &&
+      !document.querySelector('.ui-loading'),
+    { timeout: 120_000 },
+  );
+  await new Promise((r) => setTimeout(r, 750));
+}
+await shot('teams-cup', false);
 await page.click('.league-switcher button:nth-child(1)');
 // The switcher's data-league comes from settings and flips at once, while the recommendation
 // lags a tick behind it. Without a settle these three conditions all pass on a frame where the

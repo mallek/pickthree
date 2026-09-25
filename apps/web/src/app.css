@@ -173,7 +173,7 @@ a {
 .btn-ghost {
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--accent-text);
   min-height: 44px;
   padding: 0 8px;
   width: auto;
@@ -1586,7 +1586,7 @@ textarea.paste {
   gap: 5px;
 }
 .tab.on {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .tab svg {
   width: 22px;
