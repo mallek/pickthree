@@ -1,4 +1,4 @@
-import type { FacingSource, TeamRecommendation } from '@pickthree/engine';
+import type { FacingSource, Recommendation, TeamRecommendation } from '@pickthree/engine';
 import type { WindowKey } from '@pickthree/engine/meta';
 import {
   Button,
@@ -11,8 +11,17 @@ import {
   ProgressCard,
   Select,
 } from '@pickthree/ui';
-import { useEffect, useState } from 'react';
-import { CogGlyph, MetaGlyph, META_URL, NoCollection, Progress, useLogCount } from '../components.tsx';
+import { useEffect } from 'react';
+import {
+  CogGlyph,
+  MetaGlyph,
+  META_URL,
+  NoCollection,
+  Progress,
+  useLogCount,
+  useScrollMemory,
+  useSticky,
+} from '../components.tsx';
 import { TeamCardBody } from '../components/team/TeamCardBody.tsx';
 import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
@@ -88,16 +97,19 @@ export function Teams() {
   const logCount = useLogCount();
   const key = filterKey(s.settings, s.logVersion, s.community);
   const stale = s.recommendedWith !== key;
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const isOpen = (id: string, i: number): boolean => open[id] ?? i === 0;
+  // Open rows last the session (leave Teams and come back, they are as you left them) and belong
+  // to one recommendation: a new list, stored at rec-done, starts over with only its first row
+  // open. A run that is still pending keeps the old list and its open rows.
+  const [open, setOpen] = useSticky('teams.open', {
+    list: null as Recommendation | null,
+    rows: {} as Record<string, boolean>,
+  });
+  const rows = open.list === s.recommendation ? open.rows : {};
+  const isOpen = (id: string, i: number): boolean => rows[id] ?? i === 0;
   const toggle = (id: string, i: number): void =>
-    setOpen((cur) => ({ ...cur, [id]: !(cur[id] ?? i === 0) }));
-
-  // A fresh recommendation is a fresh list: start over with only its first row open, rather than
-  // carrying open/closed state that named yesterday's team ids.
-  useEffect(() => {
-    setOpen({});
-  }, [s.recommendedWith]);
+    setOpen({ list: s.recommendation, rows: { ...rows, [id]: !(rows[id] ?? i === 0) } });
+  const teams = s.recommendation?.teams ?? [];
+  useScrollMemory('teams.scroll', teams.length > 0 && !s.recommending);
 
   useEffect(() => {
     if (
@@ -132,7 +144,6 @@ export function Teams() {
     );
   }
 
-  const teams = s.recommendation?.teams ?? [];
   const choice = facingSettings(s.settings);
   const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
   // The league list is not known yet on a cold start straight into Teams (store.tsx routes here

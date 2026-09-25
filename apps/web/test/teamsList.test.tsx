@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Recommendation, TeamRecommendation } from '@pickthree/engine';
 import { facingSummary, Teams } from '../src/screens/Teams.tsx';
@@ -42,6 +43,11 @@ function hostWith(teams: TeamRecommendation[]) {
   return host;
 }
 
+/** The row toggles only: an open row's body holds Term buttons that also carry aria-expanded. */
+function rowHeads(): HTMLButtonElement[] {
+  return [...document.querySelectorAll<HTMLButtonElement>('.ui-expand-head')];
+}
+
 async function mount(host: ReturnType<typeof fakeHost>) {
   render(
     <AppProvider host={host}>
@@ -73,7 +79,7 @@ describe('Teams list', () => {
       ]),
     );
     await screen.findAllByText(/Stardust/);
-    const toggles = screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-expanded'));
+    const toggles = rowHeads();
     expect(toggles[0]).toHaveAttribute('aria-expanded', 'true');
     expect(toggles[1]).toHaveAttribute('aria-expanded', 'false');
     const names = screen.getAllByTestId('team-summary-names').map((el) => el.textContent);
@@ -84,7 +90,7 @@ describe('Teams list', () => {
   it('opens and closes a row on tap', async () => {
     await mount(hostWith([makeTeam({ id: 'a' }), makeTeam({ id: 'b', species: ['mimikyu', 'melmetal', 'greninja'] })]));
     await screen.findAllByText(/Stardust/);
-    const second = screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-expanded'))[1]!;
+    const second = rowHeads()[1]!;
     fireEvent.click(second);
     expect(second).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(second);
@@ -98,7 +104,7 @@ describe('Teams list', () => {
     ]);
     await mount(host);
     await screen.findAllByText(/Stardust/);
-    const toggles = () => screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-expanded'));
+    const toggles = rowHeads;
     fireEvent.click(toggles()[0]!);
     expect(toggles()[0]).toHaveAttribute('aria-expanded', 'false');
     const calls = (host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls.length;
@@ -116,11 +122,65 @@ describe('Teams list', () => {
     await waitFor(() => expect(toggles()[0]).toHaveAttribute('aria-expanded', 'true'));
   });
 
+  it('keeps the rows the player opened and closed across leaving Teams and coming back', async () => {
+    let show: (on: boolean) => void = () => undefined;
+    function Toggle() {
+      const [on, setOn] = useState(true);
+      show = setOn;
+      return on ? <Teams /> : null;
+    }
+    render(
+      <AppProvider
+        host={hostWith([
+          makeTeam({ id: 'a' }),
+          makeTeam({ id: 'b', species: ['mimikyu', 'melmetal', 'greninja'] }),
+        ])}
+      >
+        <Probe />
+        <Toggle />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(latest?.state.recommendation).not.toBeNull());
+    await screen.findAllByText(/Stardust/);
+    const toggles = rowHeads;
+    fireEvent.click(toggles()[1]!);
+    fireEvent.click(toggles()[0]!);
+    expect(toggles()[0]).toHaveAttribute('aria-expanded', 'false');
+    expect(toggles()[1]).toHaveAttribute('aria-expanded', 'true');
+    act(() => show(false));
+    expect(screen.queryAllByTestId('team-summary-names')).toHaveLength(0);
+    act(() => show(true));
+    expect(toggles()[0]).toHaveAttribute('aria-expanded', 'false');
+    expect(toggles()[1]).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('keeps a closed first row closed while a new run is pending', async () => {
+    const host = hostWith([
+      makeTeam({ id: 'a' }),
+      makeTeam({ id: 'b', species: ['mimikyu', 'melmetal', 'greninja'] }),
+    ]);
+    await mount(host);
+    await screen.findAllByText(/Stardust/);
+    const toggles = rowHeads;
+    fireEvent.click(toggles()[0]!);
+    expect(toggles()[0]).toHaveAttribute('aria-expanded', 'false');
+    // The next run never finishes, so the old list stays on screen under the pending run.
+    host.recommend = vi.fn(() => new Promise<never>(() => {})) as unknown as typeof host.recommend;
+    await act(async () => {
+      latest!.actions.updateSettings((cur) => ({
+        ...cur,
+        facing: { ...cur.facing, source: 'prior' },
+      }));
+    });
+    await waitFor(() => expect(latest?.state.recommending).toBe(true));
+    expect(toggles()[0]).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('View analysis and Edit team go to their places without toggling the row', async () => {
     await mount(hostWith([makeTeam({ id: 'a' })]));
     const view = await screen.findByRole('link', { name: 'View analysis' });
     expect(view).toHaveAttribute('href', hashFor({ screen: 'team', id: 'a' }));
-    const toggle = screen.getAllByRole('button').find((b) => b.hasAttribute('aria-expanded'))!;
+    const toggle = rowHeads()[0]!;
     fireEvent.click(screen.getByRole('button', { name: 'Edit team' }));
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await waitFor(() => expect(latest?.state.route.screen).toBe('build'));
