@@ -293,4 +293,25 @@ describe('FilterButton', () => {
     render(<FilterButton count={0} onClick={() => undefined} />);
     expect(screen.getByRole('button', { name: 'Filters' })).not.toHaveClass('on');
   });
+
+  it('has an icon-only form with the same accessible name and a count badge when on', async () => {
+    const onClick = vi.fn();
+    const { container } = render(<FilterButton iconOnly count={1} onClick={onClick} />);
+    const button = screen.getByRole('button', { name: 'Filters, 1 on' });
+    expect(button).toHaveClass('ui-icon-btn', 'ui-filter-icon', 'on');
+    expect(button).toHaveAttribute('aria-haspopup', 'dialog');
+    // No visible label: the glyph and the badge only.
+    expect(button.textContent).toBe('1');
+    expect(container.querySelector('.ui-filter-badge')?.textContent).toBe('1');
+    await userEvent.click(button);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('icon-only with nothing on: named Filters, no badge, not on', () => {
+    const { container } = render(<FilterButton iconOnly count={0} onClick={() => undefined} />);
+    const button = screen.getByRole('button', { name: 'Filters' });
+    expect(button).not.toHaveClass('on');
+    expect(container.querySelector('.ui-filter-badge')).toBeNull();
+    expect(button.textContent).toBe('');
+  });
 });

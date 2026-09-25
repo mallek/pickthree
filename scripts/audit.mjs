@@ -67,6 +67,20 @@ export async function auditPage(page) {
       if (el.textContent.trim() === '') {
         continue;
       }
+      // A decoration that hangs over an edge on purpose (a count badge on a button's corner) is
+      // marked data-audit-overhang. Overflow that the marked overhang alone explains is not
+      // clipping; anything wider than that still is.
+      const marked = el.querySelectorAll('[data-audit-overhang]');
+      if (marked.length > 0) {
+        const padRight = el.getBoundingClientRect().right - parseFloat(cs.borderRightWidth);
+        let hang = 0;
+        for (const d of marked) {
+          hang = Math.max(hang, d.getBoundingClientRect().right - padRight);
+        }
+        if (hang > 0 && el.scrollWidth - el.clientWidth <= Math.ceil(hang) + 1) {
+          continue;
+        }
+      }
       const name = `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? `.${el.className.trim().split(/\s+/).join('.')}` : ''}`;
       out.push(`clipped: ${name} content is ${el.scrollWidth}px in a ${el.clientWidth}px box`);
     }

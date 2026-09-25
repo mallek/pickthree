@@ -301,6 +301,11 @@ export function Gallery() {
           <FilterButton count={0} onClick={() => undefined} />
           <FilterButton count={3} onClick={() => undefined} />
         </div>
+        <p className="g-note">Icon only, for a controls row: none on, and one on.</p>
+        <div className="g-row">
+          <FilterButton iconOnly count={0} onClick={() => undefined} />
+          <FilterButton iconOnly count={1} onClick={() => undefined} />
+        </div>
       </Section>
 
       <Section name="Measured">
