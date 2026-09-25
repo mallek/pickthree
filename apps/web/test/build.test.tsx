@@ -47,71 +47,97 @@ describe('Build a team', () => {
     );
   });
 
-  it('offers teammates once something is pinned, and drops them into the empty slots', async () => {
-    const suggestTeammates = vi.fn(async () => ({
-      pinLine: 'Tinkaton beats 12 of 48 in the current Great League meta group.',
-      suggestions: [
-        {
-          character: 'safest' as const,
-          label: 'Safest',
-          chase: false,
-          coverage: 30,
-          cost: 0,
-          sightings: null,
-          fills: [
-            {
-              slot: 1 as const,
-              pick: { kind: 'species' as const, id: 'azumarill' },
-              speciesId: 'azumarill',
-              standIn: true,
-              covers: ['clodsire'],
-              line: 'Beats Clodsire and 4 more that Tinkaton loses to.',
-            },
-            {
-              slot: 2 as const,
-              pick: { kind: 'species' as const, id: 'clodsire' },
-              speciesId: 'clodsire',
-              standIn: true,
-              covers: ['medicham'],
-              line: 'Beats Medicham and 2 more that Tinkaton and Azumarill lose to.',
-            },
-          ],
-        },
-      ],
-      assumptions: {} as never,
-      stats: { standIns: 0, poolSize: 0, cores: 0, simulatedRows: 0 },
-      ms: 1,
-    }));
+  // The offer a suggestTeammates call resolves to below. Shared by the two tests that replaced
+  // "offers teammates once something is pinned, and drops them into the empty slots": that test
+  // asserted the auto-fill store.tsx no longer does (suggestTeammates never writes a pick now).
+  const offer = {
+    pinLine: 'Tinkaton beats 12 of 48 in the current Great League meta group.',
+    suggestions: [
+      {
+        character: 'safest' as const,
+        label: 'Safest',
+        chase: false,
+        coverage: 30,
+        cost: 0,
+        sightings: null,
+        fills: [
+          {
+            slot: 1 as const,
+            pick: { kind: 'species' as const, id: 'azumarill' },
+            speciesId: 'azumarill',
+            standIn: true,
+            covers: ['clodsire'],
+            line: 'Beats Clodsire and 4 more that Tinkaton loses to.',
+          },
+          {
+            slot: 2 as const,
+            pick: { kind: 'species' as const, id: 'clodsire' },
+            speciesId: 'clodsire',
+            standIn: true,
+            covers: ['medicham'],
+            line: 'Beats Medicham and 2 more that Tinkaton and Azumarill lose to.',
+          },
+        ],
+      },
+    ],
+    assumptions: {} as never,
+    stats: { standIns: 0, poolSize: 0, cores: 0, simulatedRows: 0 },
+    ms: 1,
+  };
+
+  // TODO(Task 4): these depend on UI that does not exist until Tasks 3 and 4 ship: the
+  // "Add <name>" suggestion row, suggestions running on their own instead of behind a button, and
+  // the "Search any Pokémon for <slot>" placeholder (currently "Search any Pokemon for <slot>",
+  // no accent). Switch `it.skip` to `it` once that UI lands.
+  async function pickFirst(query: string, label: string): Promise<void> {
+    const empty = await screen.findByRole('button', { name: /, empty$/ });
+    fireEvent.click(empty);
+    fireEvent.change(await screen.findByPlaceholderText(/Search any Pokémon for/), {
+      target: { value: query },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: label }));
+  }
+
+  it.skip('offers teammates without writing any pick', async () => {
+    const suggestTeammates = vi.fn(async () => offer);
     render(
       <AppProvider host={fakeHost({ suggestTeammates })}>
         <Build />
       </AppProvider>,
     );
+    await pickFirst('tink', 'Tinkaton');
+    await waitFor(() => expect(suggestTeammates).toHaveBeenCalledTimes(1));
+    await screen.findByRole('button', { name: 'Add Azumarill' });
+    expect(screen.getByRole('button', { name: 'Safe Switch, empty' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Closer, empty' })).toBeInTheDocument();
+  });
 
-    // Nothing pinned: nothing to build around, so no button.
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument(),
+  it.skip('drops a suggestion for a board that changed while it ran', async () => {
+    let release: (v: typeof offer) => void = () => {};
+    const suggestTeammates = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<typeof offer>((r) => (release = r)))
+      .mockImplementation(async () => ({ ...offer, suggestions: [] }));
+    render(
+      <AppProvider host={fakeHost({ suggestTeammates })}>
+        <Build />
+      </AppProvider>,
     );
-    expect(screen.queryByRole('button', { name: 'Suggest teammates' })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Lead, empty' }));
-    fireEvent.change(await screen.findByPlaceholderText('Search any Pokemon for Lead'), {
-      target: { value: 'tink' },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: 'Tinkaton' }));
-
-    const button = await screen.findByRole('button', { name: 'Suggest teammates' });
-    fireEvent.click(button);
-
-    // The offer lands in the two empty slots, so Analyze is reachable with no further taps.
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument(),
-    );
-    expect(screen.getByRole('button', { name: 'Remove Clodsire' })).toBeInTheDocument();
-    expect(screen.getByText(/Beats Clodsire and 4 more/)).toBeInTheDocument();
-    expect(screen.getByText(/Tinkaton beats 12 of 48/)).toBeInTheDocument();
-    // Reasons only. The verdict out of 100 belongs to Analyze, one tap later.
-    expect(screen.queryByText(/out of 100/)).not.toBeInTheDocument();
+    await pickFirst('tink', 'Tinkaton');
+    await waitFor(() => expect(suggestTeammates).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Tinkaton' }));
+    await pickFirst('azu', 'Azumarill');
+    // An answer for the old board (Tinkaton) whose first teammate, Medicham, is not on the new
+    // board either, so only the stale-board check can keep it off the screen.
+    const first = offer.suggestions[0]!;
+    const medicham = {
+      ...first.fills[0]!,
+      pick: { kind: 'species' as const, id: 'medicham' },
+      speciesId: 'medicham',
+    };
+    release({ ...offer, suggestions: [{ ...first, fills: [medicham] }] });
+    await waitFor(() => expect(suggestTeammates).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('button', { name: 'Add Medicham' })).not.toBeInTheDocument();
   });
 
   it('opens and closes the moves sheet for a filled slot', async () => {

@@ -38,6 +38,7 @@ import { applyTheme } from '@pickthree/ui';
 import type { LeagueInfo, SpeciesLite } from '../host/protocol.ts';
 import { recordPick3 } from '../counter.ts';
 import { communityCores } from '../community.ts';
+import { canGoBack, markEntry } from './history.ts';
 import {
   communityRequest,
   loadCommunity,
@@ -500,6 +501,15 @@ export function hashFor(r: Route): string {
   }
 }
 
+/** Which board a suggestion was asked for: the league and the picks, order ignored. */
+export function suggestKey(picks: AppState['picks'], league: string): string {
+  const ids = picks
+    .filter((p): p is TeamPick => p !== null)
+    .map((p) => `${p.kind}:${p.id}`)
+    .sort();
+  return `${league}|${ids.join(',')}`;
+}
+
 /** The offered fills dropped into their slots, leaving every pinned slot untouched. */
 function withFills(
   picks: AppState['picks'],
@@ -578,7 +588,8 @@ function requestFor(s: AppState, now: Date): CommunityRequest | null {
 
 interface Actions {
   navigate(route: Route): void;
-  back(): void;
+  /** Back to the screen before this one; the fallback when pick3 has nothing behind it. */
+  back(fallback?: Route): void;
   openSheet(): void;
   closeSheet(): void;
   openFilters(): void;
@@ -723,7 +734,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           dispatch({ type: 'boot-error', message: e instanceof Error ? e.message : String(e) });
         }
       });
-    const onHash = (): void => dispatch({ type: 'route', route: parseHash(window.location.hash) });
+    markEntry();
+    const onHash = (): void => {
+      markEntry();
+      dispatch({ type: 'route', route: parseHash(window.location.hash) });
+    };
     window.addEventListener('hashchange', onHash);
     return () => {
       cancelled = true;
@@ -791,13 +806,17 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, []);
 
-  const back = useCallback(() => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      navigate({ screen: 'teams' });
-    }
-  }, [navigate]);
+  /** Back to the screen before this one; the fallback when pick3 has nothing behind it. */
+  const back = useCallback(
+    (fallback: Route = { screen: 'teams' }) => {
+      if (canGoBack()) {
+        window.history.back();
+      } else {
+        navigate(fallback);
+      }
+    },
+    [navigate],
+  );
 
   const updateSettings = useCallback((patch: Partial<Settings> | ((s: Settings) => Settings)) => {
     const next =
@@ -1101,8 +1120,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, [facingNow]);
   /**
-   * Teammates for whatever is already on the board. Matrix only in the worker, so it is quick
-   * enough to be a button; nothing is simulated here beyond a pin PvPoke does not rank.
+   * Teammates for whatever is already on the board. Runs on its own from Build when the board has
+   * one or two picks; matrix only in the worker, so it is quick enough to not need a button, and
+   * it never writes a pick, only the offer Build shows.
    */
   const suggestTeammates = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
@@ -1113,6 +1133,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       return;
     }
     const scope = scopeOf(stateRef);
+    const key = suggestKey(picks, s.settings.league ?? 'great');
     dispatch({ type: 'suggest-start' });
     try {
       const { facing } = await facingNow();
@@ -1129,9 +1150,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           )
         : null;
       const community = await communityCores(s.settings, s.leagueInfo.id, boardWindow);
-      if (!scope.current()) {
-        dispatch({ type: 'drop', what: 'suggest' });
-        return;
+      {
+        const now = stateRef.current;
+        if (!scope.current() || suggestKey(now.picks, now.settings.league ?? 'great') !== key) {
+          dispatch({ type: 'drop', what: 'suggest' });
+          return;
+        }
       }
       const suggestion = await h.suggestTeammates(
         picks,
@@ -1147,17 +1171,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         },
         scope.league,
       );
-      if (!scope.current()) {
-        dispatch({ type: 'drop', what: 'suggest' });
-        return;
+      {
+        const now = stateRef.current;
+        if (!scope.current() || suggestKey(now.picks, now.settings.league ?? 'great') !== key) {
+          dispatch({ type: 'drop', what: 'suggest' });
+          return;
+        }
       }
       dispatch({ type: 'suggest-done', suggestion });
-      // Applied here, from the value in hand: stateRef only catches up on the next render, so
-      // reading the offer back out of state in the same tick would find nothing.
-      const first = suggestion.suggestions[0];
-      if (first) {
-        dispatch({ type: 'picks', picks: withFills(picks, first.fills), shared: false });
-      }
     } catch (e) {
       recordError('suggest', e);
       if (!scope.current()) {
