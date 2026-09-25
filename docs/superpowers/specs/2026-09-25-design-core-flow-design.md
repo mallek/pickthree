@@ -104,7 +104,8 @@ Changes:
   lists the offered teammates below the cards: sprite, name, "yours" tag, the one-line reason,
   and **+ Add** (the whole row is the button, the + its visible cue). Adding fills the first empty
   slot; "Choosing" moves to the next empty one. The run is automatic on pick changes (matrix only,
-  no simulation), keeps its sharing-switch gate and its silent failure, and **never writes picks
+  no simulation); its community board read keeps the sharing-switch gate and its silent failure;
+  and it **never writes picks
   on its own**: today's `suggestTeammates` auto-fill of the first offer is removed. The Suggest
   teammates button is removed. The list hides once all three slots are filled.
 - **Total team cost** under the cards when all three are in: Stardust, Candy, XL Candy, Elite TM.
