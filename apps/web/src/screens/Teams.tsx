@@ -24,9 +24,8 @@ import {
 import { TeamCardBody } from '../components/team/TeamCardBody.tsx';
 import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
-import { communityLeague } from '../communityMeta.ts';
 import { shareEnabled } from '../metaShare.ts';
-import { facingSettings, isCommunity } from '../state/facing.ts';
+import { facingSettings, hasCommunityData, isCommunity } from '../state/facing.ts';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
 import type { Settings } from '../storage/db.ts';
 
@@ -139,12 +138,7 @@ export function Teams() {
   }
 
   const choice = facingSettings(s.settings);
-  const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
-  // The league list is not known yet on a cold start straight into Teams (store.tsx routes here
-  // before boot finishes): treat that as having community data, so nothing is greyed out or
-  // labeled missing on the strength of data that has not loaded yet. Only a known league whose
-  // communityLeague is null earns the note and the disabled options.
-  const hasCommunity = league ? communityLeague(league) !== null : true;
+  const hasCommunity = hasCommunityData(s.settings, s.data?.leagues);
   const fellBack =
     isCommunity(choice.source) &&
     s.recommendation?.assumptions.facing.startsWith('PvPoke weights (community data unavailable)');

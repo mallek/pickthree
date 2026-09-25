@@ -1,10 +1,10 @@
 import type { TeamStyle } from '@pickthree/engine';
 import type { WindowKey } from '@pickthree/engine/meta';
 import { Select } from '@pickthree/ui';
-import { communityLeague, WINDOW_LABELS } from '../communityMeta.ts';
+import { WINDOW_LABELS } from '../communityMeta.ts';
 import { PokemonToken, useName } from '../components.tsx';
 import { num } from '../format.ts';
-import { facingSettings, isCommunity } from '../state/facing.ts';
+import { facingSettings, hasCommunityData, isCommunity } from '../state/facing.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function Filters() {
@@ -20,11 +20,10 @@ export function Filters() {
     { k: 'noEliteTm', label: 'No Elite TM', sub: 'Skip movesets that need an Elite TM' },
     { k: 'budget', label: 'Budget builds', sub: 'Hide builds above your Stardust budget' },
   ];
-  // Window only applies to a community source, and only where the league has community data (a
-  // league not known yet counts as having it, as on Teams). It stays visible either way.
+  // Window only applies to a community source, and only where the league has community data. It
+  // stays visible either way.
   const choice = facingSettings(s.settings);
-  const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
-  const hasCommunity = league ? communityLeague(league) !== null : true;
+  const hasCommunity = hasCommunityData(s.settings, s.data?.leagues);
   const windowOff = !isCommunity(choice.source) || !hasCommunity;
   const excluded = s.settings.excludedSpecimenIds
     .map((id) => s.collection?.specimens.find((sp) => sp.id === id))

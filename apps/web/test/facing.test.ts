@@ -1,6 +1,12 @@
-import type { BattleSet } from '@pickthree/engine';
+import type { BattleSet, League } from '@pickthree/engine';
 import { describe, expect, it } from 'vitest';
-import { facingInput, facingSettings, isCommunity, logBattles } from '../src/state/facing.ts';
+import {
+  facingInput,
+  facingSettings,
+  hasCommunityData,
+  isCommunity,
+  logBattles,
+} from '../src/state/facing.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../src/storage/db.ts';
 
 const REQ = {
@@ -136,5 +142,36 @@ describe('logBattles', () => {
     });
     expect(logBattles(sets, seasons, marked, 'great', now).map((b) => b.id)).toEqual(['3']);
     expect(logBattles(sets, seasons, marked, 'ultra', now).map((b) => b.id)).toEqual(['2', '3']);
+  });
+});
+
+describe('hasCommunityData', () => {
+  const league = (id: string, kind: League['kind']): League => ({
+    id,
+    title: id,
+    short: id,
+    cp: 1500,
+    cup: id,
+    meta: id,
+    kind,
+    minCp: 1410,
+    include: [],
+    exclude: [],
+    metaSize: 0,
+  });
+
+  it('is true for an open league the community tracks', () => {
+    expect(hasCommunityData(settings({ league: 'great' }), [league('great', 'standard')])).toBe(true);
+  });
+
+  it('is false for a known league with no community data', () => {
+    expect(hasCommunityData(settings({ league: 'special1' }), [league('special1', 'special')])).toBe(
+      false,
+    );
+  });
+
+  it('counts a league not known yet (no league list, or not in it) as having it', () => {
+    expect(hasCommunityData(settings({ league: 'great' }), undefined)).toBe(true);
+    expect(hasCommunityData(settings({ league: 'ultra' }), [league('great', 'standard')])).toBe(true);
   });
 });
