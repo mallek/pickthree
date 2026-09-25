@@ -31,7 +31,7 @@ import type { Settings } from '../storage/db.ts';
 
 export const SOURCE_LABELS: Record<FacingSource, string> = {
   prior: 'PvPoke',
-  log: 'Your log',
+  log: 'Your meta',
   ladder: 'GBL',
   tournament: 'Tournaments',
   all: 'All',
@@ -41,7 +41,7 @@ export const SOURCE_LABELS: Record<FacingSource, string> = {
  * Active team filters: the four switches, a non-empty exclude list, a Team style other than Any,
  * and a Window other than This meta while a community source is picked (Window lives in the
  * Filters sheet, so a choice there always shows on the badge; it does not apply to PvPoke or
- * Your log, so it does not count then).
+ * Your meta, so it does not count then).
  */
 export function filterCount(settings: Settings): number {
   const f = settings.filters;
@@ -142,7 +142,7 @@ export function Teams() {
   const fellBack =
     isCommunity(choice.source) &&
     s.recommendation?.assumptions.facing.startsWith('PvPoke weights (community data unavailable)');
-  const logLabel = logCount >= 15 ? 'Your log' : `Your log: ${logCount} of 15`;
+  const logLabel = logCount >= 15 ? 'Your meta' : `Your meta: ${logCount} of 15`;
   const sourceOptions = (Object.keys(SOURCE_LABELS) as FacingSource[]).map((value) => ({
     value,
     label:

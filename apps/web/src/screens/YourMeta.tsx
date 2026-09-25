@@ -258,7 +258,7 @@ export function YourMeta() {
         <LeagueSwitcher compact />
         <p className="log-status meta" style={{ margin: 0 }}>
           {!blendOn
-            ? 'Pick "Your log" as the Source on Teams to weight teams by these battles.'
+            ? 'Pick "Your meta" as the Source on Teams to weight teams by these battles.'
             : logCount >= min
               ? `Weighting Teams and Counters by ${logCount} battles this season.`
               : `${logCount} of ${min} battles until your log weights Teams and Counters.`}

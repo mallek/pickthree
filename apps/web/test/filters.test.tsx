@@ -102,7 +102,7 @@ describe('Teams Filters sheet', () => {
     expect(latest?.state.settings.facing?.source).toBe('ladder');
   });
 
-  it('disables Window with its note for Your log and for PvPoke', async () => {
+  it('disables Window with its note for Your meta and for PvPoke', async () => {
     await storage.saveSettings({ ...DEFAULT_SETTINGS, facing: { source: 'log', window: 'meta' } });
     await mountSheet();
     expect(screen.getByLabelText('Window')).toBeDisabled();

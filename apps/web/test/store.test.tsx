@@ -284,7 +284,7 @@ describe('battle log actions', () => {
       await latest!.actions.runRecommend();
       await latest!.actions.loadCounters();
     });
-    // An old save (no facing field, blend on) reads as Your log.
+    // An old save (no facing field, blend on) reads as Your meta.
     const recOpts = (host.recommend as unknown as { mock: { calls: unknown[][] } }).mock
       .calls[0]![1] as {
       facing: { kind: string; battles: unknown[] };

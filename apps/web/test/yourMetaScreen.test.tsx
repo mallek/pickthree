@@ -4,7 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { YourMeta } from '../src/screens/YourMeta.tsx';
 import { AppProvider } from '../src/state/store.tsx';
-import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
 import { fakeHost } from './fakeHost.ts';
 
 describe('Your meta screen', () => {
@@ -64,6 +64,18 @@ describe('Your meta screen', () => {
     expect(screen.getAllByText(/outside the meta 3/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/2 battles/).length).toBeGreaterThan(0);
     expect(screen.getByText('1-1', { selector: '.team-row b' })).toBeInTheDocument();
+  });
+
+  it('names the Teams Source option "Your meta" when another source is picked', async () => {
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, facing: { source: 'prior', window: 'meta' } });
+    render(
+      <AppProvider host={fakeHost()}>
+        <YourMeta />
+      </AppProvider>,
+    );
+    expect(
+      await screen.findByText('Pick "Your meta" as the Source on Teams to weight teams by these battles.'),
+    ).toBeInTheDocument();
   });
 
   it('links out to the community meta site', async () => {

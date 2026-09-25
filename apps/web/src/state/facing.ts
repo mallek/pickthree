@@ -42,7 +42,7 @@ export function hasCommunityData(settings: Settings, leagues: League[] | undefin
   return league ? communityLeague(league) !== null : true;
 }
 
-/** This season's battles for one league, after any fresh mark: what Your log weights by. */
+/** This season's battles for one league, after any fresh mark: what the Your meta source weights by. */
 export function logBattles(
   sets: BattleSet[],
   seasons: Season[],

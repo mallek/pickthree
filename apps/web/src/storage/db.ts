@@ -50,7 +50,7 @@ export interface Settings {
   };
   /**
    * Whose opponents Teams, Counters and Build weight. Absent in older saves: the source reads as
-   * Your log unless yourMeta.blend was false (then PvPoke), and the window as This meta.
+   * Your meta (the log source) unless yourMeta.blend was false (then PvPoke), and the window as This meta.
    */
   facing?: {
     source?: FacingSource;

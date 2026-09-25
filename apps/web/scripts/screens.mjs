@@ -248,7 +248,7 @@ await page.evaluate(() => {
 });
 await page.waitForFunction(() => !document.querySelector('.ui-loading'), { timeout: 60_000 });
 await shot('teams-community');
-// Back to Your log, the default, so no later shot is community-weighted. The recommendation
+// Back to Your meta (the log), the default, so no later shot is community-weighted. The recommendation
 // lags the select a tick, so wait for quiet, give the new run time to start, then wait again.
 await page.evaluate(() => {
   const select = [...document.querySelectorAll('label')]

@@ -26,7 +26,7 @@ function settings(over: Partial<Settings>): Settings {
 }
 
 describe('facingSettings', () => {
-  it('reads an old save with the blend on (or absent) as Your log, This meta', () => {
+  it('reads an old save with the blend on (or absent) as Your meta, This meta', () => {
     expect(facingSettings(settings({}))).toEqual({ source: 'log', window: 'meta' });
     expect(facingSettings(settings({ yourMeta: { blend: true } }))).toEqual({
       source: 'log',

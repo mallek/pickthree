@@ -92,7 +92,7 @@ describe('filterCount', () => {
     expect(on('tournament', '30')).toBe(1);
     expect(on('all', '7')).toBe(1);
     expect(on('ladder', 'meta')).toBe(0);
-    // Window does not apply to PvPoke or Your log, so a leftover choice does not count.
+    // Window does not apply to PvPoke or Your meta, so a leftover choice does not count.
     expect(on('log', '7')).toBe(0);
     expect(on('prior', '30')).toBe(0);
   });
@@ -119,6 +119,31 @@ describe('Teams header', () => {
       screen.getByLabelText('Source').closest('.teams-controls'),
     );
     expect(screen.queryByText(/Team style:/)).toBeNull();
+  });
+
+  it('labels the log source "Your meta", with the count until 15 battles', async () => {
+    await mount(fakeHost());
+    expect(screen.getByRole('option', { name: 'Your meta: 0 of 15' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Your log/ })).toBeNull();
+  });
+
+  it('labels the log source plain "Your meta" at 15 battles', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: Array.from({ length: 15 }, (_, i) => ({
+        id: `b${i}`,
+        at: `2026-09-15T10:${String(i).padStart(2, '0')}:00Z`,
+        opponents: ['medicham'],
+        result: 'win' as const,
+        tanked: false,
+      })),
+      closed: false,
+    });
+    await mount(fakeHost());
+    expect(await screen.findByRole('option', { name: 'Your meta' })).toBeInTheDocument();
   });
 
   it('names the filter count on the icon and opens the Filters sheet', async () => {

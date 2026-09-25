@@ -128,7 +128,7 @@ describe('Counters screen, facing', () => {
         <Counters />
       </AppProvider>,
     );
-    // The default source is Your log.
+    // The default source is Your meta (the log).
     await waitFor(() => expect(calls.length).toBe(1));
     expect((calls[0]![1] as { facing: { kind: string } }).facing.kind).toBe('log');
     // Another screen (Teams) switches the Source; Counters must not keep the old weighting.
