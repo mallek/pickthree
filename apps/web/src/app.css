@@ -276,16 +276,6 @@ a {
   border-color: var(--divider);
   color: var(--muted);
 }
-.structure {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 8px;
-  border-radius: var(--r-sm);
-  font-size: 11px;
-  color: var(--muted);
-  border: 1px solid var(--divider);
-  white-space: nowrap;
-}
 .tm {
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -1250,12 +1240,6 @@ textarea.paste {
 }
 
 /* detail */
-.slot-card-head {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  gap: 12px;
-  align-items: start;
-}
 .kv {
   display: flex;
   justify-content: space-between;
@@ -1267,17 +1251,6 @@ textarea.paste {
 }
 .kv span:first-child {
   white-space: nowrap;
-}
-.hscroll {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  margin: 0 -20px;
-  padding: 0 20px;
-}
-.hscroll::-webkit-scrollbar {
-  display: none;
 }
 .mini {
   flex: none;
@@ -2046,29 +2019,51 @@ textarea.paste {
   font-size: 17px;
   font-weight: 500;
 }
-/* Team detail: the three members at a glance, above everything else. */
-.team-strip-card {
-  gap: 12px;
-}
-.team-strip-row {
+/* Team Analysis: the three members at a glance, each a button that opens its details row. */
+.analysis-strip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
-.strip-member {
+.analysis-strip-member {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 3px;
   min-width: 0;
+  min-height: 44px;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
   font-size: 13px;
+  cursor: pointer;
 }
-.strip-member b {
+.analysis-strip-member b {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.analysis-strip-line {
+  text-align: center;
+}
+.analysis-edit {
+  display: flex;
+  justify-content: center;
+}
+/* Team Analysis: the jump row, four text buttons, one line. */
+.analysis-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+}
+/* A jumped-to heading lands under the sticky header, not behind it. */
+.analysis-section {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 76px);
 }
 /* The header keeps the shared, symmetric 12px padding, so its title stays centred on the page and
    the extra row stays even. Only the actions move in, to end on the page gutter like the content
@@ -2082,7 +2077,7 @@ textarea.paste {
 /* The round link to the sister site, meta.pick3.gg: `.head-cog`'s own 36px circle (see below),
    sitting to the left of the settings cog on the four tab-root screens' page-head row
    (Teams.tsx, Counters.tsx, Collection.tsx, YourMeta.tsx). It is an `<a>`, not a `<button>`, so it
-   needs its own color and underline reset to match `ShareButton`, which is a plain `<button
+   needs its own color and underline reset to match `HeadCog`, which is a plain `<button
    class="head-cog">` and gets both for free from the global `button` and `:active` rules. */
 .meta-button {
   display: inline-flex;

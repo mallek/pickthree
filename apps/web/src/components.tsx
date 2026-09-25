@@ -5,7 +5,6 @@ import {
   type MoveChoice,
   type MoveEffect,
   type PokemonType,
-  type Structure,
   type VerdictLabel,
 } from '@pickthree/engine';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -102,32 +101,30 @@ export function useMetaRank(): (id: string) => MetaRank | undefined {
   return (id: string) => leagueInfo?.metaRanks[id];
 }
 
-/** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
- * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
- * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair. */
-/** The share icon, a box with an arrow out of the top, as an icon button. */
-export function ShareButton({ onClick, label = 'Share' }: { onClick: () => void; label?: string }) {
+/** The share icon, a box with an arrow out of the top: a bare glyph for an IconButton. */
+export function ShareGlyph() {
   return (
-    <button type="button" className="head-cog" aria-label={label} title={label} onClick={onClick}>
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M12 3v12" />
-        <path d="M8 7l4-4 4 4" />
-        <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
-      </svg>
-    </button>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3v12" />
+      <path d="M8 7l4-4 4 4" />
+      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </svg>
   );
 }
 
+/** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
+ * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
+ * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair. */
 export function useSpeciesSearch(query: string, limit = 30): string[] {
   const s = useAppState();
   const name = useName();
@@ -257,7 +254,7 @@ export const META_URL = 'https://meta.pick3.gg';
  * mark. On pick3's own header the pick3 mark means "home", so wearing it on a link that leaves
  * would read backwards; a destination badge should depict the destination, not the app it sits
  * in. Drawn in `currentColor` at the same stroke weight and size as this app's other head-row
- * icons (ShareButton, HeadCog: 20px, 1.8 stroke, round caps and joins), so it takes pick3's own
+ * icons (ShareGlyph, HeadCog: 20px, 1.8 stroke, round caps and joins), so it takes pick3's own
  * ink rather than meta's violet and looks native here. */
 export function MetaGlyph() {
   return (
@@ -458,10 +455,6 @@ export function MoveRows({
 
 export function FitTag({ fit }: { fit: 'Strong' | 'Solid' | 'Situational' | 'Weak' }) {
   return <span className={`fit fit-${fit.toLowerCase()}`}>{fit} fit</span>;
-}
-
-export function StructureTag({ structure }: { structure: Structure }) {
-  return <span className="structure">{structure === 'ABB' ? 'ABB line' : 'Balanced ABC'}</span>;
 }
 
 export function VerdictChip({ label }: { label: VerdictLabel }) {
