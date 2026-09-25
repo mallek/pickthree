@@ -1134,6 +1134,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     const scope = scopeOf(stateRef);
     const key = suggestKey(picks, s.settings.league ?? 'great');
+    // True once the board has moved on from the one this call was asked about, or the facing
+    // scope changed under it; either way whatever comes back next is for a question nobody is
+    // asking any more.
+    const stale = (): boolean => {
+      const now = stateRef.current;
+      return !scope.current() || suggestKey(now.picks, now.settings.league ?? 'great') !== key;
+    };
     dispatch({ type: 'suggest-start' });
     try {
       const { facing } = await facingNow();
@@ -1150,12 +1157,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           )
         : null;
       const community = await communityCores(s.settings, s.leagueInfo.id, boardWindow);
-      {
-        const now = stateRef.current;
-        if (!scope.current() || suggestKey(now.picks, now.settings.league ?? 'great') !== key) {
-          dispatch({ type: 'drop', what: 'suggest' });
-          return;
-        }
+      if (stale()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
       }
       const suggestion = await h.suggestTeammates(
         picks,
@@ -1171,12 +1175,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         },
         scope.league,
       );
-      {
-        const now = stateRef.current;
-        if (!scope.current() || suggestKey(now.picks, now.settings.league ?? 'great') !== key) {
-          dispatch({ type: 'drop', what: 'suggest' });
-          return;
-        }
+      if (stale()) {
+        dispatch({ type: 'drop', what: 'suggest' });
+        return;
       }
       dispatch({ type: 'suggest-done', suggestion });
     } catch (e) {

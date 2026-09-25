@@ -58,5 +58,7 @@ export async function shareLink(
 export function clearShareMarker(): void {
   const url = new URL(window.location.href);
   url.searchParams.delete(SHARE_PARAM);
-  window.history.replaceState(null, '', url.toString());
+  // Keep this entry's existing state (history.ts's markEntry stamps pick3Depth on it); passing
+  // null here would wipe that stamp out from under it.
+  window.history.replaceState(window.history.state, '', url.toString());
 }
