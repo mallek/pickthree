@@ -1,5 +1,5 @@
 import type { MoveChoice, MovePool } from '@pickthree/engine';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MovePicker } from '../src/components/MovePicker.tsx';
 
@@ -29,6 +29,13 @@ const pool: MovePool = {
   ],
   recommended: { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
 };
+
+const f1 = 'BUBBLE';
+const c1 = 'ICE_BEAM';
+const c2 = 'PLAY_ROUGH';
+const c3 = 'HYDRO_PUMP';
+
+const nameOf = (id: string): string => [...pool.fast, ...pool.charged].find((m) => m.moveId === id)?.name ?? id;
 
 describe('MovePicker', () => {
   it('shows the pool with the chosen moves marked', () => {
@@ -62,7 +69,7 @@ describe('MovePicker', () => {
     });
   });
 
-  it('a third charged move replaces the one picked first', () => {
+  it('clicking a third charged move does nothing when two are already selected', () => {
     const onChange = vi.fn();
     render(
       <MovePicker
@@ -72,10 +79,7 @@ describe('MovePicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('checkbox', { name: /Hydro Pump/ }));
-    expect(onChange).toHaveBeenCalledWith({
-      fast: 'BUBBLE',
-      charged: ['PLAY_ROUGH', 'HYDRO_PUMP'],
-    });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('unticks a charged move but never the last one', () => {
@@ -116,5 +120,46 @@ describe('MovePicker', () => {
     expect(onChange).toHaveBeenCalledWith({ fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] });
     expect(screen.getByRole('checkbox', { name: /Play Rough/ })).toHaveTextContent('Elite TM');
     expect(screen.getByRole('checkbox', { name: /Ice Beam/ })).toHaveTextContent('7');
+  });
+
+  it('never bumps: with two picked, the other charged rows are disabled with a hint', () => {
+    const onChange = vi.fn();
+    render(<MovePicker pool={pool} value={{ fast: f1, charged: [c1, c2] }} onChange={onChange} />);
+    const third = screen.getByRole('checkbox', { name: new RegExp(nameOf(c3)) });
+    expect(third).toBeDisabled();
+    expect(screen.getByText('Untick one to pick another')).toBeInTheDocument();
+    fireEvent.click(third);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps the last charged move ticked', () => {
+    const onChange = vi.fn();
+    render(<MovePicker pool={pool} value={{ fast: f1, charged: [c1] }} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: new RegExp(nameOf(c1)) }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByText('Untick one to pick another')).not.toBeInTheDocument();
+  });
+
+  it('has no hint and no disabled row when the pool has only two charged moves', () => {
+    const small = { ...pool, charged: pool.charged.slice(0, 2) };
+    render(<MovePicker pool={small} value={{ fast: f1, charged: [c1, c2] }} onChange={vi.fn()} />);
+    expect(screen.queryByText('Untick one to pick another')).not.toBeInTheDocument();
+    for (const row of screen.getAllByRole('checkbox')) {
+      expect(row).not.toBeDisabled();
+    }
+  });
+
+  it('shows the recommended set and tags what differs from it', () => {
+    render(
+      <MovePicker
+        pool={pool}
+        value={{ fast: pool.recommended.fast, charged: [c3] }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/^Recommended:/)).toBeInTheDocument();
+    const changed = screen.getByRole('checkbox', { name: new RegExp(nameOf(c3)) });
+    expect(within(changed).getByText('Changed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'How move counts work' })).toBeInTheDocument();
   });
 });

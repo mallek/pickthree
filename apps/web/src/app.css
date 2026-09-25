@@ -2578,6 +2578,13 @@ input[type='range'] {
 .move-opt:last-child {
   border-bottom: 0;
 }
+.move-opt:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+.move-opt:disabled .move-opt-mark {
+  border-color: var(--divider);
+}
 .move-opt-mark {
   width: 16px;
   height: 16px;
@@ -2598,9 +2605,8 @@ input[type='range'] {
   color: var(--accent-text);
   font-weight: 500;
 }
-.move-picker-reset {
-  align-self: flex-start;
-  padding-left: 0;
+.move-picker-rec {
+  margin: 0;
 }
 .hdr .head-cog {
   justify-self: end;
