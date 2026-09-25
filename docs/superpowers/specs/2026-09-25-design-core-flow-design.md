@@ -28,8 +28,9 @@ action). Each page passes the audit and Travis signs its record before the next 
 - **Every team is an expandable row, the first one open** (option B).
 - **Headline score on Analysis is battle strength** (coverage, consistency, safety), not the total
   that includes cost and accessibility.
-- **Source and Window stay visible selects**, labeled, not hidden in Filters. Team filters and
-  Team style live in the Teams Filters sheet (already built).
+- **Source stays a visible, labeled select; Window moves into the Filters sheet** (changed
+  2026-09-25 from rendered options; see Your Teams). Team filters and Team style live in the
+  Teams Filters sheet (already built).
 - **Build keeps today's cards and search.** Find best order moves to the top; a "Choosing <slot>"
   line; total team cost; suggestions run on their own, with + Add, and never fill slots on their
   own.
