@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Recommendation, TeamRecommendation } from '@pickthree/engine';
 import { facingSummary, Teams } from '../src/screens/Teams.tsx';
 import { AppProvider, hashFor, useActions, useAppState, type AppState } from '../src/state/store.tsx';
@@ -69,6 +69,11 @@ describe('Teams list', () => {
     resetCommunityMetaCache();
     latest = null;
     await saveEmptyCollection();
+  });
+
+  // A failed assertion must not leave a stubbed global (matchMedia, fetch) to later tests.
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('shows every team as a row, the first one open, in the order the engine sent', async () => {
@@ -250,7 +255,6 @@ describe('Teams list', () => {
     expect(rowHeads()).toHaveLength(0);
     await new Promise((r) => setTimeout(r, 50));
     expect((host.recommend as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
-    vi.unstubAllGlobals();
   });
 
   it('keeps the footer counts', async () => {
