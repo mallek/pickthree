@@ -3124,3 +3124,28 @@ input[type='range'] {
   margin: 0;
   font-size: var(--fs-body);
 }
+.teams-controls {
+  gap: var(--space);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.teams-summary {
+  margin: 0;
+}
+.teams-list {
+  gap: 12px;
+}
+.teams-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.teams-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space);
+  padding-top: 8px;
+}
+.teams-footer {
+  text-align: center;
+}

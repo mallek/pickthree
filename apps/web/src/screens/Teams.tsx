@@ -1,89 +1,26 @@
 import type { FacingSource, TeamRecommendation } from '@pickthree/engine';
 import type { WindowKey } from '@pickthree/engine/meta';
-import { Select } from '@pickthree/ui';
-import { useEffect } from 'react';
 import {
-  Chip,
-  FitTag,
-  HeadCog,
-  MetaButton,
-  PokemonToken,
-  Progress,
-  RoleLabel,
-  StructureTag,
-  useLogCount,
-  useName,
-  NoCollection,
-} from '../components.tsx';
-import { costLine } from '../format.ts';
+  Button,
+  Empty,
+  ErrorState,
+  ExpandRow,
+  FilterButton,
+  Header,
+  IconButton,
+  ProgressCard,
+  Select,
+} from '@pickthree/ui';
+import { useEffect, useState } from 'react';
+import { CogGlyph, MetaGlyph, META_URL, NoCollection, Progress, useLogCount } from '../components.tsx';
+import { TeamCardBody } from '../components/team/TeamCardBody.tsx';
+import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { communityLeague, WINDOW_LABELS } from '../communityMeta.ts';
-import { facingSettings, isCommunity } from '../state/facing.ts';
+import { shareEnabled } from '../metaShare.ts';
+import { facingSettings, isCommunity, type FacingChoice } from '../state/facing.ts';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
 import type { Settings } from '../storage/db.ts';
-
-export function TeamCard({
-  team,
-  first,
-  href,
-  onOpen,
-}: {
-  team: TeamRecommendation;
-  first: boolean;
-  /** The team's analysis page, behind the small link at the foot of the card. */
-  href: string;
-  /** Tapping the card: load the team into Build for edits. */
-  onOpen: () => void;
-}) {
-  const name = useName();
-  return (
-    <div
-      className={`team-card${first ? ' first' : ''}`}
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-    >
-      <div className="between">
-        <span className="row">
-          <FitTag fit={team.score.fit} />
-          <StructureTag structure={team.structure} />
-        </span>
-        <span className="diff">
-          <span className="small">{team.score.difficulty} to play</span>
-          <span className="diff-why">{team.score.difficultyWhy}</span>
-        </span>
-      </div>
-      <div className="slots3">
-        {team.slots.map((s) => (
-          <div className="slot" key={s.candidate.build.specimenId}>
-            <PokemonToken speciesId={s.candidate.build.speciesId} size={52} />
-            <span className="slot-name">{name(s.candidate.build.speciesId)}</span>
-            <RoleLabel role={s.role} />
-          </div>
-        ))}
-      </div>
-      {first ? (
-        <p className="meta" style={{ textAlign: 'center' }}>
-          Lead opens the battle. Safe Switch answers a bad start. Closer finishes once shields are
-          gone.
-        </p>
-      ) : null}
-      <p style={{ fontSize: 14 }}>{team.explanation.why}</p>
-      <div className="cost-line">
-        <span>{costLine(team.cost)}</span>
-        <a className="team-details" href={href} onClick={(e) => e.stopPropagation()}>
-          Analysis &rsaquo;
-        </a>
-      </div>
-    </div>
-  );
-}
 
 export const SOURCE_LABELS: Record<FacingSource, string> = {
   prior: 'PvPoke',
@@ -103,9 +40,23 @@ export function filterCount(settings: Settings): number {
   );
 }
 
+/** One supporting line under the controls: what the team list is weighted by. */
+export function facingSummary(choice: FacingChoice, logCount: number, fellBack: boolean): string {
+  if (fellBack) {
+    return 'PvPoke weighting (community data unavailable)';
+  }
+  if (choice.source === 'prior') {
+    return 'PvPoke weighting';
+  }
+  if (choice.source === 'log') {
+    return logCount >= 15 ? 'Your log weighting' : 'PvPoke weighting until your log reaches 15 battles';
+  }
+  return `${WINDOW_LABELS[choice.window]} · ${SOURCE_LABELS[choice.source]} weighting`;
+}
+
 export function Teams() {
   const s = useAppState();
-  const { navigate, runRecommend, updateSettings, openFilters, setPick } = useActions();
+  const { navigate, runRecommend, updateSettings, openFilters, openSheet, setPick } = useActions();
   /** Tapping a team loads it into Build as your specimens at the recommended stage. */
   const editInBuild = (t: TeamRecommendation): void => {
     t.slots.forEach((slot, i) => {
@@ -117,6 +68,10 @@ export function Teams() {
   const logCount = useLogCount();
   const key = filterKey(s.settings, s.logVersion, s.community);
   const stale = s.recommendedWith !== key;
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const isOpen = (id: string, i: number): boolean => open[id] ?? i === 0;
+  const toggle = (id: string, i: number): void =>
+    setOpen((cur) => ({ ...cur, [id]: !(cur[id] ?? i === 0) }));
 
   useEffect(() => {
     if (
@@ -171,20 +126,27 @@ export function Teams() {
     disabled: isCommunity(value) && !hasCommunity,
   }));
   const filters = filterCount(s.settings);
+  const sharing = shareEnabled(s.settings);
 
   return (
     <div className="screen">
       <div className="page-head">
-        <div className="between">
-          <h2>Your Teams</h2>
-          <span className="row">
-            <span className="meta">{s.collection.report.recognized} Pokémon</span>
-            <MetaButton />
-            <HeadCog />
-          </span>
-        </div>
+        <Header
+          variant="top"
+          title="Your Teams"
+          actions={
+            <>
+              <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
+                <MetaGlyph />
+              </IconButton>
+              <IconButton label="Settings" onClick={openSheet}>
+                <CogGlyph />
+              </IconButton>
+            </>
+          }
+        />
         <LeagueSwitcher />
-        <div className="row" style={{ gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="row teams-controls">
           <Select<FacingSource>
             label="Source"
             value={choice.source}
@@ -205,13 +167,12 @@ export function Teams() {
               updateSettings((cur) => ({ ...cur, facing: { ...cur.facing, window } }))
             }
           />
-          <Chip on={filters > 0} onClick={openFilters}>
-            {filters > 0 ? `Filters: ${filters}` : 'Filters'}
-          </Chip>
+          <FilterButton count={filters} onClick={openFilters} />
         </div>
         {!hasCommunity ? <span className="meta">No community data for this league</span> : null}
+        <p className="meta teams-summary">{facingSummary(choice, logCount, Boolean(fellBack))}</p>
       </div>
-      <div className="scroll" style={{ gap: 14 }}>
+      <div className="scroll teams-list">
         <button type="button" className="action-row" onClick={() => navigate({ screen: 'build' })}>
           <span>
             <b>Build your own team</b>
@@ -222,25 +183,44 @@ export function Teams() {
         {s.boot === 'loading' ? <Progress stage="boot" done={0} total={0} /> : null}
         {s.recommending && s.progress ? <Progress {...s.progress} /> : null}
         {s.recommending && !s.progress ? <Progress stage="eligibility" done={0} total={0} /> : null}
-        {s.recommendError ? <div className="error">{s.recommendError}</div> : null}
+        {s.recommendError ? <ErrorState line={s.recommendError} /> : null}
         {!s.recommending && s.recommendation && teams.length === 0 ? (
-          <p className="muted" style={{ padding: '32px 12px', textAlign: 'center' }}>
-            No team fits these filters. Loosen one to see recommendations again.
-          </p>
+          <Empty
+            line="No team fits these filters. Loosen one to see recommendations again."
+            action={<FilterButton count={filters} onClick={openFilters} />}
+          />
         ) : null}
         {teams.map((t, i) => (
-          <TeamCard
-            key={t.id}
-            team={t}
-            first={i === 0}
-            href={hashFor({ screen: 'team', id: t.id })}
-            onOpen={() => editInBuild(t)}
-          />
+          <div className="teams-item" key={t.id}>
+            <ExpandRow
+              summary={<TeamRowSummary team={t} />}
+              open={isOpen(t.id, i)}
+              onToggle={() => toggle(t.id, i)}
+            >
+              <TeamCardBody team={t} legend={i === 0} />
+              <div className="teams-actions">
+                <Button variant="text" href={hashFor({ screen: 'team', id: t.id })}>
+                  View analysis
+                </Button>
+                <Button variant="text" onClick={() => editInBuild(t)}>
+                  Edit team
+                </Button>
+              </div>
+            </ExpandRow>
+            {i === 0 && logCount < 15 ? (
+              <ProgressCard
+                title="Make these teams personal"
+                done={logCount}
+                goal={15}
+                line={`Log ${15 - logCount} more ${15 - logCount === 1 ? 'battle' : 'battles'} to weight teams by what you actually face.`}
+                {...(sharing ? { contribution: 'Anonymous logs also improve the live meta.' } : {})}
+              />
+            ) : null}
+          </div>
         ))}
         {s.recommendation ? (
-          <p className="meta" style={{ textAlign: 'center' }}>
-            {s.recommendation.stats.triosScored.toLocaleString('en-US')} combinations scored,{' '}
-            {s.recommendation.stats.finalists} simulated with your exact Pokémon.
+          <p className="meta teams-footer">
+            {`${s.recommendation.stats.triosScored.toLocaleString('en-US')} combinations scored · ${s.recommendation.stats.finalists} simulated with your exact Pokémon`}
           </p>
         ) : null}
       </div>
