@@ -282,7 +282,7 @@ describe('Team Analysis', () => {
     await mountRecommended('a');
     const jumps: [string, string][] = [
       ['Battle plan', 'plan'],
-      ['Matchups', 'matchups'],
+      ['Threats', 'threats'],
       ['Pokémon', 'pokemon'],
       ['Details', 'details'],
     ];
@@ -293,7 +293,7 @@ describe('Team Analysis', () => {
       expect((spy.mock.contexts[0] as HTMLElement).id).toBe(id);
     }
     expect(document.getElementById('plan')).toHaveTextContent('Battle plan');
-    expect(document.getElementById('matchups')).toHaveTextContent('Matchups to remember');
+    expect(document.getElementById('threats')).toHaveTextContent('Threats');
     expect(document.getElementById('pokemon')).toHaveTextContent(/^Pokémon details$/);
     expect(document.getElementById('details')).toHaveTextContent('Why this team');
   });
@@ -304,13 +304,13 @@ describe('Team Analysis', () => {
     const reduce = (q: string) => ({ matches: q.includes('reduce') }) as MediaQueryList;
     vi.stubGlobal('matchMedia', vi.fn(reduce));
     await mountRecommended('a');
-    fireEvent.click(screen.getByRole('button', { name: 'Matchups' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Threats' }));
     expect(spy).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
     vi.stubGlobal(
       'matchMedia',
       vi.fn(() => ({ matches: false }) as MediaQueryList),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Matchups' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Threats' }));
     expect(spy).toHaveBeenLastCalledWith({ block: 'start', behavior: 'smooth' });
   });
 

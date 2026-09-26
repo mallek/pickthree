@@ -22,9 +22,9 @@ import {
   useName,
 } from '../components.tsx';
 import { BattlePlan } from '../components/team/BattlePlan.tsx';
-import { Matchups } from '../components/team/Matchups.tsx';
 import { PokemonDetails } from '../components/team/PokemonDetails.tsx';
 import { ScoreCard, type CustomNotes } from '../components/team/ScoreCard.tsx';
+import { KeyWins, SwitchList, Threats } from '../components/team/Threats.tsx';
 import { WhyThisTeam } from '../components/team/WhyThisTeam.tsx';
 import { costLine, SEP } from '../format.ts';
 import { shareLink } from '../share.ts';
@@ -34,7 +34,7 @@ import { picksFromTeam, teamLink } from '../teamLink.ts';
 /** The jump row: each button scrolls its section's heading to the top, under the sticky header. */
 const JUMPS = [
   { label: 'Battle plan', id: 'plan' },
-  { label: 'Matchups', id: 'matchups' },
+  { label: 'Threats', id: 'threats' },
   { label: 'Pokémon', id: 'pokemon' },
   { label: 'Details', id: 'details' },
 ] as const;
@@ -306,12 +306,9 @@ export function TeamDetail({ id }: { id: string }) {
           <BattlePlan team={team} />
         </section>
 
-        <section className="stack">
-          <h3 id="matchups" className="analysis-section">
-            Matchups to remember
-          </h3>
-          <Matchups team={team} leadName={name(lead.candidate.build.speciesId)} />
-        </section>
+        <Threats team={team} />
+
+        <SwitchList team={team} leadName={name(lead.candidate.build.speciesId)} />
 
         <section className="stack">
           <h3 id="pokemon" className="analysis-section">
@@ -324,6 +321,8 @@ export function TeamDetail({ id }: { id: string }) {
             onToggle={(i) => setRows((cur) => cur.map((o, j) => (j === i ? !o : o)))}
           />
         </section>
+
+        <KeyWins team={team} />
 
         <section className="stack">
           <h3 id="details" className="analysis-section">

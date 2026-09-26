@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
+import type { KeyMatchup, SwitchAdvice } from '@pickthree/engine';
 import { BattlePlan } from '../src/components/team/BattlePlan.tsx';
-import { Matchups } from '../src/components/team/Matchups.tsx';
 import { PokemonDetails } from '../src/components/team/PokemonDetails.tsx';
 import { ScoreCard } from '../src/components/team/ScoreCard.tsx';
+import { KeyWins, SwitchList, Threats } from '../src/components/team/Threats.tsx';
 import { WhyThisTeam } from '../src/components/team/WhyThisTeam.tsx';
 import { costLine, SEP } from '../src/format.ts';
 import { AppProvider } from '../src/state/store.tsx';
@@ -15,6 +16,16 @@ const NO_WINS =
   'No Pokémon in the meta group is a clear win for this team in the simulated scenarios.';
 
 const wrap = (ui: ReactNode) => render(<AppProvider host={fakeHost()}>{ui}</AppProvider>);
+
+/** A KeyMatchup built from makeTeam's own first key threat, with a fresh opponent and line. */
+function threat(opponent: string, line: string): KeyMatchup {
+  return { ...makeTeam().explanation.keyThreats[0]!, opponent, opponentName: opponent, line };
+}
+
+/** A SwitchAdvice built from makeTeam's own first switch entry, with a fresh opponent. */
+function switchRow(opponent: string): SwitchAdvice {
+  return { ...makeTeam().explanation.switchPlan[0]!, opponent, opponentName: opponent };
+}
 
 describe('ScoreCard, the hero card', () => {
   it('shows the number alone, the structure, the fit and five bars', () => {
@@ -236,33 +247,61 @@ describe('BattlePlan', () => {
   });
 });
 
-describe('Matchups', () => {
-  it('shows one key win and one key threat, then everything behind Show all', () => {
-    const team = makeTeam(); // needs >= 2 keyWins, >= 2 keyThreats, >= 1 switchPlan entry
-    wrap(<Matchups team={team} leadName="Tinkaton" />);
-    expect(screen.getAllByTestId('key-win')).toHaveLength(1);
-    expect(screen.getAllByTestId('key-threat')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
-    expect(screen.getAllByTestId('key-win')).toHaveLength(team.explanation.keyWins.length);
-    expect(screen.getByText('When to switch')).toBeInTheDocument();
-  });
-
-  it('heads one card "Key win" and one "Key threat", and says so when there is no win', () => {
+describe('Threats', () => {
+  it('lists the engine threats as rows and counts the rest that beat the team', () => {
     const team = makeTeam();
-    wrap(<Matchups team={team} leadName="Tinkaton" />);
-    expect(screen.getByRole('heading', { name: 'Key win' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Key threat' })).toBeInTheDocument();
-    expect(screen.queryByText(NO_WINS)).not.toBeInTheDocument();
+    team.explanation.keyThreats = [threat('a', 'A line.'), threat('b', 'B line.')];
+    team.score.uncoveredOpponents = ['a', 'b', 'c', 'd', 'e'];
+    wrap(<Threats team={team} />);
+    expect(screen.getAllByTestId('threat-row')).toHaveLength(2);
+    expect(screen.getByText('and 3 more beat this team')).toBeInTheDocument();
   });
 
-  it('with no key wins, a muted line stands in, collapsed and expanded', () => {
+  it('says so when nothing beats all three', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [];
+    team.score.uncoveredOpponents = [];
+    wrap(<Threats team={team} />);
+    expect(screen.getByText(/Nothing in the meta group beats all three/)).toBeInTheDocument();
+    expect(screen.queryByText(/more beat this team/)).not.toBeInTheDocument();
+  });
+});
+
+describe('SwitchList', () => {
+  it('skips opponents already under Threats, shows five, Show all up to eight', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [threat('o1', 'x')];
+    team.explanation.switchPlan = Array.from({ length: 10 }, (_, i) => switchRow(`o${i + 1}`));
+    wrap(<SwitchList team={team} leadName="Tinkaton" />);
+    expect(screen.queryByTestId('switch-o1')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId(/^switch-/)).toHaveLength(5);
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getAllByTestId(/^switch-/)).toHaveLength(8);
+  });
+
+  it('says so when nothing beats the lead', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [];
+    team.explanation.switchPlan = [];
+    wrap(<SwitchList team={team} leadName="Tinkaton" />);
+    expect(
+      screen.getByText('Nothing in the meta group beats your lead in a 1-shield fight.'),
+    ).toBeInTheDocument();
+  });
+});
+
+describe('KeyWins', () => {
+  it('lists the engine key wins as rows', () => {
+    const team = makeTeam();
+    wrap(<KeyWins team={team} />);
+    expect(screen.getAllByTestId('key-win')).toHaveLength(team.explanation.keyWins.length);
+  });
+
+  it('says so when there is no win', () => {
     const team = makeTeam();
     team.explanation.keyWins = [];
-    wrap(<Matchups team={team} leadName="Tinkaton" />);
+    wrap(<KeyWins team={team} />);
     expect(screen.queryAllByTestId('key-win')).toHaveLength(0);
-    expect(screen.getByText(NO_WINS)).toHaveClass('muted');
-    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
-    expect(screen.getByRole('heading', { name: 'Key wins' })).toBeInTheDocument();
     expect(screen.getByText(NO_WINS)).toHaveClass('muted');
   });
 });
