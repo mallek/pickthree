@@ -111,7 +111,8 @@ describe('New Set on the foundation', () => {
       fireEvent.click(start);
     });
     await waitFor(async () => expect(await storage.loadSets('great')).toHaveLength(1));
-    expect(window.location.hash).toBe('#/meta');
+    // The set is saved before startSet resolves and go() navigates, so the hash can lag the save.
+    await waitFor(() => expect(window.location.hash).toBe('#/meta'));
   });
 
   it('shows a From pick3 row reading like Teams, the number and fit', async () => {
@@ -174,7 +175,8 @@ describe('New Set on the foundation', () => {
         ],
       });
     });
-    expect(window.location.hash).toBe('#/meta');
+    // The set is saved before startSet resolves and go() navigates, so the hash can lag the save.
+    await waitFor(() => expect(window.location.hash).toBe('#/meta'));
   });
 
   it('clearing a slot after a From pick3 tap drops its moves: the refilled team starts without them', async () => {
