@@ -40,11 +40,14 @@ export function NoticeToast() {
     const t = window.setTimeout(() => notify(null), info ? INFO_MS : WARN_MS);
     return () => window.clearTimeout(t);
   }, [message, info, notify]);
+  // Measured again when the page changes under a confirmation, since the new page's foot bar
+  // (the tab bar, or Log a Battle's taller result bar) sets where it must sit.
+  const route = s.route;
   useLayoutEffect(() => {
     if (message && info) {
       setBottom(footClearance());
     }
-  }, [message, info]);
+  }, [message, info, route]);
   if (!message) {
     return null;
   }

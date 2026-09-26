@@ -3019,13 +3019,13 @@ input[type='range'] {
   line-height: 1.2;
 }
 /* Log a Battle's slots fill their column, so a two-line name has the room and the remove button
-   stays inside the slot. */
-.slot-wrap {
+   stays inside the slot. Scoped to the opponent slots: Build's pick cards use `.slot-wrap` too. */
+.opp-slots > .slot-wrap {
   position: relative;
   justify-self: stretch;
   min-width: 0;
 }
-.slot-wrap > .opp-slot {
+.opp-slots > .slot-wrap > .opp-slot {
   width: 100%;
 }
 /* A 44px target around the 24px circle, which sits on the token's upper right (its centre 18px

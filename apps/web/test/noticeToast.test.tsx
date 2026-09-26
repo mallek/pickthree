@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NoticeToast } from '../src/components/NoticeToast.tsx';
-import { AppProvider, useActions, type NoticeTone } from '../src/state/store.tsx';
+import { AppProvider, useActions, useAppState, type NoticeTone } from '../src/state/store.tsx';
 import { resetDbForTests } from '../src/storage/db.ts';
 import { fakeHost } from './fakeHost.ts';
 
@@ -24,6 +24,20 @@ function renderNotice(message: string, tone?: NoticeTone) {
     </AppProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'raise' }));
+}
+
+/** A stand-in page foot: the tab bar on Your Meta, Log a Battle's taller result bar on its page. */
+function Foot() {
+  const s = useAppState();
+  const { navigate } = useActions();
+  return (
+    <>
+      <button type="button" onClick={() => navigate({ screen: 'meta-log' })}>
+        log a battle
+      </button>
+      {s.route.screen === 'meta-log' ? <div className="result-bar" /> : <nav className="tabs" />}
+    </>
+  );
 }
 
 describe('NoticeToast', () => {
@@ -75,5 +89,46 @@ describe('NoticeToast', () => {
       vi.advanceTimersByTime(200);
     });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it("moves a confirmation above the new page's bar when the page changes while it is up", async () => {
+    window.history.replaceState(null, '', '#/meta');
+    // jsdom lays nothing out: each bar's top is stubbed, the tab bar 56px tall, the result bar 120.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const h = this.classList.contains('result-bar')
+        ? 120
+        : this.classList.contains('tabs')
+          ? 56
+          : 0;
+      const top = window.innerHeight - h;
+      return {
+        top,
+        bottom: top + h,
+        height: h,
+        left: 0,
+        right: 0,
+        width: 0,
+        x: 0,
+        y: top,
+      } as DOMRect;
+    });
+    render(
+      <AppProvider host={fakeHost()}>
+        <Notify message="Link copied." tone="info" />
+        <Foot />
+        <NoticeToast />
+      </AppProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'raise' }));
+    expect(screen.getByRole('status')).toHaveStyle({ bottom: '68px' });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'log a battle' }));
+    });
+    // The route lands through the hashchange event; the notice is still up (well inside 3 s).
+    await waitFor(() => expect(document.querySelector('.result-bar')).not.toBeNull());
+    expect(screen.getByRole('status')).toHaveStyle({ bottom: '132px' });
+    vi.restoreAllMocks();
   });
 });

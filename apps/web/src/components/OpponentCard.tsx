@@ -48,7 +48,13 @@ function longestWord(name: string): number {
   return Math.max(...name.split(' ').map((w) => w.length));
 }
 
-/** A rating this close to 500 is a near coin flip: its cell is outlined, not filled. */
+/**
+ * A rating this close to 500 is a near coin flip: its cell is outlined, not filled. The band is
+ * wider on purpose than the engine's "Close; shields decide it" (`CLOSE_RATING` 450 in
+ * `explain.ts`, a 50 margin): the grid is a visual two-step, solid for a clear result, outlined for
+ * anything that could turn on a switch or a bait. Whether the two should share one number is an
+ * open item for Travis in the Log a Battle record.
+ */
 const CLOSE_MARGIN = 100;
 
 /**

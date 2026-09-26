@@ -865,29 +865,35 @@ await page.waitForFunction(
 await shot('log-battle-edit', false, { mustShow: '.result-bar .ui-btn-primary' });
 await assertTitleCentred('edit battle');
 
-// Put the running set back as it was, and reload so the app reads it again.
-await page.evaluate(
-  (before) =>
-    new Promise((resolve, reject) => {
-      const open = indexedDB.open('pickthree');
-      open.onerror = () => reject(open.error);
-      open.onsuccess = () => {
-        const db = open.result;
-        const tx = db.transaction('battles', 'readwrite');
-        tx.objectStore('battles').put(before);
-        tx.oncomplete = () => {
-          db.close();
-          resolve();
+/**
+ * Puts the running set back as it was before the steps that add battles to it, and reloads so the
+ * app reads it again. Teams runs the recommendation again after the reload, for New Set's "From
+ * pick3" rows.
+ */
+const restoreRunningSet = async () => {
+  await page.evaluate(
+    (before) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('pickthree');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('battles', 'readwrite');
+          tx.objectStore('battles').put(before);
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
         };
-        tx.onerror = () => reject(tx.error);
-      };
-    }),
-  setBefore,
-);
-// Teams runs the recommendation again after the reload, for New Set's "From pick3" rows.
-await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
-await page.reload({ waitUntil: 'networkidle0' });
-await settled();
+      }),
+    setBefore,
+  );
+  await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
+  await page.reload({ waitUntil: 'networkidle0' });
+  await settled();
+};
+await restoreRunningSet();
 
 console.log('log a battle');
 await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
@@ -949,11 +955,12 @@ await page.setViewport({
 
 console.log('log a battle, saved');
 // The confirmation clears itself after about 3 seconds, sooner than a shot and its audit in two
-// themes, so a light shot that finds it gone logs one more battle to bring it back.
+// themes, so each shot starts from a fresh one: any notice still up is tapped away first (it
+// could otherwise clear between this check and the shot), then one more Win is logged. Those
+// Wins land in the running set, which is put back as it was after this step.
 const logWin = async () => {
-  if (await page.$('.notice-toast.notice-info')) {
-    return;
-  }
+  await page.evaluate(() => document.querySelector('.notice-toast .notice-tap')?.click());
+  await page.waitForSelector('.notice-toast', { hidden: true });
   await page.$eval('.result-row .ui-btn-win', (el) => el.click());
   await page.waitForSelector('.notice-toast.notice-info[role="status"]', { timeout: 15_000 });
 };
@@ -972,8 +979,9 @@ if (!noticePlace || !noticePlace.clear || noticePlace.gap < 4 || noticePlace.gap
   throw new Error(`saved notice: not just above the result bar: ${JSON.stringify(noticePlace)}`);
 }
 await shot('log-battle-saved', false, { mustShow: '.notice-toast.notice-info', before: logWin });
-await page.$eval('.notice-toast .notice-tap', (el) => el.click());
+await page.evaluate(() => document.querySelector('.notice-toast .notice-tap')?.click());
 await page.waitForSelector('.notice-toast', { hidden: true });
+await restoreRunningSet();
 
 console.log('new set');
 await page.goto(`${base}/#/meta/new`, { waitUntil: 'networkidle0' });
