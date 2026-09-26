@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { BattlePlan } from '../src/components/team/BattlePlan.tsx';
@@ -16,20 +16,127 @@ const NO_WINS =
 
 const wrap = (ui: ReactNode) => render(<AppProvider host={fakeHost()}>{ui}</AppProvider>);
 
-describe('ScoreCard', () => {
-  it('headlines battle strength, not the total, with one primary action', () => {
+describe('ScoreCard, the hero card', () => {
+  it('shows the number alone, the structure, the fit and five bars', () => {
     const team = makeTeam({ battle: 81.6, total: 64 });
-    const take = vi.fn();
-    wrap(<ScoreCard team={team} custom={null} onTakeToBattle={take} />);
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={null}
+        onTakeToBattle={() => undefined}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
+      />,
+    );
     expect(screen.getByText('82')).toBeInTheDocument();
-    expect(screen.queryByText('64')).not.toBeInTheDocument();
-    expect(screen.getByText(/^Run it in this order:/)).toBeInTheDocument();
-    screen.getByRole('button', { name: 'Take to battle' }).click();
-    expect(take).toHaveBeenCalledTimes(1);
-    expect(document.querySelectorAll('.ui-btn-primary')).toHaveLength(1);
+    expect(screen.queryByText(/\/ 100/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Balanced ABC|ABB line/ })).toBeInTheDocument();
+    for (const label of ['Coverage', 'Consistency', 'Safety', 'Affordable', 'Accessibility']) {
+      expect(
+        screen.getByRole('meter', { name: new RegExp(`^${label} \\d+ of 100$`) }),
+      ).toBeInTheDocument();
+    }
+    expect(screen.queryByText(/Run it in this order/)).not.toBeInTheDocument();
   });
 
-  it('adds the custom notes: best recommended, assumed IVs, chosen moves, unranked, orders', () => {
+  it('fills each bar with its factor, rounded, and states the difficulty', () => {
+    const team = makeTeam({ battle: 81.6, total: 64 });
+    team.score.factors = {
+      coverage: 98.6,
+      consistency: 55.2,
+      safety: 100,
+      cost: 0,
+      accessibility: 60.4,
+    };
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={null}
+        onTakeToBattle={() => undefined}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
+      />,
+    );
+    const coverage = screen.getByRole('meter', { name: 'Coverage 99 of 100' });
+    expect(coverage).toHaveAttribute('aria-valuenow', '99');
+    expect(coverage).toHaveAttribute('aria-valuemin', '0');
+    expect(coverage).toHaveAttribute('aria-valuemax', '100');
+    expect(coverage.querySelector('.hero-bar-fill')).toHaveStyle({ width: '99%' });
+    expect(screen.getByRole('meter', { name: 'Affordable 0 of 100' })).toBeInTheDocument();
+    expect(screen.getByRole('meter', { name: 'Accessibility 60 of 100' })).toBeInTheDocument();
+    expect(
+      screen.getByText(`${team.score.difficulty} to play: ${team.score.difficultyWhy}`),
+    ).toBeInTheDocument();
+  });
+
+  it('a custom team shows three bars and what it costs to build', () => {
+    const team = makeTeam({ battle: 70, total: 60 });
+    const analysis = {
+      team,
+      orders: [],
+      hypothetical: [],
+      chosenMoves: [],
+      unranked: [],
+      assumptions: {} as never,
+      ms: 0,
+    } as unknown as import('@pickthree/engine').TeamAnalysis;
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={{ analysis, best: null, shared: false, leagueTitle: 'Great League' }}
+        onTakeToBattle={() => undefined}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
+      />,
+    );
+    expect(screen.getAllByRole('meter')).toHaveLength(3);
+    expect(screen.queryByRole('meter', { name: /Affordable/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/^To build all three:/).textContent).toBe(
+      `To build all three: ${costLine(team.cost)}`,
+    );
+  });
+
+  it('the pencil edits and a strip tap shows that Pokémon', () => {
+    const onEdit = vi.fn();
+    const onShowMember = vi.fn();
+    const team = makeTeam();
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={null}
+        onTakeToBattle={() => undefined}
+        onEdit={onEdit}
+        onShowMember={onShowMember}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit team' }));
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getAllByRole('button', { name: /Lead|Switch|Closer/ })[1]!);
+    expect(onShowMember).toHaveBeenCalledWith(1);
+  });
+
+  it('puts Take to battle, the one primary action, under the card', () => {
+    const take = vi.fn();
+    wrap(
+      <ScoreCard
+        team={makeTeam()}
+        custom={null}
+        onTakeToBattle={take}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
+      />,
+    );
+    const card = screen.getByRole('region', { name: 'Battle score' });
+    const button = screen.getByRole('button', { name: 'Take to battle' });
+    expect(card).not.toContainElement(button);
+    expect(card.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(button);
+    expect(take).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll('.ui-btn-primary')).toHaveLength(1);
+    expect(document.querySelector('.custom-note')).toBeNull();
+  });
+
+  it('adds the custom notes under Take to battle: best recommended, assumed IVs, chosen moves, unranked, orders', () => {
     const team = makeTeam({ battle: 70, total: 60 });
     const best = makeTeam({ battle: 88, total: 70 });
     const analysis = {
@@ -49,17 +156,24 @@ describe('ScoreCard', () => {
         team={team}
         custom={{ analysis, best, shared: false, leagueTitle: 'Great League' }}
         onTakeToBattle={() => undefined}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
       />,
     );
-    expect(screen.getByText(/Your best recommended team rates/)).toHaveTextContent('88');
-    expect(screen.getByText(/not in your collection/)).toBeInTheDocument();
-    expect(screen.getByText(/ran the moves you chose/)).toBeInTheDocument();
-    expect(screen.getByText(/PvPoke does not rank/)).toBeInTheDocument();
-    expect(screen.getByText(/tried all six orders/)).toHaveTextContent('70');
+    const notes = document.querySelector('.custom-note') as HTMLElement;
+    expect(notes).toHaveClass('score-notes');
+    const button = screen.getByRole('button', { name: 'Take to battle' });
+    expect(button.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(notes).getByText(/Your best recommended team rates/)).toHaveTextContent('88');
+    expect(within(notes).getByText(/not in your collection/)).toBeInTheDocument();
+    expect(within(notes).getByText(/ran the moves you chose/)).toBeInTheDocument();
+    expect(within(notes).getByText(/PvPoke does not rank/)).toBeInTheDocument();
+    expect(within(notes).getByText(/tried all six orders/)).toHaveTextContent('70');
+    expect(screen.queryByText(/Run it in this order/)).not.toBeInTheDocument();
     expect(screen.queryByText('Run in the order you picked.')).not.toBeInTheDocument();
   });
 
-  it('with only the picked order tried, says the order once', () => {
+  it('with only the picked order tried, no orders line and no order sentence', () => {
     const team = makeTeam({ battle: 70, total: 60 });
     const analysis = {
       team,
@@ -77,9 +191,11 @@ describe('ScoreCard', () => {
         team={team}
         custom={{ analysis, best: null, shared: false, leagueTitle: 'Great League' }}
         onTakeToBattle={() => undefined}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
       />,
     );
-    expect(screen.getByText(/^Run it in this order:/)).toBeInTheDocument();
+    expect(screen.queryByText(/Run it in this order/)).not.toBeInTheDocument();
     expect(screen.queryByText('Run in the order you picked.')).not.toBeInTheDocument();
     expect(screen.queryByText(/tried all six orders/)).not.toBeInTheDocument();
   });

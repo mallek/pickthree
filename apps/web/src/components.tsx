@@ -547,6 +547,26 @@ export function CogGlyph() {
   );
 }
 
+/** A pencil over a line, the Edit glyph for an IconButton: 20px, drawn like ShareGlyph. */
+export function PencilGlyph() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M13 21h8" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
+
 export function Header({
   title,
   sub,

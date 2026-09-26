@@ -227,7 +227,7 @@ describe('Team Analysis', () => {
     expect(screen.getByRole('status')).toBeInTheDocument();
     release();
     const card = await screen.findByRole('region', { name: 'Battle score' });
-    expect(card.querySelector('.score-num')).toHaveTextContent(/^71$/);
+    expect(card.querySelector('.hero-num')).toHaveTextContent(/^71$/);
     expect(screen.queryByRole('status')).toBeNull();
     watch.disconnect();
     expect(sawNotFound).toBe(false);
@@ -263,11 +263,17 @@ describe('Team Analysis', () => {
   it('headlines battle strength, not the total', async () => {
     await mountRecommended('a');
     const card = await screen.findByRole('region', { name: 'Battle score' });
-    expect(card.querySelector('.score-num')).toHaveTextContent(/^71$/);
-    expect(card).not.toHaveClass('custom-note');
-    expect(within(card).getByRole('button', { name: 'Take to battle' })).toHaveClass(
-      'ui-btn-primary',
-    );
+    expect(card.querySelector('.hero-num')).toHaveTextContent(/^71$/);
+    expect(card).not.toHaveTextContent('/ 100');
+    expect(document.querySelector('.custom-note')).toBeNull();
+    // The one primary action sits under the card, outside it.
+    const take = screen.getByRole('button', { name: 'Take to battle' });
+    expect(take).toHaveClass('ui-btn-primary');
+    expect(card).not.toContainElement(take);
+    expect(card.compareDocumentPosition(take) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The card carries the team: the three Pokémon and the Edit pencil.
+    expect(within(card).getAllByRole('button', { name: /Lead|Switch|Closer/ })).toHaveLength(3);
+    expect(within(card).getByRole('button', { name: 'Edit team' })).toBeInTheDocument();
   });
 
   it('jump buttons scroll their sections into view', async () => {
@@ -447,7 +453,10 @@ describe('Team Analysis', () => {
     // Analyze navigated to the custom route; open it fresh, as a reload would.
     resetHistoryForTests();
     const card = await screen.findByRole('region', { name: 'Battle score' });
-    expect(card).toHaveClass('custom-note');
+    expect(document.querySelector('.custom-note')).not.toBeNull();
+    // The hero card gives a hand-built team's build cost in place of the Affordable bar.
+    expect(within(card).queryByRole('meter', { name: /Affordable/ })).toBeNull();
+    expect(card).toHaveTextContent('To build all three:');
     // Scored only against its own orders, a hand-built team's breakdown gives its build cost instead.
     expect(document.getElementById('details')!.parentElement).toHaveTextContent(
       'To build all three:',
@@ -510,9 +519,7 @@ describe('Team Analysis from a team link', () => {
   });
 
   it('Back lands on Teams: not off the site, not back through the link', async () => {
-    expect(screen.getByRole('region', { name: 'Battle score' })).toHaveTextContent(
-      'Shared team link.',
-    );
+    expect(document.querySelector('.custom-note')).toHaveTextContent('Shared team link.');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.hash).toBe('#/teams'));
     await waitFor(() => expect(latest!.state.route.screen).toBe('teams'));

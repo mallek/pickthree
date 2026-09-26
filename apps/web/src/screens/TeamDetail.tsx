@@ -205,7 +205,6 @@ export function TeamDetail({ id }: { id: string }) {
     const rs = slot.sim.results.filter((r) => r.opponent === op).map((r) => r.rating);
     return rs.length === 0 ? 500 : Math.min(...rs);
   };
-  const structure = team.structure === 'ABB' ? 'ABB line' : 'Balanced ABC';
   const a = custom ? s.analysis?.assumptions : s.recommendation?.assumptions;
   const best = custom ? (s.recommendation?.teams[0] ?? null) : null;
   const hypothetical = custom ? (s.analysis?.hypothetical ?? []) : [];
@@ -285,37 +284,13 @@ export function TeamDetail({ id }: { id: string }) {
     <div className="screen">
       {header}
       <div className="scroll" style={{ gap: 24 }}>
-        <div className="stack" style={{ gap: 8 }}>
-          <div className="analysis-strip">
-            {team.slots.map((slot, i) => {
-              const sid = slot.candidate.build.speciesId;
-              return (
-                <button
-                  type="button"
-                  className="analysis-strip-member"
-                  key={`${sid}-${i}`}
-                  onClick={() => showMember(i)}
-                >
-                  <PokemonToken speciesId={sid} size={48} />
-                  <b>{name(sid)}</b>
-                  <span className="meta">{ROLE_SHORT[slot.role]}</span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="meta analysis-strip-line">
-            <Term term={structure}>{GLOSSARY[structure]}</Term>
-            {SEP}
-            {team.score.difficulty} to play: {team.score.difficultyWhy}
-          </p>
-          <div className="analysis-edit">
-            <Button variant="text" onClick={editInBuild}>
-              Edit team
-            </Button>
-          </div>
-        </div>
-
-        <ScoreCard team={team} custom={notes} onTakeToBattle={() => void takeToBattle()} />
+        <ScoreCard
+          team={team}
+          custom={notes}
+          onTakeToBattle={() => void takeToBattle()}
+          onEdit={editInBuild}
+          onShowMember={showMember}
+        />
 
         <nav className="analysis-jumps" aria-label="Jump to">
           {JUMPS.map((j) => (

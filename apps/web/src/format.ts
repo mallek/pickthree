@@ -146,31 +146,6 @@ export function metaTags(rank: MetaRank | undefined, cutoff = META_CUTOFF): stri
   return tags;
 }
 
-/** One sentence for a team's battle rating. Mirrors the engine's fitWhy, kept here so the main
- * bundle does not pull the engine in. */
-export function fitWhy(
-  fit: 'Strong' | 'Solid' | 'Situational' | 'Weak',
-  covered: number,
-  n: number,
-  topUncovered: number,
-): string {
-  const cover = `beats ${covered} of ${n} meta Pokémon`;
-  const top =
-    topUncovered === 0
-      ? 'every one of the top ten has an answer'
-      : `${topUncovered} of the top ten ${topUncovered === 1 ? 'has' : 'have'} no answer`;
-  switch (fit) {
-    case 'Strong':
-      return `Ready to run: ${cover} and ${top}.`;
-    case 'Solid':
-      return `Playable: ${cover}, ${top}. Expect to lose some leads.`;
-    case 'Situational':
-      return `Thin: ${cover} and ${top}. It wins when the matchups fall right.`;
-    default:
-      return `Not competitive: ${cover} and ${top}. Swap at least one member.`;
-  }
-}
-
 /** Import summary line: what the file was read as. Mirrors the engine's Layout without importing it. */
 export function layoutLine(layout: Layout | undefined): string | null {
   if (!layout || layout.columnCount === 0) {
