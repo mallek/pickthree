@@ -728,7 +728,11 @@ a {
   padding: 18px;
   border: 1px solid var(--divider);
   border-radius: var(--r-sheet);
-  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--bg)));
+  background: linear-gradient(
+    180deg,
+    var(--surface),
+    color-mix(in srgb, var(--surface) 82%, var(--bg))
+  );
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
   text-align: left;
 }
@@ -805,7 +809,11 @@ a {
   padding: 18px;
   border: 1px solid var(--divider);
   border-radius: var(--r-sheet);
-  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--bg)));
+  background: linear-gradient(
+    180deg,
+    var(--surface),
+    color-mix(in srgb, var(--surface) 82%, var(--bg))
+  );
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
   color: inherit;
   text-decoration: none;
@@ -2760,25 +2768,50 @@ input[type='range'] {
 .hdr .head-cog {
   justify-self: end;
 }
-.log-bar {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--divider);
-  overflow: hidden;
+/* Your Meta: the head's state lines, the explainer and its dismiss, the current team's actions. */
+.ym-line {
+  margin: 0;
 }
-.log-bar span {
-  display: block;
-  height: 100%;
-  background: var(--accent);
+.ym-share-off {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.ym-share-off .ui-btn {
+  font-size: inherit;
+}
+.explainer {
+  position: relative;
+  padding-right: 44px;
+}
+.ym-team-actions {
+  display: flex;
+  justify-content: space-between;
+  margin: -4px -8px 0;
+}
+.ym-list-head {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ym-list-head .seg > * {
+  min-height: var(--tap);
+  padding: 0 10px;
+}
+/* The shared .seg's --accent on the page background is 4.1:1 in light; --accent-text clears it. */
+.ym-list-head .seg > .on {
+  color: var(--accent-text);
+}
+.ym-foot {
+  margin: 8px 0 0;
 }
 .card-x {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 26px;
-  height: 26px;
+  top: 0;
+  right: 0;
+  width: var(--tap);
+  height: var(--tap);
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--r-control);
   background: transparent;
   color: var(--muted);
   font-size: 18px;
@@ -2787,41 +2820,54 @@ input[type='range'] {
   align-items: center;
   justify-content: center;
 }
-.link-btn {
-  align-self: flex-start;
-  border: 0;
-  background: transparent;
-  padding: 2px 0;
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 500;
-}
-/* Last results with the current team, one chip each. */
+/* Last results with the current team, one chip each: a 44px button around a small chip, pulled
+   left so the first chip lines up with the card's text. */
 .result-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  margin: -8px 0 -8px -8px;
 }
 .result-chip {
-  width: 24px;
-  height: 24px;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.result-chip > span {
+  width: 28px;
+  height: 28px;
   border-radius: var(--r-sm);
   display: grid;
   place-items: center;
-  font-size: 12px;
-  font-weight: 700;
 }
-.result-chip.win {
-  background: color-mix(in srgb, var(--win) 22%, transparent);
+.result-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+/* The outcome buttons' own fills (base.css), so the letters clear 4.5:1 in both themes. axe
+   cannot judge a single letter, so the chips are marked static and test/resultChips.test.ts
+   checks these blocks against the tokens. */
+.result-chip.win > span {
+  background: color-mix(in srgb, var(--win) 5%, var(--surface));
+  border: 1px solid var(--win);
   color: var(--win);
 }
-.result-chip.loss {
-  background: color-mix(in srgb, var(--loss) 22%, transparent);
+.result-chip.loss > span {
+  background: color-mix(in srgb, var(--loss) 5%, var(--surface));
+  border: 1px solid var(--loss);
   color: var(--loss);
 }
-.result-chip.tanked {
+.result-chip.tanked > span {
   background: var(--surface2);
-  color: var(--faint);
+  border: 1px solid var(--divider);
+  color: var(--muted);
 }
 .set-slots {
   display: grid;
@@ -2848,30 +2894,59 @@ input[type='range'] {
   opacity: 0.55;
   font-size: 11px;
 }
+/* Your Meta's faced list: full-width rows on the card surface, a thin frequency bar inside the
+   row under its content, "Who beats it" leading to Counters. */
 .faced-row {
-  position: relative;
   display: grid;
-  grid-template-columns: 36px 1fr auto auto;
-  gap: 10px;
+  grid-template-columns: 36px minmax(0, 1fr) auto auto;
+  column-gap: 10px;
+  row-gap: 8px;
   align-items: center;
-  padding: 6px 8px;
+  padding: 8px 12px 8px 10px;
   border-radius: var(--r-md);
-  overflow: hidden;
+  background: var(--surface);
   color: inherit;
   text-decoration: none;
 }
-.faced-row .chev {
+.faced-name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Inline, so the mark follows the name's last word when a long name wraps. */
+.faced-title {
+  min-width: 0;
+}
+.faced-title .spec-name {
+  display: inline;
+}
+.faced-out {
+  margin-left: 3px;
+  font-size: 11px;
   color: var(--faint);
+  vertical-align: super;
+  line-height: 0;
+}
+.faced-rec {
+  font-variant-numeric: tabular-nums;
+}
+.faced-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--accent-text);
+  white-space: nowrap;
 }
 .faced-bar {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--accent-tint);
-  z-index: 0;
+  grid-column: 1 / -1;
+  justify-self: start;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
 }
-.faced-row > :not(.faced-bar) {
-  position: relative;
-  z-index: 1;
+.faced-legend {
+  margin: 0;
 }
 .team-row {
   display: grid;

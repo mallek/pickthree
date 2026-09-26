@@ -58,6 +58,11 @@ export function useSticky<T>(key: string, initial: T): [T, (next: T | ((cur: T) 
   return [value, set];
 }
 
+/** Forgets every sticky value, so one test's sort or dismissal does not carry into the next. */
+export function resetStickyForTests(): void {
+  sticky.clear();
+}
+
 /**
  * Remembers how far a screen was scrolled and puts it back on return, once `ready` says the
  * list is rendered. Tapping into a Pokemon and coming back lands where you left off.
