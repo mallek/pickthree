@@ -15,8 +15,10 @@ sprite rendering itself.
 ## Screenshots
 
 Dark and light at 390px, one pair per state, converted to WebP (600px wide, quality 72), from
-`apps/web/screenshots/<name>-{dark,light}.png` (fresh `npm run web:audit` run, 2026-09-26, on
-`7a40b6a`, the branch's last commit). `21-log-battle`, `log-battle-card` and `log-battle-edit` are
+`apps/web/screenshots/<name>-{dark,light}.png` (`npm run web:audit` run, 2026-09-26, on
+`7a40b6a`; re-run for the final fix wave on `e80cc9c`, where `log-battle-likely`,
+`log-battle-saved` and `log-battle-edit` changed and were re-converted, and the other three
+converted byte for byte identical). `21-log-battle`, `log-battle-card` and `log-battle-edit` are
 full-page; `log-battle-likely`, `log-battle-saved` and `log-battle-wide` are viewport shots (the
 first two mid-flow, where a full-page shot would add nothing new below the fold; the wide shot is
 1280×900, the width and height alone, not a phone viewport).
@@ -24,15 +26,16 @@ first two mid-flow, where a full-page shot would add nothing new below the fold;
 | State | Dark | Light |
 | --- | --- | --- |
 | `21-log-battle`: empty. `Header variant="sub"` "Log a Battle" / "0 logged with this team", Back; the team strip (Shadow Greninja, Melmetal, Galarian Corsola); the search "Search any Pokémon"; "Add all three opponents when you can. One or two still helps."; three dashed empty slots; Win/Loss/Tanked at the foot with "What is Tanked?" under them | ![](img/21-log-battle-dark.webp) | ![](img/21-log-battle-light.webp) |
-| `log-battle-card`: two opponents slotted (Tinkaton, Galarian Corsola), the grid folded, the in-battle card open on Galarian Corsola: moves with counts and effectiveness (1/2, 1x, 2x), the shield grid (Wins / Mixed / Mixed, all-decisive W/L letters, no close cell in this matchup), the reads line (full page) | ![](img/log-battle-card-dark.webp) | ![](img/log-battle-card-light.webp) |
+| `log-battle-card`: two opponents slotted (Tinkaton, Galarian Corsola), the grid folded, the in-battle card open on Galarian Corsola: moves with counts and effectiveness (1/2, 1x, 2x), the shield grid (Wins / Mixed / Mixed; row = your shields, column = theirs; six close cells, outlined rather than filled: S. Greninja 0/0 W and 1/2 L, Melmetal 0/0 W and 2/2 W, G. Corsola 0/0 L and 2/2 L; the other 21 solid), the reads line (full page) | ![](img/log-battle-card-dark.webp) | ![](img/log-battle-card-light.webp) |
 | `log-battle-likely`: one opponent slotted (Medicham), the search still focused and open, "Often with Medicham" leading the panel with six ranked names (Azumarill, Clodsire, Lanturn, Registeel, S. Dragonite, S. Swampert), Recent under it with those six left out | ![](img/log-battle-likely-dark.webp) | ![](img/log-battle-likely-light.webp) |
-| `log-battle-saved`: after a Win is logged, the neutral info notice "Win logged · 1 with this team" sitting at the foot just above the Win/Loss/Tanked bar, the slots cleared back to empty | ![](img/log-battle-saved-dark.webp) | ![](img/log-battle-saved-light.webp) |
-| `log-battle-edit`: opened from a "Loss against ..." result chip on Your Meta. "Edit battle" / "Logged Sep 26, 12:04 PM"; the battle's three opponents fill the slots (Azumarill, Clodsire, Shadow Dragonite, the last wrapping to two lines with no ellipsis); Loss is pressed (filled); the primary reads "Save changes" | ![](img/log-battle-edit-dark.webp) | ![](img/log-battle-edit-light.webp) |
+| `log-battle-saved`: after a Win is logged, the neutral info notice sitting at the foot just above the Win/Loss/Tanked bar, the slots cleared back to empty. Each theme's shot taps the last notice away and logs its own Win for a fresh one (final review M2), so dark reads "Win logged · 2 with this team" and light "Win logged · 3 with this team", the sub-line "2 logged" and "3 logged" to match; the set is put back as it was after the step | ![](img/log-battle-saved-dark.webp) | ![](img/log-battle-saved-light.webp) |
+| `log-battle-edit`: opened from a "Loss against ..." result chip on Your Meta. "Edit battle" / "Logged Sep 26, 1:00 PM" (the seeded battle's time follows the run's clock); the battle's three opponents fill the slots (Azumarill, Clodsire, Shadow Dragonite, the last wrapping to two lines with no ellipsis); Loss is pressed (filled); the primary reads "Save changes" | ![](img/log-battle-edit-dark.webp) | ![](img/log-battle-edit-light.webp) |
 | `log-battle-wide`: 1280×900. Header and team strip span the full width; search, the hint line and the three slots sit in the left column; the in-battle card sits beside them in a right column; Win/Loss/Tanked span the width at the foot | ![](img/log-battle-wide-dark.webp) | ![](img/log-battle-wide-light.webp) |
 
 Not captured, all string- or timing-driven states rather than layout differences: the no-open-set
-redirect to New Set (a defensive path, covered by `apps/web/test/newSet.test.tsx`'s own regression
-test for the redirect and by Log a Battle's "renders New Set when there is no open set" case); the
+redirect to New Set (a defensive path, covered by `apps/web/test/newSet.test.tsx`'s "Cancel escapes
+Log a Battle's own no-set redirect" describe block, which drives the real router from Log a Battle
+with nothing running to New Set and checks the redirect replaces its history entry); the
 in-battle card's loading state (shared `Loading`, the same component audited elsewhere); the
 transient "saving" moment between a result tap and the toast landing; a slot's remove (×) mid-tap.
 
@@ -52,9 +55,10 @@ capture possible.
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run
-      2026-09-26 on `7a40b6a`: exit 0. Zero findings on `21-log-battle`, `log-battle-card`,
-      `log-battle-likely`, `log-battle-saved`, `log-battle-edit` and `log-battle-wide`, in both
-      themes. 693 findings remain on screens not yet redesigned, none failing the run.
+      2026-09-26 on `7a40b6a`, and again for the final fix wave on `e80cc9c`: exit 0 both times.
+      Zero findings on `21-log-battle`, `log-battle-card`, `log-battle-likely`, `log-battle-saved`,
+      `log-battle-edit` and `log-battle-wide`, in both themes. 693 findings remain on screens not
+      yet redesigned, none failing the run.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] the run's own guards, all passed:
   - `assertTitleCentred` holds on both "Log a Battle" and "Edit battle" (printed offsets of
@@ -71,13 +75,15 @@ capture possible.
     passed: "Galarian Corsola" is whole on one line in both themes);
   - `log-battle-saved` fails the run if the notice sits outside 4-24px above the result bar, or
     below the sticky head; it passed in both themes;
-  - the restore step confirms no state leaked from Your Meta's seeded capture: this page's own
-    captures all read "0 logged with this team" (`21-log-battle`) or "1 logged with this team"
-    (`log-battle-likely`, `log-battle-saved`) against Your Meta's seeded "3-2", proving the set was
-    put back before these ran.
+  - the restore steps confirm no state leaked between steps: the running set is put back after
+    Your Meta's seeded capture and again after `log-battle-saved`, so `21-log-battle` and
+    `log-battle-likely` both read "0 logged with this team" against Your Meta's seeded "3-2" (on
+    `7a40b6a`, before the second restore, `log-battle-likely` inherited the saved step's Win and
+    read "1 logged").
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all re-run 2026-09-26 on `7a40b6a`: lint exit 0; typecheck exit 0 across every
-      workspace; `npm test` 140 files, 1287 tests passed; `check-colors` exit 0 (the color-literal
+      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` for the final fix
+      wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files, 1291 tests
+      passed on `e80cc9c` (1287 on `7a40b6a`); `check-colors` exit 0 (the color-literal
       baseline shrank by one `#fff`, removed from the shield grid and the toast, never grew);
       `check-tokens`: ok. `npm run ui:audit`: "gallery audit: clean in dark and light" (the `Button`
       win/loss/warn variants and `pressed` prop this page added both show in the gallery).
@@ -190,6 +196,11 @@ capture possible.
 | Task 7, first audit pass (380 enforced findings, all here): the shield grid faded close results with inline `opacity`, taking the letters under 4.5:1; the slot remove (×) was 24×24; the notice/update toast's OK button was 43×30 at 3.22:1 in dark. | A result within 100 of 500 is now a `.close` cell (the outcome tint with an inset outline and a colored letter, `data-audit-contrast="static"` since axe cannot judge a one-letter cell); the (×) is a 44px transparent button around the same 24px circle as a child `<span>`; the OK button is at least 44×44 on `--accent-lo`/`--on-accent` (shared with `UpdateToast`'s Reload). | `307f405` |
 | Task 7, seen in the captures (not caught by axe): "Astonish" broke mid-word ("Astonis / h"); the saved toast wrapped at half the viewport ("Win logged · 1 / with this team"). | The long-move-name shrink now keys on the longest word exceeding 7 characters, not just a single-word name; `.notice-toast` is `width: max-content` (still bounded by `max-width: calc(100vw - 32px)`). | `307f405` |
 | Task 7 round 2: the saved notice still sat at the top with an OK button for 8 seconds, and slot names ellipsized instead of wrapping (a shared review finding with New Set, whose slots use the same rule). | Info notices move to the page's foot (measured against the highest fixed foot bar, here the result bar), one `.notice-tap` to dismiss, no OK, 3 seconds; `.opp-slot .small` wraps on word breaks with no ellipsis, and the remove (×) re-centers from the slot's own center so it stays on the token's upper right. Seen in `log-battle-saved` (the pill above the result bar) and `log-battle-edit` ("Shadow Dragonite" wraps to two lines). | `7a40b6a` |
+| Final review I3: this record said no capture shows a close shield-grid cell (the `log-battle-card` row, the open decision, the open item), though `log-battle-card` shows six in both themes. | The row, the open decision and the open item name the six cells (S. Greninja 0/0 W and 1/2 L, Melmetal 0/0 W and 2/2 W, Galarian Corsola 0/0 L and 2/2 L) and point Travis at `log-battle-card` as the look to judge; checked by eye in the fix wave's capture. | this record's commit |
+| Final review M1: `NoticeToast` measured the foot once, so a confirmation raised on Your Meta (Share this team) and carried into Log a Battle within 3 seconds sat over Win/Loss/Tanked, where a tap dismissed it instead of logging. This record called that unreachable from this page's flow. | The measurement re-runs on a route change; `noticeToast.test.tsx` stubs the bars' boxes and checks the notice moves from above the tab bar to above the result bar (it failed before the fix: 68px against 132px). The open item is dropped. | `75c5fce` |
+| Final review M2: the `log-battle-saved` capture's re-raise returned early when a notice was up (which could clear before `mustShow` read it) and logged real Wins that later steps inherited (`log-battle-likely` read "1 logged"). | Each shot taps any notice away, waits for it to go and logs one Win for a fresh notice; the running set is put back after the step. `log-battle-likely` now reads "0 logged"; `log-battle-saved` reads 2 (dark) and 3 (light). web:audit exit 0 on `e80cc9c`. | `75c5fce`, `e80cc9c` |
+| Final review M3 and M4: `.slot-wrap`'s new rules also matched Build's wrap; `CLOSE_MARGIN` was a second meaning of "close" with no word on why. | Log a Battle's stretch and `min-width` are scoped to `.opp-slots > .slot-wrap`. The first pass also scoped `position: relative`, which Build's `.pick-side` needs (pre-branch, shared): Build's remove button drew off its card and web:audit hung in the build step; `e80cc9c` puts that one declaration back on the shared rule, Build's captures convert identical to its signed record, and the capture script now fails after three remove taps that leave a pick. `CLOSE_MARGIN` carries a comment on the wider, visual band; the open item stays for Travis. | `75c5fce`, `e80cc9c` |
+| Final review M5: Review focus 3 said an edit with sharing off does not send, "both tested", with no such test; the redirect was credited to a Log a Battle test that does not exist. | `store.test.tsx` "with sharing off, an edit does not try to send" (device mocked eligible, no `/battles` call after `editBattle`; it fails with the sharing check removed from `shareSync`: 2 calls). The redirect cites `newSet.test.tsx`'s "Cancel escapes Log a Battle's own no-set redirect" describe block. | this record's commit |
 
 ## Decisions and rulings (plan `2026-09-26-play.md`, `global-constraints.md`)
 
@@ -211,7 +222,10 @@ capture possible.
    the same row once, per Task 1's upsert; the community meta counts it once, with the new result.
 7. **Review focus 2 (tanked to a win, or back):** `result` and `tanked` stay consistent
    (`result: null` exactly when tanked), tested for both directions in `store.test.tsx`.
-8. **Review focus 3 (sharing off):** no board read, and an edit does not try to send; both tested.
+8. **Review focus 3 (sharing off):** no board read, and an edit does not try to send; both tested
+   (`logBattle.test.tsx`'s "does not read the board with sharing off"; `store.test.tsx`'s "with
+   sharing off, an edit does not try to send", which mocks the device as eligible and finds no
+   `/battles` call after `editBattle`, the same setup that sends with sharing on).
 9. **Review focus 5 (the search with the card open on a phone):** the input stays visible below the
    sticky header rather than sliding under it once the card opens, per the spec's own fix.
 
@@ -220,12 +234,13 @@ fade.** Before this task, a result's letter faded in proportion to its margin fr
 continuous read Travis said he liked: "he said he liked the margin shading"). The redesign needed a
 contrast fix (the faded letters fell under 4.5:1), and the fix the controller chose is a two-step
 rule instead: a result within 100 points of 500 is a `.close` cell (tinted, outlined, still a
-colored letter), everything else renders fully solid. None of this record's own captures land a
-close cell (`log-battle-card`'s matchup is decisive on all nine cells in both themes), so the new
-look is not shown in any image here, only in the code (`OpponentCard.tsx`'s `CLOSE_MARGIN = 100`)
-and in `apps/web/test/contrast.test.ts`'s `w.close`/`l.close` cases. The two-step read keeps the
-margin information Travis liked in coarser form; whether that's the right trade against the old
-continuous fade is this record's one open call for sign-off.
+colored letter), everything else renders fully solid. `log-battle-card` (both themes) is the look
+to judge: six of its 27 cells are close and outlined (S. Greninja 0/0 W and 1/2 L, Melmetal 0/0 W
+and 2/2 W, Galarian Corsola 0/0 L and 2/2 L, row = your shields, column = theirs) beside the solid
+rest; `log-battle-wide` shows the same grid. The rule is `OpponentCard.tsx`'s `CLOSE_MARGIN = 100`,
+and `apps/web/test/contrast.test.ts`'s `w.close`/`l.close` cases hold the letters at 4.5:1. The
+two-step read keeps the margin information Travis liked in coarser form; whether that's the right
+trade against the old continuous fade is this record's one open call for sign-off.
 
 ## Visible changes outside Log a Battle
 
@@ -254,7 +269,7 @@ continuous fade is this record's one open call for sign-off.
 ## Open items for Travis (not fixed on this branch)
 
 - **The shield grid's close-margin rule (outlined) replaces the old continuous fade by margin.**
-  See the open decision above; none of this record's captures happen to show a close cell.
+  See the open decision above; `log-battle-card` shows six close cells, solid beside outlined.
 - **The Shadow glow (`.token-shadow-wrap::before`) is still not visible.** Pre-existing, unchanged
   by this branch, the same open item recorded on Team Analysis and Build.
 - **Log a Battle's supporting text stays at 12px** (the `.meta` class: the sub-line, the hint line,
@@ -268,14 +283,10 @@ continuous fade is this record's one open call for sign-off.
   group for this league in the pinned data.** That's a fact about the synthetic fixture, not
   something Log a Battle's own suggestion grid marks (it has no outsider dagger the way Your Meta's
   faced list does); noted here for the record since the dispatch called it out.
-- **The saved notice's foot position is measured once, when it appears**, not re-measured on a
-  route change inside its 3 seconds; a share-then-navigate sequence elsewhere in the app could in
-  principle show the pill against the wrong foot bar for a moment. Not reachable from this page's
-  own flow (its result bar is fixed for the page's lifetime); noted for completeness since the
-  fix is shared app-wide.
 - **The shared confirmation-toast change (info at the foot, no OK, 3 seconds) is a behavior change
-  on the signed Team Analysis page**, whose own audit record still describes the old top-toast
-  "Link copied" behavior. Updating that record is outside this task's three pages.
+  on the signed Team Analysis page.** Its record never described its "Link copied" notice, so it
+  does not record the change; see its "After sign-off" row (and Teams' for the update toast's
+  button). Both keep their signatures.
 
 ## Sign-off
 

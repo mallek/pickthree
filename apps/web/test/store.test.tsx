@@ -402,6 +402,46 @@ describe('battle log actions', () => {
     }
   });
 
+  it('with sharing off, an edit does not try to send (the same setup sends with sharing on, above)', async () => {
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, share: { enabled: false } });
+    const eligibleSpy = vi
+      .spyOn(await import('../src/metaShare.ts'), 'shareEligible')
+      .mockReturnValue(true);
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    const battlePosts = () =>
+      fetchSpy.mock.calls.filter(([url]) => String(url).includes('/battles')).length;
+    try {
+      await mount();
+      expect(latest!.state.settings.share?.enabled).toBe(false);
+      await act(async () => {
+        await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+        await latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false });
+      });
+      const setId = latest!.state.sets[0]!.id;
+      const battleId = latest!.state.sets[0]!.battles[0]!.id;
+      let ok = false;
+      await act(async () => {
+        ok = await latest!.actions.editBattle(setId, battleId, {
+          opponents: ['medicham'],
+          result: 'loss',
+          tanked: false,
+        });
+      });
+      expect(ok).toBe(true);
+      // Give a share sync every chance to run before checking that none went out.
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      expect(battlePosts()).toBe(0);
+      expect(latest!.state.sets[0]!.battles[0]!.sharedAt).toBeUndefined();
+    } finally {
+      fetchSpy.mockRestore();
+      eligibleSpy.mockRestore();
+    }
+  });
+
   it('endSet closes a partial set and startFresh marks the league', async () => {
     await mount();
     await act(async () => {

@@ -17,8 +17,8 @@ instead; nothing on this branch touched sprite rendering itself.
 
 Dark and light at 390px, one pair per state, full-page, converted to WebP (600px wide, quality 72)
 the same way the Teams, Build and Team Analysis images were, from
-`apps/web/screenshots/<name>-{dark,light}.png` (fresh `npm run web:audit` run, 2026-09-26, on
-`7a40b6a`, the branch's last commit).
+`apps/web/screenshots/<name>-{dark,light}.png` (`npm run web:audit` run, 2026-09-26, on
+`7a40b6a`; the final fix wave's run on `e80cc9c` converted both pairs byte for byte identical).
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -38,12 +38,15 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run
-      2026-09-26 on `7a40b6a`: exit 0. Zero findings on `20-your-meta` and `your-meta-active` in
-      both themes. 693 findings remain on screens not yet redesigned, none failing the run.
+      2026-09-26 on `7a40b6a`, and again for the final fix wave on `e80cc9c`: exit 0 both
+      times. Zero findings on `20-your-meta` and `your-meta-active` in both themes; the final run's
+      captures of both converted byte for byte identical to the images below. 693 findings
+      remain on screens not yet redesigned, none failing the run.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all re-run 2026-09-26 on `7a40b6a`: lint exit 0; typecheck exit 0 across every
-      workspace; `npm test` 140 files, 1287 tests passed; `check-colors` exit 0; `check-tokens`: ok.
+      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` for the final fix
+      wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files, 1291 tests
+      passed on `e80cc9c` (1287 on `7a40b6a`); `check-colors` exit 0; `check-tokens`: ok.
       `npm run ui:audit`: "gallery audit: clean in dark and light" (the shared `Button` win/loss/warn
       variants Log a Battle added, and the `.seg` fix this page's own review moved to the source,
       both live in the gallery).
@@ -58,12 +61,13 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 - [x] colors from tokens, in their roles: violet marks what you tap (the primary "Log a battle" /
       "Pick your team" button, "See what everyone else is facing", the `Seg`'s pressed label, the
       league switcher); pink is the one measured line, "N of your battles are in the community
-      meta", with its dot, never a pill (`your-meta-active`); the result chips use the outcome
-      tokens (win green, loss red-pink, tanked muted amber-free gray) exactly as Log a Battle's
-      result buttons do; nothing on the page is red (Start fresh keeps `ConfirmSheet`'s default
-      tone, no danger button, confirmed by the test asserting no `.ui-btn-danger` and that
-      `window.confirm` is never called). Backed by `check-colors` (clean) and zero `web:audit`
-      contrast findings in either theme.
+      meta", with its dot, never a pill (`your-meta-active`); the W and L result chips use the
+      outcome tokens (win green, loss red-pink) as Log a Battle's Win and Loss buttons do, but the
+      T chip is a neutral gray (`--surface2` fill, `--muted` letter, `.result-chip.tanked` in
+      `app.css`) while Log a Battle's Tanked button is amber (see Open items); nothing on the page
+      is red (Start fresh keeps `ConfirmSheet`'s default tone, no danger button, confirmed by the
+      test asserting no `.ui-btn-danger` and that `window.confirm` is never called). Backed by
+      `check-colors` (clean) and zero `web:audit` contrast findings in either theme.
 - [x] at most four text levels, one page title, with the same 12px `.meta` supporting-text
       deferral Build and Team Analysis carry (see Open items): "Your Meta" is the one title
       (`Header variant="top"`, matching Teams' pattern); "Current team" and "Your teams" are
@@ -122,8 +126,8 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
       `window.confirm`, and moves battles to Earlier seasons without deleting anything.
 - [x] back returns to the origin: Your Meta is a tab-bar destination rather than a page reached by
       "Back", so this bullet applies to the one route it opens: a result chip's edit route lands
-      back on `#/meta` after Save changes or Cancel, per Log a Battle's own back rule (its record
-      covers the test for that return).
+      back on `#/meta` after Save changes or Back (edit mode has Back, not Cancel), per Log a
+      Battle's own back rule (its record covers the test for that return).
 - [ ] input layout rule: not applicable. Your Meta has no text input.
 - [x] icon buttons named; focus visible: the meta.pick3.gg and Settings `IconButton`s carry their
       labels (matching Teams); the explainer's dismiss is 44×44; each result chip and the `Seg`'s
@@ -145,9 +149,11 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
       the current list and Earlier seasons, and never marked before the meta group loads), the
       explainer copy and its dismissal, both footer variants, Start fresh through the
       `alertdialog`, the one-line link out, and the header `IconButton`s), plus
-      `apps/web/test/contrast.test.ts` (9 tests: each result-chip letter and the `Seg`'s pressed
-      label at 4.5:1 in all three theme blocks) and `apps/web/src/state/contribution.ts`'s own
-      `apps/web/test/contribution.test.ts` (`contributedCount`: stamped and not tanked, across every
+      `apps/web/test/contrast.test.ts` (28 cases in all: this page's 9 are each result-chip
+      letter, W, L and T, at 4.5:1 in all three theme blocks, and 6 are the shared `Seg`'s pressed
+      label on `--bg` and `--surface` in the same blocks; the other 13 are Log a Battle's shield
+      grid, its twelve cell cases and the axis numbers) and
+      `apps/web/src/state/contribution.ts`'s own `apps/web/test/contribution.test.ts` (`contributedCount`: stamped and not tanked, across every
       league, zero for nothing sent).
 
 ## Findings and fixes
@@ -158,6 +164,8 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 | Task 5 review, Minor: two unrelated `linear-gradient` blocks (`.landing-you`, `.mp-card`) were reformatted by a Prettier pass with no value change, and the report's file-level summary overstated that `.action-row` also got a page-scoped rule. | The two gradient blocks are back on one line each (`git diff` confirms neither rule's value moved); the report line is corrected. | `a5f99e3` |
 | Task 7, seen in the captures (not caught by axe): "Shadow Dragonite" and "Shadow Swampert" wrapped to two lines where the approved render keeps them on one line, and `tabular-nums` on the record spaced "1 - 5" wide without aligning anything, since each row is its own grid. | Dropped `tabular-nums` and added `nowrap` on the name, so both names fit on one line, matching the render; visible in `your-meta-active`, both themes. | `307f405` |
 | Task 7, round 2: the app's confirmation toasts (including this page's own "Link copied" from Share this team) sat at the top with an OK button and read as a warning. | Moved to the shared `NoticeToast` fix (see Log a Battle's record for the full change): info notices now render at the page's foot, one tap to dismiss, no OK, 3 seconds; warnings are unchanged. Not re-captured on this page (no Share tap in the capture flow) but exercised by `apps/web/test/noticeToast.test.tsx` and the app-wide caller check in the Task 7 review. | `7a40b6a` |
+| Final review M6: the result chips were said to use the outcome tokens "exactly as Log a Battle's result buttons do", but the T chip is gray where Tanked is amber; "Save changes or Cancel" (edit mode has Back); `contrast.test.ts` called "9 tests" when it has 28 cases. | The Aesthetics line says W and L match and T is gray, with the gray-versus-amber choice added to Open items for Travis; "Save changes or Back"; the tests line counts the 28 cases (this page's 9 chip cases, 6 `Seg` cases, 13 for Log a Battle's grid). | this record's commit |
+| Final review I2: this record said the signed Team Analysis record "still describes" the old top toast; it never described that notice. | Reworded: that record does not record the change; it now has an "After sign-off" row (and Teams one for the update toast's button). | this record's commit |
 
 ## Decisions and rulings (plan `2026-09-26-play.md`, `global-constraints.md`)
 
@@ -216,9 +224,14 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
   not a bug, but worth a look at sign-off since it may surprise.
 - **The shared confirmation-toast change (info at the foot, no OK, 3 seconds) is a behavior change
   on a page other than this one's own capture set can show:** this page's "Link copied" notice now
-  behaves the same way Log a Battle's saved notice does, but no capture here shows it landing; the
-  Team Analysis signed record still describes the old top-toast behavior for its own "Link copied"
-  line (see Log a Battle's record for the same note).
+  behaves the same way Log a Battle's saved notice does, but no capture here shows it landing. The
+  signed Team Analysis record never described its own "Link copied" notice, so it does not record
+  the change; see its "After sign-off" row (and Teams' for the update toast's button).
+- **The T chip is gray, Log a Battle's Tanked button is amber.** The W and L chips match the Win
+  and Loss buttons' outcome colors; T uses the neutral `--surface2`/`--muted` pair
+  (`.result-chip.tanked`), where Tanked on Log a Battle is the amber `warn` variant. Visible in
+  `your-meta-active`. Gray reads "does not count" (a tanked battle is left out of the record);
+  amber would match the button the battle was logged with. Travis's call at sign-off.
 
 ## Sign-off
 

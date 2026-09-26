@@ -15,9 +15,10 @@ sprite rendering itself.
 ## Screenshots
 
 Dark and light at 390px, one pair per state, full-page, converted to WebP (600px wide, quality 72),
-from `apps/web/screenshots/<name>-{dark,light}.png` (fresh `npm run web:audit` run, 2026-09-26, on
-`7a40b6a`, the branch's last commit; the run visits Teams first and waits for its recommendation to
-settle before shooting New Set, so its "From pick3" rows have real teams to show).
+from `apps/web/screenshots/<name>-{dark,light}.png` (`npm run web:audit` run, 2026-09-26, on
+`7a40b6a`; the final fix wave's run on `e80cc9c` converted both pairs byte for byte identical;
+the run visits Teams first and waits for its recommendation to settle before shooting New Set, so
+its "From pick3" rows have real teams to show).
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -33,8 +34,10 @@ button's `disabled` state and the slot contents, tested directly).
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run
-      2026-09-26 on `7a40b6a`: exit 0. Zero findings on `22-new-set` and `new-set-searching`, in
-      both themes. 693 findings remain on screens not yet redesigned, none failing the run.
+      2026-09-26 on `7a40b6a`, and again for the final fix wave on `e80cc9c`: exit 0 both
+      times. Zero findings on `22-new-set` and `new-set-searching` in both themes; the final run's
+      captures of both converted byte for byte identical to the images below. 693 findings
+      remain on screens not yet redesigned, none failing the run.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] the run's own guards, all passed:
   - `assertTitleCentred` holds on "Pick Your Team" (printed an offset of `-0.0px` in this run,
@@ -44,8 +47,9 @@ button's `disabled` state and the slot contents, tested directly).
   - `new-set-searching` requires both "From pick3" and "Recent teams" to be absent from the DOM
     while a query is typed, not merely hidden by CSS.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all re-run 2026-09-26 on `7a40b6a`: lint exit 0; typecheck exit 0 across every
-      workspace; `npm test` 140 files, 1287 tests passed; `check-colors` exit 0; `check-tokens`: ok.
+      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` for the final fix
+      wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files, 1291 tests
+      passed on `e80cc9c` (1287 on `7a40b6a`); `check-colors` exit 0; `check-tokens`: ok.
       `npm run ui:audit`: "gallery audit: clean in dark and light".
 
 ## Aesthetics
@@ -115,9 +119,9 @@ button's `disabled` state and the slot contents, tested directly).
       Cancel returning to Your Meta, input before the slots; starting a set from three picks with
       Start set disabled until then; a From pick3 row reading like Teams with the number and fit;
       a From pick3 tap filling the three slots without starting, then Start set starting it with
-      its moves; clearing a slot after that tap dropping the moves; both lists hidden while searching; no From pick3 row with an empty recommendation; the
-      regression test for Cancel escaping Log a Battle's own no-set redirect without adding a
-      history entry).
+      its moves; clearing a slot after that tap dropping the moves; both lists hidden while
+      searching; no From pick3 row with an empty recommendation; the regression test for Cancel
+      escaping Log a Battle's own no-set redirect without adding a history entry).
 
 ## Findings and fixes
 
@@ -126,6 +130,8 @@ button's `disabled` state and the slot contents, tested directly).
 | Task 6 review, Important: Cancel's `back()` could bounce through Log a Battle's own no-open-set redirect back into New Set instead of reaching Your Meta, in the narrow case of a stale `#/meta/log` history entry (browser back/forward, or a reloaded/shared hash) reached with no set running. Before this task, Cancel was an unconditional `navigate`, which always escaped this loop; switching it to `back()` (needed for the "return to where you came from" rule) removed that escape hatch for this one path. | Fixed at the root rather than in New Set's own code: Log a Battle's redirect now calls `navigate({ screen: 'meta-new' }, { replace: true })`, so it never becomes a "where you came from" entry that a later Cancel could land back on. A new describe block in `newSet.test.tsx` drives a real router through the exact sequence (a stale `#/meta/log` visit with nothing running, then Cancel) and asserts no history entry was added and Cancel reaches `#/meta`. | `22d5080` |
 | Task 6 review, Minor: a test named "does not show From pick3 without a recommendation" actually exercised an empty recommendation (`teams: []`), not the literal absence of one. | Renamed to "does not show From pick3 with an empty recommendation"; no behavior change, the assertion was already correct for the branch it exercises (`fromPick3.length > 0`). | `22d5080` |
 | Task 7 round 2, seen in the captures (shared with Log a Battle, whose slots use the same rule): opponent slot names ellipsized at 84px instead of wrapping. | `.opp-slot .small` wraps on word breaks with no ellipsis, and this page's slots inherit the fix since they share the class; no capture in this record happens to fill a slot with a long enough name to show the wrap (`new-set-searching`'s Matches are short names), but the shared rule and its test (`apps/web/test/opponentCard.test.tsx`, `logBattle.test.tsx`) cover it. | `7a40b6a` |
+
+| Final review I1: a From pick3 tap called `startSet` at once (the pre-branch behavior), though the spec says tapping one fills the slots; since `startSet` closes the running set, one tap ended the current team with no look at the picks. This record said both ("fills the slots and starts that team"). | The tap fills the three slots with the team's picks and keeps its `TeamRef` (moves included); Start set starts that team, moves and all, while the slots still hold it; clearing any slot drops it, so a team refilled by hand starts without moves. Recent teams stay one tap. Two `newSet.test.tsx` cases (the tap fills three slots without calling `startSet`, then Start set saves the team with its specimens and moves; a cleared slot drops the moves). No capture taps a row, so `22-new-set` and `new-set-searching` show the same states as before. | `8403291` |
 
 Also seen in the captures during this task, not tied to a named review finding: New Set's "Start
 set" button was a small, left-aligned button before this pass; it is now full width, matching every
@@ -170,6 +176,11 @@ row). Fixed alongside the Task 7 audit pass, commit `307f405`.
   `LogBattle.tsx`, not in this page's file.
 
 ## Open items for Travis (not fixed on this branch)
+
+- **A From pick3 tap fills the slots; a Recent teams tap starts at once.** The final review's I1
+  followed the spec ("tapping one fills the slots") and kept Recent teams one tap ("as today").
+  If From pick3 should start at once too, the spec line and this record change instead of the
+  code.
 
 - **The Shadow glow (`.token-shadow-wrap::before`) is still not visible.** Pre-existing, unchanged
   by this branch, the same open item recorded on Team Analysis and Build.
