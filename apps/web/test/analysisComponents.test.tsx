@@ -224,7 +224,11 @@ describe('Threats', () => {
     team.score.uncoveredOpponents = ['a', 'b', 'c', 'd', 'e'];
     wrap(<Threats team={team} />);
     expect(screen.getAllByTestId('threat-row')).toHaveLength(2);
-    expect(screen.getByText('and 3 more beat this team')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'and 3 more beat this team (see the matchup grid under Assumptions and detail)',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('says "beats" when one more beats the team', () => {
@@ -232,7 +236,11 @@ describe('Threats', () => {
     team.explanation.keyThreats = [threat('a', 'A line.')];
     team.score.uncoveredOpponents = ['a', 'b'];
     wrap(<Threats team={team} />);
-    expect(screen.getByText('and 1 more beats this team')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'and 1 more beats this team (see the matchup grid under Assumptions and detail)',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('says so when nothing beats all three', () => {

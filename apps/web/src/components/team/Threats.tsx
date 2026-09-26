@@ -35,7 +35,7 @@ function MatchupRow({ m, testId }: { m: KeyMatchup; testId: string }) {
 
 /**
  * What beats this team: the engine's key threats as rows, then how many more of the meta group
- * also beat it.
+ * also beat it and where to find them (the matchup grid).
  */
 export function Threats({ team }: { team: TeamRecommendation }) {
   const threats = team.explanation.keyThreats;
@@ -57,7 +57,8 @@ export function Threats({ team }: { team: TeamRecommendation }) {
           ))}
           {moreCount > 0 ? (
             <p className="small muted">
-              and {moreCount} more {moreCount === 1 ? 'beats' : 'beat'} this team
+              and {moreCount} more {moreCount === 1 ? 'beats' : 'beat'} this team (see the matchup
+              grid under Assumptions and detail)
             </p>
           ) : null}
         </>
