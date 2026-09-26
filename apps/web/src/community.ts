@@ -1,5 +1,7 @@
 /**
- * The community team board, read for Build's teammate suggestions.
+ * The community team board, read for Build's teammate suggestions and Log a Battle's likely
+ * teammates (the same cached read per league and window, the same sharing gate, both silent on
+ * failure).
  *
  * This is the app's first outbound READ. The other three calls out (the hit counter, error
  * reports, battle records) all push. Two rules keep it honest:
