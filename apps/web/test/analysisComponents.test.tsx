@@ -135,13 +135,18 @@ describe('PokemonDetails', () => {
       />,
     );
     const more = screen.getAllByRole('button', { name: '+2 more' });
-    // Its own line under the chips, not wrapped in among them, so its 44px target overlaps none.
     for (const b of more) {
+      // Its own line under the chips, not wrapped in among them, so its 44px target overlaps none.
       expect(b.closest('.tchips')).toBeNull();
       expect(b.parentElement?.querySelector('.tchips')).not.toBeNull();
+      // A control looks like one: the text Button, never the read-only rank-tag pill.
+      expect(b).toHaveClass('ui-btn', 'ui-btn-text');
+      expect(b.querySelector('.mtag')).toBeNull();
+      expect(b).toHaveAttribute('aria-expanded', 'false');
     }
     fireEvent.click(more[0]!);
-    expect(screen.getAllByRole('button', { name: 'fewer' })).toHaveLength(1);
+    const fewer = screen.getByRole('button', { name: 'Show fewer' });
+    expect(fewer).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getAllByRole('button', { name: '+2 more' })).toHaveLength(1);
   });
 

@@ -2224,29 +2224,16 @@ textarea.paste {
   gap: 4px;
   margin-bottom: 14px;
 }
-/* A Pokémon's safe types: the chips, then "+N more" on its own line under them, so its 44px
-   target has its own space and covers none of the chips. */
+/* A Pokémon's safe types: the chips, then "+N more" (a text Button, like Matchups' "Show all")
+   on its own line under them, so its 44px target has its own space and covers none of the chips.
+   No side padding, so its text starts in line with the chips. */
 .safe-types {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
-/* "+N more": the pill (an .mtag inside) looks like the chips above it, the button around it is
-   the 44px target, the pill on its left edge in line with the chips. */
-.more-chip {
-  display: inline-flex;
-  align-items: center;
-  min-width: var(--tap);
-  min-height: var(--tap);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: 11px;
-  cursor: pointer;
-}
-.more-chip .mtag {
-  align-self: center;
+.safe-types .ui-btn {
+  padding-inline: 0;
 }
 .counter-row.counter-row {
   font: inherit;

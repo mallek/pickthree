@@ -1,5 +1,5 @@
 import type { Cost, TeamRecommendation } from '@pickthree/engine';
-import { ExpandRow, Tag, Term } from '@pickthree/ui';
+import { Button, ExpandRow, Tag, Term } from '@pickthree/ui';
 import { useState } from 'react';
 import {
   GLOSSARY,
@@ -123,10 +123,9 @@ export function PokemonDetails({
                         ) : null}
                       </span>
                       {detail.resistances.length > 6 ? (
-                        <button
-                          type="button"
-                          className="more-chip"
-                          aria-expanded={openSafe.has(i)}
+                        <Button
+                          variant="text"
+                          ariaExpanded={openSafe.has(i)}
                           onClick={() =>
                             setOpenSafe((cur) => {
                               const next = new Set(cur);
@@ -139,10 +138,10 @@ export function PokemonDetails({
                             })
                           }
                         >
-                          <span className="mtag">
-                            {openSafe.has(i) ? 'fewer' : `+${detail.resistances.length - 6} more`}
-                          </span>
-                        </button>
+                          {openSafe.has(i)
+                            ? 'Show fewer'
+                            : `+${detail.resistances.length - 6} more`}
+                        </Button>
                       ) : null}
                     </span>
                   </div>

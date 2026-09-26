@@ -436,7 +436,9 @@ console.log('team analysis, "+N more" owns its whole target');
 // The sample lead has more than six safe types. Its toggle's 44px box must be the topmost thing at
 // its own top and bottom edges: nothing painted over it, and it over nothing.
 const moreHits = await page.evaluate(() => {
-  const more = document.querySelector('.more-chip');
+  const more = [...document.querySelectorAll('.safe-types .ui-btn')].find((b) =>
+    /^\+\d+ more$/.test(b.textContent?.trim() ?? ''),
+  );
   if (!more) {
     return null;
   }
