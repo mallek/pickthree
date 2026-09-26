@@ -53,6 +53,32 @@ describe('ScoreCard', () => {
     expect(screen.getByText(/ran the moves you chose/)).toBeInTheDocument();
     expect(screen.getByText(/PvPoke does not rank/)).toBeInTheDocument();
     expect(screen.getByText(/tried all six orders/)).toHaveTextContent('70');
+    expect(screen.queryByText('Run in the order you picked.')).not.toBeInTheDocument();
+  });
+
+  it('with only the picked order tried, says the order once', () => {
+    const team = makeTeam({ battle: 70, total: 60 });
+    const analysis = {
+      team,
+      orders: [
+        { slots: ['a', 'b', 'c'], names: ['A', 'B', 'C'], battle: 70, total: 60, fit: 'Solid' },
+      ],
+      hypothetical: [],
+      chosenMoves: [],
+      unranked: [],
+      assumptions: {} as never,
+      ms: 0,
+    } as unknown as import('@pickthree/engine').TeamAnalysis;
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={{ analysis, best: null, shared: false, leagueTitle: 'Great League' }}
+        onTakeToBattle={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/^Run it in this order:/)).toBeInTheDocument();
+    expect(screen.queryByText('Run in the order you picked.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/tried all six orders/)).not.toBeInTheDocument();
   });
 });
 
@@ -204,6 +230,13 @@ describe('WhyThisTeam', () => {
     expect(
       screen.getByText(/Battle strength 80 is coverage, consistency and safety/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/The total, 66, also counts cost/)).toBeInTheDocument();
+    const f = team.score.factors;
+    // Every factor reads so higher is plainly better: cost is how cheap, not how much.
+    expect(
+      screen.getByText(
+        `The total, 66, also counts cost (${Math.round(f.cost)} of 100, higher is cheaper) and accessibility (${Math.round(f.accessibility)} of 100, higher needs fewer power-ups).`,
+        { exact: false },
+      ),
+    ).toBeInTheDocument();
   });
 });

@@ -35,10 +35,7 @@ export function ScoreCard({
   const first = tried[0];
   const last = tried.length > 1 ? tried[tried.length - 1] : undefined;
   return (
-    <section
-      className={custom ? 'score-card custom-note' : 'score-card'}
-      aria-label="Battle score"
-    >
+    <section className={custom ? 'score-card custom-note' : 'score-card'} aria-label="Battle score">
       <div className="score-head">
         <span className="score-num">{Math.round(team.score.battle)}</span>
         <span className="score-of">/ 100 in battle</span>
@@ -81,8 +78,6 @@ export function ScoreCard({
           pick3 tried all six orders. Best: {first.names.join(', ')} at {first.battle}. Weakest:{' '}
           {last.names.join(', ')} at {last.battle}.
         </p>
-      ) : custom ? (
-        <p className="meta">Run in the order you picked.</p>
       ) : null}
       <Button variant="primary" onClick={onTakeToBattle}>
         Take to battle

@@ -319,7 +319,7 @@ describe('Team Analysis', () => {
     };
     await mountRecommended('a', [team]);
     expect(document.getElementById('details')!.parentElement).toHaveTextContent(
-      'Battle strength 88 is coverage, consistency and safety (99, 56, 100). The total, 72, also counts cost (0) and accessibility (60).',
+      'Battle strength 88 is coverage, consistency and safety (99, 56, 100). The total, 72, also counts cost (0 of 100, higher is cheaper) and accessibility (60 of 100, higher needs fewer power-ups).',
     );
   });
 

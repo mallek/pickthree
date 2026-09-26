@@ -94,8 +94,8 @@ export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
       <p className="meta">
         Battle strength {round(team.score.battle)} is coverage, consistency and safety (
         {round(f.coverage)}, {round(f.consistency)}, {round(f.safety)}). The total,{' '}
-        {round(team.score.total)}, also counts cost ({round(f.cost)}) and accessibility (
-        {round(f.accessibility)}).
+        {round(team.score.total)}, also counts cost ({round(f.cost)} of 100, higher is cheaper) and
+        accessibility ({round(f.accessibility)} of 100, higher needs fewer power-ups).
       </p>
     </div>
   );
