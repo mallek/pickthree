@@ -97,6 +97,29 @@ describe('Your Meta result chip contrast', () => {
   }
 });
 
+describe('In-battle shield grid contrast', () => {
+  // One letter per cell (W, L) and the shield numbers on the axes, which axe will not judge
+  // ("too short"), so the grid is marked data-audit-contrast="static" and checked here. A
+  // decisive result is a filled cell; a close one is the tinted, outlined cell, so the margin
+  // shows without fading the letter.
+  for (const cell of ['w', 'l', 'w.close', 'l.close']) {
+    const rule = block(app, `.fo-grid i.${cell} {`);
+    for (const [theme, body] of Object.entries(themes)) {
+      it(`${cell}: the letter clears 4.5:1 on its fill in ${theme}`, () => {
+        const { fill, ink } = paint(rule, body);
+        expect(ratio(ink, fill)).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+  it('the shield numbers clear 4.5:1 on the card in every theme', () => {
+    const axis =
+      /(?:^|\s)color:\s*var\(--([a-z0-9-]+)\)/.exec(block(app, '.fo-grid i.fo-ax {'))?.[1] ?? '';
+    for (const body of Object.values(themes)) {
+      expect(ratio(value(body, axis), value(body, 'surface'))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
 describe('Seg pressed label contrast', () => {
   // Your Meta's sort sits on the page (--bg); the Settings sheet's Segs sit on --surface.
   const ink = /(?:^|\s)color:\s*var\(--([a-z0-9-]+)\)/.exec(block(app, '.seg > .on {'))?.[1] ?? '';

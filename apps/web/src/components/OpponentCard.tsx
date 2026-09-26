@@ -40,13 +40,26 @@ function Eff({ cell }: { cell: FaceoffCell }) {
   );
 }
 
+/** A word longer than this does not fit a move column at 390px ("Astonish" broke mid-word), so
+ * its name takes the smaller size. */
+const LONG_WORD = 7;
+
+function longestWord(name: string): number {
+  return Math.max(...name.split(' ').map((w) => w.length));
+}
+
+/** A rating this close to 500 is a near coin flip: its cell is outlined, not filled. */
+const CLOSE_MARGIN = 100;
+
 /**
  * Nine cells with a W or L each: your shields 0, 1, 2 down the side, theirs across the top.
- * Colour depth is the margin, so a near-coin-flip looks paler than a blowout.
+ * A decisive result is a filled cell and a near coin flip an outlined one, so a close call looks
+ * paler than a blowout while its letter keeps full contrast. The letters are one character each,
+ * which axe cannot judge, so test/contrast.test.ts checks the fills (data-audit-contrast).
  */
 function ShieldGrid({ grid }: { grid: number[] }) {
   return (
-    <span className="fo-grid" aria-hidden="true">
+    <span className="fo-grid" aria-hidden="true" data-audit-contrast="static">
       <i className="fo-ax corner" />
       {[0, 1, 2].map((n) => (
         <i className="fo-ax" key={`t${n}`}>
@@ -58,12 +71,9 @@ function ShieldGrid({ grid }: { grid: number[] }) {
           <i className="fo-ax">{mine}</i>
           {[0, 1, 2].map((theirs) => {
             const r = grid[mine * 3 + theirs] ?? 500;
+            const close = Math.abs(r - 500) < CLOSE_MARGIN;
             return (
-              <i
-                key={theirs}
-                className={r > 500 ? 'w' : 'l'}
-                style={{ opacity: 0.45 + (Math.abs(r - 500) / 500) * 0.55 }}
-              >
+              <i key={theirs} className={`${r > 500 ? 'w' : 'l'}${close ? ' close' : ''}`}>
                 {r > 500 ? 'W' : 'L'}
               </i>
             );
@@ -98,7 +108,7 @@ export function OpponentCard({ opponent, data }: { opponent: string; data: Faceo
               {data.moves.map((m) => (
                 <th scope="col" key={m.moveId} className="fo-move">
                   <span
-                    className={`fo-move-name${m.name.length > 9 && !m.name.includes(' ') ? ' long' : ''}`}
+                    className={`fo-move-name${longestWord(m.name) > LONG_WORD ? ' long' : ''}`}
                     style={
                       {
                         '--c': typeColor(m.type),

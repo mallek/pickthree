@@ -44,6 +44,16 @@ const AUDIT_ENFORCED = new Set([
   '14c-shared-team',
   'analysis-confirm',
   'analysis-not-found',
+  '20-your-meta',
+  'your-meta-active',
+  '21-log-battle',
+  'log-battle-card',
+  'log-battle-likely',
+  'log-battle-saved',
+  'log-battle-edit',
+  'log-battle-wide',
+  '22-new-set',
+  'new-set-searching',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -92,27 +102,46 @@ page.on('requestfailed', (r) => {
   }
 });
 
-// Automation never reads the live worker: the community meta is answered from the synthetic
-// fixture, and every other worker call is refused, as before (counter.ts and diag.ts already
-// check navigator.webdriver). CDP-wide request interception (page.setRequestInterception) pauses
-// every request in the browser, including the ones the compute worker makes for the static game
-// data, and those never get resolved because interception is only handled on the page session, so
-// the app hangs forever waiting on its own boot. Patching window.fetch on the document instead
-// only touches the main thread's fetches, leaving the dedicated worker's fetches alone.
-const communitySample = fs.readFileSync(
-  path.join(here, '..', '..', '..', 'fixtures', 'community-meta-sample.json'),
-  'utf8',
+// Automation never writes to the live worker and never reads its community data: the community
+// meta and the team board are answered from synthetic fixtures, and every other call that is not a
+// GET is refused here (counter.ts, diag.ts and the battle share already check navigator.webdriver;
+// the refusal also covers the one step below that lifts that gate). The welcome screen's counter
+// read still goes through, as before. CDP-wide request interception (page.setRequestInterception)
+// pauses every request in the browser, including the ones the compute worker makes for the static
+// game data, and those never get resolved because interception is only handled on the page
+// session, so the app hangs forever waiting on its own boot. Patching window.fetch on the document
+// instead only touches the main thread's fetches, leaving the dedicated worker's fetches alone.
+const fixture = (name) =>
+  fs.readFileSync(path.join(here, '..', '..', '..', 'fixtures', name), 'utf8');
+await page.evaluateOnNewDocument(
+  (meta, teams) => {
+    const worker = 'https://pickthree-counter.travis-c82.workers.dev';
+    const json = (body) =>
+      Promise.resolve(
+        new Response(body, { status: 200, headers: { 'content-type': 'application/json' } }),
+      );
+    const native = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url =
+        typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+      if (url.startsWith(`${worker}/api/v1/meta`)) {
+        return json(meta);
+      }
+      if (url.startsWith(`${worker}/api/v1/teams`)) {
+        return json(teams);
+      }
+      const method = (
+        init?.method ?? (input instanceof Request ? input.method : 'GET')
+      ).toUpperCase();
+      if (url.startsWith(worker) && method !== 'GET') {
+        return Promise.resolve(new Response(null, { status: 503 }));
+      }
+      return native(input, init);
+    };
+  },
+  fixture('community-meta-sample.json'),
+  fixture('community-teams-sample.json'),
 );
-await page.evaluateOnNewDocument((sample) => {
-  const native = window.fetch.bind(window);
-  window.fetch = (input, init) => {
-    const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
-    if (url.startsWith('https://pickthree-counter.travis-c82.workers.dev/api/v1/meta')) {
-      return Promise.resolve(new Response(sample, { status: 200, headers: { 'content-type': 'application/json' } }));
-    }
-    return native(input, init);
-  };
-}, communitySample);
 
 /**
  * `mustShow`: a selector that has to be on the page when each shot is taken, for states that do
@@ -694,6 +723,8 @@ console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.set-card', { timeout: 60_000 });
 await page.waitForSelector('.faced-row');
+// The sample log is under 15 battles this season: the progress line and its bar.
+await page.waitForSelector('.page-head [role="progressbar"]');
 // Full page, so the set list ("Your teams") is in the capture, and its rows keep their own grid:
 // the Teams summary once shared the .team-row name and turned these rows into a flex line.
 await shot('20-your-meta');
@@ -724,8 +755,10 @@ if (!page.url().endsWith('#/meta')) {
 }
 
 console.log('who beats an outsider (simulated on device)');
+// An outsider (outside PvPoke's meta group) carries the dagger mark once the meta group loads.
+await page.waitForSelector('.faced-row .faced-out', { timeout: 60_000 });
 const outsiderHref = await page.$$eval('.faced-row', (rows) => {
-  const r = rows.find((el) => el.textContent?.includes('outside the meta'));
+  const r = rows.find((el) => el.querySelector('.faced-out'));
   return r ? r.getAttribute('href') : null;
 });
 if (!outsiderHref) {
@@ -750,9 +783,115 @@ if (!simNote.includes('simulated on this device')) {
 }
 await shot('24-counters-vs-outsider', false);
 
+console.log('your meta, 15 or more battles');
+// Six more battles on the running team, sent to the community meta, so the season passes 15 and
+// the contribution count shows. The set as it was is kept and put back after the shots.
+const setBefore = await page.evaluate(
+  () =>
+    new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('battles', 'readwrite');
+        const store = tx.objectStore('battles');
+        const all = store.getAll();
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => reject(tx.error);
+        all.onsuccess = () => {
+          const set = all.result.find((x) => x.league === 'great' && !x.closed);
+          if (!set) {
+            resolve(null);
+            return;
+          }
+          const faced = [
+            [['medicham', 'lanturn', 'registeel'], 'win'],
+            [['azumarill', 'clodsire', 'dragonite_shadow'], 'loss'],
+            [['medicham', 'swampert_shadow', 'tinkaton'], 'win'],
+            [[], null],
+            [['lanturn', 'azumarill', 'registeel'], 'win'],
+            [['clodsire', 'medicham', 'dragonite_shadow'], 'loss'],
+          ];
+          const now = Date.now();
+          const added = faced.map(([opponents, result], i) => {
+            const at = new Date(now - (faced.length - i) * 6 * 60_000).toISOString();
+            return {
+              id: `screens-${i}`,
+              at,
+              opponents,
+              result,
+              tanked: result === null,
+              sharedAt: at,
+            };
+          });
+          store.put({ ...set, battles: [...set.battles, ...added] });
+          resolve(set);
+        };
+      };
+    }),
+);
+if (!setBefore) {
+  throw new Error('your meta, 15 or more: no running set to add battles to');
+}
+await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForSelector('.set-card', { timeout: 60_000 });
+await page.waitForSelector('.page-head [role="progressbar"][aria-valuenow="100"]', {
+  timeout: 60_000,
+});
+await page.waitForSelector('.page-head .ui-measured-line', { timeout: 30_000 });
+await page.waitForSelector('.faced-row .faced-out', { timeout: 60_000 });
+await shot('your-meta-active');
+
+console.log('log a battle, edit from a result chip');
+await page.$$eval('.result-chip', (els) =>
+  els.find((el) => el.getAttribute('aria-label')?.startsWith('Loss against'))?.click(),
+);
+await page.waitForFunction(() => document.location.hash.startsWith('#/meta/log/'), {
+  timeout: 15_000,
+});
+await page.waitForFunction(
+  () =>
+    document.querySelector('.hdr .hdr-title')?.textContent?.includes('Edit battle') &&
+    document.querySelectorAll('.opp-slot.filled').length === 3 &&
+    document.querySelector('.result-bar [aria-pressed="true"]'),
+  { timeout: 30_000 },
+);
+await shot('log-battle-edit', false, { mustShow: '.result-bar .ui-btn-primary' });
+await assertTitleCentred('edit battle');
+
+// Put the running set back as it was, and reload so the app reads it again.
+await page.evaluate(
+  (before) =>
+    new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('battles', 'readwrite');
+        tx.objectStore('battles').put(before);
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    }),
+  setBefore,
+);
+// Teams runs the recommendation again after the reload, for New Set's "From pick3" rows.
+await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
+await page.reload({ waitUntil: 'networkidle0' });
+await settled();
+
 console.log('log a battle');
 await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.result-row');
+await page.waitForSelector('.team-strip');
+await shot('21-log-battle', false);
+await assertTitleCentred('log a battle');
+
+console.log('log a battle, card open');
 // The recent grid shows while the search has focus and stays open after a pick while a slot is
 // free, so the second pick needs no second tap; blurring the search folds it for the shot.
 await page.click('.search');
@@ -769,13 +908,76 @@ if (cardVerdicts !== 3) {
   throw new Error(`in-battle card shows ${cardVerdicts} verdicts, expected 3`);
 }
 await new Promise((r) => setTimeout(r, 300));
-await shot('21-log-battle', false);
-await assertTitleCentred('log a battle');
+await shot('log-battle-card', true, { mustShow: '.faceoff .fo-table' });
+
+console.log('log a battle, wide');
+// Ruling 2: from 900px the card sits beside the search and the slots. Width only: flipping
+// isMobile or hasTouch would reload the page and lose the slots.
+await page.setViewport({
+  width: 1280,
+  height: 900,
+  deviceScaleFactor: 1,
+  isMobile: true,
+  hasTouch: true,
+});
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('log-battle-wide', false, { mustShow: '.log-card .faceoff .fo-table' });
+await page.setViewport({
+  width: 390,
+  height: 844,
+  deviceScaleFactor: 2,
+  isMobile: true,
+  hasTouch: true,
+});
+
+console.log('log a battle, saved');
+await page.$eval('.result-row .ui-btn-win', (el) => el.click());
+await page.waitForSelector('.notice-toast.notice-info[role="status"]', { timeout: 15_000 });
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('log-battle-saved', false, { mustShow: '.notice-toast.notice-info' });
+await page.$eval('.notice-toast button', (el) => el.click());
+await page.waitForSelector('.notice-toast', { hidden: true });
 
 console.log('new set');
 await page.goto(`${base}/#/meta/new`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.opp-slot');
-await shot('22-new-set', false);
+await page.waitForSelector('.pick3-row', { timeout: 60_000 });
+await shot('22-new-set', true, { mustShow: '.pick3-row' });
+await assertTitleCentred('new set');
+
+console.log('new set, searching');
+await page.click('.search');
+await page.type('.search', 'azu');
+await page.waitForSelector('.recent-token', { timeout: 15_000 });
+await shot('new-set-searching', false, { mustShow: '.recent-token' });
+
+console.log('log a battle, likely teammates');
+// The "Often with" row reads the community team board, which the app reads only on the live site
+// and never under automation (navigator.webdriver). For this one step the page is told it is not
+// automated and the dev flag is set; the board is answered from the fixture above, and any write
+// the lifted gate lets through is refused by the same fetch patch. The reload after puts both back.
+await page.evaluate(() => {
+  Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false, configurable: true });
+  localStorage.setItem('pickthree.shareDev', '1');
+});
+await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.result-row');
+await page.click('.search');
+await page.type('.search', 'medicham');
+await page.waitForSelector('.recent-token[aria-label="Medicham"]', { timeout: 15_000 });
+await page.click('.recent-token[aria-label="Medicham"]');
+await page.waitForSelector('[role="group"][aria-label="Often with Medicham"] .recent-token', {
+  timeout: 30_000,
+});
+await shot('log-battle-likely', false, {
+  mustShow: '[role="group"][aria-label="Often with Medicham"]',
+});
+await page.evaluate(() => localStorage.removeItem('pickthree.shareDev'));
+await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+await page.reload({ waitUntil: 'networkidle0' });
+if (await page.evaluate(() => navigator.webdriver !== true)) {
+  throw new Error('likely teammates: the automation flag did not come back after the reload');
+}
 
 console.log('suggest teammates around one pin');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });

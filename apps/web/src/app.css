@@ -1595,7 +1595,7 @@ textarea.paste {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 8px 8px 16px;
+  padding: 4px 4px 4px 16px;
   border-radius: 999px;
   background: var(--surface2);
   color: var(--text);
@@ -1605,7 +1605,10 @@ textarea.paste {
   max-width: calc(100vw - 32px);
   white-space: nowrap;
 }
+/* max-content: pinned at left 50%, a shrink-to-fit box would otherwise wrap at half the screen
+   ("Win logged · 1 / with this team"); a long warning still wraps at the max-width. */
 .notice-toast {
+  width: max-content;
   white-space: normal;
   text-align: left;
   line-height: 1.35;
@@ -1617,12 +1620,17 @@ textarea.paste {
 .notice-toast > span {
   min-width: 0;
 }
+/* A 44px target; --accent-lo under --on-accent clears 4.5:1 in both themes, as the primary
+   button's gradient end does. */
 .update-toast button {
+  flex: none;
+  min-width: var(--tap);
+  min-height: var(--tap);
   border: 0;
   border-radius: 999px;
-  padding: 6px 12px;
-  background: var(--accent);
-  color: #fff;
+  padding: 0 16px;
+  background: var(--accent-lo);
+  color: var(--on-accent);
   font-weight: 600;
   font-size: 13px;
 }
@@ -2915,8 +2923,10 @@ input[type='range'] {
   vertical-align: super;
   line-height: 0;
 }
+/* Proportional figures: each row is its own grid, so tabular figures aligned nothing and cost the
+   name the few pixels that kept "Shadow Dragonite" on one line. */
 .faced-rec {
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .faced-go {
   display: inline-flex;
@@ -2990,12 +3000,25 @@ input[type='range'] {
 .slot-wrap {
   position: relative;
 }
+/* A 44px target around the 24px circle, which sits where it always did (its centre 20px in from
+   the slot's right edge, 2px right of the target's). The circle is a child, so axe reads its fill. */
 .slot-x {
   position: absolute;
-  top: -4px;
-  right: 8px;
+  top: -14px;
+  right: 0;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.slot-x > span {
   width: 24px;
   height: 24px;
+  margin-left: 4px;
+  box-sizing: border-box;
   border-radius: 50%;
   border: 1px solid var(--divider);
   background: var(--surface);
@@ -3004,7 +3027,6 @@ input[type='range'] {
   line-height: 1;
   display: grid;
   place-items: center;
-  padding: 0;
 }
 .recent-row {
   display: grid;
@@ -3208,7 +3230,9 @@ input[type='range'] {
   display: block;
   padding: 2px 3px;
   border-radius: var(--r-sm);
-  background: color-mix(in srgb, var(--c) 22%, transparent);
+  /* The type chip's own paint (ui base.css .tchip), so the ink clears 4.5:1 in both themes. */
+  background: color-mix(in srgb, var(--c) var(--tchip-fill), transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
   color: var(--t, var(--text));
   font-size: 10px;
   font-weight: 600;
@@ -3226,7 +3250,7 @@ input[type='range'] {
 .fo-count {
   display: block;
   font-size: 10px;
-  color: var(--faint);
+  color: var(--muted);
   margin-top: 2px;
 }
 .fo-member {
@@ -3260,10 +3284,11 @@ input[type='range'] {
   border-radius: var(--r-sm);
   font-weight: 700;
   font-size: 12px;
-  color: var(--faint);
+  color: var(--muted);
 }
+/* A light tint, so the 12px label clears 4.5:1 on it in both themes. */
 .fo-eff.super {
-  background: var(--hit-tint);
+  background: color-mix(in srgb, var(--hit) 6%, var(--surface));
   color: var(--hit);
 }
 .fo-eff.super.strong {
@@ -3301,19 +3326,32 @@ input[type='range'] {
   font-style: normal;
   font-size: 9px;
   font-weight: 700;
-  color: var(--bg);
 }
 .fo-grid i.fo-ax {
   width: 10px;
-  color: var(--faint);
+  color: var(--muted);
   font-weight: 500;
   background: transparent;
 }
+/* Decisive results fill the cell; a near coin flip takes the outcome buttons' tint and an
+   outline, so it reads paler without fading its letter (test/contrast.test.ts). */
 .fo-grid i.w {
   background: var(--win);
+  color: var(--bg);
 }
 .fo-grid i.l {
   background: var(--loss);
+  color: var(--bg);
+}
+.fo-grid i.w.close {
+  background: color-mix(in srgb, var(--win) 5%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--win);
+  color: var(--win);
+}
+.fo-grid i.l.close {
+  background: color-mix(in srgb, var(--loss) 5%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--loss);
+  color: var(--loss);
 }
 .fo-verdict {
   font-size: 11px;
@@ -3366,6 +3404,9 @@ input[type='range'] {
   max-width: 560px;
   margin: 0 auto;
   z-index: 5;
+  /* A column, so Start set spans the width as the other pages' primary buttons do. */
+  display: flex;
+  flex-direction: column;
   padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
   background: linear-gradient(to top, var(--bg) 70%, transparent);
 }

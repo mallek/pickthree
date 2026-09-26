@@ -367,7 +367,7 @@ export function LogBattle() {
                     aria-label={`Remove ${name(id)}`}
                     onClick={() => remove(id)}
                   >
-                    &times;
+                    <span aria-hidden="true">&times;</span>
                   </button>
                 ) : null}
               </div>

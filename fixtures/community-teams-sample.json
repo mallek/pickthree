@@ -1,0 +1,55 @@
+{
+  "league": "great",
+  "since": "2026-09-02T00:00:00.000Z",
+  "until": "2026-09-24T00:10:00.000Z",
+  "source": "all",
+  "battles": 1240,
+  "devices": 18,
+  "sources": { "ladder": 1240 },
+  "teams": [],
+  "cores": [
+    {
+      "species": ["azumarill", "medicham"],
+      "kind": "core",
+      "runBattles": 40,
+      "runWins": 22,
+      "runLosses": 18,
+      "facedBattles": 60,
+      "facedWins": 31,
+      "facedLosses": 29,
+      "moves": [null, null],
+      "thirds": [
+        { "speciesId": "registeel", "sightings": 14 },
+        { "speciesId": "lanturn", "sightings": 9 }
+      ]
+    },
+    {
+      "species": ["clodsire", "medicham"],
+      "kind": "core",
+      "runBattles": 30,
+      "runWins": 16,
+      "runLosses": 14,
+      "facedBattles": 44,
+      "facedWins": 20,
+      "facedLosses": 24,
+      "moves": [null, null],
+      "thirds": [
+        { "speciesId": "dragonite_shadow", "sightings": 12 },
+        { "speciesId": "tinkaton", "sightings": 6 }
+      ]
+    },
+    {
+      "species": ["lanturn", "medicham"],
+      "kind": "core",
+      "runBattles": 12,
+      "runWins": 5,
+      "runLosses": 7,
+      "facedBattles": 20,
+      "facedWins": 11,
+      "facedLosses": 9,
+      "moves": [null, null],
+      "thirds": [{ "speciesId": "swampert_shadow", "sightings": 8 }]
+    }
+  ],
+  "generatedAt": "2026-09-24T00:05:00.000Z"
+}
