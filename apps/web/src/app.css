@@ -2879,10 +2879,11 @@ input[type='range'] {
   border: 1px solid var(--loss);
   color: var(--loss);
 }
+/* Tanked reads in the same amber as Log a Battle's Tanked button (`.ui-btn-warn`). */
 .result-chip.tanked > span {
-  background: var(--surface2);
-  border: 1px solid var(--divider);
-  color: var(--muted);
+  background: var(--warn-tint);
+  border: 1px solid var(--warn);
+  color: var(--warn);
 }
 .set-slots {
   display: grid;

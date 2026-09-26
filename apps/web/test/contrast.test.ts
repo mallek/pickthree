@@ -97,6 +97,21 @@ describe('Your Meta result chip contrast', () => {
   }
 });
 
+describe("The T chip is Log a Battle's Tanked amber (Travis, 2026-09-26)", () => {
+  const ui = read('../../../packages/ui/base.css');
+  const chip = block(app, '.result-chip.tanked > span {');
+  const button = block(ui, '.ui-btn-warn {');
+  for (const [theme, body] of Object.entries(themes)) {
+    it(`paints the Tanked button's fill and ink, at 4.5:1, in ${theme}`, () => {
+      const c = paint(chip, body);
+      const b = paint(button, body);
+      expect(c).toEqual(b);
+      expect(c.ink).toBe(value(body, 'warn'));
+      expect(ratio(c.ink, c.fill)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+});
+
 describe('In-battle shield grid contrast', () => {
   // One letter per cell (W, L) and the shield numbers on the axes, which axe will not judge
   // ("too short"), so the grid is marked data-audit-contrast="static" and checked here. A
