@@ -319,7 +319,7 @@ describe('Team Analysis', () => {
     };
     await mountRecommended('a', [team]);
     expect(document.getElementById('details')!.parentElement).toHaveTextContent(
-      'Battle strength 88 is coverage, consistency and safety (99, 56, 100). The total, 72, also counts cost (0 of 100, higher is cheaper) and accessibility (60 of 100, higher needs fewer power-ups).',
+      'Battle strength 88 is coverage, consistency and safety (99, 56, 100). The total, 72, also counts cost (0 of 100 against the other teams pick3 simulated from your collection, higher is cheaper) and accessibility (60 of 100, higher needs fewer power-ups).',
     );
   });
 
@@ -448,6 +448,10 @@ describe('Team Analysis', () => {
     resetHistoryForTests();
     const card = await screen.findByRole('region', { name: 'Battle score' });
     expect(card).toHaveClass('custom-note');
+    // Scored only against its own orders, a hand-built team's breakdown gives its build cost instead.
+    expect(document.getElementById('details')!.parentElement).toHaveTextContent(
+      'To build all three:',
+    );
     expect(canGoBack()).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.hash).toBe('#/build'));

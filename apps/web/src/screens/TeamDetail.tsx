@@ -355,7 +355,7 @@ export function TeamDetail({ id }: { id: string }) {
           <h3 id="details" className="analysis-section">
             Why this team
           </h3>
-          <WhyThisTeam team={team} />
+          <WhyThisTeam team={team} custom={custom} />
         </section>
 
         <div className="stack" style={{ gap: 4 }}>

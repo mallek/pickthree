@@ -6,7 +6,7 @@ import { Matchups } from '../src/components/team/Matchups.tsx';
 import { PokemonDetails } from '../src/components/team/PokemonDetails.tsx';
 import { ScoreCard } from '../src/components/team/ScoreCard.tsx';
 import { WhyThisTeam } from '../src/components/team/WhyThisTeam.tsx';
-import { SEP } from '../src/format.ts';
+import { costLine, SEP } from '../src/format.ts';
 import { AppProvider } from '../src/state/store.tsx';
 import { fakeHost } from './fakeHost.ts';
 import { makeTeam } from './teamFixture.ts';
@@ -246,19 +246,38 @@ describe('PokemonDetails', () => {
 });
 
 describe('WhyThisTeam', () => {
-  it('says the headline is battle strength and lists the factors', () => {
+  it('for a recommended team, says the headline is battle strength and what cost is compared against', () => {
     const team = makeTeam({ battle: 80, total: 66 });
-    wrap(<WhyThisTeam team={team} />);
+    team.score.factors = { coverage: 90, consistency: 70, safety: 80, cost: 60, accessibility: 40 };
+    wrap(<WhyThisTeam team={team} custom={false} />);
     expect(
       screen.getByText(/Battle strength 80 is coverage, consistency and safety/),
     ).toBeInTheDocument();
-    const f = team.score.factors;
-    // Every factor reads so higher is plainly better: cost is how cheap, not how much.
+    // Every factor reads so higher is plainly better, and cost says what it is measured against.
     expect(
       screen.getByText(
-        `The total, 66, also counts cost (${Math.round(f.cost)} of 100, higher is cheaper) and accessibility (${Math.round(f.accessibility)} of 100, higher needs fewer power-ups).`,
+        'The total, 66, also counts cost (60 of 100 against the other teams pick3 simulated from your collection, higher is cheaper) and accessibility (40 of 100, higher needs fewer power-ups).',
         { exact: false },
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/To build all three/)).not.toBeInTheDocument();
+  });
+
+  it('for a hand-built team, drops cost, accessibility and the total, and says what it costs to build', () => {
+    const team = makeTeam({ battle: 80, total: 66 });
+    team.score.factors = {
+      coverage: 90,
+      consistency: 70,
+      safety: 80,
+      cost: 100,
+      accessibility: 40,
+    };
+    wrap(<WhyThisTeam team={team} custom />);
+    const line = screen.getByText(/Battle strength 80 is coverage, consistency and safety/);
+    expect(line.textContent).toBe(
+      `Battle strength 80 is coverage, consistency and safety (90, 70, 80). To build all three: ${costLine(team.cost)}.`,
+    );
+    // A hand-built team is scored only against its own orders, so its cost factor says nothing.
+    expect(line.textContent).not.toMatch(/total|of 100|accessibility/);
   });
 });
