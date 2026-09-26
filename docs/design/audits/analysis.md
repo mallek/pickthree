@@ -17,9 +17,10 @@ shows those instead; nothing on this branch touched sprite rendering itself.
 
 Dark and light at 390px, one pair per state, converted to WebP (600px wide, quality 72) the same
 way the Teams and Build images were, from `apps/web/screenshots/<name>-{dark,light}.png` (fresh
-`npm run web:audit` run, 2026-09-25, at commit `4cf5108`, the final review's fix wave). The four
-full-page pairs changed in that wave and were re-converted; `analysis-confirm` and
-`analysis-not-found` re-converted byte for byte identical to the earlier images. `03-team-detail`,
+`npm run web:audit` run, 2026-09-25, at commit `e430c13`, after the final review's fix wave and
+the re-review's R1 fix). The four full-page pairs changed in those waves and were re-converted
+(R1 changed the score breakdown in all four); `analysis-confirm` and `analysis-not-found`
+re-converted byte for byte identical to the earlier images. `03-team-detail`,
 `14-custom-team`, `14b-custom-unranked` and `14c-shared-team` are full-page shots
 (`captureBeyondViewport: false`, the same rule Teams and Build use so the fixed tab bar lands at
 the true bottom); `analysis-confirm` and `analysis-not-found` are viewport shots (a sheet over the
@@ -51,7 +52,8 @@ after Build's Find best order (every captured custom team was analyzed in the or
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), re-run
-      2026-09-25 against `4cf5108` (the final review's fix wave): exit 0. Zero findings on all six
+      2026-09-25 against `e430c13` (the final review's fix wave and the re-review's R1 fix): exit
+      0. Zero findings on all six
       enforced Team Analysis screens (`03-team-detail`, `14-custom-team`, `14b-custom-unranked`,
       `14c-shared-team`, `analysis-confirm`, `analysis-not-found`), in both themes. 838 findings
       remain on screens not yet redesigned (the same count as before the wave), none failing the
@@ -83,11 +85,12 @@ after Build's Find best order (every captured custom team was analyzed in the or
     (Task 5's I2 fix: the toggle left the chip flow).
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all run 2026-09-25 at `4cf5108`: lint exit 0; typecheck exit 0 across all
-      seven workspaces; `npm test` 133 files, 1,173 tests passed; `check-colors` exit 0 (baseline
+      check-tokens`, all run 2026-09-25 at `e430c13`: lint exit 0; typecheck exit 0 across all
+      seven workspaces; `npm test` 133 files, 1,174 tests passed; `check-colors` exit 0 (baseline
       untouched); `check-tokens`: ok.
-- [x] `npm run ui:audit` re-run 2026-09-25 at `4cf5108`: exit 0, "gallery audit: clean in dark
-      and light", its three self-checks passing (they exit 1 on failure). `npm run meta:screens`:
+- [x] `npm run ui:audit` re-run 2026-09-25 at `4cf5108` (nothing it covers changed after): exit
+      0, "gallery audit: clean in dark and light", its three self-checks passing (they exit 1 on
+      failure). `npm run meta:screens`:
       not re-run; nothing under `packages/ui` or `apps/meta` changed in the fix wave (`Button`'s
       `ariaExpanded` prop, the one `packages/ui` change on this branch, predates Task 5's passing
       `meta:screens` run).
@@ -254,11 +257,12 @@ after Build's Find best order (every captured custom team was analyzed in the or
 - [x] tests cover the new behavior: `apps/web/test/analysisComponents.test.tsx` (ScoreCard with
       one order line or the tried-orders line, BattlePlan, Matchups with its "Key win"/"Key
       threat" heads and the no-wins line, PokemonDetails with "+N more" as a text Button,
-      WhyThisTeam's higher-is-better breakdown), `apps/web/test/teamDetail.test.tsx` (the
-      screen: not-found after a run, Loading then the team on a fresh load, the failed run with
-      Try again and no loop, headline, jumps, strip, Take to battle in all three running-set
-      cases, Edit team, Back with and without history, the team-link describe block, the rounded
-      score breakdown, the reduced-motion jump), `apps/web/test/history.test.ts` (`replaceEntry`),
+      WhyThisTeam's breakdown for a recommended team and for a hand-built one),
+      `apps/web/test/teamDetail.test.tsx` (the screen: not-found after a run, Loading then the
+      team on a fresh load, the failed run with Try again and no loop, headline, jumps, strip,
+      Take to battle in all three running-set cases, Edit team, Back with and without history,
+      the team-link describe block, the rounded score breakdown, the custom breakdown's build
+      cost, the reduced-motion jump), `apps/web/test/history.test.ts` (`replaceEntry`),
       `apps/web/test/format.test.ts` (`costParts`), `apps/web/test/shadowToken.test.tsx` (the
       token-wrapper alignment fix), `packages/engine/test/analyze.test.ts` (Ruling 1's
       battle-first order sort).
@@ -297,11 +301,20 @@ after Build's Find best order (every captured custom team was analyzed in the or
    decimals ("56.3," "71.7") beside a rounded headline, fixed by rounding every number in the line
    the same way the headline is rounded. **Changed by the controller after the final review
    flagged it:** "cost (0)" meant the most expensive build but read as "costs nothing". In
-   `score.ts` cost is 100 for the cheapest of the finalists and 0 for the most expensive, and
-   accessibility falls with the power-up steps left, so both now say which way is better:
-   `03-team-detail` reads "The total, 72, also counts cost (0 of 100, higher is cheaper) and
-   accessibility (60 of 100, higher needs fewer power-ups)." (`a3636e6`; the WhyThisTeam and
-   TeamDetail tests pin the sentence).
+   `score.ts` cost is 100 for the cheapest of the teams scored in the same run and 0 for the most
+   expensive, and accessibility falls with the power-up steps left, so both now say which way is
+   better (`a3636e6`). **Changed again after the re-review (R1):** "the teams scored in the same
+   run" are pick3's simulated finalists for a recommended team, but only a hand-built team's own
+   orders for a custom one, which all cost the same, so every custom team read "cost (100 of
+   100, higher is cheaper)" whatever it cost. A recommended team's line now names what cost is
+   compared against: `03-team-detail` reads "The total, 72, also counts cost (0 of 100 against
+   the other teams pick3 simulated from your collection, higher is cheaper) and accessibility
+   (60 of 100, higher needs fewer power-ups)." A custom team (hand-built or from a link) drops
+   cost, accessibility and the total and gives the build cost instead: `14-custom-team` reads
+   "Battle strength 67 is coverage, consistency and safety (88, 61, 30). To build all three:
+   723,500 Stardust · 593 Candy · 182 XL Candy · 2 Elite TM." (`e430c13`; the WhyThisTeam tests
+   pin both sentences, the TeamDetail tests the recommended one and the custom one's "To build
+   all three").
 7. **`StructureTag` and `GLOSSARY['line']` are removed** once TeamDetail stops using them; the
    structure is a `Term` like Teams. [Cost if wrong: none.] `StructureTag` deleted in Task 4 (no
    remaining user); `GLOSSARY['line']` did not exist at HEAD, so there was nothing to delete.
@@ -333,6 +346,7 @@ after Build's Find best order (every captured custom team was analyzed in the or
 | Final review I4 and M6, record claims: the text-levels tick left out the 40px score and the 12/13/11px sizes; the strip-tap claim, the chips/tags tick, Ruling 1's wording, the shadowToken count (23, not 22), where the Share and Settings labels live, "every one of these notes at once", and the missing `Button` `ariaExpanded` and closed Build open item under visible changes. | The text-levels tick names every size and the 40px score as a display exception for Travis; the `.meta` 12px deferral is carried to Open items in Build's words; every other claim corrected in place. | this record's commit |
 | Final review flags, ruled by the controller: Ruling 3 ("Run in the order you picked." repeated the order line) and Ruling 6 ("cost (0)" read as free). | See Rulings 3 and 6 above. | `a3636e6` |
 | Final review M1, M2, M3, M4, M5, M7. M1: `.custom-note`'s left bar never drew (overridden by `.score-card`'s border). M2: "Wins" (plural) over one card, "Threat" (singular), and nothing under "Wins"/"Key wins" when the engine returns no key wins. M3: "Your Pokémon" over rows that say "Not in your collection". M4: 17px and 11px literals where tokens exist. M5: `.mini`'s fixed widths from the retired scroll rows and a stale comment. M7: violet on read-only things. | M1: rule deleted, class kept as a hook. M2: "Key win"/"Key threat" and a muted no-wins line, collapsed and expanded (two tests). M3: "Pokémon details". M4: `--fs-section`, `--fs-label`. M5: widths removed from `.mini` and `.mini.threat`, the overrides' width lines and the comment gone. M7: plan rail `--divider`, plan titles `--muted`, keep-shield line plain text; the carried violet rank tags, role eyebrow and win cells are named in the colors tick. | `4cf5108` |
+| Re-review R1: cost is normalized across the teams scored in the same run, which for a custom team is only its own orders, so every custom team read "cost (100 of 100, higher is cheaper)". | A recommended team's line says cost is "against the other teams pick3 simulated from your collection"; a custom team's line drops cost, accessibility and the total and ends "To build all three: <costLine>." (see Ruling 6). Tests for both sentences. | `e430c13` |
 
 ## Visible changes outside Team Analysis
 
