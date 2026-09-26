@@ -601,6 +601,25 @@ function requestFor(s: AppState, now: Date): CommunityRequest | null {
     : null;
 }
 
+/**
+ * The window the community team board is read for in `league`: the Source picker's window when a
+ * community source is chosen, else This meta. Build's teammate suggestions and Log a Battle's
+ * likely teammates both read it, so they share `communityCores`' cache entry.
+ */
+export function boardWindow(s: AppState, league: string): CommunityRequest | null {
+  const info = s.data?.leagues.find((l) => l.id === league);
+  if (!info) {
+    return null;
+  }
+  const choice = facingSettings(s.settings);
+  return communityRequest(
+    info,
+    isCommunity(choice.source) ? choice.window : 'meta',
+    s.data?.seasons ?? [],
+    s.data?.epochs ?? [],
+  );
+}
+
 interface Actions {
   /**
    * Go to a screen. `replace` swaps the current history entry for it instead of adding one, for a
@@ -1183,17 +1202,11 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       const { facing } = await facingNow();
       const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
         optionsFrom(s.settings);
-      const choice = facingSettings(s.settings);
-      const info = s.data?.leagues.find((l) => l.id === leagueInfo.id);
-      const boardWindow = info
-        ? communityRequest(
-            info,
-            isCommunity(choice.source) ? choice.window : 'meta',
-            s.data?.seasons ?? [],
-            s.data?.epochs ?? [],
-          )
-        : null;
-      const community = await communityCores(s.settings, leagueInfo.id, boardWindow);
+      const community = await communityCores(
+        s.settings,
+        leagueInfo.id,
+        boardWindow(s, leagueInfo.id),
+      );
       if (stale()) {
         dispatch({ type: 'drop', what: 'suggest' });
         return;

@@ -3001,8 +3001,115 @@ input[type='range'] {
   background: var(--bg);
   border-top: 1px solid var(--divider);
 }
-.result-row .btn-ghost {
-  border: 1px solid var(--divider);
+/* Log a Battle's results: each labeled, the outcome color supporting the label. Tanked is amber
+   (--warn): the opponent quit or threw, not a loss. Pressed is edit mode's chosen result. */
+.result-btn {
+  width: 100%;
+  padding: 0 8px;
+}
+.result-win {
+  background: color-mix(in srgb, var(--win) 8%, var(--surface));
+  border-color: var(--win);
+  color: var(--win);
+}
+.result-loss {
+  background: color-mix(in srgb, var(--loss) 8%, var(--surface));
+  border-color: var(--loss);
+  color: var(--loss);
+}
+.result-tanked {
+  background: var(--warn-tint);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.result-win[aria-pressed='true'] {
+  background: var(--win);
+  color: var(--bg);
+}
+.result-loss[aria-pressed='true'] {
+  background: var(--loss);
+  color: var(--bg);
+}
+.result-tanked[aria-pressed='true'] {
+  background: var(--warn);
+  color: var(--bg);
+}
+.log-help {
+  margin: 0;
+  text-align: center;
+}
+/* The page: a sticky head (title, team, search), the results and slots, then the in-battle
+   card. The head keeps the search in view however far the card is scrolled. */
+.log-page {
+  padding-bottom: 200px;
+}
+.log-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg);
+  border-bottom: 1px solid var(--divider);
+}
+.log-head .hdr {
+  position: static;
+  border-bottom: 0;
+}
+.log-head .team-strip {
+  padding: 0 12px 8px;
+}
+.log-search {
+  padding: 0 var(--gutter) 12px;
+}
+.log-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px var(--gutter) 0;
+}
+.log-card {
+  padding: 14px var(--gutter) 0;
+}
+/* Wide screens: the page widens and the card takes a 420px column beside the search, results
+   and slots. The head's parts join the page grid. */
+@media (min-width: 900px) {
+  .app:has(> .log-page) {
+    max-width: 960px;
+  }
+  .log-page .result-bar {
+    max-width: 960px;
+  }
+  .log-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    /* The last row takes the card's extra height, so the search stays on top of the results. */
+    grid-template-rows: auto auto auto 1fr;
+  }
+  .log-head {
+    display: contents;
+  }
+  .log-head .hdr {
+    position: sticky;
+    border-bottom: 1px solid var(--divider);
+  }
+  .log-head .hdr,
+  .log-head .team-strip {
+    grid-column: 1 / -1;
+  }
+  .log-head .team-strip {
+    padding-top: 10px;
+  }
+  .log-search,
+  .log-body {
+    grid-column: 1;
+  }
+  .log-search {
+    padding-top: 14px;
+  }
+  .log-card {
+    grid-column: 2;
+    grid-row: 3 / 5;
+    padding-left: 0;
+  }
 }
 /* Your team for this set, inside the sticky header: who the card's rows are. */
 .team-strip {
@@ -3026,7 +3133,7 @@ input[type='range'] {
 /* in-battle card */
 .faceoff {
   background: var(--surface);
-  border-radius: var(--r-xl);
+  border-radius: var(--r-card);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -3117,7 +3224,7 @@ input[type='range'] {
   min-width: 26px;
   height: 22px;
   padding: 0 4px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-weight: 700;
   font-size: 12px;
   color: var(--faint);
@@ -3161,7 +3268,7 @@ input[type='range'] {
   font-style: normal;
   font-size: 9px;
   font-weight: 700;
-  color: #fff;
+  color: var(--bg);
 }
 .fo-grid i.fo-ax {
   width: 10px;
