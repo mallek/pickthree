@@ -753,14 +753,16 @@ await shot('24-counters-vs-outsider', false);
 console.log('log a battle');
 await page.goto(`${base}/#/meta/log`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.result-row');
-// The recent grid shows while the search has focus and folds away after each pick.
+// The recent grid shows while the search has focus and stays open after a pick while a slot is
+// free, so the second pick needs no second tap; blurring the search folds it for the shot.
 await page.click('.search');
 await page.waitForSelector('.recent-token');
 await page.click('.recent-token');
+await page.waitForSelector('.opp-slot.filled');
+await page.$$eval('.recent-token:not(.on)', (els) => els[0]?.click());
+await page.waitForFunction(() => document.querySelectorAll('.opp-slot.filled').length === 2);
+await page.$eval('.search', (e) => e.blur());
 await page.waitForFunction(() => !document.querySelector('.recent-token'));
-await page.click('.search');
-await page.waitForSelector('.recent-token');
-await page.$$eval('.recent-token', (els) => els[1]?.click());
 await page.waitForSelector('.faceoff .fo-table', { timeout: 60_000 });
 const cardVerdicts = await page.$$eval('.fo-verdict', (els) => els.length);
 if (cardVerdicts !== 3) {

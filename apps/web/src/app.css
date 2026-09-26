@@ -1606,10 +1606,13 @@ textarea.paste {
   white-space: nowrap;
 }
 .notice-toast {
-  background: var(--warn-tint);
   white-space: normal;
   text-align: left;
   line-height: 1.35;
+}
+/* A warning is amber; a confirmation keeps the toast's neutral --surface2. */
+.notice-warn {
+  background: var(--warn-tint);
 }
 .notice-toast > span {
   min-width: 0;
@@ -3000,39 +3003,6 @@ input[type='range'] {
   padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
   background: var(--bg);
   border-top: 1px solid var(--divider);
-}
-/* Log a Battle's results: each labeled, the outcome color supporting the label. Tanked is amber
-   (--warn): the opponent quit or threw, not a loss. Pressed is edit mode's chosen result. */
-.result-btn {
-  width: 100%;
-  padding: 0 8px;
-}
-.result-win {
-  background: color-mix(in srgb, var(--win) 8%, var(--surface));
-  border-color: var(--win);
-  color: var(--win);
-}
-.result-loss {
-  background: color-mix(in srgb, var(--loss) 8%, var(--surface));
-  border-color: var(--loss);
-  color: var(--loss);
-}
-.result-tanked {
-  background: var(--warn-tint);
-  border-color: var(--warn);
-  color: var(--warn);
-}
-.result-win[aria-pressed='true'] {
-  background: var(--win);
-  color: var(--bg);
-}
-.result-loss[aria-pressed='true'] {
-  background: var(--loss);
-  color: var(--bg);
-}
-.result-tanked[aria-pressed='true'] {
-  background: var(--warn);
-  color: var(--bg);
 }
 .log-help {
   margin: 0;

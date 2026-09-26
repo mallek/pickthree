@@ -141,3 +141,47 @@ describe('species token letter contrast', () => {
     });
   }
 });
+
+// The outcome buttons (Win, Loss, and the amber one for Tanked): the label on the tinted fill,
+// and --bg on the full fill once pressed, in every theme. The fills are read from base.css; a
+// color-mix is worked out the way the browser does it in srgb.
+function mix(a: string, pct: number, b: string): string {
+  const channels = [1, 3, 5].map((i) => {
+    const x = parseInt(a.slice(i, i + 2), 16);
+    const y = parseInt(b.slice(i, i + 2), 16);
+    return Math.round((pct / 100) * x + (1 - pct / 100) * y)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${channels.join('')}`;
+}
+
+const MIX = /color-mix\(in srgb, var\(--([a-z0-9-]+)\) (\d+)%, var\(--([a-z0-9-]+)\)\)/;
+
+/** The fill and the ink a rule block paints, as hex in one theme's token block. */
+function paint(body: string, theme: string): { fill: string; ink: string } {
+  const bg = /background:\s*([^;]+);/.exec(body)?.[1]?.trim() ?? '';
+  const ink = /(?:^|\s)color:\s*var\(--([a-z0-9-]+)\)/.exec(body)?.[1] ?? '';
+  const mixed = MIX.exec(bg);
+  const fill = mixed
+    ? mix(value(theme, mixed[1] ?? ''), Number(mixed[2]), value(theme, mixed[3] ?? ''))
+    : value(theme, /var\(--([a-z0-9-]+)\)/.exec(bg)?.[1] ?? '');
+  return { fill, ink: value(theme, ink) };
+}
+
+describe('outcome button contrast', () => {
+  for (const variant of ['win', 'loss', 'warn']) {
+    const plain = block(base, `.ui-btn-${variant} {`);
+    const pressed = block(base, `.ui-btn-${variant}[aria-pressed='true'] {`);
+    for (const [theme, body] of Object.entries(themes)) {
+      it(`${variant}: the label clears 4.5:1 on its fill in ${theme}`, () => {
+        const { fill, ink } = paint(plain, body);
+        expect(ratio(ink, fill)).toBeGreaterThanOrEqual(4.5);
+      });
+      it(`${variant}: pressed clears 4.5:1 in ${theme}`, () => {
+        const { fill, ink } = paint(pressed, body);
+        expect(ratio(ink, fill)).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+});

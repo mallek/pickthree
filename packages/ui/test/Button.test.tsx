@@ -5,7 +5,8 @@ import { Button, IconButton } from '../src/index.ts';
 
 describe('Button', () => {
   it('renders each variant as a button with its class', () => {
-    for (const variant of ['primary', 'secondary', 'text', 'danger'] as const) {
+    const variants = ['primary', 'secondary', 'text', 'danger', 'win', 'loss', 'warn'] as const;
+    for (const variant of variants) {
       const { unmount } = render(<Button variant={variant}>Go</Button>);
       expect(screen.getByRole('button', { name: 'Go' })).toHaveClass(`ui-btn-${variant}`);
       unmount();
@@ -41,6 +42,23 @@ describe('Button', () => {
       'href',
       'https://meta.pick3.gg',
     );
+  });
+
+  it('marks the pressed one of a set where a tap selects, and says nothing otherwise', () => {
+    render(
+      <>
+        <Button variant="win" pressed>
+          Win
+        </Button>
+        <Button variant="loss" pressed={false}>
+          Loss
+        </Button>
+        <Button variant="warn">Tanked</Button>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Win' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Loss' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Tanked' })).not.toHaveAttribute('aria-pressed');
   });
 
   it('does not fire when disabled', async () => {

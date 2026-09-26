@@ -127,7 +127,8 @@ function renderScreen(r: Route) {
     case 'meta-new':
       return <NewSet />;
     case 'meta-log':
-      return <LogBattle />;
+      // A fresh page per battle edited, so an edit's slots never carry into a new log.
+      return <LogBattle key={r.edit ? `${r.edit.set}/${r.edit.battle}` : 'new'} />;
     case 'shared':
       return <SharedTeam league={r.league} members={r.members} />;
     default:

@@ -61,7 +61,7 @@ function CurrentTeam({ set }: { set: BattleSet }) {
     );
     const r = await shareLink(url, `pick3 team: ${set.team.species.map(name).join(', ')}`);
     if (r === 'copied') {
-      notify('Link copied. Paste it anywhere; it opens this team in pick3.');
+      notify('Link copied. Paste it anywhere; it opens this team in pick3.', 'info');
     } else if (r === 'failed') {
       notify(`Could not copy the link. It is ${url}`);
     }

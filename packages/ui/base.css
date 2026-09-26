@@ -449,6 +449,35 @@
   border-color: var(--danger);
   color: var(--danger);
 }
+/* Outcome buttons: recording a result. Pressed (the chosen one) fills with the outcome color.
+   Contrast is checked in test/contrast.test.ts. */
+.ui-btn-win {
+  background: color-mix(in srgb, var(--win) 5%, var(--surface));
+  border-color: var(--win);
+  color: var(--win);
+}
+.ui-btn-loss {
+  background: color-mix(in srgb, var(--loss) 5%, var(--surface));
+  border-color: var(--loss);
+  color: var(--loss);
+}
+.ui-btn-warn {
+  background: var(--warn-tint);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.ui-btn-win[aria-pressed='true'] {
+  background: var(--win);
+  color: var(--bg);
+}
+.ui-btn-loss[aria-pressed='true'] {
+  background: var(--loss);
+  color: var(--bg);
+}
+.ui-btn-warn[aria-pressed='true'] {
+  background: var(--warn);
+  color: var(--bg);
+}
 
 /* Icon buttons: one shape everywhere. */
 .ui-icon-btn {

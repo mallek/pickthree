@@ -5,7 +5,7 @@ import {
   type CommunityPairing,
   type Faceoff,
 } from '@pickthree/engine';
-import { Button, Header, Term } from '@pickthree/ui';
+import { Button, Header, Term, type ButtonVariant } from '@pickthree/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PokemonToken, useName, useShortName, useSpeciesSearch } from '../components.tsx';
 import { OpponentCard } from '../components/OpponentCard.tsx';
@@ -13,10 +13,11 @@ import { communityCores, likelyTeammates } from '../community.ts';
 import { boardWindow, useActions, useAppState } from '../state/store.tsx';
 
 type Outcome = 'win' | 'loss' | 'tanked';
-const OUTCOMES: { key: Outcome; label: string }[] = [
-  { key: 'win', label: 'Win' },
-  { key: 'loss', label: 'Loss' },
-  { key: 'tanked', label: 'Tanked' },
+/** Each result's outcome color: Tanked is amber, the opponent quit or threw, not a loss. */
+const OUTCOMES: { key: Outcome; label: string; variant: ButtonVariant }[] = [
+  { key: 'win', label: 'Win', variant: 'win' },
+  { key: 'loss', label: 'Loss', variant: 'loss' },
+  { key: 'tanked', label: 'Tanked', variant: 'warn' },
 ];
 
 /** The battle's own time, for the edit header: "Sep 15, 10:05 AM". */
@@ -104,7 +105,10 @@ export function LogBattle() {
   const league = s.settings.league ?? 'great';
   const first = slots[0] ?? null;
   const [cores, setCores] = useState<CommunityPairing[] | null>(null);
-  const board = useMemo(() => boardWindow(s, league), [s.data, s.settings, league]);
+  const board = useMemo(
+    () => boardWindow({ data: s.data, settings: s.settings }, league),
+    [s.data, s.settings, league],
+  );
   const wantBoard = first !== null;
   useEffect(() => {
     if (!wantBoard) {
@@ -139,12 +143,19 @@ export function LogBattle() {
   const showGrid = searching || (focused && !picked);
 
   const add = (id: string): void => {
-    setSlots((cur) => (cur.length >= 3 || cur.includes(id) ? cur : [...cur, id]));
+    const next = slots.length >= 3 || slots.includes(id) ? slots : [...slots, id];
+    setSlots(next);
     setSelected(id);
     setQuery('');
-    // The grid folds away, leaving the slots and the card. On a desktop the cursor stays in
-    // the search so the next opponent is a few keystrokes away; on a touch screen the keyboard
-    // drops so the card is in view.
+    if (next.length < 3) {
+      // Room for another: the search stays open and focused, so the next opponent (and the
+      // likely teammates of the first) are right there.
+      searchRef.current?.focus();
+      setPicked(false);
+      return;
+    }
+    // The third: the grid folds away, leaving the slots and the card. On a desktop the cursor
+    // stays in the search; on a touch screen the keyboard drops so the card is in view.
     const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
     if (fine) {
       searchRef.current?.focus();
@@ -200,7 +211,7 @@ export function LogBattle() {
         setSelected(null);
         setQuery('');
         const label = OUTCOMES.find((o) => o.key === outcome)?.label ?? '';
-        notify(`${label} logged · ${count} with this team`);
+        notify(`${label} logged · ${count} with this team`, 'info');
       }
     } finally {
       setSaving(false);
@@ -369,16 +380,15 @@ export function LogBattle() {
       <div className="result-bar">
         <div className="result-row">
           {OUTCOMES.map((o) => (
-            <button
-              type="button"
+            <Button
               key={o.key}
-              className={`ui-btn result-btn result-${o.key}`}
+              variant={o.variant}
               disabled={saving}
-              aria-pressed={editing ? choice === o.key : undefined}
+              pressed={editing ? choice === o.key : undefined}
               onClick={() => (editing ? setChoice(o.key) : void save(o.key))}
             >
               {o.label}
-            </button>
+            </Button>
           ))}
         </div>
         {editing ? (

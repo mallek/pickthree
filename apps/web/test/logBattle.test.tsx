@@ -104,8 +104,9 @@ describe('New set and Log a battle', () => {
     fireEvent.focus(screen.getByPlaceholderText('Search any Pokémon'));
     // Medicham was faced; it leads the recent row.
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
-    // A pick folds the grid away, leaving the slot and the card.
-    expect(screen.queryByRole('button', { name: 'Medicham' })).not.toBeInTheDocument();
+    // Room for two more: the grid stays open with the search focused, Medicham marked as in.
+    expect(screen.getByRole('button', { name: 'Medicham' })).toHaveClass('on');
+    expect(screen.getByPlaceholderText('Search any Pokémon')).toHaveFocus();
     // The in-battle card opens for the opponent just added: their moves across the top.
     await waitFor(() => expect(screen.getByText('Ice Punch')).toBeInTheDocument());
     expect(screen.getByText('in 7')).toBeInTheDocument();
@@ -194,9 +195,7 @@ describe('New set and Log a battle', () => {
     const search = screen.getByPlaceholderText('Search any Pokémon');
     fireEvent.focus(search);
     fireEvent.click(screen.getByRole('button', { name: 'Clodsire' }));
-    // The grid folded; tapping the search brings it back for the second pick.
-    expect(screen.queryByRole('button', { name: 'Medicham' })).not.toBeInTheDocument();
-    fireEvent.focus(search);
+    // The grid stays open for the second pick, no second tap on the search.
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Remove Clodsire' })).toBeInTheDocument();
@@ -249,33 +248,57 @@ describe('New set and Log a battle', () => {
       expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
     });
 
-    // A desktop (fine pointer) keeps the cursor in the search for the next opponent.
+    // A touch screen too: with room for more, the search stays focused and cleared.
     window.matchMedia = vi
       .fn()
-      .mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+      .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+    const search = screen.getByPlaceholderText('Search any Pokémon');
     fireEvent.click(screen.getByRole('button', { name: 'Tinkaton' }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Remove Tinkaton' })).toBeInTheDocument(),
     );
-    expect(screen.getByPlaceholderText('Search any Pokémon')).toHaveFocus();
-    expect(screen.getByPlaceholderText('Search any Pokémon')).toHaveValue('');
-    // The grid folded away with the pick; typing brings the matches back.
-    expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Search any Pokémon'), {
-      target: { value: 'azu' },
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue('');
+    fireEvent.change(search, { target: { value: 'azu' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Azumarill' }));
+    await screen.findByRole('button', { name: 'Remove Azumarill' });
+    expect(search).toHaveFocus();
+    // The third pick fills the slots: on a touch screen the keyboard drops and the grid folds,
+    // so the card is in view.
+    fireEvent.change(search, { target: { value: 'clod' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Clodsire' }));
+    await screen.findByRole('button', { name: 'Remove Clodsire' });
+    expect(search).not.toHaveFocus();
+    expect(screen.queryByText('Recent')).not.toBeInTheDocument();
+  });
+
+  it('keeps the cursor in the search after the third pick on a desktop', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: [],
+      closed: false,
     });
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Azumarill' })).toBeInTheDocument(),
+    render(
+      <AppProvider host={fakeHost()}>
+        <LogBattle />
+      </AppProvider>,
     );
-    // A touch screen drops focus instead, so the keyboard does not cover the card.
+    await screen.findByText('0 logged with this team');
     window.matchMedia = vi
       .fn()
-      .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
-    fireEvent.click(screen.getByRole('button', { name: 'Azumarill' }));
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument(),
-    );
-    expect(screen.getByPlaceholderText('Search any Pokémon')).not.toHaveFocus();
+      .mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+    const search = screen.getByPlaceholderText('Search any Pokémon');
+    fireEvent.focus(search);
+    for (const who of ['Tinkaton', 'Azumarill', 'Clodsire']) {
+      fireEvent.click(await screen.findByRole('button', { name: who }));
+      await screen.findByRole('button', { name: `Remove ${who}` });
+    }
+    expect(search).toHaveFocus();
+    // The grid folds with the third pick; typing brings matches back.
+    expect(screen.queryByText('Recent')).not.toBeInTheDocument();
   });
 });
 
@@ -314,6 +337,7 @@ describe('Log a Battle on the foundation', () => {
   });
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     resetCommunityCache();
     localStorage.removeItem(SHARE_DEV_KEY);
   });
@@ -338,9 +362,12 @@ describe('Log a Battle on the foundation', () => {
     await storage.saveSet(openSet());
     renderLog();
     const win = await screen.findByRole('button', { name: 'Win' });
-    expect(win).toHaveClass('result-win');
-    expect(screen.getByRole('button', { name: 'Loss' })).toHaveClass('result-loss');
-    expect(screen.getByRole('button', { name: 'Tanked' })).toHaveClass('result-tanked');
+    // The ui Button's outcome variants; Tanked is the amber one.
+    expect(win).toHaveClass('ui-btn-win');
+    expect(screen.getByRole('button', { name: 'Loss' })).toHaveClass('ui-btn-loss');
+    expect(screen.getByRole('button', { name: 'Tanked' })).toHaveClass('ui-btn-warn');
+    // Outside edit mode a tap logs; nothing is pressed.
+    expect(win).not.toHaveAttribute('aria-pressed');
     const line = 'They quit or threw. It stays in the log but counts for nothing.';
     expect(screen.queryByText(line)).not.toBeInTheDocument();
     expect(screen.queryByText(/Tanked means/)).not.toBeInTheDocument();
@@ -356,10 +383,33 @@ describe('Log a Battle on the foundation', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Win' }));
     });
     expect(await screen.findByText('Win logged · 2 with this team')).toBeInTheDocument();
+    // A confirmation: neutral and polite, not the amber alert a failed save raises.
+    const toast = screen.getByRole('status');
+    expect(toast).toHaveTextContent('Win logged · 2 with this team');
+    expect(toast).toHaveClass('notice-info');
+    expect(toast).not.toHaveClass('notice-warn');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Tanked' }));
     });
     expect(await screen.findByText('Tanked logged · 3 with this team')).toBeInTheDocument();
+  });
+
+  it('still warns in amber when the phone refuses the save', async () => {
+    await storage.saveSet(openSet([medichamWin]));
+    renderLog();
+    await screen.findByText('1 logged with this team');
+    vi.spyOn(storage, 'saveSet').mockRejectedValue(new Error('refused'));
+    // The refusal is recorded: recordError reads matchMedia (jsdom has none) and may report.
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}'));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Loss' }));
+    });
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/Could not save that battle/);
+    expect(alert).toHaveClass('notice-warn');
+    expect(screen.queryByText(/Loss logged/)).not.toBeInTheDocument();
   });
 
   it('offers the likely teammates of the first opponent from the community board', async () => {
@@ -392,8 +442,8 @@ describe('Log a Battle on the foundation', () => {
     // Nothing slotted yet: no board read, no row.
     fireEvent.focus(search);
     expect(screen.queryByText(/Often with/)).not.toBeInTheDocument();
+    // The search stays open after the pick, so the row shows without another tap.
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
-    fireEvent.focus(search);
     const row = await screen.findByRole('group', { name: 'Often with Medicham' });
     expect(within(row).getByText('Often with Medicham')).toBeInTheDocument();
     expect(
@@ -407,7 +457,6 @@ describe('Log a Battle on the foundation', () => {
     // Tapping one slots it, and it leaves the row.
     fireEvent.click(within(row).getByRole('button', { name: 'Clodsire' }));
     await screen.findByRole('button', { name: 'Remove Clodsire' });
-    fireEvent.focus(search);
     const again = await screen.findByRole('group', { name: 'Often with Medicham' });
     expect(within(again).queryByRole('button', { name: 'Clodsire' })).not.toBeInTheDocument();
   });
@@ -425,10 +474,8 @@ describe('Log a Battle on the foundation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
     await screen.findByRole('button', { name: 'Remove Medicham' });
     await waitFor(() => expect(teamsCalls(fetchSpy)).toHaveLength(1));
-    fireEvent.focus(search);
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 20));
-    });
+    // Let the failed read settle into state.
+    await act(async () => {});
     expect(screen.queryByText(/Often with/)).not.toBeInTheDocument();
     expect(screen.getByText('Recent')).toBeInTheDocument();
   });
@@ -446,10 +493,8 @@ describe('Log a Battle on the foundation', () => {
     fireEvent.focus(search);
     fireEvent.click(screen.getByRole('button', { name: 'Medicham' }));
     await screen.findByRole('button', { name: 'Remove Medicham' });
-    fireEvent.focus(search);
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 20));
-    });
+    await act(async () => {});
+    expect(screen.getByText('Recent')).toBeInTheDocument();
     expect(screen.queryByText(/Often with/)).not.toBeInTheDocument();
     expect(teamsCalls(fetchSpy)).toHaveLength(0);
   });

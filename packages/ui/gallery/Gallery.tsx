@@ -170,6 +170,22 @@ export function Gallery() {
         <Button variant="secondary">
           Build from your Rookidee and see what it beats in Great League
         </Button>
+        <div className="g-row">
+          <Button variant="win">Win</Button>
+          <Button variant="loss">Loss</Button>
+          <Button variant="warn">Tanked</Button>
+        </div>
+        <div className="g-row">
+          <Button variant="win" pressed={false}>
+            Win
+          </Button>
+          <Button variant="loss" pressed>
+            Loss
+          </Button>
+          <Button variant="warn" pressed={false}>
+            Tanked
+          </Button>
+        </div>
       </Section>
 
       <Section name="IconButton">

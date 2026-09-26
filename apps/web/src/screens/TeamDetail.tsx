@@ -109,7 +109,7 @@ export function TeamDetail({ id }: { id: string }) {
     const title = `pick3 team: ${team.slots.map((x) => name(x.candidate.build.speciesId)).join(', ')}`;
     const r = await shareLink(url, title);
     if (r === 'copied') {
-      notify('Link copied. Paste it anywhere; it opens this team in pick3.');
+      notify('Link copied. Paste it anywhere; it opens this team in pick3.', 'info');
     } else if (r === 'failed') {
       notify(`Could not copy the link. It is ${url}`);
     }

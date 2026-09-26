@@ -83,6 +83,8 @@ function normalizeOpponents(opponents: string[]): string[] {
   return opponents.filter((id, i, arr) => id !== '' && arr.indexOf(id) === i).slice(0, 3);
 }
 
+export type NoticeTone = 'warn' | 'info';
+
 export type Route =
   | { screen: 'welcome' }
   | { screen: 'import' }
@@ -147,6 +149,8 @@ export interface AppState {
   countersProgress: ProgressEvent | null;
   /** One-line message for the floating toast, such as a failed save. */
   notice: string | null;
+  /** How the notice reads: warn (amber, announced at once) or info (a neutral confirmation). */
+  noticeTone: NoticeTone;
   /** True while Build holds a team that arrived by link, until a pick is changed by hand. */
   sharedTeam: boolean;
   scanList: ScanList | null;
@@ -198,7 +202,7 @@ type Action =
   | { type: 'counters-start'; vs: string | null }
   | { type: 'counters-progress'; progress: ProgressEvent }
   | { type: 'counters-done'; counters: CountersResult | null }
-  | { type: 'notice'; message: string | null }
+  | { type: 'notice'; message: string | null; tone: NoticeTone }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
   | { type: 'picks'; picks: AppState['picks']; shared: boolean }
@@ -238,6 +242,7 @@ const initial: AppState = {
   countersVs: null,
   countersProgress: null,
   notice: null,
+  noticeTone: 'warn',
   sharedTeam: false,
   scanList: null,
   picks: [null, null, null],
@@ -363,7 +368,7 @@ function reducer(s: AppState, a: Action): AppState {
     case 'counters-done':
       return { ...s, countersLoading: false, counters: a.counters, countersProgress: null };
     case 'notice':
-      return { ...s, notice: a.message };
+      return { ...s, notice: a.message, noticeTone: a.tone };
     case 'scanlist':
       return { ...s, scanList: a.scanList };
     case 'suggest-start':
@@ -606,7 +611,10 @@ function requestFor(s: AppState, now: Date): CommunityRequest | null {
  * community source is chosen, else This meta. Build's teammate suggestions and Log a Battle's
  * likely teammates both read it, so they share `communityCores`' cache entry.
  */
-export function boardWindow(s: AppState, league: string): CommunityRequest | null {
+export function boardWindow(
+  s: Pick<AppState, 'data' | 'settings'>,
+  league: string,
+): CommunityRequest | null {
   const info = s.data?.leagues.find((l) => l.id === league);
   if (!info) {
     return null;
@@ -683,8 +691,11 @@ interface Actions {
     input: { opponents: string[]; result: 'win' | 'loss' | null; tanked: boolean },
   ): Promise<boolean>;
   endSet(): Promise<boolean>;
-  /** Show (or clear with null) the floating one-line notice. */
-  notify(message: string | null): void;
+  /**
+   * Show (or clear with null) the floating one-line notice. `warn` (the default) is for trouble,
+   * such as a refused save; `info` is a neutral confirmation, such as a logged battle.
+   */
+  notify(message: string | null, tone?: NoticeTone): void;
   /** Community meta sharing on or off. Off also asks the worker to drop what this phone sent. */
   setShareEnabled(on: boolean): Promise<void>;
   /** The rank band stamped on records sent from now on. */
@@ -1381,8 +1392,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [updateSettings],
   );
 
-  const notify = useCallback((message: string | null) => {
-    dispatch({ type: 'notice', message });
+  const notify = useCallback((message: string | null, tone: NoticeTone = 'warn') => {
+    dispatch({ type: 'notice', message, tone });
   }, []);
 
   /**
