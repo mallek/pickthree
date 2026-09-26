@@ -1,27 +1,31 @@
-import { teamKey, type TeamMoves, type TeamRef } from '@pickthree/engine';
-import { useMemo, useState, type ReactNode } from 'react';
+import { teamKey, type TeamMoves, type TeamRecommendation, type TeamRef } from '@pickthree/engine';
+import { Button, Header } from '@pickthree/ui';
+import { useMemo, useState } from 'react';
 import {
-  FitTag,
-  Header,
   PokemonToken,
   useName,
   useShortName,
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
+import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { specimenRecord } from '../searchRecords.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
-function TeamPick({
-  team,
-  right,
-  onPick,
-}: {
-  team: TeamRef;
-  right?: ReactNode;
-  onPick: () => void;
-}) {
+/** The picks a recommended team's slots resolved to, for starting a set from it directly. */
+function toTeamRef(t: TeamRecommendation): TeamRef {
+  return {
+    species: t.slots.map((x) => x.candidate.build.speciesId) as [string, string, string],
+    specimenIds: t.slots.map((x) => x.candidate.build.specimenId) as [string, string, string],
+    moves: t.slots.map((x) => ({
+      fast: x.candidate.moveset.fast.moveId,
+      charged: x.candidate.moveset.charged.map((m) => m.moveId),
+    })) as [TeamMoves | null, TeamMoves | null, TeamMoves | null],
+  };
+}
+
+function TeamPick({ team, onPick }: { team: TeamRef; onPick: () => void }) {
   const name = useName();
   return (
     <button type="button" className="team-pick spec-row" onClick={onPick}>
@@ -33,14 +37,24 @@ function TeamPick({
       <span className="spec-name" style={{ minWidth: 0 }}>
         {team.species.map(name).join(', ')}
       </span>
-      {right ?? <span className="chev">&rsaquo;</span>}
+      <span className="chev">&rsaquo;</span>
+    </button>
+  );
+}
+
+/** A pick3 recommendation as a whole-team shortcut: the same row Teams shows, tap to start it. */
+function Pick3Pick({ team, onPick }: { team: TeamRecommendation; onPick: () => void }) {
+  return (
+    <button type="button" className="pick3-row" onClick={onPick}>
+      <TeamRowSummary team={team} />
+      <span className="chev">&rsaquo;</span>
     </button>
   );
 }
 
 export function NewSet() {
   const s = useAppState();
-  const { navigate, startSet } = useActions();
+  const { back, navigate, startSet } = useActions();
   const name = useName();
   const short = useShortName();
   const species = useSpecies();
@@ -63,23 +77,13 @@ export function NewSet() {
     return out.slice(0, 5);
   }, [s.sets]);
 
-  const fromPick3 = useMemo(() => {
-    const teams = [
+  const fromPick3 = useMemo(
+    (): TeamRecommendation[] => [
       ...(s.recommendation?.teams ?? []).slice(0, 3),
       ...(s.analysis ? [s.analysis.team] : []),
-    ];
-    return teams.map((t) => ({
-      fit: t.score.fit,
-      team: {
-        species: t.slots.map((x) => x.candidate.build.speciesId) as [string, string, string],
-        specimenIds: t.slots.map((x) => x.candidate.build.specimenId) as [string, string, string],
-        moves: t.slots.map((x) => ({
-          fast: x.candidate.moveset.fast.moveId,
-          charged: x.candidate.moveset.charged.map((m) => m.moveId),
-        })) as [TeamMoves | null, TeamMoves | null, TeamMoves | null],
-      },
-    }));
-  }, [s.recommendation, s.analysis]);
+    ],
+    [s.recommendation, s.analysis],
+  );
 
   const mine = useMemo(() => {
     const parsed = parseQuery(query);
@@ -158,15 +162,14 @@ export function NewSet() {
   return (
     <div className="screen">
       <Header
+        variant="sub"
         title="Pick Your Team"
-        onBack={() => navigate({ screen: 'meta' })}
-        backLabel="Cancel"
-        cog={false}
+        back={{ label: 'Cancel', onClick: () => back({ screen: 'meta' }) }}
       />
       <div className="scroll" style={{ gap: 18, paddingBottom: 96 }}>
         <input
           className="search"
-          placeholder="Search any Pokemon"
+          placeholder="Search any Pokémon"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -224,12 +227,7 @@ export function NewSet() {
           <div className="stack" style={{ gap: 6 }}>
             <b>From pick3</b>
             {fromPick3.map((t, i) => (
-              <TeamPick
-                team={t.team}
-                right={<FitTag fit={t.fit} />}
-                key={`${i}-${teamKey(t.team.species)}`}
-                onPick={() => void go(t.team)}
-              />
+              <Pick3Pick team={t} key={`${i}-${t.id}`} onPick={() => void go(toTeamRef(t))} />
             ))}
           </div>
         ) : null}
@@ -243,9 +241,9 @@ export function NewSet() {
         ) : null}
       </div>
       <div className="new-set-foot">
-        <button type="button" className="btn" disabled={!ready} onClick={startPicked}>
+        <Button variant="primary" disabled={!ready} onClick={startPicked}>
           Start set
-        </button>
+        </Button>
       </div>
     </div>
   );

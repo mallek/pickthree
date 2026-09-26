@@ -1,0 +1,174 @@
+import 'fake-indexeddb/auto';
+import type { Recommendation, TeamRecommendation } from '@pickthree/engine';
+import { IDBFactory } from 'fake-indexeddb';
+import {
+  act,
+  fireEvent,
+  getDefaultNormalizer,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NewSet } from '../src/screens/NewSet.tsx';
+import { AppProvider, useActions, useAppState, type AppState } from '../src/state/store.tsx';
+import { resetHistoryForTests } from '../src/state/history.ts';
+import { emptyLayoutValue } from '../src/format.ts';
+import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { fakeHost } from './fakeHost.ts';
+import { makeTeam } from './teamFixture.ts';
+
+let latest: { state: AppState; actions: ReturnType<typeof useActions> } | null = null;
+function Probe() {
+  latest = { state: useAppState(), actions: useActions() };
+  return null;
+}
+
+async function saveEmptyCollection(): Promise<void> {
+  await storage.saveCollection({
+    specimens: [],
+    report: {
+      scansRead: 0,
+      recognized: 0,
+      duplicatesMerged: 0,
+      missingIvs: { count: 0, names: [] },
+      unrecognized: [],
+      rowProblems: [],
+      layout: emptyLayoutValue(),
+      newestScan: null,
+    },
+    importedAt: '2026-09-16T00:00:00Z',
+    fileName: null,
+  });
+}
+
+/** A host whose recommend() answers with the given teams, in place of the default empty list. */
+function hostWith(teams: TeamRecommendation[]) {
+  const host = fakeHost();
+  const base = host.recommend as unknown as () => Promise<Recommendation>;
+  host.recommend = vi.fn(async () => ({ ...(await base()), teams })) as typeof host.recommend;
+  return host;
+}
+
+async function renderReady(host: ReturnType<typeof fakeHost>) {
+  render(
+    <AppProvider host={host}>
+      <Probe />
+      <NewSet />
+    </AppProvider>,
+  );
+  await waitFor(() => {
+    expect(latest?.state.boot).toBe('ready');
+    expect(latest?.state.settingsLoaded).toBe(true);
+    expect(latest?.state.leagueInfo).not.toBeNull();
+  });
+}
+
+describe('New Set on the foundation', () => {
+  beforeEach(async () => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetHistoryForTests();
+    latest = null;
+    // Clears the underlying history state too, so markEntry() (which restores a saved
+    // pick3Depth from window.history.state rather than counting) starts fresh, not from a
+    // leftover depth an earlier test in this file left on the shared jsdom window.
+    window.history.replaceState(null, '', '#/meta/new');
+    await saveEmptyCollection();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('is a sub page titled Pick Your Team, Cancel returning to Your Meta, input before the slots', async () => {
+    await renderReady(hostWith([]));
+    expect(screen.getByText('Pick Your Team')).toBeInTheDocument();
+    const search = screen.getByPlaceholderText('Search any Pokémon');
+    const slot = screen.getByRole('button', { name: 'Slot 1' });
+    expect(search.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/meta'));
+  });
+
+  it('starts a set from three picked species, Start set disabled until then', async () => {
+    await renderReady(hostWith([]));
+    const start = screen.getByRole('button', { name: 'Start set' });
+    expect(start).toBeDisabled();
+    const picks: [string, string][] = [
+      ['tink', 'Tinkaton'],
+      ['azu', 'Azumarill'],
+      ['clod', 'Clodsire'],
+    ];
+    for (const [q, fullName] of picks) {
+      fireEvent.change(screen.getByPlaceholderText('Search any Pokémon'), { target: { value: q } });
+      const token = await screen.findByRole('button', { name: fullName });
+      fireEvent.click(token);
+    }
+    expect(start).toBeEnabled();
+    await act(async () => {
+      fireEvent.click(start);
+    });
+    await waitFor(async () => expect(await storage.loadSets('great')).toHaveLength(1));
+    expect(window.location.hash).toBe('#/meta');
+  });
+
+  it('shows a From pick3 row reading like Teams, the number and fit', async () => {
+    await renderReady(
+      hostWith([
+        makeTeam({
+          id: 't1',
+          species: ['tinkaton', 'azumarill', 'clodsire'],
+          battle: 88,
+          fit: 'Strong',
+        }),
+      ]),
+    );
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    expect(screen.getByText('From pick3')).toBeInTheDocument();
+    const row = screen.getByText(
+      /^88\u00a0· Strong fit\u00a0· Moderate\u00a0· 263,900\u00a0Stardust$/,
+      { normalizer: getDefaultNormalizer({ collapseWhitespace: false }) },
+    );
+    expect(row).toBeInTheDocument();
+    fireEvent.click(row.closest('button') as HTMLButtonElement);
+    await waitFor(async () => {
+      const sets = await storage.loadSets('great');
+      expect(sets).toHaveLength(1);
+      expect(sets[0]?.team.species).toEqual(['tinkaton', 'azumarill', 'clodsire']);
+    });
+    expect(window.location.hash).toBe('#/meta');
+  });
+
+  it('hides both From pick3 and Recent teams while searching', async () => {
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: [],
+      closed: false,
+    });
+    await renderReady(hostWith([makeTeam({ species: ['tinkaton', 'azumarill', 'clodsire'] })]));
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    await waitFor(() => expect(screen.getByText('From pick3')).toBeInTheDocument());
+    expect(screen.getByText('Recent teams')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Search any Pokémon'), {
+      target: { value: 'tink' },
+    });
+    expect(screen.queryByText('From pick3')).not.toBeInTheDocument();
+    expect(screen.queryByText('Recent teams')).not.toBeInTheDocument();
+  });
+
+  it('does not show From pick3 without a recommendation', async () => {
+    await renderReady(hostWith([]));
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    expect(screen.queryByText('From pick3')).not.toBeInTheDocument();
+  });
+});

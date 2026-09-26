@@ -7,13 +7,13 @@ import { resetCommunityCache } from '../src/community.ts';
 import { NoticeToast } from '../src/components/NoticeToast.tsx';
 import { SHARE_DEV_KEY } from '../src/metaShare.ts';
 import { LogBattle } from '../src/screens/LogBattle.tsx';
-import { NewSet } from '../src/screens/NewSet.tsx';
 import { AppProvider } from '../src/state/store.tsx';
 import { resetHistoryForTests } from '../src/state/history.ts';
 import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
 import { fakeHost } from './fakeHost.ts';
 
-describe('New set and Log a battle', () => {
+// New Set's own tests live in newSet.test.tsx.
+describe('Log a battle', () => {
   const matchMedia = window.matchMedia;
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
@@ -25,36 +25,6 @@ describe('New set and Log a battle', () => {
     vi.restoreAllMocks();
     resetCommunityCache();
     localStorage.removeItem(SHARE_DEV_KEY);
-  });
-
-  it('starts a set from three picked species', async () => {
-    render(
-      <AppProvider host={fakeHost()}>
-        <NewSet />
-      </AppProvider>,
-    );
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText('Search any Pokemon')).toBeInTheDocument(),
-    );
-    const start = screen.getByRole('button', { name: 'Start set' });
-    expect(start).toBeDisabled();
-    const picks: [string, string][] = [
-      ['tink', 'Tinkaton'],
-      ['azu', 'Azumarill'],
-      ['clod', 'Clodsire'],
-    ];
-    for (const [q, fullName] of picks) {
-      fireEvent.change(screen.getByPlaceholderText('Search any Pokemon'), { target: { value: q } });
-      // Grid tokens are labelled with the full name; they appear once the game data has booted.
-      const token = await screen.findByRole('button', { name: fullName });
-      fireEvent.click(token);
-    }
-    expect(start).toBeEnabled();
-    await act(async () => {
-      fireEvent.click(start);
-    });
-    await waitFor(async () => expect(await storage.loadSets('great')).toHaveLength(1));
-    expect(window.location.hash).toBe('#/meta');
   });
 
   it('asks for all three opponents, not just the ones you saw', async () => {

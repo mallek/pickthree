@@ -3338,6 +3338,26 @@ input[type='range'] {
 .team-pick {
   grid-template-columns: auto 1fr auto;
 }
+/* New Set's From pick3 rows: TeamRowSummary's own layout (design core flow, piece 2), reading
+   like Teams, plus a trailing chevron. Not .spec-row/.team-pick: those grid the sprites, name and
+   trailing content into three explicit columns, which fits neither TeamRowSummary's own layout. */
+.pick3-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--divider);
+  background: transparent;
+  text-align: left;
+  color: inherit;
+}
+.pick3-row .team-summary {
+  flex: 1;
+  min-width: 0;
+}
 .new-set-foot {
   position: fixed;
   left: 0;
