@@ -5,7 +5,9 @@
  *   GET  /count     returns { count }
  *   POST /error     records { build, stage, message, ua } (rolling 200, no identifiers)
  *   GET  /errors    returns the log; needs Authorization: Bearer <ERRORS_READ_TOKEN>
- *   POST /battles   stores anonymous battle records { device, client, battles } (max 200)
+ *   POST /battles   stores anonymous battle records { device, client, battles } (max 200);
+ *                   the same device resending the same battle id updates its result, tanked
+ *                   flag and opponents in place rather than adding a second row
  *   DELETE /battles removes everything one device sent { device }
  *   GET  /meta      per-league summary: ?league=great&days=90
  *   GET  /api/v1/meta               per-league rollup: ?league=great&since=...&until=...&source=
@@ -163,9 +165,14 @@ export class MetaStore extends DurableObject<Env> {
     let stored = 0;
     for (const b of batch.battles) {
       const cursor = this.ctx.storage.sql.exec(
-        `INSERT OR IGNORE INTO battles
+        `INSERT INTO battles
            (key, device, id, league, season, at, team, moves, opponents, result, tanked, band, source, client, received)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET
+           opponents = excluded.opponents,
+           result = excluded.result,
+           tanked = excluded.tanked,
+           received = excluded.received`,
         `${batch.device}:${b.id}`,
         batch.device,
         b.id,
