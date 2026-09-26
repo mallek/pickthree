@@ -110,8 +110,9 @@ Today's layout stays. Changes:
 - **Input first:** the search at the top, its results directly under it, then the three slots.
   "Search any Pokémon".
 - **From pick3:** the top recommended teams, each row reading like Teams ("88 · Strong fit");
-  tapping one fills the slots. **Recent teams** as today. Both lists hide while searching (they
-  are shortcuts).
+  tapping one fills the slots. **Recent teams** as today, except a tap also fills the slots
+  (Travis, 2026-09-26: "Let's make the two changes"). Both lists hide while searching (they are
+  shortcuts).
 - **Start set** is the page's one primary `Button`, disabled until three are picked.
 
 ## Editing a logged battle: data and the counter worker
