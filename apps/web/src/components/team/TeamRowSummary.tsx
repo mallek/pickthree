@@ -1,10 +1,11 @@
 import type { TeamRecommendation } from '@pickthree/engine';
 import { PokemonToken, useName } from '../../components.tsx';
-import { num } from '../../format.ts';
+import { num, SEP } from '../../format.ts';
 
 /**
- * A collapsed team: three overlapping sprites, the three names, and one line of fit, difficulty
- * and Stardust. It sits inside ExpandRow's toggle button, so it holds no buttons or links.
+ * A collapsed team: three overlapping sprites, the three names, and one line of the battle
+ * number, fit, difficulty and Stardust. It sits inside ExpandRow's toggle button, so it holds no
+ * buttons or links.
  */
 export function TeamRowSummary({ team }: { team: TeamRecommendation }) {
   const name = useName();
@@ -21,7 +22,7 @@ export function TeamRowSummary({ team }: { team: TeamRecommendation }) {
           {ids.map(name).join(' · ')}
         </span>
         <span className="team-summary-line">
-          {`${team.score.fit} fit · ${team.score.difficulty} · ${num(team.cost.stardust)} Stardust`}
+          {`${Math.round(team.score.battle)}${SEP}${team.score.fit} fit${SEP}${team.score.difficulty}${SEP}${num(team.cost.stardust)} Stardust`}
         </span>
       </span>
     </span>

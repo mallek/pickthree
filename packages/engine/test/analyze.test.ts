@@ -83,6 +83,20 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
     expect(r.team.explanation.slotDetail).toHaveLength(3);
   });
 
+  it('never doubles the opponent name at the start of a switch-plan line', () => {
+    const picks: [TeamPick, TeamPick, TeamPick] = [
+      { kind: 'specimen', id: a!.id },
+      { kind: 'specimen', id: b!.id },
+      { kind: 'species', id: 'swampert' },
+    ];
+    const r = analyzeTeam(picks, specimens, {}, deps);
+    const plan = r.team.explanation.switchPlan;
+    expect(plan.length).toBeGreaterThan(0);
+    for (const sw of plan) {
+      expect(sw.line.startsWith(sw.opponentName)).toBe(false);
+    }
+  });
+
   it('keeps the given order when asked', () => {
     const picks: [TeamPick, TeamPick, TeamPick] = [
       { kind: 'species', id: 'swampert' },

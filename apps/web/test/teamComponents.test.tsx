@@ -48,9 +48,13 @@ beforeEach(() => {
 });
 
 describe('TeamRowSummary', () => {
-  it('names the three Pokémon and says fit, difficulty and Stardust in one line', async () => {
+  it('names the three Pokémon and says the number, fit, difficulty and Stardust in one line', async () => {
     await mount(<TeamRowSummary team={makeTeam()} />);
-    expect(screen.getByText('Strong fit · Moderate · 263,900 Stardust')).toBeInTheDocument();
+    expect(
+      screen.getByText(/^88\u00a0· Strong fit\u00a0· Moderate\u00a0· 263,900 Stardust$/, {
+        normalizer: getDefaultNormalizer({ collapseWhitespace: false }),
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('team-summary-names').textContent).toMatch(/snorlax/i);
   });
 

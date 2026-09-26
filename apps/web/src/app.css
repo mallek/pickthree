@@ -1986,29 +1986,6 @@ textarea.paste {
 .score-notes:empty {
   display: none;
 }
-/* Team Analysis: the battle plan, three steps written only from engine strings. */
-.plan {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0;
-  list-style: none;
-}
-.plan-step {
-  display: flex;
-  flex-direction: column;
-  border-left: 2px solid var(--divider);
-  padding-left: 12px;
-}
-.plan-title {
-  font-size: var(--fs-label);
-  color: var(--muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.plan-line {
-  font-size: var(--fs-body);
-}
 /* Team Analysis: the Pokémon strip's expand-row summary. */
 .pd-summary {
   display: flex;
@@ -2048,22 +2025,11 @@ textarea.paste {
   overflow-wrap: anywhere;
   text-align: center;
 }
-/* Team Analysis: the jump row, four text buttons, one line. No side padding, so the four fit a
-   phone's width and the first and last labels sit on the page gutter; each keeps its 44px height
-   and is wider than 44px on its label alone. */
-.analysis-jumps {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px;
-}
-.analysis-jumps .ui-btn {
-  padding-inline: 0;
-}
-/* A jumped-to heading, or a Pokémon row a strip tap opens, lands under the sticky header, not
-   behind it. The offset is the sub header's own box (packages/ui/base.css `.hdr`): its top
-   padding, one tap-tall row of back and icon buttons, its bottom padding and border, then the
-   page's own gap under it. Change it with `.hdr`. */
+/* A Pokémon row a strip tap opens lands under the sticky header, not behind it. The offset is the
+   sub header's own box (packages/ui/base.css `.hdr`): its top padding, one tap-tall row of back
+   and icon buttons, its bottom padding and border, then the page's own gap under it. Change it
+   with `.hdr`. Section headings share the same scroll margin so an anchor never lands under the
+   header either. */
 .analysis-section,
 .pd-row {
   --hdr-box: calc(env(safe-area-inset-top, 0px) + 14px + var(--tap) + 8px + 1px);

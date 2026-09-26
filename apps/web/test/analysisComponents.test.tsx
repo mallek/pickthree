@@ -2,7 +2,6 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { KeyMatchup, SwitchAdvice } from '@pickthree/engine';
-import { BattlePlan } from '../src/components/team/BattlePlan.tsx';
 import { PokemonDetails } from '../src/components/team/PokemonDetails.tsx';
 import { ScoreCard } from '../src/components/team/ScoreCard.tsx';
 import { KeyWins, SwitchList, Threats } from '../src/components/team/Threats.tsx';
@@ -218,41 +217,6 @@ describe('ScoreCard, the hero card', () => {
   });
 });
 
-describe('BattlePlan', () => {
-  it('writes the three steps from engine strings only', () => {
-    const team = makeTeam();
-    team.explanation.roleWhy = { lead: 'Lead why.', switch: 'Switch why.', closer: 'Closer why.' };
-    team.explanation.slotDetail[0]!.formNote = 'Form note.';
-    team.explanation.slotDetail[2]!.keepShield = { delta: 3, line: 'Keep a shield.' };
-    team.explanation.switchPlan = [
-      { ...team.explanation.switchPlan[0]!, line: 'First switch.' },
-      { ...team.explanation.switchPlan[0]!, opponent: 'x2', line: 'Second switch.' },
-      { ...team.explanation.switchPlan[0]!, opponent: 'x3', line: 'Third switch.' },
-    ];
-    wrap(<BattlePlan team={team} />);
-    for (const t of [
-      'Lead why.',
-      'Form note.',
-      'First switch.',
-      'Second switch.',
-      'Closer why.',
-      'Keep a shield.',
-    ]) {
-      expect(screen.getByText(t)).toBeInTheDocument();
-    }
-    expect(screen.queryByText('Third switch.')).not.toBeInTheDocument();
-  });
-
-  it('leaves out what the engine did not write', () => {
-    const team = makeTeam();
-    team.explanation.slotDetail[0]!.formNote = null;
-    team.explanation.slotDetail[2]!.keepShield = null;
-    team.explanation.switchPlan = [];
-    wrap(<BattlePlan team={team} />);
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
-  });
-});
-
 describe('Threats', () => {
   it('lists the engine threats as rows and counts the rest that beat the team', () => {
     const team = makeTeam();
@@ -428,24 +392,17 @@ describe('PokemonDetails', () => {
 });
 
 describe('WhyThisTeam', () => {
-  it('for a recommended team, says the headline is battle strength and what cost is compared against', () => {
+  it("shows the engine's own why and the team structure, with no numeric score breakdown", () => {
     const team = makeTeam({ battle: 80, total: 66 });
     team.score.factors = { coverage: 90, consistency: 70, safety: 80, cost: 60, accessibility: 40 };
-    wrap(<WhyThisTeam team={team} custom={false} />);
-    expect(
-      screen.getByText(/Battle strength 80 is coverage, consistency and safety/),
-    ).toBeInTheDocument();
-    // Every factor reads so higher is plainly better, and cost says what it is measured against.
-    expect(
-      screen.getByText(
-        'The total, 66, also counts cost (60 of 100 against the other teams pick3 simulated from your collection, higher is cheaper) and accessibility (40 of 100, higher needs fewer power-ups).',
-        { exact: false },
-      ),
-    ).toBeInTheDocument();
+    wrap(<WhyThisTeam team={team} />);
+    expect(screen.getByText(team.explanation.why)).toBeInTheDocument();
+    // The hero card owns the number and the factor bars; this never repeats them as a sentence.
+    expect(screen.queryByText(/Battle strength/)).not.toBeInTheDocument();
     expect(screen.queryByText(/To build all three/)).not.toBeInTheDocument();
   });
 
-  it('for a hand-built team, drops cost, accessibility and the total, and says what it costs to build', () => {
+  it('says the same for a hand-built team: no breakdown and no build-cost sentence', () => {
     const team = makeTeam({ battle: 80, total: 66 });
     team.score.factors = {
       coverage: 90,
@@ -454,12 +411,9 @@ describe('WhyThisTeam', () => {
       cost: 100,
       accessibility: 40,
     };
-    wrap(<WhyThisTeam team={team} custom />);
-    const line = screen.getByText(/Battle strength 80 is coverage, consistency and safety/);
-    expect(line.textContent).toBe(
-      `Battle strength 80 is coverage, consistency and safety (90, 70, 80). To build all three: ${costLine(team.cost)}.`,
-    );
-    // A hand-built team is scored only against its own orders, so its cost factor says nothing.
-    expect(line.textContent).not.toMatch(/total|of 100|accessibility/);
+    const { container } = wrap(<WhyThisTeam team={team} />);
+    expect(screen.queryByText(/Battle strength/)).not.toBeInTheDocument();
+    // The hero card already gives a hand-built team's build cost; this never duplicates it.
+    expect(container.textContent).not.toContain(costLine(team.cost));
   });
 });

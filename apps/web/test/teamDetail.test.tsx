@@ -276,57 +276,19 @@ describe('Team Analysis', () => {
     expect(within(card).getByRole('button', { name: 'Edit team' })).toBeInTheDocument();
   });
 
-  it('jump buttons scroll their sections into view', async () => {
-    const spy = vi.fn();
-    Element.prototype.scrollIntoView = spy;
+  it('leads with Threats, then When to switch, then Your Pokémon, with no Battle plan or jump row', async () => {
     await mountRecommended('a');
-    const jumps: [string, string][] = [
-      ['Battle plan', 'plan'],
-      ['Threats', 'threats'],
-      ['Pokémon', 'pokemon'],
-      ['Details', 'details'],
-    ];
-    for (const [label, id] of jumps) {
-      spy.mockClear();
-      fireEvent.click(screen.getByRole('button', { name: label }));
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect((spy.mock.contexts[0] as HTMLElement).id).toBe(id);
-    }
-    expect(document.getElementById('plan')).toHaveTextContent('Battle plan');
-    expect(document.getElementById('threats')).toHaveTextContent('Threats');
-    expect(document.getElementById('pokemon')).toHaveTextContent(/^Pokémon details$/);
-    expect(document.getElementById('details')).toHaveTextContent('Why this team');
-  });
-
-  it('jumps without the smooth scroll when the player asks for reduced motion', async () => {
-    const spy = vi.fn();
-    Element.prototype.scrollIntoView = spy;
-    const reduce = (q: string) => ({ matches: q.includes('reduce') }) as MediaQueryList;
-    vi.stubGlobal('matchMedia', vi.fn(reduce));
-    await mountRecommended('a');
-    fireEvent.click(screen.getByRole('button', { name: 'Threats' }));
-    expect(spy).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn(() => ({ matches: false }) as MediaQueryList),
+    expect(screen.queryByText('Battle plan')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Jump to' })).not.toBeInTheDocument();
+    const headings = [...document.querySelectorAll('.analysis-section')].map(
+      (h) => h.textContent,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Threats' }));
-    expect(spy).toHaveBeenLastCalledWith({ block: 'start', behavior: 'smooth' });
-  });
-
-  it('rounds every number in the score breakdown, as the headline does', async () => {
-    const team = makeTeam({ id: 'a', battle: 88.4, total: 71.7 });
-    team.score.factors = {
-      coverage: 98.5,
-      consistency: 56.3,
-      safety: 100,
-      cost: 0.4,
-      accessibility: 59.5,
-    };
-    await mountRecommended('a', [team]);
-    expect(document.getElementById('details')!.parentElement).toHaveTextContent(
-      'Battle strength 88 is coverage, consistency and safety (99, 56, 100). The total, 72, also counts cost (0 of 100 against the other teams pick3 simulated from your collection, higher is cheaper) and accessibility (60 of 100, higher needs fewer power-ups).',
-    );
+    const threats = headings.indexOf('Threats');
+    const switchTo = headings.indexOf('When to switch');
+    const pokemon = headings.indexOf('Your Pokémon');
+    expect(threats).toBeGreaterThanOrEqual(0);
+    expect(switchTo).toBeGreaterThan(threats);
+    expect(pokemon).toBeGreaterThan(switchTo);
   });
 
   it('Assumptions keep each "·" with the label before it', async () => {
@@ -456,9 +418,10 @@ describe('Team Analysis', () => {
     expect(document.querySelector('.custom-note')).not.toBeNull();
     // The hero card gives a hand-built team's build cost in place of the Affordable bar.
     expect(within(card).queryByRole('meter', { name: /Affordable/ })).toBeNull();
+    // Scored only against its own orders, a hand-built team's hero card gives its build cost
+    // instead of the Affordable bar; "Why this team" never repeats it.
     expect(card).toHaveTextContent('To build all three:');
-    // Scored only against its own orders, a hand-built team's breakdown gives its build cost instead.
-    expect(document.getElementById('details')!.parentElement).toHaveTextContent(
+    expect(document.getElementById('details')!.parentElement).not.toHaveTextContent(
       'To build all three:',
     );
     expect(canGoBack()).toBe(false);

@@ -1,23 +1,16 @@
 import type { TeamRecommendation } from '@pickthree/engine';
 import { Term } from '@pickthree/ui';
 import { GLOSSARY, PokemonToken, ROLE_TEXT, useName } from '../../components.tsx';
-import { costLine } from '../../format.ts';
 
 /**
- * The why: the engine's own sentence, the team's structure (ABB line or Balanced ABC), then the
- * score broken into its factors so "why this number" is never a mystery.
+ * The why: the engine's own sentence, then the team's structure (ABB line or Balanced ABC). The
+ * hero card already carries the score and its factor bars, so this never repeats them as numbers.
  */
-export function WhyThisTeam({ team, custom }: { team: TeamRecommendation; custom: boolean }) {
+export function WhyThisTeam({ team }: { team: TeamRecommendation }) {
   const name = useName();
   const lead = team.slots[0];
   const back = team.slots.slice(1);
   const structureTerm = team.structure === 'ABB' ? 'ABB line' : 'Balanced ABC';
-  // Every number in the breakdown is whole, like the headline it explains. Cost is scored against
-  // the other teams in the same run (score.ts): pick3's simulated finalists for a recommended team,
-  // but only its own orders for a hand-built one, where it is always 100 and says nothing. So a
-  // hand-built team gets its build cost in words instead of cost, accessibility and the total.
-  const f = team.score.factors;
-  const round = Math.round;
   return (
     <div className="stack" style={{ gap: 16 }}>
       <p>{team.explanation.why}</p>
@@ -95,13 +88,6 @@ export function WhyThisTeam({ team, custom }: { team: TeamRecommendation; custom
           </>
         )}
       </div>
-      <p className="meta">
-        Battle strength {round(team.score.battle)} is coverage, consistency and safety (
-        {round(f.coverage)}, {round(f.consistency)}, {round(f.safety)}).{' '}
-        {custom
-          ? `To build all three: ${costLine(team.cost)}.`
-          : `The total, ${round(team.score.total)}, also counts cost (${round(f.cost)} of 100 against the other teams pick3 simulated from your collection, higher is cheaper) and accessibility (${round(f.accessibility)} of 100, higher needs fewer power-ups).`}
-      </p>
     </div>
   );
 }

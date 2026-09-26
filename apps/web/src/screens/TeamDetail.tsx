@@ -21,7 +21,6 @@ import {
   useMetaRank,
   useName,
 } from '../components.tsx';
-import { BattlePlan } from '../components/team/BattlePlan.tsx';
 import { PokemonDetails } from '../components/team/PokemonDetails.tsx';
 import { ScoreCard, type CustomNotes } from '../components/team/ScoreCard.tsx';
 import { KeyWins, SwitchList, Threats } from '../components/team/Threats.tsx';
@@ -30,14 +29,6 @@ import { costLine, SEP } from '../format.ts';
 import { shareLink } from '../share.ts';
 import { useActions, useAppState, type Route } from '../state/store.tsx';
 import { picksFromTeam, teamLink } from '../teamLink.ts';
-
-/** The jump row: each button scrolls its section's heading to the top, under the sticky header. */
-const JUMPS = [
-  { label: 'Battle plan', id: 'plan' },
-  { label: 'Threats', id: 'threats' },
-  { label: 'Pokémon', id: 'pokemon' },
-  { label: 'Details', id: 'details' },
-] as const;
 
 /** Smooth unless the player asked for reduced motion. */
 function scrollToId(id: string): void {
@@ -291,28 +282,13 @@ export function TeamDetail({ id }: { id: string }) {
           onShowMember={showMember}
         />
 
-        <nav className="analysis-jumps" aria-label="Jump to">
-          {JUMPS.map((j) => (
-            <Button key={j.id} variant="text" onClick={() => scrollToId(j.id)}>
-              {j.label}
-            </Button>
-          ))}
-        </nav>
-
-        <section className="stack">
-          <h3 id="plan" className="analysis-section">
-            Battle plan
-          </h3>
-          <BattlePlan team={team} />
-        </section>
-
         <Threats team={team} />
 
         <SwitchList team={team} leadName={name(lead.candidate.build.speciesId)} />
 
         <section className="stack">
           <h3 id="pokemon" className="analysis-section">
-            Pokémon details
+            Your Pokémon
           </h3>
           <PokemonDetails
             team={team}
@@ -328,7 +304,7 @@ export function TeamDetail({ id }: { id: string }) {
           <h3 id="details" className="analysis-section">
             Why this team
           </h3>
-          <WhyThisTeam team={team} custom={custom} />
+          <WhyThisTeam team={team} />
         </section>
 
         <div className="stack" style={{ gap: 4 }}>
