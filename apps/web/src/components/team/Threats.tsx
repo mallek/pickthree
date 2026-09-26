@@ -35,14 +35,16 @@ function MatchupRow({ m, testId }: { m: KeyMatchup; testId: string }) {
 
 /**
  * What beats this team: the engine's key threats as rows, then how many more of the meta group
- * also beat it and where to find them (the matchup grid).
+ * also beat it and where to find them (the matchup grid). The count is of species the grid shows
+ * (`gridIds`), each once: the meta group lists a few species twice, and an outsider from Your
+ * meta beats the team without a row in the grid.
  */
-export function Threats({ team }: { team: TeamRecommendation }) {
+export function Threats({ team, gridIds }: { team: TeamRecommendation; gridIds: string[] }) {
   const threats = team.explanation.keyThreats;
-  const listedInUncovered = threats.filter((t) =>
-    team.score.uncoveredOpponents.includes(t.opponent),
-  ).length;
-  const moreCount = team.score.uncoveredOpponents.length - listedInUncovered;
+  const grid = new Set(gridIds);
+  const beaten = new Set(team.score.uncoveredOpponents.filter((id) => grid.has(id)));
+  const listed = new Set(threats.map((t) => t.opponent));
+  const moreCount = [...beaten].filter((id) => !listed.has(id)).length;
   return (
     <section className="stack">
       <h3 id="threats" className="analysis-section">

@@ -282,7 +282,7 @@ export function TeamDetail({ id }: { id: string }) {
           onShowMember={showMember}
         />
 
-        <Threats team={team} />
+        <Threats team={team} gridIds={opps} />
 
         <SwitchList team={team} leadName={name(lead.candidate.build.speciesId)} />
 

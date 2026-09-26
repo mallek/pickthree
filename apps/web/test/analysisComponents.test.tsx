@@ -222,7 +222,7 @@ describe('Threats', () => {
     const team = makeTeam();
     team.explanation.keyThreats = [threat('a', 'A line.'), threat('b', 'B line.')];
     team.score.uncoveredOpponents = ['a', 'b', 'c', 'd', 'e'];
-    wrap(<Threats team={team} />);
+    wrap(<Threats team={team} gridIds={['a', 'b', 'c', 'd', 'e', 'f']} />);
     expect(screen.getAllByTestId('threat-row')).toHaveLength(2);
     expect(
       screen.getByText(
@@ -235,7 +235,7 @@ describe('Threats', () => {
     const team = makeTeam();
     team.explanation.keyThreats = [threat('a', 'A line.')];
     team.score.uncoveredOpponents = ['a', 'b'];
-    wrap(<Threats team={team} />);
+    wrap(<Threats team={team} gridIds={['a', 'b']} />);
     expect(
       screen.getByText(
         'and 1 more beats this team (see the matchup grid under Assumptions and detail)',
@@ -243,11 +243,37 @@ describe('Threats', () => {
     ).toBeInTheDocument();
   });
 
+  it('counts a species the meta group lists twice once', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [threat('a', 'A line.')];
+    // The matrix repeats 'b' (two movesets), so the score lists it twice.
+    team.score.uncoveredOpponents = ['a', 'b', 'b', 'c'];
+    wrap(<Threats team={team} gridIds={['a', 'b', 'c']} />);
+    expect(screen.getByText(/^and 2 more beat this team/)).toBeInTheDocument();
+  });
+
+  it('does not count an opponent the matchup grid does not show', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [threat('a', 'A line.')];
+    // 'x' is an outsider from Your meta: it beats the team but is not in the grid.
+    team.score.uncoveredOpponents = ['a', 'b', 'x'];
+    wrap(<Threats team={team} gridIds={['a', 'b']} />);
+    expect(screen.getByText(/^and 1 more beats this team/)).toBeInTheDocument();
+  });
+
+  it('shows no count when the only other beater is outside the grid', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [threat('a', 'A line.')];
+    team.score.uncoveredOpponents = ['a', 'x'];
+    wrap(<Threats team={team} gridIds={['a']} />);
+    expect(screen.queryByText(/more beats? this team/)).not.toBeInTheDocument();
+  });
+
   it('says so when nothing beats all three', () => {
     const team = makeTeam();
     team.explanation.keyThreats = [];
     team.score.uncoveredOpponents = [];
-    wrap(<Threats team={team} />);
+    wrap(<Threats team={team} gridIds={['a']} />);
     expect(screen.getByText(/Nothing in the meta group beats all three/)).toBeInTheDocument();
     expect(screen.queryByText(/more beats? this team/)).not.toBeInTheDocument();
   });
