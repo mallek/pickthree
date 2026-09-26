@@ -1,10 +1,20 @@
 import { teamKey, type TeamMoves, type TeamRef } from '@pickthree/engine';
-import { Button, Chevron, ConfirmSheet, Empty, Header, IconButton, Term } from '@pickthree/ui';
-import { useState } from 'react';
+import {
+  Button,
+  Chevron,
+  ConfirmSheet,
+  Empty,
+  ErrorState,
+  Header,
+  IconButton,
+  Term,
+} from '@pickthree/ui';
+import { useEffect, useState } from 'react';
 import {
   CogGlyph,
   GLOSSARY,
   PokemonToken,
+  Progress,
   ROLE_TEXT,
   ShareGlyph,
   useMetaRank,
@@ -40,7 +50,7 @@ function scrollToId(id: string): void {
 
 export function TeamDetail({ id }: { id: string }) {
   const s = useAppState();
-  const { back, navigate, openSheet, startSet, notify, setPick } = useActions();
+  const { back, navigate, openSheet, startSet, notify, setPick, runRecommend } = useActions();
   const name = useName();
   const [open, setOpen] = useState(false);
   const [allOpps, setAllOpps] = useState(false);
@@ -57,6 +67,39 @@ export function TeamDetail({ id }: { id: string }) {
    * for a recommended one and for a team link opened fresh (its landing replaced its own entry).
    */
   const fallback: Route = custom && !shared ? { screen: 'build' } : { screen: 'teams' };
+
+  // A reload or a pasted address lands here with no recommendation in memory: run it, as Teams
+  // would, rather than call the team missing. A failed run waits for Try again, so it never loops.
+  useEffect(() => {
+    if (
+      !custom &&
+      s.boot === 'ready' &&
+      s.leagueInfo &&
+      s.collection &&
+      !s.recommending &&
+      !s.recommendError &&
+      s.recommendation === null
+    ) {
+      void runRecommend();
+    }
+  }, [
+    custom,
+    s.boot,
+    s.leagueInfo,
+    s.collection,
+    s.recommending,
+    s.recommendError,
+    s.recommendation,
+    runRecommend,
+  ]);
+  /** Still finding out whether the team exists: game data, the saved collection or the run. */
+  const waiting =
+    s.boot === 'loading' ||
+    (custom
+      ? s.analyzing
+      : !s.settingsLoaded ||
+        s.recommending ||
+        (s.recommendation === null && s.collection !== null && !s.recommendError));
 
   /** A link to this team, species and moves only, for the share sheet or the clipboard. */
   const share = async (): Promise<void> => {
@@ -101,6 +144,32 @@ export function TeamDetail({ id }: { id: string }) {
       }
     />
   );
+
+  if (!team && (waiting || (!custom && s.recommendError))) {
+    return (
+      <div className="screen">
+        {header}
+        <div className="scroll">
+          {waiting ? (
+            s.progress ? (
+              <Progress {...s.progress} />
+            ) : (
+              <Progress stage={s.boot === 'loading' ? 'boot' : 'eligibility'} done={0} total={0} />
+            )
+          ) : (
+            <ErrorState
+              line={s.recommendError ?? ''}
+              action={
+                <Button variant="secondary" onClick={() => void runRecommend()}>
+                  Try again
+                </Button>
+              }
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (!team) {
     return (

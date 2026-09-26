@@ -61,25 +61,26 @@ const TEAM = makeTeam({
   total: 93,
 });
 
-/** Boot the store, run a recommendation that returns `teams`, and show `TeamDetail id`. */
-async function mountRecommended(id: string, teams: TeamRecommendation[] = [TEAM]) {
-  // Opened fresh at the team's own address, as a reload or a pasted link would.
+const NOT_FOUND = 'This team is not in the current results. Filters may have changed.';
+
+/**
+ * Show `TeamDetail id` opened fresh at the team's own address, as a reload or a pasted link
+ * would, and wait for the recommendation it runs by itself (returning `teams`) to arrive.
+ */
+async function mountRecommended(
+  id: string,
+  teams: TeamRecommendation[] = [TEAM],
+  host = hostWith(teams),
+) {
   window.history.replaceState(null, '', hashFor({ screen: 'team', id }));
   render(
-    <AppProvider host={hostWith(teams)}>
+    <AppProvider host={host}>
       <Probe />
       <TeamDetail id={id} />
     </AppProvider>,
   );
-  await waitFor(() => {
-    expect(latest?.state.boot).toBe('ready');
-    expect(latest?.state.leagueInfo).not.toBeNull();
-    expect(latest?.state.collection).not.toBeNull();
-  });
-  await act(async () => {
-    await latest!.actions.runRecommend();
-  });
   await waitFor(() => expect(latest?.state.recommendation?.teams.length).toBe(teams.length));
+  return host;
 }
 
 function analysisOf(team: TeamRecommendation): TeamAnalysis {
@@ -188,13 +189,75 @@ describe('Team Analysis', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/build'));
   });
 
-  it('a recommended team that is gone offers Back to teams', async () => {
-    await mountRecommended('gone');
-    expect(
-      screen.getByText('This team is not in the current results. Filters may have changed.'),
-    ).toBeInTheDocument();
+  it('a recommended team that is gone after the run offers Back to teams', async () => {
+    const host = await mountRecommended('gone');
+    expect(host.recommend).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(NOT_FOUND)).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back to teams' }));
     await waitFor(() => expect(window.location.hash).toBe('#/teams'));
+  });
+
+  it('a reloaded team link shows Loading while it runs the recommendation, then the team', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const host = hostWith([TEAM]);
+    const run = host.recommend;
+    host.recommend = vi.fn(async (...args: Parameters<typeof run>) => {
+      await gate;
+      return run(...args);
+    }) as typeof host.recommend;
+    // Never, at any moment, the false "not in the current results".
+    let sawNotFound = false;
+    const watch = new MutationObserver(() => {
+      sawNotFound ||= document.body.textContent?.includes(NOT_FOUND) ?? false;
+    });
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true });
+    window.history.replaceState(null, '', hashFor({ screen: 'team', id: 'a' }));
+    render(
+      <AppProvider host={host}>
+        <Probe />
+        <TeamDetail id="a" />
+      </AppProvider>,
+    );
+    expect(screen.getByRole('status')).toHaveTextContent('Loading game data');
+    await waitFor(() => expect(host.recommend).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    release();
+    const card = await screen.findByRole('region', { name: 'Battle score' });
+    expect(card.querySelector('.score-num')).toHaveTextContent(/^71$/);
+    expect(screen.queryByRole('status')).toBeNull();
+    watch.disconnect();
+    expect(sawNotFound).toBe(false);
+    expect(host.recommend).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed run shows the error with Try again and never runs again by itself', async () => {
+    // recordError's device summary reads matchMedia, which jsdom does not implement.
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    const host = hostWith([TEAM]);
+    const run = host.recommend;
+    host.recommend = vi
+      .fn(run)
+      .mockRejectedValueOnce(new Error('The engine stopped.')) as typeof host.recommend;
+    window.history.replaceState(null, '', hashFor({ screen: 'team', id: 'a' }));
+    render(
+      <AppProvider host={host}>
+        <Probe />
+        <TeamDetail id="a" />
+      </AppProvider>,
+    );
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('The engine stopped.');
+    await act(async () => {});
+    expect(host.recommend).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(NOT_FOUND)).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.click(within(error).getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('region', { name: 'Battle score' });
+    expect(host.recommend).toHaveBeenCalledTimes(2);
   });
 
   it('headlines battle strength, not the total', async () => {

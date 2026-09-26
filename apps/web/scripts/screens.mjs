@@ -567,6 +567,26 @@ console.log('team analysis strip tap lands its row under the sticky header');
 }
 await page.evaluate(() => window.scrollTo(0, 0));
 
+console.log('team analysis, reloaded');
+// A real reload drops the recommendation from memory; the screen runs it again and shows the
+// team, never the not-found state (page.goto to another hash keeps state, so only this proves it).
+await page.reload({ waitUntil: 'networkidle0' });
+await page
+  .waitForFunction(
+    () => document.querySelector('.score-card') || document.querySelector('.ui-empty, .ui-error'),
+    { timeout: 120_000 },
+  )
+  .catch(() => {
+    throw new Error('team analysis, reloaded: nothing rendered');
+  });
+const reloaded = await page.evaluate(() => ({
+  card: Boolean(document.querySelector('.score-card')),
+  text: document.querySelector('.scroll')?.textContent?.slice(0, 200) ?? '',
+}));
+if (!reloaded.card) {
+  throw new Error(`team analysis, reloaded: no score card: ${reloaded.text}`);
+}
+
 console.log('edit in build');
 // Edit team loads a recommended team into Build for edits. Through the DOM: the sticky header
 // sits under the update toast's spot, and a geometry click has missed here before.

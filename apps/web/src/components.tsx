@@ -495,6 +495,7 @@ export const GLOSSARY: Record<string, string> = {
 
 export function Progress({ stage, done, total }: { stage: string; done: number; total: number }) {
   const labels: Record<string, string> = {
+    boot: 'Loading game data',
     eligibility: 'Checking which Pokémon fit the league',
     candidates: 'Picking the strongest candidates',
     trios: 'Trying team combinations',
