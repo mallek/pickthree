@@ -2078,8 +2078,8 @@ textarea.paste {
   font-size: var(--fs-section);
   font-weight: 600;
 }
-/* Team Analysis: a heading inside a section (Wins, Key threats, When to switch, Team structure),
-   one step under the section's own heading. */
+/* Team Analysis: a heading inside a section (Key win, Key threats, When to switch, Team
+   structure), one step under the section's own heading. */
 .analysis-sub {
   margin: 0;
   font-size: var(--fs-body);
