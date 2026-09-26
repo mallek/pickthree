@@ -38,7 +38,8 @@ action). Each page passes the audit and Travis signs its record before the next 
   before picking another. The label reads "Pick one or two".
 - **Analysis: the approved split.** The design's structure (score card, jump buttons, battle plan,
   matchups to remember, expandable Pokémon rows) with today's details inside it. The battle plan
-  uses only what the engine already writes.
+  uses only what the engine already writes. Revised 2026-09-26 (see Team Analysis): a hero card
+  with factor bars, Threats and When to switch first; the battle plan and jump buttons removed.
 - **Back returns to where you came from.** "Edit team" is a labeled jump, not the back control.
 
 ## Order of work
@@ -53,10 +54,10 @@ so they stay in the app.
 
 | Component | Used by | What it is |
 | --- | --- | --- |
-| `TeamRowSummary` | Teams | The collapsed row: three overlapping sprites, the three names, "fit · difficulty · Stardust". Sits inside `ExpandRow`'s summary slot, so it holds no buttons or links. |
+| `TeamRowSummary` | Teams | The collapsed row: three overlapping sprites, the three names, "number · fit · difficulty · Stardust" (the number is `score.battle` rounded, added 2026-09-26 so strong teams can be compared on the list: Travis, "I agree let's do it"). Sits inside `ExpandRow`'s summary slot, so it holds no buttons or links. |
 | `TeamCardBody` | Teams, Analysis strip | Today's `TeamCard` content: fit tag, structure as a `Term`, difficulty and its reason, three sprites with names and roles, the role legend (first team only), the specific explanation, the full cost line. No click handler of its own. |
-| `ScoreCard` | Analysis | The headline battle score, fit tag, the coverage line, custom-team notes, "Run it in this order", Take to battle. |
-| `BattlePlan` | Analysis | Three steps (lead, switch, closer) from engine data only (see Analysis). |
+| `ScoreCard` | Analysis | Revised 2026-09-26 into the hero card: the number, structure `Term`, fit tag, Edit pencil, the three Pokémon, the difficulty line, factor bars; Take to battle and custom notes under it (see Team Analysis). |
+| `BattlePlan` | none | Removed 2026-09-26: its steps read the same on every team. |
 
 Today's `TeamCard` in `screens/Teams.tsx` is replaced by `TeamCardBody` inside an `ExpandRow`.
 
@@ -130,34 +131,44 @@ Changes:
 
 ## Team Analysis
 
+Revised 2026-09-26 after Travis used the shipped page on his phone: "the battle plan is always the
+same" across teams, the jump links "scroll off the page", Edit team takes a whole row, and "Key
+threats is the #1 thing I care about. Then when to switch." He drew the hero card; the number
+stays the headline ("it gives you an idea between 3 A teams who has an edge"), with no "/ 100".
+The page, top to bottom:
+
 - **Header:** `Header variant="sub"`, title "Team Analysis", back to the origin (Teams, Build,
-  a shared link), actions: Share and settings `IconButton`s. **Edit team** is a labeled text action
-  under the team strip (today's `editInBuild`).
-- **Team strip:** three sprites with roles; tapping one scrolls to and opens that Pokémon's
-  details row.
-- **ScoreCard:** the big number is `score.battle` (rounded), with the fit tag and the coverage
-  line (`fitWhy`: "An answer to N of M meta Pokémon"). For a custom team, today's notes: how it
-  compares with the best recommended team (by battle strength), assumed IVs, chosen moves,
-  PvPoke-unranked picks, orders tried. "Run it in this order". **Take to battle** is the page's
-  one primary `Button`, in the same place for recommended and custom teams; replacing a running
-  set asks through `ConfirmSheet` (default tone), not `window.confirm`.
-- **Jump buttons:** Battle plan, Matchups, Pokémon, Details (scroll to the section).
-- **Battle plan,** engine data only, three steps:
-  - Lead: `explanation.roleWhy.lead`, plus the lead's `slotDetail[0].formNote` when present.
-  - Switch: up to the top two `explanation.switchPlan` lines.
-  - Closer: `explanation.roleWhy.closer`, plus `slotDetail[2].keepShield.line` when present.
-  No text the engine does not produce.
-- **Matchups to remember:** the first `keyWins` entry and the first `keyThreats` entry side by
-  side; "Show all" expands to every key win and threat and the full When to switch list (up to
-  eight, today's copy).
-- **Why this team:** `explanation.why`; Team structure (today's three "beats N of M" tiles, or the
-  ABB lead and back-line block); the score breakdown (coverage, consistency, safety, cost,
-  accessibility) with a line that the headline is battle strength.
+  a shared link), actions: Share and settings `IconButton`s.
+- **Hero card:**
+  - Top row: the big number, `score.battle` rounded, alone (no "/ 100 in battle"); beside it the
+    structure as a `Term` ("Balanced ABC" or "ABB line", tap for the definition) and the fit
+    `Tag`; on the right a pencil `IconButton` "Edit team" (today's `editInBuild`).
+  - The three Pokémon with their roles, in battle order; tapping one scrolls to and opens its
+    details row. Long names wrap to two lines, never truncate.
+  - The difficulty line ("Demanding to play: ...").
+  - Factor bars, read-only, no numbers: Coverage, Consistency, Safety, Affordable (the cost
+    factor, so a full bar means cheap) and Accessibility (fewer power-ups is higher). A custom
+    team shows only Coverage, Consistency and Safety, then "To build all three: <cost line>",
+    because its cost factor only compares its own orders.
+- **Take to battle** under the card, the page's one primary `Button`; replacing a running set
+  asks through `ConfirmSheet` (default tone). A custom team's notes (best recommended team,
+  assumed IVs, chosen moves, PvPoke-unranked picks, orders tried when more than one) sit as small
+  lines under the button.
+- **Threats:** `keyThreats` (the engine keeps at most three) as compact rows (token, name, types,
+  rank, the engine's line), unanswered first; then "and N more beat this team" when more of the
+  meta beats the whole team, pointing to the matchup grid. Nothing in the meta beats all three:
+  today's sentence.
+- **When to switch:** `switchPlan` minus any opponent already listed under Threats, the top five,
+  "Show all" up to eight, today's copy and intro line.
+- Removed: the battle plan section, the jump buttons, "Run it in this order" (the strip shows the
+  order), the coverage sentence and the written score breakdown (the bars replace them).
+- **Why this team:** `explanation.why` and Team structure (today's tiles or the ABB block).
 - **Pokémon details:** one `ExpandRow` per Pokémon, the first open. Contents are today's card:
   order and role, types as `TypeChip`s, rank tags, the role's job, form note, moves with type
   chips, move counts and extra-damage reads, TM and Elite TM tags; the move-count explanation
   ("7-6-6") beside the first move count; shield and safe types as `TypeChip`s ("+N more");
   keep-shield advice; your IVs, level, IV rank, Shadow and Lucky `Tag`s; the cost to build.
+- **Key wins:** `keyWins` as compact rows like Threats, after the Pokémon details.
 - **Alternatives you own:** today's rows.
 - **Assumptions and matchup grid:** collapsed, unchanged.
 - **States:** shared `Loading`; the not-found states use `Empty` with a `Button` back.
@@ -181,13 +192,14 @@ Changes:
 
 ## Testing
 
-- Component tests for `TeamRowSummary`, `TeamCardBody`, `ScoreCard` (battle score, custom notes),
-  `BattlePlan` (renders only engine strings, omits absent form note and keep-shield).
+- Component tests for `TeamRowSummary` (the number), `TeamCardBody`, `ScoreCard` (the hero card:
+  the number alone, bars, the custom three-bar variant and build cost, custom notes), Threats (at
+  most three, the "N more" count) and When to switch (no opponent repeated from Threats).
 - Screen tests: Teams (sort by battle, first row open, rows toggle, View analysis and Edit team
   targets, progress card only under 15, empty state action); Build (Find best order at top,
   Choosing line per role, suggestions appear without filling slots, + Add fills the first empty
   slot, total cost, back to origin); Team Analysis (score is `score.battle`, Take to battle uses
-  `ConfirmSheet`, jump buttons, battle plan content, details rows); MovePicker (no bumping, hint,
+  `ConfirmSheet`, the pencil opens Build, Threats before When to switch, details rows); MovePicker (no bumping, hint,
   last charged move locked).
 - `web:screens` captures each page's states in both themes: loading, empty, error, no collection,
   populated, a row expanded, a cup current, a Build suggestion, the move sheet, a custom and a
