@@ -72,6 +72,12 @@ export interface Explanation {
   switchPlan: SwitchAdvice[];
 }
 
+/**
+ * A matchup nobody on the team wins is still close from this rating up: shields decide it. Under
+ * it, nobody on the team beats it. One meaning for the key threats and the switch plan alike.
+ */
+const CLOSE_RATING = 450;
+
 export const ROLE_LABEL: Record<Role, string> = {
   lead: 'Lead',
   switch: 'Safe Switch',
@@ -200,6 +206,7 @@ export function switchPlanFor(
   const rankOf = (id: string): number => ranks.get(id)?.overall ?? 9999;
   const [lead, sw, closer] = t.slots;
   const out: SwitchAdvice[] = [];
+  const unanswered = new Set<string>();
   for (const r of lead.results) {
     if (r.win) {
       continue;
@@ -232,6 +239,16 @@ export function switchPlanFor(
         line: `Switch to ${toName}, ${how}.`,
       });
     } else {
+      // Nobody wins it. Read it the way the key threats do: the best slot on the whole team, the
+      // lead included, decides whether it is close or unanswered.
+      const closest = bestSlotFor(t, opponent);
+      const close = closest !== null && closest.rating >= CLOSE_RATING;
+      const line = close
+        ? `Close; shields decide it. Best try: ${fullName(closest.slot.candidate.build.speciesId, index)}.`
+        : `Nobody on the team beats it. Shield, farm energy, and switch on your terms.`;
+      if (!close) {
+        unanswered.add(opponent);
+      }
       out.push({
         opponent,
         opponentName: oppName,
@@ -240,21 +257,21 @@ export function switchPlanFor(
         to: null,
         toName: null,
         rating: Math.max(swR?.rating ?? 0, clR?.rating ?? 0),
-        line: `Nobody on the team beats it. Shield, farm energy, and switch on your terms.`,
+        line,
       });
     }
   }
-  // The ones with no answer first, then the opponents you are most likely to meet.
+  // The unanswered first, then the close ones nobody wins, then the ones with a switch; within
+  // each, the opponents you are most likely to meet.
+  const tier = (x: SwitchAdvice): number =>
+    unanswered.has(x.opponent) ? 0 : x.to === null ? 1 : 2;
   const leadRating = new Map(lead.results.map((x) => [x.opponent, x.rating]));
-  out.sort((a, b) => {
-    if ((a.to === null) !== (b.to === null)) {
-      return a.to === null ? -1 : 1;
-    }
-    return (
+  out.sort(
+    (a, b) =>
+      tier(a) - tier(b) ||
       rankOf(a.opponent) - rankOf(b.opponent) ||
-      (leadRating.get(a.opponent) ?? 0) - (leadRating.get(b.opponent) ?? 0)
-    );
-  });
+      (leadRating.get(a.opponent) ?? 0) - (leadRating.get(b.opponent) ?? 0),
+  );
   // A species listed twice in the meta group keeps its worse entry.
   return uniqueByOpponent(out);
 }
@@ -273,7 +290,7 @@ export function explainTeam(
 
   const wins: KeyMatchup[] = [];
   const threats: KeyMatchup[] = [];
-  /** Opponents nobody on the team beats, not even closely (best rating under 450). */
+  /** Opponents nobody on the team beats, not even closely (best rating under CLOSE_RATING). */
   const unanswered = new Set<string>();
   for (const opponent of view.opponents) {
     const best = bestSlotFor(t, opponent);
@@ -293,8 +310,8 @@ export function explainTeam(
       });
     } else {
       const closest =
-        best.rating >= 450 ? 'Close; shields decide it' : 'Nobody on the team beats it';
-      if (best.rating < 450) {
+        best.rating >= CLOSE_RATING ? 'Close; shields decide it' : 'Nobody on the team beats it';
+      if (best.rating < CLOSE_RATING) {
         unanswered.add(opponent);
       }
       threats.push({
