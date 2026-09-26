@@ -1987,6 +1987,10 @@ textarea.paste {
   column-gap: 16px;
   row-gap: 12px;
 }
+.hero-bar-label {
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
 .hero-bar {
   height: 10px;
   border-radius: 999px;

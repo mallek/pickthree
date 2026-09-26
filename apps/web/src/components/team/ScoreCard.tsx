@@ -1,7 +1,14 @@
 import type { TeamAnalysis, TeamRecommendation } from '@pickthree/engine';
 import { Button, IconButton, Term } from '@pickthree/ui';
 import { Fragment } from 'react';
-import { FitTag, GLOSSARY, PencilGlyph, PokemonToken, useName } from '../../components.tsx';
+import {
+  FitTag,
+  GLOSSARY,
+  PencilGlyph,
+  PokemonToken,
+  ROLE_SHORT,
+  useName,
+} from '../../components.tsx';
 import { costLine } from '../../format.ts';
 
 export interface CustomNotes {
@@ -10,8 +17,6 @@ export interface CustomNotes {
   shared: boolean;
   leagueTitle: string;
 }
-
-const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const;
 
 /**
  * The hero card: battle strength as a bare number, the structure and the fit, an Edit pencil, the

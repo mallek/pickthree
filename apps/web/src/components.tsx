@@ -373,6 +373,9 @@ export function countsText(fastName: string, counts: number[] | null): string | 
 
 export const ROLE_TEXT = { lead: 'Lead', switch: 'Safe Switch', closer: 'Closer' } as const;
 
+/** Shorter than ROLE_TEXT, for tight spots like the hero card's strip and TeamDetail's own rows. */
+export const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const;
+
 export function RoleLabel({ role }: { role: 'lead' | 'switch' | 'closer' }) {
   return <span className="role">{ROLE_TEXT[role]}</span>;
 }

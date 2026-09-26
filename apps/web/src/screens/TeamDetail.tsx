@@ -15,6 +15,7 @@ import {
   GLOSSARY,
   PokemonToken,
   Progress,
+  ROLE_SHORT,
   ROLE_TEXT,
   ShareGlyph,
   useMetaRank,
@@ -29,8 +30,6 @@ import { costLine, SEP } from '../format.ts';
 import { shareLink } from '../share.ts';
 import { useActions, useAppState, type Route } from '../state/store.tsx';
 import { picksFromTeam, teamLink } from '../teamLink.ts';
-
-const ROLE_SHORT = { lead: 'Lead', switch: 'Switch', closer: 'Closer' } as const;
 
 /** The jump row: each button scrolls its section's heading to the top, under the sticky header. */
 const JUMPS = [
