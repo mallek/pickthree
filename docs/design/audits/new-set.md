@@ -85,12 +85,17 @@ button's `disabled` state and the slot contents, tested directly).
 - [x] every "must keep" from the spec's New Set section, item by item: the header labeled Cancel;
       input first (search, then Matches, then the three slots); "From pick3" rows reading like
       Teams (the battle number and fit, via the same `TeamRowSummary` component); tapping a From
-      pick3 row fills the slots and starts that team; Recent teams unchanged; both lists hidden
-      while searching; "Start set" as the one primary, disabled until three are picked.
+      pick3 row fills the three slots and does not start the set (the player can look at the picks,
+      clear one, or tap Start set); Recent teams unchanged (one tap starts, as today); both lists
+      hidden while searching or once a slot is filled; "Start set" as the one primary, disabled
+      until three are picked.
 - [x] every control does what its label says: typing filters to Matches and hides both shortcut
-      lists (tested); tapping a From pick3 row calls `startSet` with that team's species, the same
-      as tapping a Recent teams row; Start set is disabled with fewer than three picks and starts
-      the set with exactly three.
+      lists (tested); tapping a From pick3 row fills the three slots with that team's picks and
+      keeps its moves, without calling `startSet` (tested); Start set then starts that team with
+      its moves while the slots still hold it, and clearing any slot drops the moves, so a team
+      refilled by hand starts without them (tested); tapping a Recent teams row starts that team
+      at once, as before; Start set is disabled with fewer than three picks and starts the set with
+      exactly three.
 - [x] back returns to the origin: Cancel calls `back({ screen: 'meta' })`, landing on Your Meta
       whether real history sits behind the page or not. A review finding (see Findings and fixes)
       caught a narrow case where this could fail and fixed it at its root in Log a Battle instead
@@ -109,7 +114,8 @@ button's `disabled` state and the slot contents, tested directly).
 - [x] tests cover the new behavior: `apps/web/test/newSet.test.tsx` (the sub-page header with
       Cancel returning to Your Meta, input before the slots; starting a set from three picks with
       Start set disabled until then; a From pick3 row reading like Teams with the number and fit;
-      both lists hidden while searching; no From pick3 row with an empty recommendation; the
+      a From pick3 tap filling the three slots without starting, then Start set starting it with
+      its moves; clearing a slot after that tap dropping the moves; both lists hidden while searching; no From pick3 row with an empty recommendation; the
       regression test for Cancel escaping Log a Battle's own no-set redirect without adding a
       history entry).
 

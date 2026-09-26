@@ -42,7 +42,7 @@ function TeamPick({ team, onPick }: { team: TeamRef; onPick: () => void }) {
   );
 }
 
-/** A pick3 recommendation as a whole-team shortcut: the same row Teams shows, tap to start it. */
+/** A pick3 recommendation as a whole-team shortcut: the same row Teams shows, tap to fill the slots. */
 function Pick3Pick({ team, onPick }: { team: TeamRecommendation; onPick: () => void }) {
   return (
     <button type="button" className="pick3-row" onClick={onPick}>
@@ -59,6 +59,8 @@ export function NewSet() {
   const short = useShortName();
   const species = useSpecies();
   const [slots, setSlots] = useState<(string | null)[]>([null, null, null]);
+  /** The From pick3 team the slots were filled from, kept so Start set carries its moves. */
+  const [chosen, setChosen] = useState<TeamRef | null>(null);
   const [query, setQuery] = useState('');
   const hits = useSpeciesSearch(query, 30);
 
@@ -149,7 +151,29 @@ export function NewSet() {
     }
   };
 
+  const slotValue = (team: TeamRef, i: number): string => {
+    const sp = team.species[i] as string;
+    const id = team.specimenIds?.[i];
+    return id ? `${sp}|${id}` : sp;
+  };
+
+  /** A From pick3 tap fills the three slots; Start set then starts it. */
+  const fillTeam = (team: TeamRef): void => {
+    setSlots(team.species.map((_, i) => slotValue(team, i)));
+    setChosen(team);
+    setQuery('');
+  };
+
+  const clearSlot = (i: number): void => {
+    setSlots((cur) => cur.map((x, j) => (j === i ? null : x)));
+    setChosen(null);
+  };
+
   const startPicked = (): void => {
+    if (chosen && slots.every((v, i) => v === slotValue(chosen, i))) {
+      void go(chosen);
+      return;
+    }
     const picked = slots.map((v) => parts(v as string));
     const species = picked.map((p) => p[0]) as [string, string, string];
     const ids = picked.map((p) => p[1]);
@@ -204,7 +228,7 @@ export function NewSet() {
               type="button"
               className={`opp-slot${v ? ' filled' : ''}`}
               key={i}
-              onClick={() => setSlots((cur) => cur.map((x, j) => (j === i ? null : x)))}
+              onClick={() => clearSlot(i)}
               aria-label={v ? `Clear ${name(parts(v)[0])}` : `Slot ${i + 1}`}
             >
               {v ? (
@@ -227,7 +251,7 @@ export function NewSet() {
           <div className="stack" style={{ gap: 6 }}>
             <b>From pick3</b>
             {fromPick3.map((t, i) => (
-              <Pick3Pick team={t} key={`${i}-${t.id}`} onPick={() => void go(toTeamRef(t))} />
+              <Pick3Pick team={t} key={`${i}-${t.id}`} onPick={() => fillTeam(toTeamRef(t))} />
             ))}
           </div>
         ) : null}

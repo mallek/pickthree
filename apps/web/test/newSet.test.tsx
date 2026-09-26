@@ -134,13 +134,74 @@ describe('New Set on the foundation', () => {
       { normalizer: getDefaultNormalizer({ collapseWhitespace: false }) },
     );
     expect(row).toBeInTheDocument();
-    fireEvent.click(row.closest('button') as HTMLButtonElement);
+  });
+
+  it('a From pick3 tap fills the three slots without starting; Start set starts it with its moves', async () => {
+    await renderReady(
+      hostWith([makeTeam({ id: 't1', species: ['tinkaton', 'azumarill', 'clodsire'] })]),
+    );
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    const startSet = vi.spyOn(latest!.actions, 'startSet');
+    const row = screen
+      .getByText('From pick3')
+      .parentElement!.querySelector('button.pick3-row') as HTMLButtonElement;
+    fireEvent.click(row);
+    for (const fullName of ['Tinkaton', 'Azumarill', 'Clodsire']) {
+      expect(screen.getByRole('button', { name: `Clear ${fullName}` })).toBeInTheDocument();
+    }
+    // Filled slots hide both shortcut lists; nothing started, nothing saved, still on New Set.
+    expect(screen.queryByText('From pick3')).not.toBeInTheDocument();
+    expect(startSet).not.toHaveBeenCalled();
+    expect(await storage.loadSets('great')).toHaveLength(0);
+    expect(window.location.hash).toBe('#/meta/new');
+    const start = screen.getByRole('button', { name: 'Start set' });
+    expect(start).toBeEnabled();
+    await act(async () => {
+      fireEvent.click(start);
+    });
+    await waitFor(async () => {
+      const sets = await storage.loadSets('great');
+      expect(sets).toHaveLength(1);
+      expect(sets[0]?.team).toEqual({
+        species: ['tinkaton', 'azumarill', 'clodsire'],
+        specimenIds: ['t1-tinkaton', 't1-azumarill', 't1-clodsire'],
+        moves: [
+          { fast: 'FAST', charged: expect.any(Array) },
+          { fast: 'FAST', charged: expect.any(Array) },
+          { fast: 'FAST', charged: expect.any(Array) },
+        ],
+      });
+    });
+    expect(window.location.hash).toBe('#/meta');
+  });
+
+  it('clearing a slot after a From pick3 tap drops its moves: the refilled team starts without them', async () => {
+    await renderReady(
+      hostWith([makeTeam({ id: 't1', species: ['tinkaton', 'azumarill', 'clodsire'] })]),
+    );
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    const row = screen
+      .getByText('From pick3')
+      .parentElement!.querySelector('button.pick3-row') as HTMLButtonElement;
+    fireEvent.click(row);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Clodsire' }));
+    fireEvent.change(screen.getByPlaceholderText('Search any Pokémon'), {
+      target: { value: 'clod' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Clodsire' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start set' }));
+    });
     await waitFor(async () => {
       const sets = await storage.loadSets('great');
       expect(sets).toHaveLength(1);
       expect(sets[0]?.team.species).toEqual(['tinkaton', 'azumarill', 'clodsire']);
+      expect(sets[0]?.team.moves).toBeUndefined();
     });
-    expect(window.location.hash).toBe('#/meta');
   });
 
   it('hides both From pick3 and Recent teams while searching', async () => {
