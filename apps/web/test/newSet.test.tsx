@@ -204,6 +204,10 @@ describe('New Set on the foundation', () => {
       expect(sets[0]?.team.species).toEqual(['tinkaton', 'azumarill', 'clodsire']);
       expect(sets[0]?.team.moves).toBeUndefined();
     });
+    // Starting a set navigates to Your Meta after the save; wait for it here, so that late
+    // navigation cannot land in the next test (it did on CI, as "#/meta" where "#/meta/new" was
+    // expected).
+    await waitFor(() => expect(window.location.hash).toBe('#/meta'));
   });
 
   it('a Recent teams tap fills the three slots without starting; Start set starts it with its moves', async () => {
