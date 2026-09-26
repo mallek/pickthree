@@ -229,7 +229,7 @@ export function switchPlanFor(
         to: best.to,
         toName,
         rating: best.rating,
-        line: `${oppName}: switch to ${toName}, ${how}.`,
+        line: `Switch to ${toName}, ${how}.`,
       });
     } else {
       out.push({
@@ -240,7 +240,7 @@ export function switchPlanFor(
         to: null,
         toName: null,
         rating: Math.max(swR?.rating ?? 0, clR?.rating ?? 0),
-        line: `${oppName}: nobody on the team beats it. Shield, farm energy, and switch on your terms.`,
+        line: `Nobody on the team beats it. Shield, farm energy, and switch on your terms.`,
       });
     }
   }
