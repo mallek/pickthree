@@ -314,6 +314,53 @@ describe('battle log actions', () => {
     expect(latest!.state.sets[0]?.team).toEqual({ species: ['tinkaton', 'azumarill', 'clodsire'] });
   });
 
+  it('editing a tanked battle to a loss sets tanked false and result loss', async () => {
+    await mount();
+    await act(async () => {
+      await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+      await latest!.actions.logBattle({ opponents: [], result: null, tanked: true });
+    });
+    const setId = latest!.state.sets[0]!.id;
+    const battleId = latest!.state.sets[0]!.battles[0]!.id;
+    expect(latest!.state.sets[0]?.battles[0]?.tanked).toBe(true);
+    expect(latest!.state.sets[0]?.battles[0]?.result).toBeNull();
+
+    let ok = false;
+    await act(async () => {
+      ok = await latest!.actions.editBattle(setId, battleId, {
+        opponents: ['medicham'],
+        result: 'loss',
+        tanked: false,
+      });
+    });
+    expect(ok).toBe(true);
+    const edited = latest!.state.sets[0]!.battles[0]!;
+    expect(edited.result).toBe('loss');
+    expect(edited.tanked).toBe(false);
+  });
+
+  it('editBattle with an unknown set id returns false and changes nothing', async () => {
+    await mount();
+    await act(async () => {
+      await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+      await latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false });
+    });
+    const battleId = latest!.state.sets[0]!.battles[0]!.id;
+    const before = latest!.state.sets[0]!.battles[0]!;
+
+    let ok = false;
+    await act(async () => {
+      ok = await latest!.actions.editBattle('no-such-set', battleId, {
+        opponents: ['tinkaton'],
+        result: 'loss',
+        tanked: false,
+      });
+    });
+    expect(ok).toBe(false);
+    const after = latest!.state.sets[0]!.battles[0]!;
+    expect(after).toEqual(before);
+  });
+
   it('editBattle clears sharedAt on a previously sent battle, and the share sync re-sends it', async () => {
     const eligibleSpy = vi
       .spyOn(await import('../src/metaShare.ts'), 'shareEligible')
