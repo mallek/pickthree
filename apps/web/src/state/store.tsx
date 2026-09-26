@@ -78,6 +78,11 @@ function noteLayout(layout: Layout | undefined, outcome: 'ok' | 'failed'): void 
   }
 }
 
+/** A battle's opponents as logged or edited: blanks dropped, deduped, at most three. */
+function normalizeOpponents(opponents: string[]): string[] {
+  return opponents.filter((id, i, arr) => id !== '' && arr.indexOf(id) === i).slice(0, 3);
+}
+
 export type Route =
   | { screen: 'welcome' }
   | { screen: 'import' }
@@ -92,7 +97,7 @@ export type Route =
   | { screen: 'add' }
   | { screen: 'meta' }
   | { screen: 'meta-new' }
-  | { screen: 'meta-log' }
+  | { screen: 'meta-log'; edit?: { set: string; battle: string } }
   /** A team link: league id and the raw member list, parsed by the landing screen. */
   | { screen: 'shared'; league: string; members: string };
 
@@ -470,6 +475,13 @@ export function parseHash(hash: string): Route {
       return { screen: 'meta-new' };
     }
     if (b === 'log') {
+      const [, , setId, battleId] = parts;
+      if (setId && battleId) {
+        return {
+          screen: 'meta-log',
+          edit: { set: decodeURIComponent(setId), battle: decodeURIComponent(battleId) },
+        };
+      }
       return { screen: 'meta-log' };
     }
     return { screen: 'meta' };
@@ -506,7 +518,9 @@ export function hashFor(r: Route): string {
     case 'meta-new':
       return '#/meta/new';
     case 'meta-log':
-      return '#/meta/log';
+      return r.edit
+        ? `#/meta/log/${encodeURIComponent(r.edit.set)}/${encodeURIComponent(r.edit.battle)}`
+        : '#/meta/log';
     case 'shared':
       return `#/t/${r.league}/${r.members}`;
     default:
@@ -643,6 +657,12 @@ interface Actions {
     result: 'win' | 'loss' | null;
     tanked: boolean;
   }): Promise<boolean>;
+  /** Edit a logged battle by set and battle id, found among every set (open or closed). */
+  editBattle(
+    setId: string,
+    battleId: string,
+    input: { opponents: string[]; result: 'win' | 'loss' | null; tanked: boolean },
+  ): Promise<boolean>;
   endSet(): Promise<boolean>;
   /** Show (or clear with null) the floating one-line notice. */
   notify(message: string | null): void;
@@ -1483,15 +1503,40 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         const battle: LoggedBattle = {
           id: newId(),
           at: new Date().toISOString(),
-          opponents: input.opponents
-            .filter((id, i, arr) => id !== '' && arr.indexOf(id) === i)
-            .slice(0, 3),
+          opponents: normalizeOpponents(input.opponents),
           result: input.tanked ? null : input.result,
           tanked: input.tanked,
         };
         const battles = [...open.battles, battle];
         // Battles accumulate under the current team; only picking another team closes a set.
         return persistSets([{ ...open, battles }], 'that battle');
+      }),
+    [persistSets, serialized],
+  );
+
+  const editBattle = useCallback(
+    (
+      setId: string,
+      battleId: string,
+      input: { opponents: string[]; result: 'win' | 'loss' | null; tanked: boolean },
+    ) =>
+      serialized(async () => {
+        const set = setsRef.current.find((s) => s.id === setId);
+        const old = set?.battles.find((b) => b.id === battleId);
+        if (!set || !old) {
+          return false;
+        }
+        // Resending needs the fields back to unsent; the worker updates the same row by id.
+        const { sharedAt: _gone, ...kept } = old;
+        void _gone;
+        const battle: LoggedBattle = {
+          ...kept,
+          opponents: normalizeOpponents(input.opponents),
+          result: input.tanked ? null : input.result,
+          tanked: input.tanked,
+        };
+        const battles = set.battles.map((b) => (b.id === battleId ? battle : b));
+        return persistSets([{ ...set, battles }], 'that battle');
       }),
     [persistSets, serialized],
   );
@@ -1575,6 +1620,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       forget,
       startSet,
       logBattle,
+      editBattle,
       endSet,
       notify,
       setShareEnabled,
@@ -1607,6 +1653,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       forget,
       startSet,
       logBattle,
+      editBattle,
       endSet,
       notify,
       setShareEnabled,

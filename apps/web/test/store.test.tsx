@@ -49,6 +49,15 @@ describe('routes', () => {
     expect(hashFor({ screen: 'meta-new' })).toBe('#/meta/new');
     expect(hashFor({ screen: 'meta-log' })).toBe('#/meta/log');
   });
+  it('parses and prints the Log a battle edit route', () => {
+    expect(parseHash('#/meta/log/s1/b1')).toEqual({
+      screen: 'meta-log',
+      edit: { set: 's1', battle: 'b1' },
+    });
+    expect(hashFor({ screen: 'meta-log', edit: { set: 's1', battle: 'b1' } })).toBe(
+      '#/meta/log/s1/b1',
+    );
+  });
   it('parses and prints a team link route', () => {
     const members = 'azumarill.BUBBLE.ICE_BEAM.PLAY_ROUGH+tinkaton+clodsire';
     expect(parseHash(`#/t/great/${members}`)).toEqual({
@@ -241,6 +250,109 @@ describe('battle log actions', () => {
     });
     expect(latest!.state.sets[0]?.battles).toHaveLength(2);
     expect((await storage.loadSets('great'))[0]?.battles).toHaveLength(2);
+  });
+
+  it('editBattle replaces opponents (deduped, capped at three, blanks dropped), result and tanked', async () => {
+    await mount();
+    await act(async () => {
+      await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+      await latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false });
+    });
+    const setId = latest!.state.sets[0]!.id;
+    const battleId = latest!.state.sets[0]!.battles[0]!.id;
+    let ok = false;
+    await act(async () => {
+      ok = await latest!.actions.editBattle(setId, battleId, {
+        opponents: ['medicham', '', 'medicham', 'tinkaton', 'clodsire', 'azumarill'],
+        result: 'loss',
+        tanked: false,
+      });
+    });
+    expect(ok).toBe(true);
+    const edited = latest!.state.sets[0]!.battles[0]!;
+    expect(edited.opponents).toEqual(['medicham', 'tinkaton', 'clodsire']);
+    expect(edited.result).toBe('loss');
+    expect(edited.tanked).toBe(false);
+  });
+
+  it('editBattle forces result null when tanked, keeps id/at/team, and works on a closed set', async () => {
+    await mount();
+    await act(async () => {
+      await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+      await latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false });
+      await latest!.actions.endSet();
+    });
+    const setId = latest!.state.sets[0]!.id;
+    const before = latest!.state.sets[0]!.battles[0]!;
+    expect(latest!.state.sets[0]?.closed).toBe(true);
+
+    let missing = true;
+    await act(async () => {
+      missing = await latest!.actions.editBattle(setId, 'no-such-battle', {
+        opponents: [],
+        result: null,
+        tanked: true,
+      });
+    });
+    expect(missing).toBe(false);
+
+    let ok = false;
+    await act(async () => {
+      ok = await latest!.actions.editBattle(setId, before.id, {
+        opponents: ['tinkaton'],
+        result: 'win',
+        tanked: true,
+      });
+    });
+    expect(ok).toBe(true);
+    const edited = latest!.state.sets[0]!.battles[0]!;
+    expect(edited.id).toBe(before.id);
+    expect(edited.at).toBe(before.at);
+    expect(edited.result).toBeNull();
+    expect(edited.tanked).toBe(true);
+    expect(latest!.state.sets[0]?.closed).toBe(true);
+    expect(latest!.state.sets[0]?.team).toEqual({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+  });
+
+  it('editBattle clears sharedAt on a previously sent battle, and the share sync re-sends it', async () => {
+    const eligibleSpy = vi
+      .spyOn(await import('../src/metaShare.ts'), 'shareEligible')
+      .mockReturnValue(true);
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    try {
+      await mount();
+      await act(async () => {
+        await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+        await latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false });
+      });
+      await waitFor(() => {
+        expect(latest!.state.sets[0]?.battles[0]?.sharedAt).toBeTruthy();
+      });
+      const setId = latest!.state.sets[0]!.id;
+      const battleId = latest!.state.sets[0]!.battles[0]!.id;
+      fetchSpy.mockClear();
+
+      let ok = false;
+      await act(async () => {
+        ok = await latest!.actions.editBattle(setId, battleId, {
+          opponents: ['medicham'],
+          result: 'loss',
+          tanked: false,
+        });
+      });
+      expect(ok).toBe(true);
+      expect(latest!.state.sets[0]!.battles[0]!.sharedAt).toBeUndefined();
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalled();
+        expect(latest!.state.sets[0]?.battles[0]?.sharedAt).toBeTruthy();
+      });
+    } finally {
+      fetchSpy.mockRestore();
+      eligibleSpy.mockRestore();
+    }
   });
 
   it('endSet closes a partial set and startFresh marks the league', async () => {
