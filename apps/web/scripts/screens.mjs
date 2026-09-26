@@ -1,4 +1,4 @@
-/* global document, window, indexedDB */
+/* global document, window, indexedDB, getComputedStyle */
 /**
  * Drives the built app in the locally installed Chrome, imports the sample collection, and
  * screenshots every screen at phone size.
@@ -146,14 +146,19 @@ await page.evaluateOnNewDocument(
 /**
  * `mustShow`: a selector that has to be on the page when each shot is taken, for states that do
  * not last (a loading card), so a shot that missed its state fails instead of passing quietly.
+ * `before`: runs before each shot (each theme on an audit run), to bring back a state that clears
+ * itself sooner than two shots and their audits take.
  */
-async function shot(name, fullPage = true, { mustShow } = {}) {
+async function shot(name, fullPage = true, { mustShow, before } = {}) {
   captured.add(name);
   await new Promise((r) => setTimeout(r, 350));
   // A full-page shot resizes the viewport to the page instead of stitching past it, so the fixed
   // tab bar lands at the true bottom rather than across the middle of the page.
   const options = fullPage ? { fullPage, captureBeyondViewport: false } : { fullPage };
   const take = async (file) => {
+    if (before) {
+      await before();
+    }
     await page.screenshot({ path: file, ...options });
     if (mustShow && !(await page.$(mustShow))) {
       throw new Error(`${name}: ${mustShow} was gone when the shot was taken`);
@@ -907,6 +912,18 @@ const cardVerdicts = await page.$$eval('.fo-verdict', (els) => els.length);
 if (cardVerdicts !== 3) {
   throw new Error(`in-battle card shows ${cardVerdicts} verdicts, expected 3`);
 }
+// Each slot shows its opponent's whole name, on two lines when it needs them.
+const cutNames = await page.$$eval('.opp-slot .small', (els) =>
+  els
+    .filter(
+      (el) =>
+        el.scrollWidth > el.clientWidth + 1 || getComputedStyle(el).textOverflow === 'ellipsis',
+    )
+    .map((el) => el.textContent),
+);
+if (cutNames.length > 0) {
+  throw new Error(`log a battle: slot names cut short: ${cutNames.join(', ')}`);
+}
 await new Promise((r) => setTimeout(r, 300));
 await shot('log-battle-card', true, { mustShow: '.faceoff .fo-table' });
 
@@ -931,11 +948,31 @@ await page.setViewport({
 });
 
 console.log('log a battle, saved');
-await page.$eval('.result-row .ui-btn-win', (el) => el.click());
-await page.waitForSelector('.notice-toast.notice-info[role="status"]', { timeout: 15_000 });
+// The confirmation clears itself after about 3 seconds, sooner than a shot and its audit in two
+// themes, so a light shot that finds it gone logs one more battle to bring it back.
+const logWin = async () => {
+  if (await page.$('.notice-toast.notice-info')) {
+    return;
+  }
+  await page.$eval('.result-row .ui-btn-win', (el) => el.click());
+  await page.waitForSelector('.notice-toast.notice-info[role="status"]', { timeout: 15_000 });
+};
+await logWin();
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('log-battle-saved', false, { mustShow: '.notice-toast.notice-info' });
-await page.$eval('.notice-toast button', (el) => el.click());
+// At the foot, clear of the header, just above the result bar.
+const noticePlace = await page.evaluate(() => {
+  const toast = document.querySelector('.notice-toast.notice-info')?.getBoundingClientRect();
+  const bar = document.querySelector('.result-bar')?.getBoundingClientRect();
+  const head = document.querySelector('.log-head')?.getBoundingClientRect();
+  return toast && bar && head
+    ? { gap: bar.top - toast.bottom, clear: toast.top > head.bottom }
+    : null;
+});
+if (!noticePlace || !noticePlace.clear || noticePlace.gap < 4 || noticePlace.gap > 24) {
+  throw new Error(`saved notice: not just above the result bar: ${JSON.stringify(noticePlace)}`);
+}
+await shot('log-battle-saved', false, { mustShow: '.notice-toast.notice-info', before: logWin });
+await page.$eval('.notice-toast .notice-tap', (el) => el.click());
 await page.waitForSelector('.notice-toast', { hidden: true });
 
 console.log('new set');

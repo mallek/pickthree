@@ -1617,6 +1617,25 @@ textarea.paste {
 .notice-warn {
   background: var(--warn-tint);
 }
+/* A confirmation sits at the foot, over the page's own bottom bar (NoticeToast sets the bottom
+   from the bar it measures), and the whole pill is the 44px tap that clears it. */
+.notice-foot {
+  top: auto;
+  padding: 0;
+}
+.notice-foot .notice-tap {
+  /* Shrinks and wraps: the shared toast button rule keeps its size (flex: none). */
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+}
 .notice-toast > span {
   min-width: 0;
 }
@@ -2991,21 +3010,31 @@ input[type='range'] {
   color: var(--muted);
   font-size: 16px;
 }
+/* The whole name, on two lines when it needs them ("Galarian / Corsola"), as the Team Analysis
+   strip shows it; a single long word breaks only as a last resort. */
 .opp-slot .small {
-  max-width: 84px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  line-height: 1.2;
 }
+/* Log a Battle's slots fill their column, so a two-line name has the room and the remove button
+   stays inside the slot. */
 .slot-wrap {
   position: relative;
+  justify-self: stretch;
+  min-width: 0;
 }
-/* A 44px target around the 24px circle, which sits where it always did (its centre 20px in from
-   the slot's right edge, 2px right of the target's). The circle is a child, so axe reads its fill. */
+.slot-wrap > .opp-slot {
+  width: 100%;
+}
+/* A 44px target around the 24px circle, which sits on the token's upper right (its centre 18px
+   right of the slot's centre line, 8px down from the slot's top). The circle is a child, so axe
+   reads its fill. */
 .slot-x {
   position: absolute;
   top: -14px;
-  right: 0;
+  left: calc(50% - 4px);
   width: var(--tap);
   height: var(--tap);
   border: 0;
@@ -3017,7 +3046,6 @@ input[type='range'] {
 .slot-x > span {
   width: 24px;
   height: 24px;
-  margin-left: 4px;
   box-sizing: border-box;
   border-radius: 50%;
   border: 1px solid var(--divider);
