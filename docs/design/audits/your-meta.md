@@ -18,12 +18,14 @@ instead; nothing on this branch touched sprite rendering itself.
 Dark and light at 390px, one pair per state, full-page, converted to WebP (600px wide, quality 72)
 the same way the Teams, Build and Team Analysis images were, from
 `apps/web/screenshots/<name>-{dark,light}.png` (`npm run web:audit` run, 2026-09-26, on
-`7a40b6a`; the final fix wave's run on `e80cc9c` converted both pairs byte for byte identical).
+`7a40b6a`; the final fix wave's run on `e80cc9c` converted both pairs byte for byte identical;
+`your-meta-active` was re-converted from the run on `c427979` for the amber T chip, and
+`20-your-meta`, which shows no result strip, converted identical).
 
 | State | Dark | Light |
 | --- | --- | --- |
 | `20-your-meta`: under 15 battles. "11 of 15 battles · 4 more until your meta weights Teams, Counters and Build" with the bar; "Your battles join the community meta as you log them" (zero sent, sharing on); the explainer card; Current team with "No battles logged yet." and no result strip; Log a battle, Change team, Share this team; the meta.pick3.gg link-out; the faced list (Most faced, Twilight Trails · 11 battles) with Shadow Dragonite carrying the outsider mark and its legend line; Your teams; the footer | ![](img/20-your-meta-dark.webp) | ![](img/20-your-meta-light.webp) |
-| `your-meta-active`: 15 or more (16 this season, six battles seeded into the running set, one tanked). "Your meta is weighting Teams, Counters and Build · 16 battles this season" with a full bar; the pink `MeasuredLine` "5 of your battles are in the community meta"; the record "3-2" (tanked left out) and a six-chip W/L/T/... result strip under the three Pokémon, "Tap a result to fix it"; the faced list grown to ten rows with four outsider-marked species (Shadow Dragonite, Lanturn, Registeel, Shadow Swampert) and one legend line; a third "Your teams" row | ![](img/your-meta-active-dark.webp) | ![](img/your-meta-active-light.webp) |
+| `your-meta-active`: 15 or more (16 this season, six battles seeded into the running set, one tanked). "Your meta is weighting Teams, Counters and Build · 16 battles this season" with a full bar; the pink `MeasuredLine` "5 of your battles are in the community meta"; the record "3-2" (tanked left out) and a six-chip W/L/T/... result strip under the three Pokémon (T in the Tanked amber), "Tap a result to fix it"; the faced list grown to ten rows with four outsider-marked species (Shadow Dragonite, Lanturn, Registeel, Shadow Swampert) and one legend line; a third "Your teams" row | ![](img/your-meta-active-dark.webp) | ![](img/your-meta-active-light.webp) |
 
 Not captured, all string- or state-driven rather than layout differences, and covered by
 `apps/web/test/yourMetaScreen.test.tsx`: sharing off (plain "Sharing is off" text with a Settings
@@ -37,19 +39,18 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 
 ## Automated checks
 
-- [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run
-      2026-09-26 on `7a40b6a`, and again for the final fix wave on `e80cc9c`: exit 0 both
-      times. Zero findings on `20-your-meta` and `your-meta-active` in both themes; the final run's
-      captures of both converted byte for byte identical to the images below. 693 findings
-      remain on screens not yet redesigned, none failing the run.
+- [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run 2026-09-26
+      on `7a40b6a`, and again for the final fix wave on `e80cc9c` and `c427979`: exit 0 each time.
+      Zero findings on `20-your-meta` and `your-meta-active` in both themes. 693 findings remain on
+      screens not yet redesigned, none failing the run.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` for the final fix
-      wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files, 1291 tests
-      passed on `e80cc9c` (1287 on `7a40b6a`); `check-colors` exit 0; `check-tokens`: ok.
-      `npm run ui:audit`: "gallery audit: clean in dark and light" (the shared `Button` win/loss/warn
-      variants Log a Battle added, and the `.seg` fix this page's own review moved to the source,
-      both live in the gallery).
+      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` and `c427979` for the
+      final fix wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files,
+      1295 tests passed on `c427979` (1291 on `e80cc9c`, 1287 on `7a40b6a`); `check-colors` exit 0;
+      `check-tokens`: ok. `npm run ui:audit`: "gallery audit: clean in dark and light" (the shared
+      `Button` win/loss/warn variants Log a Battle added, and the `.seg` fix this page's own review
+      moved to the source, both live in the gallery).
 - [x] the capture script's own restore check: the running set the script seeds for
       `your-meta-active` (six battles, one tanked, `sharedAt` stamped) is written back to its
       original state afterward; the difference is visible across this record's own images and Log a
@@ -61,13 +62,13 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 - [x] colors from tokens, in their roles: violet marks what you tap (the primary "Log a battle" /
       "Pick your team" button, "See what everyone else is facing", the `Seg`'s pressed label, the
       league switcher); pink is the one measured line, "N of your battles are in the community
-      meta", with its dot, never a pill (`your-meta-active`); the W and L result chips use the
-      outcome tokens (win green, loss red-pink) as Log a Battle's Win and Loss buttons do, but the
-      T chip is a neutral gray (`--surface2` fill, `--muted` letter, `.result-chip.tanked` in
-      `app.css`) while Log a Battle's Tanked button is amber (see Open items); nothing on the page
-      is red (Start fresh keeps `ConfirmSheet`'s default tone, no danger button, confirmed by the
-      test asserting no `.ui-btn-danger` and that `window.confirm` is never called). Backed by
-      `check-colors` (clean) and zero `web:audit` contrast findings in either theme.
+      meta", with its dot, never a pill (`your-meta-active`); the result chips use the colors of Log
+      a Battle's result buttons: W and L the outcome tokens (win green, loss red-pink), T the Tanked
+      button's amber (`--warn-tint` fill, `--warn` border and letter, the same tokens as
+      `.ui-btn-warn`; Travis, 2026-09-26, see Decisions 6), seen in `your-meta-active`; nothing on
+      the page is red (Start fresh keeps `ConfirmSheet`'s default tone, no danger button, confirmed
+      by the test asserting no `.ui-btn-danger` and that `window.confirm` is never called). Backed
+      by `check-colors` (clean) and zero `web:audit` contrast findings in either theme.
 - [x] at most four text levels, one page title, with the same 12px `.meta` supporting-text
       deferral Build and Team Analysis carry (see Open items): "Your Meta" is the one title
       (`Header variant="top"`, matching Teams' pattern); "Current team" and "Your teams" are
@@ -143,18 +144,18 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
       line said once in both states with `role="progressbar"` values, the Source state line with no
       bar, the pink count with its tanked/unsent/other-league exclusions, the zero-sent and
       sharing-off plain-text variants, the tanked-excluded record, result-chip names and their
-      navigation, the one primary with the two text buttons, "Pick your team" as the primary with
-      no team, the list heading following the `Seg` with the season/count line, the thin frequency
-      bar, "Who beats it" and its `href`, the outsider mark and legend (mutually exclusive between
-      the current list and Earlier seasons, and never marked before the meta group loads), the
-      explainer copy and its dismissal, both footer variants, Start fresh through the
-      `alertdialog`, the one-line link out, and the header `IconButton`s), plus
-      `apps/web/test/contrast.test.ts` (28 cases in all: this page's 9 are each result-chip
-      letter, W, L and T, at 4.5:1 in all three theme blocks, and 6 are the shared `Seg`'s pressed
-      label on `--bg` and `--surface` in the same blocks; the other 13 are Log a Battle's shield
-      grid, its twelve cell cases and the axis numbers) and
-      `apps/web/src/state/contribution.ts`'s own `apps/web/test/contribution.test.ts` (`contributedCount`: stamped and not tanked, across every
-      league, zero for nothing sent).
+      navigation, the one primary with the two text buttons, "Pick your team" as the primary with no
+      team, the list heading following the `Seg` with the season/count line, the thin frequency bar,
+      "Who beats it" and its `href`, the outsider mark and legend (mutually exclusive between the
+      current list and Earlier seasons, and never marked before the meta group loads), the explainer
+      copy and its dismissal, both footer variants, Start fresh through the `alertdialog`, the
+      one-line link out, and the header `IconButton`s), plus `apps/web/test/contrast.test.ts` (31
+      cases in all: this page's 12 are each result-chip letter, W, L and T, at 4.5:1 in all three
+      theme blocks, plus the T chip painting exactly `.ui-btn-warn`'s fill and ink in the same three
+      blocks (7.75:1 dark, 4.57:1 light); 6 are the shared `Seg`'s pressed label on `--bg` and
+      `--surface`; the other 13 are Log a Battle's shield grid, its twelve cell cases and the axis
+      numbers) and `apps/web/src/state/contribution.ts`'s own `apps/web/test/contribution.test.ts`
+      (`contributedCount`: stamped and not tanked, across every league, zero for nothing sent).
 
 ## Findings and fixes
 
@@ -166,6 +167,7 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 | Task 7, round 2: the app's confirmation toasts (including this page's own "Link copied" from Share this team) sat at the top with an OK button and read as a warning. | Moved to the shared `NoticeToast` fix (see Log a Battle's record for the full change): info notices now render at the page's foot, one tap to dismiss, no OK, 3 seconds; warnings are unchanged. Not re-captured on this page (no Share tap in the capture flow) but exercised by `apps/web/test/noticeToast.test.tsx` and the app-wide caller check in the Task 7 review. | `7a40b6a` |
 | Final review M6: the result chips were said to use the outcome tokens "exactly as Log a Battle's result buttons do", but the T chip is gray where Tanked is amber; "Save changes or Cancel" (edit mode has Back); `contrast.test.ts` called "9 tests" when it has 28 cases. | The Aesthetics line says W and L match and T is gray, with the gray-versus-amber choice added to Open items for Travis; "Save changes or Back"; the tests line counts the 28 cases (this page's 9 chip cases, 6 `Seg` cases, 13 for Log a Battle's grid). | this record's commit |
 | Final review I2: this record said the signed Team Analysis record "still describes" the old top toast; it never described that notice. | Reworded: that record does not record the change; it now has an "After sign-off" row (and Teams one for the update toast's button). | this record's commit |
+| Travis, 2026-09-26, on this record's open item (the T chip gray, the Tanked button amber): "Let's make the two changes. The two you called are ok." | `.result-chip.tanked > span` uses `--warn-tint`, `--warn` and `--warn` (the `.ui-btn-warn` tokens) in place of `--surface2`, `--divider` and `--muted`. `contrast.test.ts` checks that the chip paints the button's fill and ink, at 4.5:1 or better, in dark and both light blocks (RED before). `web:audit` on `c427979`: exit 0, zero findings; `your-meta-active` re-converted, the T chip amber in both themes (looked at both). | `e17886a` |
 
 ## Decisions and rulings (plan `2026-09-26-play.md`, `global-constraints.md`)
 
@@ -184,6 +186,11 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
    searches every set by id (Log a Battle's own `editBattle` lookup), so a chip for a battle in a
    closed set or an earlier season still finds and saves it and returns here. Covered by
    `apps/web/test/store.test.tsx`'s closed-set `editBattle` case.
+6. **The T chip is Log a Battle's Tanked amber.** Travis, 2026-09-26, on the open item that the T
+   chip was gray while the Tanked button is amber: "Let's make the two changes. The two you called
+   are ok." The chip paints with `.ui-btn-warn`'s tokens, a `--warn-tint` fill with a `--warn`
+   border and letter, so a tanked battle reads in the color of the button it was logged with. Tokens
+   only. `e17886a`.
 
 ## Visible changes outside Your Meta
 
@@ -227,11 +234,6 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
   behaves the same way Log a Battle's saved notice does, but no capture here shows it landing. The
   signed Team Analysis record never described its own "Link copied" notice, so it does not record
   the change; see its "After sign-off" row (and Teams' for the update toast's button).
-- **The T chip is gray, Log a Battle's Tanked button is amber.** The W and L chips match the Win
-  and Loss buttons' outcome colors; T uses the neutral `--surface2`/`--muted` pair
-  (`.result-chip.tanked`), where Tanked on Log a Battle is the amber `warn` variant. Visible in
-  `your-meta-active`. Gray reads "does not count" (a tanked battle is left out of the record);
-  amber would match the button the battle was logged with. Travis's call at sign-off.
 
 ## Sign-off
 

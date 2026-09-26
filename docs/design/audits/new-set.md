@@ -16,9 +16,9 @@ sprite rendering itself.
 
 Dark and light at 390px, one pair per state, full-page, converted to WebP (600px wide, quality 72),
 from `apps/web/screenshots/<name>-{dark,light}.png` (`npm run web:audit` run, 2026-09-26, on
-`7a40b6a`; the final fix wave's run on `e80cc9c` converted both pairs byte for byte identical;
-the run visits Teams first and waits for its recommendation to settle before shooting New Set, so
-its "From pick3" rows have real teams to show).
+`7a40b6a`; the final fix wave's runs on `e80cc9c` and `c427979` converted both pairs byte for
+byte identical; the run visits Teams first and waits for its recommendation to settle before
+shooting New Set, so its "From pick3" rows have real teams to show).
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -33,11 +33,11 @@ button's `disabled` state and the slot contents, tested directly).
 
 ## Automated checks
 
-- [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run
-      2026-09-26 on `7a40b6a`, and again for the final fix wave on `e80cc9c`: exit 0 both
-      times. Zero findings on `22-new-set` and `new-set-searching` in both themes; the final run's
-      captures of both converted byte for byte identical to the images below. 693 findings
-      remain on screens not yet redesigned, none failing the run.
+- [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), run 2026-09-26
+      on `7a40b6a`, and again for the final fix wave on `e80cc9c` and `c427979`: exit 0 each time.
+      Zero findings on `22-new-set` and `new-set-searching` in both themes; the final runs' captures
+      of both converted byte for byte identical to the images below. 693 findings remain on screens
+      not yet redesigned, none failing the run.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] the run's own guards, all passed:
   - `assertTitleCentred` holds on "Pick Your Team" (printed an offset of `-0.0px` in this run,
@@ -47,10 +47,10 @@ button's `disabled` state and the slot contents, tested directly).
   - `new-set-searching` requires both "From pick3" and "Recent teams" to be absent from the DOM
     while a query is typed, not merely hidden by CSS.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` for the final fix
-      wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files, 1291 tests
-      passed on `e80cc9c` (1287 on `7a40b6a`); `check-colors` exit 0; `check-tokens`: ok.
-      `npm run ui:audit`: "gallery audit: clean in dark and light".
+      check-tokens`, all re-run 2026-09-26 on `7a40b6a` and again on `e80cc9c` and `c427979` for the
+      final fix wave: lint exit 0; typecheck exit 0 across every workspace; `npm test` 140 files,
+      1295 tests passed on `c427979` (1291 on `e80cc9c`, 1287 on `7a40b6a`); `check-colors` exit 0;
+      `check-tokens`: ok. `npm run ui:audit`: "gallery audit: clean in dark and light".
 
 ## Aesthetics
 
@@ -90,16 +90,17 @@ button's `disabled` state and the slot contents, tested directly).
       input first (search, then Matches, then the three slots); "From pick3" rows reading like
       Teams (the battle number and fit, via the same `TeamRowSummary` component); tapping a From
       pick3 row fills the three slots and does not start the set (the player can look at the picks,
-      clear one, or tap Start set); Recent teams unchanged (one tap starts, as today); both lists
-      hidden while searching or once a slot is filled; "Start set" as the one primary, disabled
+      clear one, or tap Start set); a Recent teams row does the same (Travis, 2026-09-26, see
+      Decisions 4; the spec's "Recent teams as today" is superseded); both lists hidden while
+      searching or once a slot is filled; "Start set" as the one primary, disabled
       until three are picked.
 - [x] every control does what its label says: typing filters to Matches and hides both shortcut
       lists (tested); tapping a From pick3 row fills the three slots with that team's picks and
       keeps its moves, without calling `startSet` (tested); Start set then starts that team with
       its moves while the slots still hold it, and clearing any slot drops the moves, so a team
-      refilled by hand starts without them (tested); tapping a Recent teams row starts that team
-      at once, as before; Start set is disabled with fewer than three picks and starts the set with
-      exactly three.
+      refilled by hand starts without them (tested); tapping a Recent teams row fills the slots
+      the same way, and Start set starts it with its moves (tested); Start set is disabled with
+      fewer than three picks and starts the set with exactly three.
 - [x] back returns to the origin: Cancel calls `back({ screen: 'meta' })`, landing on Your Meta
       whether real history sits behind the page or not. A review finding (see Findings and fixes)
       caught a narrow case where this could fail and fixed it at its root in Log a Battle instead
@@ -119,7 +120,8 @@ button's `disabled` state and the slot contents, tested directly).
       Cancel returning to Your Meta, input before the slots; starting a set from three picks with
       Start set disabled until then; a From pick3 row reading like Teams with the number and fit;
       a From pick3 tap filling the three slots without starting, then Start set starting it with
-      its moves; clearing a slot after that tap dropping the moves; both lists hidden while
+      its moves; clearing a slot after that tap dropping the moves; a Recent teams tap filling
+      the slots without starting, then Start set starting it with its moves; both lists hidden while
       searching; no From pick3 row with an empty recommendation; the regression test for Cancel
       escaping Log a Battle's own no-set redirect without adding a history entry).
 
@@ -131,6 +133,7 @@ button's `disabled` state and the slot contents, tested directly).
 | Task 6 review, Minor: a test named "does not show From pick3 without a recommendation" actually exercised an empty recommendation (`teams: []`), not the literal absence of one. | Renamed to "does not show From pick3 with an empty recommendation"; no behavior change, the assertion was already correct for the branch it exercises (`fromPick3.length > 0`). | `22d5080` |
 | Task 7 round 2, seen in the captures (shared with Log a Battle, whose slots use the same rule): opponent slot names ellipsized at 84px instead of wrapping. | `.opp-slot .small` wraps on word breaks with no ellipsis, and this page's slots inherit the fix since they share the class; no capture in this record happens to fill a slot with a long enough name to show the wrap (`new-set-searching`'s Matches are short names), but the shared rule and its test (`apps/web/test/opponentCard.test.tsx`, `logBattle.test.tsx`) cover it. | `7a40b6a` |
 | Final review I1: a From pick3 tap called `startSet` at once (the pre-branch behavior), though the spec says tapping one fills the slots; since `startSet` closes the running set, one tap ended the current team with no look at the picks. This record said both ("fills the slots and starts that team"). | The tap fills the three slots with the team's picks and keeps its `TeamRef` (moves included); Start set starts that team, moves and all, while the slots still hold it; clearing any slot drops it, so a team refilled by hand starts without moves. Recent teams stay one tap. Two `newSet.test.tsx` cases (the tap fills three slots without calling `startSet`, then Start set saves the team with its specimens and moves; a cleared slot drops the moves). No capture taps a row, so `22-new-set` and `new-set-searching` show the same states as before. | `8403291` |
+| Travis, 2026-09-26, on this record's open item (From pick3 filled, Recent teams started at once): "Let's make the two changes. The two you called are ok." | A Recent teams tap fills the three slots like a From pick3 tap; Start set starts it with its moves and specimens. `newSet.test.tsx`: the tap fills three slots without calling `startSet` or saving, then Start set saves the same team, moves included (RED before). `web:audit` on `c427979`: both captures converted byte for byte identical (no capture taps a row). | `7a1e32b` |
 
 Also seen in the captures during this task, not tied to a named review finding: New Set's "Start
 set" button was a small, left-aligned button before this pass; it is now full width, matching every
@@ -150,6 +153,11 @@ row). Fixed alongside the Task 7 audit pass, commit `307f405`.
 3. **Both shortcut lists (From pick3, Recent teams) hide while searching**, per the mobile input
    rule (results directly under the input, shortcuts last, hidden while searching or picking).
    [Cost if wrong: one condition.]
+4. **Both shortcuts fill the slots; only Start set starts a set.** Travis, 2026-09-26, on the open
+   item that a From pick3 tap filled while a Recent teams tap started at once: "Let's make the two
+   changes. The two you called are ok." A Recent teams tap now fills the three slots with that team,
+   moves and specimens kept, like a From pick3 tap, so neither shortcut can close the running set by
+   accident. `7a1e32b`.
 
 ## Visible changes outside New Set
 
@@ -176,10 +184,6 @@ row). Fixed alongside the Task 7 audit pass, commit `307f405`.
 
 ## Open items for Travis (not fixed on this branch)
 
-- **A From pick3 tap fills the slots; a Recent teams tap starts at once.** The final review's I1
-  followed the spec ("tapping one fills the slots") and kept Recent teams one tap ("as today").
-  If From pick3 should start at once too, the spec line and this record change instead of the
-  code.
 - **The Shadow glow (`.token-shadow-wrap::before`) is still not visible.** Pre-existing, unchanged
   by this branch, the same open item recorded on Team Analysis and Build.
 - **New Set's supporting text stays at 12px** (the `.meta` class: the pick3-row summary line, the
