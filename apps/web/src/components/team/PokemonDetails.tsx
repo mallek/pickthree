@@ -150,11 +150,7 @@ export function PokemonDetails({
                     be worth it.
                   </span>
                 </div>
-                {detail.keepShield ? (
-                  <div className="small" style={{ color: 'var(--accent-text)' }}>
-                    {detail.keepShield.line}
-                  </div>
-                ) : null}
+                {detail.keepShield ? <div className="small">{detail.keepShield.line}</div> : null}
                 <div className="divider-top stack" style={{ gap: 4 }}>
                   {hypothetical.includes(c.build.speciesId) ? (
                     <div className="kv">

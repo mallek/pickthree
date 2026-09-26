@@ -15,6 +15,12 @@ function MatchupCard({ m, testId, threat }: { m: KeyMatchup; testId: string; thr
   );
 }
 
+const NO_WINS = (
+  <p className="small muted">
+    No Pokémon in the meta group is a clear win for this team in the simulated scenarios.
+  </p>
+);
+
 const NO_THREATS = (
   <p className="small muted">
     Nothing in the meta group beats all three of these in the simulated scenarios. Real battles vary
@@ -37,11 +43,15 @@ export function Matchups({ team, leadName }: { team: TeamRecommendation; leadNam
         <>
           <div className="stack">
             <h4 className="analysis-sub">Key wins</h4>
-            <div className="matchup-grid">
-              {e.keyWins.map((w) => (
-                <MatchupCard m={w} testId="key-win" key={w.opponent} />
-              ))}
-            </div>
+            {e.keyWins.length === 0 ? (
+              NO_WINS
+            ) : (
+              <div className="matchup-grid">
+                {e.keyWins.map((w) => (
+                  <MatchupCard m={w} testId="key-win" key={w.opponent} />
+                ))}
+              </div>
+            )}
             <h4 className="analysis-sub" style={{ marginTop: 8 }}>
               Key threats
             </h4>
@@ -90,11 +100,11 @@ export function Matchups({ team, leadName }: { team: TeamRecommendation; leadNam
       ) : (
         <div className="matchup-cols">
           <div className="stack" style={{ gap: 6 }}>
-            <h4 className="analysis-sub">Wins</h4>
-            {firstWin ? <MatchupCard m={firstWin} testId="key-win" /> : null}
+            <h4 className="analysis-sub">Key win</h4>
+            {firstWin ? <MatchupCard m={firstWin} testId="key-win" /> : NO_WINS}
           </div>
           <div className="stack" style={{ gap: 6 }}>
-            <h4 className="analysis-sub">Threat</h4>
+            <h4 className="analysis-sub">Key threat</h4>
             {firstThreat ? <MatchupCard m={firstThreat} testId="key-threat" threat /> : NO_THREATS}
           </div>
         </div>

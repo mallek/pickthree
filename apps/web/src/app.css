@@ -1260,7 +1260,6 @@ textarea.paste {
 }
 .mini {
   flex: none;
-  width: 150px;
   background: var(--surface);
   border-radius: var(--r-lg);
   padding: 12px;
@@ -1270,7 +1269,6 @@ textarea.paste {
 }
 .mini.threat {
   border: 1px dashed var(--divider);
-  width: 170px;
 }
 .mini b {
   font-size: 13px;
@@ -1936,9 +1934,6 @@ textarea.paste {
 .picker-list .spec-row:disabled {
   opacity: 0.45;
 }
-.custom-note {
-  border-left: 3px solid var(--accent);
-}
 /* Team Analysis: the score card headlines battle strength and carries the one primary action. */
 .score-card {
   display: flex;
@@ -1982,12 +1977,12 @@ textarea.paste {
 .plan-step {
   display: flex;
   flex-direction: column;
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--divider);
   padding-left: 12px;
 }
 .plan-title {
-  font-size: 11px;
-  color: var(--accent-text);
+  font-size: var(--fs-label);
+  color: var(--muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -2005,15 +2000,10 @@ textarea.paste {
   flex-wrap: wrap;
   gap: 8px;
 }
-/* .mini/.mini.threat are fixed-width (150px/170px) for their original home, TeamDetail's
-   horizontal-scroll rows. Here they sit in a two-column grid or a wrapping grid instead, so let
-   them fill their column and match each other rather than keep TeamDetail's scroll-row widths. */
 .matchup-cols .mini {
-  width: auto;
   flex: 1;
 }
 .matchup-grid .mini {
-  width: auto;
   min-width: 0;
   flex: 1 1 140px;
 }
@@ -2025,7 +2015,7 @@ textarea.paste {
 }
 .pd-summary-name {
   display: block;
-  font-size: 17px;
+  font-size: var(--fs-section);
   font-weight: 500;
 }
 /* Team Analysis: the three members at a glance, each a button that opens its details row. */

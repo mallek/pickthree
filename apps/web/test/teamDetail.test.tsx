@@ -288,7 +288,7 @@ describe('Team Analysis', () => {
     }
     expect(document.getElementById('plan')).toHaveTextContent('Battle plan');
     expect(document.getElementById('matchups')).toHaveTextContent('Matchups to remember');
-    expect(document.getElementById('pokemon')).toHaveTextContent('Your Pokémon');
+    expect(document.getElementById('pokemon')).toHaveTextContent(/^Pokémon details$/);
     expect(document.getElementById('details')).toHaveTextContent('Why this team');
   });
 

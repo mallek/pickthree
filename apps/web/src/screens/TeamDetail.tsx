@@ -54,7 +54,7 @@ export function TeamDetail({ id }: { id: string }) {
   const name = useName();
   const [open, setOpen] = useState(false);
   const [allOpps, setAllOpps] = useState(false);
-  /** Which "Your Pokémon" rows are open: the lead's by default. */
+  /** Which Pokémon details rows are open: the lead's by default. */
   const [rows, setRows] = useState<boolean[]>([true, false, false]);
   /** The running set Take to battle would replace, while the switch sheet asks. */
   const [confirming, setConfirming] = useState<{ running: string; played: number } | null>(null);
@@ -341,7 +341,7 @@ export function TeamDetail({ id }: { id: string }) {
 
         <section className="stack">
           <h3 id="pokemon" className="analysis-section">
-            Your Pokémon
+            Pokémon details
           </h3>
           <PokemonDetails
             team={team}

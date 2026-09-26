@@ -11,6 +11,9 @@ import { AppProvider } from '../src/state/store.tsx';
 import { fakeHost } from './fakeHost.ts';
 import { makeTeam } from './teamFixture.ts';
 
+const NO_WINS =
+  'No Pokémon in the meta group is a clear win for this team in the simulated scenarios.';
+
 const wrap = (ui: ReactNode) => render(<AppProvider host={fakeHost()}>{ui}</AppProvider>);
 
 describe('ScoreCard', () => {
@@ -126,6 +129,25 @@ describe('Matchups', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
     expect(screen.getAllByTestId('key-win')).toHaveLength(team.explanation.keyWins.length);
     expect(screen.getByText('When to switch')).toBeInTheDocument();
+  });
+
+  it('heads one card "Key win" and one "Key threat", and says so when there is no win', () => {
+    const team = makeTeam();
+    wrap(<Matchups team={team} leadName="Tinkaton" />);
+    expect(screen.getByRole('heading', { name: 'Key win' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Key threat' })).toBeInTheDocument();
+    expect(screen.queryByText(NO_WINS)).not.toBeInTheDocument();
+  });
+
+  it('with no key wins, a muted line stands in, collapsed and expanded', () => {
+    const team = makeTeam();
+    team.explanation.keyWins = [];
+    wrap(<Matchups team={team} leadName="Tinkaton" />);
+    expect(screen.queryAllByTestId('key-win')).toHaveLength(0);
+    expect(screen.getByText(NO_WINS)).toHaveClass('muted');
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByRole('heading', { name: 'Key wins' })).toBeInTheDocument();
+    expect(screen.getByText(NO_WINS)).toHaveClass('muted');
   });
 });
 
