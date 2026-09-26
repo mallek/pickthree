@@ -162,6 +162,9 @@ The page, top to bottom:
   "Show all" up to eight, today's copy and intro line.
 - Removed: the battle plan section, the jump buttons, "Run it in this order" (the strip shows the
   order), the coverage sentence and the written score breakdown (the bars replace them).
+- After When to switch, in this order: Pokémon details, Key wins, Why this team, Alternatives you
+  own, Assumptions and matchup grid (the order that shipped 2026-09-26; the details of your own
+  three matter more than the explanation).
 - **Why this team:** `explanation.why` and Team structure (today's tiles or the ABB block).
 - **Pokémon details:** one `ExpandRow` per Pokémon, the first open. Contents are today's card:
   order and role, types as `TypeChip`s, rank tags, the role's job, form note, moves with type
