@@ -273,6 +273,8 @@ export function explainTeam(
 
   const wins: KeyMatchup[] = [];
   const threats: KeyMatchup[] = [];
+  /** Opponents nobody on the team beats, not even closely (best rating under 450). */
+  const unanswered = new Set<string>();
   for (const opponent of view.opponents) {
     const best = bestSlotFor(t, opponent);
     if (!best) {
@@ -292,6 +294,9 @@ export function explainTeam(
     } else {
       const closest =
         best.rating >= 450 ? 'Close; shields decide it' : 'Nobody on the team beats it';
+      if (best.rating < 450) {
+        unanswered.add(opponent);
+      }
       threats.push({
         opponent,
         opponentName: oppName,
@@ -302,10 +307,16 @@ export function explainTeam(
     }
   }
   // Most common opponents first: beating the #2 Pokemon matters more than beating the #40.
+  // Threats nobody on the team beats come before the close ones, which shields can still decide,
+  // so the three kept are the unanswered ones first, most common first within each group.
   // The meta group lists some species twice with different movesets; show each once, and a
   // species that threatens with either moveset is a threat, not a win.
   wins.sort((a, b) => rankOf(a.opponent) - rankOf(b.opponent));
-  threats.sort((a, b) => rankOf(a.opponent) - rankOf(b.opponent));
+  threats.sort(
+    (a, b) =>
+      Number(!unanswered.has(a.opponent)) - Number(!unanswered.has(b.opponent)) ||
+      rankOf(a.opponent) - rankOf(b.opponent),
+  );
   const threatIds = new Set(threats.map((x) => x.opponent));
   const keyWins = uniqueByOpponent(wins.filter((w) => !threatIds.has(w.opponent))).slice(0, 4);
   const keyThreats = uniqueByOpponent(threats).slice(0, 3);

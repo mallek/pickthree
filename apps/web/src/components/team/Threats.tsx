@@ -34,10 +34,10 @@ function MatchupRow({ m, testId }: { m: KeyMatchup; testId: string }) {
 }
 
 /**
- * What beats this team: the engine's key threats as rows, then how many more of the meta group
- * also beat it and where to find them (the matchup grid). The count is of species the grid shows
- * (`gridIds`), each once: the meta group lists a few species twice, and an outsider from Your
- * meta beats the team without a row in the grid.
+ * What beats this team: the engine's key threats as rows, in the engine's order (unanswered
+ * first), then how many more of the meta group also beat it and where to find them (the matchup
+ * grid). The count is of species the grid shows (`gridIds`), each once: the meta group lists a
+ * few species twice, and an outsider from Your meta beats the team without a row in the grid.
  */
 export function Threats({ team, gridIds }: { team: TeamRecommendation; gridIds: string[] }) {
   const threats = team.explanation.keyThreats;
