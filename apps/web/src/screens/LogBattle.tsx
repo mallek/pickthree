@@ -60,7 +60,7 @@ export function LogBattle() {
   const cards = useRef(new Map<string, Faceoff>());
   const searchRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
-  /** Set by a pick: the grid stays hidden until the search is typed in or tapped again. */
+  /** Set by the third pick: the grid stays hidden until the search is typed in or tapped again. */
   const [picked, setPicked] = useState(false);
   const hits = useSpeciesSearch(query, 30);
 
@@ -139,7 +139,8 @@ export function LogBattle() {
     return [...hits.filter((id) => recentSet.has(id)), ...hits.filter((id) => !recentSet.has(id))];
   }, [searching, hits, recent, often]);
   const atCap = searching && hits.length >= 30;
-  /** Recent or matches show while the search is in use; a pick folds them away. */
+  /** Recent or matches show while the search is in use; a pick keeps them open while fewer than
+   * three are slotted, and the third folds them away. */
   const showGrid = searching || (focused && !picked);
 
   const add = (id: string): void => {
