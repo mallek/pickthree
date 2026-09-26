@@ -66,7 +66,9 @@ export function LogBattle() {
 
   useEffect(() => {
     if (s.setsLoaded && !open && !editing) {
-      navigate({ screen: 'meta-new' });
+      // Replaces this entry rather than pushing one: it never becomes a "where you came from" for
+      // New Set's own Cancel, which would otherwise be able to bounce back onto this redirect.
+      navigate({ screen: 'meta-new' }, { replace: true });
     }
   }, [s.setsLoaded, open, editing, navigate]);
 

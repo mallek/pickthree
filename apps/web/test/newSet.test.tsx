@@ -10,9 +10,10 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LogBattle } from '../src/screens/LogBattle.tsx';
 import { NewSet } from '../src/screens/NewSet.tsx';
 import { AppProvider, useActions, useAppState, type AppState } from '../src/state/store.tsx';
-import { resetHistoryForTests } from '../src/state/history.ts';
+import { canGoBack, resetHistoryForTests } from '../src/state/history.ts';
 import { emptyLayoutValue } from '../src/format.ts';
 import { resetDbForTests, storage } from '../src/storage/db.ts';
 import { fakeHost } from './fakeHost.ts';
@@ -164,11 +165,73 @@ describe('New Set on the foundation', () => {
     expect(screen.queryByText('Recent teams')).not.toBeInTheDocument();
   });
 
-  it('does not show From pick3 without a recommendation', async () => {
+  it('does not show From pick3 with an empty recommendation', async () => {
     await renderReady(hostWith([]));
     await act(async () => {
       await latest!.actions.runRecommend();
     });
     expect(screen.queryByText('From pick3')).not.toBeInTheDocument();
   });
+});
+
+describe("Cancel escapes Log a Battle's own no-set redirect", () => {
+  /** Mirrors App.tsx's switch for just these two routes, so the real navigate()/back() code
+   * (not a stand-in) drives the transition between them. */
+  function Router() {
+    const s = useAppState();
+    if (s.route.screen === 'meta-log') {
+      return <LogBattle />;
+    }
+    if (s.route.screen === 'meta-new') {
+      return <NewSet />;
+    }
+    return null;
+  }
+
+  beforeEach(async () => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetHistoryForTests();
+    latest = null;
+    window.history.replaceState(null, '', '#/meta');
+    await saveEmptyCollection();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it(
+    'opening Log a Battle with nothing running lands on New Set without adding a history ' +
+      'entry, and Cancel from there reaches Your Meta',
+    async () => {
+      render(
+        <AppProvider host={fakeHost()}>
+          <Probe />
+          <Router />
+        </AppProvider>,
+      );
+      await waitFor(() => expect(latest?.state.boot).toBe('ready'));
+      // A real push from Your Meta to Log a Battle, same as the button on Your Meta.
+      await act(async () => {
+        latest!.actions.navigate({ screen: 'meta-log' });
+      });
+      await waitFor(() => expect(window.location.hash).toBe('#/meta/log'));
+      await waitFor(() => expect(canGoBack()).toBe(true));
+      const pushedDepth = (window.history.state as { pick3Depth?: number } | null)?.pick3Depth;
+      // No open set: Log a Battle's own effect redirects here. It must replace this entry, not
+      // push another, so this depth (the one Cancel's back() will see) is unchanged.
+      await waitFor(() => expect(window.location.hash).toBe('#/meta/new'));
+      await waitFor(() =>
+        expect((window.history.state as { pick3Depth?: number } | null)?.pick3Depth).toBe(
+          pushedDepth,
+        ),
+      );
+      await screen.findByText('Pick Your Team');
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      // Escapes to Your Meta rather than bouncing back through the meta-log entry (which,
+      // had it pushed instead of replaced, would immediately redirect forward again).
+      await waitFor(() => expect(window.location.hash).toBe('#/meta'));
+    },
+  );
 });
