@@ -26,9 +26,13 @@ shows those instead; nothing on this branch touched sprite rendering itself.
 
 Dark and light at 390px, one pair per state, converted to WebP (600px wide, quality 72) the same
 way the Teams and Build images were, from `apps/web/screenshots/<name>-{dark,light}.png` (fresh
-`npm run web:audit` run, 2026-09-26, on the revision's last commit, this record's). The four
+`npm run web:audit` run, 2026-09-26, on the revision's last commit, `67ecbdd`). The four
 full-page pairs and `analysis-confirm` changed with the revision and were re-converted;
-`analysis-not-found` re-converted byte for byte identical to the earlier image. `03-team-detail`,
+`analysis-not-found` re-converted byte for byte identical to the earlier image. The final fix
+wave (after the final review) re-ran `web:audit` and re-converted `14-custom-team`,
+`14b-custom-unranked` and `14c-shared-team` (the Threats order, the count's pointer to the
+matchup grid, and "Biggest risk" under Why this team); `03-team-detail`, `analysis-confirm` and
+`analysis-not-found` re-converted byte for byte identical and were left as they were. `03-team-detail`,
 `14-custom-team`, `14b-custom-unranked` and `14c-shared-team` are full-page shots
 (`captureBeyondViewport: false`, the same rule Teams and Build use so the fixed tab bar lands at
 the true bottom); `analysis-confirm` and `analysis-not-found` are viewport shots (a sheet over the
@@ -37,9 +41,9 @@ hero card; a short Empty state).
 | State | Dark | Light |
 | --- | --- | --- |
 | `03-team-detail`: a recommended team. The hero card: "88" alone, the "Balanced ABC" term and the "Strong fit" tag beside it, the Edit pencil; Shadow Greninja and Galarian Corsola on two lines each, Melmetal on one, the three roles on one line; the difficulty line; five bars (Coverage, Consistency, Safety, Affordable empty, Accessibility). Take to battle under the card; Threats (one row, Hisuian Electrode, no count: nothing else beats the whole team); When to switch (five rows, none repeating Hisuian Electrode, then Show all); Pokémon details with the lead open and its "+1 more"; Key wins as rows; Why this team with the Team structure tiles and no breakdown sentence; Alternatives; Assumptions open with the matchup grid (full page) | ![](img/03-team-detail-dark.webp) | ![](img/03-team-detail-light.webp) |
-| `14-custom-team`: a hand-built team of species you don't own. Three bars and "To build all three: 723,500 Stardust · 593 Candy · 182 XL Candy · 2 Elite TM." inside the card; under Take to battle the hypothetical-IV note, the best-recommended-team note and the chosen-moves note; Threats with three rows and "and 1 more beats this team" (full page) | ![](img/14-custom-team-dark.webp) | ![](img/14-custom-team-light.webp) |
-| `14b-custom-unranked`: a custom team led by Magikarp, the PvPoke-unranked note ("PvPoke does not rank Magikarp in Great League...") in the same notes block; "and 2 more beat this team" (full page) | ![](img/14b-custom-unranked-dark.webp) | ![](img/14b-custom-unranked-light.webp) |
-| `14c-shared-team`: a team opened from a link, "Shared team link. IVs assumed for Azumarill, Tinkaton; the rest are yours." first in the notes block (full page) | ![](img/14c-shared-team-dark.webp) | ![](img/14c-shared-team-light.webp) |
+| `14-custom-team`: a hand-built team of species you don't own. Three bars and "To build all three: 723,500 Stardust · 593 Candy · 182 XL Candy · 2 Elite TM." inside the card; under Take to battle the hypothetical-IV note, the best-recommended-team note and the chosen-moves note; Threats with the two nobody on the team beats first (Cramorant #5, Jellicent #20), then the close one (Corviknight #4, "Close; shields decide it"), and "and 1 more beats this team (see the matchup grid under Assumptions and detail)"; Why this team ends "Biggest risk: Cramorant." (full page) | ![](img/14-custom-team-dark.webp) | ![](img/14-custom-team-light.webp) |
+| `14b-custom-unranked`: a custom team led by Magikarp, the PvPoke-unranked note ("PvPoke does not rank Magikarp in Great League...") in the same notes block; Threats in the same order as `14-custom-team` (Cramorant, Jellicent, then Corviknight) and "and 2 more beat this team (see the matchup grid under Assumptions and detail)" (full page) | ![](img/14b-custom-unranked-dark.webp) | ![](img/14b-custom-unranked-light.webp) |
+| `14c-shared-team`: a team opened from a link, "Shared team link. IVs assumed for Azumarill, Tinkaton; the rest are yours." first in the notes block; Threats lists the two nobody on the team beats (Corviknight #4, Jellicent #20), then the close Cramorant (#5), and "and 1 more beats this team (see the matchup grid under Assumptions and detail)", the one being the close Feraligatr (#19), which Jellicent displaced from the three; When to switch now starts at Feraligatr, since Jellicent is under Threats (full page) | ![](img/14c-shared-team-dark.webp) | ![](img/14c-shared-team-light.webp) |
 | `analysis-confirm`: Take to battle while Feraligatr, Morpeko, Galarian Stunfisk (3 logged) is running; the `ConfirmSheet` "Switch teams?" over the hero card, Keep it and Switch | ![](img/analysis-confirm-dark.webp) | ![](img/analysis-confirm-light.webp) |
 | `analysis-not-found`: "This team is not in the current results. Filters may have changed." with a "Back to teams" button | ![](img/analysis-not-found-dark.webp) | ![](img/analysis-not-found-light.webp) |
 
@@ -65,12 +69,14 @@ after Build's Find best order (every captured custom team was analyzed in the or
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), re-run
-      2026-09-26 on the revision's last commit (this record's, with the capture fixes below):
+      2026-09-26 on the revision's last commit (`67ecbdd`, with the capture fixes below):
       exit 0. Zero findings on all six enforced Team Analysis screens (`03-team-detail`,
       `14-custom-team`, `14b-custom-unranked`, `14c-shared-team`, `analysis-confirm`,
       `analysis-not-found`), in both themes, and on the nine enforced Teams screens, whose rows
       changed. 838 findings remain on screens not yet redesigned (the same count as before the
-      revision), none failing the run.
+      revision), none failing the run. Re-run again for the final fix wave (2026-09-26, after
+      `945ac03`): exit 0, zero findings on the same fifteen enforced screens in both themes, 838
+      on screens not yet redesigned, no "Browser errors" section.
 - [x] the run's own guards, all passed in this run (`apps/web/scripts/screens.mjs`, updated for the
       revision's markup):
   - `assertTitleCentred('team analysis')` holds on the Team Analysis header;
@@ -86,6 +92,9 @@ after Build's Find best order (every captured custom team was analyzed in the or
     "This team is not in the current results" (final review I2);
   - the Edit pencil (`.score-card button[aria-label="Edit team"]`, which replaced the
     `.analysis-edit` text button) lands on `#/build` with the three picks filled;
+  - the hero card's bars are counted in the browser (final review M6): five
+    `.score-card [role="meter"]` on the recommended team after the pencil step's reload, three on
+    the hand-built team in the custom step; either step throws with the count it found;
   - Take to battle is found as the card's next sibling (`.score-card + .ui-btn-primary`), no
     longer inside the card;
   - `analysis-confirm` throws if `.ui-confirm` never opens; Keep it leaves the running set alone
@@ -103,14 +112,14 @@ after Build's Find best order (every captured custom team was analyzed in the or
     (Task 5's I2 fix: the toggle left the chip flow).
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all run 2026-09-26 on the revision's last commit: lint exit 0; typecheck exit
-      0 across all seven workspaces; `npm test` 133 files, 1,181 tests passed; `check-colors`
-      exit 0 (baseline untouched); `check-tokens`: ok.
-- [x] `npm run ui:audit` last run 2026-09-25 at `4cf5108`: exit 0, "gallery audit: clean in dark
-      and light", its three self-checks passing. Not re-run for the revision, and neither was
-      `npm run meta:screens`: the revision changed nothing under `packages/ui` or `apps/meta`
-      (outside `apps/web` and the docs it touched only `packages/engine`'s switch-plan line and
-      its test).
+      check-tokens`, all run 2026-09-26 after the final fix wave's last code commit (`945ac03`):
+      lint exit 0; typecheck exit 0 across all seven workspaces; `npm test` 134 files, 1,189
+      tests passed; `check-colors` exit 0 (baseline untouched); `check-tokens`: ok.
+- [x] `npm run ui:audit` re-run 2026-09-26 for the final fix wave: exit 0, "gallery audit: clean
+      in dark and light". `npm run meta:screens` was not re-run: nothing under `packages/ui` or
+      `apps/meta` changed (outside `apps/web` and the docs, the revision and its fix wave touched
+      only `packages/engine`'s switch-plan line, its key-threat order and their tests, which
+      meta.pick3.gg does not read).
 
 ## Aesthetics
 
@@ -265,9 +274,12 @@ after Build's Find best order (every captured custom team was analyzed in the or
       opened row landing 8.4px under the header); "+N more" / "Show fewer" opens one row's Safe
       list only (`analysisComponents.test.tsx`); When to switch's "Show all" / "Show less" shows
       up to eight rows and toggles its own `aria-expanded`; the Edit pencil loads the three picks
-      into Build (`teamDetail.test.tsx`'s "Edit team loads the three into Build",
-      `analysisComponents.test.tsx`'s "the pencil edits and a strip tap shows that Pokémon", and
-      the browser step above); Take to battle starts, joins or asks to switch a set correctly
+      into Build (`teamDetail.test.tsx`'s "Edit team loads the three into Build" for a
+      recommended team and, since the final fix wave (M3), "Edit team on a hand-built team opens
+      Build with its picks as they are"; `analysisComponents.test.tsx`'s "the pencil edits and a
+      strip tap shows that Pokémon", and the browser step above); the strip tap jumps without the
+      smooth scroll under `prefers-reduced-motion: reduce` and smoothly otherwise (the test the
+      jump row took with it, restored beside the strip test, M2); Take to battle starts, joins or asks to switch a set correctly
       in all three cases (Task 4's tests 6-8, plus the same-team-running case Task 4's fix round
       added).
 - [x] back returns to the origin with filters and scroll, for Team Analysis: `back(fallback)`
@@ -276,7 +288,7 @@ after Build's Find best order (every captured custom team was analyzed in the or
       team link's own landing entry now replaces itself (`navigate(route, { replace: true })` via
       `history.ts`'s `replaceEntry`) instead of staying in history, which closed the back-gesture
       loop through `#/t/...` that Task 4's first pass introduced and its fix round removed at the
-      root. `teamDetail.test.tsx`'s main block (seventeen cases after the fix wave) plus the
+      root. `teamDetail.test.tsx`'s main block (seventeen cases after the final fix wave) plus the
       "Team Analysis from a team link" describe block (three cases: the landing replaces itself
       and stays first, Back lands on Teams, Edit team then Analyze again lets Back return to
       Build) and `history.test.ts`'s `replaceEntry` case all cover it.
@@ -284,7 +296,8 @@ after Build's Find best order (every captured custom team was analyzed in the or
 - [x] icon buttons named; focus visible: Share carries the label "Share this team," Settings
       "Settings" (the `IconButton`s in `TeamDetail.tsx`'s own header); the hero card's pencil is
       an `IconButton` labeled "Edit team"; each factor bar is a meter named with its value; the
-      strip members and the "+N more" toggle are named buttons, not bare icons; the shared
+      number itself is read as "Battle strength 88" (a visually hidden "Battle strength" before
+      `.hero-num`, final review M4), no longer a bare "88"; the strip members and the "+N more" toggle are named buttons, not bare icons; the shared
       `Button`/`IconButton` focus-visible
       outline is the one audited on other pages (gallery record), unchanged here.
 - [x] product rules: assumptions shown (the Assumptions block; the hypothetical-IV, unranked and
@@ -296,15 +309,20 @@ after Build's Find best order (every captured custom team was analyzed in the or
       the number alone, the structure, the fit and five bars, each bar's rounded value and the
       difficulty line, a custom team's three bars and "To build all three", the pencil and a
       strip tap, Take to battle under the card, the custom notes and the tried-orders line;
-      Threats: rows, the "and N more" count with "beats" for one, the nothing-beats-all-three
-      sentence and no count; When to switch: no opponent repeated from Threats, five then Show
+      the number's hidden "Battle strength" words; Threats: rows, the "and N more" count with
+      "beats" for one and the pointer to the matchup grid, a species listed twice counted once,
+      an opponent outside the grid not counted, the nothing-beats-all-three sentence and no count; When to switch: no opponent repeated from Threats, five then Show
       all up to eight, both empty sentences, the engine's own line; Key wins as rows and the
       no-wins line; PokemonDetails with "+N more" as a text Button; WhyThisTeam with no numeric
       breakdown for either kind of team), `apps/web/test/teamDetail.test.tsx` (the screen:
       not-found after a run, Loading then the team on a fresh load, the failed run with Try again
       and no loop, the battle headline, Threats then When to switch then Pokémon details with no
-      Battle plan or jump row, the strip, Take to battle in all three running-set cases, Edit
-      team, Back with and without history, the team-link describe block),
+      Battle plan or jump row, the strip and its reduced-motion branch, Take to battle in all
+      three running-set cases, Edit team for a recommended and a hand-built team, Back with and
+      without history, the team-link describe block),
+      `packages/engine/test/explain/keyThreats.test.ts` (key threats: the unanswered ones first
+      and kept over close ones that outrank them, meta rank first within each group, "Biggest
+      risk" naming the first),
       `apps/web/test/teamComponents.test.tsx` (the Teams row's number line),
       `apps/web/test/history.test.ts` (`replaceEntry`), `apps/web/test/format.test.ts`
       (`costParts`), `apps/web/test/shadowToken.test.tsx` (the token-wrapper alignment fix),
@@ -323,7 +341,15 @@ after Build's Find best order (every captured custom team was analyzed in the or
    the listed threats among them; shown only when N > 0. [Cost if wrong: one count.] `Threats`
    in `Threats.tsx`; `14-custom-team` and `14c-shared-team` read "and 1 more beats this team"
    (singular, fixed in this task), `14b-custom-unranked` "and 2 more beat this team",
-   `03-team-detail` no line (nothing beyond its one listed threat beats all three).
+   `03-team-detail` no line (nothing beyond its one listed threat beats all three). **Changed
+   in the final fix wave:** the code counted `score.uncoveredOpponents` as is, which repeats a
+   species the meta group lists twice (Great carries Shadow Forretress and Shadow Quagsire
+   twice) and includes outsiders from Your meta that the matchup grid never shows (final
+   review I3). It now counts each species once, and only the ones the grid shows, so the
+   ruling's own words hold (`414e21b`). The line also says where the rest are: "(see the
+   matchup grid under Assumptions and detail)", as the spec's Threats bullet asks (final review
+   I1, `4b54d79`). The three captured counts did not move (none of their beaters is repeated or
+   an outsider); the pointer is new on all three.
 3. **When to switch** drops opponents already listed under Threats, shows five, "Show all" up to
    eight. [Cost if wrong: numbers.] `03-team-detail`'s list starts at Tinkaton, not at Hisuian
    Electrode, which heads its Threats.
@@ -332,6 +358,20 @@ after Build's Find best order (every captured custom team was analyzed in the or
    ellipsis, no overflow, the roles on one line under them.
 5. **`.custom-note`** moves to the notes block under Take to battle (the capture script reads it).
    [Cost if wrong: selector.] The three custom capture steps read their notes from it.
+6. **Which three threats the engine keeps (controller's ruling in the final fix wave, on the
+   final review's I4 and its question for Travis):** `explainTeam` keeps the key threats nobody
+   on the team beats first (best rating under 450), then the close ones ("Close; shields decide
+   it"), most common (meta rank) first within each group, still at most three; `Threats`
+   renders that order as is. [Cost if wrong: one sort in `explain.ts`.] Before, it kept the
+   three highest-ranked non-wins, so a close threat sat above unanswered ones and could push one
+   into "and N more" (`14c-shared-team` listed the close Feraligatr and counted the unanswered
+   Jellicent). `f05e48c`; `keyThreats.test.ts` pins the selection and the order. Because
+   `explanation.why`'s "Biggest risk: X" names the first key threat, it can now name a
+   different Pokémon, on this page and on Teams' open rows (intended): `14-custom-team` and
+   `14b-custom-unranked` now say "Biggest risk: Cramorant." where they said Corviknight. No
+   engine snapshot moved (`pvpoke-baseline.test.ts` records teams and scores, not
+   explanations), and the Teams captures' visible "Biggest risk" lines (Hisuian Electrode,
+   Rillaboom) are unchanged.
 
 ## The first pass's rulings, with their costs
 
@@ -422,8 +462,14 @@ stands.
 | **The revision (Travis, 2026-09-26), after using the shipped page on his phone:** "the battle plan is always the same" across teams; the jump links "scroll off the page"; Edit team takes a whole row; "Key threats is the #1 thing I care about. Then when to switch." He drew the hero card; the number stays the headline ("it gives you an idea between 3 A teams who has an edge"), with no "/ 100". | The hero card (`ScoreCard.tsx`): the number alone, the structure `Term` and fit tag beside it, the Edit pencil, the strip moved into the card with names wrapping, the difficulty line, read-only factor bars (five for a recommended team; three and "To build all three" for a custom one). Take to battle under the card, a custom team's notes under that. Threats first (rows plus "and N more"), then When to switch without Threats' opponents, then Pokémon details, Key wins as rows, Why this team, Alternatives, Assumptions. Removed: the battle plan section (`BattlePlan.tsx` and its `.plan-*` CSS), the jump row (`.analysis-jumps`) and its browser check, `.analysis-edit`, "Run it in this order", the coverage sentence and the written score breakdown (`WhyThisTeam`), the collapsed `Matchups` pair and its `.matchup-*`/`.mini` CSS. | `10b3478`, `d5673ed`, `94fc75b` |
 | Revision, Task 1 review: `ROLE_SHORT` was defined twice (`ScoreCard.tsx`, `TeamDetail.tsx`); `.hero-bar-label` had no rule and rendered in the body type. | `ROLE_SHORT` lives once in `components.tsx` beside `ROLE_TEXT`; the bar labels take `--fs-support` and `--muted`. | `e05575f` |
 | Revision, Task 2 review: When to switch rebuilt "Switch to X, wins" by hand instead of printing the engine's line (invented matchup copy); its "nothing beats your lead" sentence checked the Threats-filtered list, so a lead whose every threat sat under Threats was told nothing threatens it. Then the engine's own line started with the opponent's name ("Tinkaton: switch to Melmetal, wins."), which every row already shows beside it. | The rows reuse Threats' row and print `SwitchAdvice.line`; the raw plan decides the empty sentence, and a fully covered plan says "Everything that beats your lead is listed under Threats."; `switchPlanFor` starts both lines with the verb ("Switch to Melmetal, wins." / "Nobody on the team beats it. ..."), pinned in `analyze.test.ts`. | `3435373`, `d378465`, `94fc75b` |
-| Revision, Task 4, the capture script: `screens.mjs` still clicked `.analysis-edit .ui-btn-text` and `.score-card .ui-btn-primary` and ran the jump-button check (with a stale "Matchups" label), none of which exist after the revision. | The jump check is deleted; the pencil is `.score-card button[aria-label="Edit team"]`; Take to battle is `.score-card + .ui-btn-primary`; the strip-tap check stays and taps inside the card (8.4px under the header); `.custom-note` is read from the notes block. | this record's commit |
-| Revision, Task 4, seen in the captures (both themes): (1) in the strip, Melmetal's one-line name beside two two-line names left "Switch" a line above "Lead" and "Closer"; (2) the Pokémon section was titled "Your Pokémon" again, over rows that say "Not in your collection" on every custom capture, the first pass's M3 finding reintroduced (the spec calls it "Pokémon details"); (3) "and 1 more beat this team" on `14-custom-team` and `14c-shared-team`; (4) on Teams, the number made the row line longer, and "251,420 Stardust" broke between the number and its unit on the Zweilous row. | (1) Each strip member spans the strip's three rows as a CSS subgrid, so names align at the top and the roles share one line; (2) "Pokémon details", with the order test following it; (3) "beats" when N is 1, a new Threats test; (4) the row's Stardust uses `format.ts`'s `amount()` (now exported), the non-breaking join every cost line already used, with the row test requiring it. | this record's commit |
+| Revision, Task 4, the capture script: `screens.mjs` still clicked `.analysis-edit .ui-btn-text` and `.score-card .ui-btn-primary` and ran the jump-button check (with a stale "Matchups" label), none of which exist after the revision. | The jump check is deleted; the pencil is `.score-card button[aria-label="Edit team"]`; Take to battle is `.score-card + .ui-btn-primary`; the strip-tap check stays and taps inside the card (8.4px under the header); `.custom-note` is read from the notes block. | `67ecbdd` |
+| Revision, Task 4, seen in the captures (both themes): (1) in the strip, Melmetal's one-line name beside two two-line names left "Switch" a line above "Lead" and "Closer"; (2) the Pokémon section was titled "Your Pokémon" again, over rows that say "Not in your collection" on every custom capture, the first pass's M3 finding reintroduced (the spec calls it "Pokémon details"); (3) "and 1 more beat this team" on `14-custom-team` and `14c-shared-team`; (4) on Teams, the number made the row line longer, and "251,420 Stardust" broke between the number and its unit on the Zweilous row. | (1) Each strip member spans the strip's three rows as a CSS subgrid, so names align at the top and the roles share one line; (2) "Pokémon details", with the order test following it; (3) "beats" when N is 1, a new Threats test; (4) the row's Stardust uses `format.ts`'s `amount()` (now exported), the non-breaking join every cost line already used, with the row test requiring it. | `67ecbdd` |
+| Revision final review I1 (a controller ruling): "and N more beat this team" was a bare count, though the spec's Threats bullet says the count points to the matchup grid (this record's former open item). | The line ends "(see the matchup grid under Assumptions and detail)", singular and plural; the two count tests pin the full strings. Seen in `14-custom-team`, `14b-custom-unranked` and `14c-shared-team`, both themes. | `4b54d79` |
+| Revision final review I3: the count read `score.uncoveredOpponents` as is, so a species the meta group lists twice (Great and the Championship Series carry Shadow Forretress and Shadow Quagsire twice) counted twice, and an outsider from Your meta counted though the grid never shows it, which would make I1's pointer false. | `Threats` takes the grid's deduplicated ids (`gridIds`, the same `opps` the matchup grid draws) and counts unique beaten species in the grid that are not already listed. Tests: a repeated id counts once; an id outside the grid does not count, and alone gives no line; "3 more" still reads 3. | `414e21b` |
+| Revision final review I4, with the controller's ruling on selection: Threats were ordered by meta rank only, so "Close; shields decide it" sat above "Nobody on the team beats it" (Corviknight over Cramorant and Jellicent in `14-custom-team` and `14b-custom-unranked`), and in `14c-shared-team` an unanswered Jellicent (#20) fell into the count behind two close threats. | `explainTeam` keeps the unanswered key threats first, then the close ones, meta rank first within each, at most three (Ruling 6); `Threats` renders the engine's order. No `rating` field was added to `KeyMatchup`: the UI does not need one once the engine orders. `keyThreats.test.ts`: an unanswered threat ranked below three close ones is kept and listed first, "Biggest risk" names it; unanswered ones before close ones, rank order within each. | `f05e48c` |
+| Revision final review I2 (a controller ruling): Teams' open-row strip dropped roles onto different lines when some names wrapped (this record's former open item; Teams' own finding). | The same subgrid as this page's strip, scoped to `.team-body .slots3` in `app.css`; recorded as an "After sign-off" row in `teams.md` with its re-converted captures. | `6571697` |
+| Revision final review M1: this record still asked Travis to choose the section order, though `ae87f83` wrote the shipped order into the spec. | The open item is dropped: the spec now lists the shipped order (Threats, When to switch, Pokémon details, Key wins, Why this team), and the order test pins it. The I1 and I2 open items are closed by the rows above. | this record's commit |
+| Revision final review M2 to M6: the reduced-motion branch of `scrollToId` lost its only test with the jump row (M2); no test for the pencil on a hand-built team (M3); the hero number was read bare, "88", by a screen reader (M4); prettier drift in two hunks this branch added (M5); nothing in the browser run counted the hero card's bars (M6). | M2: a strip tap under a stubbed `(prefers-reduced-motion: reduce)` scrolls with `behavior: 'auto'`, and `'smooth'` once restubbed. M3: `mountCustom`, Edit team, `#/build` with the same picks object. M4: a `.vh` "Battle strength " before `.hero-num`, outside it, so the region reads "Battle strength 88" and `.hero-num` stays "88" alone (a new ScoreCard test). M5: `prettier --write` on `Threats.tsx` and `teamDetail.test.tsx`. M6: `screens.mjs` requires five meters after the pencil step's reload and three in the custom step, throwing with the count; both held in this run. The M2 and M3 tests were each checked against a broken build (smooth always; the custom pencil reloading its picks) and failed there. | `945ac03` |
 
 ## Visible changes outside Team Analysis
 
@@ -479,6 +525,15 @@ stands.
   renderer (a repo-wide grep for `switchPlan` finds no other), so nothing else reads differently.
 - **`amount()` in `format.ts` is exported** for the Teams row; its output and its other callers
   (`costParts`) are unchanged.
+- **"Biggest risk" can name a different Pokémon on Teams' open rows** (final fix wave, Ruling 6).
+  `explanation.why` ends with the first key threat, and the engine now keeps the unanswered
+  threats first, so a team whose top-ranked threat is close and whose next is unanswered names
+  the unanswered one. Intended. The Teams captures' visible lines (Hisuian Electrode, Rillaboom)
+  did not change.
+- **Teams' open row keeps its three roles on one line** (final fix wave, final review I2): the
+  subgrid this page's strip uses, scoped to `.team-body .slots3`; recorded in `teams.md`'s second
+  "After sign-off" row. `packages/ui`'s `.slots3`, meta.pick3.gg and `WhyThisTeam`'s own `.slot`
+  tiles are untouched.
 
 ## Open items for Travis (not fixed on this branch)
 
@@ -507,18 +562,6 @@ stands.
   carried over; the factor bars' `--accent` fill, new with the revision and matching the
   reference renders), named in the colors tick: an app-wide call for the first two, a one-rule
   change for each of the other two (the bars could fill with `--muted` or `--text` instead).
-- **"and N more beat this team" does not point to the matchup grid.** The spec's Threats bullet
-  says the count points to it; the plan's Ruling 2 specified only the count, and that is what
-  shipped. The full list is one tap away under Assumptions ("Show all 46 meta Pokémon"). Add a
-  link or a "see the matchup grid" clause, or leave it.
-- **Section order differs from the spec's list.** The spec lists Why this team before Pokémon
-  details and Key wins; the plan ordered the page Threats, When to switch, Pokémon details, Key
-  wins, Why this team, and that is what shipped (the order test pins it). Say which you want.
-- **Teams' open row has the strip misalignment this task fixed here.** `TeamCardBody` on the
-  signed Teams page (`02-teams`, `teams-cup`, `19-teams-ultra`) still drops "SAFE SWITCH" a line
-  above "LEAD" and "CLOSER" when only the middle name fits on one line. Not touched: Teams is
-  signed, and the revision's only Teams change is the number on the row. The same subgrid rule
-  would fix it.
 
 The spacing around "+N more" that Task 5's review left open here is settled: the toggle is now
 the standard text `Button`, the same 44px control as "Show all", so the air around it is that
