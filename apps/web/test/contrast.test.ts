@@ -3,10 +3,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-// Your Meta's result chips are one letter each (W, L, T), which axe will not judge ("too short"),
-// so the page marks them data-audit-contrast="static" and this checks them the plain way: the
-// letter's color against the chip's fill, WCAG relative luminance, in every theme, with the
-// fills read from app.css and the values from the ui tokens. Normalised for CRLF checkouts.
+// Contrast checks on web's own app.css rules, the plain way: WCAG relative luminance, in every
+// theme, with the rules read from app.css and the values from the ui tokens. Your Meta's result
+// chips are one letter each (W, L, T), which axe will not judge ("too short"), so the page marks
+// them data-audit-contrast="static" and they are checked here. The shared Seg's pressed label is
+// checked here too, on every surface a Seg sits on. Normalised for CRLF checkouts.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const read = (p: string): string => readFileSync(join(__dirname, p), 'utf8').replace(/\r\n/g, '\n');
 const tokens = read('../../../packages/ui/tokens.css');
@@ -91,6 +92,18 @@ describe('Your Meta result chip contrast', () => {
       it(`${outcome}: the letter clears 4.5:1 on its fill in ${theme}`, () => {
         const { fill, ink } = paint(chip, body);
         expect(ratio(ink, fill)).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+});
+
+describe('Seg pressed label contrast', () => {
+  // Your Meta's sort sits on the page (--bg); the Settings sheet's Segs sit on --surface.
+  const ink = /(?:^|\s)color:\s*var\(--([a-z0-9-]+)\)/.exec(block(app, '.seg > .on {'))?.[1] ?? '';
+  for (const ground of ['bg', 'surface']) {
+    for (const [theme, body] of Object.entries(themes)) {
+      it(`the pressed label clears 4.5:1 on --${ground} in ${theme}`, () => {
+        expect(ratio(value(body, ink), value(body, ground))).toBeGreaterThanOrEqual(4.5);
       });
     }
   }

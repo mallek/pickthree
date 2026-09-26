@@ -172,7 +172,7 @@ function ResultStrip({ set }: { set: BattleSet }) {
               key={b.id}
               aria-label={label}
               title={label}
-              // One letter is too short for axe to judge; test/resultChips.test.ts checks it.
+              // One letter is too short for axe to judge; test/contrast.test.ts checks it.
               data-audit-contrast="static"
               onClick={() => navigate({ screen: 'meta-log', edit: { set: set.id, battle: b.id } })}
             >
