@@ -56,7 +56,9 @@ export function Threats({ team }: { team: TeamRecommendation }) {
             <MatchupRow m={t} testId="threat-row" key={t.opponent} />
           ))}
           {moreCount > 0 ? (
-            <p className="small muted">and {moreCount} more beat this team</p>
+            <p className="small muted">
+              and {moreCount} more {moreCount === 1 ? 'beats' : 'beat'} this team
+            </p>
           ) : null}
         </>
       )}

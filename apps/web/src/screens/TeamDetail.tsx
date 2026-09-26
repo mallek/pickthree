@@ -288,7 +288,7 @@ export function TeamDetail({ id }: { id: string }) {
 
         <section className="stack">
           <h3 id="pokemon" className="analysis-section">
-            Your Pokémon
+            Pokémon details
           </h3>
           <PokemonDetails
             team={team}

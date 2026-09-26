@@ -1,6 +1,6 @@
 import type { TeamRecommendation } from '@pickthree/engine';
 import { PokemonToken, useName } from '../../components.tsx';
-import { num, SEP } from '../../format.ts';
+import { amount, num, SEP } from '../../format.ts';
 
 /**
  * A collapsed team: three overlapping sprites, the three names, and one line of the battle
@@ -22,7 +22,7 @@ export function TeamRowSummary({ team }: { team: TeamRecommendation }) {
           {ids.map(name).join(' · ')}
         </span>
         <span className="team-summary-line">
-          {`${Math.round(team.score.battle)}${SEP}${team.score.fit} fit${SEP}${team.score.difficulty}${SEP}${num(team.cost.stardust)} Stardust`}
+          {`${Math.round(team.score.battle)}${SEP}${team.score.fit} fit${SEP}${team.score.difficulty}${SEP}${amount(num(team.cost.stardust), 'Stardust')}`}
         </span>
       </span>
     </span>

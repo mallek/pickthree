@@ -5,6 +5,15 @@ of 10: Team Analysis". Intake entry: `docs/design/inventory/2026-09-23-design-in
 Team Analysis, first pass (progressive disclosure)" and the "Decision (Travis, 2026-09-23)" and
 "Headline score (Travis, 2026-09-23)" under it (score.battle as the headline, not score.total).
 
+Revised 2026-09-26 after Travis used the shipped page on his phone: spec
+`docs/superpowers/specs/2026-09-25-design-core-flow-design.md`, "Team Analysis" (revised
+2026-09-26), plan `docs/superpowers/plans/2026-09-26-analysis-revision.md`. The page now opens on
+a hero card (the number, structure, fit, an Edit pencil, the three Pokémon, the difficulty line,
+factor bars), Take to battle under it, then Threats and When to switch. The battle plan, the jump
+buttons, "Run it in this order", the coverage sentence and the written score breakdown are gone.
+Everything below describes the revised page; the findings table keeps the first pass's rows as
+history, and the revision's own rows follow them.
+
 A note on sprites: this worktree's game data was built with `PICKTHREE_SKIP_SPRITES=1` (no network
 access to PokeAPI during this task), so every capture below shows the type-colored token-letter
 fallback instead of a sprite, exactly as on the Teams and Build records. That is a real, shipped
@@ -17,31 +26,35 @@ shows those instead; nothing on this branch touched sprite rendering itself.
 
 Dark and light at 390px, one pair per state, converted to WebP (600px wide, quality 72) the same
 way the Teams and Build images were, from `apps/web/screenshots/<name>-{dark,light}.png` (fresh
-`npm run web:audit` run, 2026-09-25, at commit `e430c13`, after the final review's fix wave and
-the re-review's R1 fix). The four full-page pairs changed in those waves and were re-converted
-(R1 changed the score breakdown in all four); `analysis-confirm` and `analysis-not-found`
-re-converted byte for byte identical to the earlier images. `03-team-detail`,
+`npm run web:audit` run, 2026-09-26, on the revision's last commit, this record's). The four
+full-page pairs and `analysis-confirm` changed with the revision and were re-converted;
+`analysis-not-found` re-converted byte for byte identical to the earlier image. `03-team-detail`,
 `14-custom-team`, `14b-custom-unranked` and `14c-shared-team` are full-page shots
 (`captureBeyondViewport: false`, the same rule Teams and Build use so the fixed tab bar lands at
 the true bottom); `analysis-confirm` and `analysis-not-found` are viewport shots (a sheet over the
-score card; a short Empty state).
+hero card; a short Empty state).
 
 | State | Dark | Light |
 | --- | --- | --- |
-| `03-team-detail`: a recommended team (no rating card), battle score 88 "Strong fit," battle plan, matchups ("Key win" and "Key threat"), the three "Pokémon details" rows with the lead expanded and its "+1 more" text button, Team structure tiles, the score breakdown, Alternatives, Assumptions open with the matchup grid (full page) | ![](img/03-team-detail-dark.webp) | ![](img/03-team-detail-light.webp) |
-| `14-custom-team`: a hand-built team of species you don't own, rating card with the hypothetical-IV note, the best-recommended-team note, the chosen-moves note and "Run it in this order" once (full page) | ![](img/14-custom-team-dark.webp) | ![](img/14-custom-team-light.webp) |
-| `14b-custom-unranked`: a custom team led by Magikarp, the PvPoke-unranked note ("PvPoke does not rank Magikarp in Great League...") added to the same rating card (full page) | ![](img/14b-custom-unranked-dark.webp) | ![](img/14b-custom-unranked-light.webp) |
-| `14c-shared-team`: a team opened from a link, "Shared team link. IVs assumed for Azumarill, Tinkaton; the rest are yours." (full page) | ![](img/14c-shared-team-dark.webp) | ![](img/14c-shared-team-light.webp) |
-| `analysis-confirm`: Take to battle while Feraligatr, Morpeko, Galarian Stunfisk (3 logged) is running; the `ConfirmSheet` "Switch teams?" over the score card, Keep it and Switch | ![](img/analysis-confirm-dark.webp) | ![](img/analysis-confirm-light.webp) |
+| `03-team-detail`: a recommended team. The hero card: "88" alone, the "Balanced ABC" term and the "Strong fit" tag beside it, the Edit pencil; Shadow Greninja and Galarian Corsola on two lines each, Melmetal on one, the three roles on one line; the difficulty line; five bars (Coverage, Consistency, Safety, Affordable empty, Accessibility). Take to battle under the card; Threats (one row, Hisuian Electrode, no count: nothing else beats the whole team); When to switch (five rows, none repeating Hisuian Electrode, then Show all); Pokémon details with the lead open and its "+1 more"; Key wins as rows; Why this team with the Team structure tiles and no breakdown sentence; Alternatives; Assumptions open with the matchup grid (full page) | ![](img/03-team-detail-dark.webp) | ![](img/03-team-detail-light.webp) |
+| `14-custom-team`: a hand-built team of species you don't own. Three bars and "To build all three: 723,500 Stardust · 593 Candy · 182 XL Candy · 2 Elite TM." inside the card; under Take to battle the hypothetical-IV note, the best-recommended-team note and the chosen-moves note; Threats with three rows and "and 1 more beats this team" (full page) | ![](img/14-custom-team-dark.webp) | ![](img/14-custom-team-light.webp) |
+| `14b-custom-unranked`: a custom team led by Magikarp, the PvPoke-unranked note ("PvPoke does not rank Magikarp in Great League...") in the same notes block; "and 2 more beat this team" (full page) | ![](img/14b-custom-unranked-dark.webp) | ![](img/14b-custom-unranked-light.webp) |
+| `14c-shared-team`: a team opened from a link, "Shared team link. IVs assumed for Azumarill, Tinkaton; the rest are yours." first in the notes block (full page) | ![](img/14c-shared-team-dark.webp) | ![](img/14c-shared-team-light.webp) |
+| `analysis-confirm`: Take to battle while Feraligatr, Morpeko, Galarian Stunfisk (3 logged) is running; the `ConfirmSheet` "Switch teams?" over the hero card, Keep it and Switch | ![](img/analysis-confirm-dark.webp) | ![](img/analysis-confirm-light.webp) |
 | `analysis-not-found`: "This team is not in the current results. Filters may have changed." with a "Back to teams" button | ![](img/analysis-not-found-dark.webp) | ![](img/analysis-not-found-light.webp) |
 
 Not captured: the "No hand-built team yet" flavor of not-found (same `Empty` component, a
 different first line and button, both string-driven, not a layout difference); the ABB line team
 structure (this branch's fixtures and the two enforced custom teams all land as Balanced ABC; the
-ABB block is unchanged markup carried over from before this task, per Task 3's report); the
+ABB block is unchanged markup carried over from before this task, per Task 3's report); a team
+that nothing in the meta beats (Threats' "Nothing in the meta group beats all three" sentence
+and no count) and a lead whose every threat is already under Threats ("Everything that beats
+your lead is listed under Threats."), neither reached by the fixtures, both covered by
+`analysisComponents.test.tsx`; When to switch expanded (Show all up to eight, "Show less"), a
+text toggle like "+N more", covered by the same file; the
 strip tap's landing (not a picture, a measured browser check: `web:audit` taps the second strip
-member from the top of the page and requires `#pokemon-1` to land 0 to 24px under the header and
-open, see Automated checks; `teamDetail.test.tsx` checks which rows open); the Loading state
+member in the hero card from the top of the page and requires `#pokemon-1` to land 0 to 24px
+under the header and open, see Automated checks; `teamDetail.test.tsx` checks which rows open); the Loading state
 (shared `Loading`, via `Progress`) and the recommendation error with Try again, which a reload or
 a pasted `#/teams/<id>` passes through while pick3 runs the recommendation: covered by
 `teamDetail.test.tsx` (Loading then the team, never the not-found line; a failed run shows the
@@ -52,32 +65,37 @@ after Build's Find best order (every captured custom team was analyzed in the or
 ## Automated checks
 
 - [x] `npm run web:audit` clean for this page's screens (listed in `AUDIT_ENFORCED`), re-run
-      2026-09-25 against `e430c13` (the final review's fix wave and the re-review's R1 fix): exit
-      0. Zero findings on all six
-      enforced Team Analysis screens (`03-team-detail`, `14-custom-team`, `14b-custom-unranked`,
-      `14c-shared-team`, `analysis-confirm`, `analysis-not-found`), in both themes. 838 findings
-      remain on screens not yet redesigned (the same count as before the wave), none failing the
-      run.
-- [x] the run's own guards, all passed in this run:
+      2026-09-26 on the revision's last commit (this record's, with the capture fixes below):
+      exit 0. Zero findings on all six enforced Team Analysis screens (`03-team-detail`,
+      `14-custom-team`, `14b-custom-unranked`, `14c-shared-team`, `analysis-confirm`,
+      `analysis-not-found`), in both themes, and on the nine enforced Teams screens, whose rows
+      changed. 838 findings remain on screens not yet redesigned (the same count as before the
+      revision), none failing the run.
+- [x] the run's own guards, all passed in this run (`apps/web/scripts/screens.mjs`, updated for the
+      revision's markup):
   - `assertTitleCentred('team analysis')` holds on the Team Analysis header;
-  - every jump button (Battle plan, Matchups, Pokémon, Details) lands its section's heading 0 to
-    24px under the sticky header, starting from more than 24px under it, measured after waiting
-    for the smooth scroll (or the instant jump under reduced motion) to stop moving (Task 5's
-    Minor 1 fix; the run emulates `prefers-reduced-motion: reduce`, so it exercises the instant
-    path); this run: 8.0, 8.1, 7.6 and 7.7px;
-  - a tap on the second strip member, from the top of the page, lands `#pokemon-1` 0 to 24px
-    under the sticky header (from 2028px below it to 7.9px under it in this run) and opens it
-    (`aria-expanded="true"`); against the old markup, with no scroll margin on the row, the same
-    check failed at -0.1px, under the header (final review I1);
-  - a real `page.reload()` of the recommended team's analysis renders the score card, not the
-    not-found state; against the old screen it failed with "This team is not in the current
-    results" (final review I2);
+  - the jump-button check is gone with the jump row (it also still named a stale "Matchups"
+    button); the strip tap is now the page's only scroll-to control;
+  - a tap on the second strip member, now inside the hero card, from the top of the page, lands
+    `#pokemon-1` 0 to 24px under the sticky header (from 1895px below it to 8.4px under it in
+    this run) and opens it (`aria-expanded="true"`); against the first pass's markup, with no
+    scroll margin on the row, the same check failed at -0.1px, under the header (final review
+    I1);
+  - a real `page.reload()` of the recommended team's analysis renders the hero card
+    (`.score-card`), not the not-found state; against the first pass's old screen it failed with
+    "This team is not in the current results" (final review I2);
+  - the Edit pencil (`.score-card button[aria-label="Edit team"]`, which replaced the
+    `.analysis-edit` text button) lands on `#/build` with the three picks filled;
+  - Take to battle is found as the card's next sibling (`.score-card + .ui-btn-primary`), no
+    longer inside the card;
   - `analysis-confirm` throws if `.ui-confirm` never opens; Keep it leaves the running set alone
     and the analysis open, Switch closes it and lands on Log a battle's `.team-strip` (Task 4's
     behavior, Task 5's capture);
   - the shared-link step throws "shared team failed: <reason>" on a real failure (waits for
     `.custom-note, .ui-error, .scroll .error` and reads `.ui-error, .scroll .error`, Task 5's I4
-    fix) rather than a silent 120s timeout;
+    fix) rather than a silent 120s timeout; `.custom-note` is now the notes block under Take to
+    battle, and the three custom steps still read their notes from it ("ran the moves you
+    chose", "does not rank Magikarp", "Shared team link");
   - `analysis-not-found`'s `.ui-empty` includes "not in the current results" (Task 5's Minor 2
     fix), not just any `Empty`;
   - the "+N more" toggle, found by its text among the `.safe-types` buttons, is topmost at both
@@ -85,15 +103,14 @@ after Build's Find best order (every captured custom team was analyzed in the or
     (Task 5's I2 fix: the toggle left the chip flow).
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
-      check-tokens`, all run 2026-09-25 at `e430c13`: lint exit 0; typecheck exit 0 across all
-      seven workspaces; `npm test` 133 files, 1,174 tests passed; `check-colors` exit 0 (baseline
-      untouched); `check-tokens`: ok.
-- [x] `npm run ui:audit` re-run 2026-09-25 at `4cf5108` (nothing it covers changed after): exit
-      0, "gallery audit: clean in dark and light", its three self-checks passing (they exit 1 on
-      failure). `npm run meta:screens`:
-      not re-run; nothing under `packages/ui` or `apps/meta` changed in the fix wave (`Button`'s
-      `ariaExpanded` prop, the one `packages/ui` change on this branch, predates Task 5's passing
-      `meta:screens` run).
+      check-tokens`, all run 2026-09-26 on the revision's last commit: lint exit 0; typecheck exit
+      0 across all seven workspaces; `npm test` 133 files, 1,181 tests passed; `check-colors`
+      exit 0 (baseline untouched); `check-tokens`: ok.
+- [x] `npm run ui:audit` last run 2026-09-25 at `4cf5108`: exit 0, "gallery audit: clean in dark
+      and light", its three self-checks passing. Not re-run for the revision, and neither was
+      `npm run meta:screens`: the revision changed nothing under `packages/ui` or `apps/meta`
+      (outside `apps/web` and the docs it touched only `packages/engine`'s switch-plan line and
+      its test).
 
 ## Aesthetics
 
@@ -105,11 +122,14 @@ after Build's Find best order (every captured custom team was analyzed in the or
       Build) hold on every disc shown, including Melmetal's single-type steel disc, Galarian
       Corsola's and Clodsire's split discs, and the Shadow-marked Greninja disc in `03-team-detail`.
       No pink appears: Team Analysis has no measured community data of its own, only PvPoke-ranked
-      and your-collection numbers. Those two checks cannot see roles, so by eye (final review M7):
-      violet marks what you tap (Edit team, the jump row, Show all, "+N more", Take to battle, the
-      Term underlines, the header buttons). The fix wave took violet off three read-only things
-      new or moved on this page: the battle plan's rail is `--divider`, its step titles
-      (Lead, Switch, Closer) `--muted`, and the keep-shield line plain `--text`. Three read-only
+      and your-collection numbers. Those two checks cannot see roles, so by eye (final review M7,
+      re-checked for the revision): violet marks what you tap (the Edit pencil, Show all, "+N
+      more", Take to battle, the Term underlines, the header buttons). The strip members are
+      buttons but carry no violet: token, name and role in the card's own text colors. One new
+      read-only violet use arrives with the revision: the factor bars fill with `--accent` on a
+      `--surface2` track, as in the reference renders Travis approved; they have no hover or
+      pointer and no number, and are named here for Travis rather than changed (see Open items).
+      Three older read-only
       violet uses remain, all carried over unchanged from before this branch and named here for
       Travis as precedent rather than fixed: the rank tags (`.mtag`, "#1 overall," "#9 charger"),
       the role eyebrow (`.role`, "FIRST · LEAD," the Team structure tiles; signed Build uses the
@@ -123,35 +143,37 @@ after Build's Find best order (every captured custom team was analyzed in the or
       accept or refuse, and the 12px `.meta` size deferred (see Open items)**: one "Team
       Analysis" title in every capture (`Header variant="sub"`, 15px/500). The levels, by size,
       as the CSS sets them and the captures show them:
-  - heads: section heads ("Battle plan," "Matchups to remember," "Pokémon details," "Why this
+  - heads: section heads ("Threats," "When to switch," "Pokémon details," "Key wins," "Why this
     team," "Alternatives you own") at `--fs-section` (17px)/600, the size Build's sections use;
-    a Pokémon row's name (`.pd-summary-name`) is the same `--fs-section` at 500;
-  - body at `--fs-body` (15px): the battle-plan lines, the score card's sentences, the Why this
-    team paragraph; sub-headings inside a section ("Key win"/"Key threat," "Key wins"/"Key
-    threats," "When to switch," "Team structure") are the same 15px at 600
-    (`h4.analysis-sub`), a weight step, not a size step. Three carried 14px texts sit just under
-    it: the move names (`.move-name`), Alternatives' main lines and the "Assumptions and detail"
-    head, the same shared markup as before this branch;
-  - supporting text at two sizes that sit side by side: 13px (`.small`: a row's role job, the
-    keep-shield line, the empty lines such as "No other Pokémon in your collection fits these
-    slots yet"; `.assump-body`: the Assumptions lines) and 12px (`.meta`: the score card's
-    notes, the strip's supporting line, the score breakdown, Alternatives' "Instead of" lines,
-    the grid legend; also the move counts and reads, `.move-sub`, the move kind, the fit tag and
-    "Opponent charged attack strategy"). That 12/13px pair is the class Build's final review
-    raised as M10; it is not fixed page by page, and it is carried to Open items in Build's own
-    words;
-  - labels at 11px (`--fs-label` or a literal 11px): the plan step titles, the role eyebrows,
-    the type chips, the rank tags, and the shield note under the Safe types ("* Low on health
-    and close to your own charged move? ...").
+    a Pokémon row's name (`.pd-summary-name`) and the hero card's structure `Term` ("Balanced
+    ABC") are the same `--fs-section`, at a lighter weight;
+  - body at `--fs-body` (15px): the Why this team paragraph; "Team structure" is the same 15px
+    at 600 (`h4.analysis-sub`), a weight step, not a size step. Four 14px texts sit just under
+    it: the Threats, When to switch and Key wins rows (`.switch-row`, the name at 500), the move
+    names (`.move-name`), Alternatives' main lines and the "Assumptions and detail" head, shared
+    markup carried from before this branch;
+  - supporting text at two sizes that sit side by side: 13px (the strip's names, bold; the bar
+    labels, `--fs-support`; `.small`: "and N more beat this team", a row's role job, the
+    keep-shield line, the empty lines; `.assump-body`: the Assumptions lines) and 12px
+    (`.meta`: the strip's roles, the difficulty line, "To build all three", the notes under Take
+    to battle, When to switch's intro line, the engine line under every Threats, When to switch
+    and Key wins row, Alternatives' "Instead of" lines, the grid legend; also the move counts
+    and reads, `.move-sub`, the move kind, the fit tag and "Opponent charged attack strategy").
+    That 12/13px pair is the class Build's final review raised as M10; it is not fixed page by
+    page, and it is carried to Open items in Build's own words;
+  - labels at 11px (`--fs-label` or a literal 11px): the role eyebrows, the type chips, the rank
+    tags, and the shield note under the Safe types ("* Low on health and close to your own
+    charged move? ...").
       So the page reads as four levels (heads, body, supporting, labels), but the sizes are
       more than four: 17, 15, 14, 13, 12 and 11px, the 14/13/12px spread being carried shared
-      markup that the app-wide `.meta` pass should settle. The exception: the battle score
-      itself, "88" in `03-team-detail`, is 40px/700 (`.score-num`), the page's one display
-      number, bigger than any heading on purpose because it is the headline Travis asked for
-      (score.battle, 2026-09-23). It is a level the four-level rule does not allow, named here for
-      Travis to keep or cut the way Build's 19px card name was.
+      markup that the app-wide `.meta` pass should settle. The exception: the battle number
+      itself, "88" in `03-team-detail`, is now 56px/700 (`.hero-num`, up from the first pass's
+      40px), the page's one display number, alone with no "/ 100", as Travis drew it: "it gives
+      you an idea between 3 A teams who has an edge" (2026-09-26). It is a level the four-level
+      rule does not allow, named here for Travis to keep or cut the way Build's 19px card name
+      was.
 - [x] one filled primary button: every capture shows exactly one `Button variant="primary"`
-      ("Take to battle") inside the score card, whether the team is recommended (`03-team-detail`)
+      ("Take to battle") under the hero card, whether the team is recommended (`03-team-detail`)
       or custom (`14-custom-team`, `14b-custom-unranked`, `14c-shared-team`); `analysis-confirm`
       adds the sheet's own primary ("Switch") and secondary ("Keep it"), a `ConfirmSheet` pattern
       already audited elsewhere, not a second page-level primary. `analysis-not-found`'s "Back to
@@ -162,16 +184,27 @@ after Build's Find best order (every captured custom team was analyzed in the or
       nothing on the page is a chip you tap. "+N more" among the Safe types used to be a bare
       button wrapping the rank-tag pill (`.mtag`), so a control looked exactly like "#9 charger"
       (final review I3). It is now the ui `Button`, variant text, with `aria-expanded` and the
-      labels "+N more" / "Show fewer", the same control as Matchups' "Show all": violet
+      labels "+N more" / "Show fewer", the same control as When to switch's "Show all": violet
       15px/600 text, no pill, on its own line under the chips with its full 44px height
       (`03-team-detail`, `14-custom-team`, `14c-shared-team`: "+1 more" under the Safe chips).
+      The factor bars are `role="meter"` elements, each named with its value ("Coverage 99 of
+      100") for a screen reader, with no hover, pointer or number on screen.
 - [x] the right header variant: every capture uses `Header variant="sub"`, Back on the left,
       Share (`ShareGlyph`, only when a team exists) and Settings `IconButton`s on the right, as on
       Build; `assertTitleCentred` confirms the title stays centred after Task 4's `.hdr-actions`
       inheritance from Build's own fix.
-- [x] rows align; gutters and the 8px base hold: the strip, the score card, the jump row, every
-      section head and each `ExpandRow` share the 20px gutter and the `--divider`/`--r-card`
-      pattern carried over from Teams and Build. Task 5's fix gives an open Pokémon row's body 12px
+- [x] rows align; gutters and the 8px base hold: the hero card, Take to battle, every section
+      head, the matchup rows and each `ExpandRow` share the 20px gutter and the
+      `--divider`/`--r-card` pattern carried over from Teams and Build. Inside the card, checked
+      by eye in all four full-page pairs: the factor bars are a two-column grid whose label column
+      is as wide as its longest label, so every track starts at one x and ends at the card's
+      inner edge (five tracks in `03-team-detail`, three in the custom captures); the strip is
+      three equal columns, and (fixed in this task, see Findings) each member is a subgrid over
+      the strip's token, name and role rows, so Melmetal's one-line name beside Shadow Greninja's
+      and Galarian Corsola's two lines no longer drops "Switch" a line above "Lead" and
+      "Closer". Long names wrap at word breaks with no ellipsis and nothing clipped; no "·"
+      starts a line anywhere on the page. Threats, When to switch and Key wins rows share one
+      grid (32px token, 10px gap, a divider above each). Task 5's fix gives an open Pokémon row's body 12px
       of top padding so its type chips no longer touch the row's own divider (visible in
       `03-team-detail`'s open Shadow Greninja row). The Assumptions card now has the same
       `--divider` border and `--r-card` radius as the `ExpandRow`s above it (Task 5), so it reads
@@ -185,11 +218,11 @@ after Build's Find best order (every captured custom team was analyzed in the or
       signed Teams and Build captures (matching page heights, per Task 5's report) and by
       `shadowToken.test.tsx`'s 23 cases (3 + 2 + 18: the audit marker and the wrapper box, the glow
       layers, 18 types x contrast). No CSS or component that draws a sprite changed on this branch.
-- [x] at most one line of text before the first result: under the strip, one line (structure `Term`
-      + "Demanding to play: why") sits above "Edit team," then the score card is the first result.
-      "Battle plan," "Matchups to remember" and "Pokémon details" each open directly on their
-      content (the collapsed Key win/Key threat pair; the first `ExpandRow`), with no extra
-      sentence above it. `analysis-not-found` has exactly the one line the state needs.
+- [x] at most one line of text before the first result: the hero card is the first thing under
+      the header, with no line above it. Threats, Pokémon details and Key wins open directly on
+      their rows; When to switch has its one intro line ("What beats your ... lead and who
+      answers it."), carried from before. `analysis-not-found` has exactly the one line the state
+      needs.
 - [x] light as readable as dark: every state above is a matched dark/light pair; `web:audit`'s
       per-theme contrast pass is clean on all six in both themes; the `ConfirmSheet` and `Empty`
       states read the same way in both (checked by eye in `analysis-confirm` and
@@ -198,39 +231,43 @@ after Build's Find best order (every captured custom team was analyzed in the or
 ## Functionality
 
 - [x] every "must keep" from the inventory entry, item by item:
-  - Per-Pokemon detail (role and order, types, meta rank tags, form notes, moves with counts and
+  - Per-Pokémon detail (role and order, types, meta rank tags, form notes, moves with counts and
     extra-damage/resisted reads, TM/Elite TM badges, shield and safe types, keep-shield advice,
     your IVs, level, IV rank, cost to build): all present in `03-team-detail`'s open Shadow
     Greninja row and reachable on the other two rows.
-  - Custom team rating card (fit and battle score, why, comparison with the best recommended team,
-    the order result, chosen moves, assumed IVs, the PvPoke-unranked note): between them
-    `14-custom-team`, `14b-custom-unranked` and `14c-shared-team` show every note but one, in the
-    order `ScoreCard.tsx` composes them (Task 2's report); `14-custom-team` has no unranked note
-    and `14b-custom-unranked` no chosen-moves note. The one not captured is the orders-tried
-    line ("pick3 tried all six orders. Best: ... Weakest: ..."), which appears only after Build's
-    Find best order; the ScoreCard test covers it, and (Ruling 3, as changed) a card with only
-    the picked order tried says the order once, in "Run it in this order: ..."
+  - Custom team rating (fit and battle score, why, comparison with the best recommended team,
+    the order result, chosen moves, assumed IVs, the PvPoke-unranked note): the number, fit and
+    bars sit in the hero card like any team's, the build cost in the card as "To build all
+    three"; the notes moved to the block under Take to battle. Between them `14-custom-team`,
+    `14b-custom-unranked` and `14c-shared-team` show every note but one, in the order
+    `ScoreCard.tsx` composes them; `14-custom-team` has no unranked note and
+    `14b-custom-unranked` no chosen-moves note. The one not captured is the orders-tried line
+    ("pick3 tried all six orders. Best: ... Weakest: ..."), which appears only after Build's Find
+    best order; the ScoreCard test covers it. "Run it in this order" is gone: the strip shows
+    the order the team runs in (spec, revised 2026-09-26).
   - Two team shapes (Balanced ABC tiles, ABB line panel): `WhyThisTeam.tsx` renders both branches
     unchanged from today's markup (Task 3); every capture here happens to land on Balanced ABC,
     since none of the enforced teams' fixtures produce an ABB line.
-  - When to switch, Key wins, Key threats, Why this team plus the score breakdown, Alternatives you
-    own: all present, folded into "Matchups to remember" (collapsed pair plus "Show all") and "Why
-    this team" (Task 3's `Matchups`/`WhyThisTeam` components), matching the intake's locked-in
-    split.
+  - When to switch, Key wins, Key threats, Why this team, Alternatives you own: all present, as
+    their own sections since the revision: Threats (the engine's key threats as rows, then the
+    count of the rest of the meta that beats the team), When to switch (without the opponents
+    already under Threats), Key wins as rows after Pokémon details, Why this team without the
+    written score breakdown, which the factor bars replace.
   - The Assumptions block (product rule: every result carries its assumptions): open in
     `03-team-detail`, showing Shields, Opponent meta, Opponent weights, IVs, Level cap, the
     matchup grid and "Show all 46 meta Pokémon," and the Total build line.
   - Share sends species and moves only: unchanged `ShareGlyph`/share logic (Task 4); no CSP or
     payload change on this branch.
-- [x] every control does what its label says: the strip opens a row and scrolls to it without
-      closing another (`teamDetail.test.tsx`'s strip test, five assertions: row 2 opens, row 1 and
-      3 keep their state, `scrollIntoView` ran on `#pokemon-1`, a second tap keeps it open; and
-      the browser check above, which measures the opened row landing 7.9px under the header);
-      "+N more" / "Show fewer" opens one row's Safe list only (`analysisComponents.test.tsx`); the
-      jump row scrolls its own section under the header (the browser check above); "Show all"
-      expands Matchups' full lists and toggles its own `aria-expanded` without affecting the other
-      sections; "Edit team" loads the three picks into Build (`teamDetail.test.tsx`'s "Edit team
-      loads the three into Build"); Take to battle starts, joins or asks to switch a set correctly
+- [x] every control does what its label says: a strip member in the hero card opens its row and
+      scrolls to it without closing another (`teamDetail.test.tsx`'s strip test, five
+      assertions: row 2 opens, row 1 and 3 keep their state, `scrollIntoView` ran on
+      `#pokemon-1`, a second tap keeps it open; and the browser check above, which measures the
+      opened row landing 8.4px under the header); "+N more" / "Show fewer" opens one row's Safe
+      list only (`analysisComponents.test.tsx`); When to switch's "Show all" / "Show less" shows
+      up to eight rows and toggles its own `aria-expanded`; the Edit pencil loads the three picks
+      into Build (`teamDetail.test.tsx`'s "Edit team loads the three into Build",
+      `analysisComponents.test.tsx`'s "the pencil edits and a strip tap shows that Pokémon", and
+      the browser step above); Take to battle starts, joins or asks to switch a set correctly
       in all three cases (Task 4's tests 6-8, plus the same-team-running case Task 4's fix round
       added).
 - [x] back returns to the origin with filters and scroll, for Team Analysis: `back(fallback)`
@@ -245,29 +282,64 @@ after Build's Find best order (every captured custom team was analyzed in the or
       Build) and `history.test.ts`'s `replaceEntry` case all cover it.
 - [ ] input layout rule: not applicable. Team Analysis has no text input.
 - [x] icon buttons named; focus visible: Share carries the label "Share this team," Settings
-      "Settings" (the `IconButton`s in `TeamDetail.tsx`'s own header); the jump row is a `nav`
-      labeled "Jump to" with four named text `Button`s; the strip members and the "+N more"
-      toggle are named buttons, not bare icons; the shared `Button`/`IconButton` focus-visible
+      "Settings" (the `IconButton`s in `TeamDetail.tsx`'s own header); the hero card's pencil is
+      an `IconButton` labeled "Edit team"; each factor bar is a meter named with its value; the
+      strip members and the "+N more" toggle are named buttons, not bare icons; the shared
+      `Button`/`IconButton` focus-visible
       outline is the one audited on other pages (gallery record), unchanged here.
-- [x] product rules: assumptions shown (the Assumptions block; the rating card's hypothetical-IV,
-      unranked and shared-link notes); collection stays on the device (Team Analysis makes no
+- [x] product rules: assumptions shown (the Assumptions block; the hypothetical-IV, unranked and
+      shared-link notes under Take to battle); collection stays on the device (Team Analysis makes no
       request that carries collection data; Share sends species and moves only, unchanged CSP);
       sharing copy not applicable (no sharing toggle lives on this screen; the "shared" word here
       means a team link, not the battle-log sharing setting).
-- [x] tests cover the new behavior: `apps/web/test/analysisComponents.test.tsx` (ScoreCard with
-      one order line or the tried-orders line, BattlePlan, Matchups with its "Key win"/"Key
-      threat" heads and the no-wins line, PokemonDetails with "+N more" as a text Button,
-      WhyThisTeam's breakdown for a recommended team and for a hand-built one),
-      `apps/web/test/teamDetail.test.tsx` (the screen: not-found after a run, Loading then the
-      team on a fresh load, the failed run with Try again and no loop, headline, jumps, strip,
-      Take to battle in all three running-set cases, Edit team, Back with and without history,
-      the team-link describe block, the rounded score breakdown, the custom breakdown's build
-      cost, the reduced-motion jump), `apps/web/test/history.test.ts` (`replaceEntry`),
-      `apps/web/test/format.test.ts` (`costParts`), `apps/web/test/shadowToken.test.tsx` (the
-      token-wrapper alignment fix), `packages/engine/test/analyze.test.ts` (Ruling 1's
-      battle-first order sort).
+- [x] tests cover the new behavior: `apps/web/test/analysisComponents.test.tsx` (the hero card:
+      the number alone, the structure, the fit and five bars, each bar's rounded value and the
+      difficulty line, a custom team's three bars and "To build all three", the pencil and a
+      strip tap, Take to battle under the card, the custom notes and the tried-orders line;
+      Threats: rows, the "and N more" count with "beats" for one, the nothing-beats-all-three
+      sentence and no count; When to switch: no opponent repeated from Threats, five then Show
+      all up to eight, both empty sentences, the engine's own line; Key wins as rows and the
+      no-wins line; PokemonDetails with "+N more" as a text Button; WhyThisTeam with no numeric
+      breakdown for either kind of team), `apps/web/test/teamDetail.test.tsx` (the screen:
+      not-found after a run, Loading then the team on a fresh load, the failed run with Try again
+      and no loop, the battle headline, Threats then When to switch then Pokémon details with no
+      Battle plan or jump row, the strip, Take to battle in all three running-set cases, Edit
+      team, Back with and without history, the team-link describe block),
+      `apps/web/test/teamComponents.test.tsx` (the Teams row's number line),
+      `apps/web/test/history.test.ts` (`replaceEntry`), `apps/web/test/format.test.ts`
+      (`costParts`), `apps/web/test/shadowToken.test.tsx` (the token-wrapper alignment fix),
+      `packages/engine/test/analyze.test.ts` (Ruling 1's battle-first order sort, and a
+      switch-plan line never starting with the opponent's own name).
 
-## The plan's rulings, with their costs
+## The revision's rulings, with their costs (plan `2026-09-26-analysis-revision.md`)
+
+1. **Bar labels:** Coverage, Consistency, Safety, Affordable (the cost factor; full means cheap),
+   Accessibility (fewer power-ups is higher). No numbers on the bars; each bar's accessible name
+   carries its value ("Coverage 99 of 100"). [Cost if wrong: labels.] `ScoreCard.tsx`; the
+   hero-card tests pin the five labels and the names. `03-team-detail` shows Affordable empty:
+   the most expensive of the teams pick3 simulated, the same fact the first pass's "cost (0 of
+   100 ...)" sentence spelled out.
+2. **"and N more beat this team":** N is the meta group Pokémon that beat the whole team, minus
+   the listed threats among them; shown only when N > 0. [Cost if wrong: one count.] `Threats`
+   in `Threats.tsx`; `14-custom-team` and `14c-shared-team` read "and 1 more beats this team"
+   (singular, fixed in this task), `14b-custom-unranked` "and 2 more beat this team",
+   `03-team-detail` no line (nothing beyond its one listed threat beats all three).
+3. **When to switch** drops opponents already listed under Threats, shows five, "Show all" up to
+   eight. [Cost if wrong: numbers.] `03-team-detail`'s list starts at Tinkaton, not at Hisuian
+   Electrode, which heads its Threats.
+4. **Strip names wrap** to two lines (no ellipsis) inside the card. [Cost if wrong: CSS.] Shadow
+   Greninja and Galarian Corsola wrap in `03-team-detail` and `analysis-confirm`, whole words, no
+   ellipsis, no overflow, the roles on one line under them.
+5. **`.custom-note`** moves to the notes block under Take to battle (the capture script reads it).
+   [Cost if wrong: selector.] The three custom capture steps read their notes from it.
+
+## The first pass's rulings, with their costs
+
+Rulings 3 ("Run it in this order"), 4 (the strip's supporting line), 5 (the jump buttons) and 6
+(the written score breakdown) below are superseded by the 2026-09-26 revision, which removed all
+four; they stay here as the record of what the first pass shipped. Ruling 2's "Edit team is a
+separate labeled text action under the strip" is now the pencil in the hero card; its Back rule
+stands.
 
 1. **Tried orders sort by battle strength**, ties by total (`compareTeamScores`), so "pick3 tried
    all six orders. Best: ..." and Build's Find best order pick the strongest order, matching the
@@ -343,10 +415,15 @@ after Build's Find best order (every captured custom team was analyzed in the or
 | Final review I1: a strip tap scrolled its Pokémon row under the sticky header (the row wrapper had no scroll margin), and this record credited a browser check that only covered the jump buttons. | The wrapper is `.pd-row` and shares the jump headings' derived `scroll-margin-top` (`.analysis-section, .pd-row`); `screens.mjs` taps the second strip member and requires `#pokemon-1` 0 to 24px under the header and open (it failed at -0.1px before the fix, lands 7.9px after). | `2bbd3ba` |
 | Final review I2: a reload or pasted `#/teams/<id>` showed a false "not in the current results" that never cleared; only Teams ran the recommendation, and the spec's shared Loading state was not built. | TeamDetail runs the recommendation with Teams' own guard and shows the shared `Loading` (through `Progress`) while game data, the saved collection or the run is pending, or a custom analysis is running; a failed run shows `ErrorState` with Try again and never reruns by itself. `Progress` gains a "boot" label. Tests: Loading then the team with no not-found in between, not-found after a run, the error once and Try again; `screens.mjs` reloads the analysis for real and requires the score card (it failed with the not-found line before the fix). | `07c3f91` |
 | Final review I3: "+N more" was the read-only rank-tag pill (`.mtag`) inside a bare button, so a control looked like a label. | The ui `Button`, variant text, `aria-expanded`, "+N more" / "Show fewer", like Matchups' "Show all"; `.more-chip` rules deleted; `.safe-types` keeps it on its own line with no side padding. Test asserts the text-button class, no `.mtag`, `aria-expanded` both ways; `screens.mjs` finds it by text. | `ba5894e` |
-| Final review I4 and M6, record claims: the text-levels tick left out the 40px score and the 12/13/11px sizes; the strip-tap claim, the chips/tags tick, Ruling 1's wording, the shadowToken count (23, not 22), where the Share and Settings labels live, "every one of these notes at once", and the missing `Button` `ariaExpanded` and closed Build open item under visible changes. | The text-levels tick names every size and the 40px score as a display exception for Travis; the `.meta` 12px deferral is carried to Open items in Build's words; every other claim corrected in place. | this record's commit |
+| Final review I4 and M6, record claims: the text-levels tick left out the 40px score and the 12/13/11px sizes; the strip-tap claim, the chips/tags tick, Ruling 1's wording, the shadowToken count (23, not 22), where the Share and Settings labels live, "every one of these notes at once", and the missing `Button` `ariaExpanded` and closed Build open item under visible changes. | The text-levels tick names every size and the 40px score as a display exception for Travis; the `.meta` 12px deferral is carried to Open items in Build's words; every other claim corrected in place. | `ae75ba6` |
 | Final review flags, ruled by the controller: Ruling 3 ("Run in the order you picked." repeated the order line) and Ruling 6 ("cost (0)" read as free). | See Rulings 3 and 6 above. | `a3636e6` |
 | Final review M1, M2, M3, M4, M5, M7. M1: `.custom-note`'s left bar never drew (overridden by `.score-card`'s border). M2: "Wins" (plural) over one card, "Threat" (singular), and nothing under "Wins"/"Key wins" when the engine returns no key wins. M3: "Your Pokémon" over rows that say "Not in your collection". M4: 17px and 11px literals where tokens exist. M5: `.mini`'s fixed widths from the retired scroll rows and a stale comment. M7: violet on read-only things. | M1: rule deleted, class kept as a hook. M2: "Key win"/"Key threat" and a muted no-wins line, collapsed and expanded (two tests). M3: "Pokémon details". M4: `--fs-section`, `--fs-label`. M5: widths removed from `.mini` and `.mini.threat`, the overrides' width lines and the comment gone. M7: plan rail `--divider`, plan titles `--muted`, keep-shield line plain text; the carried violet rank tags, role eyebrow and win cells are named in the colors tick. | `4cf5108` |
 | Re-review R1: cost is normalized across the teams scored in the same run, which for a custom team is only its own orders, so every custom team read "cost (100 of 100, higher is cheaper)". | A recommended team's line says cost is "against the other teams pick3 simulated from your collection"; a custom team's line drops cost, accessibility and the total and ends "To build all three: <costLine>." (see Ruling 6). Tests for both sentences. | `e430c13` |
+| **The revision (Travis, 2026-09-26), after using the shipped page on his phone:** "the battle plan is always the same" across teams; the jump links "scroll off the page"; Edit team takes a whole row; "Key threats is the #1 thing I care about. Then when to switch." He drew the hero card; the number stays the headline ("it gives you an idea between 3 A teams who has an edge"), with no "/ 100". | The hero card (`ScoreCard.tsx`): the number alone, the structure `Term` and fit tag beside it, the Edit pencil, the strip moved into the card with names wrapping, the difficulty line, read-only factor bars (five for a recommended team; three and "To build all three" for a custom one). Take to battle under the card, a custom team's notes under that. Threats first (rows plus "and N more"), then When to switch without Threats' opponents, then Pokémon details, Key wins as rows, Why this team, Alternatives, Assumptions. Removed: the battle plan section (`BattlePlan.tsx` and its `.plan-*` CSS), the jump row (`.analysis-jumps`) and its browser check, `.analysis-edit`, "Run it in this order", the coverage sentence and the written score breakdown (`WhyThisTeam`), the collapsed `Matchups` pair and its `.matchup-*`/`.mini` CSS. | `10b3478`, `d5673ed`, `94fc75b` |
+| Revision, Task 1 review: `ROLE_SHORT` was defined twice (`ScoreCard.tsx`, `TeamDetail.tsx`); `.hero-bar-label` had no rule and rendered in the body type. | `ROLE_SHORT` lives once in `components.tsx` beside `ROLE_TEXT`; the bar labels take `--fs-support` and `--muted`. | `e05575f` |
+| Revision, Task 2 review: When to switch rebuilt "Switch to X, wins" by hand instead of printing the engine's line (invented matchup copy); its "nothing beats your lead" sentence checked the Threats-filtered list, so a lead whose every threat sat under Threats was told nothing threatens it. Then the engine's own line started with the opponent's name ("Tinkaton: switch to Melmetal, wins."), which every row already shows beside it. | The rows reuse Threats' row and print `SwitchAdvice.line`; the raw plan decides the empty sentence, and a fully covered plan says "Everything that beats your lead is listed under Threats."; `switchPlanFor` starts both lines with the verb ("Switch to Melmetal, wins." / "Nobody on the team beats it. ..."), pinned in `analyze.test.ts`. | `3435373`, `d378465`, `94fc75b` |
+| Revision, Task 4, the capture script: `screens.mjs` still clicked `.analysis-edit .ui-btn-text` and `.score-card .ui-btn-primary` and ran the jump-button check (with a stale "Matchups" label), none of which exist after the revision. | The jump check is deleted; the pencil is `.score-card button[aria-label="Edit team"]`; Take to battle is `.score-card + .ui-btn-primary`; the strip-tap check stays and taps inside the card (8.4px under the header); `.custom-note` is read from the notes block. | this record's commit |
+| Revision, Task 4, seen in the captures (both themes): (1) in the strip, Melmetal's one-line name beside two two-line names left "Switch" a line above "Lead" and "Closer"; (2) the Pokémon section was titled "Your Pokémon" again, over rows that say "Not in your collection" on every custom capture, the first pass's M3 finding reintroduced (the spec calls it "Pokémon details"); (3) "and 1 more beat this team" on `14-custom-team` and `14c-shared-team`; (4) on Teams, the number made the row line longer, and "251,420 Stardust" broke between the number and its unit on the Zweilous row. | (1) Each strip member spans the strip's three rows as a CSS subgrid, so names align at the top and the roles share one line; (2) "Pokémon details", with the order test following it; (3) "beats" when N is 1, a new Threats test; (4) the row's Stardust uses `format.ts`'s `amount()` (now exported), the non-breaking join every cost line already used, with the row test requiring it. | this record's commit |
 
 ## Visible changes outside Team Analysis
 
@@ -365,9 +442,9 @@ after Build's Find best order (every captured custom team was analyzed in the or
   `store.tsx`'s `navigate(route, { replace: true })`), used only while `analyze()` hands off from
   the `shared` route. This closes the system back-gesture loop through `#/t/...` for every shared
   link, not just the ones that reach Team Analysis through this task's own Back button.
-- **Jump scrolls are instant under `prefers-reduced-motion: reduce`.** `scrollToId`'s new branch is
-  a general helper, not Team Analysis-specific; nothing else on this branch calls it yet, but any
-  future caller inherits the reduced-motion behavior for free.
+- **Scrolls to a row are instant under `prefers-reduced-motion: reduce`.** `scrollToId`'s branch
+  is a general helper, not Team Analysis-specific; since the revision its one caller is the
+  strip tap, and any future caller inherits the reduced-motion behavior for free.
 - **`scripts/audit.mjs`'s layer comparison and its new self-checks.** The "partially obscured" fix
   (comparing only the layers that actually paint) and the graphics/page-edge tightening
   (`cutAtOpaque` refusing to skip past an image or SVG) apply to every future audited page on both
@@ -380,8 +457,9 @@ after Build's Find best order (every captured custom team was analyzed in the or
 - **`ShareButton` is gone; `ShareGlyph` plus the shared `IconButton` renders Share everywhere it
   used to.** A repo-wide grep in Task 4 found no other caller before it was deleted.
 - **`Button` in `packages/ui` gained an optional `ariaExpanded` prop** (Task 3, for Matchups'
-  "Show all"; now also the Assumptions grid's "Show all 46 meta Pokémon" and "+N more"). It only
-  adds `aria-expanded` when a caller passes it, and only Team Analysis's three toggles do;
+  "Show all", now When to switch's; also the Assumptions grid's "Show all 46 meta Pokémon" and
+  "+N more"). It only adds `aria-expanded` when a caller passes it, and only Team Analysis's
+  three toggles do;
   `apps/meta`, which imports `Button`, passes it nowhere, so no other page or site changes.
 - **`Progress` has a label for the "boot" stage, "Loading game data".** Teams already passed
   `stage="boot"` while game data loads and printed the raw word "boot"; the fix wave's Team
@@ -391,9 +469,16 @@ after Build's Find best order (every captured custom team was analyzed in the or
   `PokemonDetails`' To-build line now joins with `SEP` from `format.ts`, which keeps each dot
   with the word before it, and the Assumptions lines do the same (the SEP test in
   `teamDetail.test.tsx`).
-- **`.mini` lost its fixed 150px/170px widths** (final review M5). Its only remaining user is
-  this page's Matchups, whose overrides already set the width, so nothing outside Team Analysis
-  moves.
+- **`.mini` lost its fixed 150px/170px widths** (final review M5), and with the revision it is
+  gone: its last user, this page's Matchups, was deleted, so nothing outside Team Analysis moves.
+- **Teams rows lead with the number** ("88 · Strong fit · Demanding · 805,320 Stardust"), with
+  the Stardust amount held to its unit; recorded as an "After sign-off" row in `teams.md` with
+  its re-converted captures.
+- **The engine's switch-plan line no longer repeats the opponent's name** (`switchPlanFor` in
+  `packages/engine/src/explain/explain.ts`). Team Analysis's When to switch is the line's only
+  renderer (a repo-wide grep for `switchPlan` finds no other), so nothing else reads differently.
+- **`amount()` in `format.ts` is exported** for the Teams row; its output and its other callers
+  (`costParts`) are unchanged.
 
 ## Open items for Travis (not fixed on this branch)
 
@@ -404,20 +489,36 @@ after Build's Find best order (every captured custom team was analyzed in the or
   - The Assumptions block says "48 Pokémon" (`a.metaSize`) a few lines above "Show all 46 meta
     Pokémon" (the deduplicated count); both numbers are real, just two different counts of the
     same meta group.
-  - On `14c-shared-team`, the score card reads "Azumarill ran the moves you chose," but the
-    sender of the link chose them, not the person viewing this capture. ("Run in the order you
-    picked," the other half of this note, is gone with Ruling 3's change.)
-- **The battle score's 40px size (final review I4)**: the one display exception on this page,
-  see the text-levels tick under Aesthetics. Keep it, or bring it down to a heading size.
+  - On `14c-shared-team`, the notes under Take to battle read "Azumarill ran the moves you
+    chose," but the sender of the link chose them, not the person viewing this capture. ("Run
+    in the order you picked," the other half of this note, is gone with Ruling 3's change.)
+- **The battle number's 56px size (final review I4, now bigger)**: the one display exception on
+  this page, see the text-levels tick under Aesthetics. The revision took it from 40px to 56px
+  as Travis drew the hero card. Keep it, or bring it down.
 - **Team Analysis's supporting text stays at 12px (final review I4, as Build's M10), deferred.**
   The foundation spec ("Type") moves `.meta` from 12px to `--fs-support` (13px) when its page is
-  redesigned. Team Analysis's score card notes, strip line, score breakdown, Alternatives'
-  "Instead of" lines and grid legend are all still `.meta` at 12px, the same as on the signed
-  Teams and Build pages. The 13px supporting size lands in one app-wide pass later, not page by
-  page, so Teams, Build and Team Analysis move together.
-- **The violet read-only elements carried over** (rank tags, the role eyebrow, the matchup grid's
-  win cells), named in the colors tick: an app-wide call for the first two, a one-rule change
-  for the third.
+  redesigned. Team Analysis's strip roles, difficulty line, "To build all three", notes under
+  Take to battle, the engine lines under each matchup row, Alternatives' "Instead of" lines
+  and grid legend are all still `.meta` at 12px, the same as on the signed Teams and Build
+  pages, while the bar labels and strip names beside them are 13px. The 13px supporting size
+  lands in one app-wide pass later, not page by page, so Teams, Build and Team Analysis move
+  together.
+- **The violet read-only elements** (rank tags, the role eyebrow, the matchup grid's win cells,
+  carried over; the factor bars' `--accent` fill, new with the revision and matching the
+  reference renders), named in the colors tick: an app-wide call for the first two, a one-rule
+  change for each of the other two (the bars could fill with `--muted` or `--text` instead).
+- **"and N more beat this team" does not point to the matchup grid.** The spec's Threats bullet
+  says the count points to it; the plan's Ruling 2 specified only the count, and that is what
+  shipped. The full list is one tap away under Assumptions ("Show all 46 meta Pokémon"). Add a
+  link or a "see the matchup grid" clause, or leave it.
+- **Section order differs from the spec's list.** The spec lists Why this team before Pokémon
+  details and Key wins; the plan ordered the page Threats, When to switch, Pokémon details, Key
+  wins, Why this team, and that is what shipped (the order test pins it). Say which you want.
+- **Teams' open row has the strip misalignment this task fixed here.** `TeamCardBody` on the
+  signed Teams page (`02-teams`, `teams-cup`, `19-teams-ultra`) still drops "SAFE SWITCH" a line
+  above "LEAD" and "CLOSER" when only the middle name fits on one line. Not touched: Teams is
+  signed, and the revision's only Teams change is the number on the row. The same subgrid rule
+  would fix it.
 
 The spacing around "+N more" that Task 5's review left open here is settled: the toggle is now
 the standard text `Button`, the same 44px control as "Show all", so the air around it is that

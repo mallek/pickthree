@@ -227,13 +227,21 @@ describe('Threats', () => {
     expect(screen.getByText('and 3 more beat this team')).toBeInTheDocument();
   });
 
+  it('says "beats" when one more beats the team', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [threat('a', 'A line.')];
+    team.score.uncoveredOpponents = ['a', 'b'];
+    wrap(<Threats team={team} />);
+    expect(screen.getByText('and 1 more beats this team')).toBeInTheDocument();
+  });
+
   it('says so when nothing beats all three', () => {
     const team = makeTeam();
     team.explanation.keyThreats = [];
     team.score.uncoveredOpponents = [];
     wrap(<Threats team={team} />);
     expect(screen.getByText(/Nothing in the meta group beats all three/)).toBeInTheDocument();
-    expect(screen.queryByText(/more beat this team/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/more beats? this team/)).not.toBeInTheDocument();
   });
 });
 

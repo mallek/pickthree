@@ -48,7 +48,7 @@ export function num(n: number): string {
 export const SEP = '\u00a0· ';
 
 /** A number and its unit held together with non-breaking spaces: "88 XL Candy" never splits. */
-function amount(n: string, unit: string): string {
+export function amount(n: string, unit: string): string {
   return `${n}\u00a0${unit.replaceAll(' ', '\u00a0')}`;
 }
 

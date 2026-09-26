@@ -51,7 +51,7 @@ describe('TeamRowSummary', () => {
   it('names the three Pokémon and says the number, fit, difficulty and Stardust in one line', async () => {
     await mount(<TeamRowSummary team={makeTeam()} />);
     expect(
-      screen.getByText(/^88\u00a0· Strong fit\u00a0· Moderate\u00a0· 263,900 Stardust$/, {
+      screen.getByText(/^88\u00a0· Strong fit\u00a0· Moderate\u00a0· 263,900\u00a0Stardust$/, {
         normalizer: getDefaultNormalizer({ collapseWhitespace: false }),
       }),
     ).toBeInTheDocument();

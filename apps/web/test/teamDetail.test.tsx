@@ -276,7 +276,7 @@ describe('Team Analysis', () => {
     expect(within(card).getByRole('button', { name: 'Edit team' })).toBeInTheDocument();
   });
 
-  it('leads with Threats, then When to switch, then Your Pokémon, with no Battle plan or jump row', async () => {
+  it('leads with Threats, then When to switch, then Pokémon details, with no Battle plan or jump row', async () => {
     await mountRecommended('a');
     expect(screen.queryByText('Battle plan')).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Jump to' })).not.toBeInTheDocument();
@@ -285,7 +285,7 @@ describe('Team Analysis', () => {
     );
     const threats = headings.indexOf('Threats');
     const switchTo = headings.indexOf('When to switch');
-    const pokemon = headings.indexOf('Your Pokémon');
+    const pokemon = headings.indexOf('Pokémon details');
     expect(threats).toBeGreaterThanOrEqual(0);
     expect(switchTo).toBeGreaterThan(threats);
     expect(pokemon).toBeGreaterThan(switchTo);

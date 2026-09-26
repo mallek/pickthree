@@ -1997,18 +1997,23 @@ textarea.paste {
   font-size: var(--fs-section);
   font-weight: 500;
 }
-/* Team Analysis: the three members at a glance, each a button that opens its details row. */
+/* Team Analysis: the three members at a glance, each a button that opens its details row. Each
+   member spans the strip's three rows (token, name, role) as a subgrid, so a one-line name beside
+   a two-line one keeps every role on the same line. */
 .analysis-strip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-rows: auto auto auto;
+  column-gap: 8px;
+  row-gap: 3px;
 }
 .analysis-strip-member {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  justify-items: center;
+  align-items: start;
   text-align: center;
-  gap: 3px;
   min-width: 0;
   min-height: 44px;
   padding: 4px 0;

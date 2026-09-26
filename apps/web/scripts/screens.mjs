@@ -459,67 +459,10 @@ if (!moreHits || !moreHits.owns || !moreHits.clear) {
 }
 await page.evaluate(() => window.scrollTo(0, 0));
 
-console.log('team analysis jumps land under the sticky header');
-for (const [label, id] of [
-  ['Battle plan', 'plan'],
-  ['Matchups', 'matchups'],
-  ['Pokémon', 'pokemon'],
-  ['Details', 'details'],
-]) {
-  // From the top of the page each time: the heading starts well below the header (below the
-  // fold for all but Battle plan), so landing just under the header proves the jump moved it.
-  await page.evaluate(() => window.scrollTo(0, 0));
-  const where = (target) =>
-    page.evaluate((t) => {
-      const heading = document.getElementById(t);
-      const hdr = document.querySelector('.hdr');
-      if (!heading || !hdr) {
-        return null;
-      }
-      return { top: heading.getBoundingClientRect().top, hdr: hdr.getBoundingClientRect().bottom };
-    }, target);
-  const before = await where(id);
-  const clicked = await page.$$eval(
-    '.analysis-jumps .ui-btn',
-    (els, l) => {
-      const b = els.find((e) => e.textContent?.trim() === l);
-      b?.click();
-      return Boolean(b);
-    },
-    label,
-  );
-  if (!clicked) {
-    throw new Error(`jump row: no "${label}" button`);
-  }
-  // Until the heading stops moving (the automation asks for reduced motion, so the jump should be
-  // instant, but a smooth scroll would still settle here), for up to three seconds.
-  let landed = await where(id);
-  for (let i = 0; i < 30; i++) {
-    await new Promise((r) => setTimeout(r, 100));
-    const next = await where(id);
-    const settled = next && landed && Math.abs(next.top - landed.top) < 0.5;
-    landed = next;
-    if (settled) {
-      break;
-    }
-  }
-  // Just under the header: not behind it, not past a too-large scroll margin (about 8px today).
-  const gap = landed ? landed.top - landed.hdr : NaN;
-  if (!before || !landed || before.top - before.hdr <= 24 || !(gap >= 0 && gap <= 24)) {
-    throw new Error(
-      `jump to ${label}: heading from ${before?.top}px to ${landed?.top}px, header ends at ${landed?.hdr}px`,
-    );
-  }
-  console.log(
-    `  ${label}: from ${(before.top - before.hdr).toFixed(0)}px to ${gap.toFixed(1)}px under the header`,
-  );
-}
-await page.evaluate(() => window.scrollTo(0, 0));
-
 console.log('team analysis strip tap lands its row under the sticky header');
 {
-  // The second member's row starts closed and far below the fold; a tap opens it and brings its
-  // head (role and name) just under the header, measured the same way as the jumps.
+  // The second member's row starts closed and far below the fold; a tap on it in the hero card's
+  // strip opens the row and brings its head (role and name) just under the sticky header.
   const row = () =>
     page.evaluate(() => {
       const el = document.getElementById('pokemon-1');
@@ -592,7 +535,7 @@ if (!reloaded.card) {
 console.log('edit in build');
 // Edit team loads a recommended team into Build for edits. Through the DOM: the sticky header
 // sits under the update toast's spot, and a geometry click has missed here before.
-await page.$eval('.analysis-edit .ui-btn-text', (el) => el.click());
+await page.$eval('.score-card button[aria-label="Edit team"]', (el) => el.click());
 try {
   await page.waitForFunction(() => document.location.hash === '#/build', { timeout: 15_000 });
   await page.waitForFunction(() => document.querySelectorAll('.pick-card.filled').length === 3, {
@@ -609,12 +552,12 @@ try {
   throw e;
 }
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.score-card .ui-btn-primary', { timeout: 60_000 });
+await page.waitForSelector('.score-card + .ui-btn-primary', { timeout: 60_000 });
 
 console.log('take to battle');
 // The sample log has an open set with another team, so the switch-teams sheet opens. Keep it
 // first (the set stays, the analysis stays), then again and Switch.
-await page.click('.score-card .ui-btn-primary');
+await page.click('.score-card + .ui-btn-primary');
 await page.waitForSelector('.ui-confirm', { timeout: 10_000 }).catch(() => {
   throw new Error('take to battle: no switch-teams sheet opened over the running set');
 });
@@ -638,7 +581,7 @@ await page.waitForSelector('.ui-confirm', { hidden: true });
 if (!page.url().endsWith(teamHref)) {
   throw new Error(`Keep it left the analysis for ${page.url()}`);
 }
-await page.click('.score-card .ui-btn-primary');
+await page.click('.score-card + .ui-btn-primary');
 await page.waitForSelector('.ui-confirm', { timeout: 10_000 });
 if (!(await confirmButton('Switch'))) {
   throw new Error('switch-teams sheet: no "Switch" button');
