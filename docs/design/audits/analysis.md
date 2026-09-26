@@ -574,4 +574,5 @@ control's own, not a pill centred in a bigger box.
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-26 (reviewed the live revised page on his phone: "That looks much better").
+  Piece 2 (Teams, Build, Team Analysis) is signed.
