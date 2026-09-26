@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { communityCores, resetCommunityCache } from '../src/community.ts';
+import type { CommunityPairing } from '@pickthree/engine';
+import { communityCores, likelyTeammates, resetCommunityCache } from '../src/community.ts';
 import { DEFAULT_SETTINGS } from '../src/storage/db.ts';
 
 afterEach(() => {
@@ -28,5 +29,52 @@ describe('communityCores', () => {
     const spy = vi.spyOn(globalThis, 'fetch');
     expect(await communityCores(DEFAULT_SETTINGS, 'great', null)).toBeNull();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('likelyTeammates', () => {
+  it('ranks partners of the opponent by sightings, pairs and thirds', () => {
+    const cores: CommunityPairing[] = [
+      {
+        species: ['medicham', 'azumarill'],
+        thirds: [
+          { speciesId: 'galvantula', sightings: 5 },
+          { speciesId: 'skarmory', sightings: 2 },
+        ],
+      },
+      { species: ['medicham', 'skarmory'], thirds: [{ speciesId: 'azumarill', sightings: 1 }] },
+      { species: ['tinkaton', 'azumarill'], thirds: [{ speciesId: 'medicham', sightings: 9 }] },
+    ];
+    expect(likelyTeammates(cores, 'medicham', [])).toEqual(['azumarill', 'galvantula', 'skarmory']);
+  });
+
+  it('skips species already slotted and caps the list', () => {
+    const cores: CommunityPairing[] = [
+      {
+        species: ['medicham', 'azumarill'],
+        thirds: [
+          { speciesId: 'galvantula', sightings: 5 },
+          { speciesId: 'skarmory', sightings: 2 },
+        ],
+      },
+      { species: ['medicham', 'skarmory'], thirds: [{ speciesId: 'azumarill', sightings: 1 }] },
+      { species: ['tinkaton', 'azumarill'], thirds: [{ speciesId: 'medicham', sightings: 9 }] },
+    ];
+    expect(likelyTeammates(cores, 'medicham', ['azumarill'], 1)).toEqual(['galvantula']);
+  });
+
+  it('is empty for an opponent the board has never seen', () => {
+    const cores: CommunityPairing[] = [
+      {
+        species: ['medicham', 'azumarill'],
+        thirds: [
+          { speciesId: 'galvantula', sightings: 5 },
+          { speciesId: 'skarmory', sightings: 2 },
+        ],
+      },
+      { species: ['medicham', 'skarmory'], thirds: [{ speciesId: 'azumarill', sightings: 1 }] },
+      { species: ['tinkaton', 'azumarill'], thirds: [{ speciesId: 'medicham', sightings: 9 }] },
+    ];
+    expect(likelyTeammates(cores, 'snorlax', [])).toEqual([]);
   });
 });

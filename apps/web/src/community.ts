@@ -74,3 +74,56 @@ export async function communityCores(
     return null;
   }
 }
+
+/** Rank Pokemon most often seen on teams with a given opponent. */
+export function likelyTeammates(
+  cores: CommunityPairing[],
+  opponent: string,
+  exclude: readonly string[],
+  limit = 6,
+): string[] {
+  // Map of species -> score
+  const scores = new Map<string, number>();
+
+  for (const core of cores) {
+    // Check if opponent is in this core's pair
+    const hasOpponent = core.species.includes(opponent);
+    if (!hasOpponent) {
+      continue;
+    }
+
+    // Get the other member of the pair (if any)
+    const pairMember = core.species.find((s) => s !== opponent);
+
+    if (pairMember) {
+      // This core pairs the opponent with pairMember
+      // Add the sum of all thirds sightings to pairMember's score
+      const thirdsSum = core.thirds.reduce((sum, t) => sum + t.sightings, 0);
+      scores.set(pairMember, (scores.get(pairMember) ?? 0) + thirdsSum);
+    }
+
+    // Add sightings for species that appear as thirds in this core
+    for (const third of core.thirds) {
+      scores.set(third.speciesId, (scores.get(third.speciesId) ?? 0) + third.sightings);
+    }
+  }
+
+  // Remove opponent and excluded species
+  scores.delete(opponent);
+  for (const e of exclude) {
+    scores.delete(e);
+  }
+
+  // Sort by score descending, then by species id for stable order (ties)
+  const sorted = Array.from(scores.entries())
+    .sort(([aId, aScore], [bId, bScore]) => {
+      if (bScore !== aScore) {
+        return bScore - aScore;
+      }
+      return aId.localeCompare(bId);
+    })
+    .map(([id]) => id)
+    .slice(0, limit);
+
+  return sorted;
+}
