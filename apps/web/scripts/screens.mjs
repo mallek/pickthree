@@ -1023,14 +1023,29 @@ await page.reload({ waitUntil: 'networkidle0' });
 if (await page.evaluate(() => navigator.webdriver !== true)) {
   throw new Error('likely teammates: the automation flag did not come back after the reload');
 }
+// The reload dropped the recommendation from memory; Teams runs it again, so the custom-team
+// shots below still print "Your best recommended team rates ..." as a player's session would.
+await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
+await settled();
+
+/**
+ * Empties Build's three slots through each card's remove button. A tap that does not remove its
+ * card (the button covered, or drawn away from its card) fails the run instead of looping.
+ */
+const clearBuildPicks = async () => {
+  for (let taps = 0; await page.$('.pick-x'); taps++) {
+    if (taps >= 3) {
+      throw new Error('build: a remove tap did not remove its pick');
+    }
+    await page.click('.pick-x');
+    await new Promise((r) => setTimeout(r, 100));
+  }
+};
 
 console.log('suggest teammates around one pin');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-card');
-while (await page.$('.pick-x')) {
-  await page.click('.pick-x');
-  await new Promise((r) => setTimeout(r, 100));
-}
+await clearBuildPicks();
 await shot('build-empty', false);
 // The sub header lines up with the page under it: the back chevron's drawn left edge (its path,
 // not the svg box, which pads it) and the settings button's right edge sit on the league row's
@@ -1087,10 +1102,7 @@ console.log('build a team');
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-card');
 // Earlier steps may have left picks in Build; start from empty slots.
-while (await page.$('.pick-x')) {
-  await page.click('.pick-x');
-  await new Promise((r) => setTimeout(r, 100));
-}
+await clearBuildPicks();
 const buildQueries = [
   ['swampert', 'quagsire'],
   ['azu', 'azumarill'],
@@ -1285,10 +1297,7 @@ console.log('build from your own pokemon: the total to build');
 // Suggested grid (its "yours" tokens), so the cost line prints a real total.
 await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.pick-card');
-while (await page.$('.pick-x')) {
-  await page.click('.pick-x');
-  await new Promise((r) => setTimeout(r, 100));
-}
+await clearBuildPicks();
 const ownPicks = [];
 for (let i = 0; i < 3; i++) {
   await page.$eval('.pick-card.empty', (el) => el.click());

@@ -3018,10 +3018,14 @@ input[type='range'] {
   text-wrap: balance;
   line-height: 1.2;
 }
-/* Log a Battle's slots fill their column, so a two-line name has the room and the remove button
-   stays inside the slot. Scoped to the opponent slots: Build's pick cards use `.slot-wrap` too. */
-.opp-slots > .slot-wrap {
+/* Both users anchor an absolute child here: Log a Battle's slot remove (`.slot-x`) and Build's
+   remove-and-drag column (`.pick-side`). */
+.slot-wrap {
   position: relative;
+}
+/* Log a Battle's slots fill their column, so a two-line name has the room and the remove button
+   stays inside the slot. Scoped to the opponent slots, so Build's pick cards never take it. */
+.opp-slots > .slot-wrap {
   justify-self: stretch;
   min-width: 0;
 }
