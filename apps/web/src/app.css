@@ -2075,15 +2075,18 @@ textarea.paste {
 .analysis-jumps .ui-btn {
   padding-inline: 0;
 }
-/* A jumped-to heading lands under the sticky header, not behind it. The offset is the sub
-   header's own box (packages/ui/base.css `.hdr`): its top padding, one tap-tall row of back and
-   icon buttons, its bottom padding and border, then the page's own gap under it. Change it with
-   `.hdr`. */
+/* A jumped-to heading, or a Pokémon row a strip tap opens, lands under the sticky header, not
+   behind it. The offset is the sub header's own box (packages/ui/base.css `.hdr`): its top
+   padding, one tap-tall row of back and icon buttons, its bottom padding and border, then the
+   page's own gap under it. Change it with `.hdr`. */
+.analysis-section,
+.pd-row {
+  --hdr-box: calc(env(safe-area-inset-top, 0px) + 14px + var(--tap) + 8px + 1px);
+  scroll-margin-top: calc(var(--hdr-box) + var(--space));
+}
 .analysis-section {
   font-size: var(--fs-section);
   font-weight: 600;
-  --hdr-box: calc(env(safe-area-inset-top, 0px) + 14px + var(--tap) + 8px + 1px);
-  scroll-margin-top: calc(var(--hdr-box) + var(--space));
 }
 /* Team Analysis: a heading inside a section (Wins, Key threats, When to switch, Team structure),
    one step under the section's own heading. */

@@ -64,7 +64,7 @@ export function PokemonDetails({
         const detail = team.explanation.slotDetail[i]!;
         const shadowFlag = c.build.shadow ? 'Shadow' : sp.lucky ? 'Lucky' : null;
         return (
-          <div id={`pokemon-${i}`} key={c.build.specimenId}>
+          <div id={`pokemon-${i}`} className="pd-row" key={c.build.specimenId}>
             <ExpandRow
               open={open[i] ?? false}
               onToggle={() => onToggle(i)}

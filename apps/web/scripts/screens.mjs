@@ -514,6 +514,59 @@ for (const [label, id] of [
 }
 await page.evaluate(() => window.scrollTo(0, 0));
 
+console.log('team analysis strip tap lands its row under the sticky header');
+{
+  // The second member's row starts closed and far below the fold; a tap opens it and brings its
+  // head (role and name) just under the header, measured the same way as the jumps.
+  const row = () =>
+    page.evaluate(() => {
+      const el = document.getElementById('pokemon-1');
+      const hdr = document.querySelector('.hdr');
+      if (!el || !hdr) {
+        return null;
+      }
+      return {
+        top: el.getBoundingClientRect().top,
+        hdr: hdr.getBoundingClientRect().bottom,
+        open: el.querySelector('.ui-expand-head')?.getAttribute('aria-expanded') ?? null,
+      };
+    });
+  const before = await row();
+  const tapped = await page.$$eval('.analysis-strip-member', (els) => {
+    els[1]?.click();
+    return els.length;
+  });
+  if (tapped < 2) {
+    throw new Error(`strip: ${tapped} members, no second one to tap`);
+  }
+  let landed = await row();
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+    const next = await row();
+    const settled = next && landed && Math.abs(next.top - landed.top) < 0.5;
+    landed = next;
+    if (settled) {
+      break;
+    }
+  }
+  const gap = landed ? landed.top - landed.hdr : NaN;
+  if (
+    !before ||
+    !landed ||
+    before.top - before.hdr <= 24 ||
+    !(gap >= 0 && gap <= 24) ||
+    landed.open !== 'true'
+  ) {
+    throw new Error(
+      `strip tap: row from ${before?.top}px to ${landed?.top}px (open ${landed?.open}), header ends at ${landed?.hdr}px`,
+    );
+  }
+  console.log(
+    `  second member: from ${(before.top - before.hdr).toFixed(0)}px to ${gap.toFixed(1)}px under the header, open`,
+  );
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+
 console.log('edit in build');
 // Edit team loads a recommended team into Build for edits. Through the DOM: the sticky header
 // sits under the update toast's spot, and a geometry click has missed here before.
