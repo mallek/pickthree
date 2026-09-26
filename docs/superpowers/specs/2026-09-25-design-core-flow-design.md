@@ -157,9 +157,12 @@ The page, top to bottom:
 - **Threats:** `keyThreats` (the engine keeps at most three) as compact rows (token, name, types,
   rank, the engine's line), unanswered first; then "and N more beat this team" when more of the
   meta beats the whole team, pointing to the matchup grid. Nothing in the meta beats all three:
-  today's sentence.
+  today's sentence. The engine keeps the unanswered ones first (best rating under 450,
+  `CLOSE_RATING`), then the close ones, meta rank within each.
 - **When to switch:** `switchPlan` minus any opponent already listed under Threats, the top five,
-  "Show all" up to eight, today's copy and intro line.
+  "Show all" up to eight, today's intro line. A lead loss nobody wins reads "Close; shields decide
+  it. Best try: X." at 450 or more, today's "Nobody on the team beats it..." below; the plan lists
+  the unanswered, then the close, then the switchable ones, meta rank within each.
 - Removed: the battle plan section, the jump buttons, "Run it in this order" (the strip shows the
   order), the coverage sentence and the written score breakdown (the bars replace them).
 - After When to switch, in this order: Pokémon details, Key wins, Why this team, Alternatives you
