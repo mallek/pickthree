@@ -2209,9 +2209,10 @@ textarea.paste {
   gap: 4px;
   margin-bottom: 14px;
 }
-/* A Pokémon's safe types: the chips, then "+N more" (a text Button, like Matchups' "Show all")
-   on its own line under them, so its 44px target has its own space and covers none of the chips.
-   No side padding, so its text starts in line with the chips. */
+/* A Pokémon's safe types: the chips, then "+N more" (a text Button, the same expand-in-place
+   pattern as When to switch's "Show all") on its own line under them, so its 44px target has its
+   own space and covers none of the chips. No side padding, so its text starts in line with the
+   chips. */
 .safe-types {
   display: flex;
   flex-direction: column;

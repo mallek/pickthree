@@ -22,9 +22,15 @@ function threat(opponent: string, line: string): KeyMatchup {
   return { ...makeTeam().explanation.keyThreats[0]!, opponent, opponentName: opponent, line };
 }
 
-/** A SwitchAdvice built from makeTeam's own first switch entry, with a fresh opponent. */
-function switchRow(opponent: string): SwitchAdvice {
-  return { ...makeTeam().explanation.switchPlan[0]!, opponent, opponentName: opponent };
+/** A SwitchAdvice built from makeTeam's own first switch entry, with a fresh opponent and, when
+ * given, a fresh engine line. */
+function switchRow(opponent: string, line?: string): SwitchAdvice {
+  return {
+    ...makeTeam().explanation.switchPlan[0]!,
+    opponent,
+    opponentName: opponent,
+    ...(line === undefined ? {} : { line }),
+  };
 }
 
 describe('ScoreCard, the hero card', () => {
@@ -287,6 +293,27 @@ describe('SwitchList', () => {
     expect(
       screen.getByText('Nothing in the meta group beats your lead in a 1-shield fight.'),
     ).toBeInTheDocument();
+  });
+
+  it('says everything is listed under Threats when the raw plan is fully covered there', () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [threat('o1', 'x')];
+    team.explanation.switchPlan = [switchRow('o1')];
+    wrap(<SwitchList team={team} leadName="Tinkaton" />);
+    expect(
+      screen.getByText('Everything that beats your lead is listed under Threats.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Nothing in the meta group beats your lead in a 1-shield fight.'),
+    ).not.toBeInTheDocument();
+  });
+
+  it("prints the engine's own line, not a recomputed one", () => {
+    const team = makeTeam();
+    team.explanation.keyThreats = [];
+    team.explanation.switchPlan = [switchRow('o1', 'Engine-written switch line.')];
+    wrap(<SwitchList team={team} leadName="Tinkaton" />);
+    expect(screen.getByText('Engine-written switch line.')).toBeInTheDocument();
   });
 });
 

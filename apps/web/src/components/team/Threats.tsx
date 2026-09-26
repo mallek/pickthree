@@ -70,8 +70,9 @@ export function Threats({ team }: { team: TeamRecommendation }) {
  */
 export function SwitchList({ team, leadName }: { team: TeamRecommendation; leadName: string }) {
   const [expanded, setExpanded] = useState(false);
+  const rawPlan = team.explanation.switchPlan;
   const threatIds = new Set(team.explanation.keyThreats.map((t) => t.opponent));
-  const plan = team.explanation.switchPlan.filter((sw) => !threatIds.has(sw.opponent));
+  const plan = rawPlan.filter((sw) => !threatIds.has(sw.opponent));
   const shown = plan.slice(0, expanded ? 8 : 5);
   return (
     <section className="stack" style={{ gap: 4 }}>
@@ -82,28 +83,16 @@ export function SwitchList({ team, leadName }: { team: TeamRecommendation; leadN
         What beats your {leadName} lead and who answers it. Unanswered threats first, then the
         ones you meet most.
       </p>
-      {plan.length === 0 ? (
+      {rawPlan.length === 0 ? (
         <p className="small muted">
           Nothing in the meta group beats your lead in a 1-shield fight.
         </p>
+      ) : plan.length === 0 ? (
+        <p className="small muted">Everything that beats your lead is listed under Threats.</p>
       ) : (
         <>
           {shown.map((sw) => (
-            <div className="switch-row" data-testid={`switch-${sw.opponent}`} key={sw.opponent}>
-              <PokemonToken speciesId={sw.opponent} size={32} showInitial={false} />
-              <div>
-                <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
-                  <b style={{ fontWeight: 500 }}>{sw.opponentName}</b>
-                  <TypeChips types={sw.opponentTypes} small />
-                  <RankTag rank={sw.opponentRank} />
-                </div>
-                <div className="meta">
-                  {sw.to === null
-                    ? 'Nobody on the team beats it. Shield, farm energy, switch on your terms.'
-                    : `Switch to ${sw.toName}, ${sw.rating >= 650 ? 'wins comfortably' : sw.rating >= 550 ? 'wins' : 'edges it'}.`}
-                </div>
-              </div>
-            </div>
+            <MatchupRow m={sw} testId={`switch-${sw.opponent}`} key={sw.opponent} />
           ))}
           {plan.length > 5 ? (
             <Button variant="text" ariaExpanded={expanded} onClick={() => setExpanded((x) => !x)}>
@@ -121,7 +110,9 @@ export function KeyWins({ team }: { team: TeamRecommendation }) {
   const wins = team.explanation.keyWins;
   return (
     <section className="stack">
-      <h3 className="analysis-section">Key wins</h3>
+      <h3 id="key-wins" className="analysis-section">
+        Key wins
+      </h3>
       {wins.length === 0
         ? NO_WINS
         : wins.map((w) => <MatchupRow m={w} testId="key-win" key={w.opponent} />)}
