@@ -206,6 +206,53 @@ describe('New Set on the foundation', () => {
     });
   });
 
+  it('a Recent teams tap fills the three slots without starting; Start set starts it with its moves', async () => {
+    const team = {
+      species: ['tinkaton', 'azumarill', 'clodsire'] as [string, string, string],
+      moves: [
+        { fast: 'FAIRY_WIND', charged: ['PLAY_ROUGH'] },
+        { fast: 'BUBBLE', charged: ['ICE_BEAM'] },
+        { fast: 'POISON_STING', charged: ['EARTHQUAKE'] },
+      ] as [
+        { fast: string; charged: string[] },
+        { fast: string; charged: string[] },
+        { fast: string; charged: string[] },
+      ],
+    };
+    await storage.saveSet({
+      id: 's1',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team,
+      battles: [],
+      closed: true,
+    });
+    await renderReady(hostWith([]));
+    await waitFor(() => expect(screen.getByText('Recent teams')).toBeInTheDocument());
+    const startSet = vi.spyOn(latest!.actions, 'startSet');
+    fireEvent.click(
+      screen
+        .getByText('Recent teams')
+        .parentElement!.querySelector('button.team-pick') as HTMLButtonElement,
+    );
+    for (const fullName of ['Tinkaton', 'Azumarill', 'Clodsire']) {
+      expect(screen.getByRole('button', { name: `Clear ${fullName}` })).toBeInTheDocument();
+    }
+    expect(screen.queryByText('Recent teams')).not.toBeInTheDocument();
+    expect(startSet).not.toHaveBeenCalled();
+    expect(await storage.loadSets('great')).toHaveLength(1);
+    expect(window.location.hash).toBe('#/meta/new');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start set' }));
+    });
+    await waitFor(async () => {
+      const sets = await storage.loadSets('great');
+      expect(sets).toHaveLength(2);
+      expect(sets.find((x) => x.id !== 's1')?.team).toEqual(team);
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#/meta'));
+  });
+
   it('hides both From pick3 and Recent teams while searching', async () => {
     await storage.saveSet({
       id: 's1',

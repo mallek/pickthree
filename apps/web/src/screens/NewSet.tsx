@@ -59,7 +59,8 @@ export function NewSet() {
   const short = useShortName();
   const species = useSpecies();
   const [slots, setSlots] = useState<(string | null)[]>([null, null, null]);
-  /** The From pick3 team the slots were filled from, kept so Start set carries its moves. */
+  /** The whole team (From pick3 or Recent teams) the slots were filled from, kept so Start set
+   * carries its moves and specimens. */
   const [chosen, setChosen] = useState<TeamRef | null>(null);
   const [query, setQuery] = useState('');
   const hits = useSpeciesSearch(query, 30);
@@ -157,7 +158,7 @@ export function NewSet() {
     return id ? `${sp}|${id}` : sp;
   };
 
-  /** A From pick3 tap fills the three slots; Start set then starts it. */
+  /** A From pick3 or Recent teams tap fills the three slots; Start set then starts it. */
   const fillTeam = (team: TeamRef): void => {
     setSlots(team.species.map((_, i) => slotValue(team, i)));
     setChosen(team);
@@ -259,7 +260,7 @@ export function NewSet() {
           <div className="stack" style={{ gap: 6 }}>
             <b>Recent teams</b>
             {recent.map((t) => (
-              <TeamPick team={t} key={teamKey(t.species)} onPick={() => void go(t)} />
+              <TeamPick team={t} key={teamKey(t.species)} onPick={() => fillTeam(t)} />
             ))}
           </div>
         ) : null}
