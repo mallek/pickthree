@@ -553,6 +553,11 @@ try {
 }
 await page.goto(`${base}/${teamHref}`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.score-card + .ui-btn-primary', { timeout: 60_000 });
+// A recommended team's hero card carries five bars: the five score factors.
+const recommendedBars = await page.$$eval('.score-card [role="meter"]', (els) => els.length);
+if (recommendedBars !== 5) {
+  throw new Error(`team analysis: expected 5 bars on the hero card, found ${recommendedBars}`);
+}
 
 console.log('take to battle');
 // The sample log has an open set with another team, so the switch-teams sheet opens. Keep it
@@ -969,6 +974,12 @@ console.log(`  custom team analyzed at ${Date.now() - t0} ms`);
 const chosenNote = await page.$eval('.custom-note', (e) => e.textContent).catch(() => '');
 if (!chosenNote || !chosenNote.includes('ran the moves you chose')) {
   throw new Error('custom team did not report the hand-picked moves');
+}
+// A hand-built team's hero card has three bars: its build cost stands in for Affordable, and
+// Accessibility is left out.
+const customBars = await page.$$eval('.score-card [role="meter"]', (els) => els.length);
+if (customBars !== 3) {
+  throw new Error(`custom team: expected 3 bars on the hero card, found ${customBars}`);
 }
 await shot('14-custom-team');
 

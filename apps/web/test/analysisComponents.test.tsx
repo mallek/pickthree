@@ -55,6 +55,27 @@ describe('ScoreCard, the hero card', () => {
     expect(screen.queryByText(/Run it in this order/)).not.toBeInTheDocument();
   });
 
+  it('gives the number words for a screen reader, off the screen', () => {
+    const team = makeTeam({ battle: 81.6, total: 64 });
+    wrap(
+      <ScoreCard
+        team={team}
+        custom={null}
+        onTakeToBattle={() => undefined}
+        onEdit={() => undefined}
+        onShowMember={() => undefined}
+      />,
+    );
+    const words = screen.getByText('Battle strength');
+    expect(words).toHaveClass('vh');
+    const num = document.querySelector('.hero-num')!;
+    expect(num).toHaveTextContent(/^82$/);
+    expect(words.compareDocumentPosition(num) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Battle score' })).toHaveTextContent(
+      'Battle strength 82',
+    );
+  });
+
   it('fills each bar with its factor, rounded, and states the difficulty', () => {
     const team = makeTeam({ battle: 81.6, total: 64 });
     team.score.factors = {

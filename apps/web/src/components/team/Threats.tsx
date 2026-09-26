@@ -85,8 +85,8 @@ export function SwitchList({ team, leadName }: { team: TeamRecommendation; leadN
         When to switch
       </h3>
       <p className="meta">
-        What beats your {leadName} lead and who answers it. Unanswered threats first, then the
-        ones you meet most.
+        What beats your {leadName} lead and who answers it. Unanswered threats first, then the ones
+        you meet most.
       </p>
       {rawPlan.length === 0 ? (
         <p className="small muted">

@@ -67,6 +67,8 @@ export function ScoreCard({
       <section className="score-card" aria-label="Battle score">
         <div className="hero-top">
           <div className="hero-id">
+            {/* The number's words, for a screen reader; the bars carry theirs in their names. */}
+            <span className="vh">Battle strength </span>
             <span className="hero-num">{Math.round(team.score.battle)}</span>
             <div className="hero-labels">
               <Term term={structure}>{GLOSSARY[structure]}</Term>

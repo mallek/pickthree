@@ -280,9 +280,7 @@ describe('Team Analysis', () => {
     await mountRecommended('a');
     expect(screen.queryByText('Battle plan')).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Jump to' })).not.toBeInTheDocument();
-    const headings = [...document.querySelectorAll('.analysis-section')].map(
-      (h) => h.textContent,
-    );
+    const headings = [...document.querySelectorAll('.analysis-section')].map((h) => h.textContent);
     const threats = headings.indexOf('Threats');
     const switchTo = headings.indexOf('When to switch');
     const pokemon = headings.indexOf('Pokémon details');
@@ -329,6 +327,28 @@ describe('Team Analysis', () => {
     // A second tap on an open row's member keeps it open: the strip opens, it never closes.
     fireEvent.click(members[1]!);
     expect(rowHeads()[1]).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('a strip tap jumps without the smooth scroll when the player asks for reduced motion', async () => {
+    const spy = vi.fn();
+    Element.prototype.scrollIntoView = spy;
+    await mountRecommended('a');
+    const members = within(document.querySelector('.analysis-strip') as HTMLElement).getAllByRole(
+      'button',
+    );
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((q: string) => ({ matches: q === '(prefers-reduced-motion: reduce)' })),
+    );
+    fireEvent.click(members[1]!);
+    expect(spy).toHaveBeenLastCalledWith({ block: 'start', behavior: 'auto' });
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: false })),
+    );
+    fireEvent.click(members[1]!);
+    expect(spy).toHaveBeenLastCalledWith({ block: 'start', behavior: 'smooth' });
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it('Take to battle with no running set starts one and opens Log a battle', async () => {
@@ -396,6 +416,19 @@ describe('Team Analysis', () => {
     await mountRecommended('a');
     fireEvent.click(screen.getByRole('button', { name: 'Edit team' }));
     await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(latest!.state.picks.map((p) => p?.id)).toEqual([
+      'medicham',
+      'azumarill',
+      'dragonite_shadow',
+    ]);
+  });
+
+  it('Edit team on a hand-built team opens Build with its picks as they are', async () => {
+    await mountCustom(TEAM);
+    const before = latest!.state.picks;
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit team' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(latest!.state.picks).toBe(before);
     expect(latest!.state.picks.map((p) => p?.id)).toEqual([
       'medicham',
       'azumarill',
