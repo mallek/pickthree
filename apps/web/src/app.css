@@ -1049,14 +1049,16 @@ a {
   font-size: 13px;
   color: var(--muted);
 }
+/* The count is measured, so it takes --measured itself: --tally is the landing's alias for it,
+   and it is not defined in Settings, where the same counter also sits. */
 .counter-inline .lg-icon {
   width: 18px;
   height: 18px;
   flex: none;
-  color: var(--tally);
+  color: var(--measured);
 }
 .counter-inline b {
-  color: var(--tally);
+  color: var(--measured);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
