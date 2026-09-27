@@ -398,6 +398,66 @@ describe('Settings, Your data', () => {
   });
 });
 
+describe('Settings, Your data, Excluded from teams', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  const NONE = 'None excluded. Turn a Pokémon off on its page to leave it out of teams.';
+
+  it('comes after Your log and says so in one line when nothing is excluded', async () => {
+    await seed();
+    await open();
+    await push('Your data');
+    const page = screen.getByRole('dialog', { name: 'Your data' });
+    const heads = [...page.querySelectorAll('.settings-head')].map((h) => h.textContent);
+    expect(heads.indexOf('Excluded from teams')).toBe(heads.indexOf('Your log') + 1);
+    expect(within(page).getByText(NONE)).toBeInTheDocument();
+    expect(within(page).queryByRole('button', { name: 'Include all again' })).toBeNull();
+  });
+
+  it('lists the excluded Pokémon; X includes one, Include all again asks first', async () => {
+    await seed();
+    await storage.saveSettings({
+      ...(await storage.loadSettings()),
+      excludedSpecies: ['tinkaton', 'azumarill'],
+    });
+    await open();
+    await push('Your data');
+    const page = screen.getByRole('dialog', { name: 'Your data' });
+    await act(async () => {
+      fireEvent.click(within(page).getByRole('button', { name: 'Include Tinkaton again' }));
+    });
+    expect(latest?.state.settings.excludedSpecies).toEqual(['azumarill']);
+    await act(async () => {
+      fireEvent.click(within(page).getByRole('button', { name: 'Include all again' }));
+    });
+    const confirm = screen.getByRole('alertdialog', {
+      name: 'Include every excluded Pokémon again?',
+    });
+    await act(async () => {
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Keep them out' }));
+    });
+    expect(latest?.state.settings.excludedSpecies).toEqual(['azumarill']);
+    await act(async () => {
+      fireEvent.click(within(page).getByRole('button', { name: 'Include all again' }));
+    });
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Include all' }),
+      );
+    });
+    expect(latest?.state.settings.excludedSpecies).toEqual([]);
+    expect(within(page).getByText(NONE)).toBeInTheDocument();
+    // The confirm closed; Your data is still the page on top.
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Your data' })).toBeInTheDocument();
+  });
+});
+
 describe('Settings, Community', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();

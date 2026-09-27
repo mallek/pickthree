@@ -1,8 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { costLine, costParts, initialOf, scanAge, speciesDisplayName, topPct } from '../src/format.ts';
+import {
+  costLine,
+  costParts,
+  coversLine,
+  initialOf,
+  scanAge,
+  speciesDisplayName,
+  topPct,
+} from '../src/format.ts';
 import { hashFor, parseHash } from '../src/state/store.tsx';
 
 describe('format helpers', () => {
+  it('says which of your copies an exclusion covers, largest group first', () => {
+    expect(
+      coversLine([
+        { name: 'Melmetal', count: 1 },
+        { name: 'Meltan', count: 6 },
+      ]),
+    ).toBe('Covers your 6 Meltan and 1 Melmetal.');
+    expect(coversLine([{ name: 'Meltan', count: 6 }])).toBe('Covers your 6 Meltan.');
+    expect(coversLine([{ name: 'Meltan', count: 1 }])).toBe('Covers your 1 Meltan.');
+    expect(
+      coversLine([
+        { name: 'Eevee', count: 2 },
+        { name: 'Umbreon', count: 1 },
+        { name: 'Shadow Eevee', count: 2 },
+      ]),
+    ).toBe('Covers your 2 Eevee, 2 Shadow Eevee and 1 Umbreon.');
+  });
+
   it('turns PvPoke names into plain names', () => {
     expect(speciesDisplayName('raichu_alolan', { speciesName: 'Raichu (Alolan)' } as never)).toBe(
       'Alolan Raichu',

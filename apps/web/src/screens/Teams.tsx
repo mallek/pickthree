@@ -48,7 +48,9 @@ export function filterCount(settings: Settings): number {
   const choice = facingSettings(settings);
   return (
     [f.noXl, f.noShadow, f.noEliteTm, f.budget].filter(Boolean).length +
-    (settings.excludedSpecimenIds.length > 0 ? 1 : 0) +
+    ((settings.excludedSpecies ?? []).length + (settings.excludedSpecimenIds ?? []).length > 0
+      ? 1
+      : 0) +
     (f.style !== 'any' ? 1 : 0) +
     (isCommunity(choice.source) && choice.window !== 'meta' ? 1 : 0)
   );

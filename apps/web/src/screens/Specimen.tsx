@@ -22,7 +22,15 @@ import {
   useName,
   useSpecies,
 } from '../components.tsx';
-import { META_CUTOFF, ivLine, judgeFailedLine, levelLabel, num, scanAge } from '../format.ts';
+import {
+  META_CUTOFF,
+  coversLine,
+  ivLine,
+  judgeFailedLine,
+  levelLabel,
+  num,
+  scanAge,
+} from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { useLeague } from '../components/LeagueSwitcher.tsx';
 
@@ -39,7 +47,8 @@ function metaLine(rank: MetaRank | undefined): string {
 
 export function SpecimenScreen({ id }: { id: string }) {
   const s = useAppState();
-  const { back, navigate, openSheet, loadVerdicts, toggleExcluded, removeSpecimen } = useActions();
+  const { back, navigate, openSheet, loadVerdicts, toggleExcludedSpecies, removeSpecimen } =
+    useActions();
   const league = useLeague();
   const name = useName();
   const species = useSpecies();
@@ -112,11 +121,33 @@ export function SpecimenScreen({ id }: { id: string }) {
   const v = s.verdicts[sp.id];
   const display = name(sp.speciesId);
   const types = species(sp.speciesId)?.types ?? ['normal', 'none'];
-  const excluded = s.settings.excludedSpecimenIds.includes(sp.id);
   const teams = (s.recommendation?.teams ?? []).filter((t) =>
     t.slots.some((sl) => sl.candidate.build.specimenId === sp.id),
   );
   const build = v?.build ?? null;
+  // Exclusion goes by what the Pokémon battles as, its best build's species, so the switch waits
+  // for the verdict to name it. Legacy per-copy ids convert when verdicts finish; until then the
+  // switch shows this copy's state and stays disabled.
+  const battles = build?.speciesId ?? null;
+  const legacy = s.settings.excludedSpecimenIds ?? [];
+  const excluded = battles
+    ? (s.settings.excludedSpecies ?? []).includes(battles) || legacy.includes(sp.id)
+    : legacy.includes(sp.id);
+  const showSwitch = !(v && !battles);
+  const switchReady = battles !== null && !s.verdictsLoading && legacy.length === 0;
+  const covers =
+    battles && !s.verdictsLoading
+      ? coversLine(
+          [
+            ...(s.collection?.specimens ?? [])
+              .filter((c) => s.verdicts[c.id]?.build?.speciesId === battles)
+              .reduce((m, c) => {
+                const n = name(c.speciesId);
+                return m.set(n, (m.get(n) ?? 0) + 1);
+              }, new Map<string, number>()),
+          ].map(([n, count]) => ({ name: n, count })),
+        )
+      : undefined;
   // No power-up and no evolution to do reads "Already at level L." in place of "Level A to B",
   // and drops the zero tiles; whatever still costs something (a second move unlock) keeps its
   // tile. Half a level short is not already there, whatever the verdict's own margin says.
@@ -310,19 +341,33 @@ export function SpecimenScreen({ id }: { id: string }) {
         </div>
 
         {/* At the end of the page, in the flow: nothing sits over the content. */}
-        <div className="card">
-          <Switch
-            label="Use in team recommendations"
-            line="Off leaves it out of Teams and Build suggestions."
-            checked={!excluded}
-            onChange={() => toggleExcluded(sp.id)}
-          />
-          {sp.source === 'manual' ? (
-            <Button variant="danger" onClick={() => setConfirmRemove(true)}>
-              Remove from collection
-            </Button>
-          ) : null}
-        </div>
+        {/* A Pokémon with no build in this league never reaches a team: nothing to switch. */}
+        {showSwitch || sp.source === 'manual' ? (
+          <div className="card">
+            {!showSwitch ? null : (
+              <Switch
+                label={
+                  battles
+                    ? `Use ${name(battles)} in team recommendations`
+                    : 'Use in team recommendations'
+                }
+                {...(covers ? { line: covers } : {})}
+                checked={!excluded}
+                disabled={!switchReady}
+                onChange={() => {
+                  if (battles) {
+                    toggleExcludedSpecies(battles);
+                  }
+                }}
+              />
+            )}
+            {sp.source === 'manual' ? (
+              <Button variant="danger" onClick={() => setConfirmRemove(true)}>
+                Remove from collection
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       {confirmRemove ? (
         <ConfirmSheet

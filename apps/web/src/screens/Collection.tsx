@@ -7,6 +7,7 @@ import {
   Header,
   IconButton,
   InlineSelect,
+  Tag,
   type ChoiceOption,
 } from '@pickthree/ui';
 import { useEffect, useMemo, useState } from 'react';
@@ -140,6 +141,14 @@ export function Collection() {
   const [grouped] = useSticky('collection.grouped', true);
   const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // A row is excluded when the Pokémon it battles as (its verdict's build) is left out of teams,
+  // or, until legacy per-copy ids convert, when this very copy was.
+  const excludedSpecies = new Set(s.settings.excludedSpecies ?? []);
+  const legacyExcluded = new Set(s.settings.excludedSpecimenIds ?? []);
+  const isExcluded = (id: string): boolean => {
+    const battles = s.verdicts[id]?.build?.speciesId;
+    return (battles !== undefined && excludedSpecies.has(battles)) || legacyExcluded.has(id);
+  };
 
   useEffect(() => {
     if (
@@ -376,6 +385,7 @@ export function Collection() {
                   <span className="mtags">
                     <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
                     <HundoTag delta={v?.perfectDelta ?? null} />
+                    {isExcluded(sp.id) ? <Tag tone="neutral">Excluded</Tag> : null}
                   </span>
                 </span>
                 {v ? <VerdictTag label={v.label} /> : <span className="meta">...</span>}
@@ -418,6 +428,11 @@ export function Collection() {
                             CP {o.cp} · {rankLabel(o, ov)} · Level {o.level.max}
                             {o.lucky ? ' · Lucky' : ''}
                           </span>
+                          {isExcluded(o.id) ? (
+                            <span className="mtags">
+                              <Tag tone="neutral">Excluded</Tag>
+                            </span>
+                          ) : null}
                         </span>
                         {ov ? <VerdictTag label={ov.label} /> : <span className="meta">...</span>}
                       </a>

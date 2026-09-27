@@ -80,9 +80,14 @@ describe('filterCount', () => {
       filterCount({
         ...DEFAULT_SETTINGS,
         filters: { ...DEFAULT_SETTINGS.filters, noXl: true, style: 'abb' },
-        excludedSpecimenIds: ['x'],
+        excludedSpecies: ['azumarill', 'medicham'],
       }),
     ).toBe(3);
+    // Legacy per-copy ids still waiting to convert count the same way, once.
+    expect(filterCount({ ...DEFAULT_SETTINGS, excludedSpecimenIds: ['x'] })).toBe(1);
+    expect(
+      filterCount({ ...DEFAULT_SETTINGS, excludedSpecimenIds: ['x'], excludedSpecies: ['y'] }),
+    ).toBe(1);
   });
 
   it('counts a window other than This meta only while a community source is picked', () => {

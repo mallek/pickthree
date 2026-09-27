@@ -330,28 +330,24 @@ describe('Pokémon detail', () => {
     expect(screen.getByText('XL Candy')).toBeInTheDocument();
   });
 
-  it('flips "Use in team recommendations" in place, with nothing fixed over the page', async () => {
+  it('flips "Use Azumarill in team recommendations" in place, with nothing fixed over the page', async () => {
     await fromCounters('b');
     await judged();
-    const sw = screen.getByRole('switch', { name: 'Use in team recommendations' });
-    expect(sw).toHaveAccessibleDescription('Off leaves it out of Teams and Build suggestions.');
+    const label = 'Use Azumarill in team recommendations';
+    const sw = await screen.findByRole('switch', { name: label });
+    await waitFor(() => expect(sw).toHaveAccessibleDescription('Covers your 1 Azumarill.'));
     expect(sw).toHaveAttribute('aria-checked', 'true');
     await act(async () => {
       fireEvent.click(sw);
     });
-    expect(latest?.state.settings.excludedSpecimenIds).toEqual(['b']);
-    expect(screen.getByRole('switch', { name: 'Use in team recommendations' })).toHaveAttribute(
-      'aria-checked',
-      'false',
-    );
-    await act(async () => {
-      fireEvent.click(screen.getByRole('switch', { name: 'Use in team recommendations' }));
-    });
+    expect(latest?.state.settings.excludedSpecies).toEqual(['azumarill']);
     expect(latest?.state.settings.excludedSpecimenIds).toEqual([]);
-    expect(screen.getByRole('switch', { name: 'Use in team recommendations' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    expect(screen.getByRole('switch', { name: label })).toHaveAttribute('aria-checked', 'false');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch', { name: label }));
+    });
+    expect(latest?.state.settings.excludedSpecies).toEqual([]);
+    expect(screen.getByRole('switch', { name: label })).toHaveAttribute('aria-checked', 'true');
     const page = document.querySelector('.screen')!;
     expect(page.querySelector('.bottom-actions')).toBeNull();
     for (const el of page.querySelectorAll<HTMLElement>('*')) {

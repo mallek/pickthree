@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Button, ConfirmSheet } from '@pickthree/ui';
+import { ExcludedList } from '../../components/ExcludedList.tsx';
 import { useLeague } from '../../components/LeagueSwitcher.tsx';
 import { dateLabel, num } from '../../format.ts';
 import { useActions, useAppState } from '../../state/store.tsx';
@@ -13,9 +14,9 @@ export function kindsOf(specimens: readonly { speciesId: string; shadow: boolean
 }
 
 /**
- * Your data: the collection on this phone and the battle log. Start fresh moves battles and
- * deletes nothing, so its confirm keeps the default tone. Export and import of the log are the
- * old sheet's, unchanged: the share sheet first, then a download.
+ * Your data: the collection on this phone, the battle log and the Pokémon left out of teams.
+ * Start fresh moves battles and deletes nothing, so its confirm keeps the default tone. Export
+ * and import of the log are the old sheet's, unchanged: the share sheet first, then a download.
  */
 export function YourData() {
   const s = useAppState();
@@ -106,6 +107,10 @@ export function YourData() {
           </p>
         ) : null}
         <p className="settings-line">Files stay under your control.</p>
+      </section>
+      <section className="settings-block">
+        <h4 className="settings-head">Excluded from teams</h4>
+        <ExcludedList lineClassName="settings-line" />
       </section>
       {confirmFresh ? (
         <ConfirmSheet

@@ -2,15 +2,14 @@ import type { TeamStyle } from '@pickthree/engine';
 import type { WindowKey } from '@pickthree/engine/meta';
 import { Select } from '@pickthree/ui';
 import { WINDOW_LABELS } from '../communityMeta.ts';
-import { PokemonToken, useName } from '../components.tsx';
+import { ExcludedList } from '../components/ExcludedList.tsx';
 import { num } from '../format.ts';
 import { facingSettings, hasCommunityData, isCommunity } from '../state/facing.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export function Filters() {
   const s = useAppState();
-  const { closeFilters, updateSettings, toggleExcluded } = useActions();
-  const name = useName();
+  const { closeFilters, updateSettings } = useActions();
   const f = s.settings.filters;
   const toggle = (k: 'noXl' | 'noShadow' | 'noEliteTm' | 'budget'): void =>
     updateSettings((cur) => ({ ...cur, filters: { ...cur.filters, [k]: !cur.filters[k] } }));
@@ -25,9 +24,6 @@ export function Filters() {
   const choice = facingSettings(s.settings);
   const hasCommunity = hasCommunityData(s.settings, s.data?.leagues);
   const windowOff = !isCommunity(choice.source) || !hasCommunity;
-  const excluded = s.settings.excludedSpecimenIds
-    .map((id) => s.collection?.specimens.find((sp) => sp.id === id))
-    .filter((sp): sp is NonNullable<typeof sp> => Boolean(sp));
   return (
     <>
       <div className="overlay" onClick={closeFilters} aria-hidden="true" />
@@ -130,25 +126,7 @@ export function Filters() {
           </div>
           <div className="stack divider-top" style={{ paddingTop: 14, gap: 8 }}>
             <span>Excluded Pokémon</span>
-            {excluded.length === 0 ? (
-              <span className="small muted">
-                None yet. Open any Pokémon in your collection to exclude it from team suggestions.
-              </span>
-            ) : null}
-            <div className="pills">
-              {excluded.map((sp) => (
-                <button
-                  type="button"
-                  className="x-chip"
-                  key={sp.id}
-                  onClick={() => toggleExcluded(sp.id)}
-                >
-                  <PokemonToken speciesId={sp.speciesId} size={20} showInitial={false} />
-                  {name(sp.speciesId)}
-                  <span className="muted">&times;</span>
-                </button>
-              ))}
-            </div>
+            <ExcludedList lineClassName="small muted" />
           </div>
         </div>
       </div>

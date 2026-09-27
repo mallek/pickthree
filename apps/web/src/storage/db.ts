@@ -22,7 +22,17 @@ export interface Settings {
     budgetCap: number;
     style: 'any' | 'balanced' | 'abb';
   };
+  /**
+   * Legacy per-copy exclusions, from before exclusion went by the Pokémon as it battles. Read only
+   * to convert: once verdicts are in, each id becomes its specimen's best-build species in
+   * excludedSpecies and the list is emptied. Until then the engine still honors it.
+   */
   excludedSpecimenIds: string[];
+  /**
+   * Added 2026-09-27. Battling species ids (a build's speciesId, so a Shadow form is its own id)
+   * left out of team recommendations, from every copy. Absent in older saves means none.
+   */
+  excludedSpecies?: string[];
   /** League id in play; absent in older saves means Great League. */
   league?: string;
   /** Pokémon pictures on the tokens. Absent in older saves means on. */
@@ -74,6 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
     style: 'any',
   },
   excludedSpecimenIds: [],
+  excludedSpecies: [],
   league: 'great',
   errorReports: true,
 };

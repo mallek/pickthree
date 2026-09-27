@@ -54,6 +54,7 @@ async function mountSheet(host = fakeHost()): Promise<void> {
 
 const WINDOW_NOTE = 'Applies when Source is GBL, Tournaments or All';
 const NO_DATA_NOTE = 'No community data for this league';
+const NONE_EXCLUDED = 'None excluded. Turn a Pokémon off on its page to leave it out of teams.';
 
 describe('Teams Filters sheet', () => {
   beforeEach(() => {
@@ -126,5 +127,70 @@ describe('Teams Filters sheet', () => {
     expect(screen.getByLabelText('Window')).toBeDisabled();
     expect(screen.getByText(NO_DATA_NOTE)).toBeInTheDocument();
     expect(screen.queryByText(WINDOW_NOTE)).toBeNull();
+  });
+
+  it('lists each excluded Pokémon by its battling name; X includes it again', async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      excludedSpecies: ['azumarill', 'dragonite_shadow'],
+    });
+    await mountSheet();
+    const sheet = screen.getByRole('dialog', { name: 'Filters' });
+    expect(within(sheet).getByText('Excluded Pokémon')).toBeInTheDocument();
+    expect(
+      within(sheet).getByRole('button', { name: 'Include Azumarill again' }),
+    ).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(
+        within(sheet).getByRole('button', { name: 'Include Shadow Dragonite again' }),
+      );
+    });
+    expect(latest?.state.settings.excludedSpecies).toEqual(['azumarill']);
+    expect(
+      within(sheet).queryByRole('button', { name: 'Include Shadow Dragonite again' }),
+    ).toBeNull();
+  });
+
+  it('asks before Include all again; Keep them out keeps them, Include all clears', async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      excludedSpecies: ['azumarill', 'dragonite_shadow'],
+    });
+    await mountSheet();
+    const sheet = screen.getByRole('dialog', { name: 'Filters' });
+    const all = within(sheet).getByRole('button', { name: 'Include all again' });
+    expect(all).toHaveClass('ui-btn-secondary');
+    await act(async () => {
+      fireEvent.click(all);
+    });
+    const confirm = screen.getByRole('alertdialog', {
+      name: 'Include every excluded Pokémon again?',
+    });
+    expect(confirm).toHaveAccessibleDescription('They can appear in team recommendations again.');
+    expect(within(confirm).getByRole('button', { name: 'Include all' })).not.toHaveClass(
+      'ui-btn-danger',
+    );
+    await act(async () => {
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Keep them out' }));
+    });
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(latest?.state.settings.excludedSpecies).toEqual(['azumarill', 'dragonite_shadow']);
+    await act(async () => {
+      fireEvent.click(within(sheet).getByRole('button', { name: 'Include all again' }));
+    });
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Include all' }),
+      );
+    });
+    expect(latest?.state.settings.excludedSpecies).toEqual([]);
+    expect(within(sheet).getByText(NONE_EXCLUDED)).toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: 'Include all again' })).toBeNull();
+  });
+
+  it('says so in one line when nothing is excluded', async () => {
+    await mountSheet();
+    expect(screen.getByText(NONE_EXCLUDED)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Include all again' })).toBeNull();
   });
 });

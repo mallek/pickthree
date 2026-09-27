@@ -131,6 +131,18 @@ export function scanAge(scanDate: string, now = new Date()): string {
   return `scanned ${dateLabel(d.toISOString())}`;
 }
 
+/**
+ * Which of your copies an exclusion covers, grouped by their own species name, largest group
+ * first: "Covers your 6 Meltan and 1 Melmetal." Pokémon names take no plural.
+ */
+export function coversLine(groups: readonly { name: string; count: number }[]): string {
+  const parts = [...groups]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .map((g) => `${g.count} ${g.name}`);
+  const last = parts.pop() ?? '';
+  return `Covers your ${parts.length > 0 ? `${parts.join(', ')} and ${last}` : last}.`;
+}
+
 /** Judging the collection failed: Collection and the Pokémon detail page say so the same way. */
 export function judgeFailedLine(error: string): string {
   return `Could not judge this collection: ${error}. The list still works; verdicts will retry on the next import.`;

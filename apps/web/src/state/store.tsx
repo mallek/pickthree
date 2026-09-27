@@ -549,8 +549,33 @@ export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
     allowEliteTm: !f.noEliteTm,
     budgetStardust: f.budget ? f.budgetCap : null,
     style: f.style,
-    excludedSpecimenIds: settings.excludedSpecimenIds,
+    // Legacy per-copy ids keep reaching the engine until they convert, so nothing comes back.
+    excludedSpecimenIds: settings.excludedSpecimenIds ?? [],
+    excludedSpecies: settings.excludedSpecies ?? [],
   };
+}
+
+/**
+ * The legacy per-copy exclusions converted to what those copies battle as: each id becomes the
+ * species of its specimen's best build (the verdict's build), once. An id whose specimen or
+ * verdict is gone, or whose verdict has no build in this league, is dropped. The legacy list is
+ * emptied either way.
+ */
+export function convertLegacyExcluded(
+  settings: Settings,
+  specimens: readonly Specimen[],
+  verdicts: Record<string, Verdict>,
+): Settings {
+  const legacy = settings.excludedSpecimenIds ?? [];
+  const species = [...(settings.excludedSpecies ?? [])];
+  const have = new Set(specimens.map((sp) => sp.id));
+  for (const id of legacy) {
+    const battles = have.has(id) ? verdicts[id]?.build?.speciesId : undefined;
+    if (battles && !species.includes(battles)) {
+      species.push(battles);
+    }
+  }
+  return { ...settings, excludedSpecimenIds: [], excludedSpecies: species };
 }
 
 export function filterKey(
@@ -671,7 +696,12 @@ interface Actions {
   removeSpecimen(id: string): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   setLeague(id: string): void;
-  toggleExcluded(specimenId: string): void;
+  /** Leave a Pokémon, as it battles, out of team recommendations, or let it back in. */
+  toggleExcludedSpecies(speciesId: string): void;
+  /** Take one legacy per-copy exclusion off before it converts. */
+  includeLegacyExcluded(specimenId: string): void;
+  /** Every excluded Pokémon, legacy copies included, back into team recommendations. */
+  includeAllExcluded(): void;
   forget(): Promise<void>;
   /**
    * Open a set of five with this team in the league in play. Closes any open set first.
@@ -1015,16 +1045,20 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
   }, [facingNow]);
 
+  /** True while a verdict run is out, so two callers in one commit never start two. */
+  const verdictsInFlight = useRef(false);
   const loadVerdicts = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
-    if (!s.collection || s.verdictsLoading || !s.leagueInfo) {
+    if (!s.collection || s.verdictsLoading || !s.leagueInfo || verdictsInFlight.current) {
       return;
     }
+    verdictsInFlight.current = true;
+    const specimens = s.collection.specimens;
     dispatch({ type: 'verdicts-start' });
     try {
       const verdicts = await h.verdicts(
-        s.collection.specimens,
+        specimens,
         optionsFrom(s.settings),
         (p) => dispatch({ type: 'rec-progress', progress: p }),
         h.league,
@@ -1036,11 +1070,52 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         recordError('verdict-row', new Error(`${bad.length} could not be judged: ${bad[0]!.line}`));
       }
       dispatch({ type: 'verdicts-done', verdicts });
+      // Legacy per-copy exclusions convert here, the first time verdicts are in, in the same
+      // update as the verdicts so no screen sees one without the other.
+      const cur = stateRef.current.settings;
+      if ((cur.excludedSpecimenIds ?? []).length > 0) {
+        const next = convertLegacyExcluded(cur, specimens, verdicts);
+        dispatch({ type: 'settings', settings: next });
+        void storage.saveSettings(next);
+      }
     } catch (e) {
       recordError('verdicts', e);
       dispatch({ type: 'verdicts-error', message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      verdictsInFlight.current = false;
     }
   }, []);
+
+  // Legacy per-copy exclusions wait for verdicts to convert. Teams never asks for verdicts, so
+  // ask here once the league is loaded; with no collection there is nothing they could name.
+  const legacyExcluded = (state.settings.excludedSpecimenIds ?? []).length > 0;
+  useEffect(() => {
+    if (!legacyExcluded || !state.settingsLoaded) {
+      return;
+    }
+    if (!state.collection) {
+      updateSettings((cur) => ({ ...cur, excludedSpecimenIds: [] }));
+      return;
+    }
+    if (
+      state.leagueInfo &&
+      Object.keys(state.verdicts).length === 0 &&
+      !state.verdictsLoading &&
+      !state.verdictsError
+    ) {
+      void loadVerdicts();
+    }
+  }, [
+    legacyExcluded,
+    state.settingsLoaded,
+    state.collection,
+    state.leagueInfo,
+    state.verdicts,
+    state.verdictsLoading,
+    state.verdictsError,
+    loadVerdicts,
+    updateSettings,
+  ]);
 
   const loadCounters = useCallback(
     async (vs: string | null = null) => {
@@ -1208,8 +1283,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     dispatch({ type: 'suggest-start' });
     try {
       const { facing } = await facingNow();
-      const { allowXl, allowShadow, allowEliteTm, budgetStardust, excludedSpecimenIds } =
-        optionsFrom(s.settings);
+      const {
+        allowXl,
+        allowShadow,
+        allowEliteTm,
+        budgetStardust,
+        excludedSpecimenIds,
+        excludedSpecies,
+      } = optionsFrom(s.settings);
       const community = await communityCores(
         s.settings,
         leagueInfo.id,
@@ -1230,6 +1311,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
           ...(budgetStardust !== undefined ? { budgetStardust } : {}),
           ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
+          ...(excludedSpecies !== undefined ? { excludedSpecies } : {}),
         },
         scope.league,
       );
@@ -1374,20 +1456,34 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [updateSettings],
   );
 
-  const toggleExcluded = useCallback(
-    (specimenId: string) => {
+  const toggleExcludedSpecies = useCallback(
+    (speciesId: string) => {
       updateSettings((s) => {
-        const has = s.excludedSpecimenIds.includes(specimenId);
+        const cur = s.excludedSpecies ?? [];
         return {
           ...s,
-          excludedSpecimenIds: has
-            ? s.excludedSpecimenIds.filter((x) => x !== specimenId)
-            : [...s.excludedSpecimenIds, specimenId],
+          excludedSpecies: cur.includes(speciesId)
+            ? cur.filter((x) => x !== speciesId)
+            : [...cur, speciesId],
         };
       });
     },
     [updateSettings],
   );
+
+  const includeLegacyExcluded = useCallback(
+    (specimenId: string) => {
+      updateSettings((s) => ({
+        ...s,
+        excludedSpecimenIds: (s.excludedSpecimenIds ?? []).filter((x) => x !== specimenId),
+      }));
+    },
+    [updateSettings],
+  );
+
+  const includeAllExcluded = useCallback(() => {
+    updateSettings((s) => ({ ...s, excludedSpecimenIds: [], excludedSpecies: [] }));
+  }, [updateSettings]);
 
   const notify = useCallback((message: string | null, tone: NoticeTone = 'warn') => {
     dispatch({ type: 'notice', message, tone });
@@ -1629,7 +1725,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       removeSpecimen,
       updateSettings,
       setLeague,
-      toggleExcluded,
+      toggleExcludedSpecies,
+      includeLegacyExcluded,
+      includeAllExcluded,
       forget,
       startSet,
       logBattle,
@@ -1661,7 +1759,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       removeSpecimen,
       updateSettings,
       setLeague,
-      toggleExcluded,
+      toggleExcludedSpecies,
+      includeLegacyExcluded,
+      includeAllExcluded,
       forget,
       startSet,
       logBattle,

@@ -268,6 +268,32 @@ describe('Collection', () => {
     expect(names()).toEqual(['Azumarill', 'Clodsire', 'Dragonite', 'Medicham', 'Tinkaton']);
   });
 
+  it('marks a row whose Pokémon, as it battles, is excluded with a grey Excluded tag', async () => {
+    await storage.saveSettings({
+      ...(await storage.loadSettings()),
+      excludedSpecies: ['azumarill'],
+    });
+    const battlesAs = (v: Verdict, speciesId: string): Verdict =>
+      ({ ...v, build: { ...v.build, speciesId } }) as unknown as Verdict;
+    await open(async () => ({ ...VERDICTS, c: battlesAs(VERDICTS.c!, 'azumarill') }));
+    await judged();
+    const rows = [...document.querySelectorAll<HTMLElement>('.spec-row:not(.sub)')];
+    const tagged = rows.filter((r) =>
+      [...r.querySelectorAll('.ui-tag')].some((t) => t.textContent === 'Excluded'),
+    );
+    expect(tagged).toHaveLength(1);
+    expect(tagged[0]!.querySelector('.spec-name')?.firstChild?.textContent).toBe('Azumarill');
+    const tag = [...tagged[0]!.querySelectorAll('.ui-tag')].find(
+      (t) => t.textContent === 'Excluded',
+    )!;
+    expect(tag).toHaveClass('ui-tag-neutral');
+    expect(tag.closest('.verdict-tag')).toBeNull();
+    expect(tagged[0]!.querySelector('.verdict-tag')).toHaveAttribute(
+      'data-verdict',
+      'Wait for better IVs',
+    );
+  });
+
   it('shows each verdict as a read-only tag, never a button', async () => {
     await open();
     await judged();
