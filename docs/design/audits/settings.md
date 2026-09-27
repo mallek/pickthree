@@ -5,7 +5,7 @@ page 9 (Settings sheet). Intake entries: `docs/design/inventory/2026-09-23-desig
 "Settings sheet, first pass" and "Settings sub-pages and the confirm sheet, first pass". Spec:
 `docs/superpowers/specs/2026-09-26-design-rest-of-app-design.md`, "Decisions" and "Settings".
 Plan: `docs/superpowers/plans/2026-09-26-settings.md`. Branch `rest-of-app`, commits
-`d00c7a2` to `8b40f19`.
+`d00c7a2` to `03158ed`, plus the after-review change below.
 
 Settings is now a hub with four pages (Your data, Community, Appearance, About) on the ui `Sheet`.
 Every `window.confirm` in it is a `ConfirmSheet`. The rank band is gone.
@@ -27,11 +27,14 @@ About images (`settings-about`, `settings-about-leaves`) were re-converted from 
 2026-09-27 run on the `8b40f19` code (the ungrouped check run below; its captures are the same),
 after the Diagnostics empty line became "No errors recorded."; no other
 capture changed.
+The `settings-hub-no-collection` pair was re-converted from a third run (2026-09-27, the same
+`PICK3_BUILD=874d675`, exit 0, zero findings on the 12, no NEVER line) after the Import card
+lost its line when there is no collection.
 
 | State | Dark | Light |
 | --- | --- | --- |
 | `settings-hub`: the Import card with the one primary, the four rows with live summaries ("148 Pokémon · 13 battles", "Sharing on", "System theme · pictures on", "PvPoke data Sep 10 · build 874d675"), Forget in red, the foot line | ![](img/settings-hub-dark.webp) | ![](img/settings-hub-light.webp) |
-| `settings-hub-no-collection`: "Import a CSV", "No collection yet · 0 battles", no Forget | ![](img/settings-hub-no-collection-dark.webp) | ![](img/settings-hub-no-collection-light.webp) |
+| `settings-hub-no-collection`: the Import card as "Import a CSV" alone (no update line), "No collection yet · 0 battles", no Forget | ![](img/settings-hub-no-collection-dark.webp) | ![](img/settings-hub-no-collection-light.webp) |
 | `settings-your-data`: Collection ("148 Pokémon · 90 kinds", "Last import"), Your log (Start fresh, Export log, Import log, "Files stay under your control.") | ![](img/settings-your-data-dark.webp) | ![](img/settings-your-data-light.webp) |
 | `settings-log-imported`: the Import log result on one line, "Added 0 sets, skipped 4 already here." | ![](img/settings-log-imported-dark.webp) | ![](img/settings-log-imported-light.webp) |
 | `settings-confirm-fresh`: Start fresh's confirm in the default (violet) tone | ![](img/settings-confirm-fresh-dark.webp) | ![](img/settings-confirm-fresh-light.webp) |
@@ -83,7 +86,8 @@ it; the trainer counter (it shows only once a real count arrives, and automation
       `settings-confirm-sharing`); Start fresh is violet, since it deletes nothing
       (`settings-confirm-fresh`, and a test asserts its confirm button is not danger); the sharing
       warning line is neutral text (`settings-community`, and a test checks that neither it nor any
-      ancestor up to the page carries a warn or danger class). No pink: nothing in Settings is measured. `check-colors` clean.
+      ancestor up to the page carries a warn or danger class).
+- [x] no pink: nothing in Settings is measured. `check-colors` clean.
 - [x] at most four text levels, one page title: the sheet title; section heads (the small
       uppercase labels) and row titles; body text; supporting text (summaries, lines). Seen in
       every capture.
@@ -237,11 +241,10 @@ Made while building:
   lines; What's sent? is a "Sent:" line and a "Never sent:" line. Same words.
 - **Community's Open meta.pick3.gg sits about 16px under the open What's sent? box**, tighter than
   the page's other gaps (`settings-community-sent`).
-- **The no-collection Import card still says "Update or replace the collection on this phone."**
-  under "No collection yet": it is the spec's line, but there is nothing to update yet
-  (`settings-hub-no-collection`). A copy change needs your call; the copy is unchanged.
-- **CLAUDE.md's Screens line still says "Sheet (Settings: ...)"**, though `screens/Sheet.tsx` is
-  gone and the code now lives in `screens/settings/`. CLAUDE.md is yours to edit; it is unchanged.
+- **Resolved after the final review (Travis, 2026-09-27):** with no collection, the Import card is
+  the button alone; "Update or replace the collection on this phone." shows only when there is a
+  collection to update (`settings-hub-no-collection`, tested). CLAUDE.md's Screens line now names
+  `settings/` instead of the deleted `Sheet`.
 - **Round 3 (Counters) must move `settings-hub-no-collection` back to the Counters no-collection
   cog** (Ruling 12), restoring the check that the Counters cog opens Settings, once Counters
   passes its own audit.

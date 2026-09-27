@@ -296,6 +296,8 @@ describe('Settings hub', () => {
       'ui-btn-primary',
     );
     expect(screen.queryByRole('button', { name: /Forget/ })).toBeNull();
+    // Nothing to update or replace yet, so the card is the button alone.
+    expect(screen.queryByText('Update or replace the collection on this phone.')).toBeNull();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Your data' })).toHaveAccessibleDescription(
         'No collection yet · 0 battles',
@@ -473,9 +475,7 @@ describe('Settings, Community', () => {
   it('holds "What\'s sent?" collapsed until opened, then shows what never goes', async () => {
     await open();
     await push('Community');
-    expect(
-      screen.queryByText(/Never sent: your collection, IVs, names/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Never sent: your collection, IVs, names/)).not.toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: "What's sent?" }));
     });
@@ -520,7 +520,9 @@ describe('Settings, About', () => {
       screen.getByText('An anonymous tick to the trainer counter when you build teams.'),
     ).toBeInTheDocument();
     expect(screen.getByText('Anonymous battle records unless sharing is off.')).toBeInTheDocument();
-    expect(screen.getByText('Anonymous error reports unless turned off below.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Anonymous error reports unless turned off below.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('None of it includes your Pokémon.')).toBeInTheDocument();
   });
 
