@@ -1,7 +1,8 @@
 import type { MetaRank } from '@pickthree/engine';
-import { useEffect } from 'react';
+import { Button, ConfirmSheet, Empty, Header, IconButton, Switch } from '@pickthree/ui';
+import { useEffect, useState } from 'react';
 import {
-  Header,
+  CogGlyph,
   MoveRows,
   PokemonToken,
   Progress,
@@ -29,7 +30,7 @@ function metaLine(rank: MetaRank | undefined): string {
 
 export function SpecimenScreen({ id }: { id: string }) {
   const s = useAppState();
-  const { navigate, loadVerdicts, toggleExcluded, removeSpecimen } = useActions();
+  const { back, navigate, openSheet, loadVerdicts, toggleExcluded, removeSpecimen } = useActions();
   const league = useLeague();
   const name = useName();
   const species = useSpecies();
@@ -58,17 +59,32 @@ export function SpecimenScreen({ id }: { id: string }) {
 
   // Hooks stay above the empty-state return so their order never changes while mounted.
   const metaRank = useMetaRank();
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  // Set once Remove is confirmed: the page is on its way back, so the moment between the removal
+  // landing and the route changing shows no "not in the collection" line.
+  const [removed, setRemoved] = useState(false);
+  // No title: the name is the page's own heading, once. Back returns to wherever the player came
+  // from (Collection, Counters, a team); Collection only when pick3 has nothing behind this page.
+  const header = (
+    <Header
+      variant="sub"
+      back={{ label: 'Back', onClick: () => back({ screen: 'collection' }) }}
+      actions={
+        <IconButton label="Settings" onClick={openSheet}>
+          <CogGlyph />
+        </IconButton>
+      }
+    />
+  );
   if (!sp) {
     return (
       <div className="screen">
-        <Header
-          title="Pokémon"
-          onBack={() => navigate({ screen: 'collection' })}
-          backLabel="Collection"
-        />
-        <div className="boot">
-          <p>That Pokémon is not in the current collection.</p>
-        </div>
+        {header}
+        {removed ? null : (
+          <div className="scroll">
+            <Empty line="That Pokémon is not in the current collection." />
+          </div>
+        )}
       </div>
     );
   }
@@ -80,15 +96,13 @@ export function SpecimenScreen({ id }: { id: string }) {
     t.slots.some((sl) => sl.candidate.build.specimenId === sp.id),
   );
   const build = v?.build ?? null;
+  // No power-up and no evolution to do reads as one line, not three zero tiles.
+  const alreadyThere = build !== null && build.stageOffset === 0 && build.level <= sp.level.max;
 
   return (
     <div className="screen">
-      <Header
-        title={display}
-        onBack={() => navigate({ screen: 'collection' })}
-        backLabel="Collection"
-      />
-      <div className="scroll" style={{ gap: 22, paddingBottom: 140 }}>
+      {header}
+      <div className="scroll" style={{ gap: 22 }}>
         <div
           style={{
             display: 'grid',
@@ -99,7 +113,7 @@ export function SpecimenScreen({ id }: { id: string }) {
         >
           <PokemonToken speciesId={sp.speciesId} size={64} />
           <div>
-            <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-.01em' }}>{display}</div>
+            <h2>{display}</h2>
             <div
               className="small muted"
               style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}
@@ -119,7 +133,13 @@ export function SpecimenScreen({ id }: { id: string }) {
           </div>
         </div>
 
-        {!v && s.verdictsLoading ? <Progress stage="verdicts" done={0} total={0} /> : null}
+        {!v && s.verdictsLoading ? (
+          <Progress
+            stage="verdicts"
+            done={s.progress?.stage === 'verdicts' ? s.progress.done : 0}
+            total={s.progress?.stage === 'verdicts' ? s.progress.total : 0}
+          />
+        ) : null}
 
         <div className="card" style={{ gap: 8 }}>
           <div className="kv" style={{ alignItems: 'baseline' }}>
@@ -179,27 +199,33 @@ export function SpecimenScreen({ id }: { id: string }) {
         {v?.cost && build ? (
           <div className="stack" style={{ gap: 6 }}>
             <h3>Cost to build</h3>
-            <div className="small muted">
-              Level {sp.level.max} to {build.level}
-              {v.cost.secondMoveUnlock ? ' · includes second move unlock' : ''}
-              {v.cost.evolutionCandy > 0
-                ? ` · includes ${v.cost.evolutionCandy} candy to evolve`
-                : ''}
-            </div>
-            <div className="stat3">
-              <div className="stat">
-                <b>{num(v.cost.stardust)}</b>
-                <span className="meta">Stardust</span>
-              </div>
-              <div className="stat">
-                <b>{num(v.cost.candy)}</b>
-                <span className="meta">Candy</span>
-              </div>
-              <div className="stat">
-                <b>{num(v.cost.xlCandy)}</b>
-                <span className="meta">XL Candy</span>
-              </div>
-            </div>
+            {alreadyThere ? (
+              <p>Already at level {sp.level.max}.</p>
+            ) : (
+              <>
+                <div className="small muted">
+                  Level {sp.level.max} to {build.level}
+                  {v.cost.secondMoveUnlock ? ' · includes second move unlock' : ''}
+                  {v.cost.evolutionCandy > 0
+                    ? ` · includes ${v.cost.evolutionCandy} candy to evolve`
+                    : ''}
+                </div>
+                <div className="stat3">
+                  <div className="stat">
+                    <b>{num(v.cost.stardust)}</b>
+                    <span className="meta">Stardust</span>
+                  </div>
+                  <div className="stat">
+                    <b>{num(v.cost.candy)}</b>
+                    <span className="meta">Candy</span>
+                  </div>
+                  <div className="stat">
+                    <b>{num(v.cost.xlCandy)}</b>
+                    <span className="meta">XL Candy</span>
+                  </div>
+                </div>
+              </>
+            )}
             {v.cost.eliteTm > 0 ? (
               <p className="small muted">Plus {v.cost.eliteTm} Elite TM.</p>
             ) : null}
@@ -246,44 +272,37 @@ export function SpecimenScreen({ id }: { id: string }) {
             </button>
           ))}
         </div>
+
+        {/* At the end of the page, in the flow: nothing sits over the content. */}
+        <div className="card">
+          <Switch
+            label="Use in team recommendations"
+            line="Off leaves it out of Teams and Build suggestions."
+            checked={!excluded}
+            onChange={() => toggleExcluded(sp.id)}
+          />
+          {sp.source === 'manual' ? (
+            <Button variant="danger" onClick={() => setConfirmRemove(true)}>
+              Remove from collection
+            </Button>
+          ) : null}
+        </div>
       </div>
-      <div
-        className="bottom-actions"
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-          maxWidth: 560,
-          margin: '0 auto',
-          paddingBottom: 12,
-          background: 'linear-gradient(to top, var(--bg) 70%, transparent)',
-          borderTop: 0,
-        }}
-      >
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={excluded ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : undefined}
-          onClick={() => toggleExcluded(sp.id)}
-        >
-          {excluded ? 'Include in recommendations again' : 'Exclude from recommendations'}
-        </button>
-        {sp.source === 'manual' ? (
-          <button
-            type="button"
-            className="btn-ghost"
-            style={{ color: 'var(--warn)' }}
-            onClick={() => {
-              if (window.confirm(`Remove this ${display} from your collection?`)) {
-                void removeSpecimen(sp.id).then(() => navigate({ screen: 'collection' }));
-              }
-            }}
-          >
-            Remove from collection
-          </button>
-        ) : null}
-      </div>
+      {confirmRemove ? (
+        <ConfirmSheet
+          tone="danger"
+          title={`Remove this ${display}?`}
+          line="It leaves your collection on this phone."
+          confirmLabel="Remove"
+          cancelLabel="Keep it"
+          onConfirm={() => {
+            setConfirmRemove(false);
+            setRemoved(true);
+            void removeSpecimen(sp.id).then(() => back({ screen: 'collection' }));
+          }}
+          onCancel={() => setConfirmRemove(false)}
+        />
+      ) : null}
     </div>
   );
 }
