@@ -113,7 +113,7 @@ export function Welcome() {
             <LockGlyph />
             Runs on your phone. Your collection never leaves it.
           </button>
-          <TrainerCounter count={count} inline />
+          <TrainerCounter count={count} />
         </div>
         {infoOpen ? (
           <>
