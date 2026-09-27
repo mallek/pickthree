@@ -28,6 +28,12 @@ describe('Header', () => {
     render(<Header variant="sub" title="Melmetal" back={{ label: 'Great', href: '#/pokemon' }} />);
     expect(screen.getByRole('link', { name: 'Great' })).toHaveAttribute('href', '#/pokemon');
   });
+
+  it('renders a sub header with a back and no title', () => {
+    render(<Header variant="sub" back={{ label: 'Back', onClick: () => undefined }} />);
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading')).toBeNull();
+  });
 });
 
 function Harness() {

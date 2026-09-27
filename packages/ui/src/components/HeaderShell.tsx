@@ -15,7 +15,7 @@ export function HeaderShell({
   extra,
 }: {
   back?: ReactNode;
-  title: string;
+  title?: string | undefined;
   sub?: string | undefined;
   actions?: ReactNode;
   extra?: ReactNode;
@@ -24,7 +24,7 @@ export function HeaderShell({
     <header className="hdr">
       {back ?? <span className="back-spacer" />}
       <span className="hdr-title">
-        <span>{title}</span>
+        {title ? <span>{title}</span> : null}
         {sub ? <span className="hdr-sub">{sub}</span> : null}
       </span>
       {actions ? <span className="hdr-actions">{actions}</span> : <span className="back-spacer" />}

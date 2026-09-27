@@ -658,6 +658,33 @@
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+/* InlineSelect: reads as text ("Sort: Verdict"), a native select laid over it opacity 0 so the
+   phone opens its own picker; the label names the select for a screen reader. */
+.ui-inline-select {
+  position: relative;
+  display: inline-flex;
+  min-height: var(--tap);
+  align-items: center;
+}
+.ui-inline-select-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: var(--fs-support);
+}
+.ui-inline-select select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+}
+.ui-inline-select:has(select:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: var(--r-control);
+}
 .league-row {
   display: flex;
   min-width: 0;

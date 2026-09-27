@@ -9,6 +9,7 @@ import {
   FilterButton,
   Header,
   IconButton,
+  InlineSelect,
   LeagueList,
   LeagueSwitcher,
   Loading,
@@ -144,6 +145,7 @@ export function Gallery() {
   const [league, setLeague] = useState('great');
   const [windowPick, setWindowPick] = useState('meta');
   const [openRow, setOpenRow] = useState(true);
+  const [sort, setSort] = useState('verdict');
   const [picturesOn, setPicturesOn] = useState(true);
   const [sharingOn, setSharingOn] = useState(false);
   return (
@@ -329,6 +331,18 @@ export function Gallery() {
         </div>
       </Section>
 
+      <Section name="InlineSelect">
+        <InlineSelect
+          label="Sort"
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: 'verdict', label: 'Verdict' },
+            { value: 'rank', label: 'IV rank' },
+          ]}
+        />
+      </Section>
+
       <Section name="FilterButton">
         <div className="g-row">
           <FilterButton count={0} onClick={() => undefined} />
@@ -406,6 +420,21 @@ export function Gallery() {
             <IconButton label="Share this team" onClick={() => undefined}>
               {COG}
             </IconButton>
+          }
+        />
+        <Header
+          variant="sub"
+          back={{ label: 'Back', onClick: () => undefined }}
+          actions={
+            <InlineSelect
+              label="Sort"
+              value={sort}
+              onChange={setSort}
+              options={[
+                { value: 'verdict', label: 'Verdict' },
+                { value: 'rank', label: 'IV rank' },
+              ]}
+            />
           }
         />
       </Section>

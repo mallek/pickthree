@@ -11,6 +11,7 @@ const SECTIONS = [
   'TypeChip',
   'LeagueSwitcher',
   'Select',
+  'InlineSelect',
   'FilterButton',
   'Switch',
   'Measured',

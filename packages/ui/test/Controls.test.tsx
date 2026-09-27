@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { FilterButton, LeagueList, LeagueSwitcher, Select, Switch } from '../src/index.ts';
+import { FilterButton, InlineSelect, LeagueList, LeagueSwitcher, Select, Switch } from '../src/index.ts';
 
 /**
  * jsdom never lays out real pixels, so scrollWidth and clientWidth are both 0 by default (never
@@ -311,6 +311,24 @@ describe('Switch', () => {
     render(<Switch label="X" checked={false} onChange={onChange} disabled />);
     fireEvent.click(screen.getByRole('switch'));
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('InlineSelect', () => {
+  const options = [
+    { value: 'verdict', label: 'Verdict' },
+    { value: 'rank', label: 'IV rank' },
+  ] as const;
+  it('shows the label and the chosen option, and is a select named by the label', () => {
+    render(<InlineSelect label="Sort" value="verdict" options={[...options]} onChange={() => undefined} />);
+    expect(screen.getByText('Sort: Verdict')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Sort' })).toHaveValue('verdict');
+  });
+  it('reports a new choice', () => {
+    const onChange = vi.fn();
+    render(<InlineSelect label="Sort" value="verdict" options={[...options]} onChange={onChange} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), { target: { value: 'rank' } });
+    expect(onChange).toHaveBeenCalledWith('rank');
   });
 });
 

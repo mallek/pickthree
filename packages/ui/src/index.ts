@@ -10,6 +10,7 @@ export { Chip } from './components/Chip.tsx';
 export { Tag, type TagTone } from './components/Tag.tsx';
 export { Seg } from './components/Seg.tsx';
 export { Select, type ChoiceOption } from './components/Select.tsx';
+export { InlineSelect } from './components/InlineSelect.tsx';
 export { FilterButton } from './components/FilterButton.tsx';
 export { typeColor, typeInk } from './type.ts';
 export { applyTheme, nextTheme, storedTheme, THEME_KEY, type ThemeChoice } from './theme.ts';
