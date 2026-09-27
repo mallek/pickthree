@@ -5,7 +5,7 @@ page 9 (Settings sheet). Intake entries: `docs/design/inventory/2026-09-23-desig
 "Settings sheet, first pass" and "Settings sub-pages and the confirm sheet, first pass". Spec:
 `docs/superpowers/specs/2026-09-26-design-rest-of-app-design.md`, "Decisions" and "Settings".
 Plan: `docs/superpowers/plans/2026-09-26-settings.md`. Branch `rest-of-app`, commits
-`d00c7a2` to `f1d8af4`.
+`d00c7a2` to `8b40f19`.
 
 Settings is now a hub with four pages (Your data, Community, Appearance, About) on the ui `Sheet`.
 Every `window.confirm` in it is a `ConfirmSheet`. The rank band is gone.
@@ -15,13 +15,18 @@ sheet shows the type-colored initials instead, as on every signed record. Settin
 Pokémon.
 
 A note on the build id: the audit ran with `PICK3_BUILD=874d675` (a production-length id, to test
-the About layout), so the hub and About read "build 874d675". The code is `f1d8af4`.
+the About layout), so the hub and About read "build 874d675". The code is `f1d8af4`, and
+`8b40f19` for the four About images.
 
 ## Screenshots
 
 Dark and light at 390px, one pair per state. All 24 come from the `npm run web:audit` run on
 2026-09-27 on the code committed as `f1d8af4`, converted to WebP (600px wide, quality 72) the same
-way the Teams and Your Meta images were. Each sheet opens from the Teams header cog.
+way the Teams and Your Meta images were. Each sheet opens from the Teams header cog. The four
+About images (`settings-about`, `settings-about-leaves`) were re-converted from the last
+2026-09-27 run on the `8b40f19` code (the ungrouped check run below; its captures are the same),
+after the Diagnostics empty line became "No errors recorded."; no other
+capture changed.
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -55,13 +60,20 @@ it; the trainer counter (it shows only once a real count arrives, and automation
       both themes. 618 findings remain on screens not yet redesigned, none failing the run, the
       same count as before this round. The new "Not on screen, unmeasured" list printed four lines
       per theme, all on `settings-about-leaves` (Game data and the App head, scrolled up under the
-      header), and each was measured in `settings-about`. No NEVER line.
+      header), and each was measured in `settings-about`. No NEVER line. Re-run on `8b40f19`
+      (the final review fixes: a NEVER line on an enforced screen now fails, matched per theme
+      and per element): exit 0, zero findings on the 12, the same 618 elsewhere, the same four
+      lines per theme each "measured in another dark/light capture of settings-about", no NEVER
+      line, no "Browser errors". A check run with `settings-about-leaves` taken out of its group
+      turned those eight lines into NEVER findings and exited 1; the group was put back.
 - [x] no console errors: that run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
       check-tokens`: re-run for this record on 2026-09-27 on `f1d8af4`. lint exit 0; typecheck exit
       0; 140 files, 1322 tests passed; check-colors exit 0; "check-tokens: ok". `npm run ui:audit`
       (the `Switch` in the gallery): "gallery audit: clean in dark and light", from the Task 5 fix
-      round.
+      round. On `8b40f19`: lint, typecheck and check-colors exit 0; web tests 36 files, 389
+      passed; `settings.test.tsx` 27 of 27 in 22 runs; `npm run ui:audit` "gallery audit: clean
+      in dark and light".
 
 ## Aesthetics
 
@@ -70,8 +82,8 @@ it; the trainer counter (it shows only once a real count arrives, and automation
       actions that delete data (`settings-hub`, `settings-confirm-forget`,
       `settings-confirm-sharing`); Start fresh is violet, since it deletes nothing
       (`settings-confirm-fresh`, and a test asserts its confirm button is not danger); the sharing
-      warning line is neutral text (`settings-community`, and a test checks it carries no warn or
-      danger class). No pink: nothing in Settings is measured. `check-colors` clean.
+      warning line is neutral text (`settings-community`, and a test checks that neither it nor any
+      ancestor up to the page carries a warn or danger class). No pink: nothing in Settings is measured. `check-colors` clean.
 - [x] at most four text levels, one page title: the sheet title; section heads (the small
       uppercase labels) and row titles; body text; supporting text (summaries, lines). Seen in
       every capture.
@@ -111,7 +123,7 @@ it; the trainer counter (it shows only once a real count arrives, and automation
       Import; each row pushes its page and its summary follows the state (Your data sums every
       league's battles); Dark shows pressed at once and the hub reads it after back; the pictures
       and error reports switches flip in place; Forget empties the collection in state and in
-      IndexedDB; Start fresh moves the open set to Earlier seasons and deletes nothing; Stop and
+      IndexedDB and closes the sheet; Start fresh moves the open set to Earlier seasons and deletes nothing; Stop and
       delete turns sharing off in place and turning it back on needs no confirm; What's sent? and
       What leaves it? open and close; the meta.pick3.gg link goes to https://meta.pick3.gg.
 - [x] back returns to the origin: "< Settings" returns to the hub (tested, Appearance); Done and
@@ -126,9 +138,11 @@ it; the trainer counter (it shows only once a real count arrives, and automation
       holds a band (`store.test.tsx`); `index.html` and its `connect-src` are unchanged; What's
       sent? and What leaves it? say what the send paths send; CLAUDE.md drops "rank band" from the
       record list. Assumptions do not apply (Settings shows no result).
-- [x] tests cover the new behavior: `apps/web/test/settings.test.tsx` (25 tests: hub, Your data,
+- [x] tests cover the new behavior: `apps/web/test/settings.test.tsx` (27 tests: hub, Your data,
       Community, About, and one that spies on `window.confirm` across Forget, Start fresh and
-      sharing and finds it never called); `packages/ui/test/Controls.test.tsx` (3 `Switch`
+      sharing and finds it never called; the hub reads "Sharing off" after Stop and delete and
+      back; Import log shows the parser's own sentence for a file it cannot take; Forget closes
+      the sheet); `packages/ui/test/Controls.test.tsx` (3 `Switch`
       tests); `apps/web/test/metaShare.test.ts` and `store.test.tsx` (`band: null`).
 
 ## Findings and fixes
@@ -147,6 +161,10 @@ it; the trainer counter (it shows only once a real count arrives, and automation
 | Task 5 review, Important: the audit change dropped text scrolled wholly out of view without saying so. | It is listed as "Not on screen, unmeasured", with whether another capture of the page measured it. | `f1d8af4` |
 | Task 5 review, Minor: the clip ignored which axis scrolls and walked past fixed elements. | Each axis clips on its own; the walk stops at a fixed element. | `f1d8af4` |
 | Controller, on the About capture: Copy had no Diagnostics label and was half width; extra space under Check for updates. | A "Diagnostics" head; Copy full width when alone; the App block spaced like the others. | `f1d8af4` |
+| Final review, Important: a NEVER line on an enforced screen printed but did not fail, and the measured set merged both themes. | A NEVER line on an enforced screen is a finding (exit 1); the measured set is kept per page and theme. | `8b40f19` |
+| Final review: "measured in another capture" matched by tag and first 80 characters, so two elements with the same text could mask each other. | The key is the element's DOM path (from the nearest stable id, or body) plus its text. | `8b40f19` |
+| Final review, Minor: the battle count read had no `.catch`; the Diagnostics empty line was longer than the plan's; a stale comment named the Filters sheet; the clip walk did not say what it leaves. | The read records a `settings-count` error; the line is "No errors recorded."; the comment names About; an element that is itself fixed is not clipped, and the absolute case is named in a comment. | `8b40f19` |
+| Final review, Minor: test gaps (Sharing off on the hub after Stop and delete; the Import log error sentence; Forget closing the sheet; the neutral line checked one level up; an unrestored `window.confirm` spy). | Each is covered or fixed in `settings.test.tsx`. Test only. | `8b40f19` |
 
 ## Rulings
 
@@ -195,11 +213,18 @@ Made while building:
 - **The shared audit (`scripts/audit.mjs`), used by all three audits.** Text inside a scroll
   container is measured only where it is visible. Text scrolled wholly out of view no longer fails
   as "contrast unverified": it is listed per capture as "Not on screen, unmeasured", saying
-  whether another capture of the same page measured it (a caller that gives no report, like the ui
-  and meta audits, still gets a failing line). The clip is per axis and stops at a fixed element.
-  Counts elsewhere did not move: web 618, meta 321, ui clean. Known limit: "measured in another
-  capture" matches text by tag and first 80 characters, not by element, so on a page with repeated
-  text (Collection, Counters) it could reassure falsely.
+  whether another capture of the same page measured it in the same theme (a caller that gives no
+  report, like the ui and meta audits, still gets a failing line). On an enforced screen, a NEVER
+  line (no capture of its page measured that element in that theme) is a finding and fails the
+  run. The match is by element, not by words: the key is the element's DOM path (tag and child
+  position at each step, up to the nearest ancestor with a stable id, or body) plus its text, so two
+  elements with the same tag and text no longer stand in for each other. When the tree above an
+  element changes between captures, its key changes too and it counts as never measured, which
+  fails closed. The clip is per axis, stops at a fixed ancestor, and does not clip an element
+  that is itself fixed. Not handled, and noted in the code: an absolutely positioned descendant
+  whose containing block sits above an overflow ancestor is still clipped by that ancestor (the
+  audit measures less of it, never text that is off screen). Counts elsewhere did not move: web
+  618, meta 321, ui clean.
 - **`screens.mjs`** lost `06-sheet` and the `08d` check with the old sheet, and `shot()` takes a
   `group` so two captures of one page count as one page.
 
@@ -212,18 +237,20 @@ Made while building:
   lines; What's sent? is a "Sent:" line and a "Never sent:" line. Same words.
 - **Community's Open meta.pick3.gg sits about 16px under the open What's sent? box**, tighter than
   the page's other gaps (`settings-community-sent`).
-- **The no-collection card still says "Update or replace the collection on this phone."** It is
-  the spec's line, but there is nothing to update yet (`settings-hub-no-collection`).
-- **CLAUDE.md's Screens line still says "Sheet (...)"**, but the code now lives in
-  `screens/settings/`.
+- **The no-collection Import card still says "Update or replace the collection on this phone."**
+  under "No collection yet": it is the spec's line, but there is nothing to update yet
+  (`settings-hub-no-collection`). A copy change needs your call; the copy is unchanged.
+- **CLAUDE.md's Screens line still says "Sheet (Settings: ...)"**, though `screens/Sheet.tsx` is
+  gone and the code now lives in `screens/settings/`. CLAUDE.md is yours to edit; it is unchanged.
+- **Round 3 (Counters) must move `settings-hub-no-collection` back to the Counters no-collection
+  cog** (Ruling 12), restoring the check that the Counters cog opens Settings, once Counters
+  passes its own audit.
 - **Smaller, deferred during the build:**
   - The `Switch` row's gap is 8px; the old `.toggle` rows use 12px.
   - The Your data summary shows no battle count for a moment, until the log is read.
   - The 44px fix for the theme `Seg` applies inside Settings only, not to `.seg` everywhere.
   - Focus return is tested only after "Keep them", not after "Keep sharing" or "Keep this
     season".
-  - Two test-hygiene items: the neutral-line test checks one ancestor level, and one
-    `window.confirm` spy is never restored.
 
 ## Sign-off
 
