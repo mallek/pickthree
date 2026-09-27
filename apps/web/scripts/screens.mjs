@@ -32,6 +32,7 @@ const AUDIT_ENFORCED = new Set([
   '19-teams-ultra',
   'teams-cup',
   'teams-filters-sheet',
+  'teams-filters-excluded',
   'teams-no-collection',
   'teams-loading',
   'teams-empty',
@@ -60,6 +61,7 @@ const AUDIT_ENFORCED = new Set([
   'settings-hub',
   'settings-hub-no-collection',
   'settings-your-data',
+  'settings-your-data-excluded',
   'settings-log-imported',
   'settings-community',
   'settings-community-sent',
@@ -69,12 +71,14 @@ const AUDIT_ENFORCED = new Set([
   'settings-confirm-forget',
   'settings-confirm-fresh',
   'settings-confirm-sharing',
+  'settings-confirm-include-all',
   '04-collection',
   '11-collection-group',
   'collection-flat',
   'collection-filters-sheet',
   'collection-judging',
   'collection-empty',
+  'collection-excluded',
   '05-specimen',
   'specimen-built',
   'specimen-evolve',
@@ -242,6 +246,70 @@ async function assertTitleCentred(where) {
   }
 }
 
+/**
+ * Merges `fields` into the saved settings and resolves the settings as they were, for a step that
+ * seeds a state, reloads, shoots, and puts the settings back with `restoreSettings`.
+ */
+const seedSettings = (fields) =>
+  page.evaluate(
+    (f) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('pickthree');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('settings', 'readwrite');
+          const settings = tx.objectStore('settings');
+          const get = settings.get('current');
+          tx.oncomplete = () => db.close();
+          tx.onerror = () => reject(tx.error);
+          get.onsuccess = () => {
+            const before = get.result;
+            if (!before) {
+              reject(new Error('no saved settings to seed; the app has not saved any yet'));
+              return;
+            }
+            settings.put({ ...before, ...f });
+            resolve(before);
+          };
+        };
+      }),
+    fields,
+  );
+/** Puts the saved settings back exactly as `seedSettings` found them. */
+const restoreSettings = (before) =>
+  page.evaluate(
+    (b) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('pickthree');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('settings', 'readwrite');
+          tx.objectStore('settings').put(b);
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+    before,
+  );
+/** Reloads on Teams and waits for its cards to settle (twice, so a run that restarts is waited out). */
+const reloadTeams = async () => {
+  await page.reload({ waitUntil: 'networkidle0' });
+  for (let i = 0; i < 2; i++) {
+    await page.waitForFunction(
+      () => document.querySelector('.ui-expand-head') && !document.querySelector('.ui-loading'),
+      { timeout: 120_000 },
+    );
+    await new Promise((r) => setTimeout(r, 750));
+  }
+};
+/** Two Pokémon left out of teams for the excluded-list captures: a plain one and a Shadow form. */
+const SEEDED_EXCLUDED = ['melmetal', 'greninja_shadow'];
+
 const t0 = Date.now();
 console.log('welcome');
 await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
@@ -358,14 +426,6 @@ await page.waitForFunction(
   () => document.querySelectorAll('.ui-expand-head')[1]?.getAttribute('aria-expanded') === 'false',
 );
 
-console.log('teams, filters sheet');
-await page.click('.teams-controls .ui-filter-icon');
-await page.waitForSelector('.sheet[aria-label="Filters"]');
-await new Promise((r) => setTimeout(r, 400));
-await shot('teams-filters-sheet', false);
-await page.$eval('.sheet[aria-label="Filters"] .between button.btn-ghost', (el) => el.click());
-await page.waitForSelector('.sheet[aria-label="Filters"]', { hidden: true });
-
 console.log('teams, community source');
 await page.evaluate(() => {
   const select = [...document.querySelectorAll('label')]
@@ -469,56 +529,45 @@ const settled = async () => {
 await settled();
 
 console.log('teams, empty');
-// Deterministic: exclude every specimen in the saved settings, reload, shoot the Empty card, then
-// put the saved settings back exactly as they were and reload again.
-const savedSettings = await page.evaluate(
-  () =>
-    new Promise((resolve, reject) => {
-      const open = indexedDB.open('pickthree');
-      open.onerror = () => reject(open.error);
-      open.onsuccess = () => {
-        const db = open.result;
-        const tx = db.transaction(['settings', 'collection'], 'readwrite');
-        const settings = tx.objectStore('settings');
-        const getSettings = settings.get('current');
-        const getCollection = tx.objectStore('collection').get('current');
-        tx.oncomplete = () => db.close();
-        tx.onerror = () => reject(tx.error);
-        getCollection.onsuccess = () => {
-          const before = getSettings.result;
-          const ids = (getCollection.result?.specimens ?? []).map((sp) => sp.id);
-          settings.put({ ...before, excludedSpecimenIds: ids });
-          resolve(before);
-        };
-      };
-    }),
+// Deterministic: exclude every species there is in the saved settings, reload, shoot the Empty
+// card, then put the saved settings back exactly as they were and reload again.
+const everySpecies = await page.evaluate(async () =>
+  (await (await fetch('/data/pokemon.json')).json()).map((p) => p.speciesId),
 );
+const savedSettings = await seedSettings({ excludedSpecies: everySpecies });
 if (!savedSettings) {
   throw new Error('teams, empty: no saved settings to restore afterwards');
 }
 await page.reload({ waitUntil: 'networkidle0' });
 await page.waitForSelector('.teams-list .ui-empty', { timeout: 120_000 });
 await shot('teams-empty', false);
-await page.evaluate(
-  (before) =>
-    new Promise((resolve, reject) => {
-      const open = indexedDB.open('pickthree');
-      open.onerror = () => reject(open.error);
-      open.onsuccess = () => {
-        const db = open.result;
-        const tx = db.transaction('settings', 'readwrite');
-        tx.objectStore('settings').put(before);
-        tx.oncomplete = () => {
-          db.close();
-          resolve();
-        };
-        tx.onerror = () => reject(tx.error);
-      };
-    }),
-  savedSettings,
-);
+await restoreSettings(savedSettings);
 await page.reload({ waitUntil: 'networkidle0' });
 await settled();
+
+console.log('teams, filters sheet');
+// Two Pokémon excluded, so the sheet's excluded list shows its chips and Include all again. The
+// saved settings go back exactly as they were afterwards. Here, not with the first Teams shots:
+// only once the league switch has saved settings is there a record to seed.
+const beforeFilters = await seedSettings({ excludedSpecies: SEEDED_EXCLUDED });
+await reloadTeams();
+await page.click('.teams-controls .ui-filter-icon');
+await page.waitForSelector('.sheet[aria-label="Filters"] .x-chip');
+await new Promise((r) => setTimeout(r, 400));
+await shot('teams-filters-sheet', false);
+console.log('teams, filters sheet, excluded list');
+// The list sits at the foot of the sheet: scrolled into view so the audit measures it.
+await page.$eval('.sheet[aria-label="Filters"] .x-chip', (el) =>
+  el.scrollIntoView({ block: 'center' }),
+);
+await shot('teams-filters-excluded', false, {
+  group: 'teams-filters-sheet',
+  mustShow: '.sheet[aria-label="Filters"] .x-chip',
+});
+await page.$eval('.sheet[aria-label="Filters"] .between button.btn-ghost', (el) => el.click());
+await page.waitForSelector('.sheet[aria-label="Filters"]', { hidden: true });
+await restoreSettings(beforeFilters);
+await reloadTeams();
 
 console.log('team detail');
 // The first row is open by default, so its "View analysis" link is in the DOM already.
@@ -902,6 +951,30 @@ await page.click(specimenSwitch);
 await page.waitForSelector(`${specimenSwitch}[aria-checked="false"]`);
 await page.evaluate(() => window.scrollTo(0, 0));
 await shot('specimen-excluded');
+
+console.log('collection, excluded');
+// While that Pokémon is out, its row in Collection carries the grey Excluded tag.
+await page.evaluate(() => {
+  window.location.hash = '#/collection';
+});
+const excludedRow = '.spec-row[data-shot-excluded]';
+await page.waitForFunction(
+  () => {
+    const tag = [...document.querySelectorAll('.spec-row .mtags .ui-tag')].find(
+      (t) => t.textContent === 'Excluded',
+    );
+    const row = tag?.closest('.spec-row');
+    if (!row) {
+      return false;
+    }
+    row.setAttribute('data-shot-excluded', '');
+    row.scrollIntoView({ block: 'center' });
+    return true;
+  },
+  { timeout: 30_000 },
+);
+await shot('collection-excluded', false, { mustShow: excludedRow });
+await openSpecimen(building.href);
 await page.click(specimenSwitch);
 await page.waitForSelector(`${specimenSwitch}[aria-checked="true"]`);
 
@@ -1825,6 +1898,26 @@ const imported = await page.$eval('.ui-sheet [role="status"]', (e) => {
 console.log(`  import log: ${imported}`);
 await shot('settings-log-imported', false, { mustShow: '.ui-sheet [role="status"]' });
 await shootConfirm('settings-confirm-fresh', 'Start fresh in Great League', 'Keep this season');
+
+console.log('settings, your data, excluded');
+// Two Pokémon excluded: the Excluded from teams block lists them with Include all again, and its
+// confirm. The saved settings go back exactly as they were, and the sheet reopens on Your data.
+const reopenYourData = async () => {
+  await page.waitForSelector('button[aria-label="Settings"]');
+  await page.click('button[aria-label="Settings"]');
+  await page.waitForSelector('.ui-sheet .settings-rows');
+  await pushSettings('Your data');
+};
+const beforeYourData = await seedSettings({ excludedSpecies: SEEDED_EXCLUDED });
+await reloadTeams();
+await reopenYourData();
+await page.waitForSelector('.ui-sheet .x-chip');
+await page.$eval('.ui-sheet .x-chip', (el) => el.scrollIntoView({ block: 'center' }));
+await shot('settings-your-data-excluded', false, { mustShow: '.ui-sheet .x-chip' });
+await shootConfirm('settings-confirm-include-all', 'Include all again', 'Keep them out');
+await restoreSettings(beforeYourData);
+await reloadTeams();
+await reopenYourData();
 await backToHub();
 
 await pushSettings('Community');

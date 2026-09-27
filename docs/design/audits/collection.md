@@ -19,7 +19,9 @@ initial, as on every signed record.
 Dark and light at 390px, one pair per state. Ten come from the Task 6 `npm run web:audit` run
 on 2026-09-27 (the code committed as `101e59f`, `PICK3_BUILD=874d675`); the `collection-empty`
 pair comes from the final review run on `b3c5c12` (same build id), the one capture whose page
-changed. All are WebP (600px wide, quality 72). `04-collection` is the whole page, top to bottom.
+changed. `collection-excluded` comes from the 2026-09-27 run for exclusion by species (the code
+committed as `c6b4819`, same build id). All are WebP (600px wide, quality 72). `04-collection` is
+the whole page, top to bottom.
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -29,6 +31,7 @@ changed. All are WebP (600px wide, quality 72). `04-collection` is the whole pag
 | `collection-flat`: Group same Pokémon off, the filter icon reads 1, the count reads "111 shown", Meltan twice | ![](img/collection-flat-dark.webp) | ![](img/collection-flat-light.webp) |
 | `collection-filters-sheet`: the ui `Sheet` "Filters" with Done, five switches, "Scanned in the last two weeks" with no second line | ![](img/collection-filters-sheet-dark.webp) | ![](img/collection-filters-sheet-light.webp) |
 | `collection-empty`: "zzzz" in the search with its Clear control, no count over the empty state, "Sort: Verdict" still in place, "Nothing matches. Try another name or clear a filter." | ![](img/collection-empty-dark.webp) | ![](img/collection-empty-light.webp) |
+| `collection-excluded`: while `specimen-excluded` has Galarian Articuno switched off, its row (scrolled into view) carries a grey "Excluded" tag in its tag line, under "Same wins as best IVs", beside the unchanged Worth building tag; no other row has one | ![](img/collection-excluded-dark.webp) | ![](img/collection-excluded-light.webp) |
 
 The script checks as it shoots: before `04-collection` it measures the Sort control against the
 chips and fails on an overlap (the log reads "sort target 44px tall, 4px under the chips");
@@ -41,7 +44,8 @@ the Banned, Lucky and over-the-cap row variants (the sample shows none with Show
 
 ## Automated checks
 
-- [x] `npm run web:audit` clean for this page's screens (all six names above in `AUDIT_ENFORCED`):
+- [x] `npm run web:audit` clean for this page's screens (all seven names above in `AUDIT_ENFORCED`,
+      `collection-excluded` since the 2026-09-27 run, exit 0, zero enforced findings, no NEVER line):
       the Task 6 run on the `101e59f` code with `PICK3_BUILD=874d675` exited 0 with zero findings
       on every enforced name in both themes. No NEVER line; the only "Not on screen, unmeasured"
       lines are the known `settings-about-leaves` ones, each measured in `settings-about`.
@@ -142,6 +146,7 @@ the Banned, Lucky and over-the-cap row variants (the sample shows none with Show
 | Final review: `collection-empty` read "0 Pokémon · 0 kinds" above "Nothing matches." | The count text hides when no row matches (Sort stays, on the right); while judging the count shows as before. Tested in the Empty test; `collection-empty` retaken. | `b3c5c12` |
 | Final review: the title-less `Header` test could not fail, and `title` had become optional on `top` too. | `Header`'s props are a union: `top` requires `title`, `sub` does not. The test asserts the title element is absent, beside a new test that finds it when a title is given. | `b3c5c12` |
 | Final review: the detail page's error copy. | The "Could not judge this collection" line is one function (`judgeFailedLine` in `format.ts`), shared with the detail page; Collection's text is unchanged. | `b3c5c12` |
+| Exclusion by the Pokémon as it battles (Travis, 2026-09-27; `pokemon-detail.md`): a Pokémon left out of teams was only visible on its own page. | A row whose verdict build's species is excluded (or, until old per-copy ids convert, that very copy) shows a grey `Tag` "Excluded" (tone `neutral`) in its tag line; a sub-row gets it on its own line. The tag line rather than beside the verdict tag, so the right column stays one tag wide at 390px. `collection.test.tsx` pins it; `collection-excluded` shows it, enforced, audited clean in both themes (2026-09-27 run, exit 0, no NEVER line). | `c6b4819`, and the commit adding this row |
 
 ## Rulings
 
@@ -187,7 +192,8 @@ Made while building:
   order** follows (Built first). Nothing is stored, so no migration.
 - **`useSticky` is shared across components** (`apps/web/src/components.tsx`). Every screen's
   remembered state goes through it; the full web suite passes.
-- **`screens.mjs`:** the three Collection captures became six, all enforced.
+- **`screens.mjs`:** the three Collection captures became six, all enforced; `collection-excluded`
+  (2026-09-27) makes seven.
 - The moves card changes (the badge column, the Team Analysis hairline, the effect-icon colors on
   Build and Team Analysis) are listed in `pokemon-detail.md`.
 - **`Header`'s props are a union** (final review): `variant="top"` requires a `title`, `sub` does
