@@ -70,6 +70,10 @@ const AUDIT_ENFORCED = new Set([
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
 const captured = new Set();
+/** Text scrolled out of its scroll container in a capture, so the audit could not measure it; and
+ * per page group, the text that was measured in some capture. Listed at the end, not failing. */
+const unmeasured = [];
+const measuredOnPage = new Map();
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '..', 'screenshots');
@@ -160,8 +164,11 @@ await page.evaluateOnNewDocument(
  * not last (a loading card), so a shot that missed its state fails instead of passing quietly.
  * `before`: runs before each shot (each theme on an audit run), to bring back a state that clears
  * itself sooner than two shots and their audits take.
+ * `group`: the page this capture belongs to, when several captures show one page (About, then
+ * About with a row open and scrolled). Text a capture could not measure because it was scrolled out
+ * of view is checked against every capture of its group (default: the capture's own name).
  */
-async function shot(name, fullPage = true, { mustShow, before } = {}) {
+async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
   captured.add(name);
   await new Promise((r) => setTimeout(r, 350));
   // A full-page shot resizes the viewport to the page instead of stitching past it, so the fixed
@@ -186,8 +193,15 @@ async function shot(name, fullPage = true, { mustShow, before } = {}) {
     const file = path.join(outDir, `${name}-${theme}.png`);
     await take(file);
     console.log(`  ${name}-${theme}.png`);
-    for (const f of await auditPage(page)) {
+    const report = { unmeasured: [], measured: [] };
+    for (const f of await auditPage(page, report)) {
       auditFindings.push({ name, line: `[${name} ${theme}] ${f}` });
+    }
+    const seen = measuredOnPage.get(group ?? name) ?? new Set();
+    report.measured.forEach((k) => seen.add(k));
+    measuredOnPage.set(group ?? name, seen);
+    for (const u of report.unmeasured) {
+      unmeasured.push({ name, theme, group: group ?? name, ...u });
     }
   });
 }
@@ -1515,7 +1529,7 @@ await shot('settings-appearance', false);
 await backToHub();
 
 await pushSettings('About');
-await shot('settings-about', false);
+await shot('settings-about', false, { group: 'settings-about' });
 await clickSheetButton('What leaves it?');
 await page.waitForSelector('.ui-sheet .ui-expand.open');
 // Privacy at the top of the sheet: the open list and what follows it, no line cut under the
@@ -1524,7 +1538,7 @@ await page.$eval('.ui-sheet .ui-expand.open', (e) => {
   e.closest('.settings-block').scrollIntoView({ block: 'start' });
   e.closest('.ui-sheet-body').scrollBy(0, 1);
 });
-await shot('settings-about-leaves', false);
+await shot('settings-about-leaves', false, { group: 'settings-about' });
 await backToHub();
 
 // The confirm has to paint over the Settings sheet: the topmost element at Settings' own Done
@@ -1577,6 +1591,17 @@ if (AUDIT) {
     console.log(`\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`);
     for (const f of reported) {
       console.log(`  ${f.line}`);
+    }
+  }
+  if (unmeasured.length > 0) {
+    console.log('\nNot on screen, unmeasured (scrolled out of their container; not failing):');
+    for (const u of unmeasured) {
+      const where = measuredOnPage.get(u.group)?.has(u.key)
+        ? `measured in another capture of ${u.group}`
+        : `NEVER measured in any capture of ${u.group}`;
+      const mark = AUDIT_ENFORCED.has(u.name) ? ' (enforced)' : '';
+      const text = u.key.slice(u.key.indexOf('|') + 1, u.key.indexOf('|') + 41);
+      console.log(`  [${u.name} ${u.theme}]${mark} ${u.selector} "${text}": ${where}`);
     }
   }
   if (enforced.length > 0) {

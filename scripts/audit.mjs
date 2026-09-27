@@ -34,7 +34,15 @@ export async function forEachTheme(page, fn) {
   }, before);
 }
 
-export async function auditPage(page) {
+/**
+ * `report`, when given, takes what the audit could not measure because it was not on screen:
+ * `report.unmeasured` gets { selector, key } for text scrolled wholly out of its scroll container,
+ * and `report.measured` gets the key of every text node whose contrast was decided, so a caller
+ * can say whether hidden text was measured in another capture of the same page. The key is the
+ * tag and the first 80 characters of the text. Without a report, hidden text stays a failing
+ * "contrast unverified" finding, as it always was.
+ */
+export async function auditPage(page, report) {
   const findings = [];
 
   const overflow = await page.evaluate(
@@ -182,14 +190,27 @@ export async function auditPage(page) {
       // last lines of a sheet page that scrolls, running past the sheet's bottom edge) keeps its
       // whole box, and no opaque layer inside the container "covers" it. Only the part inside
       // every scrolling ancestor is on screen, so that part is what gets compared, and a line
-      // scrolled wholly out of sight is left out. Body and the root are not clips (a long page's
-      // own scroll is what full-page shots capture). Text scrolled wholly out of its container is
-      // not on screen at all, so there is nothing to measure and nothing to report.
+      // scrolled wholly out of sight is left out. Each axis clips only where that axis overflows
+      // (.app clips x alone), and the walk stops at a fixed element: its containing block is the
+      // viewport, so nothing above it clips it. Body and the root are not clips (a long page's own
+      // scroll is what full-page shots capture). Text scrolled wholly out of its container is not
+      // on screen, so it is handed back as hidden: unmeasured, never silently passed.
       const clips = [];
       for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
         const acs = getComputedStyle(a);
-        if (acs.overflowX !== 'visible' || acs.overflowY !== 'visible') {
-          clips.push(a.getBoundingClientRect());
+        const x = acs.overflowX !== 'visible';
+        const y = acs.overflowY !== 'visible';
+        if (x || y) {
+          const b = a.getBoundingClientRect();
+          clips.push({
+            left: x ? b.left : -Infinity,
+            right: x ? b.right : Infinity,
+            top: y ? b.top : -Infinity,
+            bottom: y ? b.bottom : Infinity,
+          });
+        }
+        if (acs.position === 'fixed') {
+          break;
         }
       }
       const wholeRects = D.getVisibleChildTextRects(el);
@@ -284,6 +305,14 @@ export async function auditPage(page) {
       return { ratio: C.getContrast(bg, fg), required, fg: fg.toHexString(), bg: bg.toHexString() };
     };
 
+    const keyOf = (e) =>
+      e
+        ? `${e.tagName.toLowerCase()}|${(e.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80)}`
+        : '';
+    const measuredKeys = [...res.passes, ...res.violations].flatMap((v) =>
+      v.nodes.map((n) => keyOf(document.querySelector(n.target.join(' ')))),
+    );
+    const hidden = [];
     const unverified = [];
     const incomplete = res.incomplete.flatMap((v) => v.nodes);
     window.axe.setup(document);
@@ -301,7 +330,11 @@ export async function auditPage(page) {
             ? measureBelowOpaque(el)
             : null;
         if (measured?.hidden) {
+          hidden.push({ selector: n.target.join(' '), key: keyOf(el) });
           continue;
+        }
+        if (measured) {
+          measuredKeys.push(keyOf(el));
         }
         if (!measured) {
           unverified.push(`contrast unverified: ${n.target.join(' ')} ${message(n)}`);
@@ -314,9 +347,19 @@ export async function auditPage(page) {
     } finally {
       window.axe.teardown();
     }
-    return [...failed, ...unverified];
+    return { findings: [...failed, ...unverified], hidden, measured: measuredKeys };
   });
-  findings.push(...contrast);
+  findings.push(...contrast.findings);
+  if (report) {
+    report.unmeasured.push(...contrast.hidden);
+    report.measured.push(...contrast.measured);
+  } else {
+    findings.push(
+      ...contrast.hidden.map(
+        (h) => `contrast unverified: ${h.selector} is scrolled out of its container, not on screen`,
+      ),
+    );
+  }
 
   return findings;
 }

@@ -19,7 +19,8 @@ function snapshot(): DiagEntry[] {
   return cache;
 }
 
-/** Error reports switch plus the on-device log with a copy button, for the About page. */
+/** About's Diagnostics block: the error reports switch, then the on-device log and Copy (with
+ * Clear beside it once there is something to clear). */
 export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   const entries = useSyncExternalStore(subscribeDiagnostics, snapshot, snapshot);
   const [copied, setCopied] = useState(false);
@@ -34,11 +35,8 @@ export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle:
   };
   return (
     <section className="settings-block">
+      <h4 className="settings-head">Diagnostics</h4>
       <Switch label="Send anonymous error reports" checked={enabled} onChange={() => onToggle()} />
-      <div className="settings-pair">
-        <Button onClick={() => void copy()}>{copied ? 'Copied' : 'Copy'}</Button>
-        {entries.length > 0 ? <Button onClick={clearDiagnostics}>Clear</Button> : null}
-      </div>
       {entries.length === 0 ? (
         <p className="settings-line">
           No errors recorded. If something breaks, this is where it shows up.
@@ -53,6 +51,10 @@ export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle:
           {entries.length > 5 ? <span>and {entries.length - 5} more in the copy</span> : null}
         </div>
       )}
+      <div className="settings-pair">
+        <Button onClick={() => void copy()}>{copied ? 'Copied' : 'Copy'}</Button>
+        {entries.length > 0 ? <Button onClick={clearDiagnostics}>Clear</Button> : null}
+      </div>
     </section>
   );
 }
