@@ -350,11 +350,10 @@ a {
 .moves {
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--divider);
 }
 .move-row {
   display: grid;
-  grid-template-columns: 56px 1fr;
+  grid-template-columns: 56px 1fr auto;
   gap: 8px;
   padding: 8px 0;
   font-size: 14px;
@@ -374,14 +373,15 @@ a {
   gap: 4px;
   min-width: 0;
 }
+.move-row > .tm {
+  align-self: start;
+  margin-top: 4px;
+}
 .move-line {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-}
-.move-line .tm {
-  margin-left: auto;
 }
 .move-name {
   font-size: 14px;

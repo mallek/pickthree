@@ -428,9 +428,9 @@ export function MoveRows({
               <TypeChip type={fast.type} small />
               <EffectIcons effects={fast.effects} />
             </span>
-            <TmBadge tm={fast.tm} />
           </span>
         </span>
+        <TmBadge tm={fast.tm} />
       </div>
       {charged.map((m, mi) => {
         const count = countsText(fast.name, m.counts);
@@ -447,7 +447,6 @@ export function MoveRows({
                   {m.altType ? <TypeChip type={m.altType} small /> : null}
                   <EffectIcons effects={m.effects} />
                 </span>
-                <TmBadge tm={m.tm} />
               </span>
               {count || read || note ? (
                 <span className="move-sub">
@@ -468,6 +467,7 @@ export function MoveRows({
                 </span>
               ) : null}
             </span>
+            <TmBadge tm={m.tm} />
           </div>
         );
       })}

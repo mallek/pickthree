@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { VerdictLabel } from '@pickthree/engine';
+import type { MoveChoice, VerdictLabel } from '@pickthree/engine';
 import {
   MetaButton,
+  MoveRows,
   Progress,
   NoCollection,
   CogGlyph,
@@ -63,6 +64,50 @@ describe('VerdictTag', () => {
       expect(tag.tagName).toBe('SPAN');
     });
   }
+});
+
+describe('MoveRows', () => {
+  const fast: MoveChoice = {
+    moveId: 'counter',
+    name: 'Counter',
+    type: 'fighting',
+    tm: 'tm',
+    energy: 0,
+    energyGain: 7,
+    turns: 1,
+    countFromFast: null,
+    counts: null,
+    effects: [],
+    altType: null,
+  };
+  const charged: MoveChoice = {
+    moveId: 'upper_hand',
+    name: 'Upper Hand',
+    type: 'fighting',
+    tm: 'have',
+    energy: 40,
+    energyGain: 0,
+    turns: 0,
+    countFromFast: 6,
+    counts: [6, 6, 6],
+    effects: [{ who: 'opponent', stat: 'atk', stages: -1, chance: 0.3 }],
+    altType: null,
+  };
+
+  it('renders the badge as a direct child of .move-row, apart from .move-line', () => {
+    const { container } = render(<MoveRows fast={fast} charged={[charged]} />);
+    const rows = container.querySelectorAll('.move-row');
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      const directBadge = Array.from(row.children).find((c) => c.classList.contains('tm'));
+      expect(directBadge).not.toBeUndefined();
+      const line = row.querySelector('.move-line');
+      expect(line).not.toBeNull();
+      expect(line?.querySelector('.tm')).toBeNull();
+      expect(line?.querySelector('.move-name')).not.toBeNull();
+      expect(line?.querySelector('.move-tags')).not.toBeNull();
+    }
+  });
 });
 
 describe('glyphs', () => {
