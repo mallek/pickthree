@@ -5,7 +5,7 @@
  * "Pokemon". Drives a puppeteer page that is already on the screen to check.
  * axe-core is injected into the page for the check only; it never ships in either app.
  */
-/* global document, window, getComputedStyle, HTMLElement, SVGElement */
+/* global document, window, getComputedStyle, HTMLElement, SVGElement, DOMRect */
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -178,7 +178,37 @@ export async function auditPage(page) {
       if (style.textShadow !== 'none') {
         return null;
       }
-      const textRects = D.getVisibleChildTextRects(el);
+      // axe clips text to overflow: hidden ancestors only, so a line cut by a scroll container (the
+      // last lines of a sheet page that scrolls, running past the sheet's bottom edge) keeps its
+      // whole box, and no opaque layer inside the container "covers" it. Only the part inside
+      // every scrolling ancestor is on screen, so that part is what gets compared, and a line
+      // scrolled wholly out of sight is left out. Body and the root are not clips (a long page's
+      // own scroll is what full-page shots capture). Text scrolled wholly out of its container is
+      // not on screen at all, so there is nothing to measure and nothing to report.
+      const clips = [];
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        const acs = getComputedStyle(a);
+        if (acs.overflowX !== 'visible' || acs.overflowY !== 'visible') {
+          clips.push(a.getBoundingClientRect());
+        }
+      }
+      const wholeRects = D.getVisibleChildTextRects(el);
+      const shownRects = wholeRects.flatMap((r) => {
+        let { left, top, right, bottom } = r;
+        for (const c of clips) {
+          left = Math.max(left, c.left);
+          top = Math.max(top, c.top);
+          right = Math.min(right, c.right);
+          bottom = Math.min(bottom, c.bottom);
+        }
+        return right - left >= 1 && bottom - top >= 1
+          ? [new DOMRect(left, top, right - left, bottom - top)]
+          : [];
+      });
+      if (clips.length > 0 && wholeRects.length > 0 && shownRects.length === 0) {
+        return { hidden: true };
+      }
+      const textRects = clips.length > 0 ? shownRects : wholeRects;
       const stacks = D.getTextElementStack(el).map((s) => D.reduceToElementsBelowFloating(s, el));
       if (textRects.length === 0 || stacks.length === 0) {
         return null;
@@ -270,6 +300,9 @@ export async function auditPage(page) {
           el && (key === 'elmPartiallyObscuring' || key === 'elmPartiallyObscured')
             ? measureBelowOpaque(el)
             : null;
+        if (measured?.hidden) {
+          continue;
+        }
         if (!measured) {
           unverified.push(`contrast unverified: ${n.target.join(' ')} ${message(n)}`);
         } else if (measured.ratio < measured.required) {

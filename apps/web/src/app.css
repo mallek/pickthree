@@ -1653,16 +1653,17 @@ textarea.paste {
   font-weight: 600;
   font-size: 13px;
 }
+/* About's App block: the build line, then Check for updates under it on the gutter (a build id of
+   any length would otherwise push it onto a line of its own, indented by its padding). */
 .update-status {
   display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
 }
 .update-status .btn-ghost {
-  min-height: 28px;
-  font-size: 12px;
-  padding: 0 8px;
+  min-height: var(--tap);
+  font-size: var(--fs-support);
+  padding: 0;
 }
 
 .form-note {
@@ -3675,4 +3676,21 @@ input[type='range'] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space);
+}
+/* An ExpandRow's body has no top padding of its own; each fact inside it is its own line. */
+.settings-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+}
+/* A standalone link on a page (About's Source): a full tap target, only as wide as its text. */
+.settings-link {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: var(--tap);
+}
+.settings-block .seg > * {
+  min-height: var(--tap);
 }

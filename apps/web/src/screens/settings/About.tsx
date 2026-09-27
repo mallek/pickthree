@@ -29,19 +29,21 @@ export function About() {
       </section>
       <section className="settings-block">
         <h4 className="settings-head">App</h4>
-        <p>Build {__PICK3_BUILD__.slice(0, 7)}</p>
+        {/* UpdateStatus names the build and its date; a separate "Build" line said it twice. */}
         <UpdateStatus />
       </section>
       <section className="settings-block">
         <h4 className="settings-head">Privacy</h4>
         <p>Your collection stays on this phone.</p>
         <ExpandRow summary="What leaves it?" open={leaves} onToggle={() => setLeaves((v) => !v)}>
-          <p className="settings-line">
-            An anonymous tick to the trainer counter when you build teams.
-          </p>
-          <p className="settings-line">Anonymous battle records unless sharing is off.</p>
-          <p className="settings-line">Anonymous error reports unless turned off below.</p>
-          <p className="settings-line">None of it includes your Pokémon.</p>
+          <div className="settings-facts">
+            <p className="settings-line">
+              An anonymous tick to the trainer counter when you build teams.
+            </p>
+            <p className="settings-line">Anonymous battle records unless sharing is off.</p>
+            <p className="settings-line">Anonymous error reports unless turned off below.</p>
+            <p className="settings-line">None of it includes your Pokémon.</p>
+          </div>
         </ExpandRow>
       </section>
       <Diagnostics
@@ -56,7 +58,9 @@ export function About() {
           Built on <a href="https://github.com/pvpoke/pvpoke">PvPoke</a> (MIT). Not affiliated with
           Niantic, Nintendo, The Pokémon Company, Poke Genie, or PvPoke.
         </p>
-        <a href="https://github.com/mallek/pickthree">Source</a>
+        <a className="settings-link" href="https://github.com/mallek/pickthree">
+          Source
+        </a>
       </section>
       <TrainerCounter count={trainers} />
     </div>

@@ -24,12 +24,14 @@ export function Appearance() {
           options={THEMES.map((t) => ({ value: t, label: THEME_WORDS[t] }))}
         />
       </section>
-      <Switch
-        label="Pokémon pictures"
-        line="Off shows a colored initial instead"
-        checked={s.settings.sprites !== false}
-        onChange={(sprites) => updateSettings((cur) => ({ ...cur, sprites }))}
-      />
+      <section className="settings-block">
+        <Switch
+          label="Pokémon pictures"
+          line="Off shows a colored initial instead"
+          checked={s.settings.sprites !== false}
+          onChange={(sprites) => updateSettings((cur) => ({ ...cur, sprites }))}
+        />
+      </section>
     </div>
   );
 }

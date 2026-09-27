@@ -1,4 +1,4 @@
-/* global document, window, indexedDB, getComputedStyle */
+/* global document, window, indexedDB, getComputedStyle, DataTransfer */
 /**
  * Drives the built app in the locally installed Chrome, imports the sample collection, and
  * screenshots every screen at phone size.
@@ -54,6 +54,18 @@ const AUDIT_ENFORCED = new Set([
   'log-battle-wide',
   '22-new-set',
   'new-set-searching',
+  'settings-hub',
+  'settings-hub-no-collection',
+  'settings-your-data',
+  'settings-log-imported',
+  'settings-community',
+  'settings-community-sent',
+  'settings-appearance',
+  'settings-about',
+  'settings-about-leaves',
+  'settings-confirm-forget',
+  'settings-confirm-fresh',
+  'settings-confirm-sharing',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -224,6 +236,27 @@ console.log('teams without a collection');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.choice-card');
 await shot('teams-no-collection', false);
+
+console.log('settings without a collection');
+// From the Teams header cog, before the import: the hub offers "Import a CSV", its Your data row
+// reads "No collection yet", and there is no Forget button. Teams, not Counters: the sheet only
+// covers part of the page, and the audit reads the page under it too; Counters is not redesigned
+// yet (round 3) and its own findings would land on this Settings shot.
+await page.click('button[aria-label="Settings"]');
+await page.waitForSelector('.ui-sheet .settings-rows');
+await page.waitForFunction(
+  () =>
+    [...document.querySelectorAll('.settings-row-summary')].some((e) =>
+      e.textContent?.startsWith('No collection yet · '),
+    ),
+  { timeout: 15_000 },
+);
+if (await page.$('.ui-sheet .ui-btn-danger')) {
+  throw new Error('settings without a collection: Forget is offered with nothing to forget');
+}
+await shot('settings-hub-no-collection', false, { mustShow: '.ui-sheet .settings-rows' });
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
 
 console.log('counters without a collection');
 await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
@@ -690,39 +723,6 @@ if (!sheetCheck.ok) {
 await shot('08c-leagues-sheet', false);
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
-
-console.log('leagues sheet opened from Settings still covers Settings');
-await page.click('.cog.head-cog');
-await page.waitForSelector('.sheet[role="dialog"]');
-await new Promise((r) => setTimeout(r, 300));
-await page.click('.sheet .league-more');
-await page.waitForSelector('.ui-sheet');
-await new Promise((r) => setTimeout(r, 300));
-const nestedSheetCheck = await page.evaluate(() => {
-  const done = [...document.querySelectorAll('.sheet .between button.btn-ghost')].find(
-    (b) => b.textContent?.trim() === 'Done',
-  );
-  if (!done) {
-    return { ok: false, reason: "could not find Settings' own Done button" };
-  }
-  const b = done.getBoundingClientRect();
-  const x = b.left + b.width / 2;
-  const y = b.top + b.height / 2;
-  const top = document.elementFromPoint(x, y);
-  const coveredByLeagues = top !== null && (top.closest('.ui-overlay') !== null || top.closest('.ui-sheet') !== null);
-  return {
-    ok: coveredByLeagues,
-    reason: `topmost at Settings' Done is ${top?.className ?? top?.tagName ?? 'nothing'}, not the Leagues overlay or sheet`,
-  };
-});
-if (!nestedSheetCheck.ok) {
-  throw new Error(`Leagues sheet nested in Settings: ${nestedSheetCheck.reason}`);
-}
-await shot('08d-leagues-sheet-in-settings', false);
-await page.click('.ui-sheet-done');
-await page.waitForSelector('.ui-sheet', { hidden: true });
-await page.click('.sheet .between button.btn-ghost');
-await page.waitForSelector('.sheet', { hidden: true });
 
 console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
@@ -1367,15 +1367,197 @@ await new Promise((r) => setTimeout(r, 600));
 console.log(`  manual add landed at ${page.url()}`);
 await shot('17-added', false);
 
-console.log('settings sheet');
+console.log('settings');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 // Teams carries two IconButtons (the meta link, then Settings); the aria-label picks the
 // settings one specifically.
 await page.waitForSelector('button[aria-label="Settings"]');
 await page.click('button[aria-label="Settings"]');
-await page.waitForSelector('.sheet');
-await new Promise((r) => setTimeout(r, 400));
-await shot('06-sheet', false);
+await page.waitForSelector('.ui-sheet .settings-rows');
+/** Waits for the Settings sheet's title to read this page's title. */
+const onSettingsPage = (title) =>
+  page.waitForFunction(
+    (t) => document.querySelector('.ui-sheet:not(.ui-confirm) .ui-sheet-title')?.textContent === t,
+    { timeout: 10_000 },
+    title,
+  );
+/** Pushes a hub row's page by its title. */
+const pushSettings = async (title) => {
+  const found = await page.$$eval(
+    '.settings-row',
+    (rows, t) => {
+      const row = rows.find((r) => r.querySelector('.settings-row-title')?.textContent === t);
+      row?.click();
+      return Boolean(row);
+    },
+    title,
+  );
+  if (!found) {
+    throw new Error(`settings: no "${title}" row on the hub`);
+  }
+  await onSettingsPage(title);
+};
+const backToHub = async () => {
+  await page.click('.ui-sheet:not(.ui-confirm) .ui-sheet-head .back');
+  await onSettingsPage('Settings');
+  await page.waitForSelector('.ui-sheet .settings-rows');
+};
+/** Clicks the button in the sheet stack with exactly this text. */
+const clickSheetButton = async (label) => {
+  const found = await page.$$eval(
+    '.ui-sheet button',
+    (els, l) => {
+      const b = els.find((e) => e.textContent?.trim() === l);
+      b?.click();
+      return Boolean(b);
+    },
+    label,
+  );
+  if (!found) {
+    throw new Error(`settings: no "${label}" button`);
+  }
+};
+/** Opens a confirm with the button labeled `open`, shoots it, then cancels with `cancel`. */
+const shootConfirm = async (name, open, cancel, check) => {
+  await clickSheetButton(open);
+  await page.waitForSelector('.ui-confirm');
+  if (check) {
+    await check();
+  }
+  await shot(name, false, { mustShow: '.ui-confirm' });
+  await clickSheetButton(cancel);
+  await page.waitForSelector('.ui-confirm', { hidden: true });
+};
+// The hub's battle count and PvPoke date land after the sheet opens.
+await page.waitForFunction(
+  () => {
+    const summaries = [...document.querySelectorAll('.settings-row-summary')].map(
+      (e) => e.textContent ?? '',
+    );
+    return summaries.some((t) => / battles?$/.test(t)) && !summaries.some((t) => t.includes('...'));
+  },
+  { timeout: 15_000 },
+);
+await shot('settings-hub', false, { mustShow: '.ui-sheet .settings-rows' });
+
+await pushSettings('Your data');
+await shot('settings-your-data', false);
+// Import log: a file built in the page from the battles store, set on the hidden input. Every set
+// is already here, so the result line counts them as skipped and nothing is written.
+await page.evaluate(
+  () =>
+    new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const req = db.transaction('battles').objectStore('battles').getAll();
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          db.close();
+          const text = JSON.stringify({
+            app: 'pick3',
+            kind: 'battle-log',
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            sets: req.result,
+          });
+          const input = document.querySelector('.ui-sheet input[type="file"]');
+          if (!input) {
+            reject(new Error('no Import log file input on Your data'));
+            return;
+          }
+          const dt = new DataTransfer();
+          dt.items.add(new File([text], 'pick3-battle-log.json', { type: 'application/json' }));
+          input.files = dt.files;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+          resolve();
+        };
+      };
+    }),
+);
+await page.waitForFunction(
+  () =>
+    /^Added \d+ sets?, skipped \d+ already here\.$/.test(
+      document.querySelector('.ui-sheet [role="status"]')?.textContent ?? '',
+    ),
+  { timeout: 15_000 },
+);
+const imported = await page.$eval('.ui-sheet [role="status"]', (e) => {
+  e.scrollIntoView({ block: 'center' });
+  return e.textContent;
+});
+console.log(`  import log: ${imported}`);
+await shot('settings-log-imported', false, { mustShow: '.ui-sheet [role="status"]' });
+await shootConfirm('settings-confirm-fresh', 'Start fresh in Great League', 'Keep this season');
+await backToHub();
+
+await pushSettings('Community');
+await shot('settings-community', false);
+await clickSheetButton("What's sent?");
+await page.waitForSelector('.ui-sheet .ui-expand.open');
+await shot('settings-community-sent', false);
+// Sharing is on by default; turning it off asks first. Cancel, and it stays on.
+await page.click('.ui-sheet [role="switch"]');
+await page.waitForSelector('.ui-confirm');
+await shot('settings-confirm-sharing', false, { mustShow: '.ui-confirm' });
+await clickSheetButton('Keep sharing');
+await page.waitForSelector('.ui-confirm', { hidden: true });
+if (
+  (await page.$eval('.ui-sheet [role="switch"]', (e) => e.getAttribute('aria-checked'))) !== 'true'
+) {
+  throw new Error('settings: Keep sharing turned sharing off');
+}
+await backToHub();
+
+await pushSettings('Appearance');
+await shot('settings-appearance', false);
+await backToHub();
+
+await pushSettings('About');
+await shot('settings-about', false);
+await clickSheetButton('What leaves it?');
+await page.waitForSelector('.ui-sheet .ui-expand.open');
+// Privacy at the top of the sheet: the open list and what follows it, no line cut under the
+// header. One pixel further, so the block's own top divider does not sit under the header's.
+await page.$eval('.ui-sheet .ui-expand.open', (e) => {
+  e.closest('.settings-block').scrollIntoView({ block: 'start' });
+  e.closest('.ui-sheet-body').scrollBy(0, 1);
+});
+await shot('settings-about-leaves', false);
+await backToHub();
+
+// The confirm has to paint over the Settings sheet: the topmost element at Settings' own Done
+// button is the confirm's overlay or the confirm itself (the old nested Leagues sheet check).
+await shootConfirm(
+  'settings-confirm-forget',
+  'Forget my collection and log',
+  'Keep them',
+  async () => {
+    const layer = await page.evaluate(() => {
+      const done = document.querySelector('.ui-sheet:not(.ui-confirm) .ui-sheet-done');
+      const confirm = document.querySelector('.ui-confirm');
+      if (!done || !confirm) {
+        return { ok: false, reason: "could not find Settings' Done button or the confirm" };
+      }
+      const b = done.getBoundingClientRect();
+      const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+      const ok = top !== null && (confirm.contains(top) || top === confirm.previousElementSibling);
+      return {
+        ok,
+        reason: `topmost at Settings' Done is ${top?.className || top?.tagName || 'nothing'}, not the confirm's overlay or sheet`,
+      };
+    });
+    if (!layer.ok) {
+      throw new Error(`Forget confirm over Settings: ${layer.reason}`);
+    }
+  },
+);
+if (!(await page.$('.ui-sheet .settings-rows'))) {
+  throw new Error('settings: Keep them left the hub');
+}
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
 
 console.log('light theme');
 await page.emulateMediaFeatures([

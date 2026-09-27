@@ -33,18 +33,22 @@ export function Community() {
         />
         <p className="settings-line">Turning this off also deletes what this phone sent.</p>
       </section>
-      <ExpandRow summary="What's sent?" open={whatsSent} onToggle={() => setWhatsSent((v) => !v)}>
-        <p className="settings-line">
-          Sent: league, season, time, your three Pokémon and their moves when known, the
-          opponents you saw, win, loss or tanked, a random device id and the app version.
-        </p>
-        <p className="settings-line">
-          Never sent: your collection, IVs, names, or the opponents&apos; moves.
-        </p>
-      </ExpandRow>
-      <Button variant="secondary" href="https://meta.pick3.gg">
-        Open meta.pick3.gg
-      </Button>
+      <section className="settings-block">
+        <ExpandRow summary="What's sent?" open={whatsSent} onToggle={() => setWhatsSent((v) => !v)}>
+          <div className="settings-facts">
+            <p className="settings-line">
+              Sent: league, season, time, your three Pokémon and their moves when known, the
+              opponents you saw, win, loss or tanked, a random device id and the app version.
+            </p>
+            <p className="settings-line">
+              Never sent: your collection, IVs, names, or the opponents&apos; moves.
+            </p>
+          </div>
+        </ExpandRow>
+        <Button variant="secondary" href="https://meta.pick3.gg">
+          Open meta.pick3.gg
+        </Button>
+      </section>
       {confirmStop ? (
         <ConfirmSheet
           title="Stop sharing?"
