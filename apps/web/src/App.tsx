@@ -8,7 +8,7 @@ import { LogBattle } from './screens/LogBattle.tsx';
 import { SharedTeam } from './screens/SharedTeam.tsx';
 import { NewSet } from './screens/NewSet.tsx';
 import { Report } from './screens/Report.tsx';
-import { Sheet } from './screens/Sheet.tsx';
+import { Settings } from './screens/settings/Settings.tsx';
 import { SpecimenScreen } from './screens/Specimen.tsx';
 import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
@@ -153,7 +153,7 @@ export function App() {
     <div className="app">
       {screen}
       {showTabs ? <TabBar /> : null}
-      {s.sheetOpen ? <Sheet /> : null}
+      {s.sheetOpen ? <Settings /> : null}
       {s.filtersOpen ? <Filters /> : null}
       <UpdateToast />
       <NoticeToast />

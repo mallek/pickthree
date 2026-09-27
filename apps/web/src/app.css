@@ -3581,3 +3581,98 @@ input[type='range'] {
   color: var(--accent-text);
   font-weight: 600;
 }
+/* Settings (screens/settings/): the hub's Import card and drill-in rows, and the blocks each
+   pushed page stacks. The sheet body is --surface, so the card sits on --surface2 to read as a
+   card; the rows share one divider between them, since the ui Switch row carries none. */
+.settings-card {
+  background: var(--surface2);
+}
+.settings-card-line {
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.settings-rows {
+  display: flex;
+  flex-direction: column;
+}
+.settings-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--divider);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-row:last-child {
+  border-bottom: 0;
+}
+.settings-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.settings-row-icon {
+  display: flex;
+  color: var(--accent-text);
+}
+.settings-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.settings-row-title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.settings-row-summary {
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.settings-row-chevron {
+  display: flex;
+  color: var(--faint);
+}
+.settings-foot {
+  font-size: var(--fs-support);
+  color: var(--muted);
+  text-align: center;
+}
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.settings-page > * + * {
+  border-top: 1px solid var(--divider);
+  padding-top: 16px;
+}
+.settings-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+}
+.settings-head {
+  margin: 0;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.settings-line {
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.settings-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space);
+}
