@@ -36,11 +36,15 @@ export async function forEachTheme(page, fn) {
 
 /**
  * `report`, when given, takes what the audit could not measure because it was not on screen:
- * `report.unmeasured` gets { selector, key } for text scrolled wholly out of its scroll container,
- * and `report.measured` gets the key of every text node whose contrast was decided, so a caller
- * can say whether hidden text was measured in another capture of the same page. The key is the
- * tag and the first 80 characters of the text. Without a report, hidden text stays a failing
- * "contrast unverified" finding, as it always was.
+ * `report.unmeasured` gets { selector, key, text } for text scrolled wholly out of its scroll
+ * container, and `report.measured` gets the key of every element whose contrast was decided, so a
+ * caller can say whether hidden text was measured in another capture of the same page. The key
+ * names the element, not just its words: its DOM path (tag and child position at each step) up to
+ * the nearest ancestor with a stable id, or to body, plus its text. Two elements never share a
+ * key, and the same element keeps its key across captures of one page as long as the tree above it
+ * holds still; when that tree changes, the key changes and the text counts as unmeasured, which
+ * fails closed. Without a report, hidden text stays a failing "contrast unverified" finding, as it
+ * always was.
  */
 export async function auditPage(page, report) {
   const findings = [];
@@ -196,7 +200,12 @@ export async function auditPage(page, report) {
       // scroll is what full-page shots capture). Text scrolled wholly out of its container is not
       // on screen, so it is handed back as hidden: unmeasured, never silently passed.
       const clips = [];
-      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      const selfFixed = style.position === 'fixed';
+      for (
+        let a = selfFixed ? null : el.parentElement;
+        a && a !== document.body;
+        a = a.parentElement
+      ) {
         const acs = getComputedStyle(a);
         const x = acs.overflowX !== 'visible';
         const y = acs.overflowY !== 'visible';
@@ -204,6 +213,11 @@ export async function auditPage(page, report) {
           const b = a.getBoundingClientRect();
           clips.push({
             left: x ? b.left : -Infinity,
+      // An element that is itself fixed is placed against the viewport, so no ancestor clips it.
+      // Not handled: an absolutely positioned descendant whose containing block sits above an
+      // overflow ancestor escapes that ancestor's clip, but is still clipped by it here. That errs
+      // toward measuring less of it (or listing it as not on screen), never toward measuring text
+      // that is off screen.
             right: x ? b.right : Infinity,
             top: y ? b.top : -Infinity,
             bottom: y ? b.bottom : Infinity,
@@ -305,10 +319,32 @@ export async function auditPage(page, report) {
       return { ratio: C.getContrast(bg, fg), required, fg: fg.toHexString(), bg: bg.toHexString() };
     };
 
-    const keyOf = (e) =>
-      e
-        ? `${e.tagName.toLowerCase()}|${(e.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80)}`
-        : '';
+    const textOf = (e) => (e ? (e.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80) : '');
+    // React's useId ids (":r1:", or the same between guillemets) change on a remount, so they are
+    // not anchors.
+    const anchorId = (e) => (e.id && !/[:«»]/.test(e.id) ? e.id : null);
+    const keyOf = (e) => {
+      if (!e) {
+        return '';
+      }
+      const steps = [];
+      let n = e;
+      for (; n && n !== document.body; n = n.parentElement) {
+        const id = anchorId(n);
+        if (id) {
+          steps.unshift(`#${id}`);
+          break;
+        }
+        const i = n.parentElement
+          ? Array.prototype.indexOf.call(n.parentElement.children, n) + 1
+          : 0;
+        steps.unshift(`${n.tagName.toLowerCase()}:nth-child(${i})`);
+      }
+      if (n === document.body) {
+        steps.unshift('body');
+      }
+      return `${steps.join(' > ')}\n${textOf(e)}`;
+    };
     const measuredKeys = [...res.passes, ...res.violations].flatMap((v) =>
       v.nodes.map((n) => keyOf(document.querySelector(n.target.join(' ')))),
     );
@@ -330,7 +366,7 @@ export async function auditPage(page, report) {
             ? measureBelowOpaque(el)
             : null;
         if (measured?.hidden) {
-          hidden.push({ selector: n.target.join(' '), key: keyOf(el) });
+          hidden.push({ selector: n.target.join(' '), key: keyOf(el), text: textOf(el) });
           continue;
         }
         if (measured) {

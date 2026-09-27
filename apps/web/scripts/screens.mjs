@@ -71,7 +71,8 @@ const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
 const captured = new Set();
 /** Text scrolled out of its scroll container in a capture, so the audit could not measure it; and
- * per page group, the text that was measured in some capture. Listed at the end, not failing. */
+ * per page group and theme, the elements measured in some capture. Listed at the end; on an
+ * enforced screen, text no capture of its page measured in that theme fails the run. */
 const unmeasured = [];
 const measuredOnPage = new Map();
 
@@ -166,7 +167,8 @@ await page.evaluateOnNewDocument(
  * itself sooner than two shots and their audits take.
  * `group`: the page this capture belongs to, when several captures show one page (About, then
  * About with a row open and scrolled). Text a capture could not measure because it was scrolled out
- * of view is checked against every capture of its group (default: the capture's own name).
+ * of view is checked against every capture of its group in the same theme (default: the capture's
+ * own name).
  */
 async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
   captured.add(name);
@@ -197,9 +199,11 @@ async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
     for (const f of await auditPage(page, report)) {
       auditFindings.push({ name, line: `[${name} ${theme}] ${f}` });
     }
-    const seen = measuredOnPage.get(group ?? name) ?? new Set();
+    // Keyed by theme too: text measured only in light says nothing about its contrast in dark.
+    const pageKey = `${group ?? name}|${theme}`;
+    const seen = measuredOnPage.get(pageKey) ?? new Set();
     report.measured.forEach((k) => seen.add(k));
-    measuredOnPage.set(group ?? name, seen);
+    measuredOnPage.set(pageKey, seen);
     for (const u of report.unmeasured) {
       unmeasured.push({ name, theme, group: group ?? name, ...u });
     }
@@ -1585,6 +1589,24 @@ await shot('07-teams-light', false);
 await browser.close();
 console.log(`done in ${Date.now() - t0} ms`);
 if (AUDIT) {
+  // Text never on screen in any capture of its page, in that theme, was never measured at all.
+  // On an enforced screen that is a finding: the audit cannot vouch for its contrast.
+  const unmeasuredLines = unmeasured.map((u) => {
+    const measuredElsewhere = measuredOnPage.get(`${u.group}|${u.theme}`)?.has(u.key) ?? false;
+    const enforcedName = AUDIT_ENFORCED.has(u.name);
+    const text = u.text.slice(0, 40);
+    if (!measuredElsewhere && enforcedName) {
+      auditFindings.push({
+        name: u.name,
+        line: `[${u.name} ${u.theme}] contrast unmeasured: ${u.selector} "${text}" is scrolled out of its container and no ${u.theme} capture of ${u.group} measured it`,
+      });
+    }
+    const where = measuredElsewhere
+      ? `measured in another ${u.theme} capture of ${u.group}`
+      : `NEVER measured in any ${u.theme} capture of ${u.group}`;
+    const mark = enforcedName ? ' (enforced)' : '';
+    return `  [${u.name} ${u.theme}]${mark} ${u.selector} "${text}": ${where}`;
+  });
   const enforced = auditFindings.filter((f) => AUDIT_ENFORCED.has(f.name));
   const reported = auditFindings.filter((f) => !AUDIT_ENFORCED.has(f.name));
   if (reported.length > 0) {
@@ -1593,15 +1615,12 @@ if (AUDIT) {
       console.log(`  ${f.line}`);
     }
   }
-  if (unmeasured.length > 0) {
-    console.log('\nNot on screen, unmeasured (scrolled out of their container; not failing):');
-    for (const u of unmeasured) {
-      const where = measuredOnPage.get(u.group)?.has(u.key)
-        ? `measured in another capture of ${u.group}`
-        : `NEVER measured in any capture of ${u.group}`;
-      const mark = AUDIT_ENFORCED.has(u.name) ? ' (enforced)' : '';
-      const text = u.key.slice(u.key.indexOf('|') + 1, u.key.indexOf('|') + 41);
-      console.log(`  [${u.name} ${u.theme}]${mark} ${u.selector} "${text}": ${where}`);
+  if (unmeasuredLines.length > 0) {
+    console.log(
+      '\nNot on screen, unmeasured (scrolled out of their container; NEVER on an enforced screen fails):',
+    );
+    for (const line of unmeasuredLines) {
+      console.log(line);
     }
   }
   if (enforced.length > 0) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, ConfirmSheet, Sheet, type SheetNav } from '@pickthree/ui';
+import { recordError } from '../../diag.ts';
 import { num } from '../../format.ts';
 import { shareEnabled } from '../../metaShare.ts';
 import { useActions, useAppState } from '../../state/store.tsx';
@@ -30,11 +31,14 @@ function useAllBattles(): number | null {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
     let live = true;
-    void storage.loadAllSets().then((all) => {
-      if (live) {
-        setCount(all.reduce((n, set) => n + set.battles.length, 0));
-      }
-    });
+    void storage
+      .loadAllSets()
+      .then((all) => {
+        if (live) {
+          setCount(all.reduce((n, set) => n + set.battles.length, 0));
+        }
+      })
+      .catch((e: unknown) => recordError('settings-count', e));
     return () => {
       live = false;
     };

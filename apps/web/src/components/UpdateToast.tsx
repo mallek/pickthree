@@ -22,7 +22,7 @@ export function UpdateToast() {
   );
 }
 
-/** Build line plus a manual check, for the Filters sheet. */
+/** Build line plus a manual check, for Settings' About page. */
 export function UpdateStatus() {
   const u = useUpdate();
   return (

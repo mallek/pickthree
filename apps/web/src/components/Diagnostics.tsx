@@ -38,9 +38,7 @@ export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle:
       <h4 className="settings-head">Diagnostics</h4>
       <Switch label="Send anonymous error reports" checked={enabled} onChange={() => onToggle()} />
       {entries.length === 0 ? (
-        <p className="settings-line">
-          No errors recorded. If something breaks, this is where it shows up.
-        </p>
+        <p className="settings-line">No errors recorded.</p>
       ) : (
         <div className="diag-list">
           {entries.slice(0, 5).map((d) => (

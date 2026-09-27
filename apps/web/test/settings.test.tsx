@@ -252,6 +252,10 @@ describe('Settings hub', () => {
     });
     await waitFor(() => expect(latest?.state.collection).toBeNull());
     expect(await storage.loadCollection()).toBeNull();
+    // Forgetting closes Settings: nothing is left in it to look at.
+    expect(latest?.state.sheetOpen).toBe(false);
+    expect(screen.queryByRole('dialog', { name: 'Settings' })).toBeNull();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 
   it('closes only the confirm on Escape, leaving Settings open', async () => {
@@ -267,6 +271,23 @@ describe('Settings hub', () => {
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(latest?.state.sheetOpen).toBe(true);
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('reads Sharing off on the Community row after Stop and delete and back', async () => {
+    await open();
+    await push('Community');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Share your battles' }));
+    });
+    const confirm = screen.getByRole('alertdialog', { name: 'Stop sharing?' });
+    await act(async () => {
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Stop and delete' }));
+    });
+    await waitFor(() => expect(latest?.state.settings.share?.enabled).toBe(false));
+    await back();
+    expect(screen.getByRole('button', { name: 'Community' })).toHaveAccessibleDescription(
+      'Sharing off',
+    );
   });
 
   it('with no collection, offers Import a CSV, no Forget, and says so on Your data', async () => {
@@ -304,6 +325,29 @@ describe('Settings, Your data', () => {
     expect(screen.getByRole('button', { name: 'Export log' })).toBeInTheDocument();
     expect(screen.getByText('Import log')).toBeInTheDocument();
     expect(screen.getByText('Files stay under your control.')).toBeInTheDocument();
+  });
+
+  it("shows the parser's own sentence when Import log gets a file it cannot take", async () => {
+    await seed();
+    await open();
+    await push('Your data');
+    const input = screen
+      .getByRole('dialog', { name: 'Your data' })
+      .querySelector<HTMLInputElement>('input[type="file"]');
+    expect(input).not.toBeNull();
+    const newer = JSON.stringify({ app: 'pick3', kind: 'battle-log', version: 999, sets: [] });
+    const file = new File([newer], 'log.json', { type: 'application/json' });
+    // jsdom's File has no text(); a browser's does.
+    Object.defineProperty(file, 'text', { value: async () => newer });
+    await act(async () => {
+      fireEvent.change(input!, { target: { files: [file] } });
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'This battle log comes from a newer pick3. Update the app and try again.',
+      ),
+    );
+    expect(latest?.state.sets[0]?.battles).toHaveLength(2);
   });
 
   it('confirms Start fresh in a default-tone sheet; Keep this season changes nothing', async () => {
@@ -367,8 +411,13 @@ describe('Settings, Community', () => {
     expect(share).toHaveAttribute('aria-checked', 'true');
     const line = screen.getByText('Turning this off also deletes what this phone sent.');
     expect(line).toBeInTheDocument();
-    expect(line.className).not.toMatch(/warn|danger/);
-    expect(line.parentElement?.className ?? '').not.toMatch(/warn|danger/);
+    // Neutral all the way up to the page: no warn or danger class on the line or any ancestor.
+    const page = line.closest('.settings-page');
+    expect(page).not.toBeNull();
+    for (let e: Element | null = line; e && e !== page; e = e.parentElement) {
+      expect(e.className).not.toMatch(/warn|danger/);
+    }
+    expect(page!.className).not.toMatch(/warn|danger/);
   });
 
   it('turning it off opens a danger confirm; Keep sharing leaves it on', async () => {
@@ -494,7 +543,7 @@ describe('Settings, About', () => {
     await open();
     await push('About');
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
-    expect(screen.getByText('No errors recorded.', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('No errors recorded.')).toBeInTheDocument();
   });
 
   it('credits PvPoke and Poke Genie without claiming affiliation', async () => {
@@ -533,42 +582,45 @@ describe('Settings never falls back to window.confirm', () => {
 
   it('never calls window.confirm across Forget, Start fresh and sharing', async () => {
     const spy = vi.spyOn(window, 'confirm');
-    await seed();
-    await open();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Forget my collection and log' }));
-    });
-    await act(async () => {
-      fireEvent.click(
-        within(screen.getByRole('alertdialog', { name: 'Forget your collection and log?' })).getByRole(
-          'button',
-          { name: 'Keep them' },
-        ),
-      );
-    });
-    await push('Your data');
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Start fresh in Great League' }));
-    });
-    await act(async () => {
-      fireEvent.click(
-        within(
-          screen.getByRole('alertdialog', { name: 'Start fresh in Great League?' }),
-        ).getByRole('button', { name: 'Keep this season' }),
-      );
-    });
-    await back();
-    await push('Community');
-    await act(async () => {
-      fireEvent.click(screen.getByRole('switch', { name: 'Share your battles' }));
-    });
-    await act(async () => {
-      fireEvent.click(
-        within(screen.getByRole('alertdialog', { name: 'Stop sharing?' })).getByRole('button', {
-          name: 'Keep sharing',
-        }),
-      );
-    });
-    expect(spy).not.toHaveBeenCalled();
+    try {
+      await seed();
+      await open();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Forget my collection and log' }));
+      });
+      await act(async () => {
+        fireEvent.click(
+          within(
+            screen.getByRole('alertdialog', { name: 'Forget your collection and log?' }),
+          ).getByRole('button', { name: 'Keep them' }),
+        );
+      });
+      await push('Your data');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Start fresh in Great League' }));
+      });
+      await act(async () => {
+        fireEvent.click(
+          within(
+            screen.getByRole('alertdialog', { name: 'Start fresh in Great League?' }),
+          ).getByRole('button', { name: 'Keep this season' }),
+        );
+      });
+      await back();
+      await push('Community');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('switch', { name: 'Share your battles' }));
+      });
+      await act(async () => {
+        fireEvent.click(
+          within(screen.getByRole('alertdialog', { name: 'Stop sharing?' })).getByRole('button', {
+            name: 'Keep sharing',
+          }),
+        );
+      });
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
