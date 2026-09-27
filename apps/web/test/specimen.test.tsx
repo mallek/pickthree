@@ -73,7 +73,7 @@ function verdict(
   sp: Specimen,
   label: VerdictLabel,
   build: { level: number; stageOffset?: number },
-  cost: { stardust: number; candy: number; xlCandy: number },
+  cost: { stardust: number; candy: number; xlCandy: number; secondMoveUnlock?: boolean },
 ): Verdict {
   return {
     specimenId: sp.id,
@@ -98,10 +98,10 @@ function verdict(
       eliteTmCount: 0,
     },
     cost: {
+      secondMoveUnlock: false,
       ...cost,
       eliteTm: 0,
       evolutionCandy: 0,
-      secondMoveUnlock: false,
       powerUpSteps: 0,
       estimated: false,
       weight: 0,
@@ -116,11 +116,15 @@ function verdict(
   } as unknown as Verdict;
 }
 
-/** Tinkaton, already built; Azumarill, worth powering up; Clodsire, typed in by hand. */
+/** Tinkaton, already built; Azumarill, worth powering up; Clodsire, typed in by hand; Medicham,
+ * at its build level but still needing its second move; Dragonite, Built half a level short. */
 const BUILT = specimen('a', 'tinkaton');
 const BUILDING = specimen('b', 'azumarill');
 const MANUAL = specimen('m', 'clodsire', { manual: true });
-const SPECIMENS = [BUILT, BUILDING, MANUAL];
+const UNLOCK = specimen('u', 'medicham');
+const HALF = specimen('h', 'dragonite_shadow');
+const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF];
+const IDS = SPECIMENS.map((x) => x.id);
 
 const VERDICTS: Record<string, Verdict> = {
   a: verdict(BUILT, 'Built', { level: 20 }, { stardust: 0, candy: 0, xlCandy: 0 }),
@@ -131,6 +135,13 @@ const VERDICTS: Record<string, Verdict> = {
     { stardust: 250000, candy: 248, xlCandy: 0 },
   ),
   m: verdict(MANUAL, 'Worth building', { level: 25 }, { stardust: 30000, candy: 30, xlCandy: 0 }),
+  u: verdict(
+    UNLOCK,
+    'Built',
+    { level: 20 },
+    { stardust: 10000, candy: 25, xlCandy: 0, secondMoveUnlock: true },
+  ),
+  h: verdict(HALF, 'Built', { level: 20.5 }, { stardust: 2500, candy: 2, xlCandy: 0 }),
 };
 
 async function seed(): Promise<void> {
@@ -269,6 +280,35 @@ describe('Pokémon detail', () => {
       expect(screen.queryByText(word)).toBeNull();
     }
     expect(screen.queryByText(/Level 20 to 20/)).toBeNull();
+    expect(screen.queryByText(/second move unlock/i)).toBeNull();
+  });
+
+  it('at its build level, still shows the second move unlock and only the non-zero tiles', async () => {
+    await fromCounters('u');
+    await judged();
+    expect(screen.getByText('Already at level 20.')).toBeInTheDocument();
+    expect(screen.queryByText(/^Level 20 to/)).toBeNull();
+    expect(screen.getByText(/includes second move unlock/i)).toBeInTheDocument();
+    const tiles = [...document.querySelectorAll('.stat3 .stat')];
+    expect(tiles.map((t) => t.querySelector('.meta')?.textContent)).toEqual(['Stardust', 'Candy']);
+    expect(tiles.map((t) => t.querySelector('b')?.textContent?.replace(/\D/g, ''))).toEqual([
+      '10000',
+      '25',
+    ]);
+    expect(screen.queryByText('XL Candy')).toBeNull();
+  });
+
+  it('half a level short of its build is not "already at level": the level line and tiles stay', async () => {
+    await fromCounters('h');
+    await judged();
+    expect(document.querySelector('.verdict-tag')).toHaveAttribute('data-verdict', 'Built');
+    expect(screen.queryByText(/^Already at level/)).toBeNull();
+    expect(screen.getByText('Level 20 to 20.5')).toBeInTheDocument();
+    expect([...document.querySelectorAll('.stat3 .stat .meta')].map((m) => m.textContent)).toEqual([
+      'Stardust',
+      'Candy',
+      'XL Candy',
+    ]);
   });
 
   it('keeps the cost tiles and the level line when there is powering up to do', async () => {
@@ -332,7 +372,7 @@ describe('Pokémon detail', () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Keep it' }));
     });
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    expect(latest?.state.collection?.specimens.map((x) => x.id)).toEqual(['a', 'b', 'm']);
+    expect(latest?.state.collection?.specimens.map((x) => x.id)).toEqual(IDS);
     expect(latest?.state.route).toEqual({ screen: 'specimen', id: 'm' });
     confirm.mockRestore();
   });
@@ -349,8 +389,12 @@ describe('Pokémon detail', () => {
     });
     await waitFor(() => expect(latest?.state.route.screen).toBe('counters'));
     expect(window.location.hash).toBe('#/counters');
-    expect(latest?.state.collection?.specimens.map((x) => x.id)).toEqual(['a', 'b']);
-    expect((await storage.loadCollection())?.specimens.map((x) => x.id)).toEqual(['a', 'b']);
+    expect(latest?.state.collection?.specimens.map((x) => x.id)).toEqual(
+      IDS.filter((x) => x !== 'm'),
+    );
+    expect((await storage.loadCollection())?.specimens.map((x) => x.id)).toEqual(
+      IDS.filter((x) => x !== 'm'),
+    );
   });
 
   it('shows the Empty state under the sub header for an unknown id', async () => {

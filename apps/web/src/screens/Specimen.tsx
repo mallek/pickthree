@@ -96,8 +96,19 @@ export function SpecimenScreen({ id }: { id: string }) {
     t.slots.some((sl) => sl.candidate.build.specimenId === sp.id),
   );
   const build = v?.build ?? null;
-  // No power-up and no evolution to do reads as one line, not three zero tiles.
+  // No power-up and no evolution to do reads "Already at level L." in place of "Level A to B",
+  // and drops the zero tiles; whatever still costs something (a second move unlock) keeps its
+  // tile. Half a level short is not already there, whatever the verdict's own margin says.
   const alreadyThere = build !== null && build.stageOffset === 0 && build.level <= sp.level.max;
+  const tiles: [string, number][] = v?.cost
+    ? (
+        [
+          ['Stardust', v.cost.stardust],
+          ['Candy', v.cost.candy],
+          ['XL Candy', v.cost.xlCandy],
+        ] as [string, number][]
+      ).filter(([, value]) => !alreadyThere || value > 0)
+    : [];
 
   return (
     <div className="screen">
@@ -200,32 +211,31 @@ export function SpecimenScreen({ id }: { id: string }) {
           <div className="stack" style={{ gap: 6 }}>
             <h3>Cost to build</h3>
             {alreadyThere ? (
-              <p>Already at level {sp.level.max}.</p>
-            ) : (
               <>
-                <div className="small muted">
-                  Level {sp.level.max} to {build.level}
-                  {v.cost.secondMoveUnlock ? ' · includes second move unlock' : ''}
-                  {v.cost.evolutionCandy > 0
-                    ? ` · includes ${v.cost.evolutionCandy} candy to evolve`
-                    : ''}
-                </div>
-                <div className="stat3">
-                  <div className="stat">
-                    <b>{num(v.cost.stardust)}</b>
-                    <span className="meta">Stardust</span>
-                  </div>
-                  <div className="stat">
-                    <b>{num(v.cost.candy)}</b>
-                    <span className="meta">Candy</span>
-                  </div>
-                  <div className="stat">
-                    <b>{num(v.cost.xlCandy)}</b>
-                    <span className="meta">XL Candy</span>
-                  </div>
-                </div>
+                <p>Already at level {sp.level.max}.</p>
+                {v.cost.secondMoveUnlock ? (
+                  <div className="small muted">Includes second move unlock</div>
+                ) : null}
               </>
+            ) : (
+              <div className="small muted">
+                Level {sp.level.max} to {build.level}
+                {v.cost.secondMoveUnlock ? ' · includes second move unlock' : ''}
+                {v.cost.evolutionCandy > 0
+                  ? ` · includes ${v.cost.evolutionCandy} candy to evolve`
+                  : ''}
+              </div>
             )}
+            {tiles.length > 0 ? (
+              <div className="stat3">
+                {tiles.map(([label, value]) => (
+                  <div className="stat" key={label}>
+                    <b>{num(value)}</b>
+                    <span className="meta">{label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {v.cost.eliteTm > 0 ? (
               <p className="small muted">Plus {v.cost.eliteTm} Elite TM.</p>
             ) : null}
