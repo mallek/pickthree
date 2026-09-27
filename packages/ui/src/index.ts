@@ -22,3 +22,4 @@ export { trapTab, useReturnFocus } from './components/focus.ts';
 export { ConfirmSheet } from './components/ConfirmSheet.tsx';
 export { Toast } from './components/Toast.tsx';
 export { Empty, ErrorState, Loading } from './components/States.tsx';
+export { Switch } from './components/Switch.tsx';

@@ -1,7 +1,7 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { FilterButton, LeagueList, LeagueSwitcher, Select } from '../src/index.ts';
+import { FilterButton, LeagueList, LeagueSwitcher, Select, Switch } from '../src/index.ts';
 
 /**
  * jsdom never lays out real pixels, so scrollWidth and clientWidth are both 0 by default (never
@@ -280,6 +280,37 @@ describe('LeagueList', () => {
     render(<LeagueList label="Leagues" value="great" onChange={onChange} options={options} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Tournament' }));
     expect(onChange).toHaveBeenCalledWith('championshipseries');
+  });
+});
+
+describe('Switch', () => {
+  it('is a switch named by its label that reports its state', () => {
+    render(
+      <Switch
+        label="Pokémon pictures"
+        line="Off shows a colored initial instead"
+        checked
+        onChange={() => undefined}
+      />,
+    );
+    const sw = screen.getByRole('switch', { name: 'Pokémon pictures' });
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('Off shows a colored initial instead')).toBeInTheDocument();
+  });
+
+  it('asks for the opposite state on a tap and never flips itself', () => {
+    const onChange = vi.fn();
+    render(<Switch label="Share your battles" checked={false} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Share your battles' }));
+    expect(onChange).toHaveBeenCalledWith(true);
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('does nothing while disabled', () => {
+    const onChange = vi.fn();
+    render(<Switch label="X" checked={false} onChange={onChange} disabled />);
+    fireEvent.click(screen.getByRole('switch'));
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
 

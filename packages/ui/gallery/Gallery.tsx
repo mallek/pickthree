@@ -17,6 +17,7 @@ import {
   ProgressCard,
   Select,
   Sheet,
+  Switch,
   Tag,
   Term,
   Toast,
@@ -143,6 +144,8 @@ export function Gallery() {
   const [league, setLeague] = useState('great');
   const [windowPick, setWindowPick] = useState('meta');
   const [openRow, setOpenRow] = useState(true);
+  const [picturesOn, setPicturesOn] = useState(true);
+  const [sharingOn, setSharingOn] = useState(false);
   return (
     <main className="g-page">
       <Section name="Tokens">
@@ -336,6 +339,17 @@ export function Gallery() {
           <FilterButton iconOnly count={0} onClick={() => undefined} />
           <FilterButton iconOnly count={1} onClick={() => undefined} />
         </div>
+      </Section>
+
+      <Section name="Switch">
+        <Switch
+          label="Pokémon pictures"
+          line="Off shows a colored initial instead"
+          checked={picturesOn}
+          onChange={setPicturesOn}
+        />
+        <Switch label="Share your battles" checked={sharingOn} onChange={setSharingOn} />
+        <Switch label="Disabled" checked={false} onChange={() => undefined} disabled />
       </Section>
 
       <Section name="Measured">

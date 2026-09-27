@@ -12,6 +12,7 @@ const SECTIONS = [
   'LeagueSwitcher',
   'Select',
   'FilterButton',
+  'Switch',
   'Measured',
   'ProgressCard',
   'ExpandRow',

@@ -1206,3 +1206,70 @@
   text-align: left;
   align-items: flex-start;
 }
+
+/* Switch: a labeled on/off row, the whole row one button. Modeled on apps/web's .toggle/.switch. */
+.ui-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  width: 100%;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ui-switch-row:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ui-switch-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ui-switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ui-switch-label {
+  font-size: var(--fs-body);
+}
+.ui-switch-line {
+  font-size: var(--fs-support);
+  color: var(--muted);
+}
+.ui-switch {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--surface2);
+  border: 1px solid var(--divider);
+  position: relative;
+  flex: none;
+  transition: background 0.2s;
+}
+.ui-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--faint);
+  transition: left 0.2s;
+}
+.ui-switch.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ui-switch.on::after {
+  left: 20px;
+  background: var(--bg);
+}
