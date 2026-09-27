@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import type { BattleSet, LoggedBattle, Specimen } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Settings } from '../src/screens/settings/Settings.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
 import { logBattles } from '../src/state/facing.ts';
@@ -352,7 +352,7 @@ describe('Settings, Your data', () => {
   });
 });
 
-describe('Settings, Community (moved as it was; Task 4 rebuilds it)', () => {
+describe('Settings, Community', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
     resetDbForTests();
@@ -360,21 +360,215 @@ describe('Settings, Community (moved as it was; Task 4 rebuilds it)', () => {
     latest = null;
   });
 
-  it('links to the community meta site with a one-line explanation', async () => {
+  it('reads on, with a neutral warning line under it', async () => {
+    await open();
+    await push('Community');
+    const share = screen.getByRole('switch', { name: 'Share your battles' });
+    expect(share).toHaveAttribute('aria-checked', 'true');
+    const line = screen.getByText('Turning this off also deletes what this phone sent.');
+    expect(line).toBeInTheDocument();
+    expect(line.className).not.toMatch(/warn|danger/);
+    expect(line.parentElement?.className ?? '').not.toMatch(/warn|danger/);
+  });
+
+  it('turning it off opens a danger confirm; Keep sharing leaves it on', async () => {
+    await open();
+    await push('Community');
+    const share = screen.getByRole('switch', { name: 'Share your battles' });
+    await act(async () => {
+      fireEvent.click(share);
+    });
+    const confirm = screen.getByRole('alertdialog', { name: 'Stop sharing?' });
+    expect(confirm).toHaveAccessibleDescription(
+      'Battles this phone sent are deleted from the community meta. Your log on this phone stays.',
+    );
+    expect(within(confirm).getByRole('button', { name: 'Stop and delete' })).toHaveClass(
+      'ui-btn-danger',
+    );
+    await act(async () => {
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Keep sharing' }));
+    });
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(latest?.state.settings.share?.enabled).not.toBe(false);
+    expect(screen.getByRole('switch', { name: 'Share your battles' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('Stop and delete turns it off in place; turning it back on needs no confirm', async () => {
+    await open();
+    await push('Community');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Share your battles' }));
+    });
+    const confirm = screen.getByRole('alertdialog', { name: 'Stop sharing?' });
+    await act(async () => {
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Stop and delete' }));
+    });
+    await waitFor(() => expect(latest?.state.settings.share?.enabled).toBe(false));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    const share = screen.getByRole('switch', { name: 'Share your battles' });
+    expect(share).toHaveAttribute('aria-checked', 'false');
+    await act(async () => {
+      fireEvent.click(share);
+    });
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(latest?.state.settings.share?.enabled).toBe(true);
+    expect(screen.getByRole('switch', { name: 'Share your battles' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('holds "What\'s sent?" collapsed until opened, then shows what never goes', async () => {
+    await open();
+    await push('Community');
+    expect(
+      screen.queryByText(/Never sent: your collection, IVs, names/),
+    ).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: "What's sent?" }));
+    });
+    expect(
+      screen.getByText("Never sent: your collection, IVs, names, or the opponents' moves."),
+    ).toBeInTheDocument();
+  });
+
+  it('links to the community meta site', async () => {
     await open();
     await push('Community');
     expect(screen.getByRole('link', { name: 'Open meta.pick3.gg' })).toHaveAttribute(
       'href',
       'https://meta.pick3.gg',
     );
-    expect(
-      screen.getByText(/most-faced Pokémon and teams, built from shared battle logs/),
-    ).toBeInTheDocument();
+  });
+});
+
+describe('Settings, About', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    latest = null;
   });
 
-  it('keeps About reachable with the game data line', async () => {
+  it('shows the opponent meta size and a way to check for updates', async () => {
     await open();
     await push('About');
-    expect(screen.getByText(/Game data from PvPoke/)).toBeInTheDocument();
+    expect(screen.getByText('Opponent meta: 48 Pokémon.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check for updates' })).toBeInTheDocument();
+  });
+
+  it('holds "What leaves it?" collapsed until opened, then shows its four facts', async () => {
+    await open();
+    await push('About');
+    expect(screen.queryByText(/None of it includes your Pokémon/)).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'What leaves it?' }));
+    });
+    expect(
+      screen.getByText('An anonymous tick to the trainer counter when you build teams.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Anonymous battle records unless sharing is off.')).toBeInTheDocument();
+    expect(screen.getByText('Anonymous error reports unless turned off below.')).toBeInTheDocument();
+    expect(screen.getByText('None of it includes your Pokémon.')).toBeInTheDocument();
+  });
+
+  it('flips error reports through a switch', async () => {
+    await open();
+    await push('About');
+    const reports = screen.getByRole('switch', { name: 'Send anonymous error reports' });
+    expect(reports).toHaveAttribute('aria-checked', 'true');
+    await act(async () => {
+      fireEvent.click(reports);
+    });
+    expect(latest?.state.settings.errorReports).toBe(false);
+    expect(screen.getByRole('switch', { name: 'Send anonymous error reports' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+  });
+
+  it('keeps the diagnostics log with a Copy control', async () => {
+    await open();
+    await push('About');
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
+    expect(screen.getByText('No errors recorded.', { exact: false })).toBeInTheDocument();
+  });
+
+  it('credits PvPoke and Poke Genie without claiming affiliation', async () => {
+    await open();
+    await push('About');
+    expect(screen.getByText(/Poke Genie/)).toBeInTheDocument();
+    expect(screen.getByText(/Built on/).textContent).toMatch(/PvPoke/);
+  });
+
+  it('puts the trainer counter last on the page', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ count: 42 }) })),
+    );
+    try {
+      await open();
+      await push('About');
+      const dialog = screen.getByRole('dialog', { name: 'About' });
+      await waitFor(() => {
+        const nodes = Array.from(dialog.querySelectorAll('.settings-page > *'));
+        expect(nodes.at(-1)?.className).toMatch(/counter/);
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('Settings never falls back to window.confirm', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  it('never calls window.confirm across Forget, Start fresh and sharing', async () => {
+    const spy = vi.spyOn(window, 'confirm');
+    await seed();
+    await open();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Forget my collection and log' }));
+    });
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole('alertdialog', { name: 'Forget your collection and log?' })).getByRole(
+          'button',
+          { name: 'Keep them' },
+        ),
+      );
+    });
+    await push('Your data');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start fresh in Great League' }));
+    });
+    await act(async () => {
+      fireEvent.click(
+        within(
+          screen.getByRole('alertdialog', { name: 'Start fresh in Great League?' }),
+        ).getByRole('button', { name: 'Keep this season' }),
+      );
+    });
+    await back();
+    await push('Community');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Share your battles' }));
+    });
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole('alertdialog', { name: 'Stop sharing?' })).getByRole('button', {
+          name: 'Keep sharing',
+        }),
+      );
+    });
+    expect(spy).not.toHaveBeenCalled();
   });
 });

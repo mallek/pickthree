@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
+import { Button, Switch } from '@pickthree/ui';
 import {
   clearDiagnostics,
   diagnosticsText,
@@ -18,7 +19,7 @@ function snapshot(): DiagEntry[] {
   return cache;
 }
 
-/** Error reports toggle plus the on-device log with a copy button, for the Filters sheet. */
+/** Error reports switch plus the on-device log with a copy button, for the About page. */
 export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   const entries = useSyncExternalStore(subscribeDiagnostics, snapshot, snapshot);
   const [copied, setCopied] = useState(false);
@@ -32,41 +33,16 @@ export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle:
     }
   };
   return (
-    <div className="stack" style={{ gap: 8 }}>
-      <button type="button" className="toggle" onClick={onToggle} aria-pressed={enabled}>
-        <span>
-          <span style={{ display: 'block', fontSize: 15 }}>Send anonymous error reports</span>
-          <span className="meta">Build id, what failed, and the message. Never your Pokémon.</span>
-        </span>
-        <span className={`switch${enabled ? ' on' : ''}`} />
-      </button>
-      <div className="between" style={{ alignItems: 'center' }}>
-        <span>Diagnostics on this device</span>
-        <span className="row" style={{ gap: 6 }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            style={{ minHeight: 28, fontSize: 12 }}
-            onClick={() => void copy()}
-          >
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-          {entries.length > 0 ? (
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ minHeight: 28, fontSize: 12 }}
-              onClick={clearDiagnostics}
-            >
-              Clear
-            </button>
-          ) : null}
-        </span>
+    <section className="settings-block">
+      <Switch label="Send anonymous error reports" checked={enabled} onChange={() => onToggle()} />
+      <div className="settings-pair">
+        <Button onClick={() => void copy()}>{copied ? 'Copied' : 'Copy'}</Button>
+        {entries.length > 0 ? <Button onClick={clearDiagnostics}>Clear</Button> : null}
       </div>
       {entries.length === 0 ? (
-        <span className="meta">
+        <p className="settings-line">
           No errors recorded. If something breaks, this is where it shows up.
-        </span>
+        </p>
       ) : (
         <div className="diag-list">
           {entries.slice(0, 5).map((d) => (
@@ -77,6 +53,6 @@ export function Diagnostics({ enabled, onToggle }: { enabled: boolean; onToggle:
           {entries.length > 5 ? <span>and {entries.length - 5} more in the copy</span> : null}
         </div>
       )}
-    </div>
+    </section>
   );
 }

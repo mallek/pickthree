@@ -70,7 +70,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
     leagueInfo: vi.fn(async () => ({
       id: 'great',
       meta: ['tinkaton', 'azumarill', 'clodsire'],
-      metaSize: 3,
+      metaSize: 48,
       metaRanks: {
         tinkaton: { overall: 1, score: 95, role: null, roleRank: null },
         azumarill: { overall: 2, score: 92, role: null, roleRank: null },
