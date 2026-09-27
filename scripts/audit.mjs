@@ -199,6 +199,11 @@ export async function auditPage(page, report) {
       // viewport, so nothing above it clips it. Body and the root are not clips (a long page's own
       // scroll is what full-page shots capture). Text scrolled wholly out of its container is not
       // on screen, so it is handed back as hidden: unmeasured, never silently passed.
+      // An element that is itself fixed is placed against the viewport, so no ancestor clips it.
+      // Not handled: an absolutely positioned descendant whose containing block sits above an
+      // overflow ancestor escapes that ancestor's clip, but is still clipped by it here. That errs
+      // toward measuring less of it (or listing it as not on screen), never toward measuring text
+      // that is off screen.
       const clips = [];
       const selfFixed = style.position === 'fixed';
       for (
@@ -213,11 +218,6 @@ export async function auditPage(page, report) {
           const b = a.getBoundingClientRect();
           clips.push({
             left: x ? b.left : -Infinity,
-      // An element that is itself fixed is placed against the viewport, so no ancestor clips it.
-      // Not handled: an absolutely positioned descendant whose containing block sits above an
-      // overflow ancestor escapes that ancestor's clip, but is still clipped by it here. That errs
-      // toward measuring less of it (or listing it as not on screen), never toward measuring text
-      // that is off screen.
             right: x ? b.right : Infinity,
             top: y ? b.top : -Infinity,
             bottom: y ? b.bottom : Infinity,
@@ -322,7 +322,7 @@ export async function auditPage(page, report) {
     const textOf = (e) => (e ? (e.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80) : '');
     // React's useId ids (":r1:", or the same between guillemets) change on a remount, so they are
     // not anchors.
-    const anchorId = (e) => (e.id && !/[:«»]/.test(e.id) ? e.id : null);
+    const anchorId = (e) => (e.id && !/[:\u00ab\u00bb]/.test(e.id) ? e.id : null);
     const keyOf = (e) => {
       if (!e) {
         return '';
