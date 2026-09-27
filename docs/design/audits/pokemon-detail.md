@@ -5,7 +5,7 @@ Piece: 4, round 2 (the Pokémon detail page, with Collection in `collection.md`)
 intake entry; the approved renders are the ones from chat on 2026-09-26 (the detail page, the
 moves card fix). Spec: `docs/superpowers/specs/2026-09-26-design-rest-of-app-design.md`,
 "Decisions" and "Pokémon detail (Specimen)". Plan: `docs/superpowers/plans/2026-09-27-collection.md`.
-Branch `rest-of-app`, commits `7f0713b` to `101e59f`.
+Branch `rest-of-app`, commits `7f0713b` to `b3c5c12`.
 
 The name shows once, as the page title. Back returns to where you came from. The verdict is a
 read-only tag. The fixed Exclude bar is gone: "Use in team recommendations" is a switch at the end
@@ -18,7 +18,10 @@ initial (and the Best stage card's disc is blank), as on every signed record.
 
 Dark and light at 390px, one pair per state. All 14 come from the Task 6 `npm run web:audit` run
 on 2026-09-27 (the code committed as `101e59f`, `PICK3_BUILD=874d675`), converted to WebP (600px
-wide, quality 72). Every detail capture but the confirm and not found is the whole page.
+wide, quality 72). Every detail capture but the confirm and not found is the whole page. The
+final review run on `b3c5c12` retook them all; I looked at `05-specimen` and `specimen-evolve`
+against these and nothing moved but the scan age ("28 days ago" for "27"), so the signed images
+stay.
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -37,8 +40,15 @@ of the building one at its build level to the saved collection, asserts the Buil
 with "Keep it" and asserts the page is still there. Nothing is ever removed.
 
 Not captured, covered by `apps/web/test/specimen.test.tsx`: the page while verdicts load (Review
-Focus 5); Back to Counters and the fallback to Collection; a Pokémon half a level short of its
-build. Not captured and not tested here: Lucky and Purified in the hero, and a team row (the
+Focus 5); the verdicts error (`ErrorState` with Collection's copy, no "Judging..."); a fresh load
+of the page's link (`Loading` under the sub header until the collection is read, never "not in
+the current collection"); Back after Add Pokémon (to where Add was opened from); Back to Counters
+and the fallback to Collection; a Pokémon half a level short of its build.
+
+`05-specimen` must show the building Pokémon's cost tiles with no evolution card
+(`mustShow: '.scroll:not(:has(.evo)) .stat3'`), and `openSpecimen` marks the page it is leaving
+(`data-leaving` on its `.scroll`) and waits for a fresh page's verdict, so no capture can be taken
+of the page it just left. Not captured and not tested here: Lucky and Purified in the hero, and a team row (the
 sample's Pokémon are in no recommended team).
 
 ## Automated checks
@@ -47,12 +57,17 @@ sample's Pokémon are in no recommended team).
       `AUDIT_ENFORCED`): the Task 6 run on the `101e59f` code with `PICK3_BUILD=874d675` exited 0
       with zero findings on every enforced name in both themes. No NEVER line; no detail page text
       unmeasured. Re-run for this record on `101e59f`, same build id: exit 0, the same result, 433
+      findings on screens not yet redesigned, none failing. Final review run on `b3c5c12`, same
+      build id: exit 0, zero findings on every enforced name in both themes, no NEVER line, 433
       findings on screens not yet redesigned, none failing.
 - [x] no console errors: neither run printed a "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
       check-tokens`: re-run for this record on 2026-09-27 on `101e59f`. lint exit 0; typecheck
       exit 0; 143 files, 1358 tests passed; check-colors exit 0; "check-tokens: ok". `npm run
-      ui:audit`: "gallery audit: clean in dark and light" (Task 1, Task 6).
+      ui:audit`: "gallery audit: clean in dark and light" (Task 1, Task 6). Final review, on
+      `b3c5c12`: lint exit 0; typecheck exit 0; 143 files, 1363 tests passed; the settings,
+      collection and specimen test files 10 times in a row, 54 of 54 each time; check-colors exit
+      0; "check-tokens: ok"; ui:audit clean in dark and light.
 
 ## Aesthetics
 
@@ -104,10 +119,11 @@ sample's Pokémon are in no recommended team).
 - [x] product rules: no new outbound call; `connect-src` unchanged; exclusion and removal stay on
       the phone, and "It leaves your collection on this phone." says so. Assumptions: the verdict
       sentence and the best-IVs line, as before.
-- [x] tests cover the new behavior: `apps/web/test/specimen.test.tsx` (14 tests: header and one
+- [x] tests cover the new behavior: `apps/web/test/specimen.test.tsx` (17 tests: header and one
       name, Back both ways, the tag, the three cost cases, the switch, Remove absent, Keep it,
-      Remove from Counters, not found, loading); `apps/web/test/components.test.tsx` (the badge
-      is its own column); `packages/engine/test/verdicts/worth.test.ts` (Built and its sentence).
+      Remove from Counters, not found, loading, and from the final review the verdicts error, a
+      fresh load of the link, Back after Add Pokémon); `apps/web/test/components.test.tsx` (the
+      badge is its own column, the counts line after it on the row); `packages/engine/test/verdicts/worth.test.ts` (Built and its sentence).
 
 ## Findings and fixes
 
@@ -122,6 +138,12 @@ sample's Pokémon are in no recommended team).
 | Audit: the "Def down" effect icon was 4.42:1 in light (warn on surface), failing on `05-specimen`, `specimen-excluded` and `specimen-built`. | Bad effects use the ui warn tag recipe (warn on its tint); good effects the win recipe, in place of the literal `#7ac74c` (baseline count 2 to 1). | `101e59f` |
 | Capture: the Best stage box had a violet outline, but you cannot tap it. | A surface card like the facts card. | `101e59f` |
 | Capture: the sample has no Built Pokémon to shoot. | The script seeds one and restores the collection (script only). | `101e59f` |
+| Final review: `5a9215a` dropped `.move-line .tm { margin-left: auto; }`, but Build's move picker still puts its badge inside `.move-line`, so the signed picker lost its flush-right TM column. | `.move-opt .move-line .tm { margin-left: auto; }`. `13b-build-moves` checked against its signed images: the TM column is flush right again, both themes. | `b3c5c12` |
+| Final review: the badge column narrowed the counts line, so a short count could wrap alone (Team Analysis). | The counts line (`.move-sub`) is a child of the row, after the badge, spanning columns 2 to the end; the row gap is 4px so the spacing is unchanged. Tested (DOM order); checked in `03-team-detail`, `05-specimen` and `specimen-evolve`. | `b3c5c12` |
+| Final review: "Judging..." forever when verdicts fail. | `ErrorState` with Collection's copy, and no "Judging..." (tested). | `b3c5c12` |
+| Final review: a fresh load of `#/collection/<id>` could say "not in the current collection" before the saved collection was read. | `Loading` ("Loading your collection") under the sub header until `settingsLoaded` (set with the collection) (tested). | `b3c5c12` |
+| Final review: Back from a Pokémon just added landed on an empty Add form. | Add Pokémon replaces itself with the new page (`navigate(..., { replace: true })`); a delayed hand-off is cleared if the player leaves first (tested). | `b3c5c12` |
+| Final review: `openSpecimen` could resolve on the page it was leaving, and `05-specimen` had no `mustShow`. | See the note under Screenshots (script only). | `b3c5c12` |
 
 ## Rulings
 
@@ -170,6 +192,15 @@ Made while building:
   order): see `collection.md`.
 - **`screens.mjs`:** `17-added` is gone (`specimen-manual` shows the same page), and the seed
   above.
+- **Build's move picker badge alignment** (final review): the picker's TM badge is flush right
+  again (`.move-opt .move-line .tm`), as signed. Checked, unchanged after the fix:
+  `13b-build-moves` in both themes matches its signed images (TM on every row at the right edge,
+  counts lines under the names).
+- **The counts line spans under the badge column** in `MoveRows`, so in Team Analysis too
+  (`03-team-detail`, Shadow Greninja open: "extra damage on 8, resisted by 14" stays on one line;
+  audited clean).
+- **Add Pokémon replaces itself in history** with the new Pokémon's page, so Back (and Remove's
+  back) from that page goes where Add was opened from, not to an empty form.
 
 ## Open items for Travis
 
@@ -185,8 +216,8 @@ Made while building:
 - **Smaller, deferred during the build:**
   - A failed `removeSpecimen` is not handled (as before this round).
   - `.evo` repeats the `.card` look by hand.
-  - CI robustness, not the page: `openSpecimen`'s waits can read the page it is leaving, and
-    `05-specimen` has no `mustShow`.
+  - (Resolved in the final review: `openSpecimen` no longer reads the page it is leaving, and
+    `05-specimen` has a `mustShow`.)
 
 ## Sign-off
 

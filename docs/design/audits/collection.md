@@ -5,7 +5,7 @@ entry: `docs/design/inventory/2026-09-22-inventory.md`, page 8 (Collection and P
 No intake entry; the approved renders are the ones from chat on 2026-09-26 (option B, the verdict
 tags). Spec: `docs/superpowers/specs/2026-09-26-design-rest-of-app-design.md`, "Decisions" and
 "Collection". Plan: `docs/superpowers/plans/2026-09-27-collection.md`. Branch `rest-of-app`,
-commits `7f0713b` to `101e59f`.
+commits `7f0713b` to `b3c5c12`.
 
 Collection now has option B: one cog (Settings) in the header, a filter icon with a count beside
 the search, and "Sort: Verdict ▾" always in view. "Built" replaces "Ready to use". Verdicts are
@@ -16,9 +16,10 @@ initial, as on every signed record.
 
 ## Screenshots
 
-Dark and light at 390px, one pair per state. All 12 come from the Task 6 `npm run web:audit` run
-on 2026-09-27 (the code committed as `101e59f`, `PICK3_BUILD=874d675`), converted to WebP (600px
-wide, quality 72). `04-collection` is the whole page, top to bottom.
+Dark and light at 390px, one pair per state. Ten come from the Task 6 `npm run web:audit` run
+on 2026-09-27 (the code committed as `101e59f`, `PICK3_BUILD=874d675`); the `collection-empty`
+pair comes from the final review run on `b3c5c12` (same build id), the one capture whose page
+changed. All are WebP (600px wide, quality 72). `04-collection` is the whole page, top to bottom.
 
 | State | Dark | Light |
 | --- | --- | --- |
@@ -27,7 +28,7 @@ wide, quality 72). `04-collection` is the whole page, top to bottom.
 | `11-collection-group`: Meltan's group open under the pinned search bar, "Hide the others" with the chevron up, five sub-rows with their own tags | ![](img/11-collection-group-dark.webp) | ![](img/11-collection-group-light.webp) |
 | `collection-flat`: Group same Pokémon off, the filter icon reads 1, the count reads "111 shown", Meltan twice | ![](img/collection-flat-dark.webp) | ![](img/collection-flat-light.webp) |
 | `collection-filters-sheet`: the ui `Sheet` "Filters" with Done, five switches, "Scanned in the last two weeks" with no second line | ![](img/collection-filters-sheet-dark.webp) | ![](img/collection-filters-sheet-light.webp) |
-| `collection-empty`: "zzzz" in the search with its Clear control, "Nothing matches. Try another name or clear a filter." | ![](img/collection-empty-dark.webp) | ![](img/collection-empty-light.webp) |
+| `collection-empty`: "zzzz" in the search with its Clear control, no count over the empty state, "Sort: Verdict" still in place, "Nothing matches. Try another name or clear a filter." | ![](img/collection-empty-dark.webp) | ![](img/collection-empty-light.webp) |
 
 The script checks as it shoots: before `04-collection` it measures the Sort control against the
 chips and fails on an overlap (the log reads "sort target 44px tall, 4px under the chips");
@@ -48,13 +49,18 @@ the Banned, Lucky and over-the-cap row variants (the sample shows none with Show
       name, the same eight `settings-about-leaves` lines, no NEVER line. 433 findings remain on
       screens not yet redesigned, none failing (618 at the Settings record, when Collection and
       the detail page were not yet enforced). The images above are from the Task 6 run; the re-run used
-      the same code.
+      the same code. Final review run on `b3c5c12` (`PICK3_BUILD=874d675 npm run web:audit`):
+      exit 0, zero findings on every enforced name in both themes, the same eight
+      `settings-about-leaves` lines, no NEVER line, 433 findings on screens not yet redesigned.
 - [x] no console errors: neither run printed a "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
       check-tokens`: re-run for this record on 2026-09-27 on `101e59f`. lint exit 0; typecheck
       exit 0; 143 files, 1358 tests passed; check-colors exit 0; "check-tokens: ok". `npm run
       ui:audit` (`InlineSelect` and the title-less sub header in the gallery): "gallery audit:
-      clean in dark and light", in Task 1 and again in Task 6.
+      clean in dark and light", in Task 1 and again in Task 6. Final review, on `b3c5c12`: lint
+      exit 0; typecheck exit 0; 143 files, 1363 tests passed; the settings, collection and
+      specimen test files 10 times in a row, 54 of 54 each time; check-colors exit 0;
+      "check-tokens: ok"; ui:audit "gallery audit: clean in dark and light".
 
 ## Aesthetics
 
@@ -133,6 +139,9 @@ the Banned, Lucky and over-the-cap row variants (the sample shows none with Show
 | Audit: Clear search was 36x36. | 44px; the input's right padding follows. | `101e59f` |
 | Task 4 review, for the captures: the full league switcher's height above the search, and the Sort target overhanging the chips by 6px. | Checked in `04-collection`: the switcher matches Teams; the Sort target is 44px and 4px under the chips. The script now fails if they overlap. | `101e59f` |
 | Task 2 review, for the captures: no `.verdict-tag` CSS was added. | Checked in `04-collection` and `11-collection-group`: tags right-aligned, centered, none cut. No change. | none |
+| Final review: `collection-empty` read "0 Pokémon · 0 kinds" above "Nothing matches." | The count text hides when no row matches (Sort stays, on the right); while judging the count shows as before. Tested in the Empty test; `collection-empty` retaken. | `b3c5c12` |
+| Final review: the title-less `Header` test could not fail, and `title` had become optional on `top` too. | `Header`'s props are a union: `top` requires `title`, `sub` does not. The test asserts the title element is absent, beside a new test that finds it when a title is given. | `b3c5c12` |
+| Final review: the detail page's error copy. | The "Could not judge this collection" line is one function (`judgeFailedLine` in `format.ts`), shared with the detail page; Collection's text is unchanged. | `b3c5c12` |
 
 ## Rulings
 
@@ -181,6 +190,8 @@ Made while building:
 - **`screens.mjs`:** the three Collection captures became six, all enforced.
 - The moves card changes (the badge column, the Team Analysis hairline, the effect-icon colors on
   Build and Team Analysis) are listed in `pokemon-detail.md`.
+- **`Header`'s props are a union** (final review): `variant="top"` requires a `title`, `sub` does
+  not. Every caller already passed one; typecheck is the proof. `HeaderProps` is exported.
 
 ## Open items for Travis
 
@@ -197,14 +208,15 @@ Made while building:
 - **The count moves while judging:** "140 Pokémon · 87 kinds" in `collection-judging` becomes
   "111 Pokémon · 65 kinds" once every verdict is in (Pokémon not yet judged cannot be sorted out
   as ineligible). I did not check whether the old page did the same.
-- **`collection-empty` shows "0 Pokémon · 0 kinds" above "Nothing matches."** Both say the same.
+- **Resolved in the final review:** `collection-empty` no longer shows "0 Pokémon · 0 kinds"
+  above "Nothing matches." (Findings).
 - **The Sort target clears the chips by 4px.** It does not overlap them.
 - **Smaller, deferred during the build:**
   - No test covers open groups or scroll across a round trip; `resetStickyForTests` leaves empty
     listener sets behind (test only).
   - The "N more" toggle's -10px top margin overlaps the row's bottom padding.
-  - `InlineSelect`'s `useId` id is unused (the select is named by `aria-label`); the title-less
-    Header test cannot fail as written.
+  - `InlineSelect`'s `useId` id is unused (the select is named by `aria-label`). (The title-less
+    Header test is fixed; see Findings.)
   - CI robustness, not the page: `collection-judging` can race the last verdict chunk (it fails
     loudly if so).
 
