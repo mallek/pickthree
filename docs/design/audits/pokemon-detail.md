@@ -1,0 +1,193 @@
+# Audit: Pokémon detail
+
+Piece: 4, round 2 (the Pokémon detail page, with Collection in `collection.md`). Inventory entry:
+`docs/design/inventory/2026-09-22-inventory.md`, page 8 (Collection and Pokémon detail). No
+intake entry; the approved renders are the ones from chat on 2026-09-26 (the detail page, the
+moves card fix). Spec: `docs/superpowers/specs/2026-09-26-design-rest-of-app-design.md`,
+"Decisions" and "Pokémon detail (Specimen)". Plan: `docs/superpowers/plans/2026-09-27-collection.md`.
+Branch `rest-of-app`, commits `7f0713b` to `101e59f`.
+
+The name shows once, as the page title. Back returns to where you came from. The verdict is a
+read-only tag. The fixed Exclude bar is gone: "Use in team recommendations" is a switch at the end
+of the page. Remove goes through a confirm sheet. The moves card's badges have their own column.
+
+A note on sprites: this worktree's game data has no sprites, so every Pokémon is a type-colored
+initial (and the Best stage card's disc is blank), as on every signed record.
+
+## Screenshots
+
+Dark and light at 390px, one pair per state. All 14 come from the Task 6 `npm run web:audit` run
+on 2026-09-27 (the code committed as `101e59f`, `PICK3_BUILD=874d675`), converted to WebP (600px
+wide, quality 72). Every detail capture but the confirm and not found is the whole page.
+
+| State | Dark | Light |
+| --- | --- | --- |
+| `05-specimen`: Galarian Articuno, Worth building. Back and the cog, no title; the name once; types, CP, level, scan age; the Worth building tag and "Same wins as best IVs"; the facts card; the moves card with TM, HAS IT, TM in their own column and Brave Bird's "Def down"; "Level 6 to 15.5 · includes second move unlock" and three tiles; the no-teams line; the switch on; nothing fixed over the page | ![](img/05-specimen-dark.webp) | ![](img/05-specimen-light.webp) |
+| `specimen-built`: a seeded copy at its build level. The Built tag, "Top 1% IVs for Great League, already at level 15.5.", "Already at level 15.5.", "Includes second move unlock.", only the Stardust and Candy tiles (XL Candy was zero) | ![](img/specimen-built-dark.webp) | ![](img/specimen-built-light.webp) |
+| `specimen-evolve`: Meltan. "Meta rank when evolved", the Best stage card ("Evolve to Melmetal before powering up"), ELITE TM in the badge column, the cost line on two lines with the evolve candy, "Plus 1 Elite TM." | ![](img/specimen-evolve-dark.webp) | ![](img/specimen-evolve-light.webp) |
+| `specimen-excluded`: `05-specimen` with the switch off; nothing else moves | ![](img/specimen-excluded-dark.webp) | ![](img/specimen-excluded-light.webp) |
+| `specimen-manual`: a hand-added Swampert, Wait for better IVs, at its build level: "Already at level 17.5.", the unlock's two tiles, "Plus 1 Elite TM."; "Remove from collection" (red outline) under the switch, in the same card | ![](img/specimen-manual-dark.webp) | ![](img/specimen-manual-light.webp) |
+| `specimen-remove-confirm`: "Remove this Swampert?", "It leaves your collection on this phone.", Keep it and a red Remove, over the dimmed page | ![](img/specimen-remove-confirm-dark.webp) | ![](img/specimen-remove-confirm-light.webp) |
+| `specimen-not-found`: the sub header and "That Pokémon is not in the current collection." | ![](img/specimen-not-found-dark.webp) | ![](img/specimen-not-found-light.webp) |
+
+The script picks each Pokémon from the judged list by what its page shows, and fails with a
+message if the sample has none. The sample has no Built Pokémon, so `specimen-built` writes a copy
+of the building one at its build level to the saved collection, asserts the Built tag and the
+"Already at level" line, and puts the collection back as it was. `specimen-remove-confirm` cancels
+with "Keep it" and asserts the page is still there. Nothing is ever removed.
+
+Not captured, covered by `apps/web/test/specimen.test.tsx`: the page while verdicts load (Review
+Focus 5); Back to Counters and the fallback to Collection; a Pokémon half a level short of its
+build. Not captured and not tested here: Lucky and Purified in the hero, and a team row (the
+sample's Pokémon are in no recommended team).
+
+## Automated checks
+
+- [x] `npm run web:audit` clean for this page's screens (all seven names above in
+      `AUDIT_ENFORCED`): the Task 6 run on the `101e59f` code with `PICK3_BUILD=874d675` exited 0
+      with zero findings on every enforced name in both themes. No NEVER line; no detail page text
+      unmeasured. Re-run for this record on `101e59f`, same build id: exit 0, the same result, 433
+      findings on screens not yet redesigned, none failing.
+- [x] no console errors: neither run printed a "Browser errors" section.
+- [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
+      check-tokens`: re-run for this record on 2026-09-27 on `101e59f`. lint exit 0; typecheck
+      exit 0; 143 files, 1358 tests passed; check-colors exit 0; "check-tokens: ok". `npm run
+      ui:audit`: "gallery audit: clean in dark and light" (Task 1, Task 6).
+
+## Aesthetics
+
+- [x] colors from tokens, in their roles: violet on Back, the cog and the switch when on; red
+      only on "Remove from collection" and the confirm's Remove (`specimen-manual`,
+      `specimen-remove-confirm`); "Keep it" violet; no pink (all captures). The effect icons now
+      use the ui tag recipes (see Findings). `check-colors` clean. Exceptions under Open items:
+      the Best stage card's violet head, the light Built tag.
+- [x] at most four text levels, one page title: the name (the page's one `h2`, tested); section
+      heads and tile figures; body (facts, the verdict sentence, the switch label); supporting
+      text (labels, lines, the scan age). The confirm sheet has its own title.
+- [x] one filled primary button: none, which is right, since the page's actions are a switch and
+      a danger button (all captures). The confirm has Keep it and a danger Remove.
+- [x] chips tapped, tags read: no chips on the page; the verdict is a `Tag` in a `.verdict-tag`
+      span, not in a button (tested); the move badges are read-only.
+- [x] the right header variant: `Header variant="sub"` with "Back" and the cog, no title, on every
+      capture including not found (tested: no heading in the header).
+- [x] rows align; gutters and the 8px base hold: the facts, moves, cost and switch cards share one
+      gutter; each badge sits top-aligned with its move name in its own column, including "HAS
+      IT" and "ELITE TM" beside a two-line move (`05-specimen`, `specimen-evolve`); the Best stage
+      card has the facts card's radius and padding.
+- [ ] sprites unchanged: cannot confirm (no sprite build, see the top). No sprite code changed.
+- [x] at most one line of text before the first result: nothing sits between the header and the
+      hero (all captures).
+- [x] light as readable as dark: seven matched pairs, and the audit's contrast pass is clean in
+      both themes. One tag reads weaker in light (Open items).
+
+## Functionality
+
+- [x] every "must keep" from inventory page 8 (the detail half): IVs, "N of 4096", meta rank and
+      "when evolved", the verdict sentence and the best-IVs line (`05-specimen`,
+      `specimen-evolve`); the best stage (`specimen-evolve`); recommended moves with TM, Elite TM
+      and Has it (`05-specimen`, `specimen-evolve`); cost to build (all three cost cases
+      captured); the teams it is in (the no-teams line, every capture); exclude, now the switch
+      (`specimen-excluded`); Remove for manual entries only (`specimen-manual`; tested absent on a
+      scanned one).
+- [x] every control does what its label says (tests): the switch flips `excludedSpecimenIds` in
+      place and back, with the spec's line as its description; Remove opens the confirm, "Keep
+      it" changes nothing, and Remove takes it out of state and IndexedDB, then goes back;
+      `window.confirm` is never called; the cog opens Settings. A team row still opens its
+      analysis (unchanged, not captured).
+- [x] back returns to the origin: opened from Counters, Back lands on Counters; opened fresh, it
+      falls back to Collection, never off the site (Review Focus 1); after Remove from a page
+      opened from Counters, it lands on Counters (Review Focus 3). All tested.
+- [ ] input layout rule: not applicable. The page has no text input.
+- [x] icon buttons named; focus visible: Back is a labeled text control; the cog is "Settings";
+      the switch is named by its label and described by its line; the confirm is an alertdialog
+      named by its title and described by its line (tests); the app-wide `:focus-visible` ring.
+- [x] product rules: no new outbound call; `connect-src` unchanged; exclusion and removal stay on
+      the phone, and "It leaves your collection on this phone." says so. Assumptions: the verdict
+      sentence and the best-IVs line, as before.
+- [x] tests cover the new behavior: `apps/web/test/specimen.test.tsx` (14 tests: header and one
+      name, Back both ways, the tag, the three cost cases, the switch, Remove absent, Keep it,
+      Remove from Counters, not found, loading); `apps/web/test/components.test.tsx` (the badge
+      is its own column); `packages/engine/test/verdicts/worth.test.ts` (Built and its sentence).
+
+## Findings and fixes
+
+| Finding | Fix | Commit |
+| --- | --- | --- |
+| Travis, on the render: Upper Hand's type and effect tags pushed its badge out of line. | The badge is its own column, top-aligned; the tags wrap under the name. The card loses its top divider. | `5a9215a` |
+| Task 3 review: in Team Analysis the moves lost their separation from the text above. | A hairline above the moves in Analysis only; the detail card keeps none (see Visible changes). | `101e59f` |
+| Task 5: the plan's "Already at level L." rule hid real cost. The second move unlock (Stardust and Candy) is often due on a Pokémon already at level. | The corrected rule (Ruling 4): the line replaces "Level A to B", any remaining cost still shows, only zero tiles hide. | `0924d7f` |
+| Task 5: the engine calls a Pokémon Built within half a level of its build; the page's rule is exact. | Half a level short keeps "Level A to B" and its tiles (tested). The engine is unchanged. | `0924d7f` |
+| Task 5 review: the "removed" flag could carry from one detail page to the next without a remount. | `SpecimenScreen` is keyed by the Pokémon's id. | `101e59f` |
+| Task 5 review: "Includes second move unlock" had no period. | Added; the test matches the exact text. | `101e59f` |
+| Audit: the "Def down" effect icon was 4.42:1 in light (warn on surface), failing on `05-specimen`, `specimen-excluded` and `specimen-built`. | Bad effects use the ui warn tag recipe (warn on its tint); good effects the win recipe, in place of the literal `#7ac74c` (baseline count 2 to 1). | `101e59f` |
+| Capture: the Best stage box had a violet outline, but you cannot tap it. | A surface card like the facts card. | `101e59f` |
+| Capture: the sample has no Built Pokémon to shoot. | The script seeds one and restores the collection (script only). | `101e59f` |
+
+## Rulings
+
+From the plan:
+
+1. **`Header variant="sub"` takes an optional title;** without one no heading renders, and the
+   page's own heading is the name. [If wrong: a ui API change.]
+2. **`VerdictTag`** and its tones, as in `collection.md`. [If wrong: markup and five tones.]
+3. **Capture names** as listed above. [If wrong: names.]
+
+From the ledger (controller):
+
+4. **"Already at level L."** shows when there is no evolution and the build level is at or below
+   the Pokémon's level. It replaces the "Level A to B" line; any remaining cost still shows (the
+   non-zero tiles, "Includes second move unlock.", "Plus N Elite TM."); only zero tiles hide.
+   Half a level short keeps "Level A to B" and the tiles. The spec says "no zero tiles", not "no
+   cost". [If wrong: a line of copy.]
+5. **The light Built tag is parked for Travis,** as in `collection.md`. [If wrong: one tag reads
+   faint in light until you rule.]
+
+Made while building:
+
+6. **The name is the global `h2`,** 24px, where the old hero used a 22px div. [If wrong: one
+   class to pin it at 22px.]
+7. **"Remove from collection" is the ui danger `Button`** (red outline), as Settings' Forget, where
+   the spec says "a red text button". [If wrong: the look of one button.]
+8. **While verdicts load, the page shows `Loading` with the real counts** and no moves or cost,
+   then fills in without a reload. [If wrong: none; the spec asks for it.]
+9. **Team Analysis gets a hairline above its moves** while the detail card has none. [If wrong:
+   one line in Analysis.]
+10. **The Built capture is seeded,** not taken from the sample. A Built Pokémon in the fixture
+    would drop the seed, but could move the signed Teams captures. [If wrong: a fixture change
+    later.]
+11. **`screens.mjs` imports the engine's `cpm.ts`** to work out the seeded copy's CP and HP (Node
+    24 strips the types). [If wrong: a copied table in the script.]
+
+## Visible changes outside the detail page
+
+- **The moves card (`MoveRows`) is shared:** the badge column and the missing top divider also
+  show in Team Analysis's Pokémon details, which gets its own hairline above the moves
+  (Task 6 checked it in `03-team-detail` with Shadow Greninja open; audited clean in both runs).
+- **The effect icons** (`.fx-icon`) change on Build and Team Analysis too: bad effects on the warn
+  tint, good effects on the win recipe, both the ui tag recipes. Audited clean on every enforced
+  Build and Analysis name.
+- **`Header variant="sub"` with no title** and **"Built"** (the engine label and sentence, Build's
+  order): see `collection.md`.
+- **`screens.mjs`:** `17-added` is gone (`specimen-manual` shows the same page), and the seed
+  above.
+
+## Open items for Travis
+
+- **The light Built tag reads faint** next to the green "Same wins as best IVs" pill: the ui `win`
+  tone is a 5% tint, nearly a bare green word in light (`specimen-built-light`; dark reads fine).
+  The pill is the app's older `.mtag`, not the ui `Tag`, so the two green tags differ in shape
+  and weight. A foundation call: strengthen `win`, or move the pill to `Tag`.
+- **"Remove from collection" is the outlined danger button** (as Settings' Forget), where the spec
+  says "a red text button" (`specimen-manual`, Ruling 7).
+- **The name is now the 24px page heading** (was 22px) (Ruling 6).
+- **The Best stage card's head, "BEST STAGE FOR GREAT LEAGUE", is violet** (the shared `.role`
+  label) on a card you cannot tap (`specimen-evolve`).
+- **Smaller, deferred during the build:**
+  - A failed `removeSpecimen` is not handled (as before this round).
+  - `.evo` repeats the `.card` look by hand.
+  - CI robustness, not the page: `openSpecimen`'s waits can read the page it is leaving, and
+    `05-specimen` has no `mustShow`.
+
+## Sign-off
+
+- [ ] Travis, <date>
