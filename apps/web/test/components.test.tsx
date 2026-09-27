@@ -1,6 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { MetaButton, Progress, NoCollection, CogGlyph, MetaGlyph } from '../src/components.tsx';
+import type { VerdictLabel } from '@pickthree/engine';
+import {
+  MetaButton,
+  Progress,
+  NoCollection,
+  CogGlyph,
+  MetaGlyph,
+  VerdictTag,
+} from '../src/components.tsx';
 
 describe('MetaButton', () => {
   it('links to the community meta site with an accessible name that says where it goes', () => {
@@ -33,6 +41,28 @@ describe('NoCollection', () => {
     fireEvent.click(importBtn);
     expect(calls).toEqual(['add', 'build', 'import']);
   });
+});
+
+describe('VerdictTag', () => {
+  const tones: Record<VerdictLabel, string> = {
+    Built: 'ui-tag-win',
+    'Worth building': 'ui-tag-accent',
+    'Wait for better IVs': 'ui-tag-neutral',
+    'Not eligible': 'ui-tag-neutral',
+    'Needs rescan': 'ui-tag-warn',
+  };
+
+  for (const [label, tone] of Object.entries(tones) as [VerdictLabel, string][]) {
+    it(`renders ${label} as a read-only Tag toned ${tone}`, () => {
+      const { container } = render(<VerdictTag label={label} />);
+      const wrap = container.querySelector('.verdict-tag');
+      expect(wrap).not.toBeNull();
+      expect(wrap).toHaveAttribute('data-verdict', label);
+      const tag = screen.getByText(label);
+      expect(tag).toHaveClass('ui-tag', tone);
+      expect(tag.tagName).toBe('SPAN');
+    });
+  }
 });
 
 describe('glyphs', () => {

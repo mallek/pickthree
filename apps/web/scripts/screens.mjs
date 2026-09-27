@@ -695,7 +695,7 @@ await shot('analysis-not-found', false, { mustShow: '.ui-empty' });
 
 console.log('collection');
 await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.verdict', { timeout: 120_000 });
+await page.waitForSelector('.verdict-tag', { timeout: 120_000 });
 console.log(`  verdicts rendered at ${Date.now() - t0} ms`);
 await shot('04-collection');
 await page.click('.more-btn');
@@ -706,7 +706,7 @@ const specHref = await page.$eval('.spec-row', (a) => a.getAttribute('href'));
 
 console.log('specimen');
 await page.goto(`${base}/${specHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.stat3, .verdict');
+await page.waitForSelector('.stat3, .verdict-tag');
 await shot('05-specimen');
 
 console.log('counters');
@@ -1380,7 +1380,7 @@ await shot('16-add-form', false);
 // Centre it first: near the bottom edge the fixed tab bar would take the click instead.
 await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
 await page.click('.scroll > .btn');
-await page.waitForSelector('.stat3, .verdict', { timeout: 60_000 });
+await page.waitForSelector('.stat3, .verdict-tag', { timeout: 60_000 });
 await new Promise((r) => setTimeout(r, 600));
 console.log(`  manual add landed at ${page.url()}`);
 await shot('17-added', false);

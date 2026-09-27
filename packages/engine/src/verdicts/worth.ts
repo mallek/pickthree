@@ -13,7 +13,7 @@ import type { MatrixView } from '../search/matrixView.js';
 import type { BattleSimulator, SimOptions } from '../sim/BattleSimulator.js';
 
 export type VerdictLabel =
-  'Ready to use' | 'Worth building' | 'Wait for better IVs' | 'Not eligible' | 'Needs rescan';
+  'Built' | 'Worth building' | 'Wait for better IVs' | 'Not eligible' | 'Needs rescan';
 
 export interface Verdict {
   specimenId: string;
@@ -231,9 +231,9 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       perfectLine,
       metaRank,
       formNote: note,
-      label: 'Ready to use',
+      label: 'Built',
       line: withMeta(
-        `Top ${topPct}% for ${deps.league.title} and already at level ${s.level.max}. Use it.`,
+        `Top ${topPct}% IVs for ${deps.league.title}, already at level ${s.level.max}.`,
       ),
     };
   }

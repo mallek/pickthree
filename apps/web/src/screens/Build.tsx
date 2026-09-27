@@ -44,7 +44,7 @@ const ROLE_JOBS = [
   'Finishes the battle after shields are gone',
 ] as const;
 const ORDER: Record<VerdictLabel, number> = {
-  'Ready to use': 0,
+  Built: 0,
   'Worth building': 1,
   'Wait for better IVs': 2,
   'Not eligible': 3,

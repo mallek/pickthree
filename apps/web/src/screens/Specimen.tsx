@@ -7,7 +7,7 @@ import {
   Progress,
   TypeChips,
   HundoTag,
-  VerdictChip,
+  VerdictTag,
   useMetaRank,
   useName,
   useSpecies,
@@ -113,7 +113,7 @@ export function SpecimenScreen({ id }: { id: string }) {
             </div>
             <div className="meta">{scanAge(sp.scannedAt)}</div>
             <div className="row" style={{ marginTop: 6, gap: 8, alignItems: 'center' }}>
-              {v ? <VerdictChip label={v.label} /> : <span className="meta">Judging...</span>}
+              {v ? <VerdictTag label={v.label} /> : <span className="meta">Judging...</span>}
               <HundoTag delta={v?.perfectDelta ?? null} />
             </div>
           </div>

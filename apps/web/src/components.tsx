@@ -14,7 +14,16 @@ import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { logBattles } from './state/facing.ts';
-import { Button, Chevron, HeaderShell, Loading, SpeciesToken, TypeChip } from '@pickthree/ui';
+import {
+  Button,
+  Chevron,
+  HeaderShell,
+  Loading,
+  SpeciesToken,
+  Tag,
+  TypeChip,
+  type TagTone,
+} from '@pickthree/ui';
 
 export { Chip, Seg, Term, TypeChip } from '@pickthree/ui';
 
@@ -470,15 +479,21 @@ export function FitTag({ fit }: { fit: 'Strong' | 'Solid' | 'Situational' | 'Wea
   return <span className={`fit fit-${fit.toLowerCase()}`}>{fit} fit</span>;
 }
 
-export function VerdictChip({ label }: { label: VerdictLabel }) {
-  const cls: Record<VerdictLabel, string> = {
-    'Ready to use': 'v-ready',
-    'Worth building': 'v-worth',
-    'Wait for better IVs': 'v-wait',
-    'Not eligible': 'v-no',
-    'Needs rescan': 'v-rescan',
+/** Ruling 3: Built wins, Worth building is the accent, Wait for better IVs and Not eligible are
+ * neutral, Needs rescan warns. Read-only, never tapped. */
+export function VerdictTag({ label }: { label: VerdictLabel }) {
+  const tone: Record<VerdictLabel, TagTone> = {
+    Built: 'win',
+    'Worth building': 'accent',
+    'Wait for better IVs': 'neutral',
+    'Not eligible': 'neutral',
+    'Needs rescan': 'warn',
   };
-  return <span className={`verdict ${cls[label]}`}>{label}</span>;
+  return (
+    <span className="verdict-tag" data-verdict={label}>
+      <Tag tone={tone[label]}>{label}</Tag>
+    </span>
+  );
 }
 
 export const GLOSSARY: Record<string, string> = {

@@ -77,10 +77,10 @@ const teamHref = await page.$eval('.teams-actions a', (a) => a.getAttribute('hre
 await go(teamHref, '.assump');
 await page.click('.assump-head');
 await shot('b2-team-detail');
-await go('#/collection', '.verdict');
+await go('#/collection', '.verdict-tag');
 await shot('b3-collection');
 const specHref = await page.$eval('.spec-row', (a) => a.getAttribute('href'));
-await go(specHref, '.stat3, .verdict');
+await go(specHref, '.stat3, .verdict-tag');
 await shot('b4-specimen');
 await go('#/counters', '.counter-row');
 await shot('b5-counters');
@@ -96,7 +96,7 @@ await page.emulateMediaFeatures([
 ]);
 await go('#/teams', '.ui-expand-head');
 await shot('c0-teams-light', false);
-await go('#/collection', '.verdict');
+await go('#/collection', '.verdict-tag');
 await shot('c1-collection-light', false);
 await go('#/', 'h1');
 await shot('c2-welcome-light', false);

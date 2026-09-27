@@ -300,36 +300,6 @@ a {
   background: var(--accent-tint);
   color: var(--accent-text);
 }
-.verdict {
-  font-size: 11px;
-  padding: 4px 9px;
-  border-radius: var(--r-sm);
-  border: 1px solid transparent;
-  white-space: nowrap;
-  text-align: center;
-  line-height: 1.25;
-  max-width: 120px;
-}
-.v-ready {
-  background: var(--accent-tint);
-  color: var(--accent-text);
-}
-.v-worth {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.v-wait {
-  background: var(--surface2);
-  color: var(--muted);
-}
-.v-no {
-  border-color: var(--divider);
-  color: var(--faint);
-}
-.v-rescan {
-  background: var(--warn-tint);
-  color: var(--warn);
-}
 .chips {
   display: flex;
   gap: 6px;
@@ -1436,11 +1406,6 @@ textarea.paste {
   padding: 6px 0 6px 0;
   border-top: 1px dashed var(--divider);
 }
-.spec-row.sub .verdict {
-  font-size: 10px;
-  padding: 3px 7px;
-}
-
 .shadow-flag {
   font-size: 10px;
   letter-spacing: 0.06em;

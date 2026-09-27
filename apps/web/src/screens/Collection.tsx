@@ -8,7 +8,7 @@ import {
   MetaTags,
   PokemonToken,
   Progress,
-  VerdictChip,
+  VerdictTag,
   useMetaRank,
   useName,
   useScrollMemory,
@@ -24,13 +24,13 @@ import { hashFor, useActions, useAppState } from '../state/store.tsx';
 
 /** Quick pills: short labels so all four fit without scrolling. Ineligible rows hide by default. */
 const PILLS: { label: VerdictLabel; short: string }[] = [
-  { label: 'Ready to use', short: 'Ready' },
+  { label: 'Built', short: 'Built' },
   { label: 'Worth building', short: 'Worth it' },
   { label: 'Wait for better IVs', short: 'Wait for IVs' },
   { label: 'Needs rescan', short: 'Rescan' },
 ];
 const ORDER: Record<VerdictLabel, number> = {
-  'Ready to use': 0,
+  Built: 0,
   'Worth building': 1,
   'Wait for better IVs': 2,
   'Not eligible': 3,
@@ -354,7 +354,7 @@ export function Collection() {
                     <HundoTag delta={v?.perfectDelta ?? null} />
                   </span>
                 </span>
-                {v ? <VerdictChip label={v.label} /> : <span className="meta">...</span>}
+                {v ? <VerdictTag label={v.label} /> : <span className="meta">...</span>}
               </a>
               {g.others.length > 0 ? (
                 <button
@@ -395,7 +395,7 @@ export function Collection() {
                             {o.lucky ? ' · Lucky' : ''}
                           </span>
                         </span>
-                        {ov ? <VerdictChip label={ov.label} /> : <span className="meta">...</span>}
+                        {ov ? <VerdictTag label={ov.label} /> : <span className="meta">...</span>}
                       </a>
                     );
                   })
