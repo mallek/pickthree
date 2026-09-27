@@ -482,26 +482,26 @@ export function MoveRows({
                   <EffectIcons effects={m.effects} />
                 </span>
               </span>
-              {count || read || note ? (
-                <span className="move-sub">
-                  {count ? (
-                    <span>
-                      {count}
-                      {note ? (
-                        <>
-                          {SEP}
-                          {note}
-                        </>
-                      ) : null}
-                    </span>
-                  ) : (
-                    note
-                  )}
-                  {read ? <span>{read}</span> : null}
-                </span>
-              ) : null}
             </span>
             <TmBadge tm={m.tm} />
+            {count || read || note ? (
+              <span className="move-sub">
+                {count ? (
+                  <span>
+                    {count}
+                    {note ? (
+                      <>
+                        {SEP}
+                        {note}
+                      </>
+                    ) : null}
+                  </span>
+                ) : (
+                  note
+                )}
+                {read ? <span>{read}</span> : null}
+              </span>
+            ) : null}
           </div>
         );
       })}

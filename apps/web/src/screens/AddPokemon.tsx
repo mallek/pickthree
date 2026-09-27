@@ -1,5 +1,5 @@
 import type { ManualResult } from '@pickthree/engine';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Header,
   MetaTags,
@@ -29,6 +29,18 @@ export function AddPokemon() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  // The new Pokémon's page takes this form's place in history, so Back from it goes where Add was
+  // opened from, not to an empty form. A delayed hand-off is dropped if the player leaves first,
+  // so it never replaces whatever page they went to.
+  const leave = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (leave.current !== null) {
+        window.clearTimeout(leave.current);
+      }
+    },
+    [],
+  );
 
   const searching = query.trim().length > 0;
   const matches = useSpeciesSearch(query, 30);
@@ -59,9 +71,12 @@ export function AddPokemon() {
         setNote(
           `No level gives exactly CP ${cp} with those IVs. Saved at level ${r.level}, CP ${r.matchedCp}. Check the IVs if that looks wrong.`,
         );
-        window.setTimeout(() => navigate({ screen: 'specimen', id: r.specimen.id }), 2500);
+        leave.current = window.setTimeout(() => {
+          leave.current = null;
+          navigate({ screen: 'specimen', id: r.specimen.id }, { replace: true });
+        }, 2500);
       } else {
-        navigate({ screen: 'specimen', id: r.specimen.id });
+        navigate({ screen: 'specimen', id: r.specimen.id }, { replace: true });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

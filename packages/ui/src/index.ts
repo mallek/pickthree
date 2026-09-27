@@ -4,7 +4,7 @@ export { TypeChip, TypeChips } from './components/TypeChip.tsx';
 export { LEAGUE_COLORS, LeagueShield, LeagueSwitcher, LeagueList } from './components/League.tsx';
 export { Chevron } from './components/Chevron.tsx';
 export { HeaderShell } from './components/HeaderShell.tsx';
-export { Header, type HeaderBack } from './components/Header.tsx';
+export { Header, type HeaderBack, type HeaderProps } from './components/Header.tsx';
 export { ExpandRow } from './components/ExpandRow.tsx';
 export { Chip } from './components/Chip.tsx';
 export { Tag, type TagTone } from './components/Tag.tsx';

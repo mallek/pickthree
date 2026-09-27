@@ -27,7 +27,7 @@ import {
   useSticky,
   NoCollection,
 } from '../components.tsx';
-import { metaTags, num, SEP } from '../format.ts';
+import { judgeFailedLine, metaTags, num, SEP } from '../format.ts';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { specimenRecord } from '../searchRecords.ts';
@@ -335,7 +335,9 @@ export function Collection() {
           ))}
         </div>
         <div className="sort-row">
-          <span className="meta">{count}</span>
+          {/* Nothing matching reads as the empty state below, not as "0 Pokémon"; while judging,
+              the count stays. The span stays too, so Sort keeps its place on the right. */}
+          <span className="meta">{rows.length === 0 && !s.verdictsLoading ? null : count}</span>
           <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
         </div>
       </div>
@@ -347,11 +349,7 @@ export function Collection() {
             total={s.progress?.stage === 'verdicts' ? s.progress.total : 0}
           />
         ) : null}
-        {s.verdictsError ? (
-          <ErrorState
-            line={`Could not judge this collection: ${s.verdictsError}. The list still works; verdicts will retry on the next import.`}
-          />
-        ) : null}
+        {s.verdictsError ? <ErrorState line={judgeFailedLine(s.verdictsError)} /> : null}
         {groups.map((g) => {
           const sp = g.best;
           const v = s.verdicts[sp.id];

@@ -3,6 +3,7 @@ import type { MoveChoice, Specimen, Verdict, VerdictLabel } from '@pickthree/eng
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AddPokemon } from '../src/screens/AddPokemon.tsx';
 import { SpecimenScreen } from '../src/screens/Specimen.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
 import {
@@ -23,9 +24,13 @@ function Probe() {
   return null;
 }
 
-/** The detail page while the route is a Pokémon's, nothing on any other screen, as App does. */
+/** The detail page while the route is a Pokémon's (and the Add form on its own route), nothing on
+ * any other screen, as App does. */
 function Gate() {
   const r = useAppState().route;
+  if (r.screen === 'add') {
+    return <AddPokemon />;
+  }
   return r.screen === 'specimen' ? <SpecimenScreen id={r.id} /> : null;
 }
 
@@ -164,10 +169,11 @@ async function seed(): Promise<void> {
 
 async function mount(
   verdicts: () => Promise<Record<string, Verdict>> = async () => VERDICTS,
+  more: Parameters<typeof fakeHost>[0] = {},
 ): Promise<void> {
   await seed();
   render(
-    <AppProvider host={fakeHost({ verdicts: vi.fn(verdicts) })}>
+    <AppProvider host={fakeHost({ verdicts: vi.fn(verdicts), ...more })}>
       <Probe />
       <Gate />
     </AppProvider>,
@@ -180,8 +186,11 @@ async function mount(
 }
 
 /** Boot as a normal visit (welcome hands off to Teams), then let that route settle. */
-async function boot(verdicts?: () => Promise<Record<string, Verdict>>): Promise<void> {
-  await mount(verdicts);
+async function boot(
+  verdicts?: () => Promise<Record<string, Verdict>>,
+  more?: Parameters<typeof fakeHost>[0],
+): Promise<void> {
+  await mount(verdicts, more);
   await waitFor(() => {
     expect(window.location.hash).toBe('#/teams');
     expect(latest?.state.route.screen).toBe('teams');
@@ -397,6 +406,41 @@ describe('Pokémon detail', () => {
     );
   });
 
+  it('takes the place of the Add form in history, so Back goes where Add was opened from', async () => {
+    const added = specimen('n', 'clodsire', { manual: true });
+    const manual = vi.fn(async () => ({
+      specimen: added,
+      level: 20,
+      exactCp: true,
+      matchedCp: 1400,
+    }));
+    await boot(undefined, { manual });
+    await go({ screen: 'collection' });
+    await go({ screen: 'add' });
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('Search any Pokemon, e.g. shadow swampert'), {
+        target: { value: 'clod' },
+      });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Clodsire' }));
+    });
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('e.g. 1487'), { target: { value: '1400' } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to my collection' }));
+    });
+    await waitFor(() => expect(latest?.state.route).toEqual({ screen: 'specimen', id: 'n' }));
+    expect(window.location.hash).toBe('#/collection/n');
+    expect(manual).toHaveBeenCalledOnce();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    });
+    await waitFor(() => expect(latest?.state.route.screen).toBe('collection'));
+    expect(window.location.hash).toBe('#/collection');
+  });
+
   it('shows the Empty state under the sub header for an unknown id', async () => {
     await boot();
     await go({ screen: 'specimen', id: 'nope' });
@@ -406,6 +450,46 @@ describe('Pokémon detail', () => {
     expect(within(header).getByRole('button', { name: 'Back' })).toBeInTheDocument();
     expect(within(header).getByRole('button', { name: 'Settings' })).toBeInTheDocument();
     expect(within(header).queryAllByRole('heading')).toHaveLength(0);
+  });
+
+  it('says judging failed, as Collection does, instead of "Judging..." forever', async () => {
+    let fail: (e: Error) => void = () => undefined;
+    await boot(() => new Promise((_, reject) => (fail = reject)));
+    await go({ screen: 'specimen', id: 'b' });
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Judging each Pokémon'),
+    );
+    await act(async () => {
+      fail(new Error('boom'));
+    });
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not judge this collection: boom. The list still works; verdicts will retry on the next import.',
+    );
+    expect(screen.queryByText('Judging...')).toBeNull();
+    expect(document.querySelector('.ui-loading')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Azumarill' })).toBeInTheDocument();
+  });
+
+  it('on a fresh load of its link, shows Loading, not "not in the collection", until the collection is read', async () => {
+    await seed();
+    window.location.hash = '#/collection/b';
+    render(
+      <AppProvider host={fakeHost({ verdicts: vi.fn(async () => VERDICTS) })}>
+        <Probe />
+        <SpecimenScreen id="b" />
+      </AppProvider>,
+    );
+    // First paint: the saved collection is still being read.
+    expect(latest?.state.settingsLoaded).toBe(false);
+    expect(document.querySelector('.ui-empty')).toBeNull();
+    expect(screen.queryByText('That Pokémon is not in the current collection.')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('Loading your collection');
+    const header = document.querySelector('header')!;
+    expect(within(header).getByRole('button', { name: 'Back' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Azumarill' })).toBeInTheDocument(),
+    );
+    expect(screen.queryByText('That Pokémon is not in the current collection.')).toBeNull();
   });
 
   it('shows Loading and no moves or cost while verdicts load, then fills in', async () => {

@@ -360,7 +360,7 @@ a {
 .move-row {
   display: grid;
   grid-template-columns: 56px 1fr auto;
-  gap: 8px;
+  gap: 4px 8px;
   padding: 8px 0;
   font-size: 14px;
   border-bottom: 1px solid var(--divider);
@@ -382,6 +382,10 @@ a {
 .move-row > .tm {
   align-self: start;
   margin-top: 4px;
+}
+/* The counts line runs on under the badge column, so a short count never wraps alone. */
+.move-row > .move-sub {
+  grid-column: 2 / -1;
 }
 .move-line {
   display: flex;
@@ -2698,6 +2702,10 @@ input[type='range'] {
   border-color: var(--accent);
   background: var(--accent);
   box-shadow: inset 0 0 0 3px var(--surface);
+}
+/* Build's move picker keeps its badge inside the move line, pushed flush right. */
+.move-opt .move-line .tm {
+  margin-left: auto;
 }
 .move-opt.on .move-name {
   color: var(--accent-text);

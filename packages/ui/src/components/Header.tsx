@@ -20,25 +20,21 @@ export interface HeaderBack {
  * meta.pick3.gg's head must pad the same way when it adopts `variant="top"`. The sub variant is
  * standalone and pads itself.
  *
- * `title` is optional so a `sub` header can carry just a back control (and `actions` or `extra`)
- * with no title in the middle; `top` always has one in practice, since a tab's own page needs a
- * name.
+ * `title` is optional only on `sub`, so a sub header can carry just a back control (and
+ * `actions`) with no title in the middle; `top` requires one, since a tab's own page needs a name.
  */
-export function Header({
-  variant,
-  title,
-  back,
-  actions,
-  mark,
-  sub,
-}: {
-  variant: 'top' | 'sub';
-  title?: string | undefined;
+interface HeaderCommon {
   back?: HeaderBack | undefined;
   actions?: ReactNode;
   mark?: ReactNode;
   sub?: string | undefined;
-}) {
+}
+export type HeaderProps =
+  | (HeaderCommon & { variant: 'top'; title: string })
+  | (HeaderCommon & { variant: 'sub'; title?: string | undefined });
+
+export function Header(props: HeaderProps) {
+  const { variant, title, back, actions, mark, sub } = props;
   if (variant === 'top') {
     return (
       <header className="ui-top">

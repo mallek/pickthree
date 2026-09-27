@@ -835,11 +835,21 @@ console.log('specimen');
 // Hash navigation keeps the verdicts in memory.
 /** Opens a detail page in place and waits for its verdict; returns what the page shows. */
 const openSpecimen = async (href) => {
+  // The page being left (the list, or another Pokémon) has a verdict tag too, and the hash matches
+  // at once, so mark its scroll area first and wait for a fresh one. Each detail page is keyed by
+  // its id, so a new Pokémon mounts a new `.scroll` without the mark.
   await page.evaluate((h) => {
+    if (window.location.hash !== h) {
+      for (const el of document.querySelectorAll('.scroll')) {
+        el.setAttribute('data-leaving', '');
+      }
+    }
     window.location.hash = h;
   }, href);
   await page.waitForFunction(
-    (h) => window.location.hash === h && document.querySelector('.scroll .verdict-tag'),
+    (h) =>
+      window.location.hash === h &&
+      document.querySelector('.scroll:not([data-leaving]) .verdict-tag'),
     { timeout: 30_000 },
     href,
   );
@@ -883,7 +893,8 @@ const evolving = await pickSpecimen(
 
 await openSpecimen(building.href);
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('05-specimen');
+// The building Pokémon: cost tiles and no evolution card, so the evolving page cannot pass.
+await shot('05-specimen', true, { mustShow: '.scroll:not(:has(.evo)) .stat3' });
 
 console.log('specimen, excluded');
 const specimenSwitch = '.scroll [role="switch"]';

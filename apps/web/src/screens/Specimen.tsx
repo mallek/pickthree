@@ -1,5 +1,14 @@
 import type { MetaRank } from '@pickthree/engine';
-import { Button, ConfirmSheet, Empty, Header, IconButton, Switch } from '@pickthree/ui';
+import {
+  Button,
+  ConfirmSheet,
+  Empty,
+  ErrorState,
+  Header,
+  IconButton,
+  Loading,
+  Switch,
+} from '@pickthree/ui';
 import { useEffect, useState } from 'react';
 import {
   CogGlyph,
@@ -13,7 +22,7 @@ import {
   useName,
   useSpecies,
 } from '../components.tsx';
-import { META_CUTOFF, ivLine, levelLabel, num, scanAge } from '../format.ts';
+import { META_CUTOFF, ivLine, judgeFailedLine, levelLabel, num, scanAge } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { useLeague } from '../components/LeagueSwitcher.tsx';
 
@@ -76,6 +85,18 @@ export function SpecimenScreen({ id }: { id: string }) {
       }
     />
   );
+  // The saved collection has not been read yet (a fresh load of this page's link): wait for it
+  // rather than saying the Pokémon is not in it.
+  if (!sp && !s.settingsLoaded) {
+    return (
+      <div className="screen">
+        {header}
+        <div className="scroll">
+          <Loading label="Loading your collection" />
+        </div>
+      </div>
+    );
+  }
   if (!sp) {
     return (
       <div className="screen">
@@ -138,7 +159,11 @@ export function SpecimenScreen({ id }: { id: string }) {
             </div>
             <div className="meta">{scanAge(sp.scannedAt)}</div>
             <div className="row" style={{ marginTop: 6, gap: 8, alignItems: 'center' }}>
-              {v ? <VerdictTag label={v.label} /> : <span className="meta">Judging...</span>}
+              {v ? (
+                <VerdictTag label={v.label} />
+              ) : s.verdictsError ? null : (
+                <span className="meta">Judging...</span>
+              )}
               <HundoTag delta={v?.perfectDelta ?? null} />
             </div>
           </div>
@@ -151,6 +176,7 @@ export function SpecimenScreen({ id }: { id: string }) {
             total={s.progress?.stage === 'verdicts' ? s.progress.total : 0}
           />
         ) : null}
+        {!v && s.verdictsError ? <ErrorState line={judgeFailedLine(s.verdictsError)} /> : null}
 
         <div className="card" style={{ gap: 8 }}>
           <div className="kv" style={{ alignItems: 'baseline' }}>

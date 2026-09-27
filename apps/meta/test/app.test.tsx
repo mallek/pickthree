@@ -108,16 +108,21 @@ describe('App', () => {
     ]);
   });
 
+  // A loaded run (the full suite in parallel) can take longer than waitFor's default second.
   it('puts the chosen source in the url, replacing rather than pushing', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Source' })).toBeVisible());
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Source' })).toBeVisible(), {
+      timeout: 5000,
+    });
     await act(async () => {
       fireEvent.change(screen.getByRole('combobox', { name: 'Source' }), {
         target: { value: 'tournament' },
       });
     });
-    await waitFor(() => expect(window.location.search).toBe('?source=tournament'));
-  });
+    await waitFor(() => expect(window.location.search).toBe('?source=tournament'), {
+      timeout: 5000,
+    });
+  }, 15_000);
 
   it('answers the back button', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);

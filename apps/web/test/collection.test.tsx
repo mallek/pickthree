@@ -320,6 +320,10 @@ describe('Collection', () => {
     const empty = document.querySelector('.ui-empty');
     expect(empty).not.toBeNull();
     expect(empty).toHaveTextContent('Nothing matches. Try another name or clear a filter.');
+    // No "0 Pokémon · 0 kinds" over the empty state; Sort stays.
+    expect(screen.queryByText(/^0 Pokémon/)).toBeNull();
+    expect(document.querySelector('.sort-row .meta')).toBeEmptyDOMElement();
+    expect(screen.getByRole('combobox', { name: 'Sort' })).toBeInTheDocument();
   });
 
   it('judges with Loading and reports a failure with ErrorState', async () => {

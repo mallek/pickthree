@@ -26,7 +26,9 @@ describe('MetaButton', () => {
 describe('Progress', () => {
   it('announces the stage label through the shared Loading state', () => {
     render(<Progress stage="simulate" done={1} total={4} />);
-    expect(screen.getByRole('status')).toHaveTextContent('Simulating battles with your exact Pokémon');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Simulating battles with your exact Pokémon',
+    );
     expect(document.querySelector('.ui-loading-bar')).not.toBeNull();
   });
 });
@@ -107,6 +109,19 @@ describe('MoveRows', () => {
       expect(line?.querySelector('.move-name')).not.toBeNull();
       expect(line?.querySelector('.move-tags')).not.toBeNull();
     }
+  });
+
+  it('puts the counts line on the row itself, after the badge, so it can run under the badge column', () => {
+    const { container } = render(<MoveRows fast={fast} charged={[charged]} />);
+    const sub = container.querySelector('.move-sub');
+    expect(sub).not.toBeNull();
+    const row = sub?.parentElement;
+    expect(row).toHaveClass('move-row');
+    const kids = Array.from(row?.children ?? []);
+    const badge = kids.findIndex((c) => c.classList.contains('tm'));
+    expect(badge).toBeGreaterThan(-1);
+    expect(kids.indexOf(sub as Element)).toBeGreaterThan(badge);
+    expect(container.querySelector('.move-main .move-sub')).toBeNull();
   });
 });
 

@@ -72,7 +72,10 @@ function costPart(n: string, unit: string, term?: 'XL Candy' | 'Elite TM'): Cost
  * one place this ordering and these zero-checks live: `costLine` and `PokemonDetails`'
  * `CostBreakdown` both build on this instead of keeping their own copy. */
 export function costParts(c: Cost): CostPart[] {
-  const parts: CostPart[] = [costPart(num(c.stardust), 'Stardust'), costPart(num(c.candy), 'Candy')];
+  const parts: CostPart[] = [
+    costPart(num(c.stardust), 'Stardust'),
+    costPart(num(c.candy), 'Candy'),
+  ];
   if (c.xlCandy > 0) {
     parts.push(costPart(num(c.xlCandy), 'XL Candy', 'XL Candy'));
   }
@@ -126,6 +129,11 @@ export function scanAge(scanDate: string, now = new Date()): string {
     return `scanned ${days} days ago`;
   }
   return `scanned ${dateLabel(d.toISOString())}`;
+}
+
+/** Judging the collection failed: Collection and the Pokémon detail page say so the same way. */
+export function judgeFailedLine(error: string): string {
+  return `Could not judge this collection: ${error}. The list still works; verdicts will retry on the next import.`;
 }
 
 /** Only species inside this cutoff get meta tags. Mirrors the engine's META_CUTOFF. */

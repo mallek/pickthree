@@ -6,7 +6,9 @@ import { ExpandRow, Header } from '../src/index.ts';
 
 describe('Header', () => {
   it('top: a page title as a level-2 heading, with its actions', () => {
-    render(<Header variant="top" title="Your Teams" actions={<button type="button">Settings</button>} />);
+    render(
+      <Header variant="top" title="Your Teams" actions={<button type="button">Settings</button>} />,
+    );
     expect(screen.getByRole('heading', { level: 2, name: 'Your Teams' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
   });
@@ -18,7 +20,9 @@ describe('Header', () => {
 
   it('sub: a back button that calls back', async () => {
     const onBack = vi.fn();
-    render(<Header variant="sub" title="Team Analysis" back={{ label: 'Teams', onClick: onBack }} />);
+    render(
+      <Header variant="sub" title="Team Analysis" back={{ label: 'Teams', onClick: onBack }} />,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Teams' }));
     expect(onBack).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Team Analysis')).toBeInTheDocument();
@@ -30,9 +34,25 @@ describe('Header', () => {
   });
 
   it('renders a sub header with a back and no title', () => {
-    render(<Header variant="sub" back={{ label: 'Back', onClick: () => undefined }} />);
+    const { container } = render(
+      <Header variant="sub" back={{ label: 'Back', onClick: () => undefined }} />,
+    );
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading')).toBeNull();
+    expect(container.querySelector('.hdr-title')).toBeEmptyDOMElement();
+    expect(container.querySelector('.hdr-title > span:not(.hdr-sub)')).toBeNull();
+  });
+
+  it('renders the sub title element when given a title, so the no-title check can fail', () => {
+    const { container } = render(
+      <Header
+        variant="sub"
+        title="Team Analysis"
+        back={{ label: 'Back', onClick: () => undefined }}
+      />,
+    );
+    expect(container.querySelector('.hdr-title > span:not(.hdr-sub)')).toHaveTextContent(
+      'Team Analysis',
+    );
   });
 });
 
@@ -64,6 +84,8 @@ describe('ExpandRow', () => {
     await userEvent.click(head);
     const id = head.getAttribute('aria-controls');
     expect(id).toBeTruthy();
-    expect(document.getElementById(id ?? '')).toContainElement(screen.getByText('Seen with Mimikyu'));
+    expect(document.getElementById(id ?? '')).toContainElement(
+      screen.getByText('Seen with Mimikyu'),
+    );
   });
 });
