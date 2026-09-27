@@ -7,7 +7,14 @@ import {
   type PokemonType,
   type VerdictLabel,
 } from '@pickthree/engine';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { metaTags, SEP, shortName, speciesDisplayName } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
@@ -50,20 +57,47 @@ export function useShortName(): (id: string) => string {
 }
 
 const sticky = new Map<string, unknown>();
+/** Every mounted useSticky, per key, so two components reading one key (Collection's list and
+ * its Filters sheet) see one value: a write from either re-renders both. */
+const stickyListeners = new Map<string, Set<() => void>>();
 
 /**
  * useState that survives leaving and returning to a screen within the session, so filters and
- * sort on the Collection do not reset when you tap into a Pokémon and come back.
+ * sort on the Collection do not reset when you tap into a Pokémon and come back. Every component
+ * reading the same key shares its value.
  */
 export function useSticky<T>(key: string, initial: T): [T, (next: T | ((cur: T) => T)) => void] {
-  const [value, setValue] = useState<T>(() => (sticky.has(key) ? (sticky.get(key) as T) : initial));
-  const set = (next: T | ((cur: T) => T)): void => {
-    setValue((cur) => {
+  // The first initial only: a caller passing a fresh object on each render (new Set()) must not
+  // hand useSyncExternalStore a new snapshot every time it asks.
+  const first = useRef(initial);
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      let listeners = stickyListeners.get(key);
+      if (!listeners) {
+        listeners = new Set();
+        stickyListeners.set(key, listeners);
+      }
+      const mine = listeners;
+      mine.add(onChange);
+      return () => {
+        mine.delete(onChange);
+      };
+    },
+    [key],
+  );
+  const read = (): T => (sticky.has(key) ? (sticky.get(key) as T) : first.current);
+  const value = useSyncExternalStore(subscribe, read);
+  const set = useCallback(
+    (next: T | ((cur: T) => T)): void => {
+      const cur = sticky.has(key) ? (sticky.get(key) as T) : first.current;
       const v = typeof next === 'function' ? (next as (cur: T) => T)(cur) : next;
       sticky.set(key, v);
-      return v;
-    });
-  };
+      for (const onChange of stickyListeners.get(key) ?? []) {
+        onChange();
+      }
+    },
+    [key],
+  );
   return [value, set];
 }
 

@@ -1448,20 +1448,6 @@ textarea.paste {
   color: var(--muted);
   flex-wrap: wrap;
 }
-.mini-chip {
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 7px;
-  border: 1px solid var(--divider);
-  background: transparent;
-  font-weight: 500;
-  font-size: 12px;
-}
-.mini-chip.on {
-  border-color: var(--accent);
-  background: var(--accent-tint);
-  color: var(--accent-text);
-}
 .stat3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2231,7 +2217,7 @@ button.counter-row {
   font-size: 12px;
 }
 
-/* collection: search with a settings cog, verdict pills, tap-to-cycle sort */
+/* collection: search with the filter icon, verdict chips, the count and the Sort dropdown */
 .search-row {
   display: flex;
   gap: 8px;
@@ -2261,40 +2247,22 @@ button.counter-row {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.cog.open {
-  border-color: var(--accent);
-  color: var(--accent-text);
-}
-.cog.active::after {
-  content: '';
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-}
+/* the count on the left, the Sort dropdown on the right, one line under the verdict chips */
 .sort-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--space);
   min-height: 32px;
-}
-.sort-toggle,
-.filters-hint {
-  border: 0;
-  background: transparent;
-  color: var(--accent-text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 10px 0;
-  min-height: 44px;
   margin: -6px 0;
 }
-.filters-hint {
-  color: var(--warn);
+/* Collection's Filters sheet: five switch rows with a hairline between them */
+.collection-filters {
+  display: flex;
+  flex-direction: column;
+}
+.collection-filters > * + * {
+  border-top: 1px solid var(--divider);
 }
 /* the head scrolls away; only the search bar stays pinned */
 .page-head.flow {
@@ -2402,9 +2370,6 @@ button.counter-row {
   padding: 12px 16px 6px;
   display: flex;
   flex-direction: column;
-}
-.popover .toggle {
-  padding: 10px 0;
 }
 .chips.tight .chip {
   padding: 0 11px;

@@ -1,10 +1,20 @@
 import type { Specimen, VerdictLabel } from '@pickthree/engine';
-import { useEffect, useMemo } from 'react';
+import {
+  Empty,
+  ErrorState,
+  FilterButton,
+  Header,
+  IconButton,
+  InlineSelect,
+  type ChoiceOption,
+} from '@pickthree/ui';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Chip,
-  HeadCog,
+  CogGlyph,
   HundoTag,
-  MetaButton,
+  META_URL,
+  MetaGlyph,
   MetaTags,
   PokemonToken,
   Progress,
@@ -16,11 +26,62 @@ import {
   useSticky,
   NoCollection,
 } from '../components.tsx';
-import { metaTags } from '../format.ts';
+import { metaTags, num, SEP } from '../format.ts';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { specimenRecord } from '../searchRecords.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { CollectionFilters } from './CollectionFilters.tsx';
+
+type Sort = 'verdict' | 'rank' | 'meta' | 'name';
+const SORTS: ChoiceOption<Sort>[] = [
+  { value: 'verdict', label: 'Verdict' },
+  { value: 'rank', label: 'IV rank' },
+  { value: 'meta', label: 'Meta rank' },
+  { value: 'name', label: 'Name' },
+];
+
+/** A plus, the Add a Pokémon glyph for an IconButton: 20px, drawn like MetaGlyph. */
+function PlusGlyph() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+/** The tab's own header: its title, Add a Pokémon, the meta.pick3.gg link and Settings. */
+function CollectionHeader({ openSheet }: { openSheet: () => void }) {
+  return (
+    <Header
+      variant="top"
+      title="Collection"
+      actions={
+        <>
+          <IconButton label="Add a Pokémon" href={hashFor({ screen: 'add' })}>
+            <PlusGlyph />
+          </IconButton>
+          <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
+            <MetaGlyph />
+          </IconButton>
+          <IconButton label="Settings" onClick={openSheet}>
+            <CogGlyph />
+          </IconButton>
+        </>
+      }
+    />
+  );
+}
 
 /** Quick pills: short labels so all four fit without scrolling. Ineligible rows hide by default. */
 const PILLS: { label: VerdictLabel; short: string }[] = [
@@ -62,24 +123,22 @@ export function rankLabel(
 
 export function Collection() {
   const s = useAppState();
-  const { navigate, loadVerdicts } = useActions();
+  const { navigate, loadVerdicts, openSheet } = useActions();
   const name = useName();
   const species = useSpecies();
   const metaRank = useMetaRank();
   const [query, setQuery] = useSticky('collection.query', '');
   // Verdict pills are a multi-select; nothing picked means everything.
   const [verdicts, setVerdicts] = useSticky<VerdictLabel[]>('collection.verdicts', []);
-  const [showIneligible, setShowIneligible] = useSticky('collection.showIneligible', false);
-  const [shadowsOnly, setShadowsOnly] = useSticky('collection.shadows', false);
-  const [recentOnly, setRecentOnly] = useSticky('collection.recent', false);
-  const [metaOnly, setMetaOnly] = useSticky('collection.meta', false);
-  const [sort, setSort] = useSticky<'verdict' | 'rank' | 'meta' | 'name'>(
-    'collection.sort',
-    'verdict',
-  );
-  const [grouped, setGrouped] = useSticky('collection.grouped', true);
+  // The Filters sheet writes these same keys; useSticky shares one value between the two.
+  const [showIneligible] = useSticky('collection.showIneligible', false);
+  const [shadowsOnly] = useSticky('collection.shadows', false);
+  const [recentOnly] = useSticky('collection.recent', false);
+  const [metaOnly] = useSticky('collection.meta', false);
+  const [sort, setSort] = useSticky<Sort>('collection.sort', 'verdict');
+  const [grouped] = useSticky('collection.grouped', true);
   const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
-  const [settingsOpen, setSettingsOpen] = useSticky('collection.settingsOpen', false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (
@@ -143,9 +202,11 @@ export function Collection() {
       const v = s.verdicts[sp.id];
       return v?.build ? v.build.ivRank.rank : 99_999;
     };
+    // The name as the row shows it: a Shadow sorts under its own name, the flag beside it.
+    const shownName = (sp: Specimen): string => name(sp.speciesId).replace(/^Shadow /, '');
     list = [...list].sort((a, b) => {
       if (sort === 'name') {
-        return name(a.speciesId).localeCompare(name(b.speciesId));
+        return shownName(a).localeCompare(shownName(b));
       }
       if (sort === 'rank') {
         return rankOf(a) - rankOf(b);
@@ -207,37 +268,26 @@ export function Collection() {
   if (!s.collection) {
     return (
       <div className="screen">
+        <div className="page-head">
+          <CollectionHeader openSheet={openSheet} />
+        </div>
         <NoCollection navigate={navigate} />
       </div>
     );
   }
-  const sortLabels = { verdict: 'Verdict', rank: 'IV rank', meta: 'Meta rank', name: 'Name' };
-  const nextSort = { verdict: 'rank', rank: 'meta', meta: 'name', name: 'verdict' } as const;
-  const filtersOn = [showIneligible, shadowsOnly, recentOnly, metaOnly].filter(Boolean).length;
-  const settingsOn = filtersOn > 0 || !grouped;
+  // Ruling 4: every switch that differs from its default counts, Group same Pokémon (on by
+  // default) included.
+  const filtersOn = [showIneligible, shadowsOnly, recentOnly, metaOnly, !grouped].filter(
+    Boolean,
+  ).length;
+  const count = grouped
+    ? `${num(rows.length)} Pokémon${SEP}${num(groups.length)} ${groups.length === 1 ? 'kind' : 'kinds'}`
+    : `${num(rows.length)} shown`;
   return (
     <div className="screen">
       <div className="page-head flow">
-        <div className="between">
-          <h2>Collection</h2>
-          <span className="row" style={{ gap: 10, alignItems: 'center' }}>
-            <span className="meta">
-              {grouped && groups.length !== rows.length
-                ? `${rows.length} Pokémon · ${groups.length} kinds`
-                : `${rows.length} shown`}
-            </span>
-            <button
-              type="button"
-              className="mini-chip on"
-              onClick={() => navigate({ screen: 'add' })}
-            >
-              + Add
-            </button>
-            <MetaButton />
-            <HeadCog />
-          </span>
-        </div>
-        <LeagueSwitcher compact />
+        <CollectionHeader openSheet={openSheet} />
+        <LeagueSwitcher />
       </div>
       <div className="sticky-bar">
         <div className="search-row">
@@ -262,18 +312,7 @@ export function Collection() {
               </button>
             ) : null}
           </div>
-          <button
-            type="button"
-            className={`cog${settingsOn ? ' active' : ''}${settingsOpen ? ' open' : ''}`}
-            aria-label="List settings"
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((x) => !x)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-            </svg>
-          </button>
+          <FilterButton iconOnly count={filtersOn} onClick={() => setFiltersOpen(true)} />
         </div>
       </div>
       <div className="page-head flow under">
@@ -295,21 +334,8 @@ export function Collection() {
           ))}
         </div>
         <div className="sort-row">
-          {filtersOn > 0 ? (
-            <button type="button" className="filters-hint" onClick={() => setSettingsOpen(true)}>
-              {filtersOn} {filtersOn === 1 ? 'filter' : 'filters'} on
-            </button>
-          ) : (
-            <span />
-          )}
-          <button
-            type="button"
-            className="sort-toggle"
-            onClick={() => setSort((x) => nextSort[x])}
-            aria-label={`Sort by ${sortLabels[sort]}, tap to change`}
-          >
-            Sort: {sortLabels[sort]} <span aria-hidden="true">&#8645;</span>
-          </button>
+          <span className="meta">{count}</span>
+          <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
@@ -321,10 +347,9 @@ export function Collection() {
           />
         ) : null}
         {s.verdictsError ? (
-          <div className="error" style={{ margin: '8px 0' }}>
-            Could not judge this collection: {s.verdictsError}. The list still works; verdicts will
-            retry on the next import.
-          </div>
+          <ErrorState
+            line={`Could not judge this collection: ${s.verdictsError}. The list still works; verdicts will retry on the next import.`}
+          />
         ) : null}
         {groups.map((g) => {
           const sp = g.best;
@@ -403,62 +428,11 @@ export function Collection() {
             </div>
           );
         })}
-        {rows.length === 0 ? (
-          <p className="muted" style={{ padding: '32px 12px', textAlign: 'center' }}>
-            Nothing matches. Try another name or clear a filter.
-          </p>
+        {rows.length === 0 && !s.verdictsLoading ? (
+          <Empty line="Nothing matches. Try another name or clear a filter." />
         ) : null}
       </div>
-      {settingsOpen ? (
-        <>
-          <div
-            className="overlay clear"
-            onClick={() => setSettingsOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="popover" role="dialog" aria-label="List settings">
-            <div className="between" style={{ marginBottom: 4 }}>
-              <b>List settings</b>
-              <button type="button" className="btn-ghost" onClick={() => setSettingsOpen(false)}>
-                Done
-              </button>
-            </div>
-            {(
-              [
-                [
-                  'Show ineligible',
-                  'Pokémon over the cap or banned here',
-                  showIneligible,
-                  setShowIneligible,
-                ],
-                ['Shadows only', 'Just the Shadow Pokémon', shadowsOnly, setShadowsOnly],
-                ['Scanned recently', 'Last two weeks of scans', recentOnly, setRecentOnly],
-                [
-                  'Top 50 meta',
-                  'Only species in the top 50 for this league',
-                  metaOnly,
-                  setMetaOnly,
-                ],
-                ['Group same Pokémon', 'One row per species, best first', grouped, setGrouped],
-              ] as const
-            ).map(([label, sub, on, set]) => (
-              <button
-                type="button"
-                className="toggle"
-                key={label}
-                onClick={() => set((x) => !x)}
-                aria-pressed={on}
-              >
-                <span>
-                  <span style={{ display: 'block', fontSize: 15 }}>{label}</span>
-                  <span className="meta">{sub}</span>
-                </span>
-                <span className={`switch${on ? ' on' : ''}`} />
-              </button>
-            ))}
-          </div>
-        </>
-      ) : null}
+      {filtersOpen ? <CollectionFilters onClose={() => setFiltersOpen(false)} /> : null}
     </div>
   );
 }
