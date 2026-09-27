@@ -89,6 +89,17 @@ async function open(): Promise<HTMLElement> {
     expect(latest?.state.settingsLoaded).toBe(true);
     expect(latest?.state.setsLoaded).toBe(true);
   });
+  // Let the boot route settle before any test taps: with a collection, boot sends welcome to
+  // teams through window.location.hash, and the hashchange it queues (and the one beforeEach
+  // queued) lands a task later. A route change made before those land would race them.
+  const settled = latest!.state.collection ? '#/teams' : '';
+  await waitFor(() => {
+    expect(window.location.hash).toBe(settled);
+    expect(latest?.state.route.screen).toBe(latest!.state.collection ? 'teams' : 'welcome');
+  });
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
   await act(async () => {
     latest!.actions.openSheet();
   });
@@ -142,7 +153,8 @@ describe('Settings hub', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Import a new CSV' }));
     });
     expect(latest?.state.sheetOpen).toBe(false);
-    expect(latest?.state.route).toEqual({ screen: 'import' });
+    // navigate() sets the hash; the route follows on the hashchange a task later.
+    await waitFor(() => expect(latest?.state.route).toEqual({ screen: 'import' }));
   });
 
   it('sums the collection and every league logged on the Your data row', async () => {
