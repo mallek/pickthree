@@ -44,3 +44,44 @@ describe.skipIf(!haveStaticData())('Built verdict', () => {
     expect(verdict.line).not.toContain('Use it.');
   });
 });
+
+/**
+ * Exclusion goes by the Pokémon as it battles, from every copy and every stage it can reach, so a
+ * verdict carries every battling species its copy has a build for, not only the best one: the
+ * detail page counts the copies an exclusion actually removes from it.
+ */
+describe.skipIf(!haveStaticData())('verdict buildSpecies', () => {
+  const data = loadStaticData();
+  const deps = { data, sim: null as unknown as never, simOptions: undefined };
+  const eevee: Specimen = {
+    id: 'e1',
+    speciesId: 'eevee',
+    familyId: null,
+    ivs: { atk: 0, def: 15, sta: 15 },
+    level: { min: 18, max: 18 },
+    cp: 509,
+    hp: 91,
+    shadow: false,
+    purified: false,
+    lucky: false,
+    currentMoves: { fast: null, charged: [] },
+    scannedAt: '2026-09-01 00:00',
+    raw: {},
+  } as unknown as Specimen;
+
+  it('lists every battling species the copy has a build for, the best build among them', () => {
+    const v = verdictsFor([eevee], {}, deps as never)['e1']!;
+    expect(v.build).not.toBeNull();
+    expect(v.buildSpecies).toContain(v.build!.speciesId);
+    expect(v.buildSpecies).toContain('umbreon');
+    expect(v.buildSpecies).toContain('sylveon');
+    expect(new Set(v.buildSpecies).size).toBe(v.buildSpecies.length);
+  });
+
+  it('is empty when there is no build', () => {
+    const v = verdictsFor([{ ...eevee, ivs: null } as unknown as Specimen], {}, deps as never)[
+      'e1'
+    ]!;
+    expect(v.buildSpecies).toEqual([]);
+  });
+});

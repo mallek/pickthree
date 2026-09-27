@@ -47,9 +47,10 @@ function specimen(id: string, speciesId: string, shadow = false): Specimen {
 }
 
 /** A verdict whose best build battles as `battles`. Only the fields the pages read. */
-function verdict(sp: Specimen, battles: string | null): Verdict {
+function verdict(sp: Specimen, battles: string | null, also: string[] = []): Verdict {
   return {
     specimenId: sp.id,
+    buildSpecies: battles ? [battles, ...also] : [],
     label: battles ? 'Worth building' : 'Not eligible',
     line: 'A line.',
     build: battles
@@ -89,6 +90,8 @@ const SPECIMENS = [
   specimen('z1', 'azumarill'),
   specimen('m4', 'marill'),
   specimen('s1', 'marill_shadow', true),
+  specimen('e1', 'eevee'),
+  specimen('y1', 'sylveon'),
 ];
 const VERDICTS: Record<string, Verdict> = {
   m1: verdict(SPECIMENS[0]!, 'azumarill'),
@@ -97,6 +100,9 @@ const VERDICTS: Record<string, Verdict> = {
   z1: verdict(SPECIMENS[3]!, 'azumarill'),
   m4: verdict(SPECIMENS[4]!, 'marill'),
   s1: verdict(SPECIMENS[5]!, 'azumarill_shadow'),
+  // An Eevee at its best as Umbreon that can also be a Sylveon: excluding Sylveon covers it.
+  e1: verdict(SPECIMENS[6]!, 'umbreon', ['sylveon']),
+  y1: verdict(SPECIMENS[7]!, 'sylveon'),
 };
 
 async function seed(): Promise<void> {
@@ -134,6 +140,9 @@ function host(verdicts: () => Promise<Record<string, Verdict>> = async () => VER
           familyId: 'marill',
           dex: 183,
         },
+        eevee: { name: 'Eevee', types: ['normal', 'none'], familyId: 'eevee', dex: 133 },
+        sylveon: { name: 'Sylveon', types: ['fairy', 'none'], familyId: 'eevee', dex: 700 },
+        umbreon: { name: 'Umbreon', types: ['dark', 'none'], familyId: 'eevee', dex: 197 },
         azumarill_shadow: {
           name: 'Azumarill (Shadow)',
           types: ['water', 'fairy'],
@@ -214,6 +223,20 @@ describe('Excluding the Pokémon as it battles', () => {
       name: 'Use Shadow Azumarill in team recommendations',
     });
     expect(sw).toHaveAccessibleDescription('Covers your 1 Shadow Marill.');
+  });
+
+  it('counts every copy the exclusion removes, not only those at their best as it', async () => {
+    await boot();
+    await go({ screen: 'specimen', id: 'y1' });
+    await judgedAll();
+    const sw = await screen.findByRole('switch', {
+      name: 'Use Sylveon in team recommendations',
+    });
+    expect(sw).toHaveAccessibleDescription('Covers your 1 Eevee and 1 Sylveon.');
+    await go({ screen: 'specimen', id: 'e1' });
+    expect(
+      screen.getByRole('switch', { name: 'Use Umbreon in team recommendations' }),
+    ).toHaveAccessibleDescription('Covers your 1 Eevee.');
   });
 
   it('waits for the verdict before naming anything', async () => {
@@ -297,9 +320,9 @@ describe('Legacy per-copy exclusions', () => {
   it('convert once to the battling species when verdicts arrive, dropping ids that are gone', async () => {
     await storage.saveSettings({
       ...DEFAULT_SETTINGS,
-      excludedSpecimenIds: ['m1', 's1', 'gone', 'm4'],
+      excludedSpecimenIds: ['m1', 's1', 'gone'],
     });
-    const h = host(async () => ({ ...VERDICTS, m4: verdict(SPECIMENS[4]!, null) }));
+    const h = host();
     await boot(h);
     // No screen asked for verdicts: the provider asks, because the legacy list needs them.
     await waitFor(() => expect(latest?.state.settings.excludedSpecimenIds).toEqual([]));
@@ -311,6 +334,33 @@ describe('Legacy per-copy exclusions', () => {
     expect(saved.excludedSpecimenIds).toEqual([]);
     expect([...(saved.excludedSpecies ?? [])].sort()).toEqual(['azumarill', 'azumarill_shadow']);
     expect(h.verdicts).toHaveBeenCalledTimes(1);
+  });
+
+  it('keep an id with no build in this league, still sent to the engine, without disabling other switches', async () => {
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, excludedSpecimenIds: ['m1', 'm4'] });
+    // m4 has no build here (over the cap, banned, or not judged): it may battle in another league.
+    const h = host(async () => ({ ...VERDICTS, m4: verdict(SPECIMENS[4]!, null) }));
+    await boot(h);
+    await waitFor(() => expect(latest?.state.settings.excludedSpecies).toEqual(['azumarill']));
+    expect(latest?.state.settings.excludedSpecimenIds).toEqual(['m4']);
+    expect((await storage.loadSettings()).excludedSpecimenIds).toEqual(['m4']);
+    // Asked once: the leftover id does not send the provider back for verdicts again.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(h.verdicts).toHaveBeenCalledTimes(1);
+    const recommend = h.recommend as unknown as ReturnType<typeof vi.fn>;
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    const opts = recommend.mock.calls.at(-1)![1] as Partial<RecommendOptions>;
+    expect(opts.excludedSpecimenIds).toEqual(['m4']);
+    expect(opts.excludedSpecies).toEqual(['azumarill']);
+    // Another copy's page still has a working switch.
+    await go({ screen: 'specimen', id: 'y1' });
+    expect(
+      screen.getByRole('switch', { name: 'Use Sylveon in team recommendations' }),
+    ).not.toBeDisabled();
   });
 
   it('keep reaching the engine until they convert', async () => {

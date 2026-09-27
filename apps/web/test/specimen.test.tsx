@@ -84,6 +84,7 @@ function verdict(
     specimenId: sp.id,
     label,
     line: `${label} line for ${sp.id}.`,
+    buildSpecies: [sp.speciesId],
     build: {
       specimenId: sp.id,
       specimen: sp,

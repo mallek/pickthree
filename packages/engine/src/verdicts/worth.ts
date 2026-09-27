@@ -21,6 +21,12 @@ export interface Verdict {
   line: string;
   /** The stage the verdict is about (may be a later evolution). */
   build: Build | null;
+  /**
+   * Every battling species this copy has a build for in the league (shadow forms are their own
+   * ids), the best build's among them; empty with no build. An exclusion of any of them removes
+   * this copy's build of it from teams.
+   */
+  buildSpecies: string[];
   moveset: Moveset | null;
   cost: Cost | null;
   /** Wins the rank-1 twin gets minus this specimen's wins across the meta, 1-1 shields. */
@@ -126,6 +132,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   const base = {
     specimenId: s.id,
     build: null,
+    buildSpecies: [] as string[],
     moveset: null,
     cost: null,
     perfectDelta: null,
@@ -146,6 +153,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   }
   const builds = buildsFor(s, deps.index, { ...deps.buildOptions, minCp: 0 });
   const build = bestBuild(builds, deps.overall);
+  const buildSpecies = [...new Set(builds.map((b) => b.speciesId))];
   if (!build) {
     const sp = deps.index.species(s.speciesId);
     const banned = Boolean(sp && !allowedInLeague(sp, deps.league));
@@ -209,6 +217,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     return {
       ...base,
       build,
+      buildSpecies,
       moveset,
       cost,
       metaWins,
@@ -224,6 +233,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     return {
       ...base,
       build,
+      buildSpecies,
       moveset,
       cost,
       metaWins,
@@ -241,6 +251,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     return {
       ...base,
       build,
+      buildSpecies,
       moveset,
       cost,
       metaWins,
@@ -257,6 +268,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   return {
     ...base,
     build,
+    buildSpecies,
     moveset,
     cost,
     metaWins,

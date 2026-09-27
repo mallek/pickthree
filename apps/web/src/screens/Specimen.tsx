@@ -126,21 +126,22 @@ export function SpecimenScreen({ id }: { id: string }) {
   );
   const build = v?.build ?? null;
   // Exclusion goes by what the Pokémon battles as, its best build's species, so the switch waits
-  // for the verdict to name it. Legacy per-copy ids convert when verdicts finish; until then the
-  // switch shows this copy's state and stays disabled.
+  // for the verdict to name it. A legacy per-copy id on this copy converts when verdicts finish;
+  // until then the switch shows this copy's state and stays disabled.
   const battles = build?.speciesId ?? null;
   const legacy = s.settings.excludedSpecimenIds ?? [];
   const excluded = battles
     ? (s.settings.excludedSpecies ?? []).includes(battles) || legacy.includes(sp.id)
     : legacy.includes(sp.id);
   const showSwitch = !(v && !battles);
-  const switchReady = battles !== null && !s.verdictsLoading && legacy.length === 0;
+  const switchReady = battles !== null && !s.verdictsLoading && !legacy.includes(sp.id);
   const covers =
     battles && !s.verdictsLoading
       ? coversLine(
           [
             ...(s.collection?.specimens ?? [])
-              .filter((c) => s.verdicts[c.id]?.build?.speciesId === battles)
+              // Every copy with a build of it: the exclusion removes that build, best or not.
+              .filter((c) => s.verdicts[c.id]?.buildSpecies.includes(battles))
               .reduce((m, c) => {
                 const n = name(c.speciesId);
                 return m.set(n, (m.get(n) ?? 0) + 1);

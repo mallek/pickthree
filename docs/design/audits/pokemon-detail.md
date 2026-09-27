@@ -33,7 +33,7 @@ changed on each.
 | --- | --- | --- |
 | `05-specimen`: Galarian Articuno, Worth building. Back and the cog, no title; the name once; types, CP, level, scan age; the Worth building tag and "Same wins as best IVs"; the facts card; the moves card with TM, HAS IT, TM in their own column and Brave Bird's "Def down"; "Level 6 to 15.5 · includes second move unlock" and three tiles; the no-teams line; the switch on, "Use Galarian Articuno in team recommendations", "Covers your 1 Galarian Articuno."; nothing fixed over the page | ![](img/05-specimen-dark.webp) | ![](img/05-specimen-light.webp) |
 | `specimen-built`: a seeded copy at its build level. The Built tag, "Top 1% IVs for Great League, already at level 15.5.", "Already at level 15.5.", "Includes second move unlock.", only the Stardust and Candy tiles (XL Candy was zero) | ![](img/specimen-built-dark.webp) | ![](img/specimen-built-light.webp) |
-| `specimen-evolve`: Meltan. "Meta rank when evolved", the Best stage card ("Evolve to Melmetal before powering up"), ELITE TM in the badge column, the cost line on two lines with the evolve candy, "Plus 1 Elite TM."; the switch names what it battles as, "Use Melmetal in team recommendations", "Covers your 2 Meltan." (the sample's other Meltan battle best as something else) | ![](img/specimen-evolve-dark.webp) | ![](img/specimen-evolve-light.webp) |
+| `specimen-evolve`: Meltan. "Meta rank when evolved", the Best stage card ("Evolve to Melmetal before powering up"), ELITE TM in the badge column, the cost line on two lines with the evolve candy, "Plus 1 Elite TM."; the switch names what it battles as, "Use Melmetal in team recommendations", "Covers your 2 Meltan." (the sample's other four Meltan, at levels 22 to 26, have no Great League build as Melmetal: evolved it would be over 1,500 CP, which cannot be powered down, so their only build is Meltan itself) | ![](img/specimen-evolve-dark.webp) | ![](img/specimen-evolve-light.webp) |
 | `specimen-excluded`: `05-specimen` with the switch off, which leaves Galarian Articuno out from every copy; nothing else moves | ![](img/specimen-excluded-dark.webp) | ![](img/specimen-excluded-light.webp) |
 | `specimen-manual`: a hand-added Swampert, Wait for better IVs, at its build level: "Already at level 17.5.", the unlock's two tiles, "Plus 1 Elite TM."; "Remove from collection" (red outline) under the switch, in the same card | ![](img/specimen-manual-dark.webp) | ![](img/specimen-manual-light.webp) |
 | `specimen-remove-confirm`: "Remove this Swampert?", "It leaves your collection on this phone.", Keep it and a red Remove, over the dimmed page | ![](img/specimen-remove-confirm-dark.webp) | ![](img/specimen-remove-confirm-light.webp) |
@@ -151,7 +151,7 @@ sample's Pokémon are in no recommended team).
 | Final review: a fresh load of `#/collection/<id>` could say "not in the current collection" before the saved collection was read. | `Loading` ("Loading your collection") under the sub header until `settingsLoaded` (set with the collection) (tested). | `b3c5c12` |
 | Final review: Back from a Pokémon just added landed on an empty Add form. | Add Pokémon replaces itself with the new page (`navigate(..., { replace: true })`); a delayed hand-off is cleared if the player leaves first (tested). | `b3c5c12` |
 | Final review: `openSpecimen` could resolve on the page it was leaving, and `05-specimen` had no `mustShow`. | See the note under Screenshots (script only). | `b3c5c12` |
-| Travis, 2026-09-27: turning off "Use in team recommendations" on a Meltan left Melmetal on his teams. Exclusion was per copy (`excludedSpecimenIds`), so pick3 evolved another Meltan; on the sample, excluding the lead Galarian Stunfisk left "Morpeko · Feraligatr · Galarian Stunfisk" in place, built from another copy. | Exclusion goes by the Pokémon as it battles (Travis, 2026-09-27): the engine skips every build whose `speciesId` is excluded, from any copy; Shadow forms are their own ids. The switch names the verdict build's species and counts the copies whose best build it is; it waits for the verdict and hides for a Pokémon with no build in the league. Legacy per-copy ids convert once when verdicts finish. See "Exclusion by the Pokémon as it battles". | `c8d080d`, `c6b4819` |
+| Travis, 2026-09-27: turning off "Use in team recommendations" on a Meltan left Melmetal on his teams. Exclusion was per copy (`excludedSpecimenIds`), so pick3 evolved another Meltan; on the sample, excluding the lead Galarian Stunfisk left "Morpeko · Feraligatr · Galarian Stunfisk" in place, built from another copy. | Exclusion goes by the Pokémon as it battles (Travis, 2026-09-27): the engine skips every build whose `speciesId` is excluded, from any copy; Shadow forms are their own ids. The switch names the verdict build's species and counts every copy with a build of it (the verdict's new `buildSpecies`, all the battling species a copy has a build for in the league); it waits for the verdict and hides for a Pokémon with no build in the league. Legacy per-copy ids with a build in the league convert when verdicts finish; the rest stay legacy. See "Exclusion by the Pokémon as it battles". | `c8d080d`, `c6b4819` |
 
 ## Exclusion by the Pokémon as it battles (2026-09-27)
 
@@ -161,18 +161,25 @@ your Meltan and any Melmetal; excluding Umbreon leaves Eevee free to be a Sylveo
 normal forms are separate.
 
 - **The switch:** "Use {battling name} in team recommendations", the line "Covers your 6 Meltan
-  and 1 Melmetal." (copies whose best build is that Pokémon, grouped by their own name, largest
-  first; one group reads "Covers your 6 Meltan."). Before the verdict it shows disabled as "Use in
+  and 1 Melmetal." (every copy the exclusion removes a build from: copies whose verdict
+  `buildSpecies` includes that Pokémon, best build or not, grouped by their own name, largest
+  first; one group reads "Covers your 6 Meltan."; an Eevee at its best as Umbreon that can also be
+  a Sylveon counts under Sylveon). Before the verdict it shows disabled as "Use in
   team recommendations" with no line; while other verdicts still load it names the Pokémon but
   waits to count and stays disabled. A Pokémon with no build in the league (Not eligible) has no
   switch; a hand-added one keeps its Remove in the same card.
 - **Where it shows:** Teams' Filters sheet and Settings > Your data list the excluded Pokémon
   (`teams.md`, `settings.md`); Collection tags their rows (`collection.md`).
-- **Old saves:** each per-copy id converts once, when verdicts finish, to its specimen's best-build
-  species; ids whose specimen or build is gone are dropped. The provider asks for verdicts itself
-  while any remain, and the engine keeps honoring them until then.
+- **Old saves:** when verdicts finish, each per-copy id whose copy has a build in the league in play
+  converts to that best build's species. An id is dropped only when its copy is gone from the
+  collection. An id with no build here (not eligible, banned, over the cap, not judged) stays
+  legacy: the engine keeps honoring it, the other copies' switches work, and it converts in a
+  league where it has a build. The provider asks for verdicts itself once per league while any
+  remain, and a run whose league changed before it finished converts nothing.
 - **Checked:** `web:audit` on 2026-09-27 (`c6b4819` code, `PICK3_BUILD=874d675`): exit 0, zero
-  findings on every enforced name in both themes, no NEVER line. Re-converted captures listed
+  findings on every enforced name in both themes, no NEVER line. Re-run after the review fixes
+  (the legacy ids kept, `buildSpecies`), same build id: exit 0, the same result; every
+  re-converted WebP came out byte-identical, so no image changed. Re-converted captures listed
   under Screenshots; checked by eye in both themes.
 
 ## Rulings

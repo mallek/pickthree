@@ -556,10 +556,10 @@ export function optionsFrom(settings: Settings): Partial<RecommendOptions> {
 }
 
 /**
- * The legacy per-copy exclusions converted to what those copies battle as: each id becomes the
- * species of its specimen's best build (the verdict's build), once. An id whose specimen or
- * verdict is gone, or whose verdict has no build in this league, is dropped. The legacy list is
- * emptied either way.
+ * The legacy per-copy exclusions converted to what those copies battle as: each id whose verdict
+ * has a build becomes the species of that best build, once. An id whose specimen is gone is
+ * dropped. An id with no build in this league (not eligible, banned, over the cap, not judged)
+ * stays legacy: the engine keeps honoring it, and it converts in a league where it has a build.
  */
 export function convertLegacyExcluded(
   settings: Settings,
@@ -569,13 +569,19 @@ export function convertLegacyExcluded(
   const legacy = settings.excludedSpecimenIds ?? [];
   const species = [...(settings.excludedSpecies ?? [])];
   const have = new Set(specimens.map((sp) => sp.id));
+  const kept: string[] = [];
   for (const id of legacy) {
-    const battles = have.has(id) ? verdicts[id]?.build?.speciesId : undefined;
-    if (battles && !species.includes(battles)) {
+    if (!have.has(id)) {
+      continue;
+    }
+    const battles = verdicts[id]?.build?.speciesId;
+    if (!battles) {
+      kept.push(id);
+    } else if (!species.includes(battles)) {
       species.push(battles);
     }
   }
-  return { ...settings, excludedSpecimenIds: [], excludedSpecies: species };
+  return { ...settings, excludedSpecimenIds: kept, excludedSpecies: species };
 }
 
 export function filterKey(
@@ -1055,6 +1061,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     }
     verdictsInFlight.current = true;
     const specimens = s.collection.specimens;
+    const league = s.settings.league ?? 'great';
     dispatch({ type: 'verdicts-start' });
     try {
       const verdicts = await h.verdicts(
@@ -1070,13 +1077,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         recordError('verdict-row', new Error(`${bad.length} could not be judged: ${bad[0]!.line}`));
       }
       dispatch({ type: 'verdicts-done', verdicts });
-      // Legacy per-copy exclusions convert here, the first time verdicts are in, in the same
-      // update as the verdicts so no screen sees one without the other.
+      // Legacy per-copy exclusions convert here, when verdicts are in, in the same update as the
+      // verdicts so no screen sees one without the other; never from verdicts of a league that is
+      // no longer in play.
       const cur = stateRef.current.settings;
-      if ((cur.excludedSpecimenIds ?? []).length > 0) {
-        const next = convertLegacyExcluded(cur, specimens, verdicts);
-        dispatch({ type: 'settings', settings: next });
-        void storage.saveSettings(next);
+      if ((cur.excludedSpecimenIds ?? []).length > 0 && (cur.league ?? 'great') === league) {
+        updateSettings((c) => convertLegacyExcluded(c, specimens, verdicts));
       }
     } catch (e) {
       recordError('verdicts', e);
@@ -1084,11 +1090,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     } finally {
       verdictsInFlight.current = false;
     }
-  }, []);
+  }, [updateSettings]);
 
   // Legacy per-copy exclusions wait for verdicts to convert. Teams never asks for verdicts, so
-  // ask here once the league is loaded; with no collection there is nothing they could name.
+  // ask here once the league is loaded; with no collection there is nothing they could name. Once
+  // per league bundle and collection: an id with no build here stays legacy after the run, and
+  // must not send the provider straight back for the same verdicts.
   const legacyExcluded = (state.settings.excludedSpecimenIds ?? []).length > 0;
+  const legacyAsked = useRef<{ info: unknown; collection: unknown } | null>(null);
   useEffect(() => {
     if (!legacyExcluded || !state.settingsLoaded) {
       return;
@@ -1097,12 +1106,15 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       updateSettings((cur) => ({ ...cur, excludedSpecimenIds: [] }));
       return;
     }
+    const asked = legacyAsked.current;
     if (
       state.leagueInfo &&
       Object.keys(state.verdicts).length === 0 &&
       !state.verdictsLoading &&
-      !state.verdictsError
+      !state.verdictsError &&
+      !(asked && asked.info === state.leagueInfo && asked.collection === state.collection)
     ) {
+      legacyAsked.current = { info: state.leagueInfo, collection: state.collection };
       void loadVerdicts();
     }
   }, [
