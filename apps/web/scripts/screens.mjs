@@ -18,6 +18,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { auditPage, forEachTheme, prepareAudit } from '../../../scripts/audit.mjs';
+// The game's CP multiplier table, straight from the engine (Node strips the types), for the one
+// Pokémon the run seeds at its build level.
+import { cpmForLevel } from '../../../packages/engine/src/tables/cpm.ts';
 
 const AUDIT = process.argv.includes('--audit');
 /** Screens held to the audit: a finding here fails the run. Each page redesign adds its own
@@ -66,6 +69,19 @@ const AUDIT_ENFORCED = new Set([
   'settings-confirm-forget',
   'settings-confirm-fresh',
   'settings-confirm-sharing',
+  '04-collection',
+  '11-collection-group',
+  'collection-flat',
+  'collection-filters-sheet',
+  'collection-judging',
+  'collection-empty',
+  '05-specimen',
+  'specimen-built',
+  'specimen-evolve',
+  'specimen-excluded',
+  'specimen-manual',
+  'specimen-remove-confirm',
+  'specimen-not-found',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -313,7 +329,8 @@ const headEdges = await page.evaluate(() => {
   const buttons = document.querySelectorAll('.page-head .ui-top-actions > *');
   const last = buttons[buttons.length - 1];
   const league =
-    document.querySelector('.page-head .league-row') ?? document.querySelector('.page-head .league-switcher');
+    document.querySelector('.page-head .league-row') ??
+    document.querySelector('.page-head .league-switcher');
   if (!title || !last || !league) {
     return null;
   }
@@ -540,7 +557,9 @@ const moreHits = await page.evaluate(() => {
   };
 });
 if (!moreHits || !moreHits.owns || !moreHits.clear) {
-  throw new Error(`"+N more": its target is covered or overlaps the chips: ${JSON.stringify(moreHits)}`);
+  throw new Error(
+    `"+N more": its target is covered or overlaps the chips: ${JSON.stringify(moreHits)}`,
+  );
 }
 await page.evaluate(() => window.scrollTo(0, 0));
 
@@ -693,21 +712,285 @@ if (!notFoundLine.includes('not in the current results')) {
 }
 await shot('analysis-not-found', false, { mustShow: '.ui-empty' });
 
+console.log('collection, judging');
+// A fresh load, so the verdicts are computed while the list is on screen. They land in chunks of
+// 25, a few seconds in all, less than two shots and their audits, so the compute worker is held at
+// a debugger pause once the first chunk is in (its league bundle has landed by then, see
+// teams-loading) and let go after the shot.
+await page.goto(`${base}/#/collection`, { waitUntil: 'domcontentloaded' });
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForFunction(
+  () =>
+    document.querySelector('.scroll .verdict-tag') && document.querySelector('.scroll .ui-loading'),
+  { timeout: 120_000, polling: 'mutation' },
+);
+const verdictWorkers = page.workers();
+for (const w of verdictWorkers) {
+  await w.client.send('Debugger.enable');
+  await w.client.send('Debugger.pause');
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('collection-judging', false, { mustShow: '.scroll .ui-loading' });
+for (const w of verdictWorkers) {
+  await w.client.send('Debugger.resume');
+  await w.client.send('Debugger.disable');
+}
+
 console.log('collection');
-await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.verdict-tag', { timeout: 120_000 });
+await page.waitForFunction(
+  () => document.querySelector('.scroll .verdict-tag') && !document.querySelector('.ui-loading'),
+  { timeout: 120_000 },
+);
 console.log(`  verdicts rendered at ${Date.now() - t0} ms`);
+await page.evaluate(() => window.scrollTo(0, 0));
+// The Sort dropdown's 44px target reaches past its line; it must stay clear of the chips above.
+const sortGap = await page.evaluate(() => {
+  const chips = document.querySelector('.chips.tight')?.getBoundingClientRect();
+  const sort = document.querySelector('.sort-row select')?.getBoundingClientRect();
+  return chips && sort ? { gap: sort.top - chips.bottom, height: sort.height } : null;
+});
+console.log(`  sort target ${sortGap?.height}px tall, ${sortGap?.gap}px under the chips`);
+if (!sortGap || sortGap.gap < 0) {
+  throw new Error(`collection: the Sort target overlaps the chips (${JSON.stringify(sortGap)})`);
+}
 await shot('04-collection');
 await page.click('.more-btn');
-await new Promise((r) => setTimeout(r, 300));
-await page.evaluate(() => document.querySelector('.more-btn').scrollIntoView({ block: 'center' }));
+await page.waitForSelector('.more-btn[aria-expanded="true"]');
+// The open group at the top of the list, just under the pinned search bar.
+await page.evaluate(() => {
+  const group = document.querySelector('.more-btn[aria-expanded="true"]').closest('.spec-group');
+  const bar = document.querySelector('.sticky-bar').getBoundingClientRect().height;
+  window.scrollTo(0, window.scrollY + group.getBoundingClientRect().top - bar);
+});
 await shot('11-collection-group', false);
-const specHref = await page.$eval('.spec-row', (a) => a.getAttribute('href'));
+// Close it again, so the later shots start from the default: every group shut.
+await page.click('.more-btn[aria-expanded="true"]');
+await page.waitForFunction(() => !document.querySelector('.more-btn[aria-expanded="true"]'));
+await page.evaluate(() => window.scrollTo(0, 0));
+
+console.log('collection, filters');
+/** Flips one switch in the Filters sheet by its label and waits for it to land. */
+const flipCollectionFilter = async (label) => {
+  const was = await page.$$eval(
+    '.ui-sheet [role="switch"]',
+    (els, l) => {
+      const sw = els.find((e) => e.textContent?.startsWith(l));
+      sw?.click();
+      return sw ? sw.getAttribute('aria-checked') : null;
+    },
+    label,
+  );
+  if (was === null) {
+    throw new Error(`collection filters: no "${label}" switch`);
+  }
+  await page.waitForFunction(
+    (l, before) =>
+      [...document.querySelectorAll('.ui-sheet [role="switch"]')]
+        .find((e) => e.textContent?.startsWith(l))
+        ?.getAttribute('aria-checked') !== before,
+    {},
+    label,
+    was,
+  );
+};
+await page.click('.search-row .ui-filter-icon');
+await page.waitForSelector('.ui-sheet .collection-filters');
+await shot('collection-filters-sheet', false, { mustShow: '.ui-sheet .collection-filters' });
+await flipCollectionFilter('Group same Pokémon');
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
+const flatCount = await page.$eval('.sort-row .meta', (e) => e.textContent ?? '');
+if (!flatCount.endsWith(' shown')) {
+  throw new Error(`collection, flat: the count reads "${flatCount}", not "N shown"`);
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('collection-flat', false);
+// The detail pages are picked from this flat list (every Pokémon, not only each group's best) by
+// what they show: a building Pokémon (cost tiles, no evolution), an evolving one, and a built one.
+const listRows = await page.$$eval('.spec-row:not(.sub)', (rows) =>
+  rows.map((r) => ({
+    href: r.getAttribute('href'),
+    verdict: r.querySelector('.verdict-tag')?.getAttribute('data-verdict') ?? null,
+  })),
+);
+const verdictCounts = {};
+for (const r of listRows) {
+  verdictCounts[r.verdict] = (verdictCounts[r.verdict] ?? 0) + 1;
+}
+console.log(`  verdicts in the flat list: ${JSON.stringify(verdictCounts)}`);
+await page.click('.search-row .ui-filter-icon');
+await page.waitForSelector('.ui-sheet .collection-filters');
+await flipCollectionFilter('Group same Pokémon');
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
+
+console.log('collection, empty');
+await page.type('.search-row .search', 'zzzz');
+await page.waitForSelector('.scroll .ui-empty');
+await shot('collection-empty', false, { mustShow: '.scroll .ui-empty' });
+await page.click('.search-clear');
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-empty'));
 
 console.log('specimen');
-await page.goto(`${base}/${specHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.stat3, .verdict-tag');
+// Hash navigation keeps the verdicts in memory.
+/** Opens a detail page in place and waits for its verdict; returns what the page shows. */
+const openSpecimen = async (href) => {
+  await page.evaluate((h) => {
+    window.location.hash = h;
+  }, href);
+  await page.waitForFunction(
+    (h) => window.location.hash === h && document.querySelector('.scroll .verdict-tag'),
+    { timeout: 30_000 },
+    href,
+  );
+  await new Promise((r) => setTimeout(r, 200));
+  return page.evaluate(() => {
+    const rankKv = [...document.querySelectorAll('.scroll .kv')].find((k) =>
+      k.firstElementChild?.textContent?.startsWith('IV rank'),
+    );
+    const rank = /^(\d+) of (\d+)$/.exec(rankKv?.lastElementChild?.textContent ?? '');
+    const levels = [...document.querySelectorAll('.scroll .small.muted')]
+      .map((e) => /^Level ([\d.]+) to ([\d.]+)/.exec(e.textContent ?? ''))
+      .find(Boolean);
+    return {
+      evolves: Boolean(document.querySelector('.evo')),
+      tiles: document.querySelectorAll('.stat3 .stat').length,
+      topShare: rank ? Number(rank[1]) / Number(rank[2]) : null,
+      buildLevel: levels ? Number(levels[2]) : null,
+    };
+  });
+};
+const pickSpecimen = async (what, verdicts, test) => {
+  for (const row of listRows.filter((r) => verdicts.includes(r.verdict))) {
+    const shown = await openSpecimen(row.href);
+    if (test(shown)) {
+      return { href: row.href, ...shown };
+    }
+  }
+  throw new Error(`specimen: the sample collection has no ${what} Pokémon to capture`);
+};
+// Top quarter IVs as well, so the same Pokémon at its build level is Built (seeded below).
+const building = await pickSpecimen(
+  'building (Worth building, top 25% IVs, cost tiles, no evolution)',
+  ['Worth building'],
+  (p) => !p.evolves && p.tiles > 0 && p.topShare !== null && p.topShare <= 0.25 && p.buildLevel,
+);
+const evolving = await pickSpecimen(
+  'evolving',
+  ['Worth building', 'Wait for better IVs', 'Built'],
+  (p) => p.evolves,
+);
+
+await openSpecimen(building.href);
+await page.evaluate(() => window.scrollTo(0, 0));
 await shot('05-specimen');
+
+console.log('specimen, excluded');
+const specimenSwitch = '.scroll [role="switch"]';
+await page.click(specimenSwitch);
+await page.waitForSelector(`${specimenSwitch}[aria-checked="false"]`);
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('specimen-excluded');
+await page.click(specimenSwitch);
+await page.waitForSelector(`${specimenSwitch}[aria-checked="true"]`);
+
+console.log('specimen, evolving');
+await openSpecimen(evolving.href);
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('specimen-evolve', true, { mustShow: '.evo' });
+
+console.log('specimen, built');
+// The sample has no Pokémon already at its build level, so one is seeded: a copy of the building
+// Pokémon above, powered up to its build level (CP and HP worked out as the game does), written to
+// the saved collection. After the shot the saved collection goes back exactly as it was.
+const buildingId = decodeURIComponent(building.href.slice('#/collection/'.length));
+const seeded = await page.evaluate(
+  async (id, level, cpm) => {
+    const pokemon = await (await fetch('/data/pokemon.json')).json();
+    return new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('collection', 'readwrite');
+        const store = tx.objectStore('collection');
+        const get = store.get('current');
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => reject(tx.error);
+        get.onsuccess = () => {
+          const before = get.result;
+          const sp = before?.specimens?.find((x) => x.id === id);
+          const base = pokemon.find((p) => p.speciesId === sp?.speciesId)?.baseStats;
+          if (!sp || !sp.ivs || !base) {
+            resolve({ error: `no specimen ${id} with IVs and base stats to copy` });
+            return;
+          }
+          const atk = (base.atk + sp.ivs.atk) * cpm;
+          const def = (base.def + sp.ivs.def) * cpm;
+          const sta = (base.hp + sp.ivs.sta) * cpm;
+          const cp = Math.max(10, Math.floor((atk * Math.sqrt(def) * Math.sqrt(sta)) / 10));
+          const hp = Math.max(10, Math.floor(sta));
+          const copy = {
+            ...sp,
+            id: `${sp.id}-built`,
+            level: { min: level, max: level },
+            cp,
+            hp,
+            raw: { ...sp.raw, cp, hp, levelMin: level, levelMax: level },
+          };
+          store.put({ ...before, specimens: [...before.specimens, copy] });
+          resolve({ before, href: `#/collection/${encodeURIComponent(copy.id)}` });
+        };
+      };
+    });
+  },
+  buildingId,
+  building.buildLevel,
+  cpmForLevel(building.buildLevel),
+);
+if (seeded.error) {
+  throw new Error(`specimen, built: ${seeded.error}`);
+}
+await page.goto(`${base}/${seeded.href}`, { waitUntil: 'domcontentloaded' });
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForSelector('.scroll .verdict-tag[data-verdict="Built"]', { timeout: 120_000 });
+await page.waitForFunction(() => !document.querySelector('.ui-loading'), { timeout: 120_000 });
+await page.evaluate(() => window.scrollTo(0, 0));
+const builtLine = await page.evaluate(() =>
+  [...document.querySelectorAll('.scroll p')].some((p) =>
+    p.textContent?.startsWith('Already at level'),
+  ),
+);
+if (!builtLine) {
+  throw new Error('specimen, built: no "Already at level" line');
+}
+await shot('specimen-built');
+await page.evaluate(
+  (before) =>
+    new Promise((resolve, reject) => {
+      const open = indexedDB.open('pickthree');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('collection', 'readwrite');
+        tx.objectStore('collection').put(before);
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    }),
+  seeded.before,
+);
+await page.reload({ waitUntil: 'networkidle0' });
+
+console.log('specimen, not found');
+await page.evaluate(() => {
+  window.location.hash = '#/collection/not-a-real-specimen';
+});
+await page.waitForSelector('.scroll .ui-empty');
+await shot('specimen-not-found', false, { mustShow: '.scroll .ui-empty' });
 
 console.log('counters');
 await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
@@ -733,10 +1016,15 @@ const sheetCheck = await page.evaluate(() => {
   const y = b.top + b.height / 2;
   const top = document.elementFromPoint(x, y);
   const ok = top !== null && (top === last || last.contains(top));
-  return { ok, reason: `topmost at the last row's center is ${top?.className ?? top?.tagName ?? 'nothing'}, not the row itself` };
+  return {
+    ok,
+    reason: `topmost at the last row's center is ${top?.className ?? top?.tagName ?? 'nothing'}, not the row itself`,
+  };
 });
 if (!sheetCheck.ok) {
-  throw new Error(`Leagues sheet: ${sheetCheck.reason} (the tab bar or another layer is painting over it)`);
+  throw new Error(
+    `Leagues sheet: ${sheetCheck.reason} (the tab bar or another layer is painting over it)`,
+  );
 }
 await shot('08c-leagues-sheet', false);
 await page.click('.ui-sheet-done');
@@ -1295,7 +1583,9 @@ await page.goto(`${base}/#/t/great/azumarill.BUBBLE.ICE_BEAM.PLAY_ROUGH+tinkaton
 // SharedTeam shows its own failures as `.scroll .error` before it hands off; the analysis shows
 // `.ui-error`. Either one fails the step with its reason.
 await page.waitForSelector('.custom-note, .ui-error, .scroll .error', { timeout: 120_000 });
-const sharedError = await page.$eval('.ui-error, .scroll .error', (e) => e.textContent).catch(() => null);
+const sharedError = await page
+  .$eval('.ui-error, .scroll .error', (e) => e.textContent)
+  .catch(() => null);
 if (sharedError) {
   throw new Error(`shared team failed: ${sharedError}`);
 }
@@ -1383,7 +1673,23 @@ await page.click('.scroll > .btn');
 await page.waitForSelector('.stat3, .verdict-tag', { timeout: 60_000 });
 await new Promise((r) => setTimeout(r, 600));
 console.log(`  manual add landed at ${page.url()}`);
-await shot('17-added', false);
+// The hand-added Pokémon's own page: full page, so Remove from collection is in the shot.
+await page.waitForSelector('.scroll .ui-btn-danger');
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('specimen-manual', true, { mustShow: '.scroll .ui-btn-danger' });
+
+console.log('specimen, remove confirm');
+// Opens the confirm and cancels it: the Pokémon stays for the steps after this one.
+await page.click('.scroll .ui-btn-danger');
+await page.waitForSelector('.ui-confirm');
+await shot('specimen-remove-confirm', false, { mustShow: '.ui-confirm' });
+await page.$$eval('.ui-confirm button', (els) =>
+  els.find((e) => e.textContent?.trim() === 'Keep it')?.click(),
+);
+await page.waitForSelector('.ui-confirm', { hidden: true });
+if (!(await page.$('.scroll .ui-btn-danger'))) {
+  throw new Error('specimen, remove confirm: Keep it left the page');
+}
 
 console.log('settings');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
@@ -1610,7 +1916,9 @@ if (AUDIT) {
   const enforced = auditFindings.filter((f) => AUDIT_ENFORCED.has(f.name));
   const reported = auditFindings.filter((f) => !AUDIT_ENFORCED.has(f.name));
   if (reported.length > 0) {
-    console.log(`\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`);
+    console.log(
+      `\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`,
+    );
     for (const f of reported) {
       console.log(`  ${f.line}`);
     }

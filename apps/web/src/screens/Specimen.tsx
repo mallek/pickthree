@@ -214,7 +214,7 @@ export function SpecimenScreen({ id }: { id: string }) {
               <>
                 <p>Already at level {sp.level.max}.</p>
                 {v.cost.secondMoveUnlock ? (
-                  <div className="small muted">Includes second move unlock</div>
+                  <div className="small muted">Includes second move unlock.</div>
                 ) : null}
               </>
             ) : (

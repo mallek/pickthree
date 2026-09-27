@@ -3,7 +3,12 @@ import { useSticky } from '../components.tsx';
 
 /** The list's five switches and their defaults (Group same Pokémon on, the four filters off);
  * Collection reads the same keys with the same defaults. */
-const COLLECTION_FILTERS = [
+const COLLECTION_FILTERS: readonly {
+  key: string;
+  label: string;
+  line?: string;
+  initial: boolean;
+}[] = [
   {
     key: 'collection.grouped',
     label: 'Group same Pokémon',
@@ -24,8 +29,7 @@ const COLLECTION_FILTERS = [
   },
   {
     key: 'collection.recent',
-    label: 'Scanned recently',
-    line: 'Last two weeks of scans',
+    label: 'Scanned in the last two weeks',
     initial: false,
   },
   {
@@ -34,12 +38,19 @@ const COLLECTION_FILTERS = [
     line: 'Only species in the top 50 for this league',
     initial: false,
   },
-] as const;
+];
 
 /** One switch on its sticky key: the list reads the same key, so it follows at once. */
 function FilterSwitch({ filter }: { filter: (typeof COLLECTION_FILTERS)[number] }) {
   const [on, setOn] = useSticky<boolean>(filter.key, filter.initial);
-  return <Switch label={filter.label} line={filter.line} checked={on} onChange={setOn} />;
+  return (
+    <Switch
+      label={filter.label}
+      {...(filter.line ? { line: filter.line } : {})}
+      checked={on}
+      onChange={setOn}
+    />
+  );
 }
 
 function FiltersBody() {

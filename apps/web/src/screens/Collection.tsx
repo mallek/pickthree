@@ -1,5 +1,6 @@
 import type { Specimen, VerdictLabel } from '@pickthree/engine';
 import {
+  Chevron,
   Empty,
   ErrorState,
   FilterButton,
@@ -401,7 +402,7 @@ export function Collection() {
                   {isOpen
                     ? 'Hide the others'
                     : `${g.others.length} more${nextLabel ? `, next best ${nextLabel}` : ''}`}
-                  <span className="more-caret">{isOpen ? '\u2303' : '\u2304'}</span>
+                  <Chevron dir={isOpen ? 'up' : 'down'} />
                 </button>
               ) : null}
               {isOpen

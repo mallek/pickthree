@@ -113,7 +113,7 @@ function renderScreen(r: Route) {
     case 'collection':
       return <Collection />;
     case 'specimen':
-      return <SpecimenScreen id={r.id} />;
+      return <SpecimenScreen key={r.id} id={r.id} />;
     case 'counters':
       return <Counters />;
     case 'build':

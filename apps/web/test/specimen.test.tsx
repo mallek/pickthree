@@ -288,7 +288,7 @@ describe('Pokémon detail', () => {
     await judged();
     expect(screen.getByText('Already at level 20.')).toBeInTheDocument();
     expect(screen.queryByText(/^Level 20 to/)).toBeNull();
-    expect(screen.getByText(/includes second move unlock/i)).toBeInTheDocument();
+    expect(screen.getByText('Includes second move unlock.')).toBeInTheDocument();
     const tiles = [...document.querySelectorAll('.stat3 .stat')];
     expect(tiles.map((t) => t.querySelector('.meta')?.textContent)).toEqual(['Stardust', 'Candy']);
     expect(tiles.map((t) => t.querySelector('b')?.textContent?.replace(/\D/g, ''))).toEqual([

@@ -213,7 +213,7 @@ describe('Collection', () => {
       ['Group same Pokémon', 'One row per species, best first'],
       ['Show ineligible', 'Pokémon over the cap or banned here'],
       ['Shadows only', 'Just the Shadow Pokémon'],
-      ['Scanned recently', 'Last two weeks of scans'],
+      ['Scanned in the last two weeks', ''],
       ['Top 50 meta', 'Only species in the top 50 for this league'],
     ] as const) {
       const sw = within(dialog).getByRole('switch', { name: label });
