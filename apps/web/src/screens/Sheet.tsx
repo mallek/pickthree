@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { ThemeChoice } from '@pickthree/ui';
 import { Seg } from '../components.tsx';
 import { TrainerCounter, useTrainerCount } from '../components/TrainerCounter.tsx';
-import { BAND_LABELS, BANDS, shareEnabled, type Band } from '../metaShare.ts';
+import { shareEnabled } from '../metaShare.ts';
 import { dateLabel } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { UpdateStatus } from '../components/UpdateToast.tsx';
@@ -20,7 +20,6 @@ export function Sheet() {
     exportLog,
     importLog,
     setShareEnabled,
-    setShareBand,
   } = useActions();
   const league = useLeague();
   const trainers = useTrainerCount();
@@ -132,23 +131,13 @@ export function Sheet() {
                 <span style={{ display: 'block', fontSize: 15 }}>Share your battles</span>
                 <span className="meta">
                   Builds a measured meta from real ladders. Sends: league, season, time, your three
-                  species and moves when known, opponents seen, win, loss or tanked, rank band,
-                  device id and app version. Never your collection, IVs, names, or opponents&apos;
-                  moves. Off also deletes what this phone sent.
+                  species and moves when known, opponents seen, win, loss or tanked, device id and
+                  app version. Never your collection, IVs, names, or opponents&apos; moves. Off
+                  also deletes what this phone sent.
                 </span>
               </span>
               <span className={`switch${shareEnabled(s.settings) ? ' on' : ''}`} />
             </button>
-            <span className="meta">Your rank band, for the meta by ladder level:</span>
-            <Seg<Band | 'none'>
-              value={s.settings.share?.band ?? 'none'}
-              onChange={(v) => setShareBand(v === 'none' ? null : v)}
-              options={[
-                { value: 'none', label: 'Not set' },
-                ...BANDS.map((b) => ({ value: b, label: BAND_LABELS[b] })),
-              ]}
-              style={{ flexWrap: 'wrap' }}
-            />
             <a
               className="btn btn-secondary"
               href="https://meta.pick3.gg"

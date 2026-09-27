@@ -402,6 +402,38 @@ describe('battle log actions', () => {
     }
   });
 
+  it('sends records without a band, even when an older save still holds one', async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      share: { enabled: true, device: 'dev-1', band: 'ace' },
+    });
+    const eligibleSpy = vi
+      .spyOn(await import('../src/metaShare.ts'), 'shareEligible')
+      .mockReturnValue(true);
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    try {
+      await mount();
+      await act(async () => {
+        await latest!.actions.startSet({ species: ['tinkaton', 'azumarill', 'clodsire'] });
+        await latest!.actions.logBattle({ opponents: ['medicham'], result: 'win', tanked: false });
+      });
+      await waitFor(() => {
+        expect(latest!.state.sets[0]?.battles[0]?.sharedAt).toBeTruthy();
+      });
+      const call = fetchSpy.mock.calls.find(([url]) => String(url).includes('/battles'));
+      expect(call).toBeTruthy();
+      const [, init] = call as unknown as [string, RequestInit];
+      const body = JSON.parse(String(init.body)) as { battles: Array<{ band: unknown }> };
+      expect(body.battles.length).toBeGreaterThan(0);
+      expect(body.battles.every((b) => b.band === null)).toBe(true);
+    } finally {
+      fetchSpy.mockRestore();
+      eligibleSpy.mockRestore();
+    }
+  });
+
   it('with sharing off, an edit does not try to send (the same setup sends with sharing on, above)', async () => {
     await storage.saveSettings({ ...DEFAULT_SETTINGS, share: { enabled: false } });
     const eligibleSpy = vi

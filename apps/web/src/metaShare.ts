@@ -2,22 +2,12 @@
  * Community meta sharing: every battle logged on this phone goes to the counter worker as an
  * anonymous record unless the player switches it off in Settings. What is sent, per battle:
  * league, season, time, the three species run and their movesets when known, the opponents
- * seen, win or loss or tanked, the player's rank band, and a random device id made here.
- * Never the collection, IVs, specimen ids or names, and never the opponents' movesets.
+ * seen, win or loss or tanked, and a random device id made here. Never the collection, IVs,
+ * specimen ids or names, and never the opponents' movesets.
  */
 import type { BattleSet, LoggedBattle, Season } from '@pickthree/engine';
 import { COUNTER_ORIGIN } from './counter.ts';
 import type { Settings } from './storage/db.ts';
-
-export const BANDS = ['below', 'ace', 'veteran', 'expert', 'legend'] as const;
-export type Band = (typeof BANDS)[number];
-export const BAND_LABELS: Record<Band, string> = {
-  below: 'Below Ace',
-  ace: 'Ace',
-  veteran: 'Veteran',
-  expert: 'Expert',
-  legend: 'Legend',
-};
 
 export interface SharedMoves {
   fast: string;
@@ -35,7 +25,8 @@ export interface SharedBattle {
   opponents: string[];
   result: 'win' | 'loss' | null;
   tanked: boolean;
-  band: Band | null;
+  /** Retired 2026-09-26: no longer asked or sent; always null. */
+  band: null;
 }
 
 export const SHARE_BATCH = 200;
@@ -90,11 +81,7 @@ export function seasonOf(at: string, seasons: Season[]): number | null {
 }
 
 /** Battles not yet sent, as records, oldest first. */
-export function pendingBattles(
-  sets: BattleSet[],
-  seasons: Season[],
-  band: Band | null,
-): SharedBattle[] {
+export function pendingBattles(sets: BattleSet[], seasons: Season[]): SharedBattle[] {
   const out: SharedBattle[] = [];
   for (const set of sets) {
     for (const b of set.battles) {
@@ -117,7 +104,7 @@ export function pendingBattles(
         opponents: b.opponents.slice(0, 3),
         result: b.result,
         tanked: b.tanked,
-        band,
+        band: null,
       });
     }
   }
@@ -136,13 +123,13 @@ export interface SyncResult {
  */
 export async function syncShared(
   sets: BattleSet[],
-  opts: { device: string; client: string; seasons: Season[]; band: Band | null },
+  opts: { device: string; client: string; seasons: Season[] },
   deps: { fetch: typeof fetch; now: () => string } = {
     fetch: (...args) => fetch(...args),
     now: () => new Date().toISOString(),
   },
 ): Promise<SyncResult | null> {
-  const pending = pendingBattles(sets, opts.seasons, opts.band);
+  const pending = pendingBattles(sets, opts.seasons);
   if (pending.length === 0) {
     return null;
   }

@@ -54,7 +54,6 @@ import {
   shareEnabled,
   syncShared,
   unstampAll,
-  type Band,
 } from '../metaShare.ts';
 import { describeLayoutLine, emptyLayoutValue } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
@@ -698,8 +697,6 @@ interface Actions {
   notify(message: string | null, tone?: NoticeTone): void;
   /** Community meta sharing on or off. Off also asks the worker to drop what this phone sent. */
   setShareEnabled(on: boolean): Promise<void>;
-  /** The rank band stamped on records sent from now on. */
-  setShareBand(band: Band | null): void;
   /** Battles before now move to earlier seasons for the league in play. Nothing is deleted. */
   startFresh(): void;
   /** The whole log (every league) as the export file text. */
@@ -1419,7 +1416,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         device,
         client: `pick3 ${__PICK3_BUILD__}`,
         seasons: cur.data?.seasons ?? [],
-        band: cur.settings.share?.band ?? null,
       });
       if (!r) {
         return;
@@ -1463,13 +1459,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       });
     },
     [updateSettings, shareSync, serialized, applySets],
-  );
-
-  const setShareBand = useCallback(
-    (band: Band | null) => {
-      updateSettings((prev) => ({ ...prev, share: { ...prev.share, band } }));
-    },
-    [updateSettings],
   );
 
   /** Writes the sets and reloads the league. False, with a toast, when the phone refused. */
@@ -1648,7 +1637,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       endSet,
       notify,
       setShareEnabled,
-      setShareBand,
       startFresh,
       exportLog,
       importLog,
@@ -1681,7 +1669,6 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       endSet,
       notify,
       setShareEnabled,
-      setShareBand,
       startFresh,
       exportLog,
       importLog,

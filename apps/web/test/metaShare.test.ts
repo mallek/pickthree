@@ -72,7 +72,7 @@ describe('community meta sharing', () => {
   });
 
   it('builds anonymous records for what has not been sent, oldest first, with the season', () => {
-    const pending = pendingBattles(sets, seasons, 'ace');
+    const pending = pendingBattles(sets, seasons);
     expect(pending.map((b) => b.id)).toEqual(['b0', 'b1']);
     expect(pending[1]).toEqual({
       id: 'b1',
@@ -88,7 +88,7 @@ describe('community meta sharing', () => {
       opponents: ['medicham'],
       result: 'win',
       tanked: false,
-      band: 'ace',
+      band: null,
     });
     expect(pending[0]!.season).toBe(27);
     expect(seasonOf('2026-01-01T00:00:00Z', seasons)).toBeNull();
@@ -100,7 +100,7 @@ describe('community meta sharing', () => {
     const fetchMock = vi.fn(async () => new Response('{"stored":2,"skipped":0}', { status: 200 }));
     const r = await syncShared(
       sets,
-      { device: 'dev-1', client: 'pick3 test', seasons, band: null },
+      { device: 'dev-1', client: 'pick3 test', seasons },
       { fetch: fetchMock as unknown as typeof fetch, now: () => '2026-09-17T12:00:00Z' },
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -118,14 +118,14 @@ describe('community meta sharing', () => {
       '2026-09-17T12:00:00Z',
     ]);
     // Nothing pending afterwards.
-    expect(pendingBattles(r!.sets, seasons, null)).toEqual([]);
+    expect(pendingBattles(r!.sets, seasons)).toEqual([]);
   });
 
   it('stamps nothing when the worker refuses, and tries again next time', async () => {
     const fetchMock = vi.fn(async () => new Response('{"error":"bad batch"}', { status: 400 }));
     const r = await syncShared(
       sets,
-      { device: 'dev-1', client: 'pick3 test', seasons, band: null },
+      { device: 'dev-1', client: 'pick3 test', seasons },
       { fetch: fetchMock as unknown as typeof fetch, now: () => '2026-09-17T12:00:00Z' },
     );
     expect(r).toBeNull();
@@ -138,6 +138,11 @@ describe('community meta sharing', () => {
     expect(init.method).toBe('DELETE');
     const cleared = unstampAll(sets);
     expect(cleared[0]!.battles.every((b) => b.sharedAt === undefined)).toBe(true);
-    expect(pendingBattles(cleared, seasons, null)).toHaveLength(3);
+    expect(pendingBattles(cleared, seasons)).toHaveLength(3);
+  });
+
+  it('always carries band: null, with no band argument to pass', () => {
+    const pending = pendingBattles(sets, seasons);
+    expect(pending.every((b) => b.band === null)).toBe(true);
   });
 });

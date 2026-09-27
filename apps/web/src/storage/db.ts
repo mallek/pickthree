@@ -36,6 +36,10 @@ export interface Settings {
   share?: {
     enabled?: boolean;
     device?: string;
+    /**
+     * Retired 2026-09-26: no longer asked or sent; older saves may hold a value, which is
+     * ignored.
+     */
     band?: 'below' | 'ace' | 'veteran' | 'expert' | 'legend' | null;
   };
   /** Battle log settings. Absent in older saves means the blend is on and nothing is fresh. */
