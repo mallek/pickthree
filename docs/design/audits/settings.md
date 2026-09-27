@@ -257,4 +257,5 @@ Made while building:
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-27 (reviewed the live Settings pages: "Settings page looks good"; then asked for the
+  landing page's trainer counter in About, in its pink, shipped in `66646a1` and `bdab4c2`).
