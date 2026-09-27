@@ -29,6 +29,8 @@ export interface Candidate {
 export interface CandidateOptions extends BuildOptions {
   poolSize: number;
   excludedSpecimenIds: string[];
+  /** Battling species ids (build.speciesId, so shadow forms are their own) left out of teams. */
+  excludedSpecies: string[];
 }
 
 function scoreOf(entries: Map<string, RankingEntry>, speciesId: string): number {
@@ -101,11 +103,12 @@ export function candidatePool(
     chargers: rankingsById(rankings.chargers),
   };
   const excluded = new Set(opts.excludedSpecimenIds);
+  const excludedSpecies = new Set(opts.excludedSpecies);
   const dropped: { speciesId: string; reason: string }[] = [];
   const candidates: Candidate[] = [];
 
   for (const build of builds) {
-    if (excluded.has(build.specimenId)) {
+    if (excluded.has(build.specimenId) || excludedSpecies.has(build.speciesId)) {
       continue;
     }
     if (build.needsXl && !opts.allowXl) {

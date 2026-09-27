@@ -57,8 +57,10 @@ export interface SuggestOptions extends BuildOptions {
   chasePool: number;
   /** Characters to produce, in order. The first one fills the board. */
   characters: Character[];
-  /** Specimens the player benched in Settings. */
+  /** Specimens the player benched before exclusion went by species (legacy). */
   excludedSpecimenIds: string[];
+  /** Battling species the player left out of teams; never offered from the collection or as a chase. */
+  excludedSpecies: string[];
   community?: CommunityPairing[];
   facing?: FacingInput;
   /** PvPoke's game master, for the default-IV stand-ins the matrix was built from. */
@@ -67,11 +69,12 @@ export interface SuggestOptions extends BuildOptions {
 
 export const DEFAULT_SUGGEST_OPTIONS: Pick<
   SuggestOptions,
-  'chasePool' | 'characters' | 'excludedSpecimenIds'
+  'chasePool' | 'characters' | 'excludedSpecimenIds' | 'excludedSpecies'
 > = {
   chasePool: 60,
   characters: DEFAULT_CHARACTERS,
   excludedSpecimenIds: [],
+  excludedSpecies: [],
 };
 
 export interface SuggestedSlot {
@@ -279,12 +282,14 @@ export function suggestTeammates(
     ...opts,
     poolSize: opts.chasePool,
     excludedSpecimenIds: opts.excludedSpecimenIds,
+    excludedSpecies: opts.excludedSpecies,
   }).pool;
   const mineSpecies = new Set(mine.map((c) => c.build.speciesId));
   const chase = candidatePool([...standInBuilds.values()], deps.data.rankings, view, index, {
     ...opts,
     poolSize: opts.chasePool,
     excludedSpecimenIds: [],
+    excludedSpecies: opts.excludedSpecies,
   }).pool.filter((c) => !mineSpecies.has(c.build.speciesId));
 
   const pool = [...mine, ...chase].filter((c) => !pinnedSpecies.has(c.build.speciesId));

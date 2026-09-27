@@ -70,6 +70,28 @@ run('suggestTeammates', () => {
     }
   });
 
+  it('never fills a slot with a species the player left out, owned or chased', () => {
+    const before = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, null],
+      collection(),
+      { gameMaster: readGameMaster() },
+      deps(),
+    );
+    const out = before.suggestions[0]?.fills[0]?.speciesId as string;
+    expect(out).toBeDefined();
+
+    const after = suggestTeammates(
+      [{ kind: 'species', id: 'azumarill' }, null, null],
+      collection(),
+      { gameMaster: readGameMaster(), excludedSpecies: [out] },
+      deps(),
+    );
+    expect(after.suggestions.length).toBeGreaterThan(0);
+    for (const s of after.suggestions) {
+      expect(s.fills.map((f) => f.speciesId)).not.toContain(out);
+    }
+  });
+
   it('covers only what the pin and the earlier fills do not already beat', () => {
     const data = loadStaticData();
     const view = new MatrixView(data.matrix);

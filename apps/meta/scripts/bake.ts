@@ -241,6 +241,7 @@ export function generateFor(input: {
     ...opts,
     poolSize: COLD_POOL,
     excludedSpecimenIds: [],
+    excludedSpecies: [],
   });
   const weights = priorWeights(input.rankings.overall, input.matrix.opponents);
   return generateColdStartTeams(

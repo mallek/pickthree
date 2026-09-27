@@ -53,7 +53,10 @@ export interface RecommendOptions extends BuildOptions {
   poolSize: number;
   finalists: number;
   style: TeamStyle;
+  /** Legacy per-copy exclusions, honored until the app converts them to species. */
   excludedSpecimenIds: string[];
+  /** Battling species ids left out of teams, from every copy (shadow forms are their own ids). */
+  excludedSpecies: string[];
   /** How many teams to return. */
   results: number;
   /** Whose opponents to weight. Absent means PvPoke. */
@@ -66,6 +69,7 @@ export const DEFAULT_RECOMMEND_OPTIONS: RecommendOptions = {
   finalists: 25,
   style: 'any',
   excludedSpecimenIds: [],
+  excludedSpecies: [],
   results: 10,
 };
 

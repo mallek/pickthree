@@ -279,6 +279,7 @@ export function analyzeTeam(
       ...DEFAULT_RECOMMEND_OPTIONS,
       ...opts,
       excludedSpecimenIds: [],
+      excludedSpecies: [],
     }).pool;
   }
   progress('candidates', 1, 1);

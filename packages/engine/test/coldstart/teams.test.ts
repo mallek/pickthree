@@ -31,6 +31,7 @@ run('generateColdStartTeams', () => {
       ...opts,
       poolSize,
       excludedSpecimenIds: [],
+      excludedSpecies: [],
     });
     return { data, view, pool, types: { types: (id: string) => index.mustSpecies(id).types } };
   }
