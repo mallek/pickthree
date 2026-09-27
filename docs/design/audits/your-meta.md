@@ -237,4 +237,4 @@ dismissed (session-sticky, as before). The result chip's own edit destination is
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-26 (reviewed the live pages and the three records on GitHub: "All three look good").
