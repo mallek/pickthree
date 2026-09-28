@@ -274,7 +274,7 @@ function SpeciesRows({
           <a
             className="faced-row"
             key={r.speciesId}
-            href={hashFor({ screen: 'counters', vs: r.speciesId })}
+            href={hashFor({ screen: 'counters', vs: r.speciesId, from: true })}
             aria-label={`Who beats ${name(r.speciesId)}: faced ${r.faced}, ${rec}${out ? ", outside PvPoke's meta group" : ''}`}
           >
             <PokemonToken speciesId={r.speciesId} size={36} />

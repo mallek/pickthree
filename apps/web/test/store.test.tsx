@@ -93,6 +93,27 @@ describe('routes', () => {
       '#/counters?vs=azumarill',
     );
   });
+  it('parses and prints the Counters back mark left by a jump from Your Meta', () => {
+    expect(parseHash('#/counters?vs=azumarill&from=1')).toEqual({
+      screen: 'counters',
+      vs: 'azumarill',
+      from: true,
+    });
+    expect(hashFor({ screen: 'counters', vs: 'azumarill', from: true })).toBe(
+      '#/counters?vs=azumarill&from=1',
+    );
+  });
+  it('does not carry the back mark on a plain link with no vs', () => {
+    expect(parseHash('#/counters')).toEqual({ screen: 'counters' });
+    expect(hashFor({ screen: 'counters' })).toBe('#/counters');
+  });
+  it('never puts the back mark on a meta.pick3.gg style link', () => {
+    expect(parseHash('#/counters?vs=azumarill&l=ultra')).toEqual({
+      screen: 'counters',
+      vs: 'azumarill',
+      league: 'ultra',
+    });
+  });
   it('filterKey changes with the log version', () => {
     expect(filterKey(DEFAULT_SETTINGS, 1)).not.toBe(filterKey(DEFAULT_SETTINGS, 2));
   });

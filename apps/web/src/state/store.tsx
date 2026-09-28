@@ -92,7 +92,7 @@ export type Route =
   | { screen: 'team'; id: string }
   | { screen: 'collection' }
   | { screen: 'specimen'; id: string }
-  | { screen: 'counters'; vs?: string; league?: string }
+  | { screen: 'counters'; vs?: string; league?: string; from?: true }
   | { screen: 'build' }
   | { screen: 'custom' }
   | { screen: 'add' }
@@ -455,13 +455,16 @@ export function parseHash(hash: string): Route {
     // A link from meta.pick3.gg names the league; the app's own links never do.
     const l = params.get('l');
     const league = l !== null && /^[a-z0-9_]+$/.test(l) ? l : null;
+    // The back mark: set by Your Meta's "Who beats it" jump and kept by the Against picker's
+    // replace-navigation. A meta.pick3.gg link never carries it.
+    const from = params.get('from') === '1' ? ({ from: true } as const) : {};
     if (vs && league) {
-      return { screen: 'counters', vs, league };
+      return { screen: 'counters', vs, league, ...from };
     }
     if (vs) {
-      return { screen: 'counters', vs };
+      return { screen: 'counters', vs, ...from };
     }
-    return league ? { screen: 'counters', league } : { screen: 'counters' };
+    return league ? { screen: 'counters', league, ...from } : { screen: 'counters', ...from };
   }
   if (a === 'build') {
     return b === 'team' ? { screen: 'custom' } : { screen: 'build' };
@@ -514,8 +517,18 @@ export function hashFor(r: Route): string {
       return '#/collection';
     case 'specimen':
       return `#/collection/${encodeURIComponent(r.id)}`;
-    case 'counters':
-      return r.vs ? `#/counters?vs=${encodeURIComponent(r.vs)}` : '#/counters';
+    case 'counters': {
+      const params = new URLSearchParams();
+      if (r.vs) {
+        params.set('vs', r.vs);
+      }
+      // The league from a meta.pick3.gg link is never written back; only the back mark is.
+      if (r.from) {
+        params.set('from', '1');
+      }
+      const qs = params.toString();
+      return qs ? `#/counters?${qs}` : '#/counters';
+    }
     case 'build':
       return '#/build';
     case 'custom':

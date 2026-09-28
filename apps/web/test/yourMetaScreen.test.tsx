@@ -198,7 +198,7 @@ describe('Your meta screen', () => {
     expect(medicham).toHaveTextContent('faced 3');
     expect(medicham).toHaveTextContent('2-1');
     expect(medicham).toHaveTextContent('Who beats it');
-    expect(medicham).toHaveAttribute('href', '#/counters?vs=medicham');
+    expect(medicham).toHaveAttribute('href', '#/counters?vs=medicham&from=1');
     expect(screen.getByRole('link', { name: /^Who beats Medicham/ })).toBe(medicham);
     // The frequency bar is a thin bar inside the row, sized by how often it was faced.
     expect(medicham?.querySelector('.faced-bar')).toHaveStyle({ width: '100%' });
