@@ -27,12 +27,13 @@ import type { LeagueInfo, WorkerRequest, WorkerResponse, WorkerResult } from './
 
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 type RequestBody = DistributiveOmit<WorkerRequest, 'id'>;
+type PartialMessage = DistributiveOmit<Extract<WorkerResponse, { kind: 'partial' }>, 'id' | 'kind'>;
 
 interface Pending {
   resolve: (r: WorkerResult) => void;
   reject: (e: Error) => void;
   onProgress?: (e: ProgressEvent) => void;
-  onPartial?: (verdicts: Record<string, Verdict>) => void;
+  onPartial?: (partial: PartialMessage) => void;
 }
 
 export class ImportFailed extends Error {
@@ -79,7 +80,7 @@ export class WorkerHost implements ComputeHost {
       return;
     }
     if (msg.kind === 'partial') {
-      p.onPartial?.(msg.verdicts);
+      p.onPartial?.(msg);
       return;
     }
     this.pending.delete(msg.id);
@@ -93,7 +94,7 @@ export class WorkerHost implements ComputeHost {
   private send(
     req: RequestBody,
     onProgress?: (e: ProgressEvent) => void,
-    onPartial?: (verdicts: Record<string, Verdict>) => void,
+    onPartial?: (partial: PartialMessage) => void,
   ): Promise<WorkerResult> {
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
@@ -156,7 +157,13 @@ export class WorkerHost implements ComputeHost {
     const r = await this.send(
       { kind: 'verdicts', league, specimens, options },
       onProgress,
-      onPartial,
+      onPartial
+        ? (m) => {
+            if ('verdicts' in m) {
+              onPartial(m.verdicts);
+            }
+          }
+        : undefined,
     );
     if (r.kind !== 'verdicts') {
       throw new Error('unexpected reply');
@@ -169,8 +176,19 @@ export class WorkerHost implements ComputeHost {
     options: Partial<CountersOptions>,
     onProgress?: (e: ProgressEvent) => void,
     league = this.league,
+    onPartial?: (r: CountersResult) => void,
   ): Promise<CountersResult> {
-    const r = await this.send({ kind: 'counters', league, specimens, options }, onProgress);
+    const r = await this.send(
+      { kind: 'counters', league, specimens, options },
+      onProgress,
+      onPartial
+        ? (m) => {
+            if ('counters' in m) {
+              onPartial(m.counters);
+            }
+          }
+        : undefined,
+    );
     if (r.kind !== 'counters') {
       throw new Error('unexpected reply');
     }

@@ -34,11 +34,18 @@ export interface ComputeHost {
     options: Partial<BuildOptions>,
     onProgress?: (e: ProgressEvent) => void,
   ): Promise<Record<string, Verdict>>;
-  /** Progress only arrives when an outsider is simulated (options.vs outside the meta group). */
+  /**
+   * Progress arrives when an outsider is simulated (options.vs outside the meta group) and while
+   * the shield grids fill against one opponent. With options.vs, `onPartial` gets the rows first
+   * with every grid null, then the rows again after each batch of grids; the promise resolves
+   * with the rows re-sorted by the grid and `gridMs` set. `league` defaults to the host's own.
+   */
   counters(
     specimens: Specimen[],
     options: Partial<CountersOptions>,
     onProgress?: (e: ProgressEvent) => void,
+    league?: string,
+    onPartial?: (r: CountersResult) => void,
   ): Promise<CountersResult>;
   scanList(options: Partial<ScanListOptions>): Promise<ScanList>;
   analyze(

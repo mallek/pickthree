@@ -113,6 +113,8 @@ export type WorkerResponse =
   | { id: number; kind: 'progress'; stage: string; done: number; total: number }
   /** A slice of the final result, so the UI can fill in while the rest computes. */
   | { id: number; kind: 'partial'; verdicts: Record<string, Verdict> }
+  /** Counters against one opponent: the rows, then the rows again as each batch of grids fills. */
+  | { id: number; kind: 'partial'; counters: CountersResult }
   | { id: number; kind: 'result'; result: WorkerResult }
   | { id: number; kind: 'error'; message: string; layout?: Layout | undefined };
 

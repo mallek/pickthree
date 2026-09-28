@@ -8,6 +8,7 @@ import {
   GameDataIndex,
   manualSpecimen,
   metaCounters,
+  counterGrids,
   metaRanks,
   movePool,
   parseCollectionCsv,
@@ -275,18 +276,42 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       return;
     }
     if (msg.kind === 'counters') {
+      const cdata = countersData(data);
+      const live = {
+        sim: env.sim,
+        league: data.league,
+        onProgress: (done: number, total: number) => progress('counters-sim', done, total),
+      };
       const counters = metaCounters(
-        countersData(data),
+        cdata,
         msg.specimens,
         env.index,
         { buildOptions: buildOptionsFor(data.league), ...msg.options },
-        {
-          sim: env.sim,
-          league: data.league,
-          onProgress: (done, total) => progress('counters-sim', done, total),
+        live,
+      );
+      // Against one opponent: the rows at once, then every shield pairing in batches, then the
+      // rows re-sorted by the grid. The whole meta and an unranked opponent have no grid phase.
+      if (!counters.vs || counters.entries.length === 0) {
+        post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
+        return;
+      }
+      post({ id: msg.id, kind: 'partial', counters });
+      progress('counters-grid', 0, counters.entries.length);
+      const { entries, gridMs } = counterGrids(
+        cdata,
+        counters.vs.speciesId,
+        counters.entries,
+        live,
+        (done, total, filled) => {
+          post({ id: msg.id, kind: 'partial', counters: { ...counters, entries: filled } });
+          progress('counters-grid', done, total);
         },
       );
-      post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
+      post({
+        id: msg.id,
+        kind: 'result',
+        result: { kind: 'counters', counters: { ...counters, entries, gridMs } },
+      });
       return;
     }
     if (msg.kind === 'scanlist') {

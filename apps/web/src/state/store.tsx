@@ -200,6 +200,8 @@ type Action =
   | { type: 'verdicts-partial'; verdicts: Record<string, Verdict> }
   | { type: 'counters-start'; vs: string | null }
   | { type: 'counters-progress'; progress: ProgressEvent }
+  /** Rows against one opponent while their shield grids are still filling. */
+  | { type: 'counters-partial'; counters: CountersResult }
   | { type: 'counters-done'; counters: CountersResult | null }
   | { type: 'notice'; message: string | null; tone: NoticeTone }
   | { type: 'scanlist'; scanList: ScanList }
@@ -344,7 +346,8 @@ function reducer(s: AppState, a: Action): AppState {
         case 'rec':
           return { ...s, recommending: false, progress: null };
         case 'counters':
-          return { ...s, countersLoading: false, countersProgress: null };
+          // A half-filled grid goes too: shown later as done, its empty cells would never fill.
+          return { ...s, countersLoading: false, countersProgress: null, counters: null };
         case 'analyze':
           return { ...s, analyzing: false, progress: null };
         case 'suggest':
@@ -364,6 +367,8 @@ function reducer(s: AppState, a: Action): AppState {
       };
     case 'counters-progress':
       return { ...s, countersProgress: a.progress };
+    case 'counters-partial':
+      return { ...s, counters: a.counters };
     case 'counters-done':
       return { ...s, countersLoading: false, counters: a.counters, countersProgress: null };
     case 'notice':
@@ -1137,29 +1142,53 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         return;
       }
       const scope = scopeOf(stateRef);
+      // Off Counters the opponent has not changed; on it, the route names the one in play.
+      const vsNow = (): string | null => {
+        const r = stateRef.current.route;
+        return r.screen === 'counters' ? (r.vs ?? null) : vs;
+      };
+      // Once dropped, nothing more from this run lands: a later load may be running by then.
+      let dropped = false;
+      const live = (): boolean => {
+        if (dropped) {
+          return false;
+        }
+        if (scope.current() && vsNow() === vs) {
+          return true;
+        }
+        dropped = true;
+        dispatch({ type: 'drop', what: 'counters' });
+        return false;
+      };
       dispatch({ type: 'counters-start', vs });
       try {
         const { facing } = await facingNow();
-        if (!scope.current()) {
-          dispatch({ type: 'drop', what: 'counters' });
+        if (!live()) {
           return;
         }
         // No collection just means nothing gets an owned mark.
         const counters = await h.counters(
           s.collection?.specimens ?? [],
           { facing, ...(vs ? { vs } : {}) },
-          (p) => dispatch({ type: 'counters-progress', progress: p }),
+          (p) => {
+            if (live()) {
+              dispatch({ type: 'counters-progress', progress: p });
+            }
+          },
           scope.league,
+          (partial) => {
+            if (live()) {
+              dispatch({ type: 'counters-partial', counters: partial });
+            }
+          },
         );
-        if (!scope.current()) {
-          dispatch({ type: 'drop', what: 'counters' });
+        if (!live()) {
           return;
         }
         dispatch({ type: 'counters-done', counters });
       } catch (e) {
         recordError('counters', e);
-        if (!scope.current()) {
-          dispatch({ type: 'drop', what: 'counters' });
+        if (!live()) {
           return;
         }
         dispatch({

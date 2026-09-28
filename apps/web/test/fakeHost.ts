@@ -1,4 +1,4 @@
-import type { CountersResult, Recommendation } from '@pickthree/engine';
+import type { CountersResult, ProgressEvent, Recommendation } from '@pickthree/engine';
 import { vi } from 'vitest';
 import type { WorkerHost } from '../src/host/WorkerHost.ts';
 
@@ -24,6 +24,36 @@ export const EMPTY_COUNTERS: CountersResult = {
   blended: false,
   battles: 0,
 };
+
+/** One counters call a test drives by hand: its partials, its progress and its reply. */
+export interface CountersRun {
+  league: string;
+  options: { vs?: string };
+  onProgress: (e: ProgressEvent) => void;
+  onPartial: (r: CountersResult) => void;
+  resolve: (r: CountersResult) => void;
+}
+
+/**
+ * A `counters` for fakeHost that streams like the worker does against one opponent: every call
+ * is recorded in `runs` and answers only when the test calls its `resolve`.
+ */
+export function streamingCounters() {
+  const runs: CountersRun[] = [];
+  const counters = vi.fn(
+    (
+      _specimens: unknown,
+      options: { vs?: string },
+      onProgress: (e: ProgressEvent) => void,
+      league: string,
+      onPartial: (r: CountersResult) => void,
+    ) =>
+      new Promise<CountersResult>((resolve) => {
+        runs.push({ league, options, onProgress, onPartial, resolve });
+      }),
+  );
+  return { counters, runs };
+}
 
 /**
  * A WorkerHost stand-in: the boot and league replies the provider needs, and spies for the

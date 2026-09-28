@@ -561,6 +561,7 @@ export function Progress({ stage, done, total }: { stage: string; done: number; 
     verdicts: 'Judging each Pokémon',
     counters: 'Scoring every species against the meta',
     'counters-sim': 'Simulating the top 300 species against it on this phone',
+    'counters-grid': 'Playing every shield pairing on this phone',
     'simulate-picks': 'Simulating an unranked pick against the meta on this phone',
   };
   return <Loading label={labels[stage] ?? stage} done={done} total={total} />;
