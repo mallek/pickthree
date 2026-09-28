@@ -8,13 +8,13 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
-import { SpeciesToken, Term } from '@pickthree/ui';
+import { SpeciesToken, Tag, Term, type TagTone } from '@pickthree/ui';
 import type { CSSProperties, ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { blendParts, sourceHeaderLine } from './headerCopy.js';
 import { spriteUrl } from './links.js';
 import type { SpeciesRanking } from './rank.js';
-import { confidence, trendLabel } from './stats.js';
+import { type Confidence, confidence, trendLabel } from './stats.js';
 
 export {
   Chevron,
@@ -305,14 +305,15 @@ export function Note({
   );
 }
 
-/** C3: how much a sample is worth trusting, said in a word inside a small pick3-style tag
- * (`.tag`, ported from apps/web/src/app.css) next to a win rate, replacing the former dot-plus-
- * word (`ConfidenceDot`). The tag's own tone (one of exactly three fixed ones, so a CSS modifier
- * rather than an inline colour) still is not the only carrier of the meaning: the word itself is
- * the tag's text content, not a separate aria-label, so colour alone never has to carry it. */
+/** How much a sample is worth trusting, said in a word inside the ui `Tag` next to a win rate
+ * (a confidence level is read, not tapped, so it is a Tag). The tone is one of three fixed ones
+ * (few neutral, some warn, many win), and still is not the only carrier of the meaning: the word
+ * itself is the tag's text content, so colour alone never has to carry it. */
+const CONFIDENCE_TONE: Record<Confidence, TagTone> = { few: 'neutral', some: 'warn', many: 'win' };
+
 export function ConfidenceTag({ n }: { n: number }) {
   const c = confidence(n);
-  return <span className={`tag tag-${c}`}>{c}</span>;
+  return <Tag tone={CONFIDENCE_TONE[c]}>{c}</Tag>;
 }
 
 // Header, SitePill and ThemeIcon moved out in Task 5: the ui Header (variant="top"/"sub") and

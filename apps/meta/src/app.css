@@ -231,7 +231,7 @@ section > .stat-n,
 }
 
 .tabs > a.on {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .tabs > a svg {
@@ -324,36 +324,6 @@ a.rank-row {
   background: var(--warn);
   color: var(--on-accent);
   font-weight: 800;
-}
-
-/* C3: the confidence badge, ConfidenceTag's small pill next to a win rate, pick3's own `.tag`
-   shape (apps/web/src/app.css). pick3 styles `.tag` only inside the parent that uses it
-   (`.pick-moves .tag`, `.recent-token .tag`); this is the same convention, one shape reused by
-   three fixed-tone modifiers rather than an inline colour, same three tones the dot it replaces
-   used. */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.tag-few {
-  background: var(--surface2);
-  color: var(--muted);
-}
-
-.tag-some {
-  background: color-mix(in srgb, var(--warn) 16%, transparent);
-  color: var(--warn);
-}
-
-.tag-many {
-  background: color-mix(in srgb, var(--win) 16%, transparent);
-  color: var(--win);
 }
 
 /* A3: the tap-to-reveal note (`Term`), ported from pick3's own `.term-wrap`/`.term`/`.term-tip`
@@ -487,7 +457,7 @@ a.rank-row {
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-size: 15px;
-  color: var(--accent);
+  color: var(--text);
 }
 
 .row-body {
@@ -632,9 +602,10 @@ a.rank-row {
   white-space: nowrap;
 }
 
-/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, like ConfidenceTag's
-   `.tag-*` modifiers above: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a neutral
-   or zero one, so there is no third modifier here. */
+/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, the ui Tag's win and
+   loss colors (packages/ui/base.css, .ui-tag-win and .ui-tag-loss), at the smaller size a name
+   line needs: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a
+   neutral or zero one, so there is no third modifier here. */
 .trend-tag {
   display: inline-flex;
   align-items: center;
@@ -647,12 +618,12 @@ a.rank-row {
   flex: none;
 }
 .trend-tag.up {
-  color: var(--win);
-  background: color-mix(in srgb, var(--win) 16%, transparent);
+  color: var(--win-ink);
+  background: var(--win-tint);
 }
 .trend-tag.down {
   color: var(--loss);
-  background: color-mix(in srgb, var(--loss) 16%, transparent);
+  background: color-mix(in srgb, var(--loss) 5%, var(--surface));
 }
 
 /* D1: the sparkline's latest-point dot and label, and its week-tick row. Plain HTML rather than
@@ -676,6 +647,11 @@ a.rank-row {
   color: var(--text);
   white-space: nowrap;
   pointer-events: none;
+  /* The card's own surface behind the label, so the line it sits on never runs through the
+     text (and the audit can measure it against a flat color rather than the chart). */
+  background: var(--surface);
+  padding: 0 4px;
+  border-radius: var(--r-sm);
 }
 .spark-ticks {
   display: flex;
@@ -773,4 +749,25 @@ button:focus-visible,
   * {
     transition: none !important;
   }
+}
+
+/* About's Appearance card: 44px segments, as pick3's own Appearance page sets them
+   (apps/web/src/app.css, `.settings-block .seg > *`). */
+.appearance .seg > * {
+  min-height: var(--tap);
+}
+
+/* "PvPoke's set" sits on its own line under a tournament set; the column would otherwise stretch
+   the tag across the card. */
+.pick-moves > .ui-tag {
+  align-self: flex-start;
+}
+
+/* Species' two actions: side by side when both fit, the second under the first when not, each at
+   its own width rather than squeezed into half the row and wrapped mid-label. */
+.species-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 8px;
 }

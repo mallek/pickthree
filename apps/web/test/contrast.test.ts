@@ -136,8 +136,10 @@ describe('In-battle shield grid contrast', () => {
 });
 
 describe('Seg pressed label contrast', () => {
-  // Your Meta's sort sits on the page (--bg); the Settings sheet's Segs sit on --surface.
-  const ink = /(?:^|\s)color:\s*var\(--([a-z0-9-]+)\)/.exec(block(app, '.seg > .on {'))?.[1] ?? '';
+  // Your Meta's sort sits on the page (--bg); the Settings sheet's Segs sit on --surface. The Seg
+  // rules live in packages/ui/base.css beside the component (meta.pick3.gg's About uses it too).
+  const ui = read('../../../packages/ui/base.css');
+  const ink = /(?:^|\s)color:\s*var\(--([a-z0-9-]+)\)/.exec(block(ui, '.seg > .on {'))?.[1] ?? '';
   for (const ground of ['bg', 'surface']) {
     for (const [theme, body] of Object.entries(themes)) {
       it(`the pressed label clears 4.5:1 on --${ground} in ${theme}`, () => {

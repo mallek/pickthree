@@ -143,8 +143,10 @@ function tailLine(n: number): string {
  *  all, so the first two lines drop out entirely and the rank stands alone. */
 function RowFigure({ row, ranking }: { row: SpeciesRow; ranking: SpeciesRanking }): ReactNode {
   const figure = facedFigure(row, ranking);
-  const showRecord =
-    ranking.source === 'prior' ? false : !(ranking.source === 'tournament' && row.banned);
+  // A record belongs to a measured figure: with none (PvPoke alone, banned at tournaments, or not
+  // faced or picked in this window) the muted words already say there is nothing to report, and
+  // "no result recorded" under "Not faced in this window" only said it twice.
+  const showRecord = figure !== null;
   return (
     <span className="row-figure">
       {ranking.source === 'prior' ? null : figure ? (
@@ -178,6 +180,11 @@ function RowView({
   href: (view: View) => string;
 }) {
   const species = speciesOf(data, row.speciesId);
+  // `row.trend` is the change in the ladder share (rank.ts compares sightings with the previous
+  // window's), so it belongs only beside a ladder figure: All and GBL. Under PvPoke the list says
+  // "Nothing measured.", and under Tournaments the figure is a pick share; a ladder trend next to
+  // either would be a measured claim about a number the row is not showing.
+  const trend = ranking.source === 'all' || ranking.source === 'ladder' ? row.trend : null;
   return (
     <a className="rank-row" href={href({ name: 'species', league, speciesId: row.speciesId })}>
       <span className="fine">{row.rank}</span>
@@ -185,7 +192,7 @@ function RowView({
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
           <span className="name">{species.name}</span>
-          {row.trend !== null ? <TrendTag points={row.trend} /> : null}
+          {trend !== null ? <TrendTag points={trend} /> : null}
         </span>
         <span style={{ display: 'flex', gap: 4 }}>
           <TypeChips types={species.types} />

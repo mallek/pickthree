@@ -107,7 +107,7 @@ describe('About', () => {
       screen.getByText(/On the Species page, a win rate is shown as a percentage/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/On Teams, a record is always the raw win-loss count too/),
+      screen.getByText(/On Top teams, a record is always the raw win-loss count too/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/is shown as a matchup score out of 100, never a percentage/),

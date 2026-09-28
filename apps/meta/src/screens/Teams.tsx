@@ -369,12 +369,9 @@ function Row({
           ) : null}
           {isCore ? null : (
             <div className="cost-line">
-              <a
-                className="team-details"
-                href={teamLink(league, membersOf(row.species, row.moves))}
-              >
+              <Button variant="text" href={teamLink(league, membersOf(row.species, row.moves))}>
                 Open in pick3 <Chevron />
-              </a>
+              </Button>
             </div>
           )}
         </div>

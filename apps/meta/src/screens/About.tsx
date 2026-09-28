@@ -125,7 +125,7 @@ export function About(p: {
         a projection is shown as a matchup score out of 100 instead, never a percentage.
       </p>
 
-      <section className="card">
+      <section className="card appearance">
         <h2>Appearance</h2>
         <Seg value={theme} onChange={onTheme} options={THEME_OPTIONS} />
       </section>
@@ -195,7 +195,7 @@ export function About(p: {
         <p className="fine">
           Reading needs no key. A server or script can call it freely; a page running in someone
           else&apos;s browser is limited by this site&apos;s CORS allow-list for now. The team board
-          behind Teams:
+          behind Top teams:
         </p>
         <p className="fine">
           <code>
@@ -230,8 +230,9 @@ export function About(p: {
           it: few under {count(SOME)} decided {battleWord(SOME)}, some from there up to{' '}
           {count(MANY)}, many at {count(MANY)} or more. On the Species page, a win rate is shown as
           a percentage, with a plain-language range beside it that narrows the more decided battles
-          stand behind it. On Teams, a record is always the raw win-loss count too; a projection,
-          when a row has one, is shown as a matchup score out of 100, never a percentage. A trend is
+          stand behind it. On Top teams, a record is always the raw win-loss count too; a
+          projection, when a row has one, is shown as a matchup score out of 100, never a
+          percentage. A trend is
           only shown when both windows being compared hold at least {count(TREND_MIN)}{' '}
           {battleWord(TREND_MIN)}, and only when the change is bigger than the noise in the numbers.
         </p>

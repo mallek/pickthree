@@ -243,10 +243,13 @@ describe('Sparkline', () => {
 });
 
 describe('ConfidenceTag', () => {
-  it('says how much to trust a sample in words, in a small pick3-style tag', () => {
-    render(<ConfidenceTag n={12} />);
-    const tag = screen.getByText('few');
-    expect(tag).toHaveClass('tag', 'tag-few');
+  it('says how much to trust a sample in words, in the ui Tag, one tone per level', () => {
+    const { rerender } = render(<ConfidenceTag n={12} />);
+    expect(screen.getByText('few')).toHaveClass('ui-tag', 'ui-tag-neutral');
+    rerender(<ConfidenceTag n={30} />);
+    expect(screen.getByText('some')).toHaveClass('ui-tag', 'ui-tag-warn');
+    rerender(<ConfidenceTag n={300} />);
+    expect(screen.getByText('many')).toHaveClass('ui-tag', 'ui-tag-win');
   });
 });
 

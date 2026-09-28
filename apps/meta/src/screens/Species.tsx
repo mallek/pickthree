@@ -381,7 +381,7 @@ function RecordCard({
  * plain violet link style; the trailing `Chevron` matches Teams.tsx's own "Open in pick3" links. */
 function ActionLinks({ league, speciesId }: { league: string; speciesId: string }): ReactNode {
   return (
-    <div className="btn-pair">
+    <div className="species-actions">
       <Button variant="text" href={countersLink(league, speciesId)}>
         Who beats it <Chevron />
       </Button>

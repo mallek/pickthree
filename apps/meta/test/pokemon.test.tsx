@@ -320,6 +320,17 @@ describe('Pokemon, a measured row', () => {
     expect(within(row).getByText('+30')).toBeInTheDocument();
   });
 
+  it('keeps the ladder trend off the PvPoke and Tournaments lists', () => {
+    const previous = { battles: 1000, species: [{ speciesId: 'azumarill', sightings: 100 }] };
+    const species = [faced('azumarill', 400, 200, 200)];
+    for (const source of ['prior', 'tournament'] as const) {
+      const { unmount } = renderPokemon({ battles: 1000, devices: 9, species, previous, source });
+      const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+      expect(within(row).queryByText('+30')).toBeNull();
+      unmount();
+    }
+  });
+
   it('marks a species PvPoke does not rank as new', () => {
     renderPokemon({ battles: 480, devices: 9, species: [faced('surprise', 120, 50, 70)] });
     const row = screen.getByText('Surprise').closest('a');
@@ -434,6 +445,14 @@ describe('Pokemon, nothing to measure', () => {
     expect(within(row).getByText('Not faced in this window')).toBeInTheDocument();
     expect(row.querySelector('.ui-measured')).toBeNull();
     expect(within(row).queryByText(/\d+%/)).toBeNull();
+  });
+
+  it('says "Not faced in this window" once, with no record line repeating it', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [] });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    expect(within(row).queryByText(/no result recorded/)).toBeNull();
+    expect(within(row).queryByText(/^went /)).toBeNull();
+    expect(within(row).getByText('PvPoke #1')).toBeInTheDocument();
   });
 
   it('under Tournaments, a species with zero picks reads "Not picked in this window" even though the total is nonzero', () => {
