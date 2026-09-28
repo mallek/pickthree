@@ -8,14 +8,13 @@ import {
   Header,
   IconButton,
   InlineSelect,
+  SiteLink,
   Term,
   type ChoiceOption,
 } from '@pickthree/ui';
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import {
   CogGlyph,
-  META_URL,
-  MetaGlyph,
   MetaTags,
   PokemonToken,
   Progress,
@@ -167,9 +166,7 @@ export function Counters() {
       title="Counters"
       actions={
         <>
-          <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
-            <MetaGlyph />
-          </IconButton>
+          <SiteLink site="meta" />
           {settings}
         </>
       }

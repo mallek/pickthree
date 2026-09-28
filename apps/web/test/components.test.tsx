@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MoveChoice, VerdictLabel } from '@pickthree/engine';
+import { MetaGlyph } from '@pickthree/ui';
 import {
   MoveRows,
   Progress,
   NoCollection,
   CogGlyph,
-  MetaGlyph,
   VerdictTag,
 } from '../src/components.tsx';
 

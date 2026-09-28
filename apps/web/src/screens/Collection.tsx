@@ -7,6 +7,7 @@ import {
   Header,
   IconButton,
   InlineSelect,
+  SiteLink,
   Tag,
   type ChoiceOption,
 } from '@pickthree/ui';
@@ -15,8 +16,6 @@ import {
   Chip,
   CogGlyph,
   HundoTag,
-  META_URL,
-  MetaGlyph,
   MetaTags,
   PokemonToken,
   Progress,
@@ -73,9 +72,7 @@ function CollectionHeader({ openSheet }: { openSheet: () => void }) {
           <IconButton label="Add a Pokémon" href={hashFor({ screen: 'add' })}>
             <PlusGlyph />
           </IconButton>
-          <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
-            <MetaGlyph />
-          </IconButton>
+          <SiteLink site="meta" />
           <IconButton label="Settings" onClick={openSheet}>
             <CogGlyph />
           </IconButton>

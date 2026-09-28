@@ -9,12 +9,11 @@ import {
   IconButton,
   ProgressCard,
   Select,
+  SiteLink,
 } from '@pickthree/ui';
 import { useEffect } from 'react';
 import {
   CogGlyph,
-  MetaGlyph,
-  META_URL,
   NoCollection,
   Progress,
   useLogCount,
@@ -64,9 +63,7 @@ function TeamsHeader({ openSheet }: { openSheet: () => void }) {
       title="Your Teams"
       actions={
         <>
-          <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
-            <MetaGlyph />
-          </IconButton>
+          <SiteLink site="meta" />
           <IconButton label="Settings" onClick={openSheet}>
             <CogGlyph />
           </IconButton>

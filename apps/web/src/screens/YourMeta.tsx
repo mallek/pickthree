@@ -16,11 +16,11 @@ import {
   IconButton,
   MeasuredLine,
   progressPercent,
+  SiteLink,
 } from '@pickthree/ui';
 import { useEffect, useMemo, useState } from 'react';
 import {
   CogGlyph,
-  MetaGlyph,
   META_URL,
   PokemonToken,
   Seg,
@@ -393,9 +393,7 @@ export function YourMeta() {
           title="Your Meta"
           actions={
             <>
-              <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
-                <MetaGlyph />
-              </IconButton>
+              <SiteLink site="meta" />
               <IconButton label="Settings" onClick={openSheet}>
                 <CogGlyph />
               </IconButton>
