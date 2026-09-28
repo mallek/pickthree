@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { toSpecimens } from '../../src/collection/specimen.js';
-import { metaCounters } from '../../src/counters/counters.js';
+import { counterGrids, metaCounters, type CounterEntry } from '../../src/counters/counters.js';
 import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
+import { simOptionsFor } from '../../src/gamedata/league.js';
 import { facingWeight } from '../../src/gamedata/metaRank.js';
-import { haveStaticData, loadFixtureCsv, loadStaticData } from '../fixtures.js';
+import { haveStaticData, loadFixtureCsv, loadStaticData, readGameMaster } from '../fixtures.js';
 
 describe('facing weight', () => {
   it('drops with rank and treats unranked as rare', () => {
@@ -65,6 +67,12 @@ describe.skipIf(!haveStaticData())('meta counters', () => {
     }
   });
 
+  it('leaves the shield grid empty against the whole meta', () => {
+    for (const c of counters) {
+      expect(c.grid).toBeNull();
+    }
+  });
+
   it('computes the gap against the overall rank', () => {
     for (const c of counters) {
       if (c.overallRank !== null) {
@@ -122,5 +130,99 @@ describe.skipIf(!haveStaticData())('counters against one opponent', () => {
     });
     expect(r.blended).toBe(false);
     expect(r.battles).toBe(0);
+  });
+});
+
+describe.skipIf(!haveStaticData())('the shield grid against one opponent', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const sim = new PvPokeSimulator(loadPvPokeInNode(readGameMaster()));
+  const live = { sim, league: data.league };
+  const target = data.matrix.opponents[0]!;
+  const first = metaCounters(data, [], index, { limit: 20, vs: target }, live);
+  const won = (c: CounterEntry): number => c.grid!.filter((r) => r > 500).length;
+  const mean = (c: CounterEntry): number => c.grid!.reduce((a, b) => a + b, 0) / 9;
+
+  it('leaves the grid empty until it is filled', () => {
+    expect(first.entries.length).toBe(20);
+    for (const c of first.entries) {
+      expect(c.grid).toBeNull();
+    }
+  });
+
+  const filled = counterGrids(data, target, first.entries, live);
+
+  it('fills nine ratings per counter, your shields by theirs, row-major', () => {
+    expect(filled.entries).toHaveLength(first.entries.length);
+    expect(filled.gridMs).toBeGreaterThanOrEqual(0);
+    for (const c of filled.entries) {
+      expect(c.grid).toHaveLength(9);
+      for (const r of c.grid!) {
+        expect(r).toBeGreaterThanOrEqual(0);
+        expect(r).toBeLessThanOrEqual(1000);
+      }
+      // Two shields against none is never worse than none against two.
+      expect(c.grid![2 * 3 + 0]).toBeGreaterThanOrEqual(c.grid![0 * 3 + 2]!);
+    }
+    // One cell off the diagonal, battled directly: yours 0, theirs 1 is index 1.
+    const c = filled.entries[0]!;
+    const ranking = (id: string): string[] =>
+      data.matrix.candidateMovesets[id] ??
+      data.rankings.overall.find((e) => e.speciesId === id)!.moveset;
+    const spec = (id: string, shields: number) => ({
+      speciesId: id,
+      fastMove: ranking(id)[0]!,
+      chargedMoves: ranking(id).slice(1, 3),
+      shields,
+      startEnergyTurns: 0,
+    });
+    const direct = sim.simulate(spec(c.speciesId, 0), spec(target, 1), simOptionsFor(data.league));
+    expect(c.grid![1]).toBe(direct.rating);
+  });
+
+  it('orders by cells won, then mean rating, then overall rank, and renumbers', () => {
+    filled.entries.forEach((c, i) => {
+      expect(c.antiRank).toBe(i + 1);
+      expect(c.gap).toBe((c.overallRank ?? data.matrix.candidates.length) - c.antiRank);
+      if (i === 0) {
+        return;
+      }
+      const p = filled.entries[i - 1]!;
+      expect(won(c)).toBeLessThanOrEqual(won(p));
+      if (won(c) === won(p)) {
+        expect(mean(c)).toBeLessThanOrEqual(mean(p));
+        if (mean(c) === mean(p)) {
+          expect(c.overallRank ?? 9999).toBeGreaterThanOrEqual(p.overallRank ?? 9999);
+        }
+      }
+    });
+    // The same species as went in, only reordered.
+    expect(filled.entries.map((c) => c.speciesId).sort()).toEqual(
+      first.entries.map((c) => c.speciesId).sort(),
+    );
+  });
+
+  it('reports each batch, in the incoming order, as it finishes', () => {
+    const calls: { done: number; total: number; ids: string[]; gridded: number }[] = [];
+    counterGrids(
+      data,
+      target,
+      first.entries,
+      live,
+      (done, total, entries) =>
+        calls.push({
+          done,
+          total,
+          ids: entries.map((e) => e.speciesId),
+          gridded: entries.filter((e) => e.grid !== null).length,
+        }),
+      7,
+    );
+    expect(calls.map((c) => c.done)).toEqual([7, 14, 20]);
+    for (const c of calls) {
+      expect(c.total).toBe(20);
+      expect(c.gridded).toBe(c.done);
+      expect(c.ids).toEqual(first.entries.map((e) => e.speciesId));
+    }
   });
 });

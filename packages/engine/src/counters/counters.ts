@@ -8,7 +8,9 @@ import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
 import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js';
 import type { MatchupMatrix, MetaEntry, RankingCategory, RankingEntry } from '../gamedata/types.js';
+import { simOptionsFor } from '../gamedata/league.js';
 import { MatrixView } from '../search/matrixView.js';
+import type { SimPokemonSpec } from '../sim/BattleSimulator.js';
 import { simulateMatrix, type MatrixSimDeps } from '../sim/matrixSim.js';
 import { profileFor, type FacingInput } from '../yourmeta/facing.js';
 import { facingLine } from '../yourmeta/profile.js';
@@ -38,6 +40,11 @@ export interface CounterEntry {
   /** The best-IV specimen that is or becomes this species. */
   ownedSpecimenId: string | null;
   ownedStageOffset: number | null;
+  /**
+   * Against one opponent: nine battle ratings for this species, row-major, your shields 0..2 by
+   * theirs 0..2 (index yours * 3 + theirs). Null against the whole meta and until filled.
+   */
+  grid: number[] | null;
 }
 
 export interface CountersOptions {
@@ -64,6 +71,8 @@ export interface CountersResult {
    * simulated is how many ranked species were then run through the simulator instead.
    */
   vs?: { speciesId: string; inMeta: boolean; simulated?: number };
+  /** Milliseconds spent battling every shield pairing, set once the grids are in. */
+  gridMs?: number;
 }
 
 /** What the outsider path needs: the simulator and league the matrix was built with. */
@@ -266,6 +275,7 @@ export function metaCounters(
       owned: b ? (b.stageOffset === 0 ? 'have' : 'build') : 'none',
       ownedSpecimenId: b?.specimenId ?? null,
       ownedStageOffset: b?.stageOffset ?? null,
+      grid: null,
     });
   });
   if (target && simulated !== undefined) {
@@ -292,4 +302,100 @@ export function metaCounters(
     blended: profile.engaged,
     battles: profile.battles,
   };
+}
+
+/** Shield counts on each side of the grid: 0, 1 and 2. */
+const GRID_SHIELDS = [0, 1, 2] as const;
+
+/**
+ * The moveset a species fights with in the matrix: the rankings' recommended moveset (with the
+ * data build's overrides) as the matrix recorded it, else the rankings entry itself.
+ */
+function rankingMoveset(data: CountersData, speciesId: string): string[] {
+  return (
+    data.matrix.candidateMovesets[speciesId] ??
+    data.rankings.overall.find((e) => e.speciesId === speciesId)?.moveset ??
+    data.matrix.opponentMovesets[speciesId] ??
+    []
+  );
+}
+
+function gridSpec(speciesId: string, moveset: string[], shields: number): SimPokemonSpec {
+  return {
+    speciesId,
+    fastMove: moveset[0] ?? '',
+    chargedMoves: moveset.slice(1, 3),
+    shields,
+    startEnergyTurns: 0,
+  };
+}
+
+function cellsWon(grid: number[]): number {
+  return grid.filter((r) => r > 500).length;
+}
+
+function meanRating(grid: number[]): number {
+  return grid.length === 0 ? 0 : grid.reduce((a, b) => a + b, 0) / grid.length;
+}
+
+/**
+ * Every shield pairing against one opponent: nine battles per counter, your shields 0..2 by
+ * theirs 0..2, at PvPoke default IVs and the rankings' movesets on both sides, with the league's
+ * simulator options, the same inputs as the matrix. Fills in batches, reporting each batch in the
+ * incoming order, then sorts by cells won out of nine, then mean rating, then PvPoke overall rank,
+ * and renumbers antiRank (and the gap) from that order.
+ */
+export function counterGrids(
+  data: CountersData,
+  vs: string,
+  entries: CounterEntry[],
+  live: CountersLive,
+  onBatch?: (done: number, total: number, entries: CounterEntry[]) => void,
+  batchSize = 10,
+): { entries: CounterEntry[]; gridMs: number } {
+  const started = Date.now();
+  const simOptions = simOptionsFor(live.league);
+  const theirs = rankingMoveset(data, vs);
+  const out = entries.map((e) => ({ ...e }));
+  const step = Math.max(1, Math.floor(batchSize));
+  for (let i = 0; i < out.length; i++) {
+    const e = out[i]!;
+    const yours = rankingMoveset(data, e.speciesId);
+    const grid: number[] = [];
+    for (const mine of GRID_SHIELDS) {
+      for (const their of GRID_SHIELDS) {
+        const r = live.sim.simulate(
+          gridSpec(e.speciesId, yours, mine),
+          gridSpec(vs, theirs, their),
+          simOptions,
+        );
+        grid.push(r.rating);
+      }
+    }
+    e.grid = grid;
+    const done = i + 1;
+    if (onBatch && (done % step === 0 || done === out.length)) {
+      onBatch(
+        done,
+        out.length,
+        out.map((x) => ({ ...x })),
+      );
+    }
+  }
+  const rankOf = (e: CounterEntry): number => e.overallRank ?? 9999;
+  const key = (e: CounterEntry): [number, number] => {
+    const g = e.grid ?? [];
+    return [cellsWon(g), meanRating(g)];
+  };
+  out.sort((a, b) => {
+    const [wa, ma] = key(a);
+    const [wb, mb] = key(b);
+    return wb - wa || mb - ma || rankOf(a) - rankOf(b);
+  });
+  const sorted = out.map((e, i) => ({
+    ...e,
+    antiRank: i + 1,
+    gap: (e.overallRank ?? data.matrix.candidates.length) - (i + 1),
+  }));
+  return { entries: sorted, gridMs: Date.now() - started };
 }
