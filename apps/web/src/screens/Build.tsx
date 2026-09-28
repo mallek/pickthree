@@ -114,6 +114,11 @@ export function Build() {
   const routeLeague = route?.league ?? null;
   const knownRouteLeague =
     routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
+  // True while a named, known league has not caught up in leagueInfo yet: settings.league can
+  // flip to it a render before league-start clears the old bundle, so leagueInfo may still be the
+  // OLD league's for a beat. Nothing about it (analyzable included) can be trusted until its own
+  // id matches, the same guard Counters.tsx uses for its own linked-league switch.
+  const switchingLeague = knownRouteLeague && s.leagueInfo?.id !== routeLeague;
   useEffect(() => {
     if (!lead) {
       return;
@@ -122,7 +127,7 @@ export function Build() {
       setLeague(routeLeague!);
       return;
     }
-    if (s.boot !== 'ready' || !s.leagueInfo) {
+    if (s.boot !== 'ready' || !s.leagueInfo || switchingLeague) {
       return;
     }
     if (s.leagueInfo.analyzable.includes(lead)) {
@@ -133,6 +138,7 @@ export function Build() {
     lead,
     knownRouteLeague,
     routeLeague,
+    switchingLeague,
     s.settings.league,
     s.boot,
     s.leagueInfo,

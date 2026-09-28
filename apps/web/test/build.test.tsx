@@ -618,6 +618,51 @@ describe('Build lead link', () => {
     expect(screen.getByRole('radio', { name: 'Ultra League' })).toBeChecked();
   });
 
+  it('waits for the target league\'s own bundle before judging eligibility or dropping the lead', async () => {
+    // Great (in play at boot) offers azumarill; Ultra (the link's target) does not. If the
+    // effect ever checked analyzable against the wrong league's still-loaded bundle, it would
+    // set the pick from Great's list and drop the lead before Ultra's own bundle arrived.
+    const base = fakeHost();
+    const bootReply = await base.ready();
+    let resolveUltra: (info: unknown) => void = () => {};
+    const leagueInfo = vi.fn((id: string) =>
+      id === 'great'
+        ? base.leagueInfo('great')
+        : id === 'ultra'
+          ? new Promise((r) => (resolveUltra = r))
+          : new Promise<never>(() => {}),
+    );
+    window.location.hash = '#/build?lead=azumarill&l=ultra';
+    render(
+      <AppProvider
+        host={fakeHost({
+          leagueInfo,
+          ready: vi.fn(async () => ({ ...bootReply, leagues: [GREAT, ULTRA] })),
+        })}
+      >
+        <Build />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(leagueInfo).toHaveBeenCalledWith('ultra'));
+    // Ultra's own bundle has not answered yet: the lead must not be judged against Great's
+    // bundle, so the hash keeps the lead and pick 0 stays empty.
+    await new Promise((r) => setTimeout(r, 30));
+    expect(window.location.hash).toBe('#/build?lead=azumarill&l=ultra');
+    expect(screen.queryByRole('button', { name: 'Remove Azumarill' })).not.toBeInTheDocument();
+    // Ultra's own bundle excludes azumarill: the lead still leaves the route once it answers, but
+    // the pick never lands.
+    resolveUltra({
+      id: 'ultra',
+      meta: ['clodsire'],
+      metaSize: 3,
+      metaRanks: { clodsire: { overall: 1, score: 90, role: null, roleRank: null } },
+      analyzable: ['clodsire'],
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Ultra League' })).toBeChecked();
+  });
+
   it('ignores an unknown league in the link and applies the lead in the league already in play', async () => {
     window.location.hash = '#/build?lead=azumarill&l=nosuchleague';
     render(
