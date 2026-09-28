@@ -93,7 +93,8 @@ export type Route =
   | { screen: 'collection' }
   | { screen: 'specimen'; id: string }
   | { screen: 'counters'; vs?: string; league?: string; from?: true }
-  | { screen: 'build' }
+  /** A Build lead link from meta.pick3.gg: the species for pick 0, and the league it belongs to. */
+  | { screen: 'build'; lead?: string; league?: string }
   | { screen: 'custom' }
   | { screen: 'add' }
   | { screen: 'meta' }
@@ -511,7 +512,19 @@ export function parseHash(hash: string): Route {
     return league ? { screen: 'counters', league, ...from } : { screen: 'counters', ...from };
   }
   if (a === 'build') {
-    return b === 'team' ? { screen: 'custom' } : { screen: 'build' };
+    if (b === 'team') {
+      return { screen: 'custom' };
+    }
+    const params = new URLSearchParams(query ?? '');
+    const leadRaw = params.get('lead');
+    const lead = leadRaw !== null && /^[a-z0-9_]+$/.test(leadRaw) ? leadRaw : null;
+    if (!lead) {
+      return { screen: 'build' };
+    }
+    // A league from a meta.pick3.gg link; kept only alongside a lead, same as counters' `l`.
+    const l = params.get('l');
+    const league = l !== null && /^[a-z0-9_]+$/.test(l) ? l : null;
+    return league ? { screen: 'build', lead, league } : { screen: 'build', lead };
   }
   if (a === 'add') {
     return { screen: 'add' };
@@ -573,8 +586,17 @@ export function hashFor(r: Route): string {
       const qs = params.toString();
       return qs ? `#/counters?${qs}` : '#/counters';
     }
-    case 'build':
-      return '#/build';
+    case 'build': {
+      if (!r.lead) {
+        return '#/build';
+      }
+      const params = new URLSearchParams();
+      params.set('lead', r.lead);
+      if (r.league) {
+        params.set('l', r.league);
+      }
+      return `#/build?${params.toString()}`;
+    }
     case 'custom':
       return '#/build/team';
     case 'add':

@@ -556,3 +556,110 @@ describe('Build a team', () => {
     expect(document.querySelectorAll('.ui-btn-primary')).toHaveLength(1);
   });
 });
+
+describe('Build lead link', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    resetHistoryForTests();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('sets pick 0 from the link, then drops it from the hash without adding a history entry', async () => {
+    window.location.hash = '#/teams';
+    render(
+      <AppProvider host={fakeHost()}>
+        <Build />
+      </AppProvider>,
+    );
+    await screen.findByRole('button', { name: 'Back' });
+    window.location.hash = '#/build?lead=azumarill';
+    await waitFor(() =>
+      expect((window.history.state as { pick3Depth?: number } | null)?.pick3Depth).toBe(1),
+    );
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(await screen.findByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument();
+    // A replace, not a push: the depth the hashchange marked stays put.
+    expect((window.history.state as { pick3Depth?: number } | null)?.pick3Depth).toBe(1);
+  });
+
+  it('switches to the league the link names, then applies the lead once its data is in', async () => {
+    const base = fakeHost();
+    const bootReply = await base.ready();
+    const ultraInfo = {
+      id: 'ultra',
+      meta: ['azumarill'],
+      metaSize: 3,
+      metaRanks: { azumarill: { overall: 1, score: 90, role: null, roleRank: null } },
+      analyzable: ['azumarill'],
+    };
+    const leagueInfo = vi.fn((id: string) =>
+      id === 'great' ? base.leagueInfo('great') : id === 'ultra' ? Promise.resolve(ultraInfo) : new Promise<never>(() => {}),
+    );
+    window.location.hash = '#/build?lead=azumarill&l=ultra';
+    render(
+      <AppProvider
+        host={fakeHost({
+          leagueInfo,
+          ready: vi.fn(async () => ({ ...bootReply, leagues: [GREAT, ULTRA] })),
+        })}
+      >
+        <Build />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(leagueInfo).toHaveBeenCalledWith('ultra'));
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(await screen.findByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Ultra League' })).toBeChecked();
+  });
+
+  it('ignores an unknown league in the link and applies the lead in the league already in play', async () => {
+    window.location.hash = '#/build?lead=azumarill&l=nosuchleague';
+    render(
+      <AppProvider host={fakeHost()}>
+        <Build />
+      </AppProvider>,
+    );
+    expect(await screen.findByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(screen.getByRole('radio', { name: 'Great League' })).toBeChecked();
+  });
+
+  it('drops a lead the league picker does not offer, leaving the board as it was', async () => {
+    // medicham is in allSpecies (fakeHost's boot reply) but not in the default league's
+    // analyzable list, so the picker would never offer it.
+    window.location.hash = '#/build?lead=medicham';
+    render(
+      <AppProvider host={fakeHost()}>
+        <Build />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument();
+  });
+
+  it('lands the lead once boot and the league bundle are ready, even though the link arrived first', async () => {
+    const base = fakeHost();
+    const bootReply = await base.ready();
+    let resolveReady: (r: typeof bootReply) => void = () => {};
+    window.location.hash = '#/build?lead=azumarill';
+    render(
+      <AppProvider
+        host={fakeHost({ ready: vi.fn(() => new Promise((r) => (resolveReady = r))) })}
+      >
+        <Build />
+      </AppProvider>,
+    );
+    await new Promise((r) => setTimeout(r, 20));
+    // Boot has not resolved yet: the link's lead is still on the hash, not yet applied.
+    expect(window.location.hash).toBe('#/build?lead=azumarill');
+    resolveReady(bootReply);
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(await screen.findByRole('button', { name: 'Remove Azumarill' })).toBeInTheDocument();
+  });
+});

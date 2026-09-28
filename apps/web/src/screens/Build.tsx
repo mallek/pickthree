@@ -56,9 +56,11 @@ export function Build() {
   const s = useAppState();
   const {
     back,
+    navigate,
     openSheet,
     setPick,
     setPicks,
+    setLeague,
     findOrder,
     analyze,
     loadVerdicts,
@@ -100,6 +102,43 @@ export function Build() {
     s.verdictsLoading,
     s.verdictsError,
     loadVerdicts,
+  ]);
+
+  // A lead link from meta.pick3.gg ("Build a team around it"): switch to its league once, the way
+  // Counters.tsx applies its own linked league, then set pick 0 once the league's data is in and
+  // its own picker actually offers that species. Either way the lead leaves the route (replace),
+  // so a later league switch or Back cannot replay it. An unknown league id is ignored; the lead
+  // then applies in whatever league is already in play.
+  const route = s.route.screen === 'build' ? s.route : null;
+  const lead = route?.lead ?? null;
+  const routeLeague = route?.league ?? null;
+  const knownRouteLeague =
+    routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
+  useEffect(() => {
+    if (!lead) {
+      return;
+    }
+    if (knownRouteLeague && (s.settings.league ?? 'great') !== routeLeague) {
+      setLeague(routeLeague!);
+      return;
+    }
+    if (s.boot !== 'ready' || !s.leagueInfo) {
+      return;
+    }
+    if (s.leagueInfo.analyzable.includes(lead)) {
+      setPick(0, { kind: 'species', id: lead });
+    }
+    navigate({ screen: 'build' }, { replace: true });
+  }, [
+    lead,
+    knownRouteLeague,
+    routeLeague,
+    s.settings.league,
+    s.boot,
+    s.leagueInfo,
+    setLeague,
+    setPick,
+    navigate,
   ]);
 
   const parsed = useMemo(() => parseQuery(query), [query]);

@@ -26,6 +26,12 @@ export function countersLink(league: string, speciesId: string): string {
   return `${PICK3}/#/counters?vs=${encodeURIComponent(speciesId)}&l=${encodeURIComponent(league)}`;
 }
 
+/** "Build a team around it" from the Species page: opens pick3 with the species already in the
+ * lead slot, in the right league. */
+export function buildLink(league: string, speciesId: string): string {
+  return `${PICK3}/#/build?lead=${encodeURIComponent(speciesId)}&l=${encodeURIComponent(league)}`;
+}
+
 /** Shadow forms share the base form's sprite, exactly as pick3 does it. */
 export function spriteUrl(speciesId: string): string {
   return `${PICK3}/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp`;

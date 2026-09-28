@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countersLink, spriteUrl, teamLink } from '../src/links.js';
+import { buildLink, countersLink, spriteUrl, teamLink } from '../src/links.js';
 
 describe('teamLink', () => {
   it('writes the format pick3 parses, moves included when known', () => {
@@ -20,6 +20,12 @@ describe('countersLink', () => {
     expect(countersLink('ultra', 'azumarill')).toBe(
       'https://pick3.gg/#/counters?vs=azumarill&l=ultra',
     );
+  });
+});
+
+describe('buildLink', () => {
+  it('carries the lead species and the league so Build opens with it already picked', () => {
+    expect(buildLink('great', 'melmetal')).toBe('https://pick3.gg/#/build?lead=melmetal&l=great');
   });
 });
 

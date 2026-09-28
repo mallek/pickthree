@@ -68,6 +68,21 @@ describe('routes', () => {
     expect(hashFor({ screen: 'shared', league: 'great', members })).toBe(`#/t/great/${members}`);
     expect(parseHash('#/t/great')).toEqual({ screen: 'build' });
   });
+  it('parses and prints a Build lead link from meta.pick3.gg', () => {
+    expect(parseHash('#/build/team')).toEqual({ screen: 'custom' });
+    expect(parseHash('#/build')).toEqual({ screen: 'build' });
+    expect(parseHash('#/build?lead=azumarill&l=ultra')).toEqual({
+      screen: 'build',
+      lead: 'azumarill',
+      league: 'ultra',
+    });
+    // An id that fails the id shape is not a lead at all: no partial route.
+    expect(parseHash('#/build?lead=Bad Id')).toEqual({ screen: 'build' });
+    // The league is dropped along with a missing lead: `l` only ever tags along with one.
+    expect(parseHash('#/build?l=ultra')).toEqual({ screen: 'build' });
+    const route = { screen: 'build' as const, lead: 'azumarill', league: 'ultra' };
+    expect(parseHash(hashFor(route))).toEqual(route);
+  });
   it('parses and prints the Counters route with a species to score against', () => {
     expect(parseHash('#/counters')).toEqual({ screen: 'counters' });
     expect(parseHash('#/counters?vs=medicham')).toEqual({ screen: 'counters', vs: 'medicham' });
