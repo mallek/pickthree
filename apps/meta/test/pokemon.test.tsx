@@ -6,8 +6,8 @@ import type { MetaSummaryV1, SpeciesStats, TournamentBlock } from '../src/api.js
 import type { StaticData } from '../src/data.js';
 import type { Legal } from '../src/legal.js';
 import { DEFAULT_QUERY, hrefFor, type SourceKey } from '../src/route.js';
-import { rankSpecies } from '../src/rank.js';
-import { Pokemon } from '../src/screens/Pokemon.js';
+import { rankSpecies, type SpeciesRanking, type SpeciesRow } from '../src/rank.js';
+import { facedFigure, Pokemon } from '../src/screens/Pokemon.js';
 
 // A minimal static file: no species/moves entries at all. Every id these tests use (azumarill,
 // surprise, one, two, three) is unknown to it on purpose, so `speciesOf`'s own fallback (title
@@ -83,6 +83,9 @@ function renderPokemon(opts: {
   source?: SourceKey;
   /** The Play! ban list. Defaults to null: nothing banned, same as before this took a `legal`. */
   legal?: { cup: string | null; banned: string[] };
+  /** The prior window's sightings, for the trend tag: `rank.ts`'s `trendPoints` needs both this
+   *  and the current window at or above `TREND_MIN` (200) battles to say anything at all. */
+  previous?: { battles: number; species: { speciesId: string; sightings: number }[] };
   onRetry?: () => void;
 }) {
   const meta: MetaSummaryV1 = {
@@ -97,7 +100,7 @@ function renderPokemon(opts: {
     sources: { ladder: opts.battles ?? 0 },
     species: opts.species ?? [],
     teams: [],
-    previous: null,
+    previous: opts.previous ?? null,
     tournament: opts.tournament ?? null,
     generatedAt: '2026-09-08T00:00:00.000Z',
   };
@@ -116,6 +119,122 @@ function renderPokemon(opts: {
     />,
   );
 }
+
+/** A minimal `SpeciesRow`, every field zeroed or null, so a test overrides only what it cares
+ *  about. Used to test `facedFigure` directly, without going through `rankSpecies`. */
+function row(overrides: Partial<SpeciesRow> = {}): SpeciesRow {
+  return {
+    speciesId: 'x',
+    rank: 1,
+    weight: 0,
+    pvpokeRank: null,
+    inMetaGroup: false,
+    sightings: 0,
+    share: null,
+    wins: 0,
+    losses: 0,
+    decided: 0,
+    confidence: 'few',
+    trend: null,
+    barPct: 0,
+    tournamentPicks: 0,
+    tournamentGame1Picks: 0,
+    tournamentWins: 0,
+    tournamentLosses: 0,
+    tournamentUnresolvedForms: 0,
+    banned: false,
+    ...overrides,
+  };
+}
+
+/** A minimal `SpeciesRanking`, for the same reason as `row` above. */
+function ranking(overrides: Partial<SpeciesRanking> = {}): SpeciesRanking {
+  return {
+    source: 'all',
+    say: 0,
+    battles: 0,
+    devices: 0,
+    tournamentSay: 0,
+    tournamentBattles: 0,
+    events: 0,
+    eventsOther: 0,
+    rows: [],
+    weights: new Map(),
+    pvpokeCommit: 'abc1234',
+    pvpokeDate: '2026-09-10',
+    ...overrides,
+  };
+}
+
+// Fix round 1 minor: a direct unit test on `facedFigure` itself, across every source and its
+// null-vs-figure edges, rather than only exercising it indirectly through rendered rows.
+describe('facedFigure', () => {
+  it('is null under prior, regardless of battles', () => {
+    expect(
+      facedFigure(row({ share: 0.5, sightings: 200 }), ranking({ source: 'prior', battles: 480 })),
+    ).toBeNull();
+  });
+
+  it('is null under all when there is nothing to divide by', () => {
+    expect(facedFigure(row(), ranking({ source: 'all', battles: 0 }))).toBeNull();
+  });
+
+  it('is null under all when the row itself has zero sightings, even with battles counted', () => {
+    expect(
+      facedFigure(row({ share: 0, sightings: 0 }), ranking({ source: 'all', battles: 480 })),
+    ).toBeNull();
+  });
+
+  it('is a real figure under all with nonzero sightings', () => {
+    expect(
+      facedFigure(row({ share: 2 / 480, sightings: 2 }), ranking({ source: 'all', battles: 480 })),
+    ).toEqual({ share: 2 / 480, n: 2, of: 480 });
+  });
+
+  it('is null under ladder when there is nothing to divide by', () => {
+    expect(facedFigure(row(), ranking({ source: 'ladder', battles: 0 }))).toBeNull();
+  });
+
+  it('is a real figure under ladder with nonzero sightings', () => {
+    expect(
+      facedFigure(
+        row({ share: 240 / 480, sightings: 240 }),
+        ranking({ source: 'ladder', battles: 480 }),
+      ),
+    ).toEqual({ share: 0.5, n: 240, of: 480 });
+  });
+
+  it('is null under tournament when there are no tournament battles at all', () => {
+    expect(facedFigure(row(), ranking({ source: 'tournament', tournamentBattles: 0 }))).toBeNull();
+  });
+
+  it('is null under tournament when the row has zero picks, even with a nonzero total', () => {
+    expect(
+      facedFigure(
+        row({ tournamentPicks: 0 }),
+        ranking({ source: 'tournament', tournamentBattles: 100 }),
+      ),
+    ).toBeNull();
+  });
+
+  it('is null under tournament when the row is banned, even with nonzero picks and a total', () => {
+    expect(
+      facedFigure(
+        row({ banned: true, tournamentPicks: 40 }),
+        ranking({ source: 'tournament', tournamentBattles: 100 }),
+      ),
+    ).toBeNull();
+  });
+
+  it('is a real figure under tournament with nonzero picks and not banned', () => {
+    expect(
+      facedFigure(
+        row({ tournamentPicks: 40 }),
+        ranking({ source: 'tournament', tournamentBattles: 100 }),
+      ),
+    ).toEqual({ share: 0.4, n: 40, of: 100 });
+  });
+});
 
 describe('Pokemon, the one blend line', () => {
   it('has no "What you face" heading; the blend line and its Term carry that now', () => {
@@ -174,6 +293,31 @@ describe('Pokemon, a measured row', () => {
     expect(measured.closest('.ui-measured')).not.toBeNull();
     const lines = Array.from(figure.children).map((el) => el.textContent);
     expect(lines).toEqual(['50%', '240 of 480 battles', 'went 120-120 some', 'PvPoke #1']);
+  });
+
+  // Fix round 1, Important 1: a share under half a point used to round to "0%" with plain `pct`,
+  // reading as "never faced" when the truth is "faced, just rarely". `pctFloor` (format.ts) is
+  // the same floor Species' own hero uses, so the two never disagree about a small row.
+  it('reads a small share as "<1%", never "0%"', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [faced('azumarill', 2, 1, 1)] });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    const measured = within(row).getByText('<1%');
+    expect(measured.closest('.ui-measured')).not.toBeNull();
+    expect(within(row).queryByText('0%')).toBeNull();
+  });
+
+  // Fix round 1 minor: the trend tag was only ever asserted absent (via the "New" row) or by
+  // proxy (the weight bar test below never checked the tag itself). `previous` needs both windows
+  // at or above TREND_MIN (200) battles and a real gap between their shares, per `trendPoints`.
+  it('shows the trend tag when the previous window backs a real change', () => {
+    renderPokemon({
+      battles: 1000,
+      devices: 9,
+      species: [faced('azumarill', 400, 200, 200)],
+      previous: { battles: 1000, species: [{ speciesId: 'azumarill', sightings: 100 }] },
+    });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    expect(within(row).getByText('+30')).toBeInTheDocument();
   });
 
   it('marks a species PvPoke does not rank as new', () => {
@@ -246,9 +390,10 @@ describe('Pokemon, a measured row', () => {
     expect(within(row).queryByRole('button')).toBeNull();
   });
 
-  // The trend tag and the weight bar are unmoved by ruling 6: they sit on the left, under the
-  // name, same as before this task.
-  it('keeps the trend tag and the weight bar on the left, under the name', () => {
+  // The weight bar is unmoved by ruling 6: it sits on the left, under the name, same as before
+  // this task. The trend tag gets its own dedicated test above (it needs a `previous` window to
+  // render at all).
+  it('keeps the weight bar on the left, under the name', () => {
     renderPokemon({
       battles: 480,
       devices: 9,
@@ -256,6 +401,50 @@ describe('Pokemon, a measured row', () => {
     });
     const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
     expect(row.querySelector('.bar')).not.toBeNull();
+  });
+});
+
+describe('Pokemon, nothing to measure', () => {
+  // Fix round 1, Important 2: this coverage was dropped when the suite was rewritten for ruling
+  // 6. Restored: a row with nothing to divide by (no battles at all, or no tournament battles at
+  // all) shows plain muted words, never a pink figure or a bare percentage.
+  it('under All with no battles at all, reads "Not faced in this window" with no pink figure', () => {
+    renderPokemon({ battles: 0, devices: 0, species: [] });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    expect(within(row).getByText('Not faced in this window')).toBeInTheDocument();
+    expect(row.querySelector('.ui-measured')).toBeNull();
+    expect(within(row).queryByText(/\d+%/)).toBeNull();
+  });
+
+  it('under Tournaments with no tournament battles at all, reads "No tournament battles in this window" with no pink figure', () => {
+    renderPokemon({ source: 'tournament', battles: 480, devices: 9 });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    expect(within(row).getByText('No tournament battles in this window')).toBeInTheDocument();
+    expect(row.querySelector('.ui-measured')).toBeNull();
+    expect(within(row).queryByText(/\d+%/)).toBeNull();
+  });
+
+  // Fix round 1, controller ruling: a row whose own count is zero reads as words too, even when
+  // the source counted plenty of other battles -- the same rule Species' own hero header follows
+  // (Species.tsx's headerText: `d.sightings === 0` -> "Not faced in this window",
+  // `picks === 0` under a nonzero tournament total -> "Not picked in this window").
+  it('under All, a species with zero sightings reads "Not faced in this window" even though the window has battles', () => {
+    renderPokemon({ battles: 480, devices: 9, species: [] });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    expect(within(row).getByText('Not faced in this window')).toBeInTheDocument();
+    expect(row.querySelector('.ui-measured')).toBeNull();
+    expect(within(row).queryByText(/\d+%/)).toBeNull();
+  });
+
+  it('under Tournaments, a species with zero picks reads "Not picked in this window" even though the total is nonzero', () => {
+    renderPokemon({
+      source: 'tournament',
+      tournament: { events: 1, battles: 100, eventsOther: 0, species: [] },
+    });
+    const row = screen.getByText('Azumarill').closest('a') as HTMLElement;
+    expect(within(row).getByText('Not picked in this window')).toBeInTheDocument();
+    expect(row.querySelector('.ui-measured')).toBeNull();
+    expect(within(row).queryByText(/\d+%/)).toBeNull();
   });
 });
 

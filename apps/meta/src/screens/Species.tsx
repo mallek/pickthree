@@ -597,7 +597,7 @@ export function Species(p: {
   // past building the header line, so every card below it kept rendering as if the ladder's own
   // measured numbers applied no matter which source was picked. `isPrior` and `isTournament` are
   // read once here and gate every card the rest of the function draws, the same way Pokemon.tsx's
-  // `facedLine`/`recordOf` and Teams.tsx's `observed` memo already key off `query.source`/
+  // `facedFigure`/`recordOf` and Teams.tsx's `observed` memo already key off `query.source`/
   // `ranking.source` for their own cards.
   const isPrior = p.query.source === 'prior';
   const isTournament = p.query.source === 'tournament';

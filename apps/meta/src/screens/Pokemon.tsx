@@ -19,7 +19,7 @@ import type { ReactNode } from 'react';
 import { Button, ErrorState, Loading, MeasuredValue } from '@pickthree/ui';
 import { Bar, BlendLine, ConfidenceTag, Sprite, TrendTag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
-import { count, pct, plural } from '../format.js';
+import { count, pctFloor, plural } from '../format.js';
 import { PICK3 } from '../links.js';
 import {
   HALF_SAY_BATTLES,
@@ -49,11 +49,12 @@ function blendExplainer(ranking: SpeciesRanking): string {
 
 /**
  * The measured share, count and total behind a row, the one thing the right side leads with. Null
- * when there is nothing to divide by (Ruling 6): under PvPoke there is no measured side at all,
- * and a banned row has no tournament share to show regardless of how many battles the window
- * carries. A row a source counts but never saw (0 picks, 0 sightings) still returns a figure here,
- * a real zero, not null: the null cases are exactly the three the caller falls back to plain words
- * for, never "not enough of a number to bother with".
+ * when there is nothing to divide by (Ruling 6: under PvPoke there is no measured side at all, and
+ * a banned row has no tournament share to show regardless of how many battles the window carries)
+ * OR when the row's own count is zero (fix round 1 controller ruling: a species nobody actually
+ * saw reads as words, not a pink "0%" or "<1%", the same as the Species hero's own headerText).
+ * This is the one place that decides pink figure vs. plain words; `facedWords` below only picks
+ * which words once this has already said no.
  */
 export function facedFigure(
   row: SpeciesRow,
@@ -63,7 +64,7 @@ export function facedFigure(
     return null;
   }
   if (ranking.source === 'tournament') {
-    if (row.banned || ranking.tournamentBattles === 0) {
+    if (row.banned || ranking.tournamentBattles === 0 || row.tournamentPicks === 0) {
       return null;
     }
     return {
@@ -72,21 +73,26 @@ export function facedFigure(
       of: ranking.tournamentBattles,
     };
   }
-  if (row.share === null) {
+  if (row.share === null || row.sightings === 0) {
     return null;
   }
   return { share: row.share, n: row.sightings, of: ranking.battles };
 }
 
 /** The plain words a row falls back to when `facedFigure` is null. Under PvPoke this is never
- *  called: "Nothing measured." already says it once, in the header line, and repeating it on
- *  every row would say the same thing over and over for no reason. */
+ *  called: "Nothing measured." already prints once, in the fine-print line above the list (not
+ *  the header's own blend line), and repeating it on every row would say the same thing over and
+ *  over for no reason. The branches here mirror `facedFigure`'s own null cases in the same order,
+ *  so every null the figure can return has exactly one form of words to explain it. */
 function facedWords(row: SpeciesRow, ranking: SpeciesRanking): string {
   if (ranking.source === 'tournament') {
     if (row.banned) {
       return 'Banned at tournaments';
     }
-    return 'No tournament battles in this window';
+    if (ranking.tournamentBattles === 0) {
+      return 'No tournament battles in this window';
+    }
+    return 'Not picked in this window';
   }
   return 'Not faced in this window';
 }
@@ -135,7 +141,7 @@ function RowFigure({ row, ranking }: { row: SpeciesRow; ranking: SpeciesRanking 
   return (
     <span className="row-figure">
       {ranking.source === 'prior' ? null : figure ? (
-        <MeasuredValue value={`${pct(figure.share)}%`} />
+        <MeasuredValue value={pctFloor(figure.share)} />
       ) : (
         <small>{facedWords(row, ranking)}</small>
       )}
