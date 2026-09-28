@@ -34,7 +34,7 @@ lost its line when there is no collection.
 | State | Dark | Light |
 | --- | --- | --- |
 | `settings-hub`: the Import card with the one primary, the four rows with live summaries ("148 Pokémon · 13 battles", "Sharing on", "System theme · pictures on", "PvPoke data Sep 10 · build 874d675"), Forget in red, the foot line | ![](img/settings-hub-dark.webp) | ![](img/settings-hub-light.webp) |
-| `settings-hub-no-collection`: the Import card as "Import a CSV" alone (no update line), "No collection yet · 0 battles", no Forget | ![](img/settings-hub-no-collection-dark.webp) | ![](img/settings-hub-no-collection-light.webp) |
+| `settings-hub-no-collection`: the Import card as "Import a CSV" alone (no update line), "No collection yet · 0 battles", no Forget. Since round 3 it opens from the Counters cog, so Counters is behind the sheet (after sign-off, see Findings) | ![](img/settings-hub-no-collection-dark.webp) | ![](img/settings-hub-no-collection-light.webp) |
 | `settings-your-data`: Collection ("148 Pokémon · 90 kinds", "Last import"), Your log (Start fresh, Export log, Import log, "Files stay under your control.") | ![](img/settings-your-data-dark.webp) | ![](img/settings-your-data-light.webp) |
 | `settings-log-imported`: the Import log result on one line, "Added 0 sets, skipped 4 already here." | ![](img/settings-log-imported-dark.webp) | ![](img/settings-log-imported-light.webp) |
 | `settings-confirm-fresh`: Start fresh's confirm in the default (violet) tone | ![](img/settings-confirm-fresh-dark.webp) | ![](img/settings-confirm-fresh-light.webp) |
@@ -170,6 +170,7 @@ it; the trainer counter (it shows only once a real count arrives, and automation
 | Final review, Minor: the battle count read had no `.catch`; the Diagnostics empty line was longer than the plan's; a stale comment named the Filters sheet; the clip walk did not say what it leaves. | The read records a `settings-count` error; the line is "No errors recorded."; the comment names About; an element that is itself fixed is not clipped, and the absolute case is named in a comment. | `8b40f19` |
 | Final review, Minor: test gaps (Sharing off on the hub after Stop and delete; the Import log error sentence; Forget closing the sheet; the neutral line checked one level up; an unrestored `window.confirm` spy). | Each is covered or fixed in `settings.test.tsx`. Test only. | `8b40f19` |
 | After sign-off, exclusion by the Pokémon as it battles (Travis, 2026-09-27; `pokemon-detail.md`): Settings had no place to see or clear what is left out of teams. | Your data gains an "Excluded from teams" block after Your log: one chip per excluded Pokémon by the name it battles as, each X named "Include X again", and "Include all again" (violet, `Button variant="secondary"`) behind a default-tone `ConfirmSheet` ("Include every excluded Pokémon again?", "They can appear in team recommendations again.", Include all / Keep them out). With none excluded it reads "None excluded. Turn a Pokémon off on its page to leave it out of teams." The list is the same component as Teams' Filters sheet (`ExcludedList`). `settings.test.tsx` pins the order, the line, X, the confirm's cancel and confirm. New captures, both enforced: `settings-your-data-excluded` (two seeded exclusions, Melmetal and Shadow Greninja, the saved settings restored after) ![](img/settings-your-data-excluded-dark.webp) ![](img/settings-your-data-excluded-light.webp) and `settings-confirm-include-all` ![](img/settings-confirm-include-all-dark.webp) ![](img/settings-confirm-include-all-light.webp). Re-converted: `settings-your-data` (dark and light), which now ends with the block and its "None excluded" line. `web:audit` 2026-09-27 (`c6b4819` code, `PICK3_BUILD=874d675`): exit 0, zero findings on every enforced Settings name in both themes, no NEVER line; checked by eye in both themes. | `c6b4819`, and the commit adding this row |
+| After sign-off, round 3 (Counters, 2026-09-28): the no-collection hub was shot from the Teams cog (Ruling 12), so no capture checked that the Counters cog opens Settings. | `screens.mjs` opens it from the Counters top header's cog again, with the same hub checks; the Teams-side step is gone. The pair above is re-converted from the Counters record's run (`aedfd95` code, `PICK3_BUILD=874d675`): the same hub, "Import a CSV" alone, "No collection yet · 0 battles", no Forget, with Counters behind the sheet. `web:audit` exit 0, zero findings on every enforced name in both themes, no NEVER line; checked by eye in both themes. | `f694bb7`, and the commit adding this row |
 
 ## Rulings
 
@@ -246,9 +247,9 @@ Made while building:
   the button alone; "Update or replace the collection on this phone." shows only when there is a
   collection to update (`settings-hub-no-collection`, tested). CLAUDE.md's Screens line now names
   `settings/` instead of the deleted `Sheet`.
-- **Round 3 (Counters) must move `settings-hub-no-collection` back to the Counters no-collection
-  cog** (Ruling 12), restoring the check that the Counters cog opens Settings, once Counters
-  passes its own audit.
+- **Done after sign-off (round 3, `f694bb7`): `settings-hub-no-collection` is back on the
+  Counters no-collection cog** (Ruling 12), restoring the check that the Counters cog opens
+  Settings, now that Counters passes its own audit (see Findings and `counters.md`).
 - **Smaller, deferred during the build:**
   - The `Switch` row's gap is 8px; the old `.toggle` rows use 12px.
   - The Your data summary shows no battle count for a moment, until the log is read.
