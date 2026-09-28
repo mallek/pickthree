@@ -15,7 +15,8 @@ export interface MatrixSimDeps {
   onProgress?: (done: number, total: number) => void;
 }
 
-function specFor(f: MatrixFighter, shields: number, energy: number): SimPokemonSpec {
+/** A fighter as the simulator takes it: the fast move and up to two charged moves. */
+export function specFor(f: MatrixFighter, shields: number, energy: number): SimPokemonSpec {
   return {
     speciesId: f.speciesId,
     fastMove: f.moveset[0] ?? '',

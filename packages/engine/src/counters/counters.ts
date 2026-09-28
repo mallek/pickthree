@@ -10,8 +10,7 @@ import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js'
 import type { MatchupMatrix, MetaEntry, RankingCategory, RankingEntry } from '../gamedata/types.js';
 import { simOptionsFor } from '../gamedata/league.js';
 import { MatrixView } from '../search/matrixView.js';
-import type { SimPokemonSpec } from '../sim/BattleSimulator.js';
-import { simulateMatrix, type MatrixSimDeps } from '../sim/matrixSim.js';
+import { simulateMatrix, specFor, type MatrixSimDeps } from '../sim/matrixSim.js';
 import { profileFor, type FacingInput } from '../yourmeta/facing.js';
 import { facingLine } from '../yourmeta/profile.js';
 
@@ -169,21 +168,53 @@ export interface CountersData {
 }
 
 /**
+ * A counter's moveset: the rankings' recommended moveset with the data build's overrides, as the
+ * matrix recorded it for its row. The matrix and the simulated column both battle it.
+ */
+function counterMoveset(data: CountersData, speciesId: string): string[] {
+  return data.matrix.candidateMovesets[speciesId] ?? [];
+}
+
+/**
+ * An outsider's moveset: its overall rankings entry's, the one its simulated column battles.
+ * Null when there is no entry, or it lacks a charged move.
+ */
+function outsiderMoveset(data: CountersData, vs: string): string[] | null {
+  const entry = data.rankings.overall.find((e) => e.speciesId === vs);
+  return entry && entry.moveset.length >= 2 ? entry.moveset : null;
+}
+
+/**
+ * A meta-group opponent's moveset: the meta group's, the one its matrix column battled. PvPoke
+ * lists a few species twice with different movesets (forretress_shadow in Great League); the
+ * first listing is taken on purpose, since the matrix's per-species opponentMovesets keeps only
+ * the last and so cannot say which one the grid used.
+ */
+function metaMoveset(data: CountersData, vs: string): string[] {
+  const first = data.meta.find((m) => m.speciesId === vs);
+  if (first) {
+    // As the data build does: a battle uses two charged moves.
+    return [first.fastMove, ...first.chargedMoves.slice(0, 2)];
+  }
+  return data.matrix.opponentMovesets[vs] ?? [];
+}
+
+/**
  * The matrix column the data build would have written for `vs`, had it been in the meta group:
  * the top ranked species against it at its ranking moveset, in the matrix's shield scenarios.
  * Null when the species has no ranking entry to take a moveset from.
  */
 function simulateColumn(data: CountersData, vs: string, live: CountersLive): MatchupMatrix | null {
-  const entry = data.rankings.overall.find((e) => e.speciesId === vs);
-  if (!entry || entry.moveset.length < 2) {
+  const moveset = outsiderMoveset(data, vs);
+  if (!moveset) {
     return null;
   }
   const src = data.matrix;
   const candidates = src.candidates
     .filter((id) => id !== vs)
     .slice(0, SIMULATED_CANDIDATES)
-    .map((id) => ({ speciesId: id, moveset: src.candidateMovesets[id] ?? [] }));
-  return simulateMatrix(src, candidates, [{ speciesId: vs, moveset: entry.moveset }], live);
+    .map((id) => ({ speciesId: id, moveset: counterMoveset(data, id) }));
+  return simulateMatrix(src, candidates, [{ speciesId: vs, moveset }], live);
 }
 
 /**
@@ -307,29 +338,6 @@ export function metaCounters(
 /** Shield counts on each side of the grid: 0, 1 and 2. */
 const GRID_SHIELDS = [0, 1, 2] as const;
 
-/**
- * The moveset a species fights with in the matrix: the rankings' recommended moveset (with the
- * data build's overrides) as the matrix recorded it, else the rankings entry itself.
- */
-function rankingMoveset(data: CountersData, speciesId: string): string[] {
-  return (
-    data.matrix.candidateMovesets[speciesId] ??
-    data.rankings.overall.find((e) => e.speciesId === speciesId)?.moveset ??
-    data.matrix.opponentMovesets[speciesId] ??
-    []
-  );
-}
-
-function gridSpec(speciesId: string, moveset: string[], shields: number): SimPokemonSpec {
-  return {
-    speciesId,
-    fastMove: moveset[0] ?? '',
-    chargedMoves: moveset.slice(1, 3),
-    shields,
-    startEnergyTurns: 0,
-  };
-}
-
 function cellsWon(grid: number[]): number {
   return grid.filter((r) => r > 500).length;
 }
@@ -340,11 +348,11 @@ function meanRating(grid: number[]): number {
 
 /**
  * Every shield pairing against one opponent: nine battles per counter, your shields 0..2 by
- * theirs 0..2, at PvPoke default IVs with the league's simulator options, the same inputs as the
- * matrix: the rankings' moveset for the counter, and for the opponent the meta group's moveset
- * when it is in the meta group (the rankings' otherwise). Fills in batches, reporting each batch in the
- * incoming order, then sorts by cells won out of nine, then mean rating, then PvPoke overall rank,
- * and renumbers antiRank (and the gap) from that order.
+ * theirs 0..2, at PvPoke default IVs with the league's simulator options and the movesets that
+ * chose the rows: the counter at its matrix row's moveset; the opponent at its meta group moveset
+ * (first listing) when it has a matrix column, else at its rankings moveset, as its simulated
+ * column. Fills in batches, reporting each batch in the incoming order, then sorts by cells won
+ * out of nine, then mean rating, then PvPoke overall rank, and renumbers antiRank (and the gap).
  */
 export function counterGrids(
   data: CountersData,
@@ -356,24 +364,23 @@ export function counterGrids(
 ): { entries: CounterEntry[]; gridMs: number } {
   const started = Date.now();
   const simOptions = simOptionsFor(live.league);
-  // A meta-group opponent fights at the meta group's moveset, the one the matrix battled when it
-  // chose these rows; an outsider keeps the rankings' moveset, as its simulated column did.
-  const theirs = data.matrix.opponents.includes(vs)
-    ? (data.matrix.opponentMovesets[vs] ?? rankingMoveset(data, vs))
-    : rankingMoveset(data, vs);
+  // The opponent at the moveset that chose these rows: its matrix column's, or for an outsider
+  // its simulated column's.
+  const theirs = {
+    speciesId: vs,
+    moveset: data.matrix.opponents.includes(vs)
+      ? metaMoveset(data, vs)
+      : (outsiderMoveset(data, vs) ?? []),
+  };
   const out = entries.map((e) => ({ ...e }));
   const step = Math.max(1, Math.floor(batchSize));
   for (let i = 0; i < out.length; i++) {
     const e = out[i]!;
-    const yours = rankingMoveset(data, e.speciesId);
+    const yours = { speciesId: e.speciesId, moveset: counterMoveset(data, e.speciesId) };
     const grid: number[] = [];
     for (const mine of GRID_SHIELDS) {
       for (const their of GRID_SHIELDS) {
-        const r = live.sim.simulate(
-          gridSpec(e.speciesId, yours, mine),
-          gridSpec(vs, theirs, their),
-          simOptions,
-        );
+        const r = live.sim.simulate(specFor(yours, mine, 0), specFor(theirs, their, 0), simOptions);
         grid.push(r.rating);
       }
     }

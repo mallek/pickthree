@@ -7,6 +7,7 @@ import { GameDataIndex } from '../../src/gamedata/index.js';
 import { simOptionsFor } from '../../src/gamedata/league.js';
 import { facingWeight } from '../../src/gamedata/metaRank.js';
 import { MatrixView } from '../../src/search/matrixView.js';
+import { simulateMatrix } from '../../src/sim/matrixSim.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData, readGameMaster } from '../fixtures.js';
 
 describe('facing weight', () => {
@@ -261,5 +262,69 @@ describe.skipIf(!haveStaticData())('the shield grid against a meta-group opponen
         [0, 1, 2].map((sc) => view.rating(row, col, sc)),
       );
     }
+  });
+
+  // PvPoke lists a few species twice with different movesets; the grid takes the first listing.
+  const twice = data.matrix.opponents.find(
+    (id, i) =>
+      data.matrix.opponents.indexOf(id) === i && data.matrix.opponents.lastIndexOf(id) !== i,
+  );
+
+  it.skipIf(!twice)('takes the first listing of a species the meta group lists twice', () => {
+    const r = metaCounters(data, [], index, { limit: 5, vs: twice! }, live);
+    const { entries } = counterGrids(data, twice!, r.entries, live);
+    const first = data.matrix.opponents.indexOf(twice!);
+    expect(entries.length).toBeGreaterThan(0);
+    for (const c of entries) {
+      const row = view.rowOf(c.speciesId)!;
+      expect([c.grid![0], c.grid![4], c.grid![8]]).toEqual(
+        [0, 1, 2].map((sc) => view.rating(row, first, sc)),
+      );
+    }
+  });
+});
+
+describe.skipIf(!haveStaticData())('the shield grid against an outsider', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const sim = new PvPokeSimulator(loadPvPokeInNode(readGameMaster()));
+  const live = { sim, league: data.league };
+  const cols = new Set(data.matrix.opponents);
+  const entry = data.rankings.overall.find((e) => !cols.has(e.speciesId) && e.moveset.length >= 3)!;
+  const outsider = entry.speciesId;
+  // Its matrix row is given a different moveset from its rankings entry (here one charged move,
+  // not two); 18 outsiders in the shipped data differ that way. The simulated column battles the
+  // rankings moveset, so the grid must too.
+  const tampered = {
+    ...data,
+    matrix: {
+      ...data.matrix,
+      candidateMovesets: {
+        ...data.matrix.candidateMovesets,
+        [outsider]: entry.moveset.slice(0, 2),
+      },
+    },
+  };
+
+  it('battles at the moveset its simulated column used, so equal shields agree with it', () => {
+    const r = metaCounters(tampered, [], index, { limit: 10, vs: outsider }, live);
+    expect(r.vs?.inMeta).toBe(false);
+    const { entries } = counterGrids(tampered, outsider, r.entries, live);
+    expect(entries.length).toBeGreaterThan(0);
+    const column = simulateMatrix(
+      tampered.matrix,
+      entries.map((c) => ({
+        speciesId: c.speciesId,
+        moveset: tampered.matrix.candidateMovesets[c.speciesId]!,
+      })),
+      [{ speciesId: outsider, moveset: entry.moveset }],
+      live,
+    );
+    const view = new MatrixView(column);
+    entries.forEach((c, i) => {
+      expect([c.grid![0], c.grid![4], c.grid![8]]).toEqual(
+        [0, 1, 2].map((sc) => view.rating(i, 0, sc)),
+      );
+    });
   });
 });
