@@ -2077,20 +2077,6 @@ textarea.paste {
   margin-right: calc(var(--gutter) - 12px);
 }
 
-/* The round link to the sister site, meta.pick3.gg: `.head-cog`'s own 36px circle (see below),
-   sitting to the left of the settings cog on the four tab-root screens' page-head row
-   (Teams.tsx, Counters.tsx, Collection.tsx, YourMeta.tsx). It is an `<a>`, not a `<button>`, so it
-   needs its own color and underline reset to match `HeadCog`, which is a plain `<button
-   class="head-cog">` and gets both for free from the global `button` and `:active` rules. */
-.meta-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  color: inherit;
-  text-decoration: none;
-}
-
 /* matchup grid, opponents as rows */
 .ogrid {
   display: flex;
@@ -2207,17 +2193,6 @@ textarea.paste {
 }
 .safe-types .ui-btn {
   padding-inline: 0;
-}
-.counter-row.counter-row {
-  font: inherit;
-  cursor: pointer;
-}
-button.counter-row {
-  background: transparent;
-  border-left: 0;
-  border-right: 0;
-  border-top: 0;
-  text-align: left;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) .mtag.good {
@@ -2437,21 +2412,84 @@ button.counter-row {
   word-break: break-all;
 }
 
-/* counters */
-.head-link {
-  text-decoration: none;
-  color: var(--muted);
+/* Counters: the Against picker and the filter icon on one row, the line with Sort under it, then
+   rows (not links) whose labeled links sit on their last line. */
+/* Jumped to (the sub header): the header and the controls stick together, as Log a Battle's. */
+.counters-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg);
+}
+.counters-head .hdr {
+  position: static;
+  border-bottom: 0;
+}
+.counters-head .page-head {
+  position: static;
+  padding-top: 4px;
+}
+/* The picker fills the row, the filter icon sits at its right, their bottoms aligned. */
+.counters-controls {
+  display: flex;
+  gap: var(--space);
+  align-items: flex-end;
+}
+.counters-controls > .field {
+  flex: 1;
+}
+/* A button that opens the Against sheet, drawn as the Select it stands beside elsewhere. */
+.counters-pick {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 36px 0 14px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--divider);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.counters-pick:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* The one line before the rows: the facing sentence on the left, Sort on the right. */
+.counters-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space);
+  min-height: 32px;
+  margin: -6px 0;
+}
+.counters-line > .meta {
+  min-width: 0;
+}
+.counters-line .ui-inline-select {
+  flex: none;
+  white-space: nowrap;
 }
 .counter-row {
-  text-decoration: none;
-  color: inherit;
   display: grid;
   grid-template-columns: 44px 1fr auto;
-  gap: 12px;
+  gap: 0 12px;
   align-items: start;
   padding: 12px 0;
   border-bottom: 1px solid var(--divider);
   width: 100%;
+}
+.counter-main {
+  min-width: 0;
+}
+.counter-rank {
+  display: block;
 }
 .counter-line {
   display: block;
@@ -2459,12 +2497,69 @@ button.counter-row {
   margin-top: 4px;
   line-height: 1.35;
 }
-.counter-own {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 12px;
+/* Labeled links on the row's last line, across its full width so two fit on one line: the text
+   buttons' side padding hangs into the gutter, their 44px height into the row's bottom padding. */
+.counter-links {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space);
+  margin: 2px 0 -10px -8px;
+}
+.counter-links .ui-btn {
+  font-size: var(--fs-support);
+}
+/* One opponent: the shield grid with its "shields" caption, a Term whose note opens below the
+   caption across the row rather than down the narrow score column. */
+.counter-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.counter-grid .term-wrap {
+  position: relative;
+}
+.counter-grid .term-tip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 2;
+  width: min(260px, calc(100vw - 2 * var(--gutter)));
+  text-align: left;
+}
+/* The Against sheet: the search, its matches, The whole meta last; the Filters sheet's Seg. */
+.counters-against {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.counters-note {
+  margin: 0;
+}
+.counters-whole {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--tap);
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-body);
   font-weight: 500;
-  color: var(--accent);
+  text-align: left;
+}
+.counters-whole svg {
+  color: var(--muted);
+}
+.counters-filters .seg > * {
+  min-height: var(--tap);
 }
 .anti {
   display: flex;

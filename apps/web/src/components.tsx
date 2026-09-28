@@ -200,10 +200,11 @@ export function useSpeciesSearch(query: string, limit = 30): string[] {
   return hits.slice(0, limit);
 }
 
-/** "#18 overall" and "#5 closer" pills for a species, nothing outside the top 50. */
-export function MetaTags({ speciesId }: { speciesId: string }) {
+/** "#18 overall" and "#5 closer" pills for a species, nothing outside the top 50. `overall`
+ * false leaves out the overall-rank pill, for a row whose own line already states that rank. */
+export function MetaTags({ speciesId, overall = true }: { speciesId: string; overall?: boolean }) {
   const rank = useMetaRank()(speciesId);
-  const tags = metaTags(rank);
+  const tags = metaTags(rank).filter((t) => overall || !t.endsWith(' overall'));
   if (tags.length === 0) {
     return null;
   }
@@ -298,10 +299,10 @@ export function Mark({ height = 22 }: { height?: number }) {
 
 export const META_URL = 'https://meta.pick3.gg';
 
-/** Three ascending bars, suggesting rankings: the glyph for the `MetaButton` below. Not the pick3
- * mark. On pick3's own header the pick3 mark means "home", so wearing it on a link that leaves
- * would read backwards; a destination badge should depict the destination, not the app it sits
- * in. Drawn in `currentColor` at the same stroke weight and size as this app's other head-row
+/** Three ascending bars, suggesting rankings: the glyph for the meta.pick3.gg `IconButton` on
+ * the tab headers. Not the pick3 mark. On pick3's own header the pick3 mark means "home", so
+ * wearing it on a link that leaves would read backwards; a destination badge should depict the
+ * destination, not the app it sits in. Drawn in `currentColor` at the same stroke weight and size as this app's other head-row
  * icons (ShareGlyph, HeadCog: 20px, 1.8 stroke, round caps and joins), so it takes pick3's own
  * ink rather than meta's violet and looks native here. */
 export function MetaGlyph() {
@@ -321,30 +322,6 @@ export function MetaGlyph() {
       <path d="M12 18V10" />
       <path d="M18 18V6" />
     </svg>
-  );
-}
-
-/** The round icon button linking to the sister site, meta.pick3.gg: pick3's own `.head-cog`
- * shape (36px circle) sitting to the left of the settings cog, on all four tab-root screens
- * (Teams, Counters, Collection, Your Meta). It used to be a bordered pill with a visible "meta"
- * label, which read as a second control family next to the cog and, on Teams and Collection,
- * fought the Pokemon count already in that row; an icon in the cog's own shape reads as one
- * control family instead. It does not live in the shared `Header` used by the back-button
- * screens, which route to it a different way (Your Meta's own contextual card).
- *
- * There is no visible label, so the accessible name is the whole story: "meta, the community
- * meta", since a bare "meta" read aloud would name nothing. The glyph carries its own
- * aria-hidden. */
-export function MetaButton() {
-  return (
-    <a
-      className="head-cog meta-button"
-      href={META_URL}
-      aria-label="meta, the community meta"
-      title="meta, the community meta"
-    >
-      <MetaGlyph />
-    </a>
   );
 }
 

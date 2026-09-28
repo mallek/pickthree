@@ -1,34 +1,70 @@
 import type { CounterEntry, CounterMatchup } from '@pickthree/engine';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Chevron } from '@pickthree/ui';
 import {
-  Chip,
-  HeadCog,
-  MetaButton,
+  Button,
+  Chevron,
+  Empty,
+  FilterButton,
+  Header,
+  IconButton,
+  InlineSelect,
+  Term,
+  type ChoiceOption,
+} from '@pickthree/ui';
+import { useEffect, useId, useState, type ReactNode } from 'react';
+import {
+  CogGlyph,
+  META_URL,
+  MetaGlyph,
   MetaTags,
   PokemonToken,
   Progress,
   TypeChips,
   useName,
+  useScrollMemory,
   useSpecies,
+  useSticky,
 } from '../components.tsx';
-import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { ShieldGrid } from '../components/ShieldGrid.tsx';
 import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
+import { canGoBack } from '../state/history.ts';
+import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { CountersAgainst } from './CountersAgainst.tsx';
+import { CountersFilters, OWN_DEFAULT, OWN_KEY, type CountersOwn } from './CountersFilters.tsx';
 
-type Own = 'all' | 'have' | 'build';
+type Sort = 'best' | 'radar';
+const SORTS: ChoiceOption<Sort>[] = [
+  { value: 'best', label: 'Best' },
+  // Strong against the meta but ranked lower overall than that suggests (the engine's gap).
+  { value: 'radar', label: 'Under the radar' },
+];
 
+const SHIELDS_NOTE =
+  "Each cell is one battle at PvPoke's movesets and default IVs: your shields down the side, theirs across the top. W is a win, L a loss; an outlined cell is close.";
+
+/**
+ * Counters, and Who Beats X: one page. The Against picker switches between the whole meta and
+ * one opponent in place (replacing the history entry), so Back always leaves the page for where
+ * the player came from. Opened by a jump (Your Meta's "Who beats it", marked `from` on the route)
+ * with pick3 history behind it, the header is a sub header with Back; otherwise the tab's own.
+ */
 export function Counters() {
   const s = useAppState();
-  const { loadCounters, navigate, setPick, setLeague } = useActions();
+  const { back, loadCounters, navigate, openSheet, setPick, setLeague } = useActions();
   const league = useLeague();
   const name = useName();
   const species = useSpecies();
-  const [own, setOwn] = useState<Own>('all');
-  const [radar, setRadar] = useState(false);
-  /** Species to score against instead of the whole meta, from the Your meta most-faced rows. */
-  const vs = s.route.screen === 'counters' ? (s.route.vs ?? null) : null;
+  const [ownPicked] = useSticky<CountersOwn>(OWN_KEY, OWN_DEFAULT);
+  const [sort, setSort] = useSticky<Sort>('counters.sort', 'best');
+  const [sheet, setSheet] = useState<'against' | 'filters' | null>(null);
+  const labelId = useId();
+  const valueId = useId();
+  const route = s.route.screen === 'counters' ? s.route : null;
+  /** Species to score against instead of the whole meta. */
+  const vs = route?.vs ?? null;
+  /** The back mark: opened by a jump from another screen. */
+  const from = route?.from === true;
   /** League named on a link from meta.pick3.gg; the app's own links never carry one. */
-  const routeLeague = s.route.screen === 'counters' ? (s.route.league ?? null) : null;
+  const routeLeague = route?.league ?? null;
   const knownRouteLeague =
     routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
   const stale = s.counters === null || s.countersVs !== vs;
@@ -51,6 +87,8 @@ export function Counters() {
   }, [s.boot, s.leagueInfo, stale, s.countersLoading, loadCounters, vs, switchingLeague]);
 
   const counters = stale ? null : s.counters;
+  // Without a collection nothing is owned, so a filter left on from before would hide every row.
+  const own: CountersOwn = s.collection ? ownPicked : 'all';
   let rows: CounterEntry[] = counters?.entries ?? [];
   if (own === 'have') {
     rows = rows.filter((c) => c.owned === 'have');
@@ -58,114 +96,161 @@ export function Counters() {
   if (own === 'build') {
     rows = rows.filter((c) => c.owned !== 'none');
   }
-  if (radar) {
+  if (sort === 'radar') {
     rows = [...rows].sort((a, b) => b.gap - a.gap || a.antiRank - b.antiRank);
   }
+  useScrollMemory('counters.scroll', rows.length > 0);
+
+  /** The species of the copy that is or becomes this counter, null when it is not in the
+   * collection (none imported, or gone since the scores were computed). */
   const specimenSpecies = (id: string | null): string | null => {
     const sp = id ? s.collection?.specimens.find((x) => x.id === id) : undefined;
     return sp ? sp.speciesId : null;
   };
   const oppText = (m: CounterMatchup): string =>
     m.opponentRank ? `${name(m.opponent)} #${m.opponentRank}` : name(m.opponent);
+  const pick = (next: string | null): void => {
+    setSheet(null);
+    navigate(
+      { screen: 'counters', ...(next ? { vs: next } : {}), ...(from ? { from: true } : {}) },
+      { replace: true },
+    );
+  };
+
+  const settings = (
+    <IconButton label="Settings" onClick={openSheet}>
+      <CogGlyph />
+    </IconButton>
+  );
+  const jumped = from && canGoBack();
+  const header = jumped ? (
+    <Header
+      variant="sub"
+      title="Counters"
+      back={{ label: 'Back', onClick: () => back({ screen: 'meta' }) }}
+      actions={settings}
+    />
+  ) : (
+    <Header
+      variant="top"
+      title="Counters"
+      actions={
+        <>
+          <IconButton label="meta.pick3.gg, the community meta" href={META_URL}>
+            <MetaGlyph />
+          </IconButton>
+          {settings}
+        </>
+      }
+    />
+  );
+
+  const metaSize = s.leagueInfo?.metaSize;
+  const against = vs
+    ? name(vs)
+    : metaSize !== undefined
+      ? `The whole meta (${metaSize})`
+      : 'The whole meta';
+  let line: ReactNode;
+  if (!s.collection) {
+    line = (
+      <>
+        <a href={hashFor({ screen: 'import' })}>Import</a> your collection to mark the ones you own.
+      </>
+    );
+  } else if (vs) {
+    line = "PvPoke's movesets; your log doesn't apply";
+  } else {
+    line = counters?.facing ?? null;
+  }
+  const controls = (
+    <>
+      <LeagueSwitcher compact />
+      <div className="counters-controls">
+        <div className="field">
+          <span className="field-l" id={labelId}>
+            Against
+          </span>
+          <span className="select-wrap">
+            <button
+              type="button"
+              className="counters-pick"
+              aria-haspopup="dialog"
+              aria-labelledby={`${labelId} ${valueId}`}
+              onClick={() => setSheet('against')}
+            >
+              <span id={valueId}>{against}</span>
+            </button>
+            <Chevron dir="down" />
+          </span>
+        </div>
+        {s.collection ? (
+          <FilterButton
+            iconOnly
+            count={own === 'all' ? 0 : 1}
+            onClick={() => setSheet('filters')}
+          />
+        ) : null}
+      </div>
+      <div className="counters-line">
+        <span className="meta">{line}</span>
+        <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
+      </div>
+    </>
+  );
+
+  let empty: string | null = null;
+  if (counters && rows.length === 0 && (!s.countersLoading || counters.entries.length > 0)) {
+    empty =
+      counters.vs && !counters.vs.inMeta && counters.vs.simulated === undefined
+        ? `PvPoke does not rank ${name(counters.vs.speciesId)} in ${league.title}, so pick3 has no moveset to simulate it with.`
+        : 'Nothing here yet. Try another filter.';
+  }
 
   return (
     <div className="screen">
-      <div className="page-head">
-        {vs ? (
-          <button
-            type="button"
-            className="back"
-            style={{ marginBottom: -6 }}
-            onClick={() => navigate({ screen: 'meta' })}
-          >
-            <Chevron dir="left" /> Your Meta
-          </button>
-        ) : null}
-        <div className="between">
-          <h2>{vs ? `Who Beats ${name(vs)}` : 'Counters'}</h2>
-          <span className="row">
-            {vs ? null : (
-              <span className="meta">vs {s.leagueInfo?.metaSize ?? '...'} meta Pokémon</span>
-            )}
-            <MetaButton />
-            <HeadCog />
-          </span>
+      {jumped ? (
+        <div className="counters-head">
+          {header}
+          <div className="page-head">{controls}</div>
         </div>
-        <LeagueSwitcher compact />
-        {vs ? (
-          <p className="meta" style={{ margin: 0 }}>
-            {counters?.vs?.simulated
-              ? `The top ${counters.vs.simulated} ranked ${league.title} species`
-              : `Every ranked ${league.title} species`}{' '}
-            that wins at least one of the three shield scenarios against {name(vs)}, best first.{' '}
-            <a href={hashFor({ screen: 'counters' })}>Back to the whole meta</a>
-          </p>
-        ) : (
-          <p className="meta" style={{ margin: 0 }}>
-            Who beats the current {league.title} meta, weighted by how often you meet each opponent.
-            Under the radar means strong against the meta but ranked lower than that suggests.
-          </p>
-        )}
-        {counters ? (
-          <p className="meta" style={{ margin: 0 }}>
-            {counters.facing}.
-          </p>
-        ) : null}
-        {s.collection ? null : (
-          <p className="meta" style={{ margin: 0 }}>
-            <a href={hashFor({ screen: 'import' })}>Import your collection</a> and pick3 marks the
-            ones you own or can build.
-          </p>
-        )}
-        <div className="chips">
-          <Chip on={own === 'all'} onClick={() => setOwn('all')}>
-            All
-          </Chip>
-          {s.collection ? (
-            <>
-              <Chip on={own === 'have'} onClick={() => setOwn('have')}>
-                You own
-              </Chip>
-              <Chip on={own === 'build'} onClick={() => setOwn('build')}>
-                Own or can build
-              </Chip>
-            </>
-          ) : null}
-          <Chip on={radar} onClick={() => setRadar((x) => !x)}>
-            Under the radar
-          </Chip>
+      ) : (
+        <div className="page-head">
+          {header}
+          {controls}
         </div>
-      </div>
+      )}
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
-        {s.countersLoading && !counters ? (
-          s.countersProgress ? (
-            <Progress
-              stage={s.countersProgress.stage}
-              done={s.countersProgress.done}
-              total={s.countersProgress.total}
-            />
-          ) : (
-            <Progress stage="counters" done={0} total={0} />
-          )
+        {s.boot === 'loading' && !counters ? <Progress stage="boot" done={0} total={0} /> : null}
+        {s.countersLoading ? (
+          <Progress
+            stage={s.countersProgress?.stage ?? 'counters'}
+            done={s.countersProgress?.done ?? 0}
+            total={s.countersProgress?.total ?? 0}
+          />
         ) : null}
         {rows.map((c) => {
-          const href = c.ownedSpecimenId
-            ? hashFor({ screen: 'specimen', id: c.ownedSpecimenId })
-            : null;
-          const from = specimenSpecies(c.ownedSpecimenId);
-          const inner: ReactNode = (
-            <>
+          const mine = c.owned === 'none' ? null : specimenSpecies(c.ownedSpecimenId);
+          const view =
+            mine && c.ownedSpecimenId
+              ? {
+                  href: hashFor({ screen: 'specimen', id: c.ownedSpecimenId }),
+                  label: c.owned === 'have' ? 'View yours' : `View your ${name(mine)}`,
+                }
+              : null;
+          return (
+            <div className="counter-row" key={c.speciesId}>
               <PokemonToken speciesId={c.speciesId} size={44} />
-              <span style={{ minWidth: 0 }}>
+              <span className="counter-main">
                 <span className="spec-name">
                   {name(c.speciesId)}
                   <TypeChips types={species(c.speciesId)?.types ?? ['normal', 'none']} small />
                 </span>
-                <span className="meta" style={{ display: 'block' }}>
+                <span className="meta counter-rank">
                   {vs ? `#${c.antiRank} vs ${name(vs)}` : `#${c.antiRank} vs meta`} ·{' '}
                   {c.overallRank ? `#${c.overallRank} overall` : 'unranked'}
                 </span>
-                <MetaTags speciesId={c.speciesId} />
+                <MetaTags speciesId={c.speciesId} overall={false} />
                 {c.beats.length > 0 ? (
                   <span className="counter-line">Beats {c.beats.map(oppText).join(', ')}</span>
                 ) : null}
@@ -174,47 +259,43 @@ export function Counters() {
                     Loses to {c.losesTo.map(oppText).join(', ')}
                   </span>
                 ) : null}
-                {c.owned === 'have' ? (
-                  <span className="counter-own">You own one &rsaquo;</span>
-                ) : c.owned === 'build' && from ? (
-                  <span className="counter-own">Build from your {name(from)} &rsaquo;</span>
-                ) : (
-                  <span className="counter-own faint">Tap to build a team around it &rsaquo;</span>
-                )}
               </span>
-              <span className="anti">
-                <b>{Math.round(c.antiMeta)}%</b>
-                <small>{vs ? 'of fights' : 'of meta'}</small>
+              {vs ? (
+                <span className="counter-grid">
+                  <ShieldGrid grid={c.grid} size="row" />
+                  <Term term="shields">{SHIELDS_NOTE}</Term>
+                </span>
+              ) : (
+                <span className="anti">
+                  <b>{Math.round(c.antiMeta)}%</b>
+                  <small>of the meta</small>
+                </span>
+              )}
+              <span className="counter-links">
+                <Button
+                  variant="text"
+                  onClick={() => {
+                    setPick(0, { kind: 'species', id: c.speciesId });
+                    navigate({ screen: 'build' });
+                  }}
+                >
+                  Build a team around it &rsaquo;
+                </Button>
+                {view ? (
+                  <Button variant="text" href={view.href}>
+                    {view.label} &rsaquo;
+                  </Button>
+                ) : null}
               </span>
-            </>
-          );
-          return href ? (
-            <a className="counter-row" key={c.speciesId} href={href}>
-              {inner}
-            </a>
-          ) : (
-            <button
-              type="button"
-              className="counter-row"
-              key={c.speciesId}
-              title="Build a team around it"
-              onClick={() => {
-                setPick(0, { kind: 'species', id: c.speciesId });
-                navigate({ screen: 'build' });
-              }}
-            >
-              {inner}
-            </button>
+            </div>
           );
         })}
-        {counters && rows.length === 0 ? (
-          <p className="muted" style={{ padding: '32px 12px', textAlign: 'center' }}>
-            {counters.vs && !counters.vs.inMeta
-              ? `PvPoke does not rank ${name(counters.vs.speciesId)} in ${league.title}, so pick3 has no moveset to simulate it with.`
-              : 'Nothing here yet. Try another filter.'}
-          </p>
-        ) : null}
+        {empty ? <Empty line={empty} /> : null}
       </div>
+      {sheet === 'against' ? (
+        <CountersAgainst onClose={() => setSheet(null)} onPick={pick} />
+      ) : null}
+      {sheet === 'filters' ? <CountersFilters onClose={() => setSheet(null)} /> : null}
     </div>
   );
 }
