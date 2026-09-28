@@ -255,4 +255,6 @@ Made while building:
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-27 (used the live page: "Design looks good"; asked for exclusion by the Pokémon
+  as it battles, shipped in `9046dad` and confirmed "That works great"; Remove as the outlined
+  danger button is fine; the Built tag pill shipped in `f9313d4`).

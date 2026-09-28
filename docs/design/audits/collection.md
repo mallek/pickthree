@@ -227,4 +227,6 @@ Made while building:
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-27 (used the live page: "Design looks good"; ruled on the open items: the Built
+  tag gets a real pill, groups show the copy that earned their place (option 2); both shipped in
+  `f9313d4` and `515829e`).
