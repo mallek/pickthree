@@ -6,6 +6,7 @@ import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { simOptionsFor } from '../../src/gamedata/league.js';
 import { facingWeight } from '../../src/gamedata/metaRank.js';
+import { MatrixView } from '../../src/search/matrixView.js';
 import { haveStaticData, loadFixtureCsv, loadStaticData, readGameMaster } from '../fixtures.js';
 
 describe('facing weight', () => {
@@ -166,17 +167,19 @@ describe.skipIf(!haveStaticData())('the shield grid against one opponent', () =>
     }
     // One cell off the diagonal, battled directly: yours 0, theirs 1 is index 1.
     const c = filled.entries[0]!;
-    const ranking = (id: string): string[] =>
-      data.matrix.candidateMovesets[id] ??
-      data.rankings.overall.find((e) => e.speciesId === id)!.moveset;
-    const spec = (id: string, shields: number) => ({
+    // The counter at its rankings moveset, the meta-group opponent at its meta moveset.
+    const spec = (id: string, moveset: string[], shields: number) => ({
       speciesId: id,
-      fastMove: ranking(id)[0]!,
-      chargedMoves: ranking(id).slice(1, 3),
+      fastMove: moveset[0]!,
+      chargedMoves: moveset.slice(1, 3),
       shields,
       startEnergyTurns: 0,
     });
-    const direct = sim.simulate(spec(c.speciesId, 0), spec(target, 1), simOptionsFor(data.league));
+    const direct = sim.simulate(
+      spec(c.speciesId, data.matrix.candidateMovesets[c.speciesId]!, 0),
+      spec(target, data.matrix.opponentMovesets[target]!, 1),
+      simOptionsFor(data.league),
+    );
     expect(c.grid![1]).toBe(direct.rating);
   });
 
@@ -223,6 +226,40 @@ describe.skipIf(!haveStaticData())('the shield grid against one opponent', () =>
       expect(c.total).toBe(20);
       expect(c.gridded).toBe(c.done);
       expect(c.ids).toEqual(first.entries.map((e) => e.speciesId));
+    }
+  });
+});
+
+describe.skipIf(!haveStaticData())('the shield grid against a meta-group opponent', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const sim = new PvPokeSimulator(loadPvPokeInNode(readGameMaster()));
+  const live = { sim, league: data.league };
+  const view = new MatrixView(data.matrix);
+  // A meta-group species whose meta moveset has a move its rankings moveset lacks: talonflame in
+  // Great League (Flame Charge in the meta group, Brave Bird in the rankings).
+  const moves = (m: string[] | undefined): string => [...(m ?? [])].sort().join(',');
+  const candidates = data.matrix.opponents.filter(
+    (id) =>
+      data.matrix.opponents.indexOf(id) === data.matrix.opponents.lastIndexOf(id) &&
+      data.rankings.overall.some((e) => e.speciesId === id) &&
+      moves(data.matrix.opponentMovesets[id]) !==
+        moves(data.rankings.overall.find((e) => e.speciesId === id)?.moveset),
+  );
+  const target = candidates.includes('talonflame') ? 'talonflame' : candidates[0];
+
+  it.skipIf(!target)('battles at the meta moveset, so equal shields agree with the matrix', () => {
+    const r = metaCounters(data, [], index, { limit: 10, vs: target! }, live);
+    expect(r.vs?.inMeta).toBe(true);
+    const { entries } = counterGrids(data, target!, r.entries, live);
+    const col = data.matrix.opponents.indexOf(target!);
+    expect(entries.length).toBeGreaterThan(0);
+    for (const c of entries) {
+      const row = view.rowOf(c.speciesId)!;
+      // Diagonal cells 0, 4 and 8 are 0-0, 1-1 and 2-2: the matrix's three scenarios.
+      expect([c.grid![0], c.grid![4], c.grid![8]]).toEqual(
+        [0, 1, 2].map((sc) => view.rating(row, col, sc)),
+      );
     }
   });
 });

@@ -340,8 +340,9 @@ function meanRating(grid: number[]): number {
 
 /**
  * Every shield pairing against one opponent: nine battles per counter, your shields 0..2 by
- * theirs 0..2, at PvPoke default IVs and the rankings' movesets on both sides, with the league's
- * simulator options, the same inputs as the matrix. Fills in batches, reporting each batch in the
+ * theirs 0..2, at PvPoke default IVs with the league's simulator options, the same inputs as the
+ * matrix: the rankings' moveset for the counter, and for the opponent the meta group's moveset
+ * when it is in the meta group (the rankings' otherwise). Fills in batches, reporting each batch in the
  * incoming order, then sorts by cells won out of nine, then mean rating, then PvPoke overall rank,
  * and renumbers antiRank (and the gap) from that order.
  */
@@ -355,7 +356,11 @@ export function counterGrids(
 ): { entries: CounterEntry[]; gridMs: number } {
   const started = Date.now();
   const simOptions = simOptionsFor(live.league);
-  const theirs = rankingMoveset(data, vs);
+  // A meta-group opponent fights at the meta group's moveset, the one the matrix battled when it
+  // chose these rows; an outsider keeps the rankings' moveset, as its simulated column did.
+  const theirs = data.matrix.opponents.includes(vs)
+    ? (data.matrix.opponentMovesets[vs] ?? rankingMoveset(data, vs))
+    : rankingMoveset(data, vs);
   const out = entries.map((e) => ({ ...e }));
   const step = Math.max(1, Math.floor(batchSize));
   for (let i = 0; i < out.length; i++) {
