@@ -91,11 +91,13 @@ const AUDIT_ENFORCED = new Set([
   '18b-counters-no-collection',
   '23-counters-vs',
   'counters-vs-filling',
+  'counters-loading',
   '24-counters-vs-outsider',
   'counters-against',
   'counters-against-search',
   'counters-against-scrolled',
   'counters-unranked',
+  'counters-error',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -191,10 +193,26 @@ await page.evaluateOnNewDocument(
 );
 // The last Counters result the compute worker handed back (its opponent and, against one, the grid
 // time), read off the worker's own messages so the run can log how long the shield grids took on
-// this machine. Automation only: the app has no hook for it.
+// this machine. With window.__pick3FailCounters set, the next counters request never reaches the
+// worker: it is answered with an error, as a worker that failed would answer it, for the Counters
+// error state. Automation only: the app has no hook for either.
 await page.evaluateOnNewDocument(() => {
   const Native = window.Worker;
   window.Worker = class extends Native {
+    postMessage(msg, ...rest) {
+      if (window.__pick3FailCounters && msg?.kind === 'counters') {
+        window.__pick3FailCounters = false;
+        setTimeout(() => {
+          this.dispatchEvent(
+            new MessageEvent('message', {
+              data: { id: msg.id, kind: 'error', message: 'failed on purpose by screens.mjs' },
+            }),
+          );
+        }, 0);
+        return;
+      }
+      super.postMessage(msg, ...rest);
+    }
     constructor(...args) {
       super(...args);
       this.addEventListener('message', (e) => {
@@ -1143,6 +1161,26 @@ const linkLines = await page.$eval('.counter-row .counter-links:has(.ui-btn + .u
 if (linkLines !== 1) {
   throw new Error('counters: a row with two links wraps them onto two lines');
 }
+// Where a long name does wrap a row's second link, its text starts where the first link's does.
+const wrapOffsets = await page.$$eval('.counter-row .counter-links', (lists) =>
+  lists.flatMap((l) => {
+    const [a, b] = [...l.querySelectorAll('.ui-btn')];
+    if (!a || !b || a.getBoundingClientRect().top === b.getBoundingClientRect().top) {
+      return [];
+    }
+    const textLeft = (x) =>
+      x.getBoundingClientRect().left + parseFloat(getComputedStyle(x).paddingLeft);
+    return [textLeft(b) - textLeft(a)];
+  }),
+);
+console.log(
+  `  wrapped second links: ${wrapOffsets.length}, off the first by ${JSON.stringify(wrapOffsets)}px`,
+);
+if (wrapOffsets.some((d) => Math.abs(d) > 1)) {
+  throw new Error(
+    `counters: a wrapped second link is off the first by ${JSON.stringify(wrapOffsets)}px`,
+  );
+}
 await shot('counters-filters', false, { mustShow: '.ui-sheet .counters-filters' });
 await page.$$eval('.ui-sheet .counters-filters .seg > *', (opts) =>
   opts.find((o) => o.textContent?.trim() === 'All')?.click(),
@@ -1228,6 +1266,49 @@ if (!(await page.$('.counters-pick'))) {
 }
 await shot('counters-unranked', false, { mustShow: '.scroll .ui-empty' });
 
+console.log('counters, a run that failed');
+// The Worker wrapper above answers the next counters request (the whole meta, picked by a route
+// change in place) with an error. The app records the failure in the local diagnostics log as it
+// would any other; the log is put back after, so the Settings captures later stay as they were.
+const diagBefore = await page.evaluate(() => localStorage.getItem('pickthree.diag'));
+await page.evaluate(() => {
+  window.__pick3FailCounters = true;
+  window.location.hash = '#/counters';
+});
+await page.waitForSelector('.scroll .ui-error', { timeout: 60_000 });
+const failedState = await page.evaluate(() => ({
+  line: document.querySelector('.scroll .ui-error p')?.textContent ?? '',
+  again: [...document.querySelectorAll('.scroll .ui-error button')].some(
+    (b) => b.textContent?.trim() === 'Try again',
+  ),
+  empty: document.querySelector('.scroll .ui-empty') !== null,
+  line2: document.querySelector('.counters-line') !== null,
+}));
+if (
+  failedState.line !== 'Counters could not be computed.' ||
+  !failedState.again ||
+  failedState.empty ||
+  failedState.line2
+) {
+  throw new Error(`counters, failed: the wrong state: ${JSON.stringify(failedState)}`);
+}
+await shot('counters-error', false, { mustShow: '.scroll .ui-error' });
+// Try again asks once more; the worker answers this time and the rows come.
+await page.$$eval('.scroll .ui-error button', (bs) =>
+  bs.find((b) => b.textContent?.trim() === 'Try again')?.click(),
+);
+await page.waitForSelector('.counter-row', { timeout: 120_000 });
+if (await page.$('.scroll .ui-error')) {
+  throw new Error('counters, failed: the error state stayed after Try again');
+}
+await page.evaluate((v) => {
+  if (v === null) {
+    localStorage.removeItem('pickthree.diag');
+  } else {
+    localStorage.setItem('pickthree.diag', v);
+  }
+}, diagBefore);
+
 console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.set-card', { timeout: 60_000 });
@@ -1255,24 +1336,61 @@ if (!new URLSearchParams(facedHref.split('?')[1]).has('from')) {
 }
 const facedVs = new URLSearchParams(facedHref.split('?')[1]).get('vs');
 // A tap, not a goto, so Your Meta is the pick3 screen behind Counters and the header is the sub
-// header with Back. The rows land first with empty grid cells, then the grids fill in batches;
-// the compute worker is held at a debugger pause once the first batch is in (its league bundle
-// has long landed, see teams-loading) and let go after the shot. The row is scrolled to the middle
-// first: at the top of the page it sits half under the tab bar, which would take the tap.
+// header with Back. The rows land first with empty grid cells, then the grids fill in batches.
+// The compute worker holds itself at a debugger statement right after it posts the progress for
+// the first batch of grids (the rows with those grids went just before it), so the shots below
+// always find a grid filled, the next one empty and the loading bar up, however fast the machine.
+// The hold is automation only: a wrapper put on the worker's own postMessage through its CDP
+// session (its league bundle has long landed, see teams-loading), fired once and let go after the
+// shots. The row is scrolled to the middle first: at the top of the page it sits half under the
+// tab bar, which would take the tap.
+const gridWorkers = page.workers();
+const held = [];
+for (const w of gridWorkers) {
+  await w.client.send('Debugger.enable');
+  held.push(new Promise((resolve) => w.client.once('Debugger.paused', resolve)));
+  await w.client.send('Runtime.evaluate', {
+    expression: `(() => {
+      const native = self.postMessage.bind(self);
+      self.postMessage = (m, ...rest) => {
+        native(m, ...rest);
+        if (!self.__pick3Held && m && m.kind === 'progress' && m.stage === 'counters-grid' && m.done > 0) {
+          self.__pick3Held = true;
+          debugger;
+        }
+      };
+    })()`,
+  });
+}
 await page.$eval('.faced-row', (a) => a.scrollIntoView({ block: 'center' }));
 await page.click('.faced-row');
+let heldTimer;
+await Promise.race([
+  Promise.any(held),
+  new Promise((_, reject) => {
+    heldTimer = setTimeout(
+      () => reject(new Error('counters vs: the worker never reached its first grid batch')),
+      120_000,
+    );
+  }),
+]).finally(() => clearTimeout(heldTimer));
 await page.waitForFunction(
   () =>
     document.querySelector('.counter-row .fo-grid i.w, .counter-row .fo-grid i.l') &&
     document.querySelector('.counter-row .fo-grid i.empty') &&
     document.querySelector('.scroll .ui-loading'),
-  { timeout: 120_000, polling: 'mutation' },
+  { timeout: 30_000, polling: 'mutation' },
 );
-const gridWorkers = page.workers();
-for (const w of gridWorkers) {
-  await w.client.send('Debugger.enable');
-  await w.client.send('Debugger.pause');
+// Scrolled to the top: the loading bar over the first rows, its stage the shield pairings.
+await page.evaluate(() => window.scrollTo(0, 0));
+const loadingStage = await page.$eval('.scroll .ui-loading', (e) => e.textContent ?? '');
+if (!loadingStage.includes('Playing every shield pairing')) {
+  throw new Error(`counters vs: the loading bar reads "${loadingStage}"`);
 }
+await shot('counters-loading', false, {
+  mustShow: '.scroll .ui-loading',
+  group: 'counters-vs-filling',
+});
 // Scrolled to where the filled rows end, so the capture shows a grid in and the next one waiting.
 await page.evaluate(() => {
   const row = [...document.querySelectorAll('.counter-row')].find((r) =>
