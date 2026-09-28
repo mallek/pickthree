@@ -254,9 +254,10 @@ describe('Species', () => {
 
   it('aggregates movesets into one pick3-style line per move, fast first, share at the end', async () => {
     render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    // Correction 2: `runs` counts battles, not distinct reporters, so the header must not claim
-    // "60 reporters ran it themselves". This site never overstates a count it does not have.
-    expect(await screen.findByText('Run by reporters in 60 battles')).toBeInTheDocument();
+    // Task 4: the denominator is the battles whose moves are known (the movesets sum, 48 + 12 =
+    // 60), not `runs` itself; the fixture happens to have every run's moves known, so the two
+    // numbers coincide here, but the sub line still has to name both.
+    expect(await screen.findByText('Moves known in 60 of 60 battles')).toBeInTheDocument();
     // Correction 1: the two fixture sets both carry ICE_BEAM (48 + 12 battles) and both carry
     // BUBBLE as their fast move, so aggregated by move each name appears exactly once, not once
     // per set.
@@ -269,12 +270,83 @@ describe('Species', () => {
     )!;
     const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
     expect(markers).toEqual(['F', 'C', 'C']);
-    // BUBBLE and ICE_BEAM sit in both sets (60 of 60 battles, 100%); PLAY_ROUGH sits in only the
-    // first (48 of 60, 80%). D2 dropped the old "add up to about 200%" footnote that used to
-    // explain shares like these; the per-line share is the whole explanation now.
+    // BUBBLE and ICE_BEAM sit in both sets (60 of 60 known battles, 100%); PLAY_ROUGH sits in
+    // only the first (48 of 60, 80%). D2 dropped the old "add up to about 200%" footnote that
+    // used to explain shares like these; the per-line share is the whole explanation now.
     const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
     expect(shares).toEqual(['100%', '100%', '80%']);
     expect(screen.queryByText(/add up to about 200%/)).toBeNull();
+  });
+
+  // Task 4: the worker only records a moveset when the moves it saw were actually known
+  // (workers/counter/src/battles.ts ~255-265), so a species run in 62 battles with only one
+  // moveset actually known must show shares of that 5, not of the 62: dividing by `runs` was the
+  // bug (Melmetal showed 8% for moves known in only 5 of 62 battles).
+  it('divides move shares by the battles whose moves are known, not by every run', async () => {
+    const melmetal = {
+      ...species,
+      runs: 62,
+      movesets: [{ fast: 'THUNDER_SHOCK', charged: ['DOUBLE_IRON_BASH', 'DYNAMIC_PUNCH'], battles: 5 }],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: melmetal, meta }), now }} />);
+    expect(await screen.findByText('Moves known in 5 of 62 battles')).toBeInTheDocument();
+    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
+      'section',
+    )!;
+    const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
+    expect(shares).toEqual(['100%', '100%', '100%']);
+  });
+
+  // Task 4: two known sets sharing a fast move but splitting the charged move (3 of 5 vs. 2 of
+  // 5) still divide by the known total (5), not by `runs` (62): the fast move is in every known
+  // battle (100%), the charged moves split it 60/40.
+  it('splits charged move shares between two known sets while the fast move stays at 100%', async () => {
+    const twoSets = {
+      ...species,
+      runs: 62,
+      movesets: [
+        { fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 3 },
+        { fast: 'BUBBLE', charged: ['PLAY_ROUGH'], battles: 2 },
+      ],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: twoSets, meta }), now }} />);
+    expect(await screen.findByText('Moves known in 5 of 62 battles')).toBeInTheDocument();
+    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
+      'section',
+    )!;
+    const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
+    expect(markers).toEqual(['F', 'C', 'C']);
+    const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
+    expect(shares).toEqual(['100%', '60%', '40%']);
+  });
+
+  // Review Focus 4: `runs` known but no moveset is actually known (none recorded, or every one
+  // recorded at zero battles) must say so plainly, never "NaN%" and never a share computed from a
+  // zero denominator.
+  it('says moves are not reported rather than showing a zero-battle share', async () => {
+    const noMovesets = { ...species, runs: 62, movesets: [] };
+    render(<App deps={{ fetcher: stubFetch({ species: noMovesets, meta }), now }} />);
+    expect(await screen.findByText('No moves reported yet.')).toBeInTheDocument();
+    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
+      'section',
+    )!;
+    expect(card.querySelector('.pick-move-share')).toBeNull();
+    expect(within(card).queryByText(/%/)).toBeNull();
+    expect(screen.queryByText(/Moves known in/)).toBeNull();
+  });
+
+  it('treats an all-zero-battle moveset list the same as no movesets at all', async () => {
+    const zeroMovesets = {
+      ...species,
+      runs: 62,
+      movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 0 }],
+    };
+    render(<App deps={{ fetcher: stubFetch({ species: zeroMovesets, meta }), now }} />);
+    expect(await screen.findByText('No moves reported yet.')).toBeInTheDocument();
+    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
+      'section',
+    )!;
+    expect(card.querySelector('.pick-move-share')).toBeNull();
   });
 
   it('labels PvPoke as PvPoke', async () => {
@@ -301,7 +373,7 @@ describe('Species', () => {
       movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 1 }],
     };
     render(<App deps={{ fetcher: stubFetch({ species: one, meta }), now }} />);
-    expect(await screen.findByText('Run by reporters in 1 battle')).toBeInTheDocument();
+    expect(await screen.findByText('Moves known in 1 of 1 battle')).toBeInTheDocument();
     expect(screen.queryByText(/1 battles\b/)).toBeNull();
   });
 

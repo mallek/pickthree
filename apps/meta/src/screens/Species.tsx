@@ -64,6 +64,15 @@ interface MoveShare {
   battles: number;
 }
 
+/** Task 4: `detail.runs` counts every battle the species was run in, but the worker only records
+ * a moveset when the moves it saw were actually known (workers/counter/src/battles.ts ~255-265),
+ * so a move share must be a share of the battles whose moves are known, not of every run. Dividing
+ * by `runs` instead is the bug this fixes: a species run in 62 battles with only 5 known movesets
+ * showed each of those moves at 8% (5 of 62) rather than 100% (5 of 5). */
+export function knownMoveBattles(movesets: readonly MovesetStats[]): number {
+  return movesets.reduce((sum, m) => sum + m.battles, 0);
+}
+
 function aggregateMoves(
   movesets: readonly MovesetStats[],
   pick: (m: MovesetStats) => readonly string[],
@@ -89,17 +98,19 @@ function MoveLine({
   moveId,
   kind,
   battles,
-  runs,
+  known,
   data,
 }: {
   moveId: string;
   kind: 'F' | 'C';
   battles: number;
-  runs: number;
+  /** Task 4: the battles whose moves are known (`knownMoveBattles`), not every battle the
+   * species was run in. */
+  known: number;
   data: StaticData;
 }) {
   const move = data.moves.get(moveId);
-  const sharePct = runs > 0 ? (battles / runs) * 100 : 0;
+  const sharePct = known > 0 ? (battles / known) * 100 : 0;
   return (
     <span className="pick-move">
       <i className="pick-move-k">{kind}</i>
@@ -110,9 +121,12 @@ function MoveLine({
   );
 }
 
-/** Correction 2 (task-12-report.md): `runs` counts battles, not distinct reporters, so the
- * header says "Run by reporters in N battles" rather than the brief's "N reporters ran it
- * themselves", which this site's own numbers do not support. */
+/** Correction 2 (task-12-report.md): `runs` counts battles, not distinct reporters, so the sub
+ * line never claims "N reporters ran it themselves", which this site's own numbers do not
+ * support. Task 4: the sub line and every share below it are now over `known`, the battles whose
+ * moves the worker actually recorded (Review Focus 4: `known === 0` renders "No moves reported
+ * yet." instead of a share computed from a zero denominator, whether that is no movesets at all
+ * or movesets that only ever recorded zero battles). */
 function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticData }) {
   if (detail.runs === 0) {
     return (
@@ -122,12 +136,23 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
       </section>
     );
   }
+  const known = knownMoveBattles(detail.movesets);
+  if (known === 0) {
+    return (
+      <section className="card">
+        <h2>Moves reporters ran</h2>
+        <p className="sub">No moves reported yet.</p>
+      </section>
+    );
+  }
   const fastShares = aggregateMoves(detail.movesets, (m) => [m.fast]);
   const chargedShares = aggregateMoves(detail.movesets, (m) => m.charged);
   return (
     <section className="card">
       <h2>Moves reporters ran</h2>
-      <p className="sub">Run by reporters in {battlesText(detail.runs)}</p>
+      <p className="sub">
+        {`Moves known in ${count(known)} of ${count(detail.runs)} ${plural(detail.runs, 'battle', 'battles')}`}
+      </p>
       <div className="pick-moves">
         {fastShares.map((s) => (
           <MoveLine
@@ -135,7 +160,7 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
             moveId={s.moveId}
             kind="F"
             battles={s.battles}
-            runs={detail.runs}
+            known={known}
             data={data}
           />
         ))}
@@ -145,7 +170,7 @@ function MovesetCard({ detail, data }: { detail: SpeciesDetailV1; data: StaticDa
             moveId={s.moveId}
             kind="C"
             battles={s.battles}
-            runs={detail.runs}
+            known={known}
             data={data}
           />
         ))}
