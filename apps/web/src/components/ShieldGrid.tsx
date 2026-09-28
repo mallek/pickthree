@@ -26,11 +26,19 @@ export function ShieldGrid({
 }) {
   const cells = grid ?? new Array<number | null>(9).fill(null);
   const wins = cells.filter((r) => r !== null && r > 500).length;
+  const played = cells.filter((r) => r !== null).length;
+  // A grid still filling says so: a count out of nine would read its empty cells as losses.
+  const label =
+    played === 0
+      ? 'Shield pairings still being played'
+      : played < 9
+        ? `Wins ${wins} of ${played} so far`
+        : `Wins ${wins} of 9 shield pairings`;
   return (
     <span
-      className={`fo-grid${size === 'row' ? ' row' : ''}`}
+      className={`fo-grid${size === 'row' ? ' fo-grid-lg' : ''}`}
       role="img"
-      aria-label={`Wins ${wins} of 9 shield pairings`}
+      aria-label={label}
       data-audit-contrast="static"
     >
       <i className="fo-ax corner" />

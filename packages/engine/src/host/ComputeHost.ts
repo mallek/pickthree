@@ -36,9 +36,11 @@ export interface ComputeHost {
   ): Promise<Record<string, Verdict>>;
   /**
    * Progress arrives when an outsider is simulated (options.vs outside the meta group) and while
-   * the shield grids fill against one opponent. With options.vs, `onPartial` gets the rows first
-   * with every grid null, then the rows again after each batch of grids; the promise resolves
-   * with the rows re-sorted by the grid and `gridMs` set. `league` defaults to the host's own.
+   * the shield grids fill against one opponent. With options.vs and at least one row, `onPartial`
+   * gets the rows first with every grid null, then the rows again after each batch of grids but
+   * the last; the promise resolves with the rows re-sorted by the grid and `gridMs` set. An
+   * opponent PvPoke does not rank (no rows) and the whole meta get no partials, only the result.
+   * `league` defaults to the host's own.
    */
   counters(
     specimens: Specimen[],

@@ -45,18 +45,33 @@ describe('ShieldGrid', () => {
     expect(container.querySelectorAll('.fo-grid i.w, .fo-grid i.l')).toHaveLength(0);
   });
 
-  it('summarizes wins out of nine in the aria-label, unresolved cells not counted as wins', () => {
-    const grid = [600, 400, null, 700, 300, 550, null, 450, 800];
+  it('summarizes wins out of nine in the aria-label once every pairing is played', () => {
+    const grid = [600, 400, 450, 700, 300, 550, 420, 450, 800];
     const { container } = render(<ShieldGrid grid={grid} />);
     const el = container.querySelector('.fo-grid');
     expect(el).toHaveAttribute('aria-label', 'Wins 4 of 9 shield pairings');
     expect(el).toHaveAttribute('role', 'img');
   });
 
+  it('a grid still filling never reads its empty cells as losses', () => {
+    const { container: none } = render(<ShieldGrid grid={null} />);
+    expect(none.querySelector('.fo-grid')).toHaveAttribute(
+      'aria-label',
+      'Shield pairings still being played',
+    );
+    const { container: some } = render(
+      <ShieldGrid grid={[600, 400, null, 700, 300, 550, null, 450, 800]} />,
+    );
+    expect(some.querySelector('.fo-grid')).toHaveAttribute('aria-label', 'Wins 4 of 7 so far');
+  });
+
   it('defaults to the card size and takes the larger row size for Counters', () => {
     const { container: card } = render(<ShieldGrid grid={null} />);
-    expect(card.querySelector('.fo-grid')).not.toHaveClass('row');
+    expect(card.querySelector('.fo-grid')).not.toHaveClass('fo-grid-lg');
     const { container: row } = render(<ShieldGrid grid={null} size="row" />);
-    expect(row.querySelector('.fo-grid')).toHaveClass('row');
+    const grid = row.querySelector('.fo-grid');
+    expect(grid).toHaveClass('fo-grid-lg');
+    // Not the global flex utility from base.css.
+    expect(grid).not.toHaveClass('row');
   });
 });

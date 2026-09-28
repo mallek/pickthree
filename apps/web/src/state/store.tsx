@@ -149,6 +149,9 @@ export interface AppState {
   /** Set when the last counters run for countersVs failed; Counters shows it with Try again
    * instead of asking again on its own. Cleared when a run starts or is dropped. */
   countersError: string | null;
+  /** Bumped whenever what counters are scored from changes under a run (an import, the battle
+   * log, a new league or source): a run started under an older epoch lands nothing. */
+  countersEpoch: number;
   /** One-line message for the floating toast, such as a failed save. */
   notice: string | null;
   /** How the notice reads: warn (amber, announced at once) or info (a neutral confirmation). */
@@ -247,6 +250,7 @@ const initial: AppState = {
   countersVs: null,
   countersProgress: null,
   countersError: null,
+  countersEpoch: 0,
   notice: null,
   noticeTone: 'warn',
   sharedTeam: false,
@@ -313,6 +317,7 @@ function reducer(s: AppState, a: Action): AppState {
         verdictsError: null,
         counters: null,
         countersError: null,
+        countersEpoch: s.countersEpoch + 1,
         recommendedWith: null,
       };
     case 'import-error':
@@ -327,6 +332,7 @@ function reducer(s: AppState, a: Action): AppState {
             settings: a.settings,
             counters: null,
             countersError: null,
+            countersEpoch: s.countersEpoch + 1,
             suggestion: null,
             suggestError: null,
           };
@@ -453,6 +459,7 @@ function reducer(s: AppState, a: Action): AppState {
         settingsLoaded: true,
         route: { screen: 'welcome' },
         logVersion: s.logVersion + 1,
+        countersEpoch: s.countersEpoch + 1,
       };
     case 'sets':
       // Anything weighted by the log is stale now; Teams re-runs through filterKey.
@@ -463,6 +470,7 @@ function reducer(s: AppState, a: Action): AppState {
         logVersion: s.logVersion + 1,
         counters: null,
         countersError: null,
+        countersEpoch: s.countersEpoch + 1,
       };
     default:
       return s;
@@ -1196,13 +1204,15 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         const r = stateRef.current.route;
         return r.screen === 'counters' ? (r.vs ?? null) : vs;
       };
+      // An import or a new battle log since the start: the owned marks and the weights moved.
+      const epoch = s.countersEpoch;
       // Once dropped, nothing more from this run lands: a later load may be running by then.
       let dropped = false;
       const live = (): boolean => {
         if (dropped) {
           return false;
         }
-        if (scope.current() && vsNow() === vs) {
+        if (scope.current() && vsNow() === vs && stateRef.current.countersEpoch === epoch) {
           return true;
         }
         dropped = true;

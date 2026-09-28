@@ -589,7 +589,7 @@ describe('Counters page', () => {
     expect(within(rows[1]!).getByText('#2 vs Azumarill · unranked')).toBeInTheDocument();
     expect(within(rows[0]!).queryByText('70%')).toBeNull();
     const grid = within(rows[0]!).getByRole('img', { name: 'Wins 6 of 9 shield pairings' });
-    expect(grid).toHaveClass('row');
+    expect(grid).toHaveClass('fo-grid-lg');
     const term = within(rows[0]!).getByRole('button', { name: 'shields' });
     fireEvent.click(term);
     expect(
@@ -682,6 +682,34 @@ describe('Counters page', () => {
       runs[0]!.resolve(VS);
     });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('a run still filling when the collection changes lands nothing more, and runs again', async () => {
+    const { counters, runs } = streamingCounters();
+    await boot({ collection: true, counters });
+    await go({ screen: 'counters', vs: 'azumarill' });
+    await waitFor(() => expect(runs).toHaveLength(1));
+    const owned = VS.entries.map((e) =>
+      e.speciesId === 'tinkaton'
+        ? { ...e, grid: null, owned: 'have' as const, ownedSpecimenId: 'a', ownedStageOffset: 0 }
+        : { ...e, grid: null },
+    );
+    await act(async () => {
+      runs[0]!.onPartial({ ...VS, entries: owned });
+    });
+    await rowsIn();
+    // The Tinkaton is removed mid-run: the rows it marked are cleared, and the old run's next
+    // batch, still carrying the old owned mark, must not bring them back.
+    await act(async () => {
+      await latest!.actions.removeSpecimen('a');
+    });
+    await act(async () => {
+      runs[0]!.onPartial({ ...VS, entries: [{ ...owned[0]!, grid: SPLIT }, owned[1]!] });
+    });
+    expect(document.querySelectorAll('.counter-row')).toHaveLength(0);
+    expect(latest?.state.counters).toBeNull();
+    // Counters asks again, for the collection as it is now.
+    await waitFor(() => expect(runs).toHaveLength(2));
   });
 
   it('each list keeps its own scroll: the whole meta offset never lands on an opponent list', async () => {

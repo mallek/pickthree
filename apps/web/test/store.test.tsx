@@ -103,6 +103,10 @@ describe('routes', () => {
       '#/counters?vs=azumarill&from=1',
     );
   });
+  it('parses and prints the back mark with no opponent (the whole meta, reached by a jump)', () => {
+    expect(parseHash('#/counters?from=1')).toEqual({ screen: 'counters', from: true });
+    expect(hashFor({ screen: 'counters', from: true })).toBe('#/counters?from=1');
+  });
   it('does not carry the back mark on a plain link with no vs', () => {
     expect(parseHash('#/counters')).toEqual({ screen: 'counters' });
     expect(hashFor({ screen: 'counters' })).toBe('#/counters');

@@ -2487,14 +2487,13 @@ textarea.paste {
   flex-wrap: wrap;
   margin: 2px 0 -10px -8px;
 }
+/* Every link keeps the text button's 8px on the left, the one the row's -8px margin takes back,
+   so a second link that wraps starts at the same edge as the first (the text column); 4px on the
+   right keeps 12px between two links on one line. */
 .counter-links .ui-btn {
   font-size: var(--fs-support);
-}
-.counter-links .ui-btn:not(:first-child) {
-  padding-left: 6px;
-}
-.counter-links .ui-btn:not(:last-child) {
-  padding-right: 6px;
+  padding-left: 8px;
+  padding-right: 4px;
 }
 .counter-links .ui-btn:last-child {
   padding-right: 0;
@@ -3409,16 +3408,16 @@ input[type='range'] {
 }
 /* Counters' one-opponent rows read the grid from further away, so its cells scale up (about
    20px) rather than the in-battle card's compact 14px. */
-.fo-grid.row {
+.fo-grid-lg {
   grid-template-columns: 14px repeat(3, 20px);
   gap: 3px;
 }
-.fo-grid.row i {
+.fo-grid-lg i {
   width: 20px;
   height: 20px;
   font-size: 12px;
 }
-.fo-grid.row i.fo-ax {
+.fo-grid-lg i.fo-ax {
   width: 14px;
 }
 .fo-verdict {

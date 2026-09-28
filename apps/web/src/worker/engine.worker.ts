@@ -289,8 +289,9 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         { buildOptions: buildOptionsFor(data.league), ...msg.options },
         live,
       );
-      // Against one opponent: the rows at once, then every shield pairing in batches, then the
-      // rows re-sorted by the grid. The whole meta and an unranked opponent have no grid phase.
+      // Against one opponent: the rows at once, then every shield pairing in batches (all but the
+      // last, which the re-sorted result stands for), then the rows re-sorted by the grid. The
+      // whole meta and an unranked opponent have no grid phase and get no partials.
       if (!counters.vs || counters.entries.length === 0) {
         post({ id: msg.id, kind: 'result', result: { kind: 'counters', counters } });
         return;

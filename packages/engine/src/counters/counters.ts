@@ -351,8 +351,9 @@ function meanRating(grid: number[]): number {
  * theirs 0..2, at PvPoke default IVs with the league's simulator options and the movesets that
  * chose the rows: the counter at its matrix row's moveset; the opponent at its meta group moveset
  * (first listing) when it has a matrix column, else at its rankings moveset, as its simulated
- * column. Fills in batches, reporting each batch in the incoming order, then sorts by cells won
- * out of nine, then mean rating, then PvPoke overall rank, and renumbers antiRank (and the gap).
+ * column. Fills in batches, reporting each batch but the last in the incoming order (the sorted
+ * result follows the last at once), then sorts by cells won out of nine, then mean rating, then
+ * PvPoke overall rank, and renumbers antiRank (and the gap).
  */
 export function counterGrids(
   data: CountersData,
@@ -386,7 +387,8 @@ export function counterGrids(
     }
     e.grid = grid;
     const done = i + 1;
-    if (onBatch && (done % step === 0 || done === out.length)) {
+    // The last batch is not reported: the sorted result follows it at once.
+    if (onBatch && done % step === 0 && done < out.length) {
       onBatch(
         done,
         out.length,

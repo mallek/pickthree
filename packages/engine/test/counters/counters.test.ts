@@ -206,7 +206,7 @@ describe.skipIf(!haveStaticData())('the shield grid against one opponent', () =>
     );
   });
 
-  it('reports each batch, in the incoming order, as it finishes', () => {
+  it('reports each batch but the last, in the incoming order, as it finishes', () => {
     const calls: { done: number; total: number; ids: string[]; gridded: number }[] = [];
     counterGrids(
       data,
@@ -222,7 +222,8 @@ describe.skipIf(!haveStaticData())('the shield grid against one opponent', () =>
         }),
       7,
     );
-    expect(calls.map((c) => c.done)).toEqual([7, 14, 20]);
+    // The last batch (15 to 20) is not reported: the sorted result follows it at once.
+    expect(calls.map((c) => c.done)).toEqual([7, 14]);
     for (const c of calls) {
       expect(c.total).toBe(20);
       expect(c.gridded).toBe(c.done);
