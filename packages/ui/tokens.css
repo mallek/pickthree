@@ -27,6 +27,9 @@
   --hit: #f07178;
   --hit-tint: rgba(240, 113, 120, 0.2);
   --win: #7ac74c;
+  /* The Win tag's pill and text ("Built"): a visible green pill, its text 4.5:1 on it. */
+  --win-tint: #263521;
+  --win-ink: #7ac74c;
   --loss: #f07178;
   --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 0 0 1px #9397ab, 0 16px 40px rgba(0, 0, 0, 0.65);
@@ -84,6 +87,8 @@
     --hit: #c8323b;
     --hit-tint: rgba(200, 50, 59, 0.14);
     --win: #3f7d1f;
+    --win-tint: #dcecd2;
+    --win-ink: #2f6a12;
     --loss: #c8323b;
     --shadow-md: 0 0 0 1px #cfd3e5, 0 6px 18px rgba(41, 43, 49, 0.12);
     --shadow-lg: 0 0 0 1px #b2b6ca, 0 16px 40px rgba(41, 43, 49, 0.18);
@@ -141,6 +146,8 @@
   --hit: #c8323b;
   --hit-tint: rgba(200, 50, 59, 0.14);
   --win: #3f7d1f;
+  --win-tint: #dcecd2;
+  --win-ink: #2f6a12;
   --loss: #c8323b;
   --shadow-md: 0 0 0 1px #cfd3e5, 0 6px 18px rgba(41, 43, 49, 0.12);
   --shadow-lg: 0 0 0 1px #b2b6ca, 0 16px 40px rgba(41, 43, 49, 0.18);

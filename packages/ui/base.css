@@ -562,8 +562,8 @@
   color: var(--accent-text);
 }
 .ui-tag-win {
-  background: color-mix(in srgb, var(--win) 5%, var(--surface));
-  color: var(--win);
+  background: var(--win-tint);
+  color: var(--win-ink);
 }
 .ui-tag-loss {
   background: color-mix(in srgb, var(--loss) 5%, var(--surface));

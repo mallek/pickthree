@@ -241,10 +241,7 @@ Made while building:
 
 ## Open items for Travis
 
-- **The light Built tag reads faint** next to the green "Same wins as best IVs" pill: the ui `win`
-  tone is a 5% tint, nearly a bare green word in light (`specimen-built-light`; dark reads fine).
-  The pill is the app's older `.mtag`, not the ui `Tag`, so the two green tags differ in shape
-  and weight. A foundation call: strengthen `win`, or move the pill to `Tag`.
+- **Resolved (Travis, 2026-09-27): the Built tag has a real green pill.** "Built tag on light needs better background." The ui `win` tag now uses two tokens, `--win-tint` (the pill) and `--win-ink` (its text, darkened in light to 4.5:1 on the pill); `specimen-built` re-captured in both themes, audit exit 0.
 - **"Remove from collection" is the outlined danger button** (as Settings' Forget), where the spec
   says "a red text button" (`specimen-manual`, Ruling 7).
 - **The name is now the 24px page heading** (was 22px) (Ruling 6).

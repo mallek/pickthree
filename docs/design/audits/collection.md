@@ -201,10 +201,7 @@ Made while building:
 
 ## Open items for Travis
 
-- **The light Built tag reads faint.** The ui `win` tone is a 5% tint, so in light it is nearly a
-  bare green word, and next to it "Same wins as best IVs" is a stronger green pill. The sample has
-  no Built Pokémon in the list; see `specimen-built-light` in `pokemon-detail.md`. Parked for your
-  call (Ruling 12).
+- **Resolved (Travis, 2026-09-27): the Built tag has a real green pill.** "Built tag on light needs better background." The ui `win` tag now uses two tokens, `--win-tint` (the pill) and `--win-ink` (its text, darkened in light to 4.5:1 on the pill); `specimen-built` re-captured in both themes, audit exit 0.
 - **"Same wins as best IVs" and the rank pills are still the app's `.mtag` pills,** not the ui
   `Tag` the app-wide rule names; the green one carries the last baselined `#7ac74c`. The spec says
   "as today" for them, so they stayed. Keep or move them to `Tag`.
