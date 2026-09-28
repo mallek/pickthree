@@ -346,6 +346,15 @@ function rowNames(): string[] {
   );
 }
 
+/** Scroll the page to 240 and let useScrollMemory record it (it samples on a frame). */
+async function scrollTo240(): Promise<void> {
+  Object.defineProperty(window, 'scrollY', { value: 240, configurable: true });
+  await act(async () => {
+    fireEvent.scroll(window);
+    await new Promise((r) => window.requestAnimationFrame(() => r(null)));
+  });
+}
+
 function openAgainst(): HTMLElement {
   fireEvent.click(screen.getByRole('button', { name: /^Against/ }));
   return screen.getByRole('dialog', { name: 'Against' });
@@ -413,6 +422,8 @@ describe('Counters page', () => {
     await go({ screen: 'counters', vs: 'azumarill' });
     const sheet = openAgainst();
     const input = within(sheet).getByPlaceholderText('Search any Pokémon');
+    // The search takes focus once the sheet is up, as Log a Battle's does.
+    await waitFor(() => expect(document.activeElement).toBe(input));
     expect(within(sheet).getByRole('button', { name: /The whole meta/ })).toBeInTheDocument();
     fireEvent.change(input, { target: { value: 'clod' } });
     expect(within(sheet).getByRole('button', { name: 'Clodsire' })).toBeInTheDocument();
@@ -584,11 +595,7 @@ describe('Counters page', () => {
     });
     expect(rowNames()).toEqual(['Corviknight', 'Tinkaton']);
     // Scrolled down the list before leaving.
-    Object.defineProperty(window, 'scrollY', { value: 240, configurable: true });
-    await act(async () => {
-      fireEvent.scroll(window);
-      await new Promise((r) => window.requestAnimationFrame(() => r(null)));
-    });
+    await scrollTo240();
     const scrollTo = vi.fn();
     window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
     const view = screen.getByRole('link', { name: 'View yours ›' });
@@ -635,6 +642,54 @@ describe('Counters page', () => {
       runs[0]!.resolve(VS);
     });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('each list keeps its own scroll: the whole meta offset never lands on an opponent list', async () => {
+    await boot();
+    await go({ screen: 'counters' });
+    await rowsIn();
+    await scrollTo240();
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    await go({ screen: 'meta' });
+    await go({ screen: 'counters', vs: 'azumarill', from: true });
+    await rowsIn();
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(scrollTo).not.toHaveBeenCalledWith(0, 240);
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+  });
+
+  it('the final result re-sorts the rows in place: the same elements, no scroll jump', async () => {
+    const { counters, runs } = streamingCounters();
+    await boot({ counters });
+    await go({ screen: 'counters', vs: 'azumarill' });
+    await waitFor(() => expect(runs).toHaveLength(1));
+    await act(async () => {
+      runs[0]!.onPartial({ ...VS, entries: VS.entries.map((e) => ({ ...e, grid: null })) });
+    });
+    const before = await rowsIn();
+    expect(rowNames()).toEqual(['Tinkaton', 'Medicham']);
+    await scrollTo240();
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    const WIN = [600, 600, 600, 600, 600, 600, 600, 600, 600];
+    await act(async () => {
+      runs[0]!.resolve({
+        ...VS,
+        entries: [
+          entry('medicham', { antiRank: 1, overallRank: null, grid: WIN }),
+          entry('tinkaton', { antiRank: 2, overallRank: 1, grid: SPLIT }),
+        ],
+      });
+    });
+    expect(rowNames()).toEqual(['Medicham', 'Tinkaton']);
+    const after = [...document.querySelectorAll<HTMLElement>('.counter-row')];
+    expect(after[0]).toBe(before[1]);
+    expect(after[1]).toBe(before[0]);
+    expect(scrollTo).not.toHaveBeenCalled();
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
   });
 
   it('an unranked opponent gets its own empty message', async () => {

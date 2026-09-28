@@ -1,5 +1,5 @@
 import { Chevron, Sheet } from '@pickthree/ui';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PokemonToken, useName, useShortName, useSpeciesSearch } from '../components.tsx';
 
 /** Log a Battle's cap: past it the grid asks for more letters instead of growing. */
@@ -15,9 +15,17 @@ function AgainstBody({ onPick }: { onPick: (vs: string | null) => void }) {
   const short = useShortName();
   const hits = useSpeciesSearch(query, CAP);
   const searching = query.trim().length > 0;
+  const input = useRef<HTMLInputElement>(null);
+  // The search takes focus once the sheet is up, as Log a Battle's does. A frame later: the Sheet
+  // focuses its dialog in an effect that runs after this one.
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => input.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   return (
     <div className="counters-against">
       <input
+        ref={input}
         className="search"
         type="search"
         enterKeyHint="search"

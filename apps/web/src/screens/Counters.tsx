@@ -99,7 +99,9 @@ export function Counters() {
   if (sort === 'radar') {
     rows = [...rows].sort((a, b) => b.gap - a.gap || a.antiRank - b.antiRank);
   }
-  useScrollMemory('counters.scroll', rows.length > 0);
+  // One memory per list: the whole meta's offset must not land on an opponent's list, or the
+  // reverse, when one is opened after the other.
+  useScrollMemory(`counters.scroll.${vs ?? 'meta'}`, rows.length > 0);
 
   /** The species of the copy that is or becomes this counter, null when it is not in the
    * collection (none imported, or gone since the scores were computed). */

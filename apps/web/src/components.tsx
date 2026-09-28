@@ -302,9 +302,9 @@ export const META_URL = 'https://meta.pick3.gg';
 /** Three ascending bars, suggesting rankings: the glyph for the meta.pick3.gg `IconButton` on
  * the tab headers. Not the pick3 mark. On pick3's own header the pick3 mark means "home", so
  * wearing it on a link that leaves would read backwards; a destination badge should depict the
- * destination, not the app it sits in. Drawn in `currentColor` at the same stroke weight and size as this app's other head-row
- * icons (ShareGlyph, HeadCog: 20px, 1.8 stroke, round caps and joins), so it takes pick3's own
- * ink rather than meta's violet and looks native here. */
+ * destination, not the app it sits in. Drawn in `currentColor` at the same stroke weight and
+ * size as this app's other head-row icons (ShareGlyph, HeadCog: 20px, 1.8 stroke, round caps and
+ * joins), so it takes pick3's own ink rather than meta's violet and looks native here. */
 export function MetaGlyph() {
   return (
     <svg
