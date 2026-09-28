@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MatrixView, type MatchupMatrix } from '@pickthree/engine/meta';
 import type { TeamRowV1, TeamsV1 } from '../src/api.js';
 import type { SpeciesLite, StaticData } from '../src/data.js';
@@ -432,7 +432,6 @@ describe('Teams, cold start', () => {
     // The h2 "Teams" and the separate paragraphs it used to sit above are gone: one blend line
     // (blendParts) and a single "How it is ranked" Term carry everything they said.
     expect(screen.queryByRole('heading', { name: 'Teams' })).toBeNull();
-    expect(screen.getByText('PvPoke 100% · No shared battles yet')).toBeInTheDocument();
     await openRanked();
     expect(
       screen.getByText(/Projected against PvPoke's meta group\. No shared battles/),
@@ -445,6 +444,43 @@ describe('Teams, cold start', () => {
     // the row panel, one tap away.
     await openEveryRow();
     expect(screen.getByText(/^Matchup score \d+ of 100$/)).toBeInTheDocument();
+  });
+
+  // Fix round 1, item 2: the spec's own line is "PvPoke 100% · No shared battles yet · How it is
+  // ranked" (and, under a live blend, "PvPoke 37% · Tournaments 37% · GBL 26% · How it is
+  // ranked"), the same " · " joining `blendParts` and the "How it is ranked" `Term`, not just
+  // between the parts themselves. Pinned on the `.sub` line's whole text, not a substring, so a
+  // missing or doubled separator fails this test either way.
+  it('joins the blend parts and "How it is ranked" with the same " · "', () => {
+    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: [] });
+    const sub = document.querySelector('.sub');
+    expect(sub?.textContent).toBe('PvPoke 100% · No shared battles yet · How it is ranked');
+  });
+
+  // Fix round 1, item 3: the brief's own empty-board case (no shared teams, no projections) was
+  // missing a test; this pins the line and the Contribute card the spec names for it.
+  it('shows the empty-board line and the Contribute card when nothing loaded at all', () => {
+    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: [] });
+    expect(
+      screen.getByText('No teams shared in this window yet, and no projections could be loaded.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Help fill this in')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Log battles in pick3' })).toBeInTheDocument();
+  });
+
+  // Fix round 1, item 1: the Term's body used to be several <p> elements inside a <p className=
+  // "sub">, which React flags as invalid HTML ("In HTML, <p> cannot be a descendant of <p>") on
+  // every render that opens it. The line is a <div> now and the sentences inside the Term are
+  // block-level spans; this pins that opening the Term logs nothing.
+  it('opening "How it is ranked" logs no console error', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: GENERATED });
+      await openRanked();
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   // The retired caveat ("a projection, not a win rate") existed because a projection used to be
@@ -611,7 +647,7 @@ describe('Teams, with measured play', () => {
     ).toBeInTheDocument();
   });
 
-  it('says how much of the real facing the projections speak for', async () => {
+  it('says how much of the real facing the projections speak for, with the accent on Pokémon', async () => {
     renderTeams({
       battles: 480,
       devices: 9,
@@ -621,6 +657,9 @@ describe('Teams, with measured play', () => {
       weightCovered: 0.6,
     });
     await openRanked();
+    // Fix round 1, minor: "Pokemon" -> "Pokémon", the accent CLAUDE.md asks for everywhere else
+    // on this site.
+    expect(screen.getByText(/Projections cover the \d+ Pokémon PvPoke lists/)).toBeInTheDocument();
     expect(screen.getByText(/which is 60% of what players actually faced/)).toBeInTheDocument();
   });
 
@@ -640,7 +679,7 @@ describe('Teams, with measured play', () => {
     // the Term (ruling 4's "Warnings stay at the top").
     expect(screen.getByText(/Projections are unavailable right now/)).toBeInTheDocument();
     await openRanked();
-    expect(screen.queryByText(/Pokemon PvPoke lists/)).toBeNull();
+    expect(screen.queryByText(/Pokémon PvPoke lists/)).toBeNull();
   });
 
   it('warns when the epoch expects a different PvPoke commit', () => {
@@ -964,9 +1003,10 @@ describe('Teams, the board controls', () => {
     expect(projected.className).toMatch(/ui-tag/);
   });
 
-  // Task 3's review flagged the join before this fix: an empty `subLine('')` next to the score
-  // used to leave two periods back to back in the aria-label. `rowSubText` (Teams.tsx) now
-  // returns 'Projected' for a generated row instead of '', so the label never has an empty part.
+  // Regression guard: `headLabel` already filtered empty parts before this join, so a generated
+  // row's aria-label never had a literal '. .' in it even when `subLine` still returned ''. This
+  // pins that invariant now that a generated row's part is 'Projected' (`rowSubText`) rather than
+  // '', so a future change to either function cannot reintroduce the double-period join.
   it("a collapsed generated row's aria-label has no '. .' sequence", () => {
     renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
     for (const head of heads()) {
@@ -974,9 +1014,11 @@ describe('Teams, the board controls', () => {
     }
   });
 
-  // Review Focus 2: three long spelled names on one row. The title still truncates (the ellipsis
-  // class stays on the title element) and the matchup score stays visible on the same row.
-  it('truncates a title of three long spelled names and keeps the score on the row', () => {
+  // Review Focus 2: three long spelled names on one row. The CSS ellipsis itself is checked in
+  // the captures (app.css's `.row-title` already truncates); what a unit test can pin is that the
+  // score stays on the row and renders as a real number, not blanked or pushed off by the long
+  // title.
+  it('keeps the matchup score on the row when its title is three long spelled names', () => {
     renderTeams({
       battles: 5,
       devices: 2,
@@ -986,7 +1028,6 @@ describe('Teams, the board controls', () => {
     });
     const title = document.querySelector('.row-title');
     expect(title).not.toBeNull();
-    expect(title!.className).toContain('row-title');
     // buildBoard may reorder a row's own species (by rank), so this checks the three long names
     // are all present rather than pinning an order the row's own component list does not promise.
     const text = title!.textContent ?? '';

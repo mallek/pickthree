@@ -187,6 +187,41 @@ describe('App, static load failure', () => {
   });
 });
 
+// Task 6 fix round 1, minor: an App-level test for Teams' own "Try again", exercised through
+// App.tsx's retryBoard rather than by calling Teams directly, so the wiring from a failed request
+// to a working retry (useTeams' own attempt counter, App.tsx's retryBoard only retrying the
+// source that actually failed) is what is under test, not just the component in isolation.
+describe('App, team board load failure', () => {
+  // A loaded run (the full suite in parallel) can take longer than findBy/waitFor's default
+  // second (see "puts the chosen source in the url" above), so every wait here is explicit.
+  it('shows ErrorState for the team board when the teams request fails once, and Try again recovers it', async () => {
+    let teamsCalls = 0;
+    const base = stubFetch({});
+    const flaky: typeof fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.startsWith('/api/v1/teams')) {
+        teamsCalls += 1;
+        if (teamsCalls === 1) {
+          throw new Error('network down');
+        }
+      }
+      return base(input);
+    }) as typeof fetch;
+    window.history.replaceState(null, '', '/great');
+    render(<App deps={{ fetcher: flaky, now }} />);
+    expect(
+      await screen.findByText('Could not load the team board.', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    // Recovered: the error is gone and the board's own controls (Sort) are on screen.
+    await waitFor(() => expect(screen.queryByText('Could not load the team board.')).toBeNull(), {
+      timeout: 5000,
+    });
+    expect(await screen.findByLabelText('Sort', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(teamsCalls).toBe(2);
+  }, 15_000);
+});
+
 describe('App, deep links', () => {
   // Fix round 1: the initial route was derived before the league list existed, so every
   // non-first league fell back to Great and had the address bar rewritten out from under it,

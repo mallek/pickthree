@@ -505,24 +505,33 @@ export function Teams(p: {
   return (
     <main>
       <section>
-        <p className="sub">
-          {blendParts(ranking).join(' · ')}{' '}
+        {/* A `div`, not a `p`: the ui Term's body (`.term-tip`) renders inside this line once
+            opened, and the sentences inside it need block-level elements of their own (`.term-line`
+            below) for their own spacing. A `<p>` nested inside a `<p>` is invalid HTML and React
+            logs it as a console error on every render that opens the Term; the fix round 1 test
+            below pins that it no longer does. */}
+        <div className="sub">
+          {`${blendParts(ranking).join(' · ')} · `}
           <Term term="How it is ranked">
-            <p>
+            <span className="term-line">
               {sourceHeaderLine(
                 ranking,
                 "Projected against PvPoke's meta group. No shared battles in this window yet.",
               )}
-            </p>
-            {ranking.source === 'all' && sourcesText ? <p>{sourcesText}</p> : null}
-            {showMatchupExplainer ? <p>{matchupScoreExplainer()}</p> : null}
+            </span>
+            {ranking.source === 'all' && sourcesText ? (
+              <span className="term-line">{sourcesText}</span>
+            ) : null}
+            {showMatchupExplainer ? (
+              <span className="term-line">{matchupScoreExplainer()}</span>
+            ) : null}
             {showCoverage ? (
-              <p>
-                {`Projections cover the ${count(board.metaGroupSize)} Pokemon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
-              </p>
+              <span className="term-line">
+                {`Projections cover the ${count(board.metaGroupSize)} Pokémon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
+              </span>
             ) : null}
           </Term>
-        </p>
+        </div>
         {mismatch && epoch?.pvpokeCommit !== undefined && bakedShort !== null ? (
           <Note tone="warn">
             <p className="sub">

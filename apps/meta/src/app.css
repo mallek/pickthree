@@ -353,13 +353,16 @@ a.rank-row {
   font-size: 12px;
 }
 
-/* Task 6: "How it is ranked" carries several sentences as separate paragraphs (the source
-   sentence, the sources line, the matchup explainer, the coverage line), so its own gap replaces
-   each <p>'s default browser margin, the same rule `.row-body p` follows for a row's own panel. */
-.term-tip p {
-  margin: 0;
+/* Fix round 1: "How it is ranked" carries several sentences (the source sentence, the sources
+   line, the matchup explainer, the coverage line) as block-level spans rather than nested <p>s
+   (a <p> inside the ui Term's own <p>-free `.term-tip` would still be fine on its own, but the
+   line hosting the Term is a <div class="sub"> that used to be a <p>, and a <p> nested in a <p>
+   is invalid HTML). `.term-line` is a meta-only class applied to the spans themselves, not a
+   restyle of the shared `.term-tip`/`.term`/`.term-wrap` component. */
+.term-line {
+  display: block;
 }
-.term-tip p + p {
+.term-line + .term-line {
   margin-top: 6px;
 }
 
