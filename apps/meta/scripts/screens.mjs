@@ -45,8 +45,29 @@ import { auditPage, forEachTheme, prepareAudit } from '../../../scripts/audit.mj
 const AUDIT = process.argv.includes('--audit');
 /** Screens held to the audit: a finding here fails the run. Each page redesign adds its own
  * screen names as it passes (design foundation, section 5). */
-const AUDIT_ENFORCED = new Set([]);
+const AUDIT_ENFORCED = new Set([
+  'great',
+  'great-open',
+  'great-sort',
+  'great-ranked',
+  'pokemon',
+  'pokemon-tournaments',
+  'pokemon-pvpoke',
+  'pokemon-ranked',
+  // `species-${DETAIL_SPECIES}` is added below, once the fixtures have named it.
+  'species-thin',
+  'species-missing',
+  'about',
+]);
 const auditFindings = [];
+/** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
+const captured = new Set();
+/** Text scrolled out of its scroll container in a capture, so the audit could not measure it; and
+ * per run, page group and theme, the elements measured in some capture. On an enforced screen,
+ * text no capture of its page measured in that theme fails the run (the NEVER rule, as in
+ * apps/web/scripts/screens.mjs). */
+const unmeasured = [];
+const measuredOnPage = new Map();
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '..', 'screenshots');
@@ -103,6 +124,12 @@ const CURATED_IDS = (() => {
 // The species drill-down target: the curated group's own top pick, guaranteed a matrix row, a
 // real sprite, and (once battles > 0) a nonzero record from the species stats built below.
 const DETAIL_SPECIES = CURATED_IDS[0];
+AUDIT_ENFORCED.add(`species-${DETAIL_SPECIES}`);
+// The thin Species page: the curated group's second pick, with a single week in the window (so
+// the weekly card is left out) and battles run but no moves known ("No moves reported yet.").
+const THIN_SPECIES = CURATED_IDS[1];
+// A well-formed id nothing on the site knows, for the not-found page.
+const MISSING_SPECIES = 'missingno';
 
 const SHARE_CURVE = [0.3, 0.22, 0.16, 0.12, 0.1, 0.08];
 
@@ -150,7 +177,21 @@ function metaFixture(battles, devices, tBattles = 0, events = 0) {
     sources: battles === 0 ? {} : { ladder: battles },
     species,
     teams: [],
-    previous: null,
+    // A previous window only once both sides clear TREND_MIN (200) by a wide margin, the thick
+    // run: the top two picks swap places since then, so the list shows one rising and one falling
+    // trend tag, well past `trendPoints`' own 95% band, and the audit sees both tones.
+    previous:
+      battles < 1000
+        ? null
+        : {
+            battles,
+            species: CURATED_IDS.map((id, i) => ({
+              speciesId: id,
+              sightings: Math.round(
+                battles * (i === 0 ? SHARE_CURVE[1] : i === 1 ? SHARE_CURVE[0] : SHARE_CURVE[i]),
+              ),
+            })),
+          },
     tournament: tBattles === 0 ? null : tournamentFixture(tBattles, events),
     generatedAt: ISO_NOW,
   };
@@ -172,7 +213,9 @@ function tournamentSpeciesStats(speciesId, share, battles) {
  * `metaFixture`'s battles/devices drive the ladder curve. `eventsOther` stays 0: this pass never
  * exercises an event on a non-blended cup, which has its own coverage in rank.test.ts. */
 function tournamentFixture(battles, events) {
-  const species = CURATED_IDS.map((id, i) => tournamentSpeciesStats(id, SHARE_CURVE[i] ?? 0, battles));
+  const species = CURATED_IDS.map((id, i) =>
+    tournamentSpeciesStats(id, SHARE_CURVE[i] ?? 0, battles),
+  );
   return { events, battles, eventsOther: 0, species };
 }
 
@@ -240,6 +283,10 @@ function teamsFixture(battles, devices) {
     Math.round(battles * 0.03),
     OVERPERFORM,
   );
+  // A second complete team on the core's pair, faced only: the core is then seen in two teams,
+  // which is what puts the "Multi-team only" chip on the board (the `great-sort` capture turns it
+  // on), and it is the faced-only branch of the collapsed row's line.
+  const teamA2 = teamRow([a, b, d].sort(), 'team', 0, Math.round(battles * 0.03));
   // Shares no pair with `core`, so it stands alone on the board as an orphaned "Full team" card,
   // run-only (never faced), the third recordLine branch (Teams.tsx's "reporters went").
   const teamB = teamRow([d, e, f].sort(), 'team', Math.round(battles * 0.016), 0);
@@ -251,7 +298,7 @@ function teamsFixture(battles, devices) {
     battles,
     devices,
     sources: { ladder: battles },
-    teams: [teamA, teamB],
+    teams: [teamA, teamA2, teamB],
     cores: [core],
     generatedAt: ISO_NOW,
   };
@@ -276,11 +323,38 @@ const EMPTY_SPECIES_DETAIL = {
   generatedAt: ISO_NOW,
 };
 
-function speciesDetailFixture(battles) {
+/** PvPoke's recommended set for a species, straight off the baked baseline, so the fixture's
+ * moves are real move ids the page can name and the "PvPoke's set" tag has a set to match. */
+function baselineSet(speciesId) {
+  const entry = BASELINE.species.find((s) => s.speciesId === speciesId);
+  return { fast: entry.fastMove, charged: [...entry.chargedMoves] };
+}
+
+/** Splits `total` over `shares` in whole numbers that still add up to `total`. */
+function splitWhole(total, shares) {
+  const out = shares.map((s) => Math.floor(total * s));
+  out[out.length - 1] += total - out.reduce((a, b) => a + b, 0);
+  return out;
+}
+
+/** The full Species page: three weeks (charted once every week clears SHARE_MIN, the counts-only
+ * fallback below that), partners seen next to it, moves known in some of the battles it was run
+ * in (so "Moves known in X of Y" has two different numbers), and, once the run seeds tournament
+ * battles, a tournament block with roster sets, one of them PvPoke's own. */
+function speciesDetailFixture(battles, tBattles) {
   if (battles === 0) {
     return EMPTY_SPECIES_DETAIL;
   }
   const s = speciesStats(DETAIL_SPECIES, SHARE_CURVE[0] ?? 0, battles);
+  const weekShares = [0.3, 0.3, 0.4];
+  const weekBattles = splitWhole(battles, weekShares);
+  const weekSightings = splitWhole(s.sightings, [0.26, 0.32, 0.42]);
+  const [b, c, d] = CURATED_IDS.slice(1);
+  const pvpokeSet = baselineSet(DETAIL_SPECIES);
+  const known = Math.round(s.runs * 0.6);
+  const [mainSet, otherSet] = splitWhole(known, [0.75, 0.25]);
+  const picks = Math.round(tBattles * (SHARE_CURVE[0] ?? 0));
+  const [tWins, tLosses] = splitDecided(picks, 0.5);
   return {
     league: LEAGUE,
     speciesId: DETAIL_SPECIES,
@@ -293,16 +367,64 @@ function speciesDetailFixture(battles) {
     runs: s.runs,
     runWins: s.runWins,
     runLosses: s.runLosses,
-    weekly: [{ week: '2026-W37', battles, sightings: s.sightings }],
-    bands: [{ band: 'ace', sightings: s.sightings, wins: s.wins, losses: s.losses }],
-    alongside: [],
-    movesets: [],
+    weekly: ['2026-W35', '2026-W36', '2026-W37'].map((week, i) => ({
+      week,
+      battles: weekBattles[i],
+      sightings: weekSightings[i],
+    })),
+    bands: [],
+    alongside: [
+      { speciesId: b, battles: Math.round(s.sightings * 0.3) },
+      { speciesId: c, battles: Math.round(s.sightings * 0.2) },
+      { speciesId: d, battles: Math.round(s.sightings * 0.1) },
+    ],
+    movesets: [
+      { ...pvpokeSet, battles: mainSet },
+      { fast: pvpokeSet.fast, charged: [pvpokeSet.charged[0], 'PLAY_ROUGH'], battles: otherSet },
+    ],
+    tournament:
+      tBattles === 0
+        ? null
+        : {
+            picks,
+            game1Picks: Math.round(picks * 0.6),
+            wins: tWins,
+            losses: tLosses,
+            byDepth: [],
+            unresolvedForms: 1,
+            broughtBy: 9,
+            rosterSize: 32,
+            pickedOnStream: Math.min(picks, 7),
+            movesets: [
+              { ...pvpokeSet, entries: 6 },
+              { fast: pvpokeSet.fast, charged: [pvpokeSet.charged[0], 'PLAY_ROUGH'], entries: 2 },
+            ],
+            movesetsKnown: 8,
+          },
     generatedAt: ISO_NOW,
   };
 }
 
-function battlesText(n) {
-  return `${n.toLocaleString('en-US')} ${n === 1 ? 'battle' : 'battles'}`;
+/** The thin Species page: one week in the window, so the weekly card is left out, and battles run
+ * with no moves known, so the moves card says "No moves reported yet." rather than a share. */
+function thinSpeciesDetailFixture(battles) {
+  if (battles === 0) {
+    return { ...EMPTY_SPECIES_DETAIL, speciesId: THIN_SPECIES };
+  }
+  const s = speciesStats(THIN_SPECIES, SHARE_CURVE[1] ?? 0, battles);
+  return {
+    ...EMPTY_SPECIES_DETAIL,
+    speciesId: THIN_SPECIES,
+    sightings: s.sightings,
+    wins: s.wins,
+    losses: s.losses,
+    runs: s.runs,
+    runWins: s.runWins,
+    runLosses: s.runLosses,
+    weekly: [{ week: '2026-W37', battles, sightings: s.sightings }],
+    movesets: [],
+    tournament: null,
+  };
 }
 
 function devicesText(n) {
@@ -314,21 +436,12 @@ function eventsText(n) {
 }
 
 /** Whole-percent tournament say, exactly as `tournamentSay` (rank.ts) computes it: min(battles
- * curve, events curve). The tournament-only source's header line rounds at exactly this one
- * point, so this number alone reproduces it. */
+ * curve, events curve). The tournament-only line (`blendParts`' `source === 'tournament'`
+ * branch) rounds at exactly this one point, so this number alone reproduces it. */
 function tournamentSay(battles, events) {
   const byBattles = battles <= 0 ? 0 : battles / (battles + 100);
   const byEvents = events <= 0 ? 0 : events / (events + 2);
   return Math.round(Math.min(byBattles, byEvents) * 100);
-}
-
-/** The tournament-only source's header line (headerCopy.ts's `source === 'tournament'` branch,
- * nonzero case), built from `tournamentSay`. Used as the `pokemon-tournaments` needle: it is a
- * superset of the required "Not shared ladder play." text, checked exactly rather than loosely
- * because this branch rounds at only the one point `tournamentSay` already rounds at. */
-function headerFragmentTournament(battles, events) {
-  const t = tournamentSay(battles, events);
-  return `${t}% from tournaments, ${100 - t}% PvPoke. From ${battlesText(battles)} at ${eventsText(events)}. Not shared ladder play.`;
 }
 
 /** The `all` source's header line once a window has both shared ladder battles and blended
@@ -358,76 +471,147 @@ function headerFragmentAll(battles, devices, tBattles, events) {
   return `PvPoke ${pvpokePct}%, tournaments ${tPct}%, GBL ${lPct}%. From ${shared} by ${devicesText(devices)} and ${tourney}.`;
 }
 
-const RUNS = [
-  {
-    name: 'empty',
-    battles: 0,
-    devices: 0,
-    tBattles: 0,
-    events: 0,
-    needles: {
-      great: [
-        "Projected against PvPoke's meta group. No shared battles in this window yet.",
-        'Projected',
-      ],
-      pokemon: ["PvPoke's list. No shared battles in this window yet."],
-      'pokemon-tournaments': ["PvPoke's list. No tournament battles in this window yet."],
-      'pokemon-pvpoke': ['Nothing measured.'],
-    },
-  },
-  {
-    name: 'thin',
-    battles: 50,
-    devices: 1,
-    tBattles: 40,
-    events: 1,
-    needles: {
-      great: [headerFragmentAll(50, 1, 40, 1)],
-      pokemon: [headerFragmentAll(50, 1, 40, 1)],
-      'pokemon-tournaments': [headerFragmentTournament(40, 1)],
-      'pokemon-pvpoke': ['Nothing measured.'],
-    },
-  },
-  {
-    name: 'mid',
-    battles: 500,
-    devices: 5,
-    tBattles: 105,
-    events: 1,
-    needles: {
-      great: [headerFragmentAll(500, 5, 105, 1)],
-      pokemon: [headerFragmentAll(500, 5, 105, 1)],
-      'pokemon-tournaments': [headerFragmentTournament(105, 1)],
-      'pokemon-pvpoke': ['Nothing measured.'],
-    },
-  },
-  {
-    name: 'thick',
-    battles: 5000,
-    devices: 30,
-    tBattles: 600,
-    events: 4,
-    needles: {
-      great: [headerFragmentAll(5000, 30, 600, 4)],
-      pokemon: [headerFragmentAll(5000, 30, 600, 4), 'PvPoke #'],
-      'pokemon-tournaments': [headerFragmentTournament(600, 4)],
-      'pokemon-pvpoke': ['Nothing measured.'],
-    },
-  },
-].map((run) => ({
-  ...run,
-  meta: metaFixture(run.battles, run.devices, run.tBattles, run.events),
-  teams: teamsFixture(run.battles, run.devices),
-  speciesDetail: speciesDetailFixture(run.battles),
-}));
+const TERM = 'How it is ranked';
 
+/** The one line the lists open with (headerCopy.ts's `blendParts`, joined with " · ", then the
+ * "How it is ranked" Term), under the `all` source. Built from the same unrounded curves as
+ * `headerFragmentAll` above and rounded only at the end, as `blendParts` rounds. */
+function blendLineAll(battles, devices, tBattles, events) {
+  if (battles === 0 && tBattles === 0) {
+    return `PvPoke 100% · No shared battles yet · ${TERM}`;
+  }
+  const say = Math.min(
+    battles <= 0 ? 0 : battles / (battles + 300),
+    devices <= 0 ? 0 : devices / (devices + 5),
+  );
+  const tSay = Math.min(
+    tBattles <= 0 ? 0 : tBattles / (tBattles + 100),
+    events <= 0 ? 0 : events / (events + 2),
+  );
+  const parts = [`PvPoke ${Math.round((1 - say) * (1 - tSay) * 100)}%`];
+  if (tBattles > 0) {
+    parts.push(`Tournaments ${Math.round((1 - say) * tSay * 100)}%`);
+  }
+  if (battles > 0) {
+    parts.push(`GBL ${Math.round(say * 100)}%`);
+  }
+  return [...parts, TERM].join(' · ');
+}
+
+/** The same line under the tournament source. */
+function blendLineTournament(tBattles, events) {
+  if (tBattles === 0) {
+    return `PvPoke 100% · No tournament battles yet · ${TERM}`;
+  }
+  const t = tournamentSay(tBattles, events);
+  return `PvPoke ${100 - t}% · Tournaments ${t}% · ${TERM}`;
+}
+
+const PRIOR_LINE = `PvPoke 100% · ${TERM}`;
+
+/** Needles for one seeded volume: the one line on every list capture, and the Term's first
+ * sentence (`sourceHeaderLine`, the sentence the line used to be) on the captures that open it. */
+function needlesFor({ battles, devices, tBattles, events }) {
+  const all = blendLineAll(battles, devices, tBattles, events);
+  const zero = battles === 0 && tBattles === 0;
+  return {
+    great: [all],
+    'great-open': [all],
+    'great-sort': [all, 'Sort: Matchup'],
+    'great-ranked': [
+      zero
+        ? "Projected against PvPoke's meta group. No shared battles in this window yet."
+        : headerFragmentAll(battles, devices, tBattles, events),
+    ],
+    pokemon: [all],
+    'pokemon-ranked': [
+      zero
+        ? "PvPoke's list. No shared battles in this window yet."
+        : headerFragmentAll(battles, devices, tBattles, events),
+    ],
+    'pokemon-tournaments': [blendLineTournament(tBattles, events)],
+    'pokemon-pvpoke': [PRIOR_LINE, 'Nothing measured.'],
+    'species-thin': battles === 0 ? [] : ['No moves reported yet.'],
+    'species-missing': ['No Pokémon by that name in'],
+    about: ['Appearance'],
+  };
+}
+
+const RUNS = [
+  { name: 'empty', battles: 0, devices: 0, tBattles: 0, events: 0 },
+  { name: 'thin', battles: 50, devices: 1, tBattles: 40, events: 1 },
+  { name: 'mid', battles: 500, devices: 5, tBattles: 105, events: 1 },
+  { name: 'thick', battles: 5000, devices: 30, tBattles: 600, events: 4 },
+].map((run) => {
+  const needles = needlesFor(run);
+  needles.great.push(...(run.battles === 0 ? ['Projected'] : []));
+  needles.pokemon.push(...(run.name === 'thick' ? ['PvPoke #'] : []));
+  needles[`species-${DETAIL_SPECIES}`] =
+    run.battles === 0 ? [] : ['Moves known in', 'Who beats it', 'Build a team around it'];
+  return {
+    ...run,
+    needles,
+    meta: metaFixture(run.battles, run.devices, run.tBattles, run.events),
+    teams: teamsFixture(run.battles, run.devices),
+    speciesDetail: speciesDetailFixture(run.battles, run.tBattles),
+    thinSpeciesDetail: thinSpeciesDetailFixture(run.battles),
+  };
+});
+
+/** Opens the first few team rows: the board renders every row collapsed, so without this no
+ * capture sees the panel that carries most of the screen's copy (the record sentence, the
+ * matchup score, the thirds a core was seen with, the nested build lines). */
+async function openRows(page) {
+  await page.evaluate(() => {
+    for (const head of Array.from(document.querySelectorAll('.row-head')).slice(0, 3)) {
+      head.click();
+    }
+  });
+}
+
+/** Opens the "How it is ranked" Term under the list's one line. */
+async function openRanked(page) {
+  await page.click('.term');
+  await page.waitForSelector('.term-tip', { timeout: 10_000 });
+}
+
+/** Multi-team only on (when the board offers it) and Sort set to its second option. Sort is a
+ * native select under the InlineSelect's text, so the capture shows the choice made, not the
+ * platform's open picker, which no screenshot can see. */
+async function sortSecond(page) {
+  await page.evaluate(() => {
+    const chip = Array.from(document.querySelectorAll('.board-controls .chip')).find((b) =>
+      (b.textContent ?? '').includes('Multi-team only'),
+    );
+    if (chip) {
+      chip.click();
+    }
+  });
+  const second = await page.evaluate(
+    () => document.querySelector('.board-controls select')?.options[1]?.value ?? null,
+  );
+  if (second === null) {
+    throw new Error('great-sort: the Sort select has no second option');
+  }
+  await page.select('.board-controls select', second);
+}
+
+/** [capture name, path, action after the page settles, page group for the NEVER rule]. The group
+ * is the page a capture belongs to: text scrolled out of view in one capture of a page counts as
+ * measured when another capture of the same page, in the same run and theme, measured it. */
 const PAGES = [
-  ['great', `/${LEAGUE}`],
-  ['pokemon', `/${LEAGUE}/pokemon`],
-  ['pokemon-tournaments', `/${LEAGUE}/pokemon?source=tournament`],
-  ['pokemon-pvpoke', `/${LEAGUE}/pokemon?source=prior`],
-  [`species-${DETAIL_SPECIES}`, `/${LEAGUE}/p/${DETAIL_SPECIES}`],
-  ['about', '/about'],
+  ['great', `/${LEAGUE}`, null, 'great'],
+  ['great-open', `/${LEAGUE}`, openRows, 'great'],
+  ['great-sort', `/${LEAGUE}`, sortSecond, 'great'],
+  ['great-ranked', `/${LEAGUE}`, openRanked, 'great'],
+  ['pokemon', `/${LEAGUE}/pokemon`, null, 'pokemon'],
+  ['pokemon-ranked', `/${LEAGUE}/pokemon`, openRanked, 'pokemon'],
+  ['pokemon-tournaments', `/${LEAGUE}/pokemon?source=tournament`, null, 'pokemon-tournaments'],
+  ['pokemon-pvpoke', `/${LEAGUE}/pokemon?source=prior`, null, 'pokemon-pvpoke'],
+  [`species-${DETAIL_SPECIES}`, `/${LEAGUE}/p/${DETAIL_SPECIES}`, null, 'species'],
+  ['species-thin', `/${LEAGUE}/p/${THIN_SPECIES}`, null, 'species-thin'],
+  ['species-missing', `/${LEAGUE}/p/${MISSING_SPECIES}`, null, 'species-missing'],
+  ['about', '/about', null, 'about'],
 ];
 
 const errors = [];
@@ -458,7 +642,11 @@ function fixtureFor(run) {
     if (url.pathname.startsWith('/api/v1/species/')) {
       const id = decodeURIComponent(url.pathname.slice('/api/v1/species/'.length));
       const detail =
-        id === DETAIL_SPECIES ? run.speciesDetail : { ...EMPTY_SPECIES_DETAIL, speciesId: id };
+        id === DETAIL_SPECIES
+          ? run.speciesDetail
+          : id === THIN_SPECIES
+            ? run.thinSpeciesDetail
+            : { ...EMPTY_SPECIES_DETAIL, speciesId: id };
       await json(detail);
       return;
     }
@@ -517,18 +705,18 @@ async function assertNoOverflow(page, label) {
   }
 }
 
-async function assertAscii(page, label) {
+/** The site's copy writes "Pokémon" with its accent and "·" between the parts of a line, so the
+ * old 7-bit ASCII check is retired (docs/superpowers/specs/2026-09-28-design-meta-design.md). The
+ * no-em-dash rule stays, and this is where the screens pass checks it. */
+async function assertNoEmDash(page, label) {
   const bad = await page.evaluate(() => {
     const text = document.body.innerText;
-    const hit = [...text].find((c) => c.charCodeAt(0) > 127);
-    if (!hit) {
-      return null;
-    }
-    const i = text.indexOf(hit);
-    return `${hit} (U+${hit.codePointAt(0).toString(16).padStart(4, '0')}) in: ${text.slice(Math.max(0, i - 40), i + 40)}`;
+    // Built from its code point: the source itself never holds the character it looks for.
+    const i = text.indexOf(String.fromCharCode(0x2014));
+    return i === -1 ? null : text.slice(Math.max(0, i - 40), i + 40);
   });
-  if (bad) {
-    throw new Error(`${label}: non-ASCII text rendered: ${bad}`);
+  if (bad !== null) {
+    throw new Error(`${label}: an em dash (U+2014) is on screen in: ${bad}`);
   }
 }
 
@@ -587,15 +775,25 @@ for (const run of RUNS) {
   await page.setRequestInterception(true);
   page.on('request', fixtureFor(run));
 
-  for (const [name, urlPath] of PAGES) {
+  for (const [name, urlPath, act, group] of PAGES) {
     console.log(`  ${name}`);
     await page.goto(`${base}${urlPath}`, { waitUntil: 'domcontentloaded' });
     await settle(page);
+    // A click-then-capture step (a row open, the Sort changed, the Term open) acts on the settled
+    // page and settles again before anything is checked or shot.
+    if (act) {
+      await act(page);
+      await settle(page);
+    }
+    captured.add(name);
     const label = `${run.name} ${name}`;
     await assertNoOverflow(page, label);
-    await assertAscii(page, label);
+    await assertNoEmDash(page, label);
     const file = path.join(outDir, `${run.name}-${name}.png`);
-    await page.screenshot({ path: file, fullPage: true });
+    // A full-page shot resizes the viewport to the page instead of stitching past it, so the fixed
+    // tab bar lands at the true bottom rather than across the middle of the page (and over
+    // whatever card happens to sit there).
+    await page.screenshot({ path: file, fullPage: true, captureBeyondViewport: false });
     // A viewport capture alongside the full-page one: what a reader actually meets above the
     // fold at phone width, the header row included, rather than a tall image that scrolls the
     // header out of frame by the time anyone looks at it.
@@ -608,9 +806,20 @@ for (const run of RUNS) {
         await page.screenshot({
           path: path.join(outDir, `${run.name}-${name}-audit-${theme}.png`),
           fullPage: true,
+          captureBeyondViewport: false,
         });
-        for (const f of await auditPage(page)) {
+        const report = { unmeasured: [], measured: [] };
+        for (const f of await auditPage(page, report)) {
           auditFindings.push({ name, line: `[${run.name} ${name} ${theme}] ${f}` });
+        }
+        // Keyed by run and theme too: the fixture volume changes what a page holds, and text
+        // measured only in light says nothing about its contrast in dark.
+        const pageKey = `${run.name} ${group}|${theme}`;
+        const seen = measuredOnPage.get(pageKey) ?? new Set();
+        report.measured.forEach((k) => seen.add(k));
+        measuredOnPage.set(pageKey, seen);
+        for (const u of report.unmeasured) {
+          unmeasured.push({ name, run: run.name, theme, group, ...u });
         }
       });
     }
@@ -624,32 +833,6 @@ for (const run of RUNS) {
         }
       }
     }
-
-    // The team board renders every row collapsed, so the pass above never sees the panel that
-    // carries most of the screen's copy (the record sentence, the matchup score, the thirds a
-    // core was seen with, the nested build lines). Open the first few and shoot that state too,
-    // or a console error, an overflow or a non-ASCII character in there would go unseen.
-    if (name === 'great') {
-      const opened = await page.evaluate(() => {
-        const heads = Array.from(document.querySelectorAll('.row-head')).slice(0, 3);
-        for (const head of heads) {
-          head.click();
-        }
-        return heads.length;
-      });
-      if (opened > 0) {
-        await settle(page);
-        const openLabel = `${label} open`;
-        await assertNoOverflow(page, openLabel);
-        await assertAscii(page, openLabel);
-        await page.screenshot({ path: path.join(outDir, `${run.name}-great-open.png`), fullPage: true });
-        await page.screenshot({
-          path: path.join(outDir, `${run.name}-great-open-viewport.png`),
-          fullPage: false,
-        });
-        console.log(`    ${run.name}-great-open.png (${Date.now() - t0} ms)`);
-      }
-    }
   }
 
   await page.close();
@@ -658,12 +841,42 @@ for (const run of RUNS) {
 await browser.close();
 console.log(`done in ${Date.now() - t0} ms`);
 if (AUDIT) {
+  // Text never on screen in any capture of its page, in that run and theme, was never measured
+  // at all. On an enforced screen that is a finding: the audit cannot vouch for its contrast.
+  const unmeasuredLines = unmeasured.map((u) => {
+    const measuredElsewhere =
+      measuredOnPage.get(`${u.run} ${u.group}|${u.theme}`)?.has(u.key) ?? false;
+    const enforcedName = AUDIT_ENFORCED.has(u.name);
+    const text = u.text.slice(0, 40);
+    const at = `${u.run} ${u.name} ${u.theme}`;
+    if (!measuredElsewhere && enforcedName) {
+      auditFindings.push({
+        name: u.name,
+        line: `[${at}] contrast unmeasured: ${u.selector} "${text}" is scrolled out of its container and no ${u.theme} capture of ${u.run} ${u.group} measured it`,
+      });
+    }
+    const where = measuredElsewhere
+      ? `measured in another ${u.theme} capture of ${u.run} ${u.group}`
+      : `NEVER measured in any ${u.theme} capture of ${u.run} ${u.group}`;
+    const mark = enforcedName ? ' (enforced)' : '';
+    return `  [${at}]${mark} ${u.selector} "${text}": ${where}`;
+  });
   const enforced = auditFindings.filter((f) => AUDIT_ENFORCED.has(f.name));
   const reported = auditFindings.filter((f) => !AUDIT_ENFORCED.has(f.name));
   if (reported.length > 0) {
-    console.log(`\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`);
+    console.log(
+      `\nAudit findings on screens not yet redesigned (${reported.length}, not failing):`,
+    );
     for (const f of reported) {
       console.log(`  ${f.line}`);
+    }
+  }
+  if (unmeasuredLines.length > 0) {
+    console.log(
+      '\nNot on screen, unmeasured (scrolled out of their container; NEVER on an enforced screen fails):',
+    );
+    for (const line of unmeasuredLines) {
+      console.log(line);
     }
   }
   if (enforced.length > 0) {
@@ -671,6 +884,12 @@ if (AUDIT) {
     for (const f of enforced) {
       console.log(`  ${f.line}`);
     }
+    process.exitCode = 1;
+  }
+  // A renamed or dropped shot would otherwise take its enforcement with it, silently.
+  const neverCaptured = [...AUDIT_ENFORCED].filter((name) => !captured.has(name));
+  if (neverCaptured.length > 0) {
+    console.log(`\nAudited screens never captured: ${neverCaptured.join(', ')}`);
     process.exitCode = 1;
   }
 }
