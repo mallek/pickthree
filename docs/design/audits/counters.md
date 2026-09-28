@@ -354,4 +354,5 @@ From the final review's fix wave:
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-28 (used the live page after `07cb395` shipped: "That looks good"; the open items
+  stand as recorded).
