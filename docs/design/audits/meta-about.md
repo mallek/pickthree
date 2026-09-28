@@ -102,7 +102,7 @@ unconditional copy, not fixture-dependent, so nothing to differ here).
 | Task 5, minor folded into fix round 1: two headings ("Top teams" in the header and "Teams" in the body) sat on the same page until Task 6. | Not About's own issue; resolved when Task 6 shipped. | (Task 6) |
 | Task 9 audit: the Appearance Seg's 60x21 targets, and it was visibly unstyled (bare grey buttons), since `.seg` rules lived only in `apps/web/src/app.css` and meta never had them. | Moved verbatim to `packages/ui/base.css` (both apps import base.css before app.css, so pick3's cascade is unchanged); About's card gets `.appearance .seg > * { min-height: var(--tap) }`. | `ac8dfec` |
 | Task 9, by eye: About said "The team board behind Teams" and "On Teams, ...". | Both now say "Top teams", the page's real name. | `ac8dfec` |
-| 2026-09-28 whole-branch review, minor: the "Planned" pill on "For other apps" was a one-off inline-styled `<span>` (its own copy of a rounded-pill look, `text-transform: uppercase` included), not a shared component. | It is now the ui `Tag` (`About.tsx`); same look and position, one fewer bespoke style, and it drops the forced upper-case, so it reads "Planned" rather than "PLANNED". | this fix wave |
+| 2026-09-28 whole-branch review, minor: the "Planned" pill on "For other apps" was a one-off inline-styled `<span>` (its own copy of a rounded-pill look, `text-transform: uppercase` included), not a shared component. | It is now the ui `Tag` (`About.tsx`); same look and position, one fewer bespoke style, and it drops the forced upper-case, so it reads "Planned" rather than "PLANNED". | `b92781d` |
 
 ## Rulings
 
