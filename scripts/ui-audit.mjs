@@ -152,6 +152,51 @@ try {
       `[self-check] expected exactly one measured contrast finding on #edge, got: ${JSON.stringify(edge)}`,
     );
   }
+
+  // Text scrolled out of a scroll box: ten lines of passing text (#333333 on white) in a 100px
+  // overflow-y: auto box. axe clips only to overflow: hidden, so it passes every line against the
+  // box's background, including the ones below the fold that are not on screen. The audit must hand
+  // those back as not on screen: with no report, each is a "contrast unverified: ... scrolled out
+  // of its container" finding; with a report, each lands in report.unmeasured, never in
+  // report.measured. The lines in view (#s1 to #s4) stay measured passes.
+  const scrollLines = Array.from(
+    { length: 10 },
+    (_, i) => `<p id="s${i + 1}">Line ${i + 1} of text</p>`,
+  ).join('');
+  await page.setContent(`<!doctype html>
+<html lang="en"><head><title>audit self-check, scroll box</title><style>
+  body { margin: 0; font: 16px/24px sans-serif; background: #ffffff; }
+  .box { height: 100px; overflow-y: auto; background: #ffffff; }
+  p { margin: 0; color: #333333; }
+</style></head><body><div class="box">${scrollLines}</div></body></html>`);
+  const below = ['#s6', '#s7', '#s8', '#s9', '#s10'];
+  const inView = ['#s1', '#s2', '#s3', '#s4'];
+  const scrolled = await auditPage(page);
+  const scrolledExpected =
+    scrolled.length === below.length &&
+    below.every((id) =>
+      scrolled.some(
+        (f) => f === `contrast unverified: ${id} is scrolled out of its container, not on screen`,
+      ),
+    );
+  if (!scrolledExpected) {
+    failures.push(
+      `[self-check] expected ${below.join(', ')} unverified as scrolled out, got: ${JSON.stringify(scrolled)}`,
+    );
+  }
+  const scrollReport = { unmeasured: [], measured: [] };
+  const reported = await auditPage(page, scrollReport);
+  const lineKey = (id) => new RegExp(`\\nLine ${id.slice(2)} of text$`);
+  const reportExpected =
+    reported.length === 0 &&
+    below.every((id) => scrollReport.unmeasured.some((u) => u.selector === id)) &&
+    below.every((id) => !scrollReport.measured.some((k) => lineKey(id).test(k))) &&
+    inView.every((id) => scrollReport.measured.some((k) => lineKey(id).test(k)));
+  if (!reportExpected) {
+    failures.push(
+      `[self-check] expected ${below.join(', ')} in report.unmeasured and out of report.measured, got: ${JSON.stringify({ reported, scrollReport })}`,
+    );
+  }
   await page.close();
 } finally {
   await browser.close();

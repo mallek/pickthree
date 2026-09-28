@@ -179,17 +179,8 @@ export async function auditPage(page, report) {
       r.right <= outer.right + 0.5 &&
       r.top >= outer.top - 0.5 &&
       r.bottom <= outer.bottom + 0.5;
-    const measureBelowOpaque = (el) => {
-      for (let e = el; e; e = e.parentElement) {
-        const cs = getComputedStyle(e);
-        if (cs.opacity !== '1' || cs.mixBlendMode !== 'normal' || cs.filter !== 'none') {
-          return null;
-        }
-      }
-      const style = getComputedStyle(el);
-      if (style.textShadow !== 'none') {
-        return null;
-      }
+    // What of an element's text is on screen.
+    const onScreen = (el) => {
       // axe clips text to overflow: hidden ancestors only, so a line cut by a scroll container (the
       // last lines of a sheet page that scrolls, running past the sheet's bottom edge) keeps its
       // whole box, and no opaque layer inside the container "covers" it. Only the part inside
@@ -203,9 +194,10 @@ export async function auditPage(page, report) {
       // Not handled: an absolutely positioned descendant whose containing block sits above an
       // overflow ancestor escapes that ancestor's clip, but is still clipped by it here. That errs
       // toward measuring less of it (or listing it as not on screen), never toward measuring text
-      // that is off screen.
+      // that is off screen. The same walk is asked of every node axe passes (below), since axe's
+      // clip to overflow: hidden alone passes text scrolled out of an overflow: auto box.
       const clips = [];
-      const selfFixed = style.position === 'fixed';
+      const selfFixed = getComputedStyle(el).position === 'fixed';
       for (
         let a = selfFixed ? null : el.parentElement;
         a && a !== document.body;
@@ -240,7 +232,22 @@ export async function auditPage(page, report) {
           ? [new DOMRect(left, top, right - left, bottom - top)]
           : [];
       });
-      if (clips.length > 0 && wholeRects.length > 0 && shownRects.length === 0) {
+      const hidden = clips.length > 0 && wholeRects.length > 0 && shownRects.length === 0;
+      return { clips, wholeRects, shownRects, hidden };
+    };
+    const measureBelowOpaque = (el) => {
+      for (let e = el; e; e = e.parentElement) {
+        const cs = getComputedStyle(e);
+        if (cs.opacity !== '1' || cs.mixBlendMode !== 'normal' || cs.filter !== 'none') {
+          return null;
+        }
+      }
+      const style = getComputedStyle(el);
+      if (style.textShadow !== 'none') {
+        return null;
+      }
+      const { clips, wholeRects, shownRects, hidden } = onScreen(el);
+      if (hidden) {
         return { hidden: true };
       }
       const textRects = clips.length > 0 ? shownRects : wholeRects;
@@ -345,14 +352,33 @@ export async function auditPage(page, report) {
       }
       return `${steps.join(' > ')}\n${textOf(e)}`;
     };
-    const measuredKeys = [...res.passes, ...res.violations].flatMap((v) =>
-      v.nodes.map((n) => keyOf(document.querySelector(n.target.join(' ')))),
-    );
+    const measuredKeys = [];
     const hidden = [];
     const unverified = [];
     const incomplete = res.incomplete.flatMap((v) => v.nodes);
     window.axe.setup(document);
     try {
+      // axe clips text to overflow: hidden only, so it passes text scrolled wholly out of an
+      // overflow: auto box against the box's background. Such a pass is not on screen: it is
+      // handed back as hidden, like an undecided node out of sight, never counted as measured.
+      for (const n of res.passes.flatMap((v) => v.nodes)) {
+        const el = document.querySelector(n.target.join(' '));
+        if (el && el.closest('[data-audit-contrast="static"]')) {
+          continue;
+        }
+        if (el && onScreen(el).hidden) {
+          hidden.push({ selector: n.target.join(' '), key: keyOf(el), text: textOf(el) });
+          continue;
+        }
+        measuredKeys.push(keyOf(el));
+      }
+      // A violation stays a failing finding wherever it is; it counts as measured only on screen.
+      for (const n of res.violations.flatMap((v) => v.nodes)) {
+        const el = document.querySelector(n.target.join(' '));
+        if (!(el && onScreen(el).hidden)) {
+          measuredKeys.push(keyOf(el));
+        }
+      }
       for (const n of incomplete) {
         const el = document.querySelector(n.target.join(' '));
         if (el && el.closest('[data-audit-contrast="static"]')) {
