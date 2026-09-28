@@ -353,6 +353,16 @@ a.rank-row {
   font-size: 12px;
 }
 
+/* Task 6: "How it is ranked" carries several sentences as separate paragraphs (the source
+   sentence, the sources line, the matchup explainer, the coverage line), so its own gap replaces
+   each <p>'s default browser margin, the same rule `.row-body p` follows for a row's own panel. */
+.term-tip p {
+  margin: 0;
+}
+.term-tip p + p {
+  margin-top: 6px;
+}
+
 .bar > span {
   display: block;
   height: 100%;
@@ -523,15 +533,6 @@ a.rank-row {
   border-radius: 999px;
   background: var(--surface2);
   font-size: 11px;
-}
-
-/* Task 12: the kind tag ("Core", "Full team", "Projected") in an open row or on a nested build
-   line. Neutral, unlike ConfidenceTag's tag-few/some/many: this says what a row IS, not how much
-   to trust it. */
-.tag-kind {
-  background: var(--surface2);
-  color: var(--text);
-  font-weight: 600;
 }
 
 /* Task 12: the "Built as" list nested under a core, and its compact rows. Each row is its own

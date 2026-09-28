@@ -84,10 +84,15 @@ export function useStatic(deps?: Deps): Loaded<StaticData> & { retry: () => void
   return { ...result, retry: () => setAttempt((n) => n + 1) };
 }
 
-export function useBaseline(league: string, deps?: Deps): Loaded<Baseline> {
+/** Same retry pattern as `useStatic`: an `attempt` counter folded into `useAsync`'s own key array,
+ * so a caller's "Try again" genuinely refetches rather than replaying a rejected promise. Task 7
+ * (Pokemon) and Task 8 (Species) reuse this retry, hence the plain name. */
+export function useBaseline(league: string, deps?: Deps): Loaded<Baseline> & { retry: () => void } {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync(() => loadBaseline(league, fetcher), [league, fetcher]);
+  const [attempt, setAttempt] = useState(0);
+  const result = useAsync(() => loadBaseline(league, fetcher), [league, fetcher, attempt]);
+  return { ...result, retry: () => setAttempt((n) => n + 1) };
 }
 
 export function useEpochs(deps?: Deps): Loaded<Epoch[]> {
@@ -104,11 +109,14 @@ export function useSlice(league: string, deps?: Deps): Loaded<Slice> {
   return useAsync(() => loadSlice(league, fetcher), [league, fetcher]);
 }
 
-/** The per-league PvPoke rank order the slice's projections are weighed against. */
-export function useRanks(league: string, deps?: Deps): Loaded<string[]> {
+/** The per-league PvPoke rank order the slice's projections are weighed against. Same retry
+ * pattern as `useBaseline` above. */
+export function useRanks(league: string, deps?: Deps): Loaded<string[]> & { retry: () => void } {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync(() => loadRanks(league, fetcher), [league, fetcher]);
+  const [attempt, setAttempt] = useState(0);
+  const result = useAsync(() => loadRanks(league, fetcher), [league, fetcher, attempt]);
+  return { ...result, retry: () => setAttempt((n) => n + 1) };
 }
 
 /** The baked generated teams for a league, recomputed against the blended weights once the
@@ -119,15 +127,17 @@ export function useGenerated(league: string, deps?: Deps): Loaded<GeneratedFile>
   return useAsync(() => loadGenerated(league, fetcher), [league, fetcher]);
 }
 
+/** Same retry pattern as `useBaseline` above. */
 export function useTeams(
   league: string,
   w: ApiWindow,
   source: SourceKey,
   deps?: Deps,
-): Loaded<TeamsV1> {
+): Loaded<TeamsV1> & { retry: () => void } {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync(
+  const [attempt, setAttempt] = useState(0);
+  const result = useAsync(
     (signal) => {
       const opts: { signal: AbortSignal; fetcher?: typeof fetch } = { signal };
       if (fetcher) {
@@ -135,14 +145,21 @@ export function useTeams(
       }
       return fetchTeams(league, w, source, opts);
     },
-    [league, w.since, w.until, source, fetcher],
+    [league, w.since, w.until, source, fetcher, attempt],
   );
+  return { ...result, retry: () => setAttempt((n) => n + 1) };
 }
 
-export function useMetaSummary(league: string, w: ApiWindow, deps?: Deps): Loaded<MetaSummaryV1> {
+/** Same retry pattern as `useBaseline` above. */
+export function useMetaSummary(
+  league: string,
+  w: ApiWindow,
+  deps?: Deps,
+): Loaded<MetaSummaryV1> & { retry: () => void } {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync(
+  const [attempt, setAttempt] = useState(0);
+  const result = useAsync(
     (signal) => {
       const opts: { signal: AbortSignal; fetcher?: typeof fetch } = { signal };
       if (fetcher) {
@@ -150,8 +167,9 @@ export function useMetaSummary(league: string, w: ApiWindow, deps?: Deps): Loade
       }
       return fetchMeta(league, w, opts);
     },
-    [league, w.since, w.until, fetcher],
+    [league, w.since, w.until, fetcher, attempt],
   );
+  return { ...result, retry: () => setAttempt((n) => n + 1) };
 }
 
 /** The league's Play! ban list, fetched lazily like the baseline. */

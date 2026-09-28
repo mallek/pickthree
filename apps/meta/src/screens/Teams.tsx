@@ -25,11 +25,12 @@
  * printed still prints, one tap away. `boardView.ts` holds the ordering and the summary line.
  */
 import { useState, type ReactNode } from 'react';
+import { Button, Empty, ErrorState, InlineSelect, Loading, Tag } from '@pickthree/ui';
 import type { MovesetStats } from '../api.js';
 import { Chevron, Chip, Note, Sprite, Term } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, battleWord, count, plural } from '../format.js';
-import { sourceHeaderLine } from '../headerCopy.js';
+import { blendParts, sourceHeaderLine } from '../headerCopy.js';
 import { teamLink, type LinkMember } from '../links.js';
 import type { Epoch } from '../epochs.js';
 import { commitMismatch } from '../epochs.js';
@@ -257,7 +258,7 @@ function BuildLine({
           <Sprite key={s.id} species={s} size={26} />
         ))}
       </span>
-      <span className="tag tag-kind">{kindTag(build)}</span>
+      <Tag>{kindTag(build)}</Tag>
       <span className="fine build-fact">{fact}</span>
       <span className="team-details">
         Open in pick3 <Chevron />
@@ -266,12 +267,23 @@ function BuildLine({
   );
 }
 
+/** The collapsed row's sub-line, as text: `subLine`'s own record summary, or "Projected" for a
+ * generated row (`subLine` returns '' there, ruling 5, since the row shows the `Projected` tag
+ * instead of a record line). One helper feeds both the visual slot (`Row`, a `Tag` for the
+ * generated case) and `headLabel` below, so the two can never say different things about the
+ * same row. */
+function rowSubText(row: BoardRow): string {
+  return row.source === 'generated' ? 'Projected' : subLine(row);
+}
+
 /** What a collapsed head says out loud. The bare figure on the right is the matchup score and
  * nothing else identifies it, so the label names it rather than leaving a screen reader to read
- * "87" after the record and let the listener guess what it counts. */
+ * "87" after the record and let the listener guess what it counts. Parts are filtered to
+ * non-empty before joining, so a row with nothing between its title and its score (none of these
+ * rows today, but the invariant is what a test pins) never prints two joins back to back. */
 function headLabel(row: BoardRow, title: string): string {
   const score = scoreOf(row);
-  const parts = [title, subLine(row), score === null ? '' : matchupScoreLine(score)].filter(
+  const parts = [title, rowSubText(row), score === null ? '' : matchupScoreLine(score)].filter(
     (p) => p.length > 0,
   );
   return parts.join('. ');
@@ -326,7 +338,9 @@ function Row({
         </span>
         <span className="row-text">
           <span className="row-title">{title}</span>
-          <span className="row-sub">{subLine(row)}</span>
+          <span className="row-sub">
+            {row.source === 'generated' ? <Tag>Projected</Tag> : subLine(row)}
+          </span>
         </span>
         <span className="row-score">{score === null ? '' : count(score)}</span>
         <Chevron dir={open ? 'up' : 'down'} />
@@ -335,7 +349,7 @@ function Row({
       {open ? (
         <div className="row-body">
           <div className="row-facts">
-            <span className="tag tag-kind">{kindTag(row)}</span>
+            <Tag>{kindTag(row)}</Tag>
             <RowFacts row={row} data={data} />
           </div>
           {isCore ? <CoreThirds core={row} data={data} /> : null}
@@ -398,24 +412,23 @@ function countLabel(rows: readonly BoardRow[]): string {
 }
 
 /** The board's own controls: how many rows are on screen, the multi-team filter and the sort.
- * The sort is a cycle rather than a menu because there are four of them and the current one is
- * the label, so it costs one tap and no screen space. */
+ * Sort is a menu, not a cycle: `InlineSelect` opens the platform's own picker over `SORTS`, so
+ * picking the fourth order costs one tap instead of three. */
 function Controls({
   rows,
   multiOnly,
   onToggleMulti,
   sort,
-  onCycleSort,
+  onSort,
   showFilter,
 }: {
   rows: readonly BoardRow[];
   multiOnly: boolean;
   onToggleMulti: () => void;
   sort: SortKey;
-  onCycleSort: () => void;
+  onSort: (key: SortKey) => void;
   showFilter: boolean;
 }): ReactNode {
-  const label = SORTS.find((s) => s.key === sort)?.label ?? SORTS[0]?.label ?? '';
   return (
     <div className="board-controls">
       <span className="fine board-count">{countLabel(rows)}</span>
@@ -424,9 +437,12 @@ function Controls({
           Multi-team only
         </Chip>
       ) : null}
-      <Chip on={sort !== 'ranked'} onClick={onCycleSort}>
-        {`Sort: ${label}`}
-      </Chip>
+      <InlineSelect
+        label="Sort"
+        value={sort}
+        onChange={onSort}
+        options={SORTS.map((s) => ({ value: s.key, label: s.label }))}
+      />
     </div>
   );
 }
@@ -447,8 +463,10 @@ export function Teams(p: {
   /** Counted battles by source in the window (`MetaSummaryV1.sources`), for the one sentence
    *  under the header that says how much of the All board came from each population. */
   sources: Record<string, number>;
+  /** Retries whichever of the board's four sources actually failed (App.tsx's `retryBoard`). */
+  onRetry: () => void;
 }): ReactNode {
-  const { league, data, boardError, board, ranking, epoch, bakedCommit, sources } = p;
+  const { league, data, boardError, board, ranking, epoch, bakedCommit, sources, onRetry } = p;
   const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
   const [multiOnly, setMultiOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>('ranked');
@@ -456,7 +474,10 @@ export function Teams(p: {
   if (boardError) {
     return (
       <main>
-        <p className="sub">Could not load the shared teams. Try again in a moment.</p>
+        <ErrorState
+          line="Could not load the team board."
+          action={<Button onClick={onRetry}>Try again</Button>}
+        />
       </main>
     );
   }
@@ -464,7 +485,7 @@ export function Teams(p: {
   if (!board || !ranking) {
     return (
       <main>
-        <p className="sub">Loading</p>
+        <Loading label="Loading" />
       </main>
     );
   }
@@ -478,31 +499,30 @@ export function Teams(p: {
   const showFilter = board.rows.some((row) => row.kind === 'core' && teamsSeen(row) >= 2);
   const shown = sortRows(multiOnly ? multiTeamOnly(board.rows) : board.rows, sort);
   const sourcesText = sourcesLine(sources);
-
-  const cycleSort = (): void => {
-    const i = SORTS.findIndex((s) => s.key === sort);
-    setSort((SORTS[(i + 1) % SORTS.length] ?? SORTS[0])?.key ?? 'ranked');
-  };
+  const showMatchupExplainer = !empty && !board.projectionless;
+  const showCoverage = showMatchupExplainer && board.weightCovered < 0.95;
 
   return (
     <main>
       <section>
-        <h2>Teams</h2>
         <p className="sub">
-          {sourceHeaderLine(ranking, "Projected against PvPoke's meta group. No shared battles in this window yet.")}
-          {!empty && !board.projectionless ? (
-            <>
-              {' '}
-              <Term term="Matchup score">{matchupScoreExplainer()}</Term>
-            </>
-          ) : null}
+          {blendParts(ranking).join(' · ')}{' '}
+          <Term term="How it is ranked">
+            <p>
+              {sourceHeaderLine(
+                ranking,
+                "Projected against PvPoke's meta group. No shared battles in this window yet.",
+              )}
+            </p>
+            {ranking.source === 'all' && sourcesText ? <p>{sourcesText}</p> : null}
+            {showMatchupExplainer ? <p>{matchupScoreExplainer()}</p> : null}
+            {showCoverage ? (
+              <p>
+                {`Projections cover the ${count(board.metaGroupSize)} Pokemon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
+              </p>
+            ) : null}
+          </Term>
         </p>
-        {ranking.source === 'all' && sourcesText ? <p className="fine">{sourcesText}</p> : null}
-        {!empty && !board.projectionless && board.weightCovered < 0.95 ? (
-          <p className="fine">
-            {`Projections cover the ${count(board.metaGroupSize)} Pokemon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
-          </p>
-        ) : null}
         {mismatch && epoch?.pvpokeCommit !== undefined && bakedShort !== null ? (
           <Note tone="warn">
             <p className="sub">
@@ -516,12 +536,10 @@ export function Teams(p: {
           </p>
         ) : null}
         {empty ? (
-          <>
-            <p className="sub">
-              No teams shared in this window yet, and no projections could be loaded.
-            </p>
-            <Contribute devices={ranking.devices} />
-          </>
+          <Empty
+            line="No teams shared in this window yet, and no projections could be loaded."
+            action={<Contribute devices={ranking.devices} />}
+          />
         ) : (
           <>
             <Controls
@@ -529,7 +547,7 @@ export function Teams(p: {
               multiOnly={multiOnly}
               onToggleMulti={() => setMultiOnly(!multiOnly)}
               sort={sort}
-              onCycleSort={cycleSort}
+              onSort={setSort}
               showFilter={showFilter}
             />
             <div className="team-rows">

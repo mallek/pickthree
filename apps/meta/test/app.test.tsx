@@ -54,9 +54,9 @@ describe('App', () => {
   it('lands on Teams', async () => {
     window.history.replaceState(null, '', '/great');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    // Two headings now say "teams": the shell's own "Top teams" and Teams.tsx's own "Teams" in
-    // the body; this checks the body's, the exact name a /teams/i match used to catch alone.
-    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
+    // Task 6 dropped Teams.tsx's own <h2>Teams</h2>: the shell's own "Top teams" (the ui Header's
+    // title) is the only heading left to identify the screen.
+    expect(await screen.findByRole('heading', { name: 'Top teams' })).toBeInTheDocument();
   });
 
   it('puts Top teams, Pokémon and About in the tab bar', async () => {
@@ -223,7 +223,7 @@ describe('App, deep links', () => {
       'aria-checked',
       'true',
     );
-    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Top teams' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/ultra');
   });
 
@@ -256,9 +256,9 @@ describe('App, deep links', () => {
     );
     // A1 dropped the centred title row (which used to name the league and window in its own
     // sub-line) in favour of the switcher and filter chips saying so directly: the "Ultra" and
-    // "7 days" checks above and below already cover that, and Teams' own left-aligned heading
-    // is what is left to identify the screen itself.
-    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
+    // "7 days" checks above and below already cover that, and the shell's own "Top teams"
+    // heading is what is left to identify the screen itself.
+    expect(await screen.findByRole('heading', { name: 'Top teams' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Window' })).toHaveValue('7');
     await waitFor(() => expect(window.location.pathname).toBe('/ultra'));
     expect(window.location.search).toBe('?w=7');
@@ -267,7 +267,7 @@ describe('App, deep links', () => {
   it('canonicalises the old teams path to the league root', async () => {
     window.history.replaceState(null, '', '/great/teams');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await screen.findByRole('heading', { name: 'Teams' });
+    await screen.findByRole('heading', { name: 'Top teams' });
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
@@ -304,7 +304,7 @@ describe('App, epochs', () => {
     const fetcher = vi.fn(stubFetch({ epochs: [laterEpoch] }));
     window.history.replaceState(null, '', '/great');
     render(<App deps={{ fetcher, now }} />);
-    await screen.findByRole('heading', { name: 'Teams' });
+    await screen.findByRole('heading', { name: 'Top teams' });
     await waitFor(() => {
       // The window recomputes as static data and the epoch list each arrive, refetching each
       // time (useMetaSummary's effect keys include w.since), so the LAST call is the one that

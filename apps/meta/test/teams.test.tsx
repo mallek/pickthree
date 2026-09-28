@@ -34,6 +34,11 @@ const CANDIDATES = [
   'oppa',
   'oppb',
   'oppc',
+  // Review Focus 2: three long spelled names on one row, so a real projection (and score) exists
+  // for the row the truncation test renders.
+  'ninetalesa',
+  'stunfiskg',
+  'sableyes',
 ];
 const OPPONENTS = ['oppa', 'oppb', 'oppc'];
 
@@ -108,6 +113,11 @@ const STATIC_DATA: StaticData = {
       ['oppa', 'Opp A'],
       ['oppb', 'Opp B'],
       ['oppc', 'Opp C'],
+      // Review Focus 2's own worked example, already spelled (this fixture assigns SpeciesLite's
+      // .name directly, so spelledName never runs here).
+      ['ninetalesa', 'Shadow Alolan Ninetales'],
+      ['stunfiskg', 'Galarian Stunfisk'],
+      ['sableyes', 'Shadow Sableye'],
     ].map(([id, name]) => [id as string, species(id as string, name as string)]),
   ),
   moves: new Map(),
@@ -218,6 +228,14 @@ const OUTSIDER = row(['outsidera', 'outsiderb', 'stranger'], 'team', {
 /** A core with no OBSERVED complete team at all: the only thing that ever nests under it is a
  * generated one. Fix round 1, item 1's converse case. */
 const GEN_CORE = row(['lonelya', 'facedc'], 'core', {
+  runBattles: 5,
+  runWins: 3,
+  runLosses: 2,
+});
+
+/** Review Focus 2's worked example: three long spelled names on one row, run enough times to
+ * carry both a projection (a score) and a record, at phone width. */
+const LONG_NAMES_TEAM = row(['ninetalesa', 'stunfiskg', 'sableyes'], 'team', {
   runBattles: 5,
   runWins: 3,
   runLosses: 2,
@@ -351,6 +369,9 @@ function renderTeams(opts: {
   /** Counted battles by source (`MetaSummaryV1.sources`), fed straight to `Teams`' own prop
    * rather than through `makeTeams`, since the two are unrelated inputs on the real screen. */
   sources?: Record<string, number>;
+  /** `Teams`' own "Try again" callback (App.tsx's `retryBoard`). Defaults to a no-op; a test that
+   *  cares passes its own spy and reads it after a click. */
+  onRetry?: () => void;
 }) {
   const battles = opts.battles ?? 0;
   const devices = opts.devices ?? 0;
@@ -380,8 +401,16 @@ function renderTeams(opts: {
       epoch={epoch}
       bakedCommit={BAKED_COMMIT}
       sources={opts.sources ?? {}}
+      onRetry={opts.onRetry ?? (() => {})}
     />,
   );
+}
+
+/** "How it is ranked": the one `Term` this screen hosts, its body carrying the source sentence,
+ * the sources line (under All), the matchup score explainer and the coverage line. Opening it is
+ * a precondition for every assertion on that body, since `Term` renders nothing until tapped. */
+async function openRanked(): Promise<void> {
+  await userEvent.click(screen.getByRole('button', { name: 'How it is ranked' }));
 }
 
 /**
@@ -398,18 +427,23 @@ async function openEveryRow(): Promise<void> {
 }
 
 describe('Teams, cold start', () => {
-  it('shows generated teams and marks them as projections', async () => {
+  it('shows the blend line and, once opened, the projection sentence', async () => {
     renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
-    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
+    // The h2 "Teams" and the separate paragraphs it used to sit above are gone: one blend line
+    // (blendParts) and a single "How it is ranked" Term carry everything they said.
+    expect(screen.queryByRole('heading', { name: 'Teams' })).toBeNull();
+    expect(screen.getByText('PvPoke 100% · No shared battles yet')).toBeInTheDocument();
+    await openRanked();
     expect(
       screen.getByText(/Projected against PvPoke's meta group\. No shared battles/),
     ).toBeInTheDocument();
-    // A generated row's collapsed sub-line is blank (`subLine` returns '' for a generated row,
-    // ruling 5): the "Projected" tag lives in the expanded panel (`kindTag`), so open every row
-    // before looking for it.
-    await openEveryRow();
+    // A generated row's collapsed sub-line is the `Projected` tag itself (ruling 5), visible
+    // without opening the row: unlike the record summary it replaces, it is not a fact one tap
+    // away, it is the tag right there on the collapsed head.
     expect(screen.getAllByText('Projected').length).toBeGreaterThan(0);
-    // A projection is a matchup score out of 100, never a percentage.
+    // A projection is a matchup score out of 100, never a percentage; that sentence is still in
+    // the row panel, one tap away.
+    await openEveryRow();
     expect(screen.getByText(/^Matchup score \d+ of 100$/)).toBeInTheDocument();
   });
 
@@ -435,27 +469,31 @@ describe('Teams, cold start', () => {
 });
 
 describe('Teams, sources', () => {
-  it('says how many battles each source contributed, under All only', () => {
+  it('says how many battles each source contributed, under All only', async () => {
     renderTeams({ source: 'all', sources: { ladder: 480, broadcast: 105 } });
+    await openRanked();
     expect(screen.getByText('From 480 battles shared and 105 tournament battles.')).toBeInTheDocument();
   });
 
-  it('says nothing about sources when only one population has anything', () => {
+  it('says nothing about sources when only one population has anything', async () => {
     renderTeams({ source: 'all', sources: { ladder: 480 } });
+    await openRanked();
     expect(screen.queryByText(/tournament battles\./)).not.toBeInTheDocument();
   });
 });
 
 describe('Teams, with measured play', () => {
-  it('says how measured the board is', () => {
+  it('says how measured the board is', async () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: GENERATED });
+    await openRanked();
     expect(
       screen.getByText(/% measured, from 480 shared battles by 9 devices/),
     ).toBeInTheDocument();
   });
 
-  it('says "1 device" rather than "1 devices"', () => {
+  it('says "1 device" rather than "1 devices"', async () => {
     renderTeams({ battles: 40, devices: 1, cores: [CORE], teams: [], generated: [] });
+    await openRanked();
     expect(screen.getByText(/by 1 device$/)).toBeInTheDocument();
   });
 
@@ -573,7 +611,7 @@ describe('Teams, with measured play', () => {
     ).toBeInTheDocument();
   });
 
-  it('says how much of the real facing the projections speak for', () => {
+  it('says how much of the real facing the projections speak for', async () => {
     renderTeams({
       battles: 480,
       devices: 9,
@@ -582,13 +620,14 @@ describe('Teams, with measured play', () => {
       generated: [],
       weightCovered: 0.6,
     });
+    await openRanked();
     expect(screen.getByText(/which is 60% of what players actually faced/)).toBeInTheDocument();
   });
 
   // Fix round 1, item 4: `covered = ctx?.weightCovered ?? 0` and `projectionless: ctx === null`
   // are the same condition, so without this guard the coverage note would fire with "0%" right
   // above the "Projections are unavailable" note when the slice itself failed.
-  it('does not show the coverage note when the slice itself could not be loaded', () => {
+  it('does not show the coverage note when the slice itself could not be loaded', async () => {
     renderTeams({
       battles: 480,
       devices: 9,
@@ -597,7 +636,10 @@ describe('Teams, with measured play', () => {
       generated: [],
       sliceMissing: true,
     });
+    // "Projections are unavailable right now" is a warning, above the list, never hidden behind
+    // the Term (ruling 4's "Warnings stay at the top").
     expect(screen.getByText(/Projections are unavailable right now/)).toBeInTheDocument();
+    await openRanked();
     expect(screen.queryByText(/Pokemon PvPoke lists/)).toBeNull();
   });
 
@@ -665,11 +707,12 @@ describe('Teams, with measured play', () => {
     expect(screen.getByText(/^Matchup score \d+ of 100$/)).toBeInTheDocument();
   });
 
-  // The `Term` explaining the matchup score is hosted once in the section header, never inside a
-  // card: a card WITH nested builds is a link-free div (see `Card`), but a link-less complete-team
-  // card is itself an `<a>`, and a `Term` renders a real `<button>`. Nesting one there would be
-  // interactive content inside an anchor, the same invalid-markup problem fix round 1 already
-  // found and fixed for a nested build line's own chevron link.
+  // The `Term` explaining the matchup score is hosted once in the section header (folded into
+  // "How it is ranked", ruling 4), never inside a card: a card WITH nested builds is a link-free
+  // div (see `Card`), but a link-less complete-team card is itself an `<a>`, and a `Term` renders
+  // a real `<button>`. Nesting one there would be interactive content inside an anchor, the same
+  // invalid-markup problem fix round 1 already found and fixed for a nested build line's own
+  // chevron link.
   it('keeps the matchup score explainer out of every row, never nested in an anchor', async () => {
     const { container } = renderTeams({
       battles: 0,
@@ -679,7 +722,7 @@ describe('Teams, with measured play', () => {
       generated: GENERATED,
     });
     await openEveryRow();
-    expect(screen.getByRole('button', { name: 'Matchup score' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'How it is ranked' })).toBeInTheDocument();
     for (const row of container.querySelectorAll('.team-row')) {
       expect(row.querySelector('.term')).toBeNull();
     }
@@ -699,7 +742,7 @@ describe('Teams, with measured play', () => {
   // are corrected in the tip text; this pins the corrected wording, not the retired claim.
   it('explains the matchup score honestly: no battle result feeds it, and both safety terms', async () => {
     renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
-    await userEvent.click(screen.getByRole('button', { name: 'Matchup score' }));
+    await openRanked();
     expect(
       screen.getByText(/weighted by how often each opponent is actually faced/),
     ).toBeInTheDocument();
@@ -712,7 +755,8 @@ describe('Teams, with measured play', () => {
 
   // Fix round 1, item 3: a failure of meta, baseline or ranks (not just the shared teams) used to
   // leave `ranking` null forever with no error surfaced, since only `teams.state` was checked.
-  it('says so when any of its four sources failed to load', () => {
+  it('says so when any of its four sources failed to load, with a Try again that refetches', async () => {
+    let retried = false;
     renderTeams({
       battles: 480,
       devices: 9,
@@ -720,10 +764,32 @@ describe('Teams, with measured play', () => {
       teams: [],
       generated: [],
       boardError: true,
+      onRetry: () => {
+        retried = true;
+      },
     });
     expect(
-      screen.getByText('Could not load the shared teams. Try again in a moment.'),
+      screen.getByText('Could not load the team board.'),
     ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retried).toBe(true);
+  });
+
+  it('shows a Loading state while the board is not yet ready', () => {
+    render(
+      <Teams
+        league="great"
+        data={STATIC_DATA}
+        boardError={false}
+        board={null}
+        ranking={null}
+        epoch={null}
+        bakedCommit={null}
+        sources={{}}
+        onRetry={() => {}}
+      />,
+    );
+    expect(screen.getByText('Loading')).toBeInTheDocument();
   });
 });
 
@@ -808,16 +874,26 @@ describe('Teams, the board controls', () => {
     expect(screen.getByText('1 core')).toBeInTheDocument();
   });
 
-  it('starts on the board\'s own ranked order, which has no number attached to it', () => {
+  it("starts on the board's own ranked order, which has no number attached to it", () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
-    expect(screen.getByRole('button', { name: 'Sort: Ranked' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Sort')).toHaveValue('ranked');
+    expect(screen.getByText('Sort: Ranked')).toBeInTheDocument();
   });
 
-  it('cycles the four orders and comes back round', async () => {
+  // Sort is a menu now, not a cycle (ruling: "InlineSelect labelled 'Sort' over SORTS and
+  // choosing sets the order, no cycling"): every option is reachable in one choice.
+  it('sets the order directly from a menu, no cycling', async () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
-    for (const label of ['Sort: Matchup', 'Sort: Usage', 'Sort: Spread', 'Sort: Ranked']) {
-      await userEvent.click(screen.getByRole('button', { name: /^Sort: / }));
-      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    const select = screen.getByLabelText('Sort');
+    for (const [value, label] of [
+      ['matchup', 'Matchup'],
+      ['spread', 'Spread'],
+      ['usage', 'Usage'],
+      ['ranked', 'Ranked'],
+    ] as const) {
+      await userEvent.selectOptions(select, label);
+      expect(select).toHaveValue(value);
+      expect(screen.getByText(`Sort: ${label}`)).toBeInTheDocument();
     }
   });
 
@@ -829,10 +905,7 @@ describe('Teams, the board controls', () => {
       teams: [FULL],
       generated: [],
     });
-    // Ranked -> Matchup -> Usage.
-    await userEvent.click(screen.getByRole('button', { name: /^Sort: / }));
-    await userEvent.click(screen.getByRole('button', { name: /^Sort: / }));
-    expect(screen.getByRole('button', { name: 'Sort: Usage' })).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText('Sort'), 'Usage');
     // CORE 40 battles, LONELY_CORE 9, GEN_CORE 5.
     expect(titles()).toEqual([
       'Azumarill, Clodsire',
@@ -870,9 +943,58 @@ describe('Teams, the board controls', () => {
     });
     await userEvent.click(heads()[0]!);
     const opened = heads()[0]!.getAttribute('aria-label');
-    await userEvent.click(screen.getByRole('button', { name: /^Sort: / }));
+    await userEvent.selectOptions(screen.getByLabelText('Sort'), 'Matchup');
     const stillOpen = heads().filter((h) => h.getAttribute('aria-expanded') === 'true');
     expect(stillOpen).toHaveLength(1);
     expect(stillOpen[0]!.getAttribute('aria-label')).toBe(opened);
+  });
+
+  it('shows the Core, Team or Projected label as a read-only Tag in an open row', async () => {
+    renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
+    await openEveryRow();
+    const coreTag = screen.getAllByText('Core')[0]!;
+    expect(coreTag.className).toMatch(/ui-tag/);
+    const teamTag = screen.getAllByText('Full team')[0]!;
+    expect(teamTag.className).toMatch(/ui-tag/);
+  });
+
+  it('shows the Projected tag as a Tag on a collapsed generated row too', () => {
+    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
+    const projected = screen.getAllByText('Projected')[0]!;
+    expect(projected.className).toMatch(/ui-tag/);
+  });
+
+  // Task 3's review flagged the join before this fix: an empty `subLine('')` next to the score
+  // used to leave two periods back to back in the aria-label. `rowSubText` (Teams.tsx) now
+  // returns 'Projected' for a generated row instead of '', so the label never has an empty part.
+  it("a collapsed generated row's aria-label has no '. .' sequence", () => {
+    renderTeams({ battles: 0, devices: 0, teams: [], cores: [], generated: GENERATED });
+    for (const head of heads()) {
+      expect(head.getAttribute('aria-label') ?? '').not.toMatch(/\.\s*\./);
+    }
+  });
+
+  // Review Focus 2: three long spelled names on one row. The title still truncates (the ellipsis
+  // class stays on the title element) and the matchup score stays visible on the same row.
+  it('truncates a title of three long spelled names and keeps the score on the row', () => {
+    renderTeams({
+      battles: 5,
+      devices: 2,
+      cores: [],
+      teams: [LONG_NAMES_TEAM],
+      generated: [],
+    });
+    const title = document.querySelector('.row-title');
+    expect(title).not.toBeNull();
+    expect(title!.className).toContain('row-title');
+    // buildBoard may reorder a row's own species (by rank), so this checks the three long names
+    // are all present rather than pinning an order the row's own component list does not promise.
+    const text = title!.textContent ?? '';
+    for (const name of ['Shadow Alolan Ninetales', 'Galarian Stunfisk', 'Shadow Sableye']) {
+      expect(text).toContain(name);
+    }
+    const score = document.querySelector('.row-score');
+    expect(score).not.toBeNull();
+    expect(score!.textContent ?? '').toMatch(/^\d+$/);
   });
 });

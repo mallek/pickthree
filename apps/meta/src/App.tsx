@@ -196,6 +196,7 @@ function renderView(
   legal: Legal | null,
   theme: ThemeChoice,
   onTheme: (theme: ThemeChoice) => void,
+  onRetryBoard: () => void,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} theme={theme} onTheme={onTheme} />;
@@ -241,6 +242,7 @@ function renderView(
       epoch={epoch}
       bakedCommit={baseline.data?.pvpokeCommit ?? null}
       sources={sources}
+      onRetry={onRetryBoard}
     />
   );
 }
@@ -456,6 +458,22 @@ export function App(props?: { deps?: Deps }): ReactNode {
     meta.state === 'error' ||
     baseline.state === 'error' ||
     ranks.state === 'error';
+  // Teams' own "Try again": retries whichever of the four sources actually failed, rather than
+  // reflying every request. Task 7 and Task 8 reuse the same four retries for their own errors.
+  function retryBoard(): void {
+    if (teamsData.state === 'error') {
+      teamsData.retry();
+    }
+    if (meta.state === 'error') {
+      meta.retry();
+    }
+    if (baseline.state === 'error') {
+      baseline.retry();
+    }
+    if (ranks.state === 'error') {
+      ranks.retry();
+    }
+  }
   // Task 13: Pokemon fails to render only when one of `ranking`'s own three sources is down, not
   // when the team board's own feed (teamsData) is: Pokemon never reads teamsData at all.
   const rankingError =
@@ -583,6 +601,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           legal.data,
           theme,
           setTheme,
+          retryBoard,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>
