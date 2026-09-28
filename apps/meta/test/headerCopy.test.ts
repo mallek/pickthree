@@ -198,4 +198,33 @@ describe('blendParts', () => {
     expect(sourceHeaderLine(r, ZERO)).toContain('PvPoke 45%, tournaments 22%, GBL 33%');
     expect(blendParts(r)).toEqual(['PvPoke 45%', 'Tournaments 22%', 'GBL 33%']);
   });
+
+  // Finding 3 (2026-09-28 whole-branch review): under All, three independently rounded fractions
+  // (PvPoke's, tournaments' and GBL's) summed to 101% or 99% for plenty of real say/tournamentSay
+  // pairs (e.g. say=0.5, tournamentSay=0.01 used to sum to 101), and the two functions could each
+  // round PvPoke's own share differently and so disagree with each other. The fix makes PvPoke's
+  // share the remainder, `100 - t - l`, in both functions, so a sweep across the whole say x
+  // tournamentSay grid always sums to exactly 100 and the two functions always agree.
+  it('always sums to 100 across a sweep of say and tournamentSay, and agrees with sourceHeaderLine', () => {
+    for (let s = 0; s <= 100; s += 1) {
+      for (let ts = 0; ts <= 100; ts += 1) {
+        const r = ranking({
+          source: 'all',
+          say: s / 100,
+          tournamentSay: ts / 100,
+          battles: 148,
+          devices: 9,
+          tournamentBattles: 105,
+          events: 1,
+        });
+        const parts = blendParts(r);
+        const pcts = parts.map((part) => Number(part.match(/(\d+)%/)?.[1]));
+        const sum = pcts.reduce((a, b) => a + b, 0);
+        expect(sum).toBe(100);
+        const line = sourceHeaderLine(r, ZERO);
+        const pvpokePart = parts.find((part) => part.startsWith('PvPoke'));
+        expect(line).toContain(pvpokePart!);
+      }
+    }
+  });
 });

@@ -9,7 +9,7 @@ fixes from the Task 9 audit wave (`333e0b3..1ef56ba`). Ledger:
 `.superpowers/sdd/2026-09-28-meta/progress.md`.
 
 Top teams is meta.pick3.gg's board of shared and projected teams for one league: a "This meta"
-window, an "All / GBL / Tournaments" Source, one blend line ("PvPoke 5% · Tournaments 10% ·
+window, an "All / GBL / Tournaments" Source, one blend line ("PvPoke 4% · Tournaments 10% ·
 GBL 86% · How it is ranked"), a "Multi-team only" chip, a native Sort select, and rows that open
 into a core's teammates, its full teams and a plain "Matchup score". A projected row (PvPoke's
 group, not yet seen in shared battles) carries a `Projected` tag instead of a row line.
@@ -29,10 +29,10 @@ projections failed to load) and `great-error` only on the `thin` run (`/api/v1/t
 
 | State | Dark | Light |
 | --- | --- | --- |
-| `great`: header "Top teams" with the meta tag and the pick3 mark; league tabs (Great current); Window "This meta", Source "All"; "PvPoke 5% · Tournaments 10% · GBL 86% · How it is ranked"; "1 core, 25 teams", "Multi-team only" (off), "Sort: Ranked"; the core row (Shadow Ninetales, Tinkaton, "600 battles · went 480-120 · 2 teams", score 63) then 24 `Projected` rows, scores in plain ink down to 83, the last row clear of the tab bar | ![](img/great-dark.webp) | ![](img/great-light.webp) |
+| `great`: header "Top teams" with the meta tag and the pick3 mark; league tabs (Great current); Window "This meta", Source "All"; "PvPoke 4% · Tournaments 10% · GBL 86% · How it is ranked" (Finding 3, 2026-09-28 review: PvPoke's own share is the remainder, `100 - 10 - 86`, corrected from a stale 5% that summed to 101); "1 core, 25 teams", "Multi-team only" (off), "Sort: Ranked"; the core row (Shadow Ninetales, Tinkaton, "600 battles · went 480-120 · 2 teams", score 63) then 24 `Projected` rows, scores in plain ink down to 83, the last row clear of the tab bar | ![](img/great-dark.webp) | ![](img/great-light.webp) |
 | `great-open`: the top three rows open. The core: "Run 400 times and faced 200 times, the team went 480-120 overall", "Seen with" (Galarian Corsola, Corviknight as chips), "Built as" two full-team lines ("Run 300 times and faced 150 times, the team went 360-90 overall", "Faced 150 times, players went 63-87"), each with its own "Open in pick3 ›" action, now a 44px text button; the next row is a full team on its own ("Run 80 times, reporters went 46-34"), also with its own "Open in pick3 ›"; the third is `Projected` ("Projected against PvPoke's group, not yet seen in shared battles"), which carries its own "Open in pick3 ›" too, so the link is not withheld just because nothing has been shared yet | ![](img/great-open-dark.webp) | ![](img/great-open-light.webp) |
 | `great-sort`: "Multi-team only" chip on (`aria-pressed="true"`), "Sort: Matchup"; the list re-orders under it (Melmetal/Mimikyu/Rillaboom first at 88), and the core (63) is now last, under its own matchup rank. The chip does not shrink this list (every row here is a team or a core; ruling: the fixture shows no visible drop, noted below) | ![](img/great-sort-dark.webp) | ![](img/great-sort-light.webp) |
-| `great-ranked`: "How it is ranked" open as a `Term`, its body: "PvPoke 5%, tournaments 10%, GBL 86%. From 5,000 shared battles by 30 devices and 600 tournament battles from 4 events." then the matchup-score and coverage explainers, above the same list | ![](img/great-ranked-dark.webp) | ![](img/great-ranked-light.webp) |
+| `great-ranked`: "How it is ranked" open as a `Term`, its body: "PvPoke 4%, tournaments 10%, GBL 86%. From 5,000 shared battles by 30 devices and 600 tournament battles from 4 events." then the matchup-score and coverage explainers, above the same list | ![](img/great-ranked-dark.webp) | ![](img/great-ranked-light.webp) |
 | `great-empty`: the empty run (no shared battles, `/baseline` and `/matrix` both 404, so there is no generated row either); "PvPoke 100% · No shared battles yet · How it is ranked"; the `Empty` line "No teams shared in this window yet, and no projections could be loaded." then the Contribute card ("Help fill this in", "0 devices are contributing to this view so far.", "Log battles in pick3") | ![](img/great-empty-dark.webp) | ![](img/great-empty-light.webp) |
 | `great-error`: the thin run with `/api/v1/teams` answering 503; only the header, league tabs and the two selects render, then the warn-tinted `ErrorState`: "Could not load the team board." with a secondary "Try again" | ![](img/great-error-dark.webp) | ![](img/great-error-light.webp) |
 
@@ -53,6 +53,13 @@ teams").
       check-tokens`: re-run on 2026-09-28 on `1ef56ba`. lint exit 0; typecheck exit 0 (all five
       workspaces); `npx vitest run --project meta --project web --project ui`: 78 files, 1064
       tests passed; check-colors exit 0 (no output); "check-tokens: ok".
+- [x] **2026-09-28 fix wave re-run:** `npm run meta:audit` again after Findings 1, 3 and 4 and the
+      `.rank-row`/`.row-figure` layout fix below: exit 0, 55 captures, zero findings on any
+      enforced name in either theme, no NEVER line. `npx vitest run --project meta --project web
+      --project ui` (1070 tests), `npm run lint`, `npm run typecheck` and `npm run check-colors`
+      all clean. `great`, `great-open`, `great-sort` and `great-ranked`'s WebPs were regenerated
+      (the corrected "PvPoke 4%"); `great-empty` and `great-error` are byte-unchanged (their
+      fixtures never hit the three-part blend line).
 
 ## Aesthetics
 
@@ -127,6 +134,8 @@ teams").
 | Task 9, ruling (plan under-listed the spec): the empty board and a failed board had no enforced capture. | `great-empty` (empty run, projections 404) and `great-error` (thin run, `/api/v1/teams` 503) added, enforced, both themes. | `1ef56ba` |
 | Task 9: `sortSecond` did not fail if the Multi-team only chip was missing on a run with battles. | It now throws, and checks `aria-pressed` after the tap. | `1ef56ba` |
 | Task 9: `great-open`'s needles did not prove a row had actually opened. | Added "Matchup score" and "Open in pick3" needles, checked on every run. | `1ef56ba` |
+| 2026-09-28 whole-branch review, Finding 3: under All, three independently rounded fractions (PvPoke's, tournaments' and GBL's) could sum to 101% or 99% (the `thick` fixture's own numbers did: "PvPoke 5%" summed to 101 with "Tournaments 10%, GBL 86%"). | `blendParts`/`sourceHeaderLine` (`headerCopy.ts`) give PvPoke the remainder, `100 - t - l`; `great`/`great-ranked` now read "PvPoke 4%" for the same fixture. | this fix wave |
+| 2026-09-28 whole-branch review, Finding 1: in-site navigation never scrolled to the top, so opening a deep row left the next page at the list's old scroll offset. | `go()` (`App.tsx`) calls `window.scrollTo(0, 0)` after the push; `refine()` and `popstate` are untouched. Not exercised by this page's own captures (full-page shots start at the top regardless), covered by `app.test.tsx`. | this fix wave |
 
 ## Rulings
 
@@ -169,6 +178,26 @@ From the ledger:
   change here, but the rule that would have caught an em dash is now the em-dash rule instead.
 
 ## Open items for Travis
+
+From the 2026-09-28 whole-branch review fix wave (final fix pass, `.superpowers/sdd/2026-09-28-meta/final-fix-report.md`):
+
+- **PvPoke's stated share is now the remainder**, `100 - tournaments% - GBL%` (`headerCopy.ts`'s
+  `blendParts`/`sourceHeaderLine`), not its own independently rounded fraction. Under All, the
+  three parts used to be able to sum to 101% or 99% for real inputs (a rounding bug, not a display
+  choice); they always sum to 100 now, and the blend line can never disagree with the "How it is
+  ranked" `Term`'s own sentence for the same numbers.
+- **`SiteLink` keeps both labels symmetric and descriptive** ("pick3, the team builder" here, and
+  "meta.pick3.gg, the community meta" on pick3's own header), not the spec's literal "Open pick3"
+  aria-label. Both sides name their destination rather than a bare verb; pre-existing, not new to
+  this wave, but worth Travis's sign-off since it is a deliberate deviation from the spec text.
+- **`spelledName` keeps a non-regional, non-Shadow parenthetical** ("Morpeko (Full Belly)"), while
+  pick3's own `fullName`/`displayName` collapses a toggle form to the bare species name
+  ("Morpeko"). The two sites can print different names for the same Pokemon by design: this one
+  names PvPoke's own entry, pick3 names what you would bring. Team rows on this page use spelled
+  names, so a Morpeko-carrying team reads with its parenthetical here.
+- **The reporters' record wording** ("players went 8-2 against it" / "it went 45-36") is a
+  Pokémon-list and Species change (see `meta-pokemon.md`); Top teams' own row lines ("went 62-31",
+  a team's own record) are unaffected, since a team's record has no "against it" ambiguity to fix.
 
 - **"Multi-team only" shows no visible change on this fixture's board** (`great-sort`): every row
   in the sample is either a core (kept) or a full team (also kept, since `boardView`'s

@@ -618,8 +618,10 @@ describe('Species, source', () => {
     });
     // The corrected share, from the tournament total (ranking.tournamentBattles), not the ladder
     // total (meta.battles, 1,000, which would have printed "of 1,000"), in the ui's own pink
-    // MeasuredLine under Tournaments too, the same as under All.
-    const figure = screen.getByText('50% of tournament battles · 20 of 40 picks');
+    // MeasuredLine under Tournaments too, the same as under All. Finding 2 (2026-09-28
+    // whole-branch review): 40 is a battle count, not a pick count, and the line now says so
+    // ("picked in 20 of 40 battles"), plural on 40, agreeing with the Pokemon row's own wording.
+    const figure = screen.getByText('50% of tournament battles · picked in 20 of 40 battles');
     expect(figure.closest('.ui-measured-line')).not.toBeNull();
     expect(screen.queryByText(/1,000/)).toBeNull();
     expect(screen.queryByRole('heading', { name: "Reporters' record against it" })).toBeNull();
@@ -702,5 +704,32 @@ describe('Species, load failure', () => {
     expect(
       await screen.findByText('Moves known in 60 of 60 battles', {}, { timeout: 5000 }),
     ).toBeInTheDocument();
+  }, 15_000);
+
+  // Minor fix (2026-09-28 whole-branch review): before this, a baseline or ranks failure left
+  // `ranking` (the hero's own figure) and `baselineEntry` (the PvPoke card) both silently null,
+  // with `detail` and `meta` both fine, so Species rendered as if the Pokemon had never been
+  // ranked at all instead of saying anything failed. `rankingError`, passed down from App.tsx the
+  // same way it already reaches Pokemon, now makes Species show the same ErrorState.
+  it('shows ErrorState when the baseline fails to load, not a silently empty hero', async () => {
+    let failing = true;
+    const base = stubFetch({ species, meta: metaFor(species) });
+    const flaky: typeof fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.startsWith('/baseline/') && !url.includes('-teams') && failing) {
+        throw new Error('network down');
+      }
+      return base(input);
+    }) as typeof fetch;
+    render(<App deps={{ fetcher: flaky, now }} />);
+    expect(
+      await screen.findByText("Could not load this Pokémon's record.", {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    failing = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() =>
+      expect(screen.queryByText("Could not load this Pokémon's record.")).toBeNull(),
+    );
+    expect(await screen.findByText('PvPoke #1', {}, { timeout: 5000 })).toBeInTheDocument();
   }, 15_000);
 });

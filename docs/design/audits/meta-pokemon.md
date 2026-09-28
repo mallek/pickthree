@@ -35,11 +35,11 @@ tags); `pokemon-error` only exists on the `thin` run (`/api/v1/meta` answers 503
 
 | State | Dark | Light |
 | --- | --- | --- |
-| `pokemon`: header "Pokémon", league tabs, Window/Source ("All"); "PvPoke 5% · Tournaments 10% · GBL 86% · How it is ranked"; rows 1-6 measured (pink share, bars mark, "N of 5,000 battles", "went W-L", a confidence `Tag`, PvPoke's own rank), Tinkaton and Shadow Ninetales carrying trend tags (this run's swapped `previous` window); rows 7-46 "Not faced in this window" with only the PvPoke rank; the Contribute card at the foot | ![](img/pokemon-dark.webp) | ![](img/pokemon-light.webp) |
-| `pokemon-tournaments`: Source "Tournaments"; "PvPoke 33% · Tournaments 67% · How it is ranked"; the same measured rows now read tournament pick share ("N of 600 battles" from picks); Mimikyu reads "Banned at tournaments" in place of a share; no trend tags (trend is ladder-only, ruling) | ![](img/pokemon-tournaments-dark.webp) | ![](img/pokemon-tournaments-light.webp) |
-| `pokemon-gbl`: Source "GBL"; "PvPoke 14% · GBL 86% · How it is ranked"; the ladder-only figure, trend tags present (a ladder source) | ![](img/pokemon-gbl-dark.webp) | ![](img/pokemon-gbl-light.webp) |
-| `pokemon-pvpoke`: Source "PvPoke"; "PvPoke 100% · How it is ranked"; every row reads "Nothing measured.", rank order only, no bars, no trend | ![](img/pokemon-pvpoke-dark.webp) | ![](img/pokemon-pvpoke-light.webp) |
-| `pokemon-ranked`: "How it is ranked" open as a `Term` over the "All" list: "PvPoke 5%, tournaments 10%, GBL 86%. From 5,000 shared battles by 30 devices and 600 tournament battles from 4 events." plus the blend and "New" explainers | ![](img/pokemon-ranked-dark.webp) | ![](img/pokemon-ranked-light.webp) |
+| `pokemon`: header "Pokémon", league tabs, Window/Source ("All"); "PvPoke 4% · Tournaments 10% · GBL 86% · How it is ranked" (Finding 3, 2026-09-28 review: corrected from a stale 5% that summed to 101); rows 1-6 measured (pink share, bars mark, "N of 5,000 battles", "players went W-L against it" (Finding 4), a confidence `Tag`, PvPoke's own rank), Tinkaton and Shadow Ninetales carrying trend tags (this run's swapped `previous` window); rows 7-46 "Not faced in this window" with only the PvPoke rank; the Contribute card at the foot | ![](img/pokemon-dark.webp) | ![](img/pokemon-light.webp) |
+| `pokemon-tournaments`: Source "Tournaments"; "PvPoke 33% · Tournaments 67% · How it is ranked" (a two-way split, never affected by Finding 3's rounding bug); the same measured rows now read tournament pick share ("N of 600 battles" from picks) and the record as "it went W-L" (Finding 4: the species' own record when picked); Mimikyu reads "Banned at tournaments" in place of a share; no trend tags (trend is ladder-only, ruling) | ![](img/pokemon-tournaments-dark.webp) | ![](img/pokemon-tournaments-light.webp) |
+| `pokemon-gbl`: Source "GBL"; "PvPoke 14% · GBL 86% · How it is ranked" (also a two-way split, unaffected by Finding 3); the ladder-only figure, "players went W-L against it" (Finding 4), trend tags present (a ladder source) | ![](img/pokemon-gbl-dark.webp) | ![](img/pokemon-gbl-light.webp) |
+| `pokemon-pvpoke`: Source "PvPoke"; "PvPoke 100% · How it is ranked"; "Nothing measured." once, above the list (not repeated per row); rows keep their weight bar (PvPoke's own prior, not a measured share) and rank order, no per-row figure, no trend | ![](img/pokemon-pvpoke-dark.webp) | ![](img/pokemon-pvpoke-light.webp) |
+| `pokemon-ranked`: "How it is ranked" open as a `Term` over the "All" list: "PvPoke 4%, tournaments 10%, GBL 86%. From 5,000 shared battles by 30 devices and 600 tournament battles from 4 events." plus the blend and "New" explainers | ![](img/pokemon-ranked-dark.webp) | ![](img/pokemon-ranked-light.webp) |
 | `pokemon-error`: the thin run with `/api/v1/meta` answering 503; header and selects render, then "Could not load the shared battles." with "Try again" | ![](img/pokemon-error-dark.webp) | ![](img/pokemon-error-light.webp) |
 
 ### Species
@@ -70,6 +70,18 @@ Source selects open; a row with a zero count reading the muted words rather than
       check-tokens`: re-run on 2026-09-28 on `1ef56ba`. lint exit 0; typecheck exit 0;
       `npx vitest run --project meta --project web --project ui`: 78 files, 1064 tests passed;
       check-colors exit 0; "check-tokens: ok".
+- [x] **2026-09-28 fix wave re-run:** the longer "players went ... against it" wording (Finding 4)
+      first broke this page's own audit (`clipped: span content is 44-56px in a 40px box` on the
+      `thick` fixture's `pokemon`, `pokemon-ranked` and `pokemon-gbl` captures, both themes: a name
+      row's `TypeChips` squeezed past its min-content width once the record column grew), fixed by
+      the `.rank-row`/`.row-figure` CSS change above. After that fix, `npm run meta:audit` exited
+      0 again: 55 captures, zero findings on any enforced name in either theme, no NEVER line.
+      `npx vitest run --project meta --project web --project ui` (1070 tests), `npm run lint`,
+      `npm run typecheck` and `npm run check-colors` all clean. `pokemon`, `pokemon-ranked`,
+      `pokemon-gbl` and `pokemon-tournaments`'s WebPs were regenerated; `species-tinkaton`'s came
+      out byte-identical (its default, non-tournament hero never reads Finding 2's fixed text) and
+      `species-thin`/`species-missing`/`pokemon-pvpoke`/`pokemon-error` were not regenerated
+      (none of the three findings touch their content).
 
 ## Aesthetics
 
@@ -148,6 +160,11 @@ Source selects open; a row with a zero count reading the muted words rather than
 | Task 9, by eye: trend tags showed under PvPoke ("Nothing measured.") and beside tournament pick shares, where the ladder-only trend has no meaning. | The row shows a trend only under Source All or GBL; `rank.ts`'s own `trend` field is untouched. | `ac8dfec` |
 | Task 9, by eye: the trend tag had the same light-theme contrast problem as the confidence tags (uncaptured until a fixture had a `previous` window). | Now the ui `Tag`'s win/loss tones. | `ac8dfec`, `1ef56ba` |
 | Task 9: `pokemon-gbl` and `pokemon-error` had no enforced capture (spec States the plan under-listed). | Both added, enforced, all applicable runs. | `1ef56ba` |
+| 2026-09-28 whole-branch review, Finding 3: under All, PvPoke's own independently rounded share could disagree with the other two (the `thick` fixture read "PvPoke 5%" against "Tournaments 10%, GBL 86%", summing to 101). | Same `headerCopy.ts` fix as `meta-teams.md`; `pokemon`/`pokemon-ranked` now read "PvPoke 4%" for the same fixture. | this fix wave |
+| 2026-09-28 whole-branch review, Finding 4: "went 8-2" named different sides depending on source without saying so (the reporters' own record under All/GBL, the species' own record under Tournaments). | `recordLine` (`Pokemon.tsx`) now reads "players went 8-2 against it" under All/GBL and "it went 45-36" under Tournaments. | this fix wave |
+| 2026-09-28 whole-branch review, Finding 2: the Species hero's tournament figure printed "{n} of {of} picks", but `{of}` is `ranking.tournamentBattles`, a battle count, so it both misnamed the number and pluralised on it as picks. | `heroFigureText` now reads "picked in {n} of {N} battles", plural on N. | this fix wave |
+| 2026-09-28 whole-branch review, minor fold-in: Finding 4's longer record text ("players went 120-120 against it") squeezed the name column's `TypeChips` row past its own min-content width at 390px on a `thick`-fixture row, clipping it (caught by `npm run meta:audit`'s per-element clip check, not by `assertNoOverflow`'s page-level one). | `.rank-row`'s last grid column is now `minmax(0, 150px)` (was `auto`), and `.row-figure small` drops `white-space: nowrap`, so a figure that does not fit 150px wraps onto a second line instead of starving the name column. | this fix wave |
+| 2026-09-28 whole-branch review, minor fold-in: a baseline or ranks failure on Species left `ranking` (the hero's figure) and `baselineEntry` (the PvPoke card) both silently null, with `detail` and `meta` fine, so the page rendered as if the species had never been ranked instead of saying anything failed. | `Species` now takes `rankingError` (the same flag Pokemon's own error state already used) and shows the same `ErrorState`; `retryDetail` (`App.tsx`) now also retries `baseline` and `ranks`, not just `detail` and `meta`. Not exercised by this page's own captures (no fixture run fails the baseline), covered by a new `species.test.tsx` test. | this fix wave |
 
 ## Rulings
 
@@ -199,6 +216,27 @@ From the ledger:
   record; none of them contain an em dash.
 
 ## Open items for Travis
+
+From the 2026-09-28 whole-branch review fix wave (final fix pass, `.superpowers/sdd/2026-09-28-meta/final-fix-report.md`):
+
+- **PvPoke's stated share is now the remainder**, `100 - tournaments% - GBL%` (`headerCopy.ts`'s
+  `blendParts`/`sourceHeaderLine`, shared with `meta-teams.md`), not its own independently rounded
+  fraction; the parts on this page's own blend line always sum to 100 now.
+- **The reporters' record wording is now source-specific**: on the Pokémon list and the Species
+  page, under All and GBL it reads "players went 8-2 against it" (the reporters' own record facing
+  the species); under Tournaments it reads "it went 45-36" (the species' own record when picked).
+  This is a copy call Travis can overrule (`Pokemon.tsx`'s `recordLine`); say if either phrasing
+  reads wrong.
+- **`SiteLink` keeps both labels symmetric and descriptive** ("pick3, the team builder" on this
+  page's sub header), not the spec's literal "Open pick3" aria-label; see `meta-teams.md` for the
+  full note.
+- **`spelledName` keeps a non-regional, non-Shadow parenthetical** ("Morpeko (Full Belly)"), while
+  pick3's own `fullName`/`displayName` collapses a toggle form to the bare species name
+  ("Morpeko"); see `meta-teams.md` for the full note. A Morpeko row or Species page on this site
+  reads with its parenthetical.
+- **The Species hero's tournament figure now says "picked in N of M battles"**, plural on the
+  battle count M, not "N of M picks" (Finding 2 of the review): M is `ranking.tournamentBattles`,
+  a battle count, and the old wording both named it wrong and pluralised on it as if it were picks.
 
 - **A genuinely nonzero share under half a point reads "<1%", never "0%"** (`pctFloor`, Task 7 fix
   round 1), on both the Pokémon list and the Species hero. This is a visible wording choice, not

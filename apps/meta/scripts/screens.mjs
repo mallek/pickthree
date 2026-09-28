@@ -451,10 +451,9 @@ function tournamentSay(battles, events) {
 /** The `all` source's header line once a window has both shared ladder battles and blended
  * tournament battles (headerCopy.ts's `hasTournament` branch). Built from the same unrounded
  * curves rank.ts computes, not from a rounded-percent helper like `tournamentSay` above:
- * headerCopy.ts rounds the three percentages only at the very end, after multiplying the two
- * unrounded fractions together, and rounding each curve to a whole percent first before
- * multiplying can land on a different integer (checked by hand for this file's own fixture
- * volumes: at `thin`, 24% vs 25%). */
+ * headerCopy.ts rounds the ladder and tournament percentages from the unrounded fractions, then
+ * gives PvPoke the remainder, `100 - tPct - lPct` (Finding 3, 2026-09-28 whole-branch review),
+ * rather than its own independently rounded fraction, so the three parts always sum to 100. */
 function headerFragmentAll(battles, devices, tBattles, events) {
   const say = Math.min(
     battles <= 0 ? 0 : battles / (battles + 300),
@@ -464,13 +463,13 @@ function headerFragmentAll(battles, devices, tBattles, events) {
     tBattles <= 0 ? 0 : tBattles / (tBattles + 100),
     events <= 0 ? 0 : events / (events + 2),
   );
-  const pvpokePct = Math.round((1 - say) * (1 - tSay) * 100);
   const tPct = Math.round((1 - say) * tSay * 100);
+  const lPct = Math.round(say * 100);
+  const pvpokePct = 100 - tPct - lPct;
   const tourney = `${tBattles.toLocaleString('en-US')} tournament ${tBattles === 1 ? 'battle' : 'battles'} from ${eventsText(events)}`;
   if (battles === 0) {
     return `PvPoke ${pvpokePct}%, tournaments ${tPct}%. From ${tourney}. No shared ladder battles in this window yet.`;
   }
-  const lPct = Math.round(say * 100);
   const shared = `${battles.toLocaleString('en-US')} shared ${battles === 1 ? 'battle' : 'battles'}`;
   return `PvPoke ${pvpokePct}%, tournaments ${tPct}%, GBL ${lPct}%. From ${shared} by ${devicesText(devices)} and ${tourney}.`;
 }
@@ -479,7 +478,8 @@ const TERM = 'How it is ranked';
 
 /** The one line the lists open with (headerCopy.ts's `blendParts`, joined with " · ", then the
  * "How it is ranked" Term), under the `all` source. Built from the same unrounded curves as
- * `headerFragmentAll` above and rounded only at the end, as `blendParts` rounds. */
+ * `headerFragmentAll` above; PvPoke's own part is `100 - t - l`, the same remainder rule (Finding
+ * 3), so this line can never disagree with `headerFragmentAll`'s sentence for the same volumes. */
 function blendLineAll(battles, devices, tBattles, events) {
   if (battles === 0 && tBattles === 0) {
     return `PvPoke 100% · No shared battles yet · ${TERM}`;
@@ -492,12 +492,15 @@ function blendLineAll(battles, devices, tBattles, events) {
     tBattles <= 0 ? 0 : tBattles / (tBattles + 100),
     events <= 0 ? 0 : events / (events + 2),
   );
-  const parts = [`PvPoke ${Math.round((1 - say) * (1 - tSay) * 100)}%`];
+  const t = Math.round((1 - say) * tSay * 100);
+  const l = Math.round(say * 100);
+  const p = 100 - t - l;
+  const parts = [`PvPoke ${p}%`];
   if (tBattles > 0) {
-    parts.push(`Tournaments ${Math.round((1 - say) * tSay * 100)}%`);
+    parts.push(`Tournaments ${t}%`);
   }
   if (battles > 0) {
-    parts.push(`GBL ${Math.round(say * 100)}%`);
+    parts.push(`GBL ${l}%`);
   }
   return [...parts, TERM].join(' · ');
 }

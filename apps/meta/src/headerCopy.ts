@@ -61,13 +61,16 @@ export function sourceHeaderLine(r: SpeciesRanking, zero: string): string {
     }
     return r.source === 'ladder' ? literalLadderLine(r) : ladderLine(r);
   }
-  const pvpokePct = Math.round((1 - r.say) * (1 - r.tournamentSay) * 100);
+  // Ruling: PvPoke gets `100 - tPct - lPct` rather than its own independently rounded fraction, so
+  // the three stated weights always sum to 100 and this sentence never disagrees with `blendParts`
+  // (both compute PvPoke's share the same way, from the same two rounded numbers).
   const tPct = Math.round((1 - r.say) * r.tournamentSay * 100);
+  const lPct = Math.round(r.say * 100);
+  const pvpokePct = 100 - tPct - lPct;
   const tourney = `${count(r.tournamentBattles)} tournament ${battleWord(r.tournamentBattles)} from ${eventsText(r.events)}`;
   if (r.battles === 0) {
     return `PvPoke ${pvpokePct}%, tournaments ${tPct}%. From ${tourney}. No shared ladder battles in this window yet.`;
   }
-  const lPct = Math.round(r.say * 100);
   return `PvPoke ${pvpokePct}%, tournaments ${tPct}%, GBL ${lPct}%. From ${sharedBattlesText(r.battles)} by ${devicesText(r.devices)} and ${tourney}.`;
 }
 
@@ -93,13 +96,14 @@ export function blendParts(r: SpeciesRanking): string[] {
     const l = Math.round(r.say * 100);
     return [`PvPoke ${100 - l}%`, `GBL ${l}%`];
   }
-  // source === 'all'
+  // source === 'all'. Ruling: PvPoke gets `100 - t - l`, not its own independently rounded
+  // fraction, so the parts always sum to 100 and this never disagrees with `sourceHeaderLine`.
   if (r.battles === 0 && r.tournamentBattles === 0) {
     return ['PvPoke 100%', 'No shared battles yet'];
   }
-  const p = Math.round((1 - r.say) * (1 - r.tournamentSay) * 100);
   const t = Math.round((1 - r.say) * r.tournamentSay * 100);
   const l = Math.round(r.say * 100);
+  const p = 100 - t - l;
   const parts = [`PvPoke ${p}%`];
   if (r.tournamentBattles > 0) {
     parts.push(`Tournaments ${t}%`);

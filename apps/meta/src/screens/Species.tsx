@@ -471,13 +471,18 @@ function PvPokeCard({ entry, data }: { entry: BaselineSpecies; data: StaticData 
  * worded for a single-species page rather than a row among many. Ladder and All read as a share
  * of what players face; Tournaments reads as a share of tournament battles, in picks, since that
  * population is not what "what players face" means. */
+/** Finding 2 (2026-09-28 whole-branch review): `figure.of` is `ranking.tournamentBattles` under
+ *  Tournaments (facedFigure in Pokemon.tsx), not a pick count, so the old "{n} of {of} picks"
+ *  pluralised on the wrong number and named the wrong thing: 40 tournament BATTLES read as "40
+ *  picks". "picked in {n} of {N} battles", plural on N, agrees with the Pokemon row's own
+ *  "{n} of {of} battles" line (RowFigure, Pokemon.tsx) for the same figure. */
 function heroFigureText(
   isTournament: boolean,
   figure: { share: number; n: number; of: number },
 ): string {
   const p = pctFloor(figure.share);
   return isTournament
-    ? `${p} of tournament battles · ${count(figure.n)} of ${count(figure.of)} ${plural(figure.of, 'pick', 'picks')}`
+    ? `${p} of tournament battles · picked in ${count(figure.n)} of ${count(figure.of)} ${plural(figure.of, 'battle', 'battles')}`
     : `${p} of what players face · ${count(figure.n)} of ${count(figure.of)} ${plural(figure.of, 'battle', 'battles')}`;
 }
 
@@ -493,16 +498,23 @@ export function Species(p: {
    * is loading or one of its own three sources failed; the hero simply omits its own line rather
    * than guessing at a figure it does not have. */
   ranking: SpeciesRanking | null;
+  /** True when any of `ranking`'s own three sources (meta, baseline or ranks) failed to load.
+   *  Minor fix (2026-09-28 whole-branch review): without this, a baseline or ranks failure left
+   *  `ranking` and `baselineEntry` both null with nothing to explain it, so the hero's own figure
+   *  and the PvPoke card just silently disappeared instead of the page showing an error. */
+  rankingError: boolean;
   /** The league's Play! ban list, or null while it is loading. A banned species is marked as
    *  banned rather than shown with zeros. */
   legal: Legal | null;
   now: Date;
   href: (view: View) => string;
-  /** Retries whichever of the species detail or the meta summary actually failed (App.tsx's
-   *  `retryDetail`), the same shape as Teams' and Pokemon's own "Try again". */
+  /** Retries whichever of the species detail, the meta summary, the baseline or the ranks
+   *  actually failed (App.tsx's `retryDetail`), the same shape as Teams' and Pokemon's own
+   *  "Try again". */
   onRetry: () => void;
 }): ReactNode {
-  const { league, speciesId, data, detail, meta, baseline, ranking, legal, href, onRetry } = p;
+  const { league, speciesId, data, detail, meta, baseline, ranking, rankingError, legal, href, onRetry } =
+    p;
 
   // Ruling: not found is decided from the static data alone, before any fetch result: a species
   // id nothing on this site knows about gets `Empty`, not a guessed title-cased name (`speciesOf`'s
@@ -578,7 +590,7 @@ export function Species(p: {
   // fetch, and so this transition, now genuinely happens instead of usually resolving before
   // Species ever paints its loading state) the moment the page moved from loading to loaded. One
   // consistent wrapper keeps the hero's own DOM node stable across every state change.
-  if (detail.state === 'error' || meta.state === 'error') {
+  if (detail.state === 'error' || meta.state === 'error' || rankingError) {
     return (
       <main>
         <section>{headerTop}</section>

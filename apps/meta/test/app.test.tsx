@@ -440,7 +440,8 @@ describe('App, filter history', () => {
 
 // Ruling 8: go() pushes { meta: 1 } as the history state and refine() replaces without losing it,
 // so a page reached through the app's own navigation can always tell a real back-chain apart from
-// a fresh one (a shared link opened in a new tab, or a reload), whose history.state is null.
+// a fresh one (a shared link opened in a new tab), whose history.state is null. A reload does not
+// carry that null state; browsers keep an entry's state across one.
 describe('App, history state', () => {
   it('pushes { meta: 1 } on every real navigation', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
@@ -467,6 +468,57 @@ describe('App, history state', () => {
   });
 });
 
+// Finding 1 (2026-09-28 whole-branch review): go() used to leave the scroll position wherever it
+// was, so tapping a row far down the Pokemon list opened Species at the list's old offset. A
+// filter change (refine()) must NOT scroll, since it is a refinement of the page already on
+// screen, not a new page; popstate must not scroll either, since the browser restores the scroll
+// position it remembers for the entry Back returns to.
+describe('App, scroll position', () => {
+  it('scrolls to the top on a real navigation (a tab click)', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('scrolls to the top when a row opens Species', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    await userEvent.click(await screen.findByRole('link', { name: /Azumarill/ }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/p/azumarill'));
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('does not scroll on a filter change', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Window' }), '7');
+    await waitFor(() => expect(window.location.search).toContain('w=7'));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('does not scroll on a popstate (Back), leaving the browser to restore it', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    window.history.back();
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+});
+
 // Ruling 8, Review Focus 1: the Species back control.
 describe('App, Species back', () => {
   // Fix round 1, Important 1: a species row (Pokemon.tsx's RowView) is a plain <a href> with no
@@ -489,10 +541,10 @@ describe('App, Species back', () => {
   });
 
   it('goes to the league Pokemon list when the page was opened fresh, with no history state', async () => {
-    // A plain replaceState, the same way a real fresh navigation (a shared link in a new tab, or
-    // a reload) always carries a null history.state, never { meta: 1 }. The query rides along
-    // with the fallback target too: a fresh species page under a filter lands on the Pokemon list
-    // under the same filter, not the default.
+    // A plain replaceState, the same way a real fresh navigation (a shared link opened in a new
+    // tab) always carries a null history.state, never { meta: 1 }. The query rides along with the
+    // fallback target too: a fresh species page under a filter lands on the Pokemon list under
+    // the same filter, not the default.
     window.history.replaceState(null, '', '/great/p/azumarill?w=7&source=ladder');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await userEvent.click(await screen.findByRole('button', { name: 'Back' }));

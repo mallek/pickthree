@@ -292,7 +292,14 @@ describe('Pokemon, a measured row', () => {
     const measured = within(figure).getByText('50%');
     expect(measured.closest('.ui-measured')).not.toBeNull();
     const lines = Array.from(figure.children).map((el) => el.textContent);
-    expect(lines).toEqual(['50%', '240 of 480 battles', 'went 120-120 some', 'PvPoke #1']);
+    // Finding 4 (2026-09-28 whole-branch review): under All the record is the reporters' own
+    // against this species, so it reads "players went ... against it", not the bare "went ...".
+    expect(lines).toEqual([
+      '50%',
+      '240 of 480 battles',
+      'players went 120-120 against it some',
+      'PvPoke #1',
+    ]);
   });
 
   // Fix round 1, Important 1: a share under half a point used to round to "0%" with plain `pct`,
@@ -477,8 +484,10 @@ describe('Pokemon, source', () => {
     });
     const sub = document.querySelector('.sub');
     // The blend's own two curves at these inputs: measuredSay(480, 9) is 62% of the ladder's say,
-    // and tournamentSay(105, 1) splits what is left between PvPoke and tournaments.
-    expect(sub?.textContent).toBe('PvPoke 26% · Tournaments 13% · GBL 62% · How it is ranked');
+    // and tournamentSay(105, 1) splits what is left between PvPoke and tournaments. Finding 3
+    // (2026-09-28 whole-branch review): PvPoke's own part is the remainder, 100 - 13 - 62 = 25,
+    // not its own independently rounded fraction (which used to sum to 101 here: 26 + 13 + 62).
+    expect(sub?.textContent).toBe('PvPoke 25% · Tournaments 13% · GBL 62% · How it is ranked');
   });
 
   it('under Tournaments, the figure is picks of tournament battles', () => {

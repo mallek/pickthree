@@ -110,12 +110,19 @@ function recordOf(row: SpeciesRow, ranking: SpeciesRanking): { wins: number; los
     : { wins: row.wins, losses: row.losses };
 }
 
+/** Finding 4 (2026-09-28 whole-branch review): "went 8-2" named different sides depending on
+ *  source without saying so. Under All and GBL the record is the reporters' own record against
+ *  the species (the ladder population), so it reads "players went 8-2 against it"; under
+ *  Tournaments it is the species' own record when picked, so it reads "it went 45-36" instead
+ *  (a copy call Travis can overrule, see docs/design/audits/meta-pokemon.md). */
 function recordLine(row: SpeciesRow, ranking: SpeciesRanking): string {
   const { wins, losses } = recordOf(row, ranking);
   if (wins + losses === 0) {
     return 'no result recorded';
   }
-  return `went ${wins}-${losses}`;
+  return ranking.source === 'tournament'
+    ? `it went ${wins}-${losses}`
+    : `players went ${wins}-${losses} against it`;
 }
 
 /** Battles behind a row's record, in whichever population `ranking.source` reads from: the count

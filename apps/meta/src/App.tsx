@@ -229,6 +229,7 @@ function renderView(
         meta={meta}
         baseline={baseline}
         ranking={ranking}
+        rankingError={rankingError}
         legal={legal}
         now={now}
         href={href}
@@ -316,13 +317,22 @@ export function App(props?: { deps?: Deps }): ReactNode {
   /** A navigation: a new place, pushed onto history so the back button can undo it. The state
    * carries `{ meta: 1 }` (Ruling 8) so a page reached this way, most importantly a species page,
    * can tell a real in-app back-chain apart from a fresh navigation (a shared link opened in a
-   * new tab, or a real browser reload) whose `history.state` is null. */
+   * new tab) whose `history.state` is null. A real browser reload is not this case: browsers keep
+   * an entry's state across a reload, so a page that got here through `go()` still carries
+   * `{ meta: 1 }` after one.
+   *
+   * Finding 1 (2026-09-28 whole-branch review): scrolls to the top only here, not in `refine()`
+   * (a filter change, which should leave the scroll position alone) and not on `popstate` (the
+   * browser restores the scroll position it remembers for the entry being returned to). Without
+   * this, tapping row 30 of the Pokemon list opened Species at the list's old scroll offset, the
+   * way apps/web/src/App.tsx's own `useLayoutEffect` avoids for pick3's own screens. */
   function go(nextView: View, nextQuery: Query): void {
     const href = hrefFor(nextView, nextQuery);
     if (href !== `${loc.pathname}${loc.search}`) {
       window.history.pushState({ meta: 1 }, '', href);
     }
     setLoc(splitHref(href));
+    window.scrollTo(0, 0);
   }
 
   /** A filter change: a refinement of the page already on screen, so it replaces the current
@@ -504,15 +514,25 @@ export function App(props?: { deps?: Deps }): ReactNode {
       ranks.retry();
     }
   }
-  // Task 8's own "Try again": Species reads both the species detail and the meta summary (the
-  // hero's own figure comes from `ranking`, which is built from `meta`), so its retry covers
-  // whichever of the two actually failed, the same shape as `retryBoard` and `retryRanking` above.
+  // Task 8's own "Try again": Species reads the species detail AND `ranking` (the hero's own
+  // figure and the PvPoke card come from `ranking`/`baseline`, built from meta, baseline and
+  // ranks), so its retry covers whichever of the four actually failed, the same shape as
+  // `retryBoard` and `retryRanking` above. Minor fix (2026-09-28 whole-branch review): this used
+  // to retry only `detail` and `meta`, so a baseline or ranks failure on Species retried nothing
+  // and Species itself never even showed an error for it (see `rankingError` passed to Species
+  // below and its own error check).
   function retryDetail(): void {
     if (detail.state === 'error') {
       detail.retry();
     }
     if (meta.state === 'error') {
       meta.retry();
+    }
+    if (baseline.state === 'error') {
+      baseline.retry();
+    }
+    if (ranks.state === 'error') {
+      ranks.retry();
     }
   }
 
@@ -555,10 +575,11 @@ export function App(props?: { deps?: Deps }): ReactNode {
             onClick: () => {
               // Ruling 8: a page reached through this app's own navigation (a tab, then a row)
               // carries `{ meta: 1 }` (go()'s own history state), so the real back chain is
-              // still there to unwind. A page opened fresh, a shared link in a new tab or a
-              // reload, carries no state at all, and `history.back()` there would either do
-              // nothing or leave the site entirely; landing on the league's own Pokemon list
-              // (Review Focus 1) is the one target that is always right.
+              // still there to unwind, and stays there across a reload (browsers keep an entry's
+              // state across one). A page opened fresh, a shared link in a new tab, carries no
+              // state at all, and `history.back()` there would either do nothing or leave the
+              // site entirely; landing on the league's own Pokemon list (Review Focus 1) is the
+              // one target that is always right.
               if ((window.history.state as { meta?: number } | null)?.meta === 1) {
                 window.history.back();
               } else {

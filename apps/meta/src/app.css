@@ -250,10 +250,17 @@ section > .stat-n,
    pick3's row does not need (pick3 does not rank a fixed top N), so it stays as this site's own
    addition rather than something pick3's rhythm dictates. Named .rank-row, not .row: pick3's own
    .row (packages/ui/base.css) is a generic flex utility used across 16 files, so this one, a
-   grid ranked-list item, kept its own name rather than converting. */
+   grid ranked-list item, kept its own name rather than converting.
+   Finding 4 fix (2026-09-28 whole-branch review): the last column used to be `auto`, sized to
+   its own widest single line, which was fine for "went 120-120" but let "players went 120-120
+   against it" (the corrected wording) grow wide enough at 390px to squeeze the name column's
+   TypeChips row past its own min-content width, clipping it. `minmax(0, 150px)` caps the figure
+   column so the name column always keeps the rest of the row; `.row-figure small` below drops
+   `white-space: nowrap` so a figure that does not fit 150px wraps onto a second line instead of
+   overflowing it. */
 .rank-row {
   display: grid;
-  grid-template-columns: 22px 44px 1fr auto;
+  grid-template-columns: 22px 44px 1fr minmax(0, 150px);
   gap: 12px;
   align-items: center;
   padding: 12px 0;
@@ -599,7 +606,7 @@ a.rank-row {
 .row-figure small {
   font-size: 11px;
   color: var(--muted);
-  white-space: nowrap;
+  text-align: right;
 }
 
 /* A4/B1: the trend tag placed after a row's name: the ui Tag in its win or loss tone (TrendTag in

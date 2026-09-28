@@ -21,7 +21,7 @@ volume), converted to WebP (600px wide, quality 72).
 
 | State | Dark | Light |
 | --- | --- | --- |
-| `about`: sub header, Back, "About" with the meta tag and the pick3 mark; the lead paragraph (real GO Battle League ratings, three sources, no accounts, never a measured record shown as a projection); "Appearance" card with a `Seg` (System pressed, Dark, Light), each option 44px; "What one shared battle contains" (a checklist); "Never collected" (a crossed-out list); "How to contribute" with "Open pick3" and "Log a battle"; "For other apps" (PLANNED) with the API call and a `curl` example; "How to read the lists"; "How the lists are built"; "How the ranking works"; "What 'projected' means"; "Teams and cores"; "When the game changes"; the trademark note and the build id/rankings line | ![](img/about-dark.webp) | ![](img/about-light.webp) |
+| `about`: sub header, Back, "About" with the meta tag and the pick3 mark; the lead paragraph (real GO Battle League ratings, three sources, no accounts, never a measured record shown as a projection); "Appearance" card with a `Seg` (System pressed, Dark, Light), each option 44px; "What one shared battle contains" (a checklist); "Never collected" (a crossed-out list); "How to contribute" with "Open pick3" and "Log a battle"; "For other apps" with a "Planned" `Tag` (2026-09-28 fix wave: the ui `Tag`, no longer forced upper-case by an inline `text-transform`, so it now reads "Planned" rather than "PLANNED") with the API call and a `curl` example; "How to read the lists"; "How the lists are built"; "How the ranking works"; "What 'projected' means"; "Teams and cores"; "When the game changes"; the trademark note and the build id/rankings line | ![](img/about-dark.webp) | ![](img/about-light.webp) |
 
 Not captured, covered by `apps/meta/test/about.test.tsx` and `theme.test.ts`: choosing Dark or
 Light and reloading (the choice survives via `storedTheme`, Review Focus 5); the page on a build
@@ -41,6 +41,13 @@ unconditional copy, not fixture-dependent, so nothing to differ here).
       and light", exercising the Seg rules now in `packages/ui/base.css`) and
       `PICK3_BUILD=874d675 npm run web:audit` (exit 0, no enforced findings) are carried from
       Task 9's run on this same, unchanged code, not re-run for this record.
+- [x] **2026-09-28 fix wave re-run:** the "Planned" pill is now the ui `Tag` (see Findings and
+      fixes). `npm run meta:audit` exited 0 after the change: 55 captures, zero findings on `about`
+      in either theme, no NEVER line. `npx vitest run --project meta --project web --project ui`
+      (1070 tests, including `about.test.tsx`'s existing `findByText('Planned')`), `npm run lint`,
+      `npm run typecheck` and `npm run check-colors` all clean. `about`'s WebPs were regenerated:
+      the pill now reads "Planned" in sentence case (the ui `Tag` sets no `text-transform`), where
+      the old inline-styled span forced it to "PLANNED".
 
 ## Aesthetics
 
@@ -95,6 +102,7 @@ unconditional copy, not fixture-dependent, so nothing to differ here).
 | Task 5, minor folded into fix round 1: two headings ("Top teams" in the header and "Teams" in the body) sat on the same page until Task 6. | Not About's own issue; resolved when Task 6 shipped. | (Task 6) |
 | Task 9 audit: the Appearance Seg's 60x21 targets, and it was visibly unstyled (bare grey buttons), since `.seg` rules lived only in `apps/web/src/app.css` and meta never had them. | Moved verbatim to `packages/ui/base.css` (both apps import base.css before app.css, so pick3's cascade is unchanged); About's card gets `.appearance .seg > * { min-height: var(--tap) }`. | `ac8dfec` |
 | Task 9, by eye: About said "The team board behind Teams" and "On Teams, ...". | Both now say "Top teams", the page's real name. | `ac8dfec` |
+| 2026-09-28 whole-branch review, minor: the "Planned" pill on "For other apps" was a one-off inline-styled `<span>` (its own copy of a rounded-pill look, `text-transform: uppercase` included), not a shared component. | It is now the ui `Tag` (`About.tsx`); same look and position, one fewer bespoke style, and it drops the forced upper-case, so it reads "Planned" rather than "PLANNED". | this fix wave |
 
 ## Rulings
 
@@ -124,6 +132,22 @@ From the ledger:
   page's copy (already plain language) needed no rewording.
 
 ## Open items for Travis
+
+From the 2026-09-28 whole-branch review fix wave (final fix pass, `.superpowers/sdd/2026-09-28-meta/final-fix-report.md`):
+
+- **The "Planned" pill is now the ui `Tag`** (`About.tsx`'s "For other apps" card), not a
+  one-off inline-styled `<span>`; same look, one fewer bespoke style to keep in sync with the
+  token set.
+- **`SiteLink` keeps both labels symmetric and descriptive** ("pick3, the team builder" on this
+  page's sub header), not the spec's literal "Open pick3" aria-label this record's own Rulings
+  section names above; see `meta-teams.md` for the full note. Not new to this wave, carried here
+  for Travis's sign-off since this page's Rulings entry is the one that names it "Open pick3".
+- **The PvPoke `100 - t - l` rounding and the "players went ... against it" / "it went ..."
+  wording** (see `meta-teams.md` and `meta-pokemon.md`) do not touch About: it carries no blend
+  line and no species record.
+- **`spelledName` keeps a non-regional, non-Shadow parenthetical** ("Morpeko (Full Belly)") while
+  pick3 shows "Morpeko" (see `meta-teams.md`); About names no species itself, so this does not
+  show here either, noted for completeness across the three records.
 
 - **The "For other apps" section is PLANNED**, not live: its `curl` example documents an endpoint
   that does not accept public callers yet. Confirm the "PLANNED" tag reads clearly enough that a

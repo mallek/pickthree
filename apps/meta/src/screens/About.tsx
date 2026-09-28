@@ -10,7 +10,7 @@
  * same PvPoke commit and date in one data build, so any one of them says the same thing.
  */
 import type { CSSProperties, ReactNode } from 'react';
-import { Button, Seg, type ThemeChoice } from '@pickthree/ui';
+import { Button, Seg, Tag, type ThemeChoice } from '@pickthree/ui';
 import type { Baseline } from '../baseline.js';
 import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
@@ -172,20 +172,7 @@ export function About(p: {
       <section className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <h2>For other apps</h2>
-          <span
-            style={{
-              background: 'var(--surface2)',
-              color: 'var(--muted)',
-              fontSize: 10,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.3px',
-              padding: '2px 8px',
-              borderRadius: 999,
-            }}
-          >
-            Planned
-          </span>
+          <Tag>Planned</Tag>
         </div>
         <p className="sub">
           Any battle logger will be able to post records here with an API key, using the same fields
