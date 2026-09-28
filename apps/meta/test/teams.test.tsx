@@ -65,7 +65,7 @@ function view(): MatrixView {
 }
 
 function species(id: string, name: string): SpeciesLite {
-  return { id, name, short: name, dex: 0, types: ['normal'], shadow: false };
+  return { id, name, dex: 0, types: ['normal'], shadow: false };
 }
 
 /**
@@ -404,8 +404,11 @@ describe('Teams, cold start', () => {
     expect(
       screen.getByText(/Projected against PvPoke's meta group\. No shared battles/),
     ).toBeInTheDocument();
-    expect(screen.getAllByText('Projected').length).toBeGreaterThan(0);
+    // A generated row's collapsed sub-line is blank (`subLine` returns '' for a generated row,
+    // ruling 5): the "Projected" tag lives in the expanded panel (`kindTag`), so open every row
+    // before looking for it.
     await openEveryRow();
+    expect(screen.getAllByText('Projected').length).toBeGreaterThan(0);
     // A projection is a matchup score out of 100, never a percentage.
     expect(screen.getByText(/^Matchup score \d+ of 100$/)).toBeInTheDocument();
   });
@@ -752,7 +755,7 @@ describe('Teams, the board controls', () => {
   it('renders every row collapsed, with its summary on one line', () => {
     renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
     // The glanceable version of the record, plus the one fact a core has that a team does not.
-    expect(screen.getByText('Run 40 / 22-18 / 1 team')).toBeInTheDocument();
+    expect(screen.getByText('Run in 40 battles · went 22-18 · 1 team')).toBeInTheDocument();
     // The full sentence and the matchup score are in the panel, which is shut.
     expect(screen.queryByText(/Matchup score \d+ of 100/)).toBeNull();
     expect(screen.queryByText(/reporters went 22-18/)).toBeNull();

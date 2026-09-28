@@ -242,20 +242,20 @@ describe('About', () => {
     expect(screen.getByText(/limited by this site's CORS allow-list for now/)).toBeInTheDocument();
   });
 
-  // Also-fix: `\s` in a JS regex matches a non-breaking space (U+00A0) and a few other characters
-  // outside the printable ASCII range, so the guard used to let the single most likely smart
-  // character (a pasted NBSP) straight through. `\n\r\t` names only the whitespace this page
-  // actually uses. Attribute text (aria-label, title, alt) is checked too, since a screen reader
-  // or a tooltip reads those the same as visible text.
-  it('is strict 7-bit ASCII throughout, including attribute text', async () => {
+  // Ruling 3 (2026-09-28-meta): the ASCII rule is retired; names and copy keep their own
+  // spelling. The one rule that still applies everywhere is CLAUDE.md's "no em dashes anywhere",
+  // so this now guards U+2014 rather than the printable-ASCII range. Attribute text (aria-label,
+  // title, alt) is checked too, since a screen reader or a tooltip reads those the same as
+  // visible text.
+  it('carries no em dash anywhere, including attribute text', async () => {
     const { container } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await screen.findByText(/PvPoke rankings of/);
-    expect(container.textContent ?? '').toMatch(/^[\x20-\x7e\n\r\t]*$/);
+    expect(container.textContent ?? '').not.toMatch(/—/);
     for (const el of container.querySelectorAll('[aria-label], [title], [alt]')) {
       for (const attr of ['aria-label', 'title', 'alt']) {
         const value = el.getAttribute(attr);
         if (value !== null) {
-          expect(value).toMatch(/^[\x20-\x7e\n\r\t]*$/);
+          expect(value).not.toMatch(/—/);
         }
       }
     }

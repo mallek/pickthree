@@ -3,13 +3,12 @@
  * out of the data build by scripts/bake.ts. All of it is small, same-origin and cacheable, so it
  * is fetched once per page load and kept.
  */
-import { ascii, shortName } from './format.js';
+import { spelledName } from './format.js';
 
 export interface SpeciesLite {
   id: string;
-  /** As the data build names it, e.g. "Corsola (Galarian)", folded to ASCII. */
+  /** Spelled the way a reader would say it, e.g. "Galarian Corsola". See `spelledName`. */
   name: string;
-  short: string;
   dex: number;
   types: string[];
   shadow: boolean;
@@ -75,11 +74,9 @@ async function build(fetcher: typeof fetch): Promise<StaticData> {
   ]);
   const species = new Map<string, SpeciesLite>();
   for (const [id, entry] of Object.entries(speciesFile)) {
-    const name = ascii(entry[0]);
     species.set(id, {
       id,
-      name,
-      short: shortName(name),
+      name: spelledName(entry[0]),
       dex: entry[1],
       types: entry[2] ? entry[2].split(',') : [],
       shadow: id.endsWith('_shadow'),
@@ -87,7 +84,7 @@ async function build(fetcher: typeof fetch): Promise<StaticData> {
   }
   const moves = new Map<string, MoveLite>();
   for (const [id, entry] of Object.entries(movesFile)) {
-    moves.set(id, { id, name: ascii(entry[0]), type: entry[1] });
+    moves.set(id, { id, name: entry[0], type: entry[1] });
   }
   return { species, moves, leagues, seasons };
 }
@@ -107,7 +104,7 @@ export function speciesOf(data: StaticData, id: string): SpeciesLite {
   if (name.trim().length === 0) {
     name = id.length > 0 ? id : 'Unknown';
   }
-  return { id, name, short: name, dex: 0, types: [], shadow: id.endsWith('_shadow') };
+  return { id, name, dex: 0, types: [], shadow: id.endsWith('_shadow') };
 }
 
 /** The season covering an instant, or the newest one that started before it. */

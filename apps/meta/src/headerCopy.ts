@@ -70,3 +70,42 @@ export function sourceHeaderLine(r: SpeciesRanking, zero: string): string {
   const lPct = Math.round(r.say * 100);
   return `PvPoke ${pvpokePct}%, tournaments ${tPct}%, GBL ${lPct}%. From ${sharedBattlesText(r.battles)} by ${devicesText(r.devices)} and ${tourney}.`;
 }
+
+/** The one blend line, joined by the caller with " · " and followed by the "How it is ranked"
+ *  `Term`: `['PvPoke 63%', 'Tournaments 37%']`-shaped parts rather than a sentence. Uses exactly
+ *  the rounding `sourceHeaderLine` above uses for the same ranking, so the two can never
+ *  disagree about the percentages they both print. */
+export function blendParts(r: SpeciesRanking): string[] {
+  if (r.source === 'prior') {
+    return ['PvPoke 100%'];
+  }
+  if (r.source === 'tournament') {
+    if (r.tournamentBattles === 0) {
+      return ['PvPoke 100%', 'No tournament battles yet'];
+    }
+    const t = Math.round(r.tournamentSay * 100);
+    return [`PvPoke ${100 - t}%`, `Tournaments ${t}%`];
+  }
+  if (r.source === 'ladder') {
+    if (r.battles === 0) {
+      return ['PvPoke 100%', 'No shared battles yet'];
+    }
+    const l = Math.round(r.say * 100);
+    return [`PvPoke ${100 - l}%`, `GBL ${l}%`];
+  }
+  // source === 'all'
+  if (r.battles === 0 && r.tournamentBattles === 0) {
+    return ['PvPoke 100%', 'No shared battles yet'];
+  }
+  const p = Math.round((1 - r.say) * (1 - r.tournamentSay) * 100);
+  const t = Math.round((1 - r.say) * r.tournamentSay * 100);
+  const l = Math.round(r.say * 100);
+  const parts = [`PvPoke ${p}%`];
+  if (r.tournamentBattles > 0) {
+    parts.push(`Tournaments ${t}%`);
+  }
+  if (r.battles > 0) {
+    parts.push(`GBL ${l}%`);
+  }
+  return parts;
+}

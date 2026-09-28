@@ -478,7 +478,7 @@ function AlongsideCard({
               >
                 <Sprite species={other} size={40} />
                 <span className="fine" style={{ color: 'var(--muted)' }}>
-                  {other.short}
+                  {other.name}
                 </span>
                 <span className="fine">
                   {Math.round(share)}% - {battlesText(a.battles)}

@@ -6,6 +6,7 @@ const files: Record<string, unknown> = {
     azumarill: ['Azumarill', 184, 'water,fairy'],
     sableye_shadow: ['Sableye (Shadow)', 302, 'dark,ghost'],
     flabebe: ['Flab\u00e9b\u00e9', 669, 'fairy'],
+    corsola_galarian: ['Corsola (Galarian)', 222, 'ghost'],
   },
   '/moves.json': { BUBBLE: ['Bubble', 'water'] },
   '/leagues.json': [{ id: 'great', title: 'Great League', short: 'Great', cp: 1500 }],
@@ -19,17 +20,17 @@ const fetcher = vi.fn(async (url: string) =>
 ) as unknown as typeof fetch;
 
 describe('loadStatic', () => {
-  it('shapes species with a short name, a shadow flag and ASCII only', async () => {
+  it('shapes species with a spelled name and a shadow flag', async () => {
     const data = await loadStatic(fetcher);
     expect(data.species.get('sableye_shadow')).toEqual({
       id: 'sableye_shadow',
-      name: 'Sableye (Shadow)',
-      short: 'Sableye-S',
+      name: 'Shadow Sableye',
       dex: 302,
       types: ['dark', 'ghost'],
       shadow: true,
     });
-    expect(data.species.get('flabebe')!.name).toBe('Flabebe');
+    expect(data.species.get('flabebe')!.name).toBe('Flabébé');
+    expect(data.species.get('corsola_galarian')!.name).toBe('Galarian Corsola');
   });
 
   it('shapes moves and keeps the leagues and seasons as given', async () => {

@@ -1,36 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import {
   ago,
-  ascii,
   battleWord,
   battles,
   count,
   pct,
   pctFloor,
   pctPrecise,
-  shortName,
+  spelledName,
 } from '../src/format.js';
 
-describe('ascii', () => {
-  it('folds accented letters so every rendered string is 7-bit', () => {
-    expect(ascii('Pok\u00e9mon')).toBe('Pokemon');
-    expect(ascii('Flab\u00e9b\u00e9')).toBe('Flabebe');
-    expect(ascii('Azumarill')).toBe('Azumarill');
+describe('spelledName', () => {
+  it('moves one regional form to the front', () => {
+    expect(spelledName('Corsola (Galarian)')).toBe('Galarian Corsola');
   });
 
-  it('leaves nothing above code point 127 behind', () => {
-    const out = ascii('Nidoran\u2640 \u00b7 Farfetch\u2019d');
-    expect([...out].every((c) => c.charCodeAt(0) < 128)).toBe(true);
+  it('puts Shadow first, stripped of its own parentheses', () => {
+    expect(spelledName('Sableye (Shadow)')).toBe('Shadow Sableye');
   });
-});
 
-describe('shortName', () => {
-  it('abbreviates regional and shadow forms', () => {
-    expect(shortName('Corsola (Galarian)')).toBe('Corsola-G');
-    expect(shortName('Marowak (Alolan)')).toBe('Marowak-A');
-    expect(shortName('Azumarill (Shadow)')).toBe('Azumarill-S');
-    expect(shortName('Deoxys (Defense)')).toBe('Deoxys-D');
-    expect(shortName('Azumarill')).toBe('Azumarill');
+  it('combines a regional form and Shadow, Shadow first', () => {
+    expect(spelledName('Ninetales (Alolan) (Shadow)')).toBe('Shadow Alolan Ninetales');
+  });
+
+  it('leaves a non-regional parenthetical exactly as PvPoke wrote it', () => {
+    expect(spelledName('Giratina (Origin)')).toBe('Giratina (Origin)');
+    expect(spelledName('Charizard (Mega X)')).toBe('Charizard (Mega X)');
+    expect(spelledName('Darmanitan (Galarian Zen)')).toBe('Darmanitan (Galarian Zen)');
+  });
+
+  it('leaves a plain name, accents and all, untouched', () => {
+    expect(spelledName('Flab\u00e9b\u00e9')).toBe('Flab\u00e9b\u00e9');
+    expect(spelledName('Azumarill')).toBe('Azumarill');
   });
 });
 

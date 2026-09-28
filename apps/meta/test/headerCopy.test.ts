@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sourceHeaderLine } from '../src/headerCopy.js';
+import { blendParts, sourceHeaderLine } from '../src/headerCopy.js';
 import type { SpeciesRanking } from '../src/rank.js';
 
 const ZERO = "PvPoke's list. No shared battles in this window yet.";
@@ -110,5 +110,92 @@ describe('sourceHeaderLine', () => {
     expect(sourceHeaderLine(r, ZERO)).toBe(
       '50% from tournaments, 50% PvPoke. From 1 battle at 2 events. Not shared ladder play.',
     );
+  });
+});
+
+describe('blendParts', () => {
+  it('says PvPoke alone under the PvPoke source', () => {
+    expect(blendParts(ranking({ source: 'prior' }))).toEqual(['PvPoke 100%']);
+  });
+
+  it('says so plainly when there are no tournament battles yet, under Tournaments', () => {
+    expect(blendParts(ranking({ source: 'tournament' }))).toEqual([
+      'PvPoke 100%',
+      'No tournament battles yet',
+    ]);
+  });
+
+  it('splits PvPoke and Tournaments under Tournaments', () => {
+    const r = ranking({
+      source: 'tournament',
+      tournamentSay: 1 / 3,
+      tournamentBattles: 105,
+      events: 1,
+    });
+    expect(blendParts(r)).toEqual(['PvPoke 67%', 'Tournaments 33%']);
+  });
+
+  it('says so plainly when there are no shared battles yet, under GBL', () => {
+    expect(blendParts(ranking({ source: 'ladder' }))).toEqual([
+      'PvPoke 100%',
+      'No shared battles yet',
+    ]);
+  });
+
+  it('splits PvPoke and GBL under GBL', () => {
+    const r = ranking({ source: 'ladder', say: 0.5, battles: 300, devices: 10 });
+    expect(blendParts(r)).toEqual(['PvPoke 50%', 'GBL 50%']);
+  });
+
+  it('says so plainly when there is nothing measured at all, under All', () => {
+    expect(blendParts(ranking({ source: 'all' }))).toEqual([
+      'PvPoke 100%',
+      'No shared battles yet',
+    ]);
+  });
+
+  it('drops the GBL part under All when there are tournament battles but no ladder ones', () => {
+    const r = ranking({
+      source: 'all',
+      say: 0,
+      tournamentSay: 0.37,
+      tournamentBattles: 105,
+      events: 1,
+    });
+    expect(blendParts(r)).toEqual(['PvPoke 63%', 'Tournaments 37%']);
+  });
+
+  it('drops the Tournaments part under All when there are ladder battles but no tournament ones', () => {
+    const r = ranking({ source: 'all', say: 0.4, battles: 200, devices: 5 });
+    expect(blendParts(r)).toEqual(['PvPoke 60%', 'GBL 40%']);
+  });
+
+  it('states all three parts under All when both populations are present', () => {
+    const r = ranking({
+      source: 'all',
+      say: 0.33,
+      tournamentSay: 1 / 3,
+      battles: 148,
+      devices: 9,
+      tournamentBattles: 105,
+      events: 1,
+    });
+    expect(blendParts(r)).toEqual(['PvPoke 45%', 'Tournaments 22%', 'GBL 33%']);
+  });
+
+  it("never disagrees with sourceHeaderLine's own percentages for the same ranking", () => {
+    const r = ranking({
+      source: 'all',
+      say: 0.33,
+      tournamentSay: 1 / 3,
+      battles: 148,
+      devices: 9,
+      tournamentBattles: 105,
+      events: 1,
+    });
+    // sourceHeaderLine's own sentence for these inputs (pinned above): "PvPoke 45%, tournaments
+    // 22%, GBL 33%. ...". blendParts must carry the identical three numbers.
+    expect(sourceHeaderLine(r, ZERO)).toContain('PvPoke 45%, tournaments 22%, GBL 33%');
+    expect(blendParts(r)).toEqual(['PvPoke 45%', 'Tournaments 22%', 'GBL 33%']);
   });
 });

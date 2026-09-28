@@ -22,7 +22,6 @@ import type { SpeciesLite } from '../src/data.js';
 const azumarill: SpeciesLite = {
   id: 'azumarill',
   name: 'Azumarill',
-  short: 'Azumarill',
   dex: 184,
   types: ['water', 'fairy'],
   shadow: false,
@@ -31,7 +30,6 @@ const azumarill: SpeciesLite = {
 const clodsire: SpeciesLite = {
   id: 'clodsire',
   name: 'Clodsire',
-  short: 'Clodsire',
   dex: 980,
   types: ['poison', 'ground'],
   shadow: false,

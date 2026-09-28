@@ -1,42 +1,30 @@
 /**
- * Every string this site renders goes through here. Reader-facing copy is strict 7-bit ASCII,
- * so species names carrying an accent get folded rather than shown. Written as \u escapes so
- * this source file itself stays 7-bit ASCII rather than carrying the characters it strips.
+ * Every string this site renders goes through here. Names and copy keep their own spelling
+ * (accents, curly quotes and all); the one rule that still applies everywhere is CLAUDE.md's "no
+ * em dashes".
  */
 
-/** Folds a string to 7-bit ASCII, dropping combining marks and anything that survives. */
-export function ascii(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201c\u201d]/g, '"')
-    .replace(/[^\x20-\x7e]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-const FORMS: Record<string, string> = {
-  Galarian: 'G',
-  Alolan: 'A',
-  Hisuian: 'H',
-  Paldean: 'P',
-  Shadow: 'S',
-  Mega: 'M',
-  Defense: 'D',
-  Attack: 'A',
-  Speed: 'S',
+const REGIONAL_PREFIX: Record<string, string> = {
+  Alolan: 'Alolan',
+  Galarian: 'Galarian',
+  Hisuian: 'Hisuian',
+  Paldean: 'Paldean',
 };
 
-/** "Corsola (Galarian)" -> "Corsola-G". Unknown forms keep their first letter. */
-export function shortName(name: string): string {
-  const plain = ascii(name);
-  const m = /^(.*?) \(([^)]+)\)$/.exec(plain);
-  if (!m) {
-    return plain;
-  }
-  const form = m[2]!;
-  return `${m[1]!}-${FORMS[form] ?? form.slice(0, 1).toUpperCase()}`;
+/** PvPoke's own name, spelled the way a reader would say it: "Corsola (Galarian)" becomes
+ * "Galarian Corsola", "Ninetales (Alolan) (Shadow)" becomes "Shadow Alolan Ninetales". Mirrors
+ * the engine's `fullName`/`displayName` (packages/engine/src/explain/explain.ts), which does the
+ * same thing off a `GameDataIndex`; meta has none, so this works on the name string alone. Any
+ * other parenthetical (a Mega, a Zen or Origin form) is not a regional prefix and keeps its
+ * parentheses exactly as PvPoke wrote them. */
+export function spelledName(pvpokeName: string): string {
+  const SHADOW_SUFFIX = ' (Shadow)';
+  const shadow = pvpokeName.endsWith(SHADOW_SUFFIX);
+  const base = shadow ? pvpokeName.slice(0, -SHADOW_SUFFIX.length) : pvpokeName;
+  const m = /^(.*) \(([^)]+)\)$/.exec(base);
+  const prefix = m && m[2] ? REGIONAL_PREFIX[m[2]] : undefined;
+  const named = prefix && m ? `${prefix} ${m[1]}` : base;
+  return shadow ? `Shadow ${named}` : named;
 }
 
 export function count(n: number): string {

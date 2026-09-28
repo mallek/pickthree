@@ -119,7 +119,7 @@ function RowView({
       <Sprite species={species} size={44} />
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-          <span className="name">{species.short}</span>
+          <span className="name">{species.name}</span>
           {row.trend !== null ? <TrendTag points={row.trend} /> : null}
         </span>
         <span style={{ display: 'flex', gap: 4 }}>

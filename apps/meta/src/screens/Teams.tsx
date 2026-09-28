@@ -107,7 +107,7 @@ function joinNames(names: readonly string[]): string {
  * and off ours, and pick3's opponent picker searches every species, so logging one is ordinary.
  * About.tsx's "What projected means" section carries the same wording. */
 function outsideText(ids: readonly string[], data: StaticData): string {
-  const names = ids.map((id) => speciesOf(data, id).short);
+  const names = ids.map((id) => speciesOf(data, id).name);
   return `No projection: ${joinNames(names)} ${names.length === 1 ? 'is' : 'are'} outside the ranked list this site ships projections for.`;
 }
 
@@ -208,7 +208,7 @@ function CoreThirds({ core, data }: { core: BoardRow; data: StaticData }): React
             return (
               <span className="third-chip" key={id}>
                 <Sprite species={s} size={18} />
-                {s.short}
+                {s.name}
               </span>
             );
           })}
@@ -271,8 +271,10 @@ function BuildLine({
  * "87" after the record and let the listener guess what it counts. */
 function headLabel(row: BoardRow, title: string): string {
   const score = scoreOf(row);
-  const tail = score === null ? '' : `. ${matchupScoreLine(score)}`;
-  return `${title}. ${subLine(row)}${tail}`;
+  const parts = [title, subLine(row), score === null ? '' : matchupScoreLine(score)].filter(
+    (p) => p.length > 0,
+  );
+  return parts.join('. ');
 }
 
 /** A top-level row: a head that toggles, and the facts underneath when it is open.
@@ -305,7 +307,7 @@ function Row({
   // A label, not a sentence: "A, B and C" wastes three characters on a line that truncates at
   // phone width, and it truncated mid-"and". A plain comma join breaks at a name boundary more
   // often and fits one more name before the ellipsis.
-  const title = species.map((sp) => sp.short).join(', ');
+  const title = species.map((sp) => sp.name).join(', ');
   const score = scoreOf(row);
 
   return (

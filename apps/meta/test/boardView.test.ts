@@ -128,14 +128,14 @@ describe('teamsSeen', () => {
 });
 
 describe('subLine', () => {
-  it('says a generated row is a projection and nothing else', () => {
-    expect(subLine(makeRow(['a', 'b', 'c'], { source: 'generated' }))).toBe('Projected');
+  it('returns nothing for a generated row: the row shows the Projected tag instead', () => {
+    expect(subLine(makeRow(['a', 'b', 'c'], { source: 'generated' }))).toBe('');
   });
 
   it('gives a run-only row its record straight', () => {
     expect(
       subLine(makeRow(['a', 'b', 'c'], { runBattles: 42, runWins: 26, runLosses: 16, decided: 42 })),
-    ).toBe('Run 42 / 26-16');
+    ).toBe('Run in 42 battles · went 26-16');
   });
 
   /** The worker counts a faced row's wins for the TEAM, so the players' own record is the
@@ -150,7 +150,7 @@ describe('subLine', () => {
           decided: 37,
         }),
       ),
-    ).toBe('Faced 37 / players 12-25');
+    ).toBe('Faced in 37 battles · players went 12-25');
   });
 
   it("gives a run-and-faced row the team's own record, labelled", () => {
@@ -166,13 +166,19 @@ describe('subLine', () => {
           decided: 47,
         }),
       ),
-    ).toBe('Seen 47 / team 32-15');
+    ).toBe('47 battles · went 32-15');
   });
 
   it('says so when a row was seen but no result was recorded', () => {
     expect(subLine(makeRow(['a', 'b', 'c'], { runBattles: 3, decided: 0 }))).toBe(
-      'Seen 3 / no result',
+      '3 battles · no result',
     );
+  });
+
+  it('pluralises "battle" for a row with exactly one', () => {
+    expect(
+      subLine(makeRow(['a', 'b', 'c'], { runBattles: 1, runWins: 1, runLosses: 0, decided: 1 })),
+    ).toBe('Run in 1 battle · went 1-0');
   });
 
   it('adds the count of complete teams a core has been seen in', () => {
@@ -183,7 +189,7 @@ describe('subLine', () => {
       decided: 42,
       builds: [build('x'), build('y')],
     });
-    expect(subLine(row)).toBe('Run 42 / 26-16 / 2 teams');
+    expect(subLine(row)).toBe('Run in 42 battles · went 26-16 · 2 teams');
   });
 
   it('says "1 team" rather than "1 teams"', () => {
@@ -194,7 +200,7 @@ describe('subLine', () => {
       decided: 42,
       builds: [build('x')],
     });
-    expect(subLine(row)).toBe('Run 42 / 26-16 / 1 team');
+    expect(subLine(row)).toBe('Run in 42 battles · went 26-16 · 1 team');
   });
 
   it('leaves the team count off a core nobody has been seen complete with', () => {
@@ -205,10 +211,10 @@ describe('subLine', () => {
       decided: 42,
       builds: [build('x', { source: 'generated' })],
     });
-    expect(subLine(row)).toBe('Run 42 / 26-16');
+    expect(subLine(row)).toBe('Run in 42 battles · went 26-16');
   });
 
-  it('stays 7-bit ASCII', () => {
+  it('carries no em dash', () => {
     const row = makeRow(['a', 'b'], {
       runBattles: 1200,
       runWins: 700,
@@ -216,6 +222,6 @@ describe('subLine', () => {
       decided: 1200,
       builds: [build('x'), build('y')],
     });
-    expect(subLine(row)).toMatch(/^[\x20-\x7e]*$/);
+    expect(subLine(row)).not.toMatch(/—/);
   });
 });

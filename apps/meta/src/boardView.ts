@@ -13,7 +13,7 @@
  * Every sort falls back to the incoming (ranked) order on a tie, so equal rows never shuffle
  * between renders and the blended ranking still breaks ties under every view.
  */
-import { count, plural } from './format.js';
+import { battles as battlesText, count, plural } from './format.js';
 import type { BoardRow } from './teamRank.js';
 
 export type SortKey = 'ranked' | 'matchup' | 'usage' | 'spread';
@@ -78,43 +78,49 @@ export function multiTeamOnly(rows: readonly BoardRow[]): BoardRow[] {
   return rows.filter((row) => row.kind === 'team' || teamsSeen(row) >= 2);
 }
 
-/** The record part of the collapsed line, in counts, never as a rate.
+/** The record part of the collapsed line, in counts, never as a rate, as the two or three parts
+ * that `subLine` joins with " · ".
  *
  * A faced row's wins belong to the TEAM, not to the reporter who met it (the worker increments
  * `facedWins` on the reporter's loss), so a faced-only row prints the players' own record and
  * says whose it is. A row with both roles prints the team's record and says that instead. The
  * expanded panel carries the full sentence; this is the glanceable version of the same fact,
- * and it labels rather than leaves the reader to guess. */
-function recordPart(row: BoardRow): string {
+ * and it labels rather than leaves the reader to guess. Undecided is checked first, ahead of
+ * which roles the row has, since "no result" is true of the row as a whole either way. */
+function recordParts(row: BoardRow): string[] {
   const total = usageOf(row);
   if (row.decided === 0) {
-    return `Seen ${count(total)} / no result`;
+    return [battlesText(total), 'no result'];
   }
   if (row.runBattles > 0 && row.facedBattles > 0) {
     const wins = row.runWins + row.facedWins;
     const losses = row.runLosses + row.facedLosses;
-    return `Seen ${count(total)} / team ${wins}-${losses}`;
+    return [battlesText(total), `went ${wins}-${losses}`];
   }
   if (row.facedBattles > 0) {
-    return `Faced ${count(row.facedBattles)} / players ${row.facedLosses}-${row.facedWins}`;
+    return [
+      `Faced in ${battlesText(row.facedBattles)}`,
+      `players went ${row.facedLosses}-${row.facedWins}`,
+    ];
   }
-  return `Run ${count(row.runBattles)} / ${row.runWins}-${row.runLosses}`;
+  return [`Run in ${battlesText(row.runBattles)}`, `went ${row.runWins}-${row.runLosses}`];
 }
 
-/** The line under a collapsed row's title: what is behind it, at a glance. A generated row has
- * no record at all, so it says only what it is. A core adds how many complete teams it has been
- * seen in, which is the one fact a core has that a team does not, and the fact the multi-team
- * filter acts on. */
+/** The line under a collapsed row's title: what is behind it, at a glance, its parts joined by
+ * " · ". A generated row has no record at all, so it returns "": the row shows the
+ * `Projected` tag (Teams.tsx's `kindTag`) instead of a line here. A core adds how many complete
+ * teams it has been seen in, which is the one fact a core has that a team does not, and the fact
+ * the multi-team filter acts on. */
 export function subLine(row: BoardRow): string {
   if (row.source === 'generated') {
-    return 'Projected';
+    return '';
   }
-  const parts = [recordPart(row)];
+  const parts = recordParts(row);
   if (row.kind === 'core') {
     const seen = teamsSeen(row);
     if (seen > 0) {
       parts.push(`${count(seen)} ${plural(seen, 'team', 'teams')}`);
     }
   }
-  return parts.join(' / ');
+  return parts.join(' · ');
 }
