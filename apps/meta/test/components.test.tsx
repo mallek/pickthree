@@ -151,13 +151,15 @@ describe('TrendTag', () => {
   it('reads a rising share as a small green-toned "up" tag', () => {
     render(<TrendTag points={3.34} />);
     const tag = screen.getByText('+3');
-    expect(tag).toHaveClass('trend-tag', 'up');
+    expect(tag).toHaveClass('ui-tag', 'ui-tag-win');
+    expect(tag.parentElement).toHaveClass('trend-tag', 'up');
   });
 
   it('reads a falling share as a small red-toned "down" tag', () => {
     render(<TrendTag points={-1.21} />);
     const tag = screen.getByText('-1');
-    expect(tag).toHaveClass('trend-tag', 'down');
+    expect(tag).toHaveClass('ui-tag', 'ui-tag-loss');
+    expect(tag.parentElement).toHaveClass('trend-tag', 'down');
   });
 
   it('renders nothing for a real but sub-whole-point move, rather than a zero-looking tag', () => {

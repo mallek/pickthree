@@ -54,6 +54,10 @@ const AUDIT_ENFORCED = new Set([
   'pokemon-tournaments',
   'pokemon-pvpoke',
   'pokemon-ranked',
+  'pokemon-gbl',
+  'pokemon-error',
+  'great-empty',
+  'great-error',
   // `species-${DETAIL_SPECIES}` is added below, once the fixtures have named it.
   'species-thin',
   'species-missing',
@@ -507,6 +511,19 @@ function blendLineTournament(tBattles, events) {
   return `PvPoke ${100 - t}% · Tournaments ${t}% · ${TERM}`;
 }
 
+/** The same line under the GBL source (`blendParts`' ladder branch): the ladder say alone. */
+function blendLineLadder(battles, devices) {
+  if (battles === 0) {
+    return `PvPoke 100% · No shared battles yet · ${TERM}`;
+  }
+  const say = Math.min(
+    battles <= 0 ? 0 : battles / (battles + 300),
+    devices <= 0 ? 0 : devices / (devices + 5),
+  );
+  const l = Math.round(say * 100);
+  return `PvPoke ${100 - l}% · GBL ${l}% · ${TERM}`;
+}
+
 const PRIOR_LINE = `PvPoke 100% · ${TERM}`;
 
 /** Needles for one seeded volume: the one line on every list capture, and the Term's first
@@ -516,7 +533,14 @@ function needlesFor({ battles, devices, tBattles, events }) {
   const zero = battles === 0 && tBattles === 0;
   return {
     great: [all],
-    'great-open': [all],
+    // Every run's board has full-team rows (generated ones on the empty run), so an opened row
+    // always shows its matchup score and its pick3 link.
+    'great-open': [all, 'Matchup score', 'Open in pick3'],
+    'great-empty': [
+      'No teams shared in this window yet, and no projections could be loaded.',
+      'Help fill this in',
+    ],
+    'great-error': ['Could not load the team board.', 'Try again'],
     'great-sort': [all, 'Sort: Matchup'],
     'great-ranked': [
       zero
@@ -531,6 +555,8 @@ function needlesFor({ battles, devices, tBattles, events }) {
     ],
     'pokemon-tournaments': [blendLineTournament(tBattles, events)],
     'pokemon-pvpoke': [PRIOR_LINE, 'Nothing measured.'],
+    'pokemon-gbl': [blendLineLadder(battles, devices)],
+    'pokemon-error': ['Could not load the shared battles.', 'Try again'],
     'species-thin': battles === 0 ? [] : ['No moves reported yet.'],
     'species-missing': ['No Pokémon by that name in'],
     about: ['Appearance'],
@@ -578,15 +604,22 @@ async function openRanked(page) {
 /** Multi-team only on (when the board offers it) and Sort set to its second option. Sort is a
  * native select under the InlineSelect's text, so the capture shows the choice made, not the
  * platform's open picker, which no screenshot can see. */
-async function sortSecond(page) {
-  await page.evaluate(() => {
+async function sortSecond(page, run) {
+  const chipFound = await page.evaluate(() => {
     const chip = Array.from(document.querySelectorAll('.board-controls .chip')).find((b) =>
       (b.textContent ?? '').includes('Multi-team only'),
     );
-    if (chip) {
-      chip.click();
+    if (!chip) {
+      return false;
     }
+    chip.click();
+    return true;
   });
+  // The fixture's core is in two teams once anything is shared (`teamA2`), so the chip must be
+  // on the board then; only the empty run, projections alone, has nothing for it to act on.
+  if (!chipFound && run.battles > 0) {
+    throw new Error(`${run.name} great-sort: the Multi-team only chip is missing`);
+  }
   const second = await page.evaluate(
     () => document.querySelector('.board-controls select')?.options[1]?.value ?? null,
   );
@@ -594,20 +627,57 @@ async function sortSecond(page) {
     throw new Error('great-sort: the Sort select has no second option');
   }
   await page.select('.board-controls select', second);
+  if (chipFound) {
+    const pressed = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll('.board-controls .chip'))
+          .find((b) => (b.textContent ?? '').includes('Multi-team only'))
+          ?.getAttribute('aria-pressed') ?? null,
+    );
+    if (pressed !== 'true') {
+      throw new Error(`${run.name} great-sort: Multi-team only did not turn on`);
+    }
+  }
 }
 
-/** [capture name, path, action after the page settles, page group for the NEVER rule]. The group
- * is the page a capture belongs to: text scrolled out of view in one capture of a page counts as
- * measured when another capture of the same page, in the same run and theme, measured it. */
+/** The empty board's deliberate failure: the baked teams and the matchup slice both 404. */
+const NO_PROJECTIONS = {
+  [`/baseline/${LEAGUE}-teams.json`]: 404,
+  [`/matrix/${LEAGUE}.json`]: 404,
+};
+
+/** [capture name, path, action after the page settles, page group for the NEVER rule, options].
+ * The group is the page a capture belongs to: text scrolled out of view in one capture of a page
+ * counts as measured when another capture of the same page, in the same run and theme, measured
+ * it. Options: `runs` limits a capture to the runs where it says something (a state that does
+ * not change with the volume is taken once); `fail` maps the paths the capture fails on purpose
+ * to the status they answer with, for that capture only. */
 const PAGES = [
   ['great', `/${LEAGUE}`, null, 'great'],
   ['great-open', `/${LEAGUE}`, openRows, 'great'],
   ['great-sort', `/${LEAGUE}`, sortSecond, 'great'],
   ['great-ranked', `/${LEAGUE}`, openRanked, 'great'],
+  // The empty board: nothing shared and the projections failed to load, so there is no row.
+  ['great-empty', `/${LEAGUE}`, null, 'great-empty', { runs: ['empty'], fail: NO_PROJECTIONS }],
+  [
+    'great-error',
+    `/${LEAGUE}`,
+    null,
+    'great-error',
+    { runs: ['thin'], fail: { '/api/v1/teams': 503 } },
+  ],
   ['pokemon', `/${LEAGUE}/pokemon`, null, 'pokemon'],
   ['pokemon-ranked', `/${LEAGUE}/pokemon`, openRanked, 'pokemon'],
   ['pokemon-tournaments', `/${LEAGUE}/pokemon?source=tournament`, null, 'pokemon-tournaments'],
   ['pokemon-pvpoke', `/${LEAGUE}/pokemon?source=prior`, null, 'pokemon-pvpoke'],
+  ['pokemon-gbl', `/${LEAGUE}/pokemon?source=ladder`, null, 'pokemon-gbl'],
+  [
+    'pokemon-error',
+    `/${LEAGUE}/pokemon`,
+    null,
+    'pokemon-error',
+    { runs: ['thin'], fail: { '/api/v1/meta': 503 } },
+  ],
   [`species-${DETAIL_SPECIES}`, `/${LEAGUE}/p/${DETAIL_SPECIES}`, null, 'species'],
   ['species-thin', `/${LEAGUE}/p/${THIN_SPECIES}`, null, 'species-thin'],
   ['species-missing', `/${LEAGUE}/p/${MISSING_SPECIES}`, null, 'species-missing'],
@@ -615,6 +685,8 @@ const PAGES = [
 ];
 
 const errors = [];
+/** The paths the capture being taken fails on purpose (pathname to status); empty otherwise. */
+let failing = new Map();
 
 /** Serves /api/v1/meta, /api/v1/teams, /api/v1/species/<id> and /epochs.json from the run's
  * fixture, and the three baked matrix/rank files straight off disk (apps/meta/public), for
@@ -624,6 +696,15 @@ const errors = [];
 function fixtureFor(run) {
   return async (request) => {
     const url = new URL(request.url());
+    const failStatus = failing.get(url.pathname);
+    if (failStatus !== undefined) {
+      await request.respond({
+        status: failStatus,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'fixture failure' }),
+      });
+      return;
+    }
     const json = (body) =>
       request.respond({
         status: 200,
@@ -760,7 +841,23 @@ for (const run of RUNS) {
     if (/^Failed to load resource: net::/.test(text)) {
       return;
     }
-    errors.push(`[${run.name} console.error] ${text}`);
+    // A capture that fails a request on purpose (`fail` in PAGES) gets Chrome's HTTP-status line
+    // for exactly those paths and statuses; this message does carry the URL, in its location.
+    const status = /^Failed to load resource: the server responded with a status of (\d+)/.exec(
+      text,
+    );
+    if (status) {
+      let pathname;
+      try {
+        pathname = new URL(m.location()?.url ?? '').pathname;
+      } catch {
+        pathname = null;
+      }
+      if (pathname !== null && failing.get(pathname) === Number(status[1])) {
+        return;
+      }
+    }
+    errors.push(`[${run.name} console.error] ${text} ${m.location()?.url ?? ''}`);
   });
   page.on('pageerror', (e) => errors.push(`[${run.name} pageerror] ${e.message}`));
   page.on('requestfailed', (r) => {
@@ -775,14 +872,20 @@ for (const run of RUNS) {
   await page.setRequestInterception(true);
   page.on('request', fixtureFor(run));
 
-  for (const [name, urlPath, act, group] of PAGES) {
+  for (const [name, urlPath, act, group, opts = {}] of PAGES) {
+    if (opts.runs && !opts.runs.includes(run.name)) {
+      continue;
+    }
     console.log(`  ${name}`);
+    // Set before the load, and replaced by the next capture's (usually empty) map, so a deliberate
+    // failure never leaks into another capture.
+    failing = new Map(Object.entries(opts.fail ?? {}));
     await page.goto(`${base}${urlPath}`, { waitUntil: 'domcontentloaded' });
     await settle(page);
     // A click-then-capture step (a row open, the Sort changed, the Term open) acts on the settled
     // page and settles again before anything is checked or shot.
     if (act) {
-      await act(page);
+      await act(page, run);
       await settle(page);
     }
     captured.add(name);

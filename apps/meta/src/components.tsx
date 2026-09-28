@@ -133,7 +133,12 @@ export function TrendTag({ points }: { points: number }) {
   if (label === 'even') {
     return null;
   }
-  return <span className={`trend-tag ${points > 0 ? 'up' : 'down'}`}>{label}</span>;
+  // The ui Tag's own win and loss tones; `.trend-tag` only sets the smaller size a name line needs.
+  return (
+    <span className={`trend-tag ${points > 0 ? 'up' : 'down'}`}>
+      <Tag tone={points > 0 ? 'win' : 'loss'}>{label}</Tag>
+    </span>
+  );
 }
 
 const SPARK_VIEW_W = 140;

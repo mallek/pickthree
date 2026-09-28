@@ -602,28 +602,19 @@ a.rank-row {
   white-space: nowrap;
 }
 
-/* A4/B1: the trend tag placed after a row's name. Exactly two fixed tones, the ui Tag's win and
-   loss colors (packages/ui/base.css, .ui-tag-win and .ui-tag-loss), at the smaller size a name
-   line needs: a null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a
-   neutral or zero one, so there is no third modifier here. */
+/* A4/B1: the trend tag placed after a row's name: the ui Tag in its win or loss tone (TrendTag in
+   components.tsx), so the colors are the Tag's own. This wrapper only sets the smaller size a name
+   line needs. A null trend renders no tag at all (see stats.ts's TREND_MIN comment), never a
+   neutral or zero one. */
 .trend-tag {
   display: inline-flex;
-  align-items: center;
+  flex: none;
+}
+.trend-tag .ui-tag {
   padding: 0 5px;
-  border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
   line-height: 1.5;
-  vertical-align: middle;
-  flex: none;
-}
-.trend-tag.up {
-  color: var(--win-ink);
-  background: var(--win-tint);
-}
-.trend-tag.down {
-  color: var(--loss);
-  background: color-mix(in srgb, var(--loss) 5%, var(--surface));
 }
 
 /* D1: the sparkline's latest-point dot and label, and its week-tick row. Plain HTML rather than
