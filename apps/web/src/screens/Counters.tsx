@@ -3,6 +3,7 @@ import {
   Button,
   Chevron,
   Empty,
+  ErrorState,
   FilterButton,
   Header,
   IconButton,
@@ -68,23 +69,51 @@ export function Counters() {
   const knownRouteLeague =
     routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
   const stale = s.counters === null || s.countersVs !== vs;
+  /** The last run against this opponent (or the whole meta) failed: shown with Try again, and
+   * not asked again on its own. */
+  const failed = s.countersError !== null && s.countersVs === vs;
 
-  // Switch to the league the link named. An unknown league id is ignored silently: the link
-  // still works, in whatever league the reader was already in.
+  // Switch to the league the link named, once. When it is in play the route lets go of it, so
+  // the league switcher works again (a route that kept it would switch straight back). An unknown
+  // league id is ignored silently: the link still works, in whatever league was in play.
   useEffect(() => {
-    if (knownRouteLeague && routeLeague && (s.settings.league ?? 'great') !== routeLeague) {
+    if (!knownRouteLeague || !routeLeague) {
+      return;
+    }
+    if (s.leagueInfo?.id === routeLeague) {
+      navigate(
+        { screen: 'counters', ...(vs ? { vs } : {}), ...(from ? { from: true } : {}) },
+        { replace: true },
+      );
+    } else if ((s.settings.league ?? 'great') !== routeLeague) {
       setLeague(routeLeague);
     }
-  }, [knownRouteLeague, routeLeague, s.settings.league, setLeague]);
+  }, [
+    knownRouteLeague,
+    routeLeague,
+    s.leagueInfo,
+    s.settings.league,
+    setLeague,
+    navigate,
+    vs,
+    from,
+  ]);
 
   // The collection only marks what you own; the meta itself needs no import. While a known
   // route league has not caught up in leagueInfo yet, hold off so the scores that load match it.
   const switchingLeague = knownRouteLeague && s.leagueInfo?.id !== routeLeague;
   useEffect(() => {
-    if (s.boot === 'ready' && s.leagueInfo && stale && !s.countersLoading && !switchingLeague) {
+    if (
+      s.boot === 'ready' &&
+      s.leagueInfo &&
+      stale &&
+      !failed &&
+      !s.countersLoading &&
+      !switchingLeague
+    ) {
       void loadCounters(vs);
     }
-  }, [s.boot, s.leagueInfo, stale, s.countersLoading, loadCounters, vs, switchingLeague]);
+  }, [s.boot, s.leagueInfo, stale, failed, s.countersLoading, loadCounters, vs, switchingLeague]);
 
   const counters = stale ? null : s.counters;
   // Without a collection nothing is owned, so a filter left on from before would hide every row.
@@ -204,13 +233,13 @@ export function Counters() {
             count={own === 'all' ? 0 : 1}
             onClick={() => setSheet('filters')}
           />
-        ) : unranked ? null : (
+        ) : unranked || failed ? null : (
           sortSelect
         )}
       </div>
-      {/* Nothing to sort or qualify under an unranked opponent: the Against row stays so another
-          can be picked, and the empty state below explains itself. */}
-      {unranked ? null : (
+      {/* Nothing to sort or qualify under an unranked opponent or a failed run: the Against row
+          stays so another can be picked, and the state below explains itself. */}
+      {unranked || failed ? null : (
         <div className="counters-line">
           <span className="meta">{line}</span>
           {s.collection ? sortSelect : null}
@@ -221,9 +250,16 @@ export function Counters() {
 
   let empty: string | null = null;
   if (counters && rows.length === 0 && (!s.countersLoading || counters.entries.length > 0)) {
-    empty = unranked
-      ? `PvPoke does not rank ${name(unranked)} in ${league.title}, so pick3 has no moveset to simulate it with.`
-      : 'Nothing here yet. Try another filter.';
+    if (unranked) {
+      empty = `PvPoke does not rank ${name(unranked)} in ${league.title}, so pick3 has no moveset to simulate it with.`;
+    } else if (counters.entries.length > 0) {
+      // Rows came back, and the ownership filter hid every one.
+      empty = 'Nothing here yet. Try another filter.';
+    } else if (vs) {
+      empty = `Nothing in ${league.title} beats ${name(vs)} in any shield pairing.`;
+    } else {
+      empty = 'No counters to show.';
+    }
   }
 
   return (
@@ -310,6 +346,16 @@ export function Counters() {
             </div>
           );
         })}
+        {failed ? (
+          <ErrorState
+            line={s.countersError ?? ''}
+            action={
+              <Button variant="secondary" onClick={() => void loadCounters(vs)}>
+                Try again
+              </Button>
+            }
+          />
+        ) : null}
         {empty ? <Empty line={empty} /> : null}
       </div>
       {sheet === 'against' ? (

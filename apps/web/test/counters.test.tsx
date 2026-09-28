@@ -93,6 +93,39 @@ describe('Counters screen, league from a link', () => {
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
+  it('lets go of the linked league once it is in play, so the league switcher still works', async () => {
+    window.location.hash = '#/counters?vs=medicham&l=ultra';
+    const host = await twoLeagueHost();
+    render(
+      <AppProvider host={host}>
+        <Counters />
+      </AppProvider>,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Ultra League' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      ),
+    );
+    // The route drops the league once Ultra is in play; the opponent stays.
+    await waitFor(() => expect(window.location.hash).toBe('#/counters?vs=medicham'));
+    const leagueCalls = (host.leagueInfo as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    await act(async () => {
+      fireEvent.click(screen.getByRole('radio', { name: 'Great League' }));
+    });
+    await waitFor(() => expect(leagueCalls.at(-1)?.[0]).toBe('great'));
+    // Given time to switch back, it does not: Great stays.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(leagueCalls.at(-1)?.[0]).toBe('great');
+    expect(screen.getByRole('radio', { name: 'Great League' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(window.location.hash).toBe('#/counters?vs=medicham');
+  });
+
   it('ignores an unknown league id and still scores counters in whatever league was in play', async () => {
     window.location.hash = '#/counters?vs=medicham&l=nonsense';
     const host = await twoLeagueHost();
@@ -733,11 +766,79 @@ describe('Counters page', () => {
     expect(screen.getByRole('button', { name: /^Against/ })).toHaveTextContent('Medicham');
   });
 
-  it('nothing to show reads as the empty state', async () => {
+  it('nothing to show against the whole meta: a plain empty state, no filter hint', async () => {
     await boot({ counters: vi.fn(async () => EMPTY_COUNTERS) });
     await go({ screen: 'counters' });
-    expect(await screen.findByText('Nothing here yet. Try another filter.')).toBeInTheDocument();
+    expect(await screen.findByText('No counters to show.')).toBeInTheDocument();
     expect(document.querySelector('.ui-empty')).not.toBeNull();
+    expect(screen.queryByText(/Try another filter/)).toBeNull();
+  });
+
+  it('nothing beats one opponent: the empty state names it and the league', async () => {
+    const counters = vi.fn(async () => ({
+      ...EMPTY_COUNTERS,
+      vs: { speciesId: 'azumarill', inMeta: true },
+    }));
+    await boot({ counters });
+    await go({ screen: 'counters', vs: 'azumarill' });
+    expect(
+      await screen.findByText('Nothing in Great League beats Azumarill in any shield pairing.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Try another filter/)).toBeNull();
+  });
+
+  it('a filter that hides every row says to try another filter', async () => {
+    const counters = vi.fn(async () => ({ ...WHOLE, entries: [entry('medicham')] }));
+    await boot({ collection: true, counters });
+    await go({ screen: 'counters' });
+    await rowsIn();
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Filters' })).getByRole('button', {
+        name: 'You own',
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(await screen.findByText('Nothing here yet. Try another filter.')).toBeInTheDocument();
+  });
+
+  describe.each([
+    { against: 'the whole meta', vs: null, collection: false },
+    { against: 'the whole meta', vs: null, collection: true },
+    { against: 'one opponent', vs: 'azumarill', collection: false },
+    { against: 'one opponent', vs: 'azumarill', collection: true },
+  ])('a failed run against $against (collection: $collection)', ({ vs, collection }) => {
+    it('shows the error state with Try again, not the empty state, and asks again only on a tap', async () => {
+      let fail = true;
+      const counters = vi.fn(async (_s: unknown, o: { vs?: string }) => {
+        if (fail) {
+          throw new Error('worker gone');
+        }
+        return o.vs ? VS : WHOLE;
+      });
+      await boot({ collection, counters });
+      await go(vs ? { screen: 'counters', vs } : { screen: 'counters' });
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('Counters could not be computed.');
+      expect(document.querySelector('.ui-empty')).toBeNull();
+      expect(screen.queryByText(/Nothing here yet|No counters to show|Nothing in/)).toBeNull();
+      // Nothing to sort or qualify: no line and no Sort, as under an unranked opponent.
+      expect(screen.queryByRole('combobox', { name: 'Sort' })).toBeNull();
+      expect(screen.queryByText(/Import your collection/)).toBeNull();
+      expect(screen.queryByText("PvPoke's movesets; your log doesn't apply")).toBeNull();
+      // It does not ask again on its own.
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 20));
+      });
+      expect(counters).toHaveBeenCalledTimes(1);
+      fail = false;
+      await act(async () => {
+        fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+      });
+      await waitFor(() => expect(counters).toHaveBeenCalledTimes(2));
+      await rowsIn();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
   });
 
   it('the description paragraphs and Back to the whole meta are gone', async () => {

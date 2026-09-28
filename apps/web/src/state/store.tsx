@@ -146,6 +146,9 @@ export interface AppState {
   countersVs: string | null;
   /** Simulation progress while an outsider is scored on device. */
   countersProgress: ProgressEvent | null;
+  /** Set when the last counters run for countersVs failed; Counters shows it with Try again
+   * instead of asking again on its own. Cleared when a run starts or is dropped. */
+  countersError: string | null;
   /** One-line message for the floating toast, such as a failed save. */
   notice: string | null;
   /** How the notice reads: warn (amber, announced at once) or info (a neutral confirmation). */
@@ -203,6 +206,7 @@ type Action =
   /** Rows against one opponent while their shield grids are still filling. */
   | { type: 'counters-partial'; counters: CountersResult }
   | { type: 'counters-done'; counters: CountersResult | null }
+  | { type: 'counters-error'; message: string }
   | { type: 'notice'; message: string | null; tone: NoticeTone }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
@@ -242,6 +246,7 @@ const initial: AppState = {
   countersLoading: false,
   countersVs: null,
   countersProgress: null,
+  countersError: null,
   notice: null,
   noticeTone: 'warn',
   sharedTeam: false,
@@ -276,6 +281,7 @@ function reducer(s: AppState, a: Action): AppState {
         verdicts: {},
         verdictsError: null,
         counters: null,
+        countersError: null,
         scanList: null,
         analysis: null,
         suggestion: null,
@@ -306,6 +312,7 @@ function reducer(s: AppState, a: Action): AppState {
         verdicts: {},
         verdictsError: null,
         counters: null,
+        countersError: null,
         recommendedWith: null,
       };
     case 'import-error':
@@ -315,7 +322,14 @@ function reducer(s: AppState, a: Action): AppState {
       // it, so a new league, source or community window clears them and the screen asks again.
       return facingScope(a.settings) === facingScope(s.settings)
         ? { ...s, settings: a.settings }
-        : { ...s, settings: a.settings, counters: null, suggestion: null, suggestError: null };
+        : {
+            ...s,
+            settings: a.settings,
+            counters: null,
+            countersError: null,
+            suggestion: null,
+            suggestError: null,
+          };
     case 'rec-start':
       return {
         ...s,
@@ -347,7 +361,13 @@ function reducer(s: AppState, a: Action): AppState {
           return { ...s, recommending: false, progress: null };
         case 'counters':
           // A half-filled grid goes too: shown later as done, its empty cells would never fill.
-          return { ...s, countersLoading: false, countersProgress: null, counters: null };
+          return {
+            ...s,
+            countersLoading: false,
+            countersProgress: null,
+            counters: null,
+            countersError: null,
+          };
         case 'analyze':
           return { ...s, analyzing: false, progress: null };
         case 'suggest':
@@ -364,6 +384,7 @@ function reducer(s: AppState, a: Action): AppState {
         countersVs: a.vs,
         counters: null,
         countersProgress: null,
+        countersError: null,
       };
     case 'counters-progress':
       return { ...s, countersProgress: a.progress };
@@ -371,6 +392,14 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, counters: a.counters };
     case 'counters-done':
       return { ...s, countersLoading: false, counters: a.counters, countersProgress: null };
+    case 'counters-error':
+      return {
+        ...s,
+        countersLoading: false,
+        counters: null,
+        countersProgress: null,
+        countersError: a.message,
+      };
     case 'notice':
       return { ...s, notice: a.message, noticeTone: a.tone };
     case 'scanlist':
@@ -427,7 +456,14 @@ function reducer(s: AppState, a: Action): AppState {
       };
     case 'sets':
       // Anything weighted by the log is stale now; Teams re-runs through filterKey.
-      return { ...s, sets: a.sets, setsLoaded: true, logVersion: s.logVersion + 1, counters: null };
+      return {
+        ...s,
+        sets: a.sets,
+        setsLoaded: true,
+        logVersion: s.logVersion + 1,
+        counters: null,
+        countersError: null,
+      };
     default:
       return s;
   }
@@ -1204,15 +1240,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         if (!live()) {
           return;
         }
-        dispatch({
-          type: 'counters-done',
-          counters: {
-            entries: [],
-            facing: 'Counters could not be computed',
-            blended: false,
-            battles: 0,
-          },
-        });
+        dispatch({ type: 'counters-error', message: 'Counters could not be computed.' });
       }
     },
     [facingNow],

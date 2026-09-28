@@ -870,7 +870,7 @@ describe('battle log actions', () => {
     expect(calls[0]?.[0]).toEqual([]);
   });
 
-  it('loadCounters recovers from a host error with a non-null empty result and does not retry', async () => {
+  it('loadCounters records a host error as countersError, clears it on the next run, and does not retry', async () => {
     // A collection saved before boot is what makes the provider willing to run counters.
     await storage.saveCollection({
       specimens: [],
@@ -894,21 +894,32 @@ describe('battle log actions', () => {
       .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
     const host = await mount(
       fakeHost({
-        counters: vi.fn(async () => {
-          throw new Error('boom');
-        }),
+        counters: vi
+          .fn()
+          .mockRejectedValueOnce(new Error('boom'))
+          .mockResolvedValue(EMPTY_COUNTERS),
       }),
     );
     await waitFor(() => expect(latest?.state.collection).not.toBeNull());
     await act(async () => {
       await latest!.actions.loadCounters();
     });
-    expect(latest!.state.counters).not.toBeNull();
-    expect(latest!.state.counters?.entries).toEqual([]);
-    expect(latest!.state.counters?.battles).toBe(0);
+    expect(latest!.state.counters).toBeNull();
+    expect(latest!.state.countersError).toBe('Counters could not be computed.');
+    expect(latest!.state.countersVs).toBeNull();
+    expect(latest!.state.countersLoading).toBe(false);
     expect((host.counters as unknown as { mock: { calls: unknown[][] } }).mock.calls).toHaveLength(
       1,
     );
+    // Try again starts a run, and the start clears the error.
+    await act(async () => {
+      await latest!.actions.loadCounters();
+    });
+    expect((host.counters as unknown as { mock: { calls: unknown[][] } }).mock.calls).toHaveLength(
+      2,
+    );
+    expect(latest!.state.countersError).toBeNull();
+    expect(latest!.state.counters).toEqual(EMPTY_COUNTERS);
   });
 
   it('exports and imports the log', async () => {
