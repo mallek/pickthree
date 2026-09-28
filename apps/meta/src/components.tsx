@@ -8,9 +8,7 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
-import lockupDark from '@pickthree/ui/brand/lockup.svg';
-import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
-import { Chevron, HeaderShell, SpeciesToken, type ThemeChoice } from '@pickthree/ui';
+import { SpeciesToken } from '@pickthree/ui';
 import type { CSSProperties, ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
 import { spriteUrl } from './links.js';
@@ -285,124 +283,9 @@ export function ConfidenceTag({ n }: { n: number }) {
   return <span className={`tag tag-${c}`}>{c}</span>;
 }
 
-/** The sticky per-screen header: a back link (or spacer, so the title stays centred) on the
- * left, the title and an optional subtitle in the middle, and a right-hand slot for this app's
- * one recurring action, the appearance toggle. Modelled on apps/web's own Header
- * (apps/web/src/components.tsx), including that the title is a plain span rather than a heading:
- * each screen's own `<h2>`s still carry the real heading structure, this is chrome around them.
- * `backHref` is a real link (not a button with an onClick) so the back target stays openable in
- * a new tab, same as every other link on this site. */
-export function Header({
-  title,
-  sub,
-  backHref,
-  backLabel,
-  action,
-}: {
-  title: string;
-  sub?: string;
-  backHref?: string;
-  backLabel?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <HeaderShell
-      back={
-        backHref ? (
-          <a className="back" href={backHref}>
-            <Chevron dir="left" /> {backLabel ?? 'Back'}
-          </a>
-        ) : undefined
-      }
-      title={title}
-      sub={sub}
-      actions={action}
-    />
-  );
-}
-
-/** The pill naming the sister site, pick3.gg: same shape and the same placement logic as pick3's
- * own header pill (apps/web/src/components.tsx's `SitePill`), so the two headers rhyme, but drawn
- * from this app's own tokens rather than importing pick3's palette. `name` is the link's full
- * accessible name ("pick3, the team builder"), since the icon alone says nothing about where the
- * link goes to a screen reader.
- *
- * G: the icon is pick3's own lockup (packages/ui/brand/lockup.svg / lockup-light.svg) now, not the
- * bare "3" mark plus a plain "pick3" text label this pill used to carry: the lockup already draws
- * the word "pick3", so a second, plain-text copy of it right next to that drawing would just
- * repeat itself on screen. Both colourways render; `.site-pill-lockup`'s `.only-dark` /
- * `.only-light` pair (app.css) shows the one that matches the active theme. Both images are
- * hidden from assistive tech, same as the old mark was, so the one accessible name lives on
- * `aria-label` and is never announced twice. */
-export function SitePill({ href, name }: { href: string; name: string }) {
-  return (
-    <a className="site-pill" href={href} aria-label={name}>
-      <img className="only-dark site-pill-lockup" src={lockupDark} alt="" aria-hidden="true" />
-      <img className="only-light site-pill-lockup" src={lockupLight} alt="" aria-hidden="true" />
-    </a>
-  );
-}
-
-/** The appearance control's glyph. This project's rendered text is strict 7-bit ASCII, so the
- * design's moon/sun characters are drawn, not spelled, in the same stroke style as Chevron.
- * System gets a half-filled circle (the familiar contrast/"auto" symbol) rather than a monitor
- * outline: a rectangle would sit oddly next to two round marks, and the half-circle already
- * reads, on its own, as "follows whatever is set elsewhere" at 16px. The sun keeps to four
- * cardinal rays rather than the design's full ring of them, which blurs into a smear at this
- * size. */
-export function ThemeIcon({ choice }: { choice: ThemeChoice }) {
-  if (choice === 'dark') {
-    return (
-      <svg
-        width={16}
-        height={16}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-      </svg>
-    );
-  }
-  if (choice === 'light') {
-    return (
-      <svg
-        width={16}
-        height={16}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
+// Header, SitePill and ThemeIcon moved out in Task 5: the ui Header (variant="top"/"sub") and
+// SiteLink now carry both those jobs, and the appearance control moved from a header glyph to
+// the Seg on About's own Appearance card, so there is no icon left to draw.
 
 // LEAGUE_COLORS, LeagueShield and LeagueSwitcher moved to packages/ui/src/components/League.tsx
 // and are re-exported above.

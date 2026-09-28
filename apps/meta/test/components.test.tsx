@@ -8,7 +8,6 @@ import {
   LeagueShield,
   LeagueSwitcher,
   Select,
-  SitePill,
   Sparkline,
   Sprite,
   Term,
@@ -42,23 +41,8 @@ describe('typeColor', () => {
   });
 });
 
-describe('SitePill', () => {
-  it('links out with an accessible name that says where it goes', () => {
-    const { container } = render(
-      <SitePill href="https://pick3.gg" name="pick3, the team builder" />,
-    );
-    const link = screen.getByRole('link', { name: 'pick3, the team builder' });
-    expect(link).toHaveAttribute('href', 'https://pick3.gg');
-    // The pick3 lockup already draws the word "pick3", so there is no separate text label to
-    // duplicate it; both colourways are hidden from assistive tech, and aria-label above is the
-    // one source of the accessible name.
-    const images = container.querySelectorAll('img');
-    expect(images).toHaveLength(2);
-    for (const img of images) {
-      expect(img).toHaveAttribute('aria-hidden', 'true');
-    }
-  });
-});
+// SitePill moved out in Task 5: the shell's cross-link to pick3 is the shared `SiteLink` from
+// @pickthree/ui now (packages/ui/src/components/SiteLink.tsx), which carries its own tests there.
 
 describe('Sprite', () => {
   it('loads the pick3 sprite and labels it for a screen reader', () => {

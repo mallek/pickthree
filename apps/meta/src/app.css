@@ -692,35 +692,13 @@ a.rank-row {
   min-width: 0;
 }
 
-/* Brand row: the wordmark, the pick3 pill and (A1) the appearance toggle, grouped with the pill
-   in .brand-actions so this row still has exactly two flex children (the wordmark and the
-   actions) despite carrying three controls worth of content. Shown on the three tab-root screens
-   (Overview, Teams, About), each reached straight from the bottom tab bar. Species is a
-   drill-down from Overview rather than a tab of its own, so its sticky header's back link (and
-   its own copy of the appearance toggle, Header's `action`) fills this row's job instead, and the
-   wordmark is dropped there rather than duplicating it. Not sticky by itself; .top-bar below
-   wraps it with the league switcher and filters so the group stays pinned as one block, matching
-   pick3's own sticky .hdr. */
-.brand {
-  justify-content: space-between;
-  padding: calc(env(safe-area-inset-top, 0px) + 16px) 0 12px;
-  gap: 8px;
-  border-bottom: 1px solid var(--divider);
-}
-
-.brand-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
-
-/* Wraps the brand row, the league switcher and the filter row into one sticky block on the three
-   tab-root screens (Overview, Teams, About), so scrolling the page body never carries the
+/* Wraps the header, the league switcher and the filter row into one sticky block on the three
+   tab-root screens (Top teams, Pokemon, About), so scrolling the page body never carries the
    navigation controls away with it. z-index matches .hdr's, below the bottom tab bar's z-index 5.
-   Species uses the sticky .hdr instead (see pageHeader in App.tsx) and never renders this. */
-/* The page scrolls under this, so the bar needs its own bottom gutter: without one the first
-   row's edge meets the bottom of the filter selects with nothing between them. */
+   The page itself supplies the left/right gutter (.page's own 16px padding); this block only owns
+   the top one, which the ui Header's `top` variant expects its container to provide (it carries no
+   padding of its own, packages/ui/base.css's own .ui-top comment). Species uses the sticky .hdr
+   instead (see pageHeader in App.tsx) and never renders this. */
 .top-bar {
   position: sticky;
   top: 0;
@@ -729,110 +707,8 @@ a.rank-row {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
   padding-bottom: 10px;
-}
-
-/* G: deliberately plain inline flow, not a flex container. pick3's own hero-lockup metrics trick
-   (the .hero-lockup rule below) leans on `vertical-align`, which a flex item ignores outright;
-   only ordinary inline layout, the same context pick3's own h1 hero puts it in
-   (apps/web/src/screens/Welcome.tsx), makes that baseline math do anything at all. */
-.wordmark {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
-  text-decoration: none;
-  /* The link's own colour (the base `a` rule above) is the accent; without this the "meta." span,
-     which sets no colour of its own, would inherit that accent instead of body ink. */
-  color: var(--text);
-}
-
-/* Only the ".gg" span is muted; "meta." stays the body ink and the pick3 lockup between them
-   carries its own fixed colour (baked into the two SVGs, one per theme). */
-.wordmark-muted {
-  color: var(--muted);
-}
-
-.only-light.hero-lockup {
-  display: none;
-}
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .only-dark.hero-lockup {
-    display: none;
-  }
-  :root:not([data-theme='dark']) .only-light.hero-lockup {
-    display: inline;
-  }
-}
-:root[data-theme='light'] .only-dark.hero-lockup {
-  display: none;
-}
-:root[data-theme='light'] .only-light.hero-lockup {
-  display: inline;
-}
-:root[data-theme='dark'] .only-dark.hero-lockup {
-  display: inline;
-}
-:root[data-theme='dark'] .only-light.hero-lockup {
-  display: none;
-}
-.only-dark.hero-lockup {
-  display: inline;
-}
-
-/* The pill naming the sister site, pick3.gg. Same shape as pick3's own header pill
-   (apps/web/src/app.css's .site-pill), drawn from this app's own tokens. */
-.site-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--divider);
-  background: var(--surface2);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-  flex: none;
-}
-
-/* G: the pill's icon is pick3's own lockup now, not the bare "3" mark, so the pill spells out
-   "pick3" the way pick3 itself does. Sized to the pill's own text height rather than forced into
-   the old mark's 16x16 square, which would have squashed the lockup's wider aspect ratio. Same
-   dark/light toggle mechanism as .hero-lockup above, kept as its own block (rather than folded
-   into that one) because the two live at different sizes in different layout contexts. */
-.site-pill-lockup {
-  height: 16px;
-  width: auto;
-  display: block;
-}
-.only-light.site-pill-lockup {
-  display: none;
-}
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .only-dark.site-pill-lockup {
-    display: none;
-  }
-  :root:not([data-theme='dark']) .only-light.site-pill-lockup {
-    display: block;
-  }
-}
-:root[data-theme='light'] .only-dark.site-pill-lockup {
-  display: none;
-}
-:root[data-theme='light'] .only-light.site-pill-lockup {
-  display: block;
-}
-:root[data-theme='dark'] .only-dark.site-pill-lockup {
-  display: block;
-}
-:root[data-theme='dark'] .only-light.site-pill-lockup {
-  display: none;
-}
-.only-dark.site-pill-lockup {
-  display: block;
 }
 
 /* Page header: sticky, matching apps/web's own .hdr geometry (packages/ui/base.css) so the two

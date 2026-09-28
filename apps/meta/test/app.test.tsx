@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { THEME_KEY } from '@pickthree/ui';
 import { App } from '../src/App.js';
 import { resetEpochs } from '../src/epochs.js';
 import { stubFetch } from './stubs/stubFetch.js';
@@ -21,44 +20,60 @@ beforeEach(() => {
 });
 
 describe('App', () => {
-  it('lands on the first league and names the site', async () => {
+  // Task 5 (Ruling 8/10): the wordmark and the brand row are gone. The header is the shared ui
+  // Header now, a real "Top teams" heading with the "meta" tag beside it and one link out to
+  // pick3, no wordmark and no appearance button anywhere near it (the appearance control moved
+  // to About's own Appearance card, see about.test.tsx).
+  it('names the header with a heading, the meta tag, and a link to pick3, no wordmark', async () => {
+    window.history.replaceState(null, '', '/great');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    // G: the wordmark reads "meta." then the pick3 lockup image then ".gg", not one plain "meta"
-    // text node any more.
-    expect(await screen.findByText('meta.')).toBeInTheDocument();
-    expect(screen.getByText('.gg')).toBeInTheDocument();
+    const heading = await screen.findByRole('heading', { name: 'Top teams' });
+    expect(within(heading.parentElement as HTMLElement).getByText('meta')).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'pick3, the team builder' })).toHaveAttribute(
+      'href',
+      'https://pick3.gg',
+    );
+    expect(screen.queryByText('meta.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /appearance/i })).not.toBeInTheDocument();
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
+  });
+
+  it('names the Pokemon header "Pokémon"', async () => {
+    window.history.replaceState(null, '', '/great/pokemon');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('heading', { name: 'Pokémon' })).toBeInTheDocument();
+  });
+
+  it('names the About header "About"', async () => {
+    window.history.replaceState(null, '', '/about');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('heading', { name: 'About' })).toBeInTheDocument();
   });
 
   it('lands on Teams', async () => {
     window.history.replaceState(null, '', '/great');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByRole('heading', { name: /teams/i })).toBeInTheDocument();
+    // Two headings now say "teams": the shell's own "Top teams" and Teams.tsx's own "Teams" in
+    // the body; this checks the body's, the exact name a /teams/i match used to catch alone.
+    expect(await screen.findByRole('heading', { name: 'Teams' })).toBeInTheDocument();
   });
 
-  it('puts Teams first in the tab bar', async () => {
+  it('puts Top teams, Pokémon and About in the tab bar', async () => {
     window.history.replaceState(null, '', '/great');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     const tabs = within(await screen.findByRole('navigation', { name: 'Sections' })).getAllByRole(
       'link',
     );
-    expect(tabs.map((t) => t.textContent)).toEqual(['Teams', 'Pokemon', 'About']);
+    expect(tabs.map((t) => t.textContent)).toEqual(['Top teams', 'Pokémon', 'About']);
   });
 
-  it('carries a pill to pick3 in the brand row', async () => {
+  it('marks the Pokémon tab current on a species page', async () => {
+    window.history.replaceState(null, '', '/great/p/azumarill');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByRole('link', { name: 'pick3, the team builder' })).toHaveAttribute(
-      'href',
-      'https://pick3.gg',
+    expect(await screen.findByRole('link', { name: 'Pokémon' })).toHaveAttribute(
+      'aria-current',
+      'page',
     );
-  });
-
-  // A1: the appearance toggle used to live in a centred title row of its own; it is drawn as
-  // pick3's own head-cog and sits in the brand row now, next to the pick3 pill.
-  it('draws the appearance toggle as a round head-cog like pick3 in the brand row', async () => {
-    render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    const button = await screen.findByRole('button', { name: /appearance/i });
-    expect(button).toHaveClass('head-cog');
   });
 
   it('switches league through the segmented control and puts it in the url', async () => {
@@ -69,7 +84,7 @@ describe('App', () => {
 
   it('moves between the three tabs', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await userEvent.click(await screen.findByRole('link', { name: 'Pokemon' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
     await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
     await userEvent.click(screen.getByRole('link', { name: 'About' }));
     await waitFor(() => expect(window.location.pathname).toBe('/about'));
@@ -132,30 +147,6 @@ describe('App', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
-  it('cycles the theme and remembers it', async () => {
-    render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await userEvent.click(await screen.findByRole('button', { name: /appearance/i }));
-    await waitFor(() => expect(document.documentElement.getAttribute('data-theme')).toBe('dark'));
-    // "remembers it" means the choice survives a reload, not just the in-page attribute, so
-    // read the storage back rather than trusting the DOM alone.
-    expect(localStorage.getItem(THEME_KEY)).toBe('dark');
-  });
-
-  it('names the appearance control by its current and next choice, and cycles through all three', async () => {
-    render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    // Asserting the accessible name, not the icon: a screen reader user cannot see that the
-    // glyph changed, and the icon's own path data is an implementation detail, not the contract.
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Appearance: system. Switch to dark.' }),
-    );
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Appearance: dark. Switch to light.' }),
-    );
-    expect(
-      await screen.findByRole('button', { name: 'Appearance: light. Switch to system.' }),
-    ).toBeInTheDocument();
-  });
-
   // The "says so, without blanking the page, when the api is down" case from the brief asserts
   // on Pokemon's real copy ("Could not load the shared battles. PvPoke's list is below; try
   // again in a moment." and a "PvPoke's meta group" heading), which is Task 10's content, not
@@ -213,10 +204,9 @@ describe('App, deep links', () => {
     );
     // Task 12 replaced the species placeholder ("registeel in master") with the real screen.
     // Registeel has no shared battles and is not in the stub baseline for any league, so its
-    // page is just the header and the no-data line. The species name is App.tsx's sticky header
-    // title now (a plain span, matching apps/web's own Header, not a heading), so this checks
-    // the text rather than a heading role.
-    expect(await screen.findByText('Registeel')).toBeInTheDocument();
+    // page is just the header and the no-data line. Task 5 moved the species name off the sub
+    // header (which now carries no title at all) into Species.tsx's own body, as a real heading.
+    expect(await screen.findByRole('heading', { name: 'Registeel' })).toBeInTheDocument();
     expect(screen.getByText('No shared battles mention it in this window.')).toBeInTheDocument();
     expect(window.location.pathname).toBe('/master/p/registeel');
   });
@@ -245,7 +235,7 @@ describe('App, deep links', () => {
   it('canonicalises the old teams path to the league root', async () => {
     window.history.replaceState(null, '', '/great/teams');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await screen.findByRole('heading', { name: /teams/i });
+    await screen.findByRole('heading', { name: 'Teams' });
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
   });
 
@@ -338,5 +328,104 @@ describe('App, filter history', () => {
     window.history.back();
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
     expect(window.location.search).toBe('?w=30');
+  });
+});
+
+// Ruling 8: go() pushes { meta: 1 } as the history state and refine() replaces without losing it,
+// so a page reached through the app's own navigation can always tell a real back-chain apart from
+// a fresh one (a shared link opened in a new tab, or a reload), whose history.state is null.
+describe('App, history state', () => {
+  it('pushes { meta: 1 } on every real navigation', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    expect(window.history.state).toEqual({ meta: 1 });
+  });
+
+  it('keeps the current history state when a filter change replaces the entry', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    // The initial `/` -> `/great` redirect is the canonicalise effect correcting the url, not a
+    // real navigation, so it carries no state; a real round trip through go() (Pokemon, then back)
+    // has to happen first to put { meta: 1 } in place for the filter change below to keep.
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    await userEvent.click(screen.getByRole('link', { name: 'Top teams' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    expect(window.history.state).toEqual({ meta: 1 });
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Window' }), '7');
+    await waitFor(() => expect(window.location.search).toContain('w=7'));
+    expect(window.history.state).toEqual({ meta: 1 });
+  });
+});
+
+// Ruling 8, Review Focus 1: the Species back control.
+describe('App, Species back', () => {
+  it('calls history.back() when the page carries { meta: 1 } state, the way go() left it', async () => {
+    window.history.pushState(null, '', '/great');
+    window.history.pushState({ meta: 1 }, '', '/great/p/azumarill');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+  });
+
+  it('goes to the league Pokemon list when the page was opened fresh, with no history state', async () => {
+    // A plain replaceState, the same way a real fresh navigation (a shared link in a new tab, or
+    // a reload) always carries a null history.state, never { meta: 1 }.
+    window.history.replaceState(null, '', '/great/p/azumarill');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+  });
+
+  it('gives the Species sub header no title and the pick3 link', async () => {
+    window.history.replaceState(null, '', '/great/p/azumarill');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    const back = await screen.findByRole('button', { name: 'Back' });
+    const header = back.closest('.hdr') as HTMLElement;
+    expect(within(header).queryByRole('heading')).toBeNull();
+    expect(within(header).getByRole('link', { name: 'pick3, the team builder' })).toHaveAttribute(
+      'href',
+      'https://pick3.gg',
+    );
+  });
+});
+
+describe('App, league switcher and filters', () => {
+  it('shows the league switcher on Top teams, Pokemon and Species, never on About', async () => {
+    const teams = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radiogroup', { name: 'League' })).toBeInTheDocument();
+    teams.unmount();
+
+    window.history.replaceState(null, '', '/great/pokemon');
+    const pokemon = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radiogroup', { name: 'League' })).toBeInTheDocument();
+    pokemon.unmount();
+
+    window.history.replaceState(null, '', '/great/p/azumarill');
+    const species = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(await screen.findByRole('radiogroup', { name: 'League' })).toBeInTheDocument();
+    species.unmount();
+
+    window.history.replaceState(null, '', '/about');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByRole('heading', { name: 'About' });
+    expect(screen.queryByRole('radiogroup', { name: 'League' })).not.toBeInTheDocument();
+  });
+
+  it('shows Window and Source only on Top teams and Pokemon, never Species or About', async () => {
+    window.history.replaceState(null, '', '/great/p/azumarill');
+    const species = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByRole('button', { name: 'Back' });
+    expect(screen.queryByRole('combobox', { name: 'Window' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Source' })).not.toBeInTheDocument();
+    species.unmount();
+
+    window.history.replaceState(null, '', '/about');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByRole('heading', { name: 'About' });
+    expect(screen.queryByRole('combobox', { name: 'Window' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Source' })).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { storedTheme } from '@pickthree/ui';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
@@ -14,6 +16,8 @@ beforeEach(() => {
   resetStatic();
   resetBaselines();
   window.history.replaceState(null, '', '/about');
+  document.documentElement.removeAttribute('data-theme');
+  localStorage.clear();
 });
 
 describe('About', () => {
@@ -25,13 +29,21 @@ describe('About', () => {
       "The reporter's three Pokemon, and the moves they had set when pick3 knew them",
       'Which opponent Pokemon were seen, up to three',
       'Win, loss, or tanked',
-      'A self-reported rank band: Below Ace, Ace, Veteran, Expert or Legend',
       'A random device id, so contributors can be counted and a device can delete what it sent',
       'Which app and build sent it, so a misbehaving version can be spotted',
       'When the server received it',
     ]) {
       expect(await screen.findByText(line)).toBeInTheDocument();
     }
+  });
+
+  // Task 5: pick3's own battle log never asks for or sends a rank band (apps/web/src/screens/
+  // LogBattle.tsx carries no such field), so the old claim was stale; this pins it gone rather
+  // than trusting the loop above, which would silently pass if the line just moved.
+  it('does not list a self-reported rank band among what a shared battle contains', async () => {
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByText('League and season');
+    expect(screen.queryByText(/A self-reported rank band/)).toBeNull();
   });
 
   it('says what is never collected, collection first', async () => {
@@ -275,6 +287,7 @@ describe('About', () => {
   it('every section has its own heading', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     for (const name of [
+      'Appearance',
       'What one shared battle contains',
       'Never collected',
       'How to contribute',
@@ -300,5 +313,59 @@ describe('About', () => {
       'href',
       'https://pick3.gg/#/meta/log',
     );
+  });
+});
+
+// Ruling 10, Review Focus 5: theme moved off the header entirely and onto About's own Appearance
+// card, a Seg of System, Dark and Light (ThemeChoice's own three values) that App.tsx wires to its
+// own theme state.
+describe('About, Appearance', () => {
+  it('renders Appearance first, offering System, Dark and Light', async () => {
+    const { container } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByText('League and season');
+    const main = container.querySelector('main') as HTMLElement;
+    const headings = within(main).getAllByRole('heading');
+    expect(headings[0]?.textContent).toBe('Appearance');
+    const group = within(main).getByRole('group');
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'System',
+      'Dark',
+      'Light',
+    ]);
+  });
+
+  it('applies the chosen theme at once, and it survives a reload', async () => {
+    const { container, unmount } = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByText('League and season');
+    const main = container.querySelector('main') as HTMLElement;
+    await userEvent.click(within(main).getByRole('button', { name: 'Dark' }));
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    // "survives a reload" means the choice is in storage, not just the in-page attribute, so this
+    // reads storedTheme() back rather than trusting the DOM alone (Review Focus 5).
+    expect(storedTheme()).toBe('dark');
+    unmount();
+
+    const remounted = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await remounted.findByText('League and season');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    const main2 = remounted.container.querySelector('main') as HTMLElement;
+    expect(within(main2).getByRole('button', { name: 'Dark' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('holds the chosen theme on every other page too, not just About', async () => {
+    const about = render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await about.findByText('League and season');
+    const main = about.container.querySelector('main') as HTMLElement;
+    await userEvent.click(within(main).getByRole('button', { name: 'Dark' }));
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    about.unmount();
+
+    window.history.replaceState(null, '', '/great');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    await screen.findByRole('heading', { name: 'Top teams' });
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 });

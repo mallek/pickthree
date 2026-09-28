@@ -10,12 +10,20 @@
  * same PvPoke commit and date in one data build, so any one of them says the same thing.
  */
 import type { CSSProperties, ReactNode } from 'react';
+import { Button, Seg, type ThemeChoice } from '@pickthree/ui';
 import type { Baseline } from '../baseline.js';
 import { battleWord, count, plural } from '../format.js';
 import { PICK3 } from '../links.js';
 import { HALF_SAY_BATTLES, HALF_SAY_DEVICES, HALF_SAY_EVENTS, HALF_SAY_TOURNAMENT_BATTLES } from '../rank.js';
 import { MANY, SOME, TREND_MIN } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
+
+/** The three choices the Appearance card offers, in the order they read on screen. */
+const THEME_OPTIONS: { value: ThemeChoice; label: string }[] = [
+  { value: 'system', label: 'System' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+];
 
 /** The two decorative marks below. Their meaning lives in the section heading and the text next
  * to them, not in the mark, so both are aria-hidden rather than announced as their own icon. */
@@ -83,7 +91,6 @@ const CONTAINS: readonly string[] = [
   "The reporter's three Pokemon, and the moves they had set when pick3 knew them",
   'Which opponent Pokemon were seen, up to three',
   'Win, loss, or tanked',
-  'A self-reported rank band: Below Ace, Ace, Veteran, Expert or Legend',
   'A random device id, so contributors can be counted and a device can delete what it sent',
   'Which app and build sent it, so a misbehaving version can be spotted',
   'When the server received it',
@@ -102,8 +109,12 @@ const NEVER: readonly string[] = [
   'Your IP address',
 ];
 
-export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
-  const { baseline } = p;
+export function About(p: {
+  baseline: Loaded<Baseline>;
+  theme: ThemeChoice;
+  onTheme: (theme: ThemeChoice) => void;
+}): ReactNode {
+  const { baseline, theme, onTheme } = p;
   return (
     <main>
       <p className="sub">
@@ -113,6 +124,11 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
         matchups behind it. Nothing is scraped. A percentage on this site always means real battles;
         a projection is shown as a matchup score out of 100 instead, never a percentage.
       </p>
+
+      <section className="card">
+        <h2>Appearance</h2>
+        <Seg value={theme} onChange={onTheme} options={THEME_OPTIONS} />
+      </section>
 
       <section className="card">
         <h2>What one shared battle contains</h2>
@@ -146,12 +162,10 @@ export function About(p: { baseline: Loaded<Baseline> }): ReactNode {
           off also deletes what your device has already sent.
         </p>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a className="btn" href={PICK3}>
-            Open pick3
-          </a>
-          <a className="btn btn-secondary" href={`${PICK3}/#/meta/log`}>
+          <Button href={PICK3}>Open pick3</Button>
+          <Button variant="secondary" href={`${PICK3}/#/meta/log`}>
             Log a battle
-          </a>
+          </Button>
         </div>
       </section>
 

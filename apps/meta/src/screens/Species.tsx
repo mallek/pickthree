@@ -558,13 +558,18 @@ export function Species(p: {
   const species = speciesOf(data, speciesId);
   const banned = legal?.banned.has(speciesId) ?? false;
 
-  // The species name itself is App.tsx's sticky header title now, not a heading printed here, so
-  // this row is just the visual identity (sprite and types) that title sits above.
+  // Task 5: the sub header carries no title any more (just the back control and the pick3 link),
+  // so the species name has to live here instead, as the page's own title, or no build ever
+  // names the page. Task 8 finishes the rest of the hero (96px sprite, MeasuredLine); this stays
+  // the one element that change touches.
   const headerTop = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <Sprite species={species} size={64} />
-      <TypeChips types={species.types} />
-    </div>
+    <>
+      <h2>{species.name}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Sprite species={species} size={64} />
+        <TypeChips types={species.types} />
+      </div>
+    </>
   );
 
   if (detail.state === 'error' || meta.state === 'error') {

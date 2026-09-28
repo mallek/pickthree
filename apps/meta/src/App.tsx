@@ -4,18 +4,14 @@
  * Task 10) lives at /<league>/pokemon, and Species is a real drill-down from it, not a
  * placeholder.
  */
-import lockupDark from '@pickthree/ui/brand/lockup.svg';
-import lockupLight from '@pickthree/ui/brand/lockup-light.svg';
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { resolveWindow, type MetaSummaryV1, type SpeciesDetailV1 } from './api.js';
 import type { Baseline } from './baseline.js';
-import { speciesOf, type StaticData } from './data.js';
+import type { StaticData } from './data.js';
 import { epochFor, type Epoch } from './epochs.js';
 import type { Legal } from './legal.js';
-import { PICK3 } from './links.js';
 import { rankSpecies, type SpeciesRanking } from './rank.js';
 import {
-  DEFAULT_QUERY,
   SOURCES,
   WINDOWS,
   hrefFor,
@@ -27,8 +23,16 @@ import {
   type WindowKey,
 } from './route.js';
 import { buildBoard, type Board } from './teamRank.js';
-import { applyTheme, nextTheme, storedTheme, type ThemeChoice } from '@pickthree/ui';
-import { Header, LeagueSwitcher, Select, SitePill, ThemeIcon } from './components.js';
+import {
+  applyTheme,
+  Header,
+  Loading,
+  SiteLink,
+  storedTheme,
+  Tag,
+  type ThemeChoice,
+} from '@pickthree/ui';
+import { LeagueSwitcher, Select } from './components.js';
 import { About } from './screens/About.js';
 import { Pokemon } from './screens/Pokemon.js';
 import { Species } from './screens/Species.js';
@@ -62,17 +66,13 @@ const SOURCE_LABELS: Record<SourceKey, string> = {
   tournament: 'Tournaments',
 };
 
-const THEME_LABELS: Record<ThemeChoice, string> = {
-  system: 'system',
-  light: 'light',
-  dark: 'dark',
+/** The three tab-root screens' own page titles, the ui Header's `title` on the `variant="top"`
+ * head; Species carries no title of its own (see `pageHeader` below). */
+const VIEW_TITLES: Record<'teams' | 'pokemon' | 'about', string> = {
+  teams: 'Top teams',
+  pokemon: 'Pokémon',
+  about: 'About',
 };
-
-/** Built from the current and next choice, not three separate sentences, so the three states
- * cannot drift out of step with each other or with what a click actually does. */
-function appearanceLabel(theme: ThemeChoice): string {
-  return `Appearance: ${THEME_LABELS[theme]}. Switch to ${THEME_LABELS[nextTheme(theme)]}.`;
-}
 
 /** Views that carry a league at all; About does not. */
 function leagueOf(view: View): string | null {
@@ -149,7 +149,7 @@ function TabBar({
         {...navProps({ name: 'teams', league: activeLeague }, query)}
       >
         {TAB_ICONS.teams}
-        Teams
+        Top teams
       </a>
       <a
         className={onPokemon ? 'on' : undefined}
@@ -157,7 +157,7 @@ function TabBar({
         {...navProps({ name: 'pokemon', league: activeLeague }, query)}
       >
         {TAB_ICONS.pokemon}
-        Pokemon
+        Pokémon
       </a>
       <a
         className={onAbout ? 'on' : undefined}
@@ -192,9 +192,11 @@ function renderView(
   epoch: Epoch | null,
   sources: Record<string, number>,
   legal: Legal | null,
+  theme: ThemeChoice,
+  onTheme: (theme: ThemeChoice) => void,
 ): ReactNode {
   if (view.name === 'about') {
-    return <About baseline={baseline} />;
+    return <About baseline={baseline} theme={theme} onTheme={onTheme} />;
   }
   if (view.name === 'pokemon') {
     // Task 13: Pokemon reads the same blended ranking Teams does (computed once below, from the
@@ -303,21 +305,26 @@ export function App(props?: { deps?: Deps }): ReactNode {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  /** A navigation: a new place, pushed onto history so the back button can undo it. */
+  /** A navigation: a new place, pushed onto history so the back button can undo it. The state
+   * carries `{ meta: 1 }` (Ruling 8) so a page reached this way, most importantly a species page,
+   * can tell a real in-app back-chain apart from a fresh navigation (a shared link opened in a
+   * new tab, or a real browser reload) whose `history.state` is null. */
   function go(nextView: View, nextQuery: Query): void {
     const href = hrefFor(nextView, nextQuery);
     if (href !== `${loc.pathname}${loc.search}`) {
-      window.history.pushState(null, '', href);
+      window.history.pushState({ meta: 1 }, '', href);
     }
     setLoc(splitHref(href));
   }
 
   /** A filter change: a refinement of the page already on screen, so it replaces the current
-   * history entry rather than adding one. Two filter clicks should not cost two back presses. */
+   * history entry rather than adding one. Two filter clicks should not cost two back presses.
+   * The current entry's own state rides along unchanged, so refining a filter never turns a
+   * `{ meta: 1 }` entry into one with no state (or the reverse). */
   function refine(nextQuery: Query): void {
     const href = hrefFor(view, nextQuery);
     if (href !== `${loc.pathname}${loc.search}`) {
-      window.history.replaceState(null, '', href);
+      window.history.replaceState(window.history.state, '', href);
     }
     setLoc(splitHref(href));
   }
@@ -418,89 +425,63 @@ export function App(props?: { deps?: Deps }): ReactNode {
   const rankingError =
     meta.state === 'error' || baseline.state === 'error' || ranks.state === 'error';
 
-  // A1: pick3's tab roots carry the settings cog in their one header row, not a row of its own,
-  // so the appearance toggle now sits in the brand row too (see brandRow below), drawn as pick3's
-  // own .head-cog rather than this app's plainer .icon-btn (which nothing else used once this
-  // moved, so it is gone from app.css).
-  const themeButton = (
-    <button
-      type="button"
-      className="head-cog"
-      aria-label={appearanceLabel(theme)}
-      onClick={() => setTheme((t) => nextTheme(t))}
-    >
-      <ThemeIcon choice={theme} />
-    </button>
-  );
-
-  // Shown on the three tab-root screens (Teams, Pokemon, About), each reached straight from the
-  // bottom tab bar. Species is a drill-down from Pokemon rather than a tab of its own, so its
-  // sticky header's back link takes over this row's job instead ("how do I leave this page"),
-  // and the wordmark is dropped there rather than duplicating it. Not sticky itself: only the
-  // filters/switcher below it are, so the two never have to share row 0 of the sticky stack.
-  //
-  // G: the wordmark is now built from pick3's own lockup rather than this app's own bare "3"
-  // mark, so the two sites read as one brand: "meta." in this app's own ink, pick3's outlined
-  // "pick3" lockup sized to the surrounding text's cap height (the .hero-lockup metrics trick,
-  // ported byte for byte from apps/web/src/app.css so the baseline math is not re-derived here),
-  // then ".gg" in the muted colour. Both lockup colourways are always in the DOM; .only-dark/
-  // .only-light (ported the same way) pick the one that matches the active theme, system or
-  // explicit, exactly as apps/web/src/screens/Welcome.tsx already does for its own hero.
-  const brandRow = (
-    <header className="brand">
-      <a className="wordmark" {...navProps({ name: 'teams', league: activeLeague }, DEFAULT_QUERY)}>
-        <span>meta.</span>
-        <img className="only-dark hero-lockup" src={lockupDark} alt="" aria-hidden="true" />
-        <img className="only-light hero-lockup" src={lockupLight} alt="" aria-hidden="true" />
-        <span className="wordmark-muted">.gg</span>
-      </a>
-      <span className="brand-actions">
-        <SitePill href={PICK3} name="pick3, the team builder" />
-        {themeButton}
-      </span>
-    </header>
-  );
-
   let content: ReactNode;
   if (staticData.state === 'loading') {
     content = (
       <div className="page">
-        <div className="top-bar">{brandRow}</div>
-        <p className="sub">Loading</p>
+        <Loading label="Loading" />
       </div>
     );
   } else if (staticData.state === 'error' || !staticData.data) {
     content = (
       <div className="page">
-        <div className="top-bar">{brandRow}</div>
         <p>Could not load the site data. Try again in a moment.</p>
       </div>
     );
   } else {
     const leagues = staticData.data.leagues;
-    const leagueInfo = leagues.find((l) => l.id === activeLeague) ?? null;
-    const leagueShort = leagueInfo?.short ?? activeLeague;
     const showFilters = view.name === 'teams' || view.name === 'pokemon';
     // About is league-agnostic: withLeague is a no-op there, so showing the switcher would be a
     // control that does nothing when clicked.
     const showLeagueSwitch = view.name !== 'about';
-    const showBrand = view.name !== 'species';
+    // Teams, Pokemon and About are tab roots, reached straight from the bottom tab bar, and share
+    // one sticky block (Ruling 8/10): the ui Header's `top` variant (a title and the "meta" mark),
+    // the league switcher and the filter row. Species is a drill-down from Pokemon rather than a
+    // tab of its own, so it carries the `sub` variant instead, back on the left (Ruling 8) and no
+    // title (the species name now lives in the page body, Species.tsx's own `headerTop`, so no
+    // build of that screen ever hides the name).
+    const isTabRoot = view.name !== 'species';
 
-    // A1: Teams, Pokemon and About are tab roots now told apart by the brand row above them,
-    // the league switcher and the filter chips below them, and (for Teams and About) an `h2`
-    // inside the screen's own body (Teams.tsx's "Teams", About.tsx's section headings),
-    // not by a second, centred title row here. Species is still a drill-in with a back link, so
-    // it keeps the one place that row belongs: its title is just the species name, since the
-    // league it belongs to is already named by the switcher rendered under this header.
     const pageHeader: ReactNode =
       view.name === 'species' ? (
         <Header
-          title={speciesOf(staticData.data, view.speciesId).name}
-          backHref={hrefFor({ name: 'pokemon', league: activeLeague }, query)}
-          backLabel={leagueShort}
-          action={themeButton}
+          variant="sub"
+          back={{
+            label: 'Back',
+            onClick: () => {
+              // Ruling 8: a page reached through this app's own navigation (a tab, then a row)
+              // carries `{ meta: 1 }` (go()'s own history state), so the real back chain is
+              // still there to unwind. A page opened fresh, a shared link in a new tab or a
+              // reload, carries no state at all, and `history.back()` there would either do
+              // nothing or leave the site entirely; landing on the league's own Pokemon list
+              // (Review Focus 1) is the one target that is always right.
+              if ((window.history.state as { meta?: number } | null)?.meta === 1) {
+                window.history.back();
+              } else {
+                go({ name: 'pokemon', league: activeLeague }, query);
+              }
+            },
+          }}
+          actions={<SiteLink site="pick3" />}
         />
-      ) : null;
+      ) : (
+        <Header
+          variant="top"
+          title={VIEW_TITLES[view.name]}
+          mark={<Tag tone="accent">meta</Tag>}
+          actions={<SiteLink site="pick3" />}
+        />
+      );
 
     const leagueSwitcher: ReactNode = showLeagueSwitch ? (
       <LeagueSwitcher
@@ -532,9 +513,9 @@ export function App(props?: { deps?: Deps }): ReactNode {
 
     content = (
       <div className="page">
-        {showBrand ? (
+        {isTabRoot ? (
           <div className="top-bar">
-            {brandRow}
+            {pageHeader}
             {leagueSwitcher}
             {filters}
           </div>
@@ -561,6 +542,8 @@ export function App(props?: { deps?: Deps }): ReactNode {
           epoch,
           teamsData.data?.sources ?? {},
           legal.data,
+          theme,
+          setTheme,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>
