@@ -406,7 +406,16 @@ export function App(props?: { deps?: Deps }): ReactNode {
   // Called unconditionally, same as meta and baseline above, to keep hook order stable across
   // views: on a non-species view there is no id to look up, so this fetches an empty one (the
   // stub, and the real worker, both answer it harmlessly) rather than skipping the hook.
-  const speciesId = view.name === 'species' ? view.speciesId : '';
+  //
+  // Fix round 1: an id the static data confirms is unknown is never fetched at all (Species.tsx's
+  // own not-found check already renders `Empty` for it, straight from `data.species`, before any
+  // fetch result); before the static data itself has loaded there is nothing yet to check the id
+  // against, so this holds off until it has, the same empty-id short-circuit `useSpeciesDetail`'s
+  // own doc comment already gives a non-species view.
+  const speciesId =
+    view.name === 'species' && (staticData.data?.species.has(view.speciesId) ?? false)
+      ? view.speciesId
+      : '';
   const detail = useSpeciesDetail(activeLeague, speciesId, w, query.source, deps);
 
   // Task 12: the team board. `ranking` and `board` are computed once here, not inside Teams

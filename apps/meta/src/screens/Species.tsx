@@ -556,7 +556,7 @@ export function Species(p: {
   // order already says the second).
   const headerTop = (
     <>
-      <h2>{species.name}</h2>
+      <h2 className="hero-name">{species.name}</h2>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Sprite species={species} size={96} />
         <TypeChips types={species.types} />
@@ -570,10 +570,18 @@ export function Species(p: {
     </>
   );
 
+  // Fix round 1: `headerTop` is wrapped in the same `<section>` in every branch below, error,
+  // loading and loaded alike. It used to sit bare in `<main>` here and only gain a `<section>`
+  // wrapper in the loaded branch further down; React sees that as two different element types at
+  // the same position in the tree, so it tore the hero down and rebuilt it (losing the element a
+  // caller was mid-query for, a real flake this task's own species detail gating exposed: the
+  // fetch, and so this transition, now genuinely happens instead of usually resolving before
+  // Species ever paints its loading state) the moment the page moved from loading to loaded. One
+  // consistent wrapper keeps the hero's own DOM node stable across every state change.
   if (detail.state === 'error' || meta.state === 'error') {
     return (
       <main>
-        {headerTop}
+        <section>{headerTop}</section>
         <ErrorState
           line="Could not load this Pokémon's record."
           action={<Button onClick={onRetry}>Try again</Button>}
@@ -585,7 +593,7 @@ export function Species(p: {
   if (!detail.data || !meta.data) {
     return (
       <main>
-        {headerTop}
+        <section>{headerTop}</section>
         <Loading label="Loading" />
       </main>
     );

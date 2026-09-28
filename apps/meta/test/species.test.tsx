@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MetaSummaryV1, SpeciesDetailV1 } from '../src/api.js';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
@@ -125,6 +125,13 @@ async function renderSpecies(
     />,
   );
   await screen.findByText(opts.awaitText ?? 'Azumarill');
+  // Fix round 1: App.tsx now holds the species detail fetch off until the static data has
+  // confirmed the id (so an unknown id never fires it at all), which means the hero's own name
+  // and measured line, fed from `ranking` alone, can render a tick before `detail`/`meta` have
+  // resolved. `ActionLinks` (the two links at the foot of the page) render only once the full,
+  // loaded body does, so waiting for one of them is what makes every assertion after this call
+  // read the page in its settled state, not mid-load.
+  await screen.findByRole('link', { name: 'Who beats it' });
 }
 
 describe('Species, hero', () => {
@@ -135,14 +142,19 @@ describe('Species, hero', () => {
     // unique match on "Water".
     const head = screen.getByRole('img', { name: 'Azumarill' }).parentElement!.parentElement!;
     expect(within(head).getByText('Water')).toBeInTheDocument();
-    // 184 / 1,000 is 18.4%, floored to 18% (pctFloor's whole-percent rounding).
-    expect(
-      screen.getByText('18% of what players face · 184 of 1,000 battles'),
-    ).toBeInTheDocument();
+    // Ruling 7: the sprite grows to 96px for the hero (every other Sprite call on this site is
+    // 40, 44 or 64).
+    expect(screen.getByRole('img', { name: 'Azumarill' })).toHaveStyle({ width: '96px' });
+    // 184 / 1,000 is 18.4%, floored to 18% (pctFloor's whole-percent rounding), in the ui's own
+    // pink MeasuredLine, not a plain paragraph.
+    const figure = screen.getByText('18% of what players face · 184 of 1,000 battles');
+    expect(figure.closest('.ui-measured-line')).not.toBeNull();
     // Ruling 7: PvPoke's own rank sits under the measured line, small and muted; the old "#1 of
-    // what players face" blended standing is gone (the list's own order already says it).
+    // what players face" blended standing and the old blend paragraph ("X% measured, from...")
+    // are both gone (the list above already carries both).
     expect(screen.getByText('PvPoke #1')).toBeInTheDocument();
     expect(screen.queryByText(/of what players face -/)).toBeNull();
+    expect(screen.queryByText(/% measured, from/)).toBeNull();
   });
 
   it('floors a real but sub-one-percent share at "<1%" instead of rounding it away to 0%', async () => {
@@ -280,6 +292,31 @@ describe('Species, moves reporters ran', () => {
     expect(shares).toEqual(['100%', '100%', '100%']);
   });
 
+  // Fix round 1 (task review): the only coverage of aggregating a per-move share across two SETS
+  // that split the charged move, dropped in the rewrite. Two known sets share a fast move but
+  // split the charged move (3 of 5 vs. 2 of 5): both divide by the known total (5), not by `runs`
+  // (62), so the fast move stays at 100% (in every known battle) while the charged moves split
+  // 60/40.
+  it('splits charged move shares between two known sets while the fast move stays at 100%', async () => {
+    await renderSpecies({
+      detail: {
+        runs: 62,
+        movesets: [
+          { fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 3 },
+          { fast: 'BUBBLE', charged: ['PLAY_ROUGH'], battles: 2 },
+        ],
+      },
+    });
+    expect(screen.getByText('Moves known in 5 of 62 battles')).toBeInTheDocument();
+    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
+      'section',
+    )!;
+    const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
+    expect(markers).toEqual(['F', 'C', 'C']);
+    const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
+    expect(shares).toEqual(['100%', '60%', '40%']);
+  });
+
   it('says moves are not reported rather than showing a zero-battle share', async () => {
     await renderSpecies({ detail: { runs: 62, movesets: [] } });
     expect(screen.getByText('No moves reported yet.')).toBeInTheDocument();
@@ -366,6 +403,7 @@ describe('Species, weekly', () => {
     expect(await screen.findByText('20% latest')).toBeInTheDocument();
     expect(screen.queryByText(/pts since the first week/)).toBeNull();
     expect(screen.queryByText(/about the same/)).toBeNull();
+    expect(screen.queryByText(/even/)).toBeNull();
   });
 
   it('shows counts only, no chart, when every week is thin', async () => {
@@ -579,10 +617,10 @@ describe('Species, source', () => {
       meta: tournamentMeta,
     });
     // The corrected share, from the tournament total (ranking.tournamentBattles), not the ladder
-    // total (meta.battles, 1,000, which would have printed "of 1,000").
-    expect(
-      screen.getByText('50% of tournament battles · 20 of 40 picks'),
-    ).toBeInTheDocument();
+    // total (meta.battles, 1,000, which would have printed "of 1,000"), in the ui's own pink
+    // MeasuredLine under Tournaments too, the same as under All.
+    const figure = screen.getByText('50% of tournament battles · 20 of 40 picks');
+    expect(figure.closest('.ui-measured-line')).not.toBeNull();
     expect(screen.queryByText(/1,000/)).toBeNull();
     expect(screen.queryByRole('heading', { name: "Reporters' record against it" })).toBeNull();
     expect(screen.getByRole('heading', { name: 'At tournaments' })).toBeInTheDocument();
@@ -623,6 +661,21 @@ describe('Species, not found', () => {
     expect(
       await screen.findByText('No Pokémon by that name in Great League.'),
     ).toBeInTheDocument();
+  });
+
+  // Fix round 1 (task review): an id the static data confirms is unknown must never be sent to
+  // the worker at all, not merely ignored once it comes back. App.tsx's own `speciesId` only
+  // passes the real id through to `useSpeciesDetail` once the static species map has confirmed it
+  // (that hook's own empty-id short-circuit is what this leans on).
+  it('makes no /api/v1/species request for an id the static data does not know', async () => {
+    const fetcher = vi.fn(stubFetch({}));
+    window.history.replaceState(null, '', '/great/p/doesnotexist');
+    render(<App deps={{ fetcher, now }} />);
+    expect(
+      await screen.findByText('No Pokémon by that name in Great League.'),
+    ).toBeInTheDocument();
+    const urls = fetcher.mock.calls.map((call) => String(call[0]));
+    expect(urls.some((u) => u.includes('/api/v1/species/'))).toBe(false);
   });
 });
 

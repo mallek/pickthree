@@ -19,9 +19,6 @@ export const MANY = 300;
  * call "some" confidence is too thin to chart a share for either. */
 export const SHARE_MIN = SOME;
 
-/** A rank band's own record reads as a hint, not a fact, below this many battles. */
-export const THIN_BAND_MAX = 100;
-
 /** few under 30 battles, some 30 to 299, many 300 and up. */
 export function confidence(n: number): Confidence {
   if (n >= MANY) {

@@ -88,6 +88,15 @@ h2 {
   line-height: 1.25;
 }
 
+/* Ruling 7 (fix round 1, minor): the Species page carries no title on its own sub header (Task
+   5), so its name lives in the body as this `h2`, standing in for the page title every other
+   screen gets from the shared Header's `top` variant. It reads at that title's own size, the
+   token `.ui-top-title h2` uses (packages/ui/base.css, `--fs-page`), not the smaller size the
+   card `h2` rule above sets. */
+.hero-name {
+  font-size: var(--fs-page);
+}
+
 .sub {
   font-size: 13px;
   color: var(--muted);
