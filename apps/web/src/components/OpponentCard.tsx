@@ -2,6 +2,7 @@ import type { Faceoff, FaceoffCell, FaceoffMember } from '@pickthree/engine';
 import type { CSSProperties } from 'react';
 import { PokemonToken, TypeChips, useName, useShortName, useSpecies } from '../components.tsx';
 import { Loading, typeColor } from '@pickthree/ui';
+import { ShieldGrid } from './ShieldGrid.tsx';
 
 /** One word each, read from the equal-shield pairs; "Mixed" means look at the grid. */
 const VERDICT: Record<FaceoffMember['verdict'], string> = {
@@ -46,48 +47,6 @@ const LONG_WORD = 7;
 
 function longestWord(name: string): number {
   return Math.max(...name.split(' ').map((w) => w.length));
-}
-
-/**
- * A rating this close to 500 is a near coin flip: its cell is outlined, not filled. The band is
- * wider on purpose than the engine's "Close; shields decide it" (`CLOSE_RATING` 450 in
- * `explain.ts`, a 50 margin): the grid is a visual two-step, solid for a clear result, outlined for
- * anything that could turn on a switch or a bait. Whether the two should share one number is an
- * open item for Travis in the Log a Battle record.
- */
-const CLOSE_MARGIN = 100;
-
-/**
- * Nine cells with a W or L each: your shields 0, 1, 2 down the side, theirs across the top.
- * A decisive result is a filled cell and a near coin flip an outlined one, so a close call looks
- * paler than a blowout while its letter keeps full contrast. The letters are one character each,
- * which axe cannot judge, so test/contrast.test.ts checks the fills (data-audit-contrast).
- */
-function ShieldGrid({ grid }: { grid: number[] }) {
-  return (
-    <span className="fo-grid" aria-hidden="true" data-audit-contrast="static">
-      <i className="fo-ax corner" />
-      {[0, 1, 2].map((n) => (
-        <i className="fo-ax" key={`t${n}`}>
-          {n}
-        </i>
-      ))}
-      {[0, 1, 2].map((mine) => (
-        <span className="fo-grid-row" key={mine}>
-          <i className="fo-ax">{mine}</i>
-          {[0, 1, 2].map((theirs) => {
-            const r = grid[mine * 3 + theirs] ?? 500;
-            const close = Math.abs(r - 500) < CLOSE_MARGIN;
-            return (
-              <i key={theirs} className={`${r > 500 ? 'w' : 'l'}${close ? ' close' : ''}`}>
-                {r > 500 ? 'W' : 'L'}
-              </i>
-            );
-          })}
-        </span>
-      ))}
-    </span>
-  );
 }
 
 /**
