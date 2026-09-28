@@ -268,6 +268,30 @@ describe('Collection', () => {
     expect(names()).toEqual(['Azumarill', 'Clodsire', 'Dragonite', 'Medicham', 'Tinkaton']);
   });
 
+  it('shows a group by the copy that earned its place in the sort', async () => {
+    // The best-IV Tinkaton waits for IVs; the other is worth building (Travis, 2026-09-27).
+    await open(async () => ({
+      ...VERDICTS,
+      a: verdict('a', 'Wait for better IVs', 5),
+      b: verdict('b', 'Worth building', 60),
+    }));
+    await judged();
+    const lead = (n: string): string | null | undefined =>
+      [...document.querySelectorAll('.spec-row:not(.sub)')]
+        .find((r) => r.querySelector('.spec-name')?.firstChild?.textContent === n)
+        ?.querySelector('.verdict-tag')
+        ?.getAttribute('data-verdict');
+    expect(names()).toEqual(['Dragonite', 'Medicham', 'Tinkaton', 'Azumarill', 'Clodsire']);
+    expect(lead('Tinkaton')).toBe('Worth building');
+    await act(async () => {
+      fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), {
+        target: { value: 'rank' },
+      });
+    });
+    expect(names()[0]).toBe('Tinkaton');
+    expect(lead('Tinkaton')).toBe('Wait for better IVs');
+  });
+
   it('marks a row whose Pokémon, as it battles, is excluded with a grey Excluded tag', async () => {
     await storage.saveSettings({
       ...(await storage.loadSettings()),

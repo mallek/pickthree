@@ -101,7 +101,7 @@ the Banned, Lucky and over-the-cap row variants (the sample shows none with Show
       Not eligible hidden unless asked (Show ineligible in the sheet); per row the token, name,
       Shadow flag, CP, IV rank, meta rank tags, "Same wins as best IVs" and the verdict
       (`04-collection`; the Banned flag is in the code, not captured); grouping with best first
-      and "N more, next best Top X%" (`04-collection`, `11-collection-group`); search, filters
+      and "N more, next Top X%" (`04-collection`, `11-collection-group`); search, filters
       and sort, remembered (tested). Add Pokémon, meta.pick3.gg, the cog and the league switcher
       stay in the header.
 - [x] every control does what its label says (tests): plus goes to `#/add`; the cog opens
@@ -205,9 +205,11 @@ Made while building:
 - **"Same wins as best IVs" and the rank pills are still the app's `.mtag` pills,** not the ui
   `Tag` the app-wide rule names; the green one carries the last baselined `#7ac74c`. The spec says
   "as today" for them, so they stayed. Keep or move them to `Tag`.
-- **A group sits where its best verdict sorts, but its top row is its best IV rank,** so a "Wait
-  for better IVs" row can sit among Worth building ones (Galarian Corsola in `04-collection`).
-  This rule is unchanged from before this round.
+- **Resolved (Travis, 2026-09-27, option 2): a group shows the copy that earned its place.** Its
+  top row is the first copy in the active sort (the best verdict under Verdict, the best IVs
+  under IV rank), and the others follow in that order, so the toggle reads "2 more, next Top 28%"
+  (no "best"). Galarian Corsola in `04-collection` now shows its Worth building copy (CP 812, Top
+  31%) among the Worth building rows; a test pins both sorts.
 - **The count moves while judging:** "140 Pokémon · 87 kinds" in `collection-judging` becomes
   "111 Pokémon · 65 kinds" once every verdict is in (Pokémon not yet judged cannot be sorted out
   as ineligible). I did not check whether the old page did the same.

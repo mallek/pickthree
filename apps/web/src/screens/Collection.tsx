@@ -216,7 +216,7 @@ export function Collection() {
     const shownName = (sp: Specimen): string => name(sp.speciesId).replace(/^Shadow /, '');
     list = [...list].sort((a, b) => {
       if (sort === 'name') {
-        return shownName(a).localeCompare(shownName(b));
+        return shownName(a).localeCompare(shownName(b)) || rankOf(a) - rankOf(b);
       }
       if (sort === 'rank') {
         return rankOf(a) - rankOf(b);
@@ -247,11 +247,12 @@ export function Collection() {
     metaRank,
   ]);
 
-  const rankOfSpecimen = (sp: Specimen): number => {
-    const v = s.verdicts[sp.id];
-    return v?.build ? v.build.ivRank.rank : 99_999;
-  };
-  /** Same species and shadow status folded together, best IV rank on top, list order kept. */
+  /**
+   * Same species and shadow status folded together. Each group shows the copy that earned its
+   * place in the list: the first one in the active sort (the best verdict under Verdict, the best
+   * IVs under IV rank), with the others after it in the same order. Travis, 2026-09-27: a "Wait
+   * for better IVs" row sat among the Worth building rows because it showed the best-IV copy.
+   */
   const groups = useMemo(() => {
     const byKey = new Map<string, { key: string; best: Specimen; others: Specimen[] }>();
     for (const sp of rows) {
@@ -259,18 +260,12 @@ export function Collection() {
       const g = byKey.get(key);
       if (!g) {
         byKey.set(key, { key, best: sp, others: [] });
-      } else if (rankOfSpecimen(sp) < rankOfSpecimen(g.best)) {
-        g.others.push(g.best);
-        g.best = sp;
       } else {
         g.others.push(sp);
       }
     }
-    for (const g of byKey.values()) {
-      g.others.sort((a, b) => rankOfSpecimen(a) - rankOfSpecimen(b));
-    }
     return [...byKey.values()];
-  }, [rows, grouped, s.verdicts]);
+  }, [rows, grouped]);
 
   // Every hook runs before the empty-state return, so the hook order never changes between
   // renders of one mounted screen.
@@ -409,7 +404,7 @@ export function Collection() {
                 >
                   {isOpen
                     ? 'Hide the others'
-                    : `${g.others.length} more${nextLabel ? `, next best ${nextLabel}` : ''}`}
+                    : `${g.others.length} more${nextLabel ? `, next ${nextLabel}` : ''}`}
                   <Chevron dir={isOpen ? 'up' : 'down'} />
                 </button>
               ) : null}
