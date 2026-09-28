@@ -605,20 +605,17 @@ a.rank-row {
   margin-right: auto;
 }
 
-/* B1: the overview row's right column, ported from pick3's own .anti/.anti b/.anti small
-   (apps/web/src/app.css): the share (or, below the measured threshold, the sighting count) as
-   the big number, the record as a small muted line under it. */
+/* B1/Task 7 (ruling 6): the row's right column, ported from pick3's own .anti/.anti b/.anti small
+   (apps/web/src/app.css). It leads with what players faced, the ui `MeasuredValue` (pink, its own
+   size and weight) or, when nothing is measured, a plain muted line in its place; the count it is
+   a share of, the reporters' record and PvPoke's rank follow underneath, all small and muted. */
 .row-figure {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 1px;
   padding-top: 2px;
   font-variant-numeric: tabular-nums;
-}
-.row-figure b {
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1;
 }
 .row-figure small {
   font-size: 11px;

@@ -197,6 +197,7 @@ function renderView(
   theme: ThemeChoice,
   onTheme: (theme: ThemeChoice) => void,
   onRetryBoard: () => void,
+  onRetryRanking: () => void,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} theme={theme} onTheme={onTheme} />;
@@ -212,6 +213,7 @@ function renderView(
         rankingError={rankingError}
         ranking={ranking}
         href={href}
+        onRetry={onRetryRanking}
       />
     );
   }
@@ -478,6 +480,19 @@ export function App(props?: { deps?: Deps }): ReactNode {
   // when the team board's own feed (teamsData) is: Pokemon never reads teamsData at all.
   const rankingError =
     meta.state === 'error' || baseline.state === 'error' || ranks.state === 'error';
+  // Task 7's own "Try again": retries whichever of `ranking`'s three sources actually failed,
+  // the same shape as `retryBoard` above but without `teamsData`, which Pokemon never reads.
+  function retryRanking(): void {
+    if (meta.state === 'error') {
+      meta.retry();
+    }
+    if (baseline.state === 'error') {
+      baseline.retry();
+    }
+    if (ranks.state === 'error') {
+      ranks.retry();
+    }
+  }
 
   let content: ReactNode;
   if (staticData.state === 'loading') {
@@ -602,6 +617,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           theme,
           setTheme,
           retryBoard,
+          retryRanking,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>

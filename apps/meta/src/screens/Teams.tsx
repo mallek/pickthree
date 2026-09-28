@@ -27,10 +27,9 @@
 import { useState, type ReactNode } from 'react';
 import { Button, Empty, ErrorState, InlineSelect, Loading, Tag } from '@pickthree/ui';
 import type { MovesetStats } from '../api.js';
-import { Chevron, Chip, Note, Sprite, Term } from '../components.js';
+import { BlendLine, Chevron, Chip, Note, Sprite } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, battleWord, count, plural } from '../format.js';
-import { blendParts, sourceHeaderLine } from '../headerCopy.js';
 import { teamLink, type LinkMember } from '../links.js';
 import type { Epoch } from '../epochs.js';
 import { commitMismatch } from '../epochs.js';
@@ -505,33 +504,26 @@ export function Teams(p: {
   return (
     <main>
       <section>
-        {/* A `div`, not a `p`: the ui Term's body (`.term-tip`) renders inside this line once
-            opened, and the sentences inside it need block-level elements of their own (`.term-line`
-            below) for their own spacing. A `<p>` nested inside a `<p>` is invalid HTML and React
-            logs it as a console error on every render that opens the Term; the fix round 1 test
-            below pins that it no longer does. */}
-        <div className="sub">
-          {`${blendParts(ranking).join(' · ')} · `}
-          <Term term="How it is ranked">
+        {/* BlendLine (components.tsx, Task 7) is the shared shape Pokemon's own list opens with
+            too: a `div`, not a `p`, because the Term's body (`.term-tip`) renders inside this line
+            once opened and its sentences need block-level elements of their own (`.term-line`,
+            passed as children below) for their own spacing. */}
+        <BlendLine
+          ranking={ranking}
+          zero="Projected against PvPoke's meta group. No shared battles in this window yet."
+        >
+          {ranking.source === 'all' && sourcesText ? (
+            <span className="term-line">{sourcesText}</span>
+          ) : null}
+          {showMatchupExplainer ? (
+            <span className="term-line">{matchupScoreExplainer()}</span>
+          ) : null}
+          {showCoverage ? (
             <span className="term-line">
-              {sourceHeaderLine(
-                ranking,
-                "Projected against PvPoke's meta group. No shared battles in this window yet.",
-              )}
+              {`Projections cover the ${count(board.metaGroupSize)} Pokémon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
             </span>
-            {ranking.source === 'all' && sourcesText ? (
-              <span className="term-line">{sourcesText}</span>
-            ) : null}
-            {showMatchupExplainer ? (
-              <span className="term-line">{matchupScoreExplainer()}</span>
-            ) : null}
-            {showCoverage ? (
-              <span className="term-line">
-                {`Projections cover the ${count(board.metaGroupSize)} Pokémon PvPoke lists, which is ${Math.round(board.weightCovered * 100)}% of what players actually faced.`}
-              </span>
-            ) : null}
-          </Term>
-        </div>
+          ) : null}
+        </BlendLine>
         {mismatch && epoch?.pvpokeCommit !== undefined && bakedShort !== null ? (
           <Note tone="warn">
             <p className="sub">

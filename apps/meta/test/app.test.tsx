@@ -222,6 +222,42 @@ describe('App, team board load failure', () => {
   }, 15_000);
 });
 
+// Task 7: Pokemon's own "Try again" (`retryRanking`), the same shape as Teams' `retryBoard`
+// above but keyed on `rankingError` (meta, baseline or ranks failing), never `teamsData`, which
+// Pokemon does not read.
+//
+// `failing` (not a first-call-only counter, unlike the team board test above) stays true until
+// the test itself clears it: the window App computes for "This meta" moves once the epoch list
+// loads (a season-start guess before it, the real epoch-adjusted start after), which refetches
+// the meta summary on its own between mount and the assertions below. A counter keyed to "the
+// first call fails" races that incidental refetch; a flag the test controls does not.
+describe('App, ranking load failure', () => {
+  it('shows ErrorState on the Pokemon list when the meta summary fails, and Try again recovers it', async () => {
+    let failing = true;
+    const base = stubFetch({});
+    const flaky: typeof fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.startsWith('/api/v1/meta') && failing) {
+        throw new Error('network down');
+      }
+      return base(input);
+    }) as typeof fetch;
+    window.history.replaceState(null, '', '/great/pokemon');
+    render(<App deps={{ fetcher: flaky, now }} />);
+    expect(
+      await screen.findByText('Could not load the shared battles.', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    failing = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    // Recovered: the error is gone and the list's own foot card is on screen.
+    await waitFor(
+      () => expect(screen.queryByText('Could not load the shared battles.')).toBeNull(),
+      { timeout: 5000 },
+    );
+    expect(await screen.findByText('Help fill this in', {}, { timeout: 5000 })).toBeInTheDocument();
+  }, 15_000);
+});
+
 describe('App, deep links', () => {
   // Fix round 1: the initial route was derived before the league list existed, so every
   // non-first league fell back to Great and had the address bar rewritten out from under it,
@@ -239,10 +275,10 @@ describe('App, deep links', () => {
       'true',
     );
     // Task 10 replaced the overview placeholder with the real screen, which never says
-    // "Most faced in ultra" (that string does not exist in the real copy). Task 13 collapsed the
-    // screen's two sections (and their "PvPoke's meta group" heading) into the one blended list
-    // under "What you face", so that is the heading this checks for now.
-    expect(await screen.findByRole('heading', { name: 'What you face' })).toBeInTheDocument();
+    // "Most faced in ultra" (that string does not exist in the real copy). Task 7 removed the
+    // screen's own "What you face" heading (the blend line and its Term carry that now), so the
+    // top header's own title is what this checks for.
+    expect(await screen.findByRole('heading', { name: 'Pokémon' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/ultra/pokemon');
   });
 
@@ -360,7 +396,7 @@ describe('App, request cost', () => {
     const fetcher = vi.fn(stubFetch({}));
     window.history.replaceState(null, '', '/great/pokemon');
     render(<App deps={{ fetcher, now }} />);
-    expect(await screen.findByRole('heading', { name: 'What you face' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Pokémon' })).toBeInTheDocument();
     const urls = fetcher.mock.calls.map((call) => String(call[0]));
     expect(urls.some((u) => u.includes('/api/v1/species/'))).toBe(false);
   });

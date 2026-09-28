@@ -9,12 +9,17 @@
  * from PvPoke's list to a measured one at 300 battles and 5 devices. The blend dissolved that
  * threshold into a curve, so the flip (and the banner announcing it) is gone: the header line
  * says how measured the ranking currently is, continuously, including the 0% state.
+ *
+ * Task 7 (ruling 6): a row used to lead with PvPoke's rank, bold, and bury the measured share
+ * inside a small sentence underneath. That inverted what the site is for. A row now leads with
+ * what players actually faced -- `MeasuredValue`, pink, with its mark -- and PvPoke's rank drops
+ * to a small, muted line at the foot, the same demotion ruling 7 gives the Species hero.
  */
 import type { ReactNode } from 'react';
-import { ConfidenceTag, Bar, Sprite, Term, TrendTag, TypeChips } from '../components.js';
+import { Button, ErrorState, Loading, MeasuredValue } from '@pickthree/ui';
+import { Bar, BlendLine, ConfidenceTag, Sprite, TrendTag, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { count, pct, plural } from '../format.js';
-import { sourceHeaderLine } from '../headerCopy.js';
 import { PICK3 } from '../links.js';
 import {
   HALF_SAY_BATTLES,
@@ -42,28 +47,48 @@ function blendExplainer(ranking: SpeciesRanking): string {
   );
 }
 
-/** A row with nothing to divide by prints a count, never a percentage: a share of nothing is not
- * zero, it is nothing. Under PvPoke there is no measured side at all and the row says so. */
-function facedLine(row: SpeciesRow, ranking: SpeciesRanking): string {
+/**
+ * The measured share, count and total behind a row, the one thing the right side leads with. Null
+ * when there is nothing to divide by (Ruling 6): under PvPoke there is no measured side at all,
+ * and a banned row has no tournament share to show regardless of how many battles the window
+ * carries. A row a source counts but never saw (0 picks, 0 sightings) still returns a figure here,
+ * a real zero, not null: the null cases are exactly the three the caller falls back to plain words
+ * for, never "not enough of a number to bother with".
+ */
+export function facedFigure(
+  row: SpeciesRow,
+  ranking: SpeciesRanking,
+): { share: number; n: number; of: number } | null {
   if (ranking.source === 'prior') {
-    return 'Nothing measured';
+    return null;
   }
+  if (ranking.source === 'tournament') {
+    if (row.banned || ranking.tournamentBattles === 0) {
+      return null;
+    }
+    return {
+      share: row.tournamentPicks / ranking.tournamentBattles,
+      n: row.tournamentPicks,
+      of: ranking.tournamentBattles,
+    };
+  }
+  if (row.share === null) {
+    return null;
+  }
+  return { share: row.share, n: row.sightings, of: ranking.battles };
+}
+
+/** The plain words a row falls back to when `facedFigure` is null. Under PvPoke this is never
+ *  called: "Nothing measured." already says it once, in the header line, and repeating it on
+ *  every row would say the same thing over and over for no reason. */
+function facedWords(row: SpeciesRow, ranking: SpeciesRanking): string {
   if (ranking.source === 'tournament') {
     if (row.banned) {
       return 'Banned at tournaments';
     }
-    if (ranking.tournamentBattles === 0) {
-      return 'No tournament battles in this window';
-    }
-    if (row.tournamentPicks === 0) {
-      return 'Not picked in this window';
-    }
-    return `${count(row.tournamentPicks)} of ${count(ranking.tournamentBattles)} battles (${pct(row.tournamentPicks / ranking.tournamentBattles)}%)`;
+    return 'No tournament battles in this window';
   }
-  if (row.share === null) {
-    return 'Not faced in this window';
-  }
-  return `${count(row.sightings)} of ${count(ranking.battles)} battles (${pct(row.share)}%)`;
+  return 'Not faced in this window';
 }
 
 function recordOf(row: SpeciesRow, ranking: SpeciesRanking): { wins: number; losses: number } {
@@ -77,7 +102,7 @@ function recordLine(row: SpeciesRow, ranking: SpeciesRanking): string {
   if (wins + losses === 0) {
     return 'no result recorded';
   }
-  return `players went ${wins}-${losses}`;
+  return `went ${wins}-${losses}`;
 }
 
 /** Battles behind a row's record, in whichever population `ranking.source` reads from: the count
@@ -90,13 +115,40 @@ function decidedOf(row: SpeciesRow, ranking: SpeciesRanking): number {
  * how much it was faced (PvPoke's list is never described with a measured word). Fix round 1,
  * item 2: this used to be a `Term` nested inside each row's own `<a>`, which put interactive
  * content inside an anchor (invalid markup, and the tap bubbled into a navigation before the tip
- * could ever be read). Hosted once here, outside every row, next to the header line's own `Term`. */
+ * could ever be read). Hosted once here, outside every row, in the "How it is ranked" `Term`. */
 function newExplainer(): string {
   return 'PvPoke does not rank this one, so its place here comes entirely from how often players faced it.';
 }
 
 function tailLine(n: number): string {
   return plural(n, '1 more was faced once', `${count(n)} more were faced once each`);
+}
+
+/** The row's own right column, leading with what players faced (Ruling 6): the measured share,
+ *  pink with its mark; the count it is a share of; the reporters' record and its confidence tag;
+ *  and, last and small, PvPoke's rank or "New". Under PvPoke there is no measured side to show at
+ *  all, so the first two lines drop out entirely and the rank stands alone. */
+function RowFigure({ row, ranking }: { row: SpeciesRow; ranking: SpeciesRanking }): ReactNode {
+  const figure = facedFigure(row, ranking);
+  const showRecord =
+    ranking.source === 'prior' ? false : !(ranking.source === 'tournament' && row.banned);
+  return (
+    <span className="row-figure">
+      {ranking.source === 'prior' ? null : figure ? (
+        <MeasuredValue value={`${pct(figure.share)}%`} />
+      ) : (
+        <small>{facedWords(row, ranking)}</small>
+      )}
+      {figure ? <small>{`${count(figure.n)} of ${count(figure.of)} battles`}</small> : null}
+      {showRecord ? (
+        <small>
+          {recordLine(row, ranking)}{' '}
+          {decidedOf(row, ranking) > 0 ? <ConfidenceTag n={decidedOf(row, ranking)} /> : null}
+        </small>
+      ) : null}
+      <small>{row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}</small>
+    </span>
+  );
 }
 
 function RowView({
@@ -127,16 +179,7 @@ function RowView({
         </span>
         <Bar pct={row.barPct} />
       </span>
-      <span className="row-figure">
-        <b>{row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}</b>
-        <small>{facedLine(row, ranking)}</small>
-        {ranking.source === 'prior' || (ranking.source === 'tournament' && row.banned) ? null : (
-          <small>
-            {recordLine(row, ranking)}{' '}
-            {decidedOf(row, ranking) > 0 ? <ConfidenceTag n={decidedOf(row, ranking)} /> : null}
-          </small>
-        )}
-      </span>
+      <RowFigure row={row} ranking={ranking} />
     </a>
   );
 }
@@ -167,13 +210,18 @@ export function Pokemon(p: {
   rankingError: boolean;
   ranking: SpeciesRanking | null;
   href: (view: View) => string;
+  /** Retries whichever of the three sources actually failed (App.tsx's `retryRanking`). */
+  onRetry: () => void;
 }): ReactNode {
-  const { league, data, rankingError, ranking, href } = p;
+  const { league, data, rankingError, ranking, href, onRetry } = p;
 
   if (rankingError) {
     return (
       <main>
-        <p className="sub">Could not load the shared battles. Try again in a moment.</p>
+        <ErrorState
+          line="Could not load the shared battles."
+          action={<Button onClick={onRetry}>Try again</Button>}
+        />
       </main>
     );
   }
@@ -181,7 +229,7 @@ export function Pokemon(p: {
   if (!ranking) {
     return (
       <main>
-        <p className="sub">Loading</p>
+        <Loading label="Loading" />
       </main>
     );
   }
@@ -197,12 +245,11 @@ export function Pokemon(p: {
   return (
     <main>
       <section>
-        <h2>What you face</h2>
-        <p className="sub">
-          {sourceHeaderLine(ranking, "PvPoke's list. No shared battles in this window yet.")}{' '}
-          <Term term="How the blend works">{blendExplainer(ranking)}</Term>{' '}
-          <Term term="New">{newExplainer()}</Term>
-        </p>
+        <BlendLine ranking={ranking} zero="PvPoke's list. No shared battles in this window yet.">
+          <span className="term-line">{blendExplainer(ranking)}</span>
+          <span className="term-line">{newExplainer()}</span>
+        </BlendLine>
+        {ranking.source === 'prior' ? <p className="fine">Nothing measured.</p> : null}
         <div className="list">
           {drawn.map((row) => (
             <RowView

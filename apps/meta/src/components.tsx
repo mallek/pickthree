@@ -8,10 +8,12 @@
  * rest of this codebase (apps/web/src/components.tsx) already leans on inference for the same
  * reason.
  */
-import { SpeciesToken } from '@pickthree/ui';
+import { SpeciesToken, Term } from '@pickthree/ui';
 import type { CSSProperties, ReactNode } from 'react';
 import type { SpeciesLite } from './data.js';
+import { blendParts, sourceHeaderLine } from './headerCopy.js';
 import { spriteUrl } from './links.js';
+import type { SpeciesRanking } from './rank.js';
 import { confidence, trendLabel } from './stats.js';
 
 export {
@@ -54,6 +56,36 @@ export function Sprite({ species, size = 40 }: { species: SpeciesLite; size?: nu
         size={size}
       />
     </span>
+  );
+}
+
+/** The one line every ranked list opens with: `blendParts` joined by " · ", then the "How it is
+ * ranked" `Term` whose body starts with the blend's own source sentence (`sourceHeaderLine`,
+ * `zero` for the nothing-measured case) and continues with whatever the screen adds after it.
+ * Shared by Teams and Pokemon (Task 7) so the two lists that both open with it can never drift
+ * apart in shape.
+ *
+ * A `div`, not a `p`: the Term's body (`.term-tip`) renders inside this line once opened, and the
+ * sentences inside it need block-level elements of their own (`.term-line`, supplied by the
+ * caller) for their own spacing. A `<p>` nested inside a `<p>` is invalid HTML and React logs it
+ * as a console error on every render that opens the Term. */
+export function BlendLine({
+  ranking,
+  zero,
+  children,
+}: {
+  ranking: SpeciesRanking;
+  zero: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="sub">
+      {`${blendParts(ranking).join(' · ')} · `}
+      <Term term="How it is ranked">
+        <span className="term-line">{sourceHeaderLine(ranking, zero)}</span>
+        {children}
+      </Term>
+    </div>
   );
 }
 
