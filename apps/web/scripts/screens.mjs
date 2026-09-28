@@ -1135,6 +1135,14 @@ console.log(`  own or can build: ${buildRows} of ${allRows} rows`);
 if (buildRows === 0 || buildRows >= allRows) {
   throw new Error(`counters filter: own or can build left ${buildRows} of ${allRows} rows`);
 }
+// Two links on a row stay on one line (a wrap stacks a second 44px line under the row).
+const linkLines = await page.$eval('.counter-row .counter-links:has(.ui-btn + .ui-btn)', (l) => {
+  const [a, b] = [...l.querySelectorAll('.ui-btn')].map((x) => x.getBoundingClientRect().top);
+  return a === b ? 1 : 2;
+});
+if (linkLines !== 1) {
+  throw new Error('counters: a row with two links wraps them onto two lines');
+}
 await shot('counters-filters', false, { mustShow: '.ui-sheet .counters-filters' });
 await page.$$eval('.ui-sheet .counters-filters .seg > *', (opts) =>
   opts.find((o) => o.textContent?.trim() === 'All')?.click(),
@@ -1210,6 +1218,13 @@ await page.waitForSelector('.scroll .ui-empty', { timeout: 120_000 });
 const unrankedLine = await page.$eval('.scroll .ui-empty', (e) => e.textContent ?? '');
 if (!unrankedLine.includes('PvPoke does not rank Magikarp in Great League')) {
   throw new Error(`counters, unranked: the wrong empty state: ${unrankedLine}`);
+}
+// The empty state explains itself: no line and no Sort above it; the Against row stays.
+if ((await page.$('.counters-line')) || (await page.$('.page-head .ui-inline-select'))) {
+  throw new Error('counters, unranked: the line or Sort still shows above the empty state');
+}
+if (!(await page.$('.counters-pick'))) {
+  throw new Error('counters, unranked: the Against picker is gone');
 }
 await shot('counters-unranked', false, { mustShow: '.scroll .ui-empty' });
 
@@ -1297,6 +1312,18 @@ if (vsBack.trim() !== 'Back') {
 }
 await assertTitleCentred('counters vs');
 await page.evaluate(() => window.scrollTo(0, 0));
+// A row's links sit in its text column, under the name, not under the token: the link's text
+// starts where the name starts (its button padding hangs into the column gap).
+const linkOffset = await page.$eval('.counter-row', (row) => {
+  const nameLeft = row.querySelector('.spec-name')?.getBoundingClientRect().left ?? NaN;
+  const link = row.querySelector('.counter-links .ui-btn');
+  const pad = link ? parseFloat(getComputedStyle(link).paddingLeft) : NaN;
+  return (link?.getBoundingClientRect().left ?? NaN) + pad - nameLeft;
+});
+console.log(`  row link text off the name column by ${linkOffset.toFixed(1)}px`);
+if (!(Math.abs(linkOffset) <= 1)) {
+  throw new Error(`counters vs: the row links are off the text column by ${linkOffset}px`);
+}
 await shot('23-counters-vs', false);
 await page.click('.counters-head .hdr .back');
 await page.waitForSelector('.set-card', { timeout: 60_000 });

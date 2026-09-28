@@ -2477,17 +2477,27 @@ textarea.paste {
   margin-top: 4px;
   line-height: 1.35;
 }
-/* Labeled links on the row's last line, across its full width so two fit on one line: the text
-   buttons' side padding hangs into the gutter, their 44px height into the row's bottom padding. */
+/* Labeled links on the row's last line, in the text column (under the name, not the token) and on
+   under the score: the first button's left padding hangs into the column gap, the 44px height into
+   the row's bottom padding. Two links fit one line at 390px ("Build a team around it ›  View your
+   Rookidee ›"): 12px between the texts, from the facing paddings, and none after the last. */
 .counter-links {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
   display: flex;
   flex-wrap: wrap;
-  gap: 0 var(--space);
   margin: 2px 0 -10px -8px;
 }
 .counter-links .ui-btn {
   font-size: var(--fs-support);
+}
+.counter-links .ui-btn:not(:first-child) {
+  padding-left: 6px;
+}
+.counter-links .ui-btn:not(:last-child) {
+  padding-right: 6px;
+}
+.counter-links .ui-btn:last-child {
+  padding-right: 0;
 }
 /* One opponent: the shield grid with its "shields" caption, a Term whose note opens below the
    caption across the row rather than down the narrow score column. */

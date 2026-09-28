@@ -712,6 +712,25 @@ describe('Counters page', () => {
       ),
     ).toBeInTheDocument();
     expect(document.querySelector('.ui-empty')).not.toBeNull();
+    // The empty state explains itself: no line and no Sort above it, while the Against row stays
+    // so another opponent can be picked.
+    expect(screen.queryByText(/Import your collection/)).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Sort' })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Against/ })).toHaveTextContent('Medicham');
+  });
+
+  it('an unranked opponent with a collection: no line, no Sort, the filter icon stays', async () => {
+    const counters = vi.fn(async () => ({
+      ...EMPTY_COUNTERS,
+      vs: { speciesId: 'medicham', inMeta: false },
+    }));
+    await boot({ collection: true, counters });
+    await go({ screen: 'counters', vs: 'medicham' });
+    await screen.findByText(/PvPoke does not rank Medicham/);
+    expect(screen.queryByText("PvPoke's movesets; your log doesn't apply")).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Sort' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Against/ })).toHaveTextContent('Medicham');
   });
 
   it('nothing to show reads as the empty state', async () => {

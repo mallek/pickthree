@@ -153,6 +153,11 @@ export function Counters() {
     : metaSize !== undefined
       ? `The whole meta (${metaSize})`
       : 'The whole meta';
+  /** The opponent PvPoke does not rank: no rows, and the empty state says why on its own. */
+  const unranked =
+    counters?.vs && !counters.vs.inMeta && counters.vs.simulated === undefined
+      ? counters.vs.speciesId
+      : null;
   let line: ReactNode;
   if (!s.collection) {
     line = (
@@ -179,6 +184,8 @@ export function Counters() {
             Against
           </span>
           <span className="select-wrap">
+            {/* counters-pick has no CSS of its own: it is a hook for tests and screens.mjs, and
+                the ui Select's rule in base.css (.select-wrap > button) draws the button. */}
             <button
               type="button"
               className="counters-pick"
@@ -197,23 +204,26 @@ export function Counters() {
             count={own === 'all' ? 0 : 1}
             onClick={() => setSheet('filters')}
           />
-        ) : (
+        ) : unranked ? null : (
           sortSelect
         )}
       </div>
-      <div className="counters-line">
-        <span className="meta">{line}</span>
-        {s.collection ? sortSelect : null}
-      </div>
+      {/* Nothing to sort or qualify under an unranked opponent: the Against row stays so another
+          can be picked, and the empty state below explains itself. */}
+      {unranked ? null : (
+        <div className="counters-line">
+          <span className="meta">{line}</span>
+          {s.collection ? sortSelect : null}
+        </div>
+      )}
     </>
   );
 
   let empty: string | null = null;
   if (counters && rows.length === 0 && (!s.countersLoading || counters.entries.length > 0)) {
-    empty =
-      counters.vs && !counters.vs.inMeta && counters.vs.simulated === undefined
-        ? `PvPoke does not rank ${name(counters.vs.speciesId)} in ${league.title}, so pick3 has no moveset to simulate it with.`
-        : 'Nothing here yet. Try another filter.';
+    empty = unranked
+      ? `PvPoke does not rank ${name(unranked)} in ${league.title}, so pick3 has no moveset to simulate it with.`
+      : 'Nothing here yet. Try another filter.';
   }
 
   return (
