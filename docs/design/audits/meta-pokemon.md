@@ -173,6 +173,14 @@ From the ledger:
 
 - Task 7, controller ruling: a zero-count row shows the muted words, never a pink "0%", matching
   how the Species hero already handled it (Findings).
+- Task 7, fix round 1, Important: a share that is genuinely nonzero but rounds under half a point
+  used to read "0%" with plain `pct`, the same overstatement (the other way) this site exists to
+  avoid: it looked like "never faced" when the truth was "faced, just rarely". `pctFloor`
+  (`format.ts`) renders such a share as "<1%" instead, on both the Pokémon list's row and the
+  Species hero's `MeasuredLine`, so the two never disagree about a small figure. Tested in
+  `apps/meta/test/pokemon.test.tsx` ("reads a small share as '<1%', never '0%'", asserting `<1%`
+  is on screen and `0%` is not); no capture in this record happens to land a row in that band, so
+  the state is proven only by the test (Open items).
 - Task 7, minor deferred: the first cold load can fetch teams/meta twice when the epoch window
   moves the "This meta" start; pre-existing, not fixed in this piece.
 - Task 8, minor deferred: the hero shows no PvPoke rank for a species PvPoke ranks outside the
@@ -192,6 +200,13 @@ From the ledger:
 
 ## Open items for Travis
 
+- **A genuinely nonzero share under half a point reads "<1%", never "0%"** (`pctFloor`, Task 7 fix
+  round 1), on both the Pokémon list and the Species hero. This is a visible wording choice, not
+  just a bug fix: it trades a rounder "0%" for an honest, slightly odd-looking "<1%". No capture
+  in this record lands a row in that band (none of the fixture's shares happen to fall under 1%),
+  so it is uncaptured; it is tested (`apps/meta/test/pokemon.test.tsx`, "reads a small share as
+  '<1%', never '0%'"). Say if this reads right, or if a fixture worth adding to prove it on screen
+  is wanted.
 - **The trend gate (All and GBL only) is a behavior change**, not a pure visual fix: `rank.ts`
   still computes `trend` for every source, but Pokemon.tsx now only reads it under a ladder
   source. If a tournament trend is wanted later it needs its own `previous` window (Task 9's own

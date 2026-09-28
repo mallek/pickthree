@@ -37,8 +37,10 @@ unconditional copy, not fixture-dependent, so nothing to differ here).
 - [x] `npm run lint`, `npm run typecheck`, `npm test`, `npm run check-colors`, `npm run
       check-tokens`: re-run on 2026-09-28 on `1ef56ba`. lint exit 0; typecheck exit 0;
       `npx vitest run --project meta --project web --project ui`: 78 files, 1064 tests passed;
-      check-colors exit 0; "check-tokens: ok". `npm run ui:audit`: "gallery audit: clean in dark
-      and light" (the Seg rules now live in `packages/ui/base.css`, exercised by the gallery too).
+      check-colors exit 0; "check-tokens: ok". `npm run ui:audit` ("gallery audit: clean in dark
+      and light", exercising the Seg rules now in `packages/ui/base.css`) and
+      `PICK3_BUILD=874d675 npm run web:audit` (exit 0, no enforced findings) are carried from
+      Task 9's run on this same, unchanged code, not re-run for this record.
 
 ## Aesthetics
 
