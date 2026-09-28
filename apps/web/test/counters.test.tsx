@@ -468,8 +468,9 @@ describe('Counters page', () => {
     await boot({ collection: true });
     await go({ screen: 'counters' });
     await rowsIn();
-    expect(screen.getByText('PvPoke weights (11 of 15 battles logged)')).toBeInTheDocument();
+    const facing = screen.getByText('PvPoke weights (11 of 15 battles logged)');
     const sort = screen.getByRole('combobox', { name: 'Sort' });
+    expect(facing.parentElement).toContainElement(sort);
     expect([...sort.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
       'Best',
       'Under the radar',
@@ -511,6 +512,12 @@ describe('Counters page', () => {
     const line = screen.getByText(/to mark the ones you own\./);
     expect(line).toHaveTextContent('Import your collection to mark the ones you own.');
     expect(within(line).getByRole('link', { name: 'Import' })).toHaveAttribute('href', '#/import');
+    // The Import line keeps its line to itself; Sort sits beside the picker instead.
+    expect(line.parentElement?.querySelector('select')).toBeNull();
+    const picker = screen.getByRole('button', { name: /^Against/ });
+    expect(picker.closest('.counters-controls')).toContainElement(
+      screen.getByRole('combobox', { name: 'Sort' }),
+    );
     for (const row of rows) {
       expect(within(row).queryAllByRole('link')).toHaveLength(0);
       expect(

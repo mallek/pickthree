@@ -165,6 +165,11 @@ export function Counters() {
   } else {
     line = counters?.facing ?? null;
   }
+  const sortSelect = (
+    <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
+  );
+  // Without a collection there is no filter icon, and the Import line needs the line's full width
+  // to stay one line at 390px, so Sort takes the icon's place beside the picker.
   const controls = (
     <>
       <LeagueSwitcher compact />
@@ -192,11 +197,13 @@ export function Counters() {
             count={own === 'all' ? 0 : 1}
             onClick={() => setSheet('filters')}
           />
-        ) : null}
+        ) : (
+          sortSelect
+        )}
       </div>
       <div className="counters-line">
         <span className="meta">{line}</span>
-        <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
+        {s.collection ? sortSelect : null}
       </div>
     </>
   );
@@ -250,7 +257,8 @@ export function Counters() {
                 </span>
                 <span className="meta counter-rank">
                   {vs ? `#${c.antiRank} vs ${name(vs)}` : `#${c.antiRank} vs meta`} ·{' '}
-                  {c.overallRank ? `#${c.overallRank} overall` : 'unranked'}
+                  {/* A no-break space: "#63 overall" wraps as one piece, never stranding "overall". */}
+                  {c.overallRank ? `#${c.overallRank}\u00a0overall` : 'unranked'}
                 </span>
                 <MetaTags speciesId={c.speciesId} overall={false} />
                 {c.beats.length > 0 ? (

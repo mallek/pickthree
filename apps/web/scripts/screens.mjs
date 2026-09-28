@@ -86,6 +86,16 @@ const AUDIT_ENFORCED = new Set([
   'specimen-manual',
   'specimen-remove-confirm',
   'specimen-not-found',
+  '08-counters',
+  'counters-filters',
+  '18b-counters-no-collection',
+  '23-counters-vs',
+  'counters-vs-filling',
+  '24-counters-vs-outsider',
+  'counters-against',
+  'counters-against-search',
+  'counters-against-scrolled',
+  'counters-unranked',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -179,6 +189,28 @@ await page.evaluateOnNewDocument(
   fixture('community-meta-sample.json'),
   fixture('community-teams-sample.json'),
 );
+// The last Counters result the compute worker handed back (its opponent and, against one, the grid
+// time), read off the worker's own messages so the run can log how long the shield grids took on
+// this machine. Automation only: the app has no hook for it.
+await page.evaluateOnNewDocument(() => {
+  const Native = window.Worker;
+  window.Worker = class extends Native {
+    constructor(...args) {
+      super(...args);
+      this.addEventListener('message', (e) => {
+        const d = e.data;
+        if (d?.kind === 'result' && d.result?.kind === 'counters') {
+          const c = d.result.counters;
+          window.__pick3Counters = {
+            vs: c.vs ?? null,
+            gridMs: c.gridMs ?? null,
+            rows: c.entries.length,
+          };
+        }
+      });
+    }
+  };
+});
 
 /**
  * `mustShow`: a selector that has to be on the page when each shot is taken, for states that do
@@ -339,12 +371,25 @@ await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.choice-card');
 await shot('teams-no-collection', false);
 
+console.log('counters without a collection');
+await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.counter-row', { timeout: 120_000 });
+await page.waitForFunction(() => !document.querySelector('.ui-loading'), { timeout: 120_000 });
+// Nothing is owned without a collection, so there is nothing to filter by: no filter icon, and the
+// line under the Against row offers the import instead.
+if (await page.$('.counters-controls .ui-filter-icon')) {
+  throw new Error('counters without a collection still offers the Filters sheet');
+}
+const importLine = await page.$eval('.counters-line > .meta', (e) => e.textContent ?? '');
+if (importLine !== 'Import your collection to mark the ones you own.') {
+  throw new Error(`counters without a collection: the wrong line: ${importLine}`);
+}
+await shot('18b-counters-no-collection', false);
+
 console.log('settings without a collection');
-// From the Teams header cog, before the import: the hub offers "Import a CSV", its Your data row
-// reads "No collection yet", and there is no Forget button. Teams, not Counters: the sheet only
-// covers part of the page, and the audit reads the page under it too; Counters is not redesigned
-// yet (round 3) and its own findings would land on this Settings shot.
-await page.click('button[aria-label="Settings"]');
+// From the Counters header cog, before the import: the cog opens Settings, the hub offers "Import
+// a CSV", its Your data row reads "No collection yet", and there is no Forget button.
+await page.click('.ui-top button[aria-label="Settings"]');
 await page.waitForSelector('.ui-sheet .settings-rows');
 await page.waitForFunction(
   () =>
@@ -359,15 +404,6 @@ if (await page.$('.ui-sheet .ui-btn-danger')) {
 await shot('settings-hub-no-collection', false, { mustShow: '.ui-sheet .settings-rows' });
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
-
-console.log('counters without a collection');
-await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.counter-row', { timeout: 120_000 });
-const emptyChips = await page.$$eval('.chips .chip', (els) => els.map((e) => e.textContent));
-if (emptyChips.includes('You own')) {
-  throw new Error('counters without a collection still offers the You own filter');
-}
-await shot('18b-counters-no-collection', false);
 
 console.log('import sample');
 await page.goto(`${base}/?sample=1#/import`, { waitUntil: 'networkidle0' });
@@ -1079,11 +1115,64 @@ await shot('specimen-not-found', false, { mustShow: '.scroll .ui-empty' });
 console.log('counters');
 await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.counter-row', { timeout: 120_000 });
+await page.waitForFunction(() => !document.querySelector('.ui-loading'), { timeout: 120_000 });
 console.log(`  counters rendered at ${Date.now() - t0} ms`);
+await page.evaluate(() => window.scrollTo(0, 0));
 await shot('08-counters');
-await page.click('.page-head > .chips:not(.league-cups) .chip:nth-child(3)');
-await new Promise((r) => setTimeout(r, 300));
-await shot('09-counters-own', false);
+
+console.log('counters, the Filters sheet');
+// Own or can build, so the sheet shows a choice other than the default and the page under it its
+// badge and fewer rows; back to All after.
+const allRows = await page.$$eval('.counter-row', (rows) => rows.length);
+await page.click('.counters-controls .ui-filter-icon');
+await page.waitForSelector('.ui-sheet .counters-filters');
+await page.$$eval('.ui-sheet .counters-filters .seg > *', (opts) =>
+  opts.find((o) => o.textContent?.trim() === 'Own or can build')?.click(),
+);
+await page.waitForSelector('.counters-controls .ui-filter-icon.on');
+const buildRows = await page.$$eval('.counter-row', (rows) => rows.length);
+console.log(`  own or can build: ${buildRows} of ${allRows} rows`);
+if (buildRows === 0 || buildRows >= allRows) {
+  throw new Error(`counters filter: own or can build left ${buildRows} of ${allRows} rows`);
+}
+await shot('counters-filters', false, { mustShow: '.ui-sheet .counters-filters' });
+await page.$$eval('.ui-sheet .counters-filters .seg > *', (opts) =>
+  opts.find((o) => o.textContent?.trim() === 'All')?.click(),
+);
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
+if (await page.$('.counters-controls .ui-filter-icon.on')) {
+  throw new Error('counters filter: still on after choosing All');
+}
+
+console.log('counters, the Against sheet');
+await page.click('.counters-pick');
+await page.waitForSelector('.ui-sheet .counters-against');
+await shot('counters-against', false, { mustShow: '.ui-sheet .counters-whole' });
+// While the search has text its matches sit under it and The whole meta shortcut is hidden.
+await page.type('.ui-sheet .counters-against input.search', 'mar');
+await page.waitForSelector('.ui-sheet .recent-row.matches .recent-token');
+if (await page.$('.ui-sheet .counters-whole')) {
+  throw new Error('counters against: The whole meta is still offered while searching');
+}
+await shot('counters-against-search', false, {
+  mustShow: '.ui-sheet .recent-row.matches .recent-token',
+});
+// "mar" has more matches than the box shows: its last row, scrolled into the box, as its own
+// capture of the same sheet.
+const matchesScroll = await page.$eval('.ui-sheet .recent-row.matches', (box) => {
+  box.scrollTop = box.scrollHeight;
+  return box.scrollHeight - box.clientHeight;
+});
+if (matchesScroll <= 0) {
+  throw new Error('counters against: "mar" no longer fills the matches box; pick a wider search');
+}
+await shot('counters-against-scrolled', false, {
+  mustShow: '.ui-sheet .recent-row.matches .recent-token',
+  group: 'counters-against-search',
+});
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
 
 console.log('leagues sheet sits above the tab bar');
 await page.click('.page-head .league-more');
@@ -1114,6 +1203,16 @@ await shot('08c-leagues-sheet', false);
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
 
+console.log('counters, an unranked opponent');
+// Magikarp is not in PvPoke's Great League rankings, so there is no moveset to simulate it with.
+await page.goto(`${base}/#/counters?vs=magikarp`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('.scroll .ui-empty', { timeout: 120_000 });
+const unrankedLine = await page.$eval('.scroll .ui-empty', (e) => e.textContent ?? '');
+if (!unrankedLine.includes('PvPoke does not rank Magikarp in Great League')) {
+  throw new Error(`counters, unranked: the wrong empty state: ${unrankedLine}`);
+}
+await shot('counters-unranked', false, { mustShow: '.scroll .ui-empty' });
+
 console.log('your meta');
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.set-card', { timeout: 60_000 });
@@ -1136,17 +1235,73 @@ const facedHref = await page.$eval('.faced-row', (a) => a.getAttribute('href'));
 if (!facedHref || !facedHref.startsWith('#/counters?vs=')) {
   throw new Error(`most-faced row does not link to Counters: ${facedHref}`);
 }
-await page.goto(`${base}/${facedHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.counter-row, .scroll > p.muted', { timeout: 120_000 });
-const vsTitle = await page.$eval('.page-head h2', (h) => h.textContent);
-if (!vsTitle || !vsTitle.startsWith('Who Beats ')) {
-  throw new Error(`counters vs view has the wrong title: ${vsTitle}`);
+if (!new URLSearchParams(facedHref.split('?')[1]).has('from')) {
+  throw new Error(`most-faced row does not mark the jump (from=1): ${facedHref}`);
 }
+const facedVs = new URLSearchParams(facedHref.split('?')[1]).get('vs');
+// A tap, not a goto, so Your Meta is the pick3 screen behind Counters and the header is the sub
+// header with Back. The rows land first with empty grid cells, then the grids fill in batches;
+// the compute worker is held at a debugger pause once the first batch is in (its league bundle
+// has long landed, see teams-loading) and let go after the shot. The row is scrolled to the middle
+// first: at the top of the page it sits half under the tab bar, which would take the tap.
+await page.$eval('.faced-row', (a) => a.scrollIntoView({ block: 'center' }));
+await page.click('.faced-row');
+await page.waitForFunction(
+  () =>
+    document.querySelector('.counter-row .fo-grid i.w, .counter-row .fo-grid i.l') &&
+    document.querySelector('.counter-row .fo-grid i.empty') &&
+    document.querySelector('.scroll .ui-loading'),
+  { timeout: 120_000, polling: 'mutation' },
+);
+const gridWorkers = page.workers();
+for (const w of gridWorkers) {
+  await w.client.send('Debugger.enable');
+  await w.client.send('Debugger.pause');
+}
+// Scrolled to where the filled rows end, so the capture shows a grid in and the next one waiting.
+await page.evaluate(() => {
+  const row = [...document.querySelectorAll('.counter-row')].find((r) =>
+    r.querySelector('.fo-grid i.empty'),
+  );
+  const head = document.querySelector('.counters-head')?.getBoundingClientRect().bottom ?? 0;
+  if (row) {
+    window.scrollTo(0, row.getBoundingClientRect().top + window.scrollY - head - 160);
+  }
+});
+await shot('counters-vs-filling', false, { mustShow: '.scroll .ui-loading' });
+for (const w of gridWorkers) {
+  await w.client.send('Debugger.resume');
+  await w.client.send('Debugger.disable');
+}
+await page.waitForFunction(
+  (vs) =>
+    window.__pick3Counters?.vs?.speciesId === vs &&
+    document.querySelector('.counter-row') &&
+    !document.querySelector('.ui-loading') &&
+    !document.querySelector('.counter-row .fo-grid i.empty'),
+  { timeout: 120_000 },
+  facedVs,
+);
+const vsResult = await page.evaluate(() => window.__pick3Counters);
+// Wall clock in the worker, so this one includes the time it was held for counters-vs-filling;
+// the outsider's below is not held.
+console.log(
+  `  ${facedVs}: ${vsResult.rows} rows, shield grids in ${vsResult.gridMs} ms (with the held pause)`,
+);
+if (typeof vsResult.gridMs !== 'number') {
+  throw new Error(`counters vs: the result carries no grid time: ${JSON.stringify(vsResult)}`);
+}
+const vsBack = await page.$eval('.counters-head .hdr .back', (b) => b.textContent ?? '');
+if (vsBack.trim() !== 'Back') {
+  throw new Error(`counters vs from Your Meta: the header's back reads "${vsBack}"`);
+}
+await assertTitleCentred('counters vs');
+await page.evaluate(() => window.scrollTo(0, 0));
 await shot('23-counters-vs', false);
-await page.click('.page-head .back');
+await page.click('.counters-head .hdr .back');
 await page.waitForSelector('.set-card', { timeout: 60_000 });
 if (!page.url().endsWith('#/meta')) {
-  throw new Error(`back from the who-beats view landed at ${page.url()}`);
+  throw new Error(`back from the counters vs view landed at ${page.url()}`);
 }
 
 console.log('who beats an outsider (simulated on device)');
@@ -1159,23 +1314,29 @@ const outsiderHref = await page.$$eval('.faced-row', (rows) => {
 if (!outsiderHref) {
   throw new Error('the sample log has no most-faced outsider to simulate');
 }
+const outsiderVs = new URLSearchParams(outsiderHref.split('?')[1]).get('vs');
 const tSim = Date.now();
-await page.goto(`${base}/${outsiderHref}`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.counter-row', { timeout: 120_000 });
-console.log(`  outsider simulated at ${Date.now() - tSim} ms`);
-const simNote = await page.$$eval('.page-head p.meta', (ps) =>
-  ps.map((p) => p.textContent).join(' '),
+const outsiderRow = `.faced-row[href="${outsiderHref}"]`;
+await page.$eval(outsiderRow, (a) => a.scrollIntoView({ block: 'center' }));
+await page.click(outsiderRow);
+// The page names no simulation (its line is the same for every opponent); the result says it: an
+// opponent outside the meta group has no matrix column, so ranked species were simulated instead.
+await page.waitForFunction(
+  (vs) =>
+    window.__pick3Counters?.vs?.speciesId === vs &&
+    document.querySelector('.counter-row') &&
+    !document.querySelector('.ui-loading'),
+  { timeout: 120_000 },
+  outsiderVs,
 );
-if (!simNote.includes('simulated on this device')) {
-  const diag = await page.evaluate(() => ({
-    url: document.location.href,
-    h2: document.querySelector('.page-head h2')?.textContent,
-    first: document.querySelector('.counter-row')?.textContent?.slice(0, 120),
-    rows: document.querySelectorAll('.counter-row').length,
-  }));
-  console.log(JSON.stringify(diag));
-  throw new Error(`outsider view did not report the simulation: ${simNote}`);
+const simResult = await page.evaluate(() => window.__pick3Counters);
+console.log(
+  `  ${outsiderVs}: ${simResult.vs.simulated} simulated, ${simResult.rows} rows, shield grids in ${simResult.gridMs} ms, all at ${Date.now() - tSim} ms`,
+);
+if (simResult.vs.inMeta || typeof simResult.vs.simulated !== 'number') {
+  throw new Error(`outsider view was not simulated: ${JSON.stringify(simResult)}`);
 }
+await page.evaluate(() => window.scrollTo(0, 0));
 await shot('24-counters-vs-outsider', false);
 
 console.log('your meta, 15 or more battles');

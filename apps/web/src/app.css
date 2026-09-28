@@ -2438,29 +2438,8 @@ textarea.paste {
 .counters-controls > .field {
   flex: 1;
 }
-/* A button that opens the Against sheet, drawn as the Select it stands beside elsewhere. */
-.counters-pick {
-  display: block;
-  width: 100%;
-  min-height: var(--tap);
-  padding: 0 36px 0 14px;
-  border-radius: var(--r-control);
-  border: 1px solid var(--divider);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 500;
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.counters-pick:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-/* The one line before the rows: the facing sentence on the left, Sort on the right. */
+/* The one line before the rows: the facing sentence on the left, Sort on the right (beside the
+   picker instead when there is no collection, so the Import line keeps one line). */
 .counters-line {
   display: flex;
   justify-content: space-between;
@@ -2472,6 +2451,7 @@ textarea.paste {
 .counters-line > .meta {
   min-width: 0;
 }
+.counters-controls .ui-inline-select,
 .counters-line .ui-inline-select {
   flex: none;
   white-space: nowrap;
@@ -2558,8 +2538,11 @@ textarea.paste {
 .counters-whole svg {
   color: var(--muted);
 }
+/* 44px each way: "All" alone is narrower than a thumb. */
 .counters-filters .seg > * {
   min-height: var(--tap);
+  min-width: var(--tap);
+  justify-content: center;
 }
 .anti {
   display: flex;

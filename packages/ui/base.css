@@ -612,7 +612,10 @@
   position: relative;
   min-width: 0;
 }
-.select-wrap select {
+/* A button in the wrap (Counters' Against picker, which opens a sheet of its own) draws as the
+   select: one rule, not a copy. */
+.select-wrap select,
+.select-wrap > button {
   display: block;
   width: 100%;
   min-height: var(--tap);
@@ -629,6 +632,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 /* Centered with auto margins, not translateY(-50%): Chevron turns itself with an inline
    transform (rotate), which replaced the translate and left the chevron half its height low.
@@ -654,7 +658,8 @@
 .select-wrap select:disabled + svg {
   color: var(--faint);
 }
-.select-wrap select:focus-visible {
+.select-wrap select:focus-visible,
+.select-wrap > button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
