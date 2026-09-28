@@ -26,8 +26,8 @@ describe('About', () => {
     for (const line of [
       'League and season',
       'When the battle happened',
-      "The reporter's three Pokemon, and the moves they had set when pick3 knew them",
-      'Which opponent Pokemon were seen, up to three',
+      "The reporter's three Pokémon, and the moves they had set when pick3 knew them",
+      'Which opponent Pokémon were seen, up to three',
       'Win, loss, or tanked',
       'A random device id, so contributors can be counted and a device can delete what it sent',
       'Which app and build sent it, so a misbehaving version can be spotted',
@@ -48,7 +48,7 @@ describe('About', () => {
 
   it('says what is never collected, collection first', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    expect(await screen.findByText('Your Pokemon collection or storage')).toBeInTheDocument();
+    expect(await screen.findByText('Your Pokémon collection or storage')).toBeInTheDocument();
     expect(screen.getByText('IVs, levels or CP')).toBeInTheDocument();
     expect(screen.getByText('Your IP address')).toBeInTheDocument();
   });
@@ -91,16 +91,16 @@ describe('About', () => {
   });
 
   // IMPORTANT 4: the old sentence named a screen called "Most run teams" that does not exist, and
-  // claimed it shows a win rate with a confidence tag, which is Pokemon's own behavior, not
+  // claimed it shows a win rate with a confidence tag, which is Pokémon's own behavior, not
   // Teams'. Teams.tsx never prints a percentage for an observed record (`recordLine`, always raw
   // counts) and, since the matchup-score change, never prints a projection as a percentage
   // either: a projection is a matchup score out of 100 (`matchupScoreLine`). This pins the
   // corrected, per-screen claims.
-  it('describes what the Pokemon list, the Species page and Teams actually show', async () => {
+  it('describes what the Pokémon list, the Species page and Teams actually show', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     expect(
       await screen.findByText(
-        /On the Pokemon list, a record is always the raw win-loss count, never a percentage/,
+        /On the Pokémon list, a record is always the raw win-loss count, never a percentage/,
       ),
     ).toBeInTheDocument();
     expect(
@@ -123,7 +123,7 @@ describe('About', () => {
       await screen.findByText(/Faced is the share of a window's shared battles/),
     ).toBeInTheDocument();
     expect(screen.getByText(/Record is how the reporters/)).toBeInTheDocument();
-    expect(screen.getByText(/Trend is the change in a Pokemon's share/)).toBeInTheDocument();
+    expect(screen.getByText(/Trend is the change in a Pokémon's share/)).toBeInTheDocument();
   });
 
   it('explains the blend, in words, with both half-say points', async () => {

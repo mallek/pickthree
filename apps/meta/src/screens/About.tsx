@@ -88,8 +88,8 @@ const ITEM_STYLE: CSSProperties = { display: 'flex', gap: 8, alignItems: 'flex-s
 const CONTAINS: readonly string[] = [
   'League and season',
   'When the battle happened',
-  "The reporter's three Pokemon, and the moves they had set when pick3 knew them",
-  'Which opponent Pokemon were seen, up to three',
+  "The reporter's three Pokémon, and the moves they had set when pick3 knew them",
+  'Which opponent Pokémon were seen, up to three',
   'Win, loss, or tanked',
   'A random device id, so contributors can be counted and a device can delete what it sent',
   'Which app and build sent it, so a misbehaving version can be spotted',
@@ -102,7 +102,7 @@ const CONTAINS: readonly string[] = [
  * `client` names an app build, not a person, and `received` is a server clock reading, not
  * anything the player supplied. */
 const NEVER: readonly string[] = [
-  'Your Pokemon collection or storage',
+  'Your Pokémon collection or storage',
   'IVs, levels or CP',
   'Trainer names, friend codes, emails or anything that identifies you',
   'Location',
@@ -206,18 +206,18 @@ export function About(p: {
         </p>
       </section>
 
-      {/* A3: the species list, now the Pokemon screen, used to carry these three definitions as
+      {/* A3: the species list, now the Pokémon screen, used to carry these three definitions as
        * prose above its own list, on every visit, whether or not the reader had ever wondered
-       * what the words meant. They live here now, once, and Pokemon links nowhere to them (the
+       * what the words meant. They live here now, once, and Pokémon links nowhere to them (the
        * words are common enough to read in place without a footnote) but a curious reader knows
        * where the site's glossary is: this page. */}
       <section className="card">
         <h2>How to read the lists</h2>
         <p className="sub">
-          Faced is the share of a window&apos;s shared battles where a Pokemon was on the other
+          Faced is the share of a window&apos;s shared battles where a Pokémon was on the other
           side. Record is how the reporters who shared those battles did against it, or, when you
           pick a different source, how that source&apos;s own population did. Trend is the change
-          in a Pokemon&apos;s share since the window before this one; it is only shown when there
+          in a Pokémon&apos;s share since the window before this one; it is only shown when there
           is enough data in both windows to trust the difference (the thresholds are below).
         </p>
       </section>
@@ -225,7 +225,7 @@ export function About(p: {
       <section className="card">
         <h2>How the lists are built</h2>
         <p className="sub">
-          Tanked battles are counted separately and never touch a record. On the Pokemon list, a
+          Tanked battles are counted separately and never touch a record. On the Pokémon list, a
           record is always the raw win-loss count, never a percentage, with a confidence tag beside
           it: few under {count(SOME)} decided {battleWord(SOME)}, some from there up to{' '}
           {count(MANY)}, many at {count(MANY)} or more. On the Species page, a win rate is shown as
@@ -259,7 +259,7 @@ export function About(p: {
           say.
         </p>
         <p className="sub">
-          Tournament results come from official Play! Pokemon broadcasts, read off the stream and
+          Tournament results come from official Play! Pokémon broadcasts, read off the stream and
           joined to the published rosters. They are a different population from ladder play, so
           they blend into PvPoke&apos;s side of the number first, on their own curve, and recede as
           shared ladder battles arrive. Only events on the league&apos;s own Play! format count
@@ -288,8 +288,8 @@ export function About(p: {
           matchup score out of 100 instead.
         </p>
         <p className="sub">
-          Projections cover the top few hundred Pokemon by PvPoke rank, which is the ranked list
-          this site ships projections for, not every Pokemon PvPoke ranks. Someone you faced who is
+          Projections cover the top few hundred Pokémon by PvPoke rank, which is the ranked list
+          this site ships projections for, not every Pokémon PvPoke ranks. Someone you faced who is
           not on that list is counted in the measured numbers and left out of the projections, and
           any card that is missing a member says so instead of guessing.
         </p>
@@ -299,7 +299,7 @@ export function About(p: {
         <h2>Teams and cores</h2>
         <p className="sub">
           Players log up to three opponents, and most of the time they log one or two. So a pair
-          counts as a core: two Pokemon that were seen together, with whatever came third. A
+          counts as a core: two Pokémon that were seen together, with whatever came third. A
           core&apos;s projection is the average over the thirds it was actually seen with; a core
           never seen complete is instead projected against PvPoke&apos;s own group, the same thirds
           any of them would expect to face. That is why a complete team usually scores above or
@@ -332,7 +332,7 @@ export function About(p: {
 
       <footer className="fine">
         <p>
-          Pokemon and Pokemon GO are trademarks of their owners. meta.pick3.gg is a fan-made tool
+          Pokémon and Pokémon GO are trademarks of their owners. meta.pick3.gg is a fan-made tool
           and is not affiliated with them.
         </p>
         <p>Build {__META_BUILD__}</p>

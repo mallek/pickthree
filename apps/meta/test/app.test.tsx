@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App.js';
+import { resetStatic } from '../src/data.js';
 import { resetEpochs } from '../src/epochs.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
@@ -153,6 +154,37 @@ describe('App', () => {
   // this shell's placeholder. That assertion now lives in Task 10's own pokemon.test.tsx
   // (see task-10-brief.md, "Overview, when the api is down"; the screen and its test moved and
   // were renamed in Task 11), which will run against the real screen once it exists.
+});
+
+// Fix round 1, Important 2: the pre-boot error (the static bake itself failed to load, before any
+// screen exists to render its own error state) used to be a dead-end plain <p>. It is the shared
+// ui ErrorState now, with a "Try again" Button that calls useStatic's own retry, which bumps a
+// counter folded into useAsync's effect key so the fetch genuinely runs again (data.ts's own
+// loadStatic already forgets a failed load, so this is not just replaying the same rejection).
+describe('App, static load failure', () => {
+  it('shows ErrorState with a Try again button that retries and recovers', async () => {
+    // data.ts's loadStatic memoises per page load; without this, an earlier test in this file
+    // that already loaded the static files successfully would hand this test that cached promise
+    // straight back, and the flaky fetcher below would never even be called.
+    resetStatic();
+    let calls = 0;
+    const flaky: typeof fetch = (async (input: RequestInfo | URL) => {
+      calls += 1;
+      // The four baked files load in parallel (Promise.all); failing the first call made is
+      // enough to fail the whole attempt, the same way one real request timing out would.
+      if (calls === 1) {
+        throw new Error('network down');
+      }
+      return stubFetch({})(input);
+    }) as typeof fetch;
+    render(<App deps={{ fetcher: flaky, now }} />);
+    expect(
+      await screen.findByText('Could not load the site data. Try again in a moment.'),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    expect(await screen.findByRole('heading', { name: 'Top teams' })).toBeInTheDocument();
+  });
 });
 
 describe('App, deep links', () => {
@@ -362,21 +394,35 @@ describe('App, history state', () => {
 
 // Ruling 8, Review Focus 1: the Species back control.
 describe('App, Species back', () => {
-  it('calls history.back() when the page carries { meta: 1 } state, the way go() left it', async () => {
-    window.history.pushState(null, '', '/great');
-    window.history.pushState({ meta: 1 }, '', '/great/p/azumarill');
+  // Fix round 1, Important 1: a species row (Pokemon.tsx's RowView) is a plain <a href> with no
+  // click handler of its own, so this has to go through a real tab click then a real row click,
+  // the same as a reader would, not a hand-built pushState({ meta: 1 }) - the whole point of the
+  // fix is that App.tsx's own delegated click listener is what puts that state there now, not the
+  // row link itself. history.length not growing on the Back click is what proves history.back()
+  // actually ran, rather than another go() to the Pokemon list pushing yet another entry.
+  it('calls history.back(), without growing history, when reached by a tab click then a row click', async () => {
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.pathname).toBe('/great'));
+    await userEvent.click(await screen.findByRole('link', { name: 'Pokémon' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    await userEvent.click(await screen.findByRole('link', { name: /Azumarill/ }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/p/azumarill'));
+    const lengthBeforeBack = window.history.length;
+    await userEvent.click(await screen.findByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    expect(window.history.length).toBe(lengthBeforeBack);
   });
 
   it('goes to the league Pokemon list when the page was opened fresh, with no history state', async () => {
     // A plain replaceState, the same way a real fresh navigation (a shared link in a new tab, or
-    // a reload) always carries a null history.state, never { meta: 1 }.
-    window.history.replaceState(null, '', '/great/p/azumarill');
+    // a reload) always carries a null history.state, never { meta: 1 }. The query rides along
+    // with the fallback target too: a fresh species page under a filter lands on the Pokemon list
+    // under the same filter, not the default.
+    window.history.replaceState(null, '', '/great/p/azumarill?w=7&source=ladder');
     render(<App deps={{ fetcher: stubFetch({}), now }} />);
     await userEvent.click(await screen.findByRole('button', { name: 'Back' }));
     await waitFor(() => expect(window.location.pathname).toBe('/great/pokemon'));
+    expect(window.location.search).toBe('?w=7&source=ladder');
   });
 
   it('gives the Species sub header no title and the pick3 link', async () => {

@@ -697,8 +697,10 @@ a.rank-row {
    navigation controls away with it. z-index matches .hdr's, below the bottom tab bar's z-index 5.
    The page itself supplies the left/right gutter (.page's own 16px padding); this block only owns
    the top one, which the ui Header's `top` variant expects its container to provide (it carries no
-   padding of its own, packages/ui/base.css's own .ui-top comment). Species uses the sticky .hdr
-   instead (see pageHeader in App.tsx) and never renders this. */
+   padding of its own, packages/ui/base.css's own .ui-top comment). Fix round 1: the top padding
+   and the border match pick3's own .page-head (apps/web/src/app.css) exactly, so the two sites'
+   sticky heads read the same, not just the same idea. Species uses the sticky .hdr instead (see
+   pageHeader in App.tsx) and never renders this. */
 .top-bar {
   position: sticky;
   top: 0;
@@ -707,8 +709,9 @@ a.rank-row {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
   padding-bottom: 10px;
+  border-bottom: 1px solid var(--divider);
 }
 
 /* Page header: sticky, matching apps/web's own .hdr geometry (packages/ui/base.css) so the two

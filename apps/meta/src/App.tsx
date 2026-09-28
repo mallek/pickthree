@@ -25,6 +25,8 @@ import {
 import { buildBoard, type Board } from './teamRank.js';
 import {
   applyTheme,
+  Button,
+  ErrorState,
   Header,
   Loading,
   SiteLink,
@@ -344,6 +346,40 @@ export function App(props?: { deps?: Deps }): ReactNode {
     };
   }
 
+  /** Fix round 1: every in-app way into a screen other than the tab bar and the league switcher
+   * (a species row, "Seen next to", every other cross-reference this site draws) is a plain
+   * `<a href>` with no click handler of its own, so before this a click there was a genuine full
+   * page load: `history.state` was always null, and every Back press pushed another Pokemon-list
+   * entry rather than unwinding one. One delegated listener on the page container catches those
+   * clicks instead of teaching every screen to call `go()` itself: a plain click (not modified,
+   * not already handled, `isPlainClick`/`e.defaultPrevented`) on an anchor whose resolved URL is
+   * same-origin and whose path this app actually routes (`parseLocation` with the known leagues)
+   * is sent through `go()`, exactly as if it had been a tab or a switcher segment; anything else,
+   * an external link (pick3.gg, "Open in pick3") or a modified click, is left to behave like an
+   * ordinary link. `e.defaultPrevented` being true means a more specific handler (`navProps`'s
+   * own onClick) already dealt with this click, so it is skipped here rather than double-handled. */
+  function onPageClick(e: MouseEvent<HTMLDivElement>): void {
+    if (e.defaultPrevented || !isPlainClick(e)) {
+      return;
+    }
+    const anchor = (e.target as HTMLElement).closest('a');
+    if (!anchor || !anchor.href || (anchor.target && anchor.target !== '_self')) {
+      return;
+    }
+    let url: URL;
+    try {
+      url = new URL(anchor.href, window.location.href);
+    } catch {
+      return;
+    }
+    if (url.origin !== window.location.origin) {
+      return;
+    }
+    const { view: nextView, query: nextQuery } = parseLocation(url.pathname, url.search, leagueIds);
+    e.preventDefault();
+    go(nextView, nextQuery);
+  }
+
   const seasons = staticData.data?.seasons ?? [];
   const now = deps?.now?.() ?? new Date();
   // Called before resolveWindow (not down with the other Task 12 hooks below) because the default
@@ -435,7 +471,10 @@ export function App(props?: { deps?: Deps }): ReactNode {
   } else if (staticData.state === 'error' || !staticData.data) {
     content = (
       <div className="page">
-        <p>Could not load the site data. Try again in a moment.</p>
+        <ErrorState
+          line="Could not load the site data. Try again in a moment."
+          action={<Button onClick={staticData.retry}>Try again</Button>}
+        />
       </div>
     );
   } else {
@@ -512,7 +551,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
     ) : null;
 
     content = (
-      <div className="page">
+      <div className="page" onClick={onPageClick}>
         {isTabRoot ? (
           <div className="top-bar">
             {pageHeader}

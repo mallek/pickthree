@@ -72,10 +72,16 @@ function useAsync<T>(run: (signal: AbortSignal) => Promise<T> | null, keys: unkn
   return result;
 }
 
-export function useStatic(deps?: Deps): Loaded<StaticData> {
+/** Fix round 1: the pre-boot error state needs something for its "Try again" button to call.
+ * `attempt` is folded into `useAsync`'s own key array so bumping it re-runs the effect and calls
+ * `loadStatic` again; `loadStatic` itself already forgets a failed load (`data.ts`'s own catch
+ * resets `cached`), so this is a genuine retry, not a replay of the same rejected promise. */
+export function useStatic(deps?: Deps): Loaded<StaticData> & { retry: () => void } {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync(() => loadStatic(fetcher), [fetcher]);
+  const [attempt, setAttempt] = useState(0);
+  const result = useAsync(() => loadStatic(fetcher), [fetcher, attempt]);
+  return { ...result, retry: () => setAttempt((n) => n + 1) };
 }
 
 export function useBaseline(league: string, deps?: Deps): Loaded<Baseline> {
