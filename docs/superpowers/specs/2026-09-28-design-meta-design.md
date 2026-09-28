@@ -42,9 +42,16 @@ From the foundation spec, restated where this piece changes code:
   set" are `Tag`s. Multi-team only is a `Chip`.
 - **At most one line of text before the first result.** Explanations sit behind a `Term`.
 - **Names are spelled out** everywhere a species shows: "Shadow Sableye", "Galarian Corsola", never
-  `-S` or `-G`. The name comes from the static data's display name. The site's short suffix form
-  is removed, not kept as a fallback.
-- **"Pokémon" with the accent** in every piece of UI copy on the site (tab, titles, lines).
+  `-S` or `-G`, by the rule pick3's `fullName` uses: a regional form leads ("Galarian Corsola"),
+  Shadow leads before it ("Shadow Alolan Ninetales"), and any other form keeps its parentheses
+  ("Giratina (Origin)"). The site's short suffix form is removed, not kept as a fallback.
+- **"Pokémon" with the accent** in every piece of UI copy on the site (tab, titles, lines), and
+  "·" between the parts of a line, as pick3 writes them. This retires the site's strict 7-bit
+  ASCII rule (`format.ts`'s `ascii()` on rendered copy, `assertAscii` in
+  `apps/meta/scripts/screens.mjs`, the ASCII tests in `about.test.tsx` and `boardView.test.ts`):
+  the approved renders use both. Species and move names keep PvPoke's own spelling ("Flabébé",
+  "Dynamic Punch+"), as pick3 shows them. The no-em-dash rule stays and the screens script checks
+  it in place of the ASCII check.
 - **Loading, error and empty** use the ui `Loading`, `ErrorState` (with "Try again", which
   refetches) and `Empty`.
 - **No new color literals;** `npm run check-colors` passes on its shrink-only baseline.
@@ -89,7 +96,11 @@ From the foundation spec, restated where this piece changes code:
   `Tag`. "Seen with" and "Built as" stay. "Open in pick3 ›" stays as a labeled text link (the
   team link format is unchanged).
 - **No shared battles yet:** the board is the projected rows from the baseline, as today, each
-  tagged `Projected`. There is no empty board while the baseline loads.
+  tagged `Projected`.
+- **Empty board** (no shared teams and the projections failed to load): today's line and the "Help
+  fill this in" card (`Contribute`), restyled.
+- **Warnings stay at the top:** the PvPoke commit mismatch `Note` and "Projections are
+  unavailable right now" keep their place above the list; they are warnings, not the explainer.
 - **Error:** `ErrorState` "Could not load the team board." with Try again.
 
 ## Pokémon (`/<league>/pokemon`)
@@ -105,8 +116,11 @@ From the foundation spec, restated where this piece changes code:
   - "PvPoke #9", small and muted.
 - **Under a single source,** the share and record are that source's numbers. Under PvPoke alone,
   the right side is "PvPoke #9" alone, and the list says "Nothing measured." once, above it.
-- **Empty:** the "Help fill this in" card as today (its copy and its pick3 Log a Battle link),
-  restyled as meta's version of the contribution line on pick3's Your Meta.
+- **Help fill this in:** the card stays at the foot of the list as today (its copy and its pick3
+  Log a Battle link), restyled as meta's version of the contribution line on pick3's Your Meta.
+- **"New"** (PvPoke does not rank it) replaces "PvPoke #9" on the right, and its explainer moves
+  into the How it is ranked `Term`.
+- **The trend tag and the weight bar** stay on the left under the name, as today.
 
 ## Species (`/<league>/p/<id>`)
 
@@ -125,8 +139,10 @@ From the foundation spec, restated where this piece changes code:
   of the moveset battles the worker returns), not every battle run. The line reads "Moves known in
   5 of 62 battles" and each share is of those 5. With none known, the card says "No moves reported
   yet." and shows no rows.
-- **Moves at tournaments:** as today, except the trailing "+" goes. When a set is PvPoke's
-  recommended set it carries a `Tag` "PvPoke's set" on its own line.
+- **Moves at tournaments:** as today. The "+" stays: "Dynamic Punch+" is its own move in
+  PvPoke's data (`DYNAMIC_PUNCH_PLUS`, 130 power for 80 energy, against Dynamic Punch's 90 for
+  45), not a stray mark. When a set is PvPoke's recommended set it carries a `Tag` "PvPoke's set"
+  on its own line.
 - **PvPoke's set:** as today.
 - **Two actions at the end,** as labeled text links:
   - "Who beats it ›" to pick3 Counters against it in this league (today's `countersLink`);
@@ -154,7 +170,8 @@ Captured by `npm run meta:screens` in both themes at 390px, for each fixture run
 mid, thick) where it applies:
 
 - **Top teams:** the list; a row open (Core, Team and Projected rows); Multi-team only on; the
-  Sort list open; the How it is ranked explainer open; no shared battles (projected only); error.
+  Sort list open; the How it is ranked explainer open; no shared battles (projected only); the
+  empty board; error.
 - **Pokémon:** the list under All, Tournaments, GBL and PvPoke; empty; error.
 - **Species:** a Pokémon with measured moves and 3 or more weeks; one with fewer than 3 weeks; one
   with no known moves; one with tournament moves; not found.
