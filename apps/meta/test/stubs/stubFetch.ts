@@ -84,6 +84,9 @@ const SPECIES_FILE = {
   medicham: ['Medicham', 308, 'fighting,psychic'],
   lanturn: ['Lanturn', 171, 'water,electric'],
   registeel: ['Registeel', 379, 'steel'],
+  // Known to the static data but absent from RANK_ORDER below: a species page can ask for the
+  // "New" marker (PvPoke does not rank it) without also asking for the "not found" state.
+  surprise: ['Surprise', 999, 'normal'],
 };
 
 const MOVES_FILE = {
@@ -92,6 +95,9 @@ const MOVES_FILE = {
   PLAY_ROUGH: ['Play Rough', 'fairy'],
   FAIRY_WIND: ['Fairy Wind', 'fairy'],
   GIGATON_HAMMER: ['Gigaton Hammer', 'steel'],
+  // Its own move in PvPoke's data, distinct from Dynamic Punch: the "+" is the name, not a stray
+  // mark (docs/superpowers/specs/2026-09-28-design-meta-design.md, "Species").
+  DYNAMIC_PUNCH_PLUS: ['Dynamic Punch+', 'fighting'],
 };
 
 const LEAGUES_FILE = [

@@ -1,48 +1,30 @@
 /**
- * The species page: how often reporters faced this Pokemon over time, their record against it
- * overall and by rank band, what they saw it alongside, and the moveset they ran when they used
- * it themselves. PvPoke's own recommended set sits alongside as a clearly separate, unmeasured
- * card (see Pokemon.tsx's header comment for the two-sources rule this whole site follows).
+ * The species page: the hero (sprite, types, the one measured line and PvPoke's rank), how often
+ * reporters faced this Pokemon over time, their record against it, what they saw it alongside,
+ * and the moveset they ran when they used it themselves. PvPoke's own recommended set sits
+ * alongside as a clearly separate, unmeasured card (see Pokemon.tsx's header comment for the
+ * two-sources rule this whole site follows).
  *
- * See docs/superpowers/specs/2026-09-18-meta-site-design.md and this task's brief
- * (.superpowers/sdd/2026-09-18-meta-site/task-12-brief.md, with four corrections recorded in
- * task-12-report.md) for the exact reader copy.
+ * Ruling 7 (docs/superpowers/specs/2026-09-28-design-meta-design.md, "Species"): the hero leads
+ * with the same figure the Pokemon list's own rows lead with, `facedFigure`/`facedWords`
+ * (Pokemon.tsx), so the two screens can never quietly disagree about the same species in the same
+ * window. The rank band card ("Record against it, by rank") is retired with the band axis; the
+ * old blend paragraph is retired too, since the list above already carries it.
  */
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
+import { Button, Empty, ErrorState, Loading, MeasuredLine, Tag } from '@pickthree/ui';
 import type { MetaSummaryV1, MovesetStats, SpeciesDetailV1 } from '../api.js';
 import type { Baseline, BaselineSpecies } from '../baseline.js';
-import { Bar, ConfidenceTag, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
+import { Chevron, ConfidenceTag, Sparkline, Sprite, TypeChip, TypeChips } from '../components.js';
 import { speciesOf, type StaticData } from '../data.js';
 import { battles as battlesText, count, pctFloor, plural } from '../format.js';
-import { sourceHeaderLine } from '../headerCopy.js';
 import type { Legal } from '../legal.js';
-import { countersLink, PICK3 } from '../links.js';
+import { buildLink, countersLink } from '../links.js';
 import type { SpeciesRanking } from '../rank.js';
 import type { Query, View } from '../route.js';
-import {
-  marginSentence,
-  SHARE_MIN,
-  THIN_BAND_MAX,
-  trendLabel,
-  trendPoints,
-  winRate,
-} from '../stats.js';
+import { facedFigure, facedWords } from './Pokemon.js';
+import { marginSentence, SHARE_MIN, trendLabel, trendPoints, winRate } from '../stats.js';
 import type { Loaded } from '../useMeta.js';
-
-/** Same bands as elsewhere, plus 'unknown': the worker emits that band for a reporter it could
- * not place by rank, and this card has to show it rather than silently dropping its battles. */
-const BAND_LABELS: Record<string, string> = {
-  below: 'Below Ace',
-  ace: 'Ace',
-  veteran: 'Veteran',
-  expert: 'Expert',
-  legend: 'Legend',
-  unknown: 'Unknown',
-};
-
-function bandLabel(band: string): string {
-  return BAND_LABELS[band] ?? band;
-}
 
 /** Joins move names the way a sentence would: "A", "A and B", "A, B and C". */
 function joinAnd(names: string[]): string {
@@ -207,13 +189,19 @@ function TournamentMovesCard({
           const key = `${set.fast}|${[...set.charged].sort().join('+')}`;
           const names = [set.fast, ...set.charged].map((id) => data.moves.get(id)?.name ?? id);
           return (
-            <span className="pick-move" key={key}>
-              <span className="pick-move-name">{joinAnd(names)}</span>
-              <span className="fine pick-move-share">
-                {`${count(set.entries)} ${plural(set.entries, 'entry', 'entries')}`}
+            // A Fragment, not a wrapping element: `.pick-moves` is a flex column, so its own
+            // children (only) each land on their own line. The Tag needs to be one of those
+            // children, not nested inside the `.pick-move` span, or it would sit on the same
+            // line as the move names instead of the "on its own line" the spec asks for.
+            <Fragment key={key}>
+              <span className="pick-move">
+                <span className="pick-move-name">{joinAnd(names)}</span>
+                <span className="fine pick-move-share">
+                  {`${count(set.entries)} ${plural(set.entries, 'entry', 'entries')}`}
+                </span>
               </span>
-              {key === recommended ? <span className="fine">PvPoke&apos;s set</span> : null}
-            </span>
+              {key === recommended ? <Tag>PvPoke&apos;s set</Tag> : null}
+            </Fragment>
           );
         })}
       </div>
@@ -245,7 +233,9 @@ function TournamentMovesCard({
  * must not silently render as "no change".
  */
 function WeeklyCard({ weekly }: { weekly: SpeciesDetailV1['weekly'] }) {
-  if (weekly.length < 2) {
+  // Ruling 7: shown only with 3 or more weeks in the window; with fewer, the card is left out
+  // entirely (not even the counts-only fallback below), since two points cannot show a trend.
+  if (weekly.length < 3) {
     return null;
   }
   // All-or-nothing, on purpose: see the comment above for the two bugs a per-week filter caused.
@@ -312,7 +302,7 @@ function tournamentRow(block: SpeciesDetailV1['tournament'], banned: boolean): R
       </p>
       {block.unresolvedForms > 0 ? (
         <p className="fine">
-          {`Form not confirmed for ${count(block.unresolvedForms)} ${plural(block.unresolvedForms, 'pick', 'picks')}.`}
+          {`${count(block.unresolvedForms)} ${plural(block.unresolvedForms, 'pick', 'picks')} didn't show whether it was Shadow.`}
         </p>
       ) : null}
     </>
@@ -343,19 +333,17 @@ function rosterLine(block: SpeciesDetailV1['tournament'], banned: boolean): stri
  * own results, and `tournamentRow` below already prints that same record as "players went W-L".
  * Printing both would show the same fact twice under two different, half-contradictory labels
  * ("Reporters' record" next to a number that has no reporters behind it). Under that source this
- * card shows only the tournament line (and the roster join and the two link buttons, which stay
- * useful regardless of source); the ladder-labeled rate block renders only when this really is a
- * reporter population. */
+ * card shows only the tournament line and the roster join; the ladder-labeled rate block renders
+ * only when this really is a reporter population. Ruling 7 moved the two action links (Who beats
+ * it, Build a team around it) out of this card and onto the page itself (`ActionLinks` below),
+ * since they apply on every source, including PvPoke and zero sightings, where this card never
+ * renders at all. */
 function RecordCard({
   detail,
-  league,
-  speciesId,
   banned,
   tournamentSource,
 }: {
   detail: SpeciesDetailV1;
-  league: string;
-  speciesId: string;
   banned: boolean;
   /** True under `query.source === 'tournament'`: see the comment above. */
   tournamentSource: boolean;
@@ -383,83 +371,24 @@ function RecordCard({
       )}
       {tournamentRow(detail.tournament, banned)}
       {roster ? <p className="fine">{roster}</p> : null}
-      {/* D4: pick3's own outlined pair (.btn-pair, both .btn.btn-secondary): neither link is
-       * more "primary" than the other, they are two different destinations on pick3. */}
-      <div className="btn-pair">
-        <a className="btn btn-secondary" href={countersLink(league, speciesId)}>
-          Who beats it
-        </a>
-        <a className="btn btn-secondary" href={`${PICK3}/#/build`}>
-          Build a team
-        </a>
-      </div>
     </section>
   );
 }
 
-/** Every band under `THIN_BAND_MAX` that has at least one battle, most battles first (so a
- * multi-band caveat reads best-attested band to worst-attested, matching how a reader scans the
- * rows above it). Correction 3 (task-12-report.md) originally read this as "the single
- * thinnest band", which under-warned: two bands tied at one sighting named only the first, and
- * a 90-battle band next to a 3-battle band got no caveat at all. Fix round 3 ("FIX 3") widens it
- * to every band that clears the bar, not just the minimum. */
-function thinBands(bands: SpeciesDetailV1['bands']): SpeciesDetailV1['bands'] {
-  return bands
-    .filter((b) => b.sightings > 0 && b.sightings < THIN_BAND_MAX)
-    .sort((a, b) => b.sightings - a.sightings || a.band.localeCompare(b.band));
-}
-
-/** D2: one short muted line, replacing the old sentence that named every thin band and its own
- * count (each band's own count is already on screen in the row above it; naming them again here
- * was the "too much prose above the data" this handoff is about). The gate is unchanged, only the
- * words are shorter: no caveat at all once every band clears `THIN_BAND_MAX`. The threshold stays
- * interpolated, the same discipline About.tsx uses for its own thresholds, so this sentence can
- * never say a number the code does not actually enforce. */
-function thinBandCaveat(thin: SpeciesDetailV1['bands']): string | null {
-  if (thin.length === 0) {
-    return null;
-  }
-  return `Under ${count(THIN_BAND_MAX)} battles per band: hints, not facts.`;
-}
-
-function BandsCard({ bands }: { bands: SpeciesDetailV1['bands'] }) {
-  const thin = thinBands(bands);
-  const caveat = thinBandCaveat(thin);
+/** Ruling 7's two labeled text links, at the foot of the page on every source, including PvPoke
+ * and a species with zero sightings this window: neither depends on measured data, only on the
+ * league and the id, so nothing above ever has to gate them. `Button`'s `text` variant is pick3's
+ * plain violet link style; the trailing `Chevron` matches Teams.tsx's own "Open in pick3" links. */
+function ActionLinks({ league, speciesId }: { league: string; speciesId: string }): ReactNode {
   return (
-    <section className="card">
-      <h2>Record against it, by rank</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {bands.map((b) => {
-          if (b.sightings === 0) {
-            return (
-              <div
-                key={b.band}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-              >
-                <span>{bandLabel(b.band)}</span>
-                <span className="fine">no battles</span>
-              </div>
-            );
-          }
-          const rate = winRate(b.wins, b.losses);
-          return (
-            <div key={b.band} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-              >
-                <span>{bandLabel(b.band)}</span>
-                <span>
-                  {rate !== null ? `${Math.round(rate * 100)}%` : '-'}{' '}
-                  <span className="fine">{battlesText(b.sightings)}</span>
-                </span>
-              </div>
-              <Bar pct={rate !== null ? rate * 100 : 0} label={`${bandLabel(b.band)} record`} />
-            </div>
-          );
-        })}
-      </div>
-      {caveat ? <p className="fine">{caveat}</p> : null}
-    </section>
+    <div className="btn-pair">
+      <Button variant="text" href={countersLink(league, speciesId)}>
+        Who beats it <Chevron />
+      </Button>
+      <Button variant="text" href={buildLink(league, speciesId)}>
+        Build a team around it <Chevron />
+      </Button>
+    </div>
   );
 }
 
@@ -505,9 +434,11 @@ function AlongsideCard({
                 <span className="fine" style={{ color: 'var(--muted)' }}>
                   {other.name}
                 </span>
-                <span className="fine">
-                  {Math.round(share)}% - {battlesText(a.battles)}
-                </span>
+                {/* Spec: "share and count on their own lines so a long name never wraps into the
+                 * numbers", as two elements, not one string joined by a dash: each is its own
+                 * flex item of the column above, so each lands on its own line. */}
+                <span className="fine">{`${Math.round(share)}%`}</span>
+                <span className="fine">{battlesText(a.battles)}</span>
               </a>
             );
           })}
@@ -536,6 +467,20 @@ function PvPokeCard({ entry, data }: { entry: BaselineSpecies; data: StaticData 
   );
 }
 
+/** Ruling 7's hero line: the same figure the Pokemon list's own row leads with (`facedFigure`),
+ * worded for a single-species page rather than a row among many. Ladder and All read as a share
+ * of what players face; Tournaments reads as a share of tournament battles, in picks, since that
+ * population is not what "what players face" means. */
+function heroFigureText(
+  isTournament: boolean,
+  figure: { share: number; n: number; of: number },
+): string {
+  const p = pctFloor(figure.share);
+  return isTournament
+    ? `${p} of tournament battles · ${count(figure.n)} of ${count(figure.of)} ${plural(figure.of, 'pick', 'picks')}`
+    : `${p} of what players face · ${count(figure.n)} of ${count(figure.of)} ${plural(figure.of, 'battle', 'battles')}`;
+}
+
 export function Species(p: {
   league: string;
   speciesId: string;
@@ -545,53 +490,41 @@ export function Species(p: {
   meta: Loaded<MetaSummaryV1>;
   baseline: Loaded<Baseline>;
   /** The same blended ranking Pokemon and Teams read (App.tsx computes it once). Null while it
-   * is loading or one of its own three sources failed; the header simply omits the blended
-   * standing rather than guessing at a rank it does not have. */
+   * is loading or one of its own three sources failed; the hero simply omits its own line rather
+   * than guessing at a figure it does not have. */
   ranking: SpeciesRanking | null;
   /** The league's Play! ban list, or null while it is loading. A banned species is marked as
    *  banned rather than shown with zeros. */
   legal: Legal | null;
   now: Date;
   href: (view: View) => string;
+  /** Retries whichever of the species detail or the meta summary actually failed (App.tsx's
+   *  `retryDetail`), the same shape as Teams' and Pokemon's own "Try again". */
+  onRetry: () => void;
 }): ReactNode {
-  const { league, speciesId, data, detail, meta, baseline, ranking, legal, href } = p;
+  const { league, speciesId, data, detail, meta, baseline, ranking, legal, href, onRetry } = p;
+
+  // Ruling: not found is decided from the static data alone, before any fetch result: a species
+  // id nothing on this site knows about gets `Empty`, not a guessed title-cased name (`speciesOf`'s
+  // own fallback) sitting over a card that can never load anything real.
+  if (!data.species.has(speciesId)) {
+    const leagueTitle = data.leagues.find((l) => l.id === league)?.title ?? league;
+    return (
+      <main>
+        <Empty
+          line={`No Pokémon by that name in ${leagueTitle}.`}
+          action={
+            <Button variant="text" href={href({ name: 'pokemon', league })}>
+              See the Pokémon list <Chevron />
+            </Button>
+          }
+        />
+      </main>
+    );
+  }
+
   const species = speciesOf(data, speciesId);
   const banned = legal?.banned.has(speciesId) ?? false;
-
-  // Task 5: the sub header carries no title any more (just the back control and the pick3 link),
-  // so the species name has to live here instead, as the page's own title, or no build ever
-  // names the page. Task 8 finishes the rest of the hero (96px sprite, MeasuredLine); this stays
-  // the one element that change touches.
-  const headerTop = (
-    <>
-      <h2>{species.name}</h2>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Sprite species={species} size={64} />
-        <TypeChips types={species.types} />
-      </div>
-    </>
-  );
-
-  if (detail.state === 'error' || meta.state === 'error') {
-    return (
-      <main>
-        {headerTop}
-        <p className="sub">Could not load this Pokemon&apos;s record. Try again in a moment.</p>
-      </main>
-    );
-  }
-
-  if (!detail.data || !meta.data) {
-    return (
-      <main>
-        {headerTop}
-        <p className="sub">Loading</p>
-      </main>
-    );
-  }
-
-  const d = detail.data;
-  const m = meta.data;
 
   // Finding 1 (2026-09-21 whole-branch review): this screen used to read query.source nowhere
   // past building the header line, so every card below it kept rendering as if the ladder's own
@@ -602,60 +535,64 @@ export function Species(p: {
   const isPrior = p.query.source === 'prior';
   const isTournament = p.query.source === 'tournament';
 
-  // The same blended row Pokemon.tsx's own rows read (rank.ts's `rankSpecies`), looked up once and
-  // shared by the header's standing line and, under `source=tournament`, the header's own share
-  // line below (symptom 2: that share used to divide the tournament pick count by `m.battles`,
-  // the LADDER total `metaUrl` always returns, because `metaUrl` never sends a `source` param and
-  // so is shared, cached, across every view; the tournament total lives on `ranking` instead,
-  // computed from the same `meta.tournament` block `rankSpecies` reads).
+  // The same blended row Pokemon.tsx's own rows read (rank.ts's `rankSpecies`): ruling 7's hero
+  // reuses `facedFigure`/`facedWords`, the exact rule the list's own rows follow, rather than a
+  // second copy of it, so the hero and the list can never quietly disagree about this species in
+  // this window.
   const rankRow = ranking?.rows.find((x) => x.speciesId === speciesId) ?? null;
+  const figure = ranking && rankRow ? facedFigure(rankRow, ranking) : null;
+  const words = ranking && rankRow ? facedWords(rankRow, ranking) : null;
+  const pvpokeText = rankRow
+    ? rankRow.pvpokeRank !== null
+      ? `PvPoke #${rankRow.pvpokeRank}`
+      : 'New'
+    : null;
 
-  // Fix round 1 (task 14): this used to switch between "#R most faced" and a bare count once the
-  // league cleared a 300 battle / 5 device floor, the exact flip this whole plan exists to
-  // retire, still live here even after rank.ts's own copy of it was deleted (CLAUDE.md: meta.pick3.gg
-  // "never hides measured numbers for being small"). The share is shown unconditionally now, with
-  // its count beside it, the same way Pokemon.tsx's own rows always print theirs.
-  let headerText: string;
-  if (isPrior) {
-    // Symptom 1: `speciesUrl` maps `prior` to the worker's `all` source (nothing to fetch
-    // separately), so `d` still carries the ladder's real, unfiltered numbers here. Printing them
-    // would contradict the header's own "Nothing measured" line just above (sourceHeaderLine).
-    headerText = 'Nothing measured';
-  } else if (isTournament) {
-    if (banned) {
-      headerText = 'Banned at tournaments';
-    } else if (!ranking || ranking.tournamentBattles === 0) {
-      headerText = 'No tournament battles in this window';
-    } else {
-      const picks = rankRow?.tournamentPicks ?? 0;
-      if (picks === 0) {
-        headerText = 'Not picked in this window';
-      } else {
-        const share = picks / ranking.tournamentBattles;
-        headerText = `${count(picks)} of ${battlesText(ranking.tournamentBattles)} (${pctFloor(share)})`;
-      }
-    }
-  } else if (d.sightings === 0) {
-    headerText = 'Not faced in this window';
-  } else {
-    const share = m.battles > 0 ? d.sightings / m.battles : 0;
-    headerText = `${count(d.sightings)} of ${battlesText(m.battles)} (${pctFloor(share)})`;
+  // Task 5: the sub header carries no title any more (just the back control and the pick3 link),
+  // so the species name has to live here instead, as the page's own title, or no build ever
+  // names the page. Ruling 7: the sprite grows to 96px and the one MeasuredLine, then PvPoke's
+  // rank (small and muted), finish the hero; the old blend paragraph and "#1 of what players
+  // face" standing are both dropped (the list above already carries the first, and the list's own
+  // order already says the second).
+  const headerTop = (
+    <>
+      <h2>{species.name}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Sprite species={species} size={96} />
+        <TypeChips types={species.types} />
+      </div>
+      {figure ? (
+        <MeasuredLine>{heroFigureText(isTournament, figure)}</MeasuredLine>
+      ) : words ? (
+        <p className="sub">{words}</p>
+      ) : null}
+      {pvpokeText ? <p className="sub">{pvpokeText}</p> : null}
+    </>
+  );
+
+  if (detail.state === 'error' || meta.state === 'error') {
+    return (
+      <main>
+        {headerTop}
+        <ErrorState
+          line="Could not load this Pokémon's record."
+          action={<Button onClick={onRetry}>Try again</Button>}
+        />
+      </main>
+    );
   }
 
-  const baselineEntry = baseline.data?.byId.get(speciesId) ?? null;
+  if (!detail.data || !meta.data) {
+    return (
+      <main>
+        {headerTop}
+        <Loading label="Loading" />
+      </main>
+    );
+  }
 
-  // The same blended standing Pokemon's rows show (rank.ts's `rankSpecies`), added here rather
-  // than replacing headerText's own window-scoped line above: that line is about this species in
-  // this window, this one is about where it sits in the league's whole blended list. Shown only
-  // once this window has actually faced it (d.sightings > 0) and only outside `prior` (under
-  // `prior` nothing is measured, so "what players face" has nothing to report): the row still
-  // exists in `ranking` even at zero sightings (PvPoke's own prior order never goes away), and
-  // printing a "what players face" rank next to "Not faced in this window" would claim a fact this
-  // window does not support.
-  const row = !isPrior && d.sightings > 0 ? rankRow : null;
-  const standingText = row
-    ? `#${row.rank} of what players face - ${row.pvpokeRank !== null ? `PvPoke #${row.pvpokeRank}` : 'New'}`
-    : null;
+  const d = detail.data;
+  const baselineEntry = baseline.data?.byId.get(speciesId) ?? null;
 
   // Used both by the zero-sightings branch's own tournaments card and by RecordCard, computed
   // once here rather than twice.
@@ -663,20 +600,7 @@ export function Species(p: {
 
   return (
     <main>
-      <section>
-        {headerTop}
-        {/* Fix round 1: without this line a blended rank had no context. A row can lead "what
-         * players face" on a say of a few percent, almost entirely PvPoke's own prior, and this
-         * is the only thing on the page that tells a reader the two apart. Same convention
-         * Pokemon.tsx and Teams.tsx use for their own header line. */}
-        {ranking ? (
-          <p className="sub">
-            {sourceHeaderLine(ranking, 'No shared battles in this window yet.')}
-          </p>
-        ) : null}
-        <p className="sub">{headerText}</p>
-        {standingText ? <p className="sub">{standingText}</p> : null}
-      </section>
+      <section>{headerTop}</section>
       {isPrior ? (
         // Symptom 1: under `prior` nothing is measured (rank.ts's `rankSpecies` turns both the
         // ladder and the tournament terms off for this source), so none of the cards below, which
@@ -698,17 +622,7 @@ export function Species(p: {
       ) : (
         <>
           <WeeklyCard weekly={d.weekly} />
-          <RecordCard
-            detail={d}
-            league={league}
-            speciesId={speciesId}
-            banned={banned}
-            tournamentSource={isTournament}
-          />
-          {/* Symptom 4: a broadcast reports no rank band, so `tournamentSpeciesDetail`
-           * (workers/counter/src/tournamentRead.ts) deliberately zeroes every band's sightings,
-           * wins and losses for this source; drawing the card would show five all-zero rows. */}
-          {isTournament ? null : <BandsCard bands={d.bands} />}
+          <RecordCard detail={d} banned={banned} tournamentSource={isTournament} />
           <AlongsideCard
             alongside={d.alongside}
             sightings={d.sightings}
@@ -723,6 +637,7 @@ export function Species(p: {
         <TournamentMovesCard block={d.tournament} entry={baselineEntry} data={data} />
       ) : null}
       {baselineEntry ? <PvPokeCard entry={baselineEntry} data={data} /> : null}
+      <ActionLinks league={league} speciesId={speciesId} />
     </main>
   );
 }

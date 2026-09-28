@@ -80,11 +80,18 @@ export function facedFigure(
 }
 
 /** The plain words a row falls back to when `facedFigure` is null. Under PvPoke this is never
- *  called: "Nothing measured." already prints once, in the fine-print line above the list (not
- *  the header's own blend line), and repeating it on every row would say the same thing over and
- *  over for no reason. The branches here mirror `facedFigure`'s own null cases in the same order,
- *  so every null the figure can return has exactly one form of words to explain it. */
-function facedWords(row: SpeciesRow, ranking: SpeciesRanking): string {
+ *  called BY THIS SCREEN: "Nothing measured." already prints once, in the fine-print line above
+ *  the list (not the header's own blend line), and repeating it on every row would say the same
+ *  thing over and over for no reason (`RowFigure` below short-circuits `ranking.source ===
+ *  'prior'` to `null` before ever calling this). The `prior` branch exists for Species' own hero
+ *  (ruling 7), which shows exactly one row and so has no "said once above the list" line to lean
+ *  on instead; it reuses this function rather than a second copy of the words. The remaining
+ *  branches mirror `facedFigure`'s own null cases in the same order, so every null the figure can
+ *  return has exactly one form of words to explain it. */
+export function facedWords(row: SpeciesRow, ranking: SpeciesRanking): string {
+  if (ranking.source === 'prior') {
+    return 'Nothing measured';
+  }
   if (ranking.source === 'tournament') {
     if (row.banned) {
       return 'Banned at tournaments';

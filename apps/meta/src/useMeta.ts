@@ -185,6 +185,9 @@ export function useLegal(league: string, deps?: Deps): Loaded<Legal> {
  * an empty `id` here is not a request that failed, it is a request that never needed to happen:
  * `run` returns `null` rather than a promise, and `useAsync` settles that as an idle, dataless
  * "ready" instead of issuing a guaranteed-404 round trip on the site's two most visited pages.
+ *
+ * Same retry pattern as `useBaseline` above (Task 8): an `attempt` counter folded into
+ * `useAsync`'s own key array, so Species' own "Try again" genuinely refetches.
  */
 export function useSpeciesDetail(
   league: string,
@@ -192,10 +195,11 @@ export function useSpeciesDetail(
   w: ApiWindow,
   source: SourceKey,
   deps?: Deps,
-): Loaded<SpeciesDetailV1> {
+): Loaded<SpeciesDetailV1> & { retry: () => void } {
   const ctx = useContext(DepsContext);
   const fetcher = deps?.fetcher ?? ctx.fetcher;
-  return useAsync<SpeciesDetailV1>(
+  const [attempt, setAttempt] = useState(0);
+  const result = useAsync<SpeciesDetailV1>(
     (signal) => {
       if (id === '') {
         return null;
@@ -206,6 +210,7 @@ export function useSpeciesDetail(
       }
       return fetchSpecies(league, id, w, source, opts);
     },
-    [league, id, w.since, w.until, source, fetcher],
+    [league, id, w.since, w.until, source, fetcher, attempt],
   );
+  return { ...result, retry: () => setAttempt((n) => n + 1) };
 }

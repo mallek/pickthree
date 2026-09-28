@@ -198,6 +198,7 @@ function renderView(
   onTheme: (theme: ThemeChoice) => void,
   onRetryBoard: () => void,
   onRetryRanking: () => void,
+  onRetryDetail: () => void,
 ): ReactNode {
   if (view.name === 'about') {
     return <About baseline={baseline} theme={theme} onTheme={onTheme} />;
@@ -231,6 +232,7 @@ function renderView(
         legal={legal}
         now={now}
         href={href}
+        onRetry={onRetryDetail}
       />
     );
   }
@@ -493,6 +495,17 @@ export function App(props?: { deps?: Deps }): ReactNode {
       ranks.retry();
     }
   }
+  // Task 8's own "Try again": Species reads both the species detail and the meta summary (the
+  // hero's own figure comes from `ranking`, which is built from `meta`), so its retry covers
+  // whichever of the two actually failed, the same shape as `retryBoard` and `retryRanking` above.
+  function retryDetail(): void {
+    if (detail.state === 'error') {
+      detail.retry();
+    }
+    if (meta.state === 'error') {
+      meta.retry();
+    }
+  }
 
   let content: ReactNode;
   if (staticData.state === 'loading') {
@@ -618,6 +631,7 @@ export function App(props?: { deps?: Deps }): ReactNode {
           setTheme,
           retryBoard,
           retryRanking,
+          retryDetail,
         )}
         <TabBar view={view} activeLeague={activeLeague} query={query} navProps={navProps} />
       </div>

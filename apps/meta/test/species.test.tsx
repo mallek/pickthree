@@ -1,11 +1,11 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { SpeciesDetailV1 } from '../src/api.js';
+import type { MetaSummaryV1, SpeciesDetailV1 } from '../src/api.js';
 import { App } from '../src/App.js';
 import { resetBaselines } from '../src/baseline.js';
 import { resetStatic } from '../src/data.js';
 import { resetLegal, type Legal } from '../src/legal.js';
-import { THIN_BAND_MAX } from '../src/stats.js';
 import { stubFetch } from './stubs/stubFetch.js';
 
 const now = (): Date => new Date('2026-09-18T12:00:00.000Z');
@@ -17,6 +17,8 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/great/p/azumarill');
 });
 
+// Three weeks by default (ruling 7: the weekly card wants 3 or more to render at all), each above
+// SHARE_MIN so the card charts a share rather than falling back to raw counts.
 const species = {
   speciesId: 'azumarill',
   sightings: 184,
@@ -26,16 +28,9 @@ const species = {
   runWins: 33,
   runLosses: 27,
   weekly: [
+    { week: '2026-W35', battles: 500, sightings: 60 },
     { week: '2026-W36', battles: 500, sightings: 75 },
     { week: '2026-W37', battles: 500, sightings: 109 },
-  ],
-  bands: [
-    { band: 'below', sightings: 90, wins: 45, losses: 45 },
-    { band: 'ace', sightings: 60, wins: 25, losses: 35 },
-    { band: 'veteran', sightings: 0, wins: 0, losses: 0 },
-    { band: 'expert', sightings: 0, wins: 0, losses: 0 },
-    { band: 'legend', sightings: 34, wins: 10, losses: 24 },
-    { band: 'unknown', sightings: 0, wins: 0, losses: 0 },
   ],
   alongside: [
     { speciesId: 'tinkaton', battles: 57 },
@@ -47,249 +42,237 @@ const species = {
   ],
 };
 
-const meta = { battles: 1000, devices: 120 };
+/** A detail override that zeroes every measured field, the shape `EMPTY_SPECIES` (stubFetch.ts)
+ *  already carries: used for "nobody has faced it this window" scenarios. */
+const ZERO_DETAIL: Partial<SpeciesDetailV1> = {
+  sightings: 0,
+  wins: 0,
+  losses: 0,
+  runs: 0,
+  runWins: 0,
+  runLosses: 0,
+  weekly: [],
+  alongside: [],
+  movesets: [],
+  tournament: null,
+};
 
-/** Renders the species page for azumarill (the id `beforeEach` puts in the URL), merging
- *  `detail` onto the fixture above and passing `legal` through to the ban list stub, in the
- *  shape `Legal` itself uses (a `Set`), converted to the array `stubFetch`'s own option wants.
- *  Waits for the page's own name to appear, so every caller's own assertions after the await can
- *  read synchronously. */
+type SightingsLike = Pick<
+  SpeciesDetailV1,
+  'speciesId' | 'sightings' | 'wins' | 'losses' | 'runs' | 'runWins' | 'runLosses'
+>;
+
+/**
+ * Ruling 7: the Species hero reads the same blended row the Pokemon list's own rows read
+ * (`rank.ts`'s `rankSpecies`, fed from the site's meta summary), NOT the species detail endpoint
+ * directly, so a test has to keep the two in step itself: `meta.species` carries this species'
+ * own sightings/wins/losses, the same numbers the detail fixture states, the way the real worker
+ * always would. Callers needing a mismatch (there are none in this file) pass `overrides.species`
+ * explicitly, which replaces this default entry.
+ */
+function metaFor(
+  detail: SightingsLike,
+  overrides: Partial<MetaSummaryV1> = {},
+): Partial<MetaSummaryV1> {
+  return {
+    battles: 1000,
+    devices: 120,
+    species: [
+      {
+        speciesId: detail.speciesId,
+        sightings: detail.sightings,
+        wins: detail.wins,
+        losses: detail.losses,
+        runs: detail.runs,
+        runWins: detail.runWins,
+        runLosses: detail.runLosses,
+      },
+    ],
+    ...overrides,
+  };
+}
+
+/** Renders the full App at a species path (azumarill by default, from `beforeEach`), merging
+ *  `detail` onto the fixture above, deriving a matching `meta.species` entry (see `metaFor`), and
+ *  passing `legal` through to the ban list stub. Waits for the page's own name to appear, so
+ *  every caller's own assertions after the await can read synchronously. */
 async function renderSpecies(
-  opts: { detail?: Partial<SpeciesDetailV1>; legal?: Legal | null } = {},
+  opts: {
+    path?: string;
+    detail?: Partial<SpeciesDetailV1>;
+    meta?: Partial<MetaSummaryV1>;
+    legal?: Legal | null;
+    awaitText?: string;
+  } = {},
 ): Promise<void> {
+  if (opts.path) {
+    window.history.replaceState(null, '', opts.path);
+  }
+  const merged = { ...species, ...opts.detail };
   const legalOpt = opts.legal
     ? { legal: { cup: opts.legal.cup, banned: [...opts.legal.banned] } }
     : {};
   render(
     <App
       deps={{
-        fetcher: stubFetch({ species: { ...species, ...opts.detail }, meta, ...legalOpt }),
+        fetcher: stubFetch({
+          species: merged,
+          meta: metaFor(merged, opts.meta),
+          ...legalOpt,
+        }),
         now,
       }}
     />,
   );
-  await screen.findByText('Azumarill');
+  await screen.findByText(opts.awaitText ?? 'Azumarill');
 }
 
-describe('Species', () => {
-  it('names it, its types and how often it turned up', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    // The species name is App.tsx's sticky header title now (a plain span, matching apps/web's
-    // own Header, not a heading), so this checks the text rather than a heading role.
-    expect(await screen.findByText('Azumarill')).toBeInTheDocument();
+describe('Species, hero', () => {
+  it('names it, its types, and the measured line ruling 7 asks for', async () => {
+    await renderSpecies();
     // D3 also prints a move's own type as a chip further down the page (BUBBLE is Water too), so
     // this scopes to the header's own sprite-and-types row rather than asserting a page-wide
-    // unique match on "Water". Two levels up: Sprite (components.tsx) wraps SpeciesToken in a
-    // span that carries the `--sprite-size` custom property, so the flex row that also holds
-    // TypeChips is the sprite token's grandparent now, not its immediate parent.
+    // unique match on "Water".
     const head = screen.getByRole('img', { name: 'Azumarill' }).parentElement!.parentElement!;
     expect(within(head).getByText('Water')).toBeInTheDocument();
-    // A4: whole percentages everywhere; 184 / 1,000 is 18.4%, rounded to 18%.
-    expect(screen.getByText('184 of 1,000 battles (18%)')).toBeInTheDocument();
+    // 184 / 1,000 is 18.4%, floored to 18% (pctFloor's whole-percent rounding).
+    expect(
+      screen.getByText('18% of what players face · 184 of 1,000 battles'),
+    ).toBeInTheDocument();
+    // Ruling 7: PvPoke's own rank sits under the measured line, small and muted; the old "#1 of
+    // what players face" blended standing is gone (the list's own order already says it).
+    expect(screen.getByText('PvPoke #1')).toBeInTheDocument();
+    expect(screen.queryByText(/of what players face -/)).toBeNull();
   });
 
-  // FIX 2 (honesty): reachable for any id through "Seen next to", not just the ranked list, which
-  // draws only a species PvPoke ranks or one faced at least twice (Pokemon.tsx's own cut). A
-  // species faced 2 times in 1,000 battles is 0.2%, real but not "0%": whole-percent rounding
-  // must not say it was never faced.
   it('floors a real but sub-one-percent share at "<1%" instead of rounding it away to 0%', async () => {
-    const rare = { ...species, sightings: 2 };
-    render(<App deps={{ fetcher: stubFetch({ species: rare, meta }), now }} />);
-    expect(await screen.findByText('2 of 1,000 battles (<1%)')).toBeInTheDocument();
-    expect(screen.queryByText(/\(0%\)/)).toBeNull();
+    await renderSpecies({ detail: { sightings: 2 } });
+    expect(
+      screen.getByText('<1% of what players face · 2 of 1,000 battles'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^0% of what players face/)).toBeNull();
   });
 
-  // Task 14 fix round 1 (Also-fix): azumarill is both RANK_ORDER[0] and the baseline's first
-  // entry, so the original version of this fixture gave it rank 1 in both the blended list and
-  // PvPoke's own order, and the test would have passed even if Species.tsx printed the same
-  // number in both slots. Here tinkaton (PvPoke rank 5) is given nine times azumarill's measured
-  // sightings, which is enough to outweigh azumarill's much stronger prior (see rank.test.ts's
-  // own blend math) and push azumarill to blended rank 2 while its PvPoke rank stays 1, so the
-  // assertion below can only pass if the two numbers really come from two different fields.
-  it("shows its place in the blended list alongside PvPoke's own rank, and the two can differ", async () => {
-    const measured = {
-      ...meta,
-      species: [
-        {
-          speciesId: 'azumarill',
-          sightings: 100,
-          wins: 0,
-          losses: 0,
-          runs: 0,
-          runWins: 0,
-          runLosses: 0,
-        },
-        {
-          speciesId: 'tinkaton',
-          sightings: 900,
-          wins: 0,
-          losses: 0,
-          runs: 0,
-          runWins: 0,
-          runLosses: 0,
-        },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species, meta: measured }), now }} />);
-    expect(await screen.findByText('#2 of what players face - PvPoke #1')).toBeInTheDocument();
+  it('reads the plain words, not a pink figure, when nothing was faced this window, and still names PvPoke’s rank', async () => {
+    await renderSpecies({ detail: ZERO_DETAIL });
+    expect(screen.getByText('Not faced in this window')).toBeInTheDocument();
+    expect(document.querySelector('.ui-measured-line')).toBeNull();
+    expect(screen.getByText('PvPoke #1')).toBeInTheDocument();
+    expect(screen.queryByText(/of what players face ·/)).toBeNull();
   });
 
-  // A species not faced at all this window has nothing to claim a blended rank from (the row
-  // still exists in `ranking`, purely from PvPoke's own prior, which is not "what players face").
-  it('says nothing about a blended rank for a species nobody has faced this window', async () => {
-    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
-    await screen.findByText('No shared battles mention it in this window.');
-    expect(screen.queryByText(/of what players face/)).toBeNull();
+  it('marks a species PvPoke does not rank as New', async () => {
+    await renderSpecies({
+      path: '/great/p/surprise',
+      detail: { speciesId: 'surprise', sightings: 5, wins: 2, losses: 3 },
+      awaitText: 'Surprise',
+    });
+    expect(screen.getByText('New')).toBeInTheDocument();
   });
 
+  it('has no "Record against it, by rank" card', async () => {
+    await renderSpecies();
+    expect(screen.queryByRole('heading', { name: 'Record against it, by rank' })).toBeNull();
+  });
+});
+
+describe('Species, record', () => {
   it('gives the record with its margin and explains a sub-50% number', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
+    await renderSpecies();
     // 80 wins over 184 decided battles is 43.478...%, which Math.round(rate * 100) takes to 43
     // (not 44: 43.478 rounds down at the whole-percent boundary).
-    expect(await screen.findByText('43%')).toBeInTheDocument();
+    expect(screen.getByText('43%')).toBeInTheDocument();
     expect(screen.getByText('80 wins, 104 losses')).toBeInTheDocument();
     expect(
       screen.getByText('Under 50% means it usually wins when it shows up.'),
     ).toBeInTheDocument();
   });
 
-  it('links out to pick3 for counters, carrying the league', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    expect(await screen.findByRole('link', { name: 'Who beats it' })).toHaveAttribute(
+  it('links out to pick3 for counters and for build, carrying the league', async () => {
+    await renderSpecies();
+    expect(screen.getByRole('link', { name: 'Who beats it' })).toHaveAttribute(
       'href',
       'https://pick3.gg/#/counters?vs=azumarill&l=great',
     );
+    expect(screen.getByRole('link', { name: 'Build a team around it' })).toHaveAttribute(
+      'href',
+      'https://pick3.gg/#/build?lead=azumarill&l=great',
+    );
   });
 
-  it('warns on every thin band, not just the thinnest, and says nothing false about an empty one', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    const card = (
-      await screen.findByRole('heading', { name: 'Record against it, by rank' })
-    ).closest('section')!;
-    // Fix round 3 ("FIX 3"): the old rule named only the single thinnest band, which under-warned
-    // a 90-battle band standing right next to a 3-battle one. All three bands with battles here
-    // (below 90, ace 60, legend 34) are under THIN_BAND_MAX, so the caveat still fires with more
-    // than one thin band in play. D2 shortened its words from naming each band and its count to
-    // one generic line; the interpolated threshold is what this test now pins.
-    expect(
-      within(card).getByText(`Under ${THIN_BAND_MAX} battles per band: hints, not facts.`),
-    ).toBeInTheDocument();
-    expect(within(card).getAllByText('no battles')).toHaveLength(3);
+  it('keeps both action links under PvPoke, where every other measured card is hidden', async () => {
+    await renderSpecies({ path: '/great/p/azumarill?source=prior' });
+    expect(screen.getByRole('link', { name: 'Who beats it' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Build a team around it' })).toBeInTheDocument();
   });
 
-  it('still reads as one short sentence when only a single band is thin', async () => {
-    const oneThin = {
-      ...species,
-      bands: [
-        { band: 'below', sightings: 200, wins: 100, losses: 100 },
-        { band: 'ace', sightings: 150, wins: 80, losses: 70 },
-        { band: 'veteran', sightings: 0, wins: 0, losses: 0 },
-        { band: 'expert', sightings: 0, wins: 0, losses: 0 },
-        { band: 'legend', sightings: 34, wins: 10, losses: 24 },
-        { band: 'unknown', sightings: 0, wins: 0, losses: 0 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: oneThin, meta }), now }} />);
-    const card = (
-      await screen.findByRole('heading', { name: 'Record against it, by rank' })
-    ).closest('section')!;
-    // D2: a single thin band (Legend, 34 battles here) reads the same short line as several would.
-    expect(
-      within(card).getByText(`Under ${THIN_BAND_MAX} battles per band: hints, not facts.`),
-    ).toBeInTheDocument();
+  it('keeps both action links for a species nobody has faced this window', async () => {
+    await renderSpecies({ detail: ZERO_DETAIL });
+    expect(screen.getByRole('link', { name: 'Who beats it' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Build a team around it' })).toBeInTheDocument();
   });
+});
 
-  it('names a tie: two bands thin by the same count are both named', async () => {
-    const tie = {
-      ...species,
-      bands: [
-        { band: 'below', sightings: 1, wins: 1, losses: 0 },
-        { band: 'ace', sightings: 1, wins: 0, losses: 1 },
-        { band: 'veteran', sightings: 0, wins: 0, losses: 0 },
-        { band: 'expert', sightings: 0, wins: 0, losses: 0 },
-        { band: 'legend', sightings: 0, wins: 0, losses: 0 },
-        { band: 'unknown', sightings: 0, wins: 0, losses: 0 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: tie, meta }), now }} />);
-    const card = (
-      await screen.findByRole('heading', { name: 'Record against it, by rank' })
-    ).closest('section')!;
-    // Old rule (a strict `<` comparison over the minimum) named only the first of a tie. Both
-    // bands still count as thin now (the gate itself is unchanged), which is what still fires the
-    // (now generic, D2) caveat line.
-    expect(
-      within(card).getByText(`Under ${THIN_BAND_MAX} battles per band: hints, not facts.`),
-    ).toBeInTheDocument();
-  });
-
+describe('Species, seen next to', () => {
   it('says what "seen next to" actually measures', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    expect(await screen.findByText(/Reporters note up to three opponents/)).toBeInTheDocument();
+    await renderSpecies();
+    expect(screen.getByText(/Reporters note up to three opponents/)).toBeInTheDocument();
   });
 
-  // Fix round 3 ("FIX 2"): a bare "100%" from a pairing seen twice violated the spec's "always
-  // on screen with their counts, however small" rule. The count now sits next to every
-  // percentage.
-  it('puts the battle count next to the alongside percentage', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest('section')!;
+  // Ruling 7: the share and the count are two elements now, not one string joined by a dash, so a
+  // long spelled name never wraps into the numbers.
+  it('puts the share and the battle count on their own lines, not joined into one string', async () => {
+    await renderSpecies();
+    const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest(
+      'section',
+    )!;
     // tinkaton: 57 of azumarill's 184 sightings is 30.978...%, which rounds to 31%.
-    expect(within(card).getByText('31% - 57 battles')).toBeInTheDocument();
+    expect(within(card).getByText('31%')).toBeInTheDocument();
+    expect(within(card).getByText('57 battles')).toBeInTheDocument();
+    expect(within(card).queryByText(/31%.*57 battles/)).toBeNull();
   });
 
-  // Task 14 fix round 1 (CRITICAL 2): this used to hide the share below a 300 battle / 5 device
-  // floor, the exact "hides measured numbers for being small" behavior CLAUDE.md rules out for
-  // meta.pick3.gg. The share is unconditional now, with its count beside it, the same way it is
-  // above with a thick league.
   it('shows a share even in a league far below the old measured floor', async () => {
-    const thin = { battles: 50, devices: 2 };
-    render(<App deps={{ fetcher: stubFetch({ species, meta: thin }), now }} />);
-    const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest('section')!;
-    // tinkaton: 57 of azumarill's 184 sightings is still 30.978...%, rounded to 31%, whatever the
-    // league's own battle or device count is: the alongside share is a share of THIS species' own
-    // sightings, not of the league's, so it never depended on the old floor in the first place.
-    expect(within(card).getByText('31% - 57 battles')).toBeInTheDocument();
+    await renderSpecies({ meta: { battles: 50, devices: 2 } });
+    const card = (await screen.findByRole('heading', { name: 'Seen next to' })).closest(
+      'section',
+    )!;
+    // The alongside share is a share of THIS species' own sightings, not of the league's, so it
+    // never depended on the league's own battle or device count.
+    expect(within(card).getByText('31%')).toBeInTheDocument();
+    expect(within(card).getByText('57 battles')).toBeInTheDocument();
   });
+});
 
+describe('Species, moves reporters ran', () => {
   it('aggregates movesets into one pick3-style line per move, fast first, share at the end', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
+    await renderSpecies();
     // Task 4: the denominator is the battles whose moves are known (the movesets sum, 48 + 12 =
     // 60), not `runs` itself; the fixture happens to have every run's moves known, so the two
     // numbers coincide here, but the sub line still has to name both.
-    expect(await screen.findByText('Moves known in 60 of 60 battles')).toBeInTheDocument();
-    // Correction 1: the two fixture sets both carry ICE_BEAM (48 + 12 battles) and both carry
-    // BUBBLE as their fast move, so aggregated by move each name appears exactly once, not once
-    // per set.
+    expect(screen.getByText('Moves known in 60 of 60 battles')).toBeInTheDocument();
     expect(screen.getAllByText('Bubble')).toHaveLength(1);
     expect(screen.getAllByText('Ice Beam')).toHaveLength(1);
     expect(screen.getByText('Play Rough')).toBeInTheDocument();
-    // D3: fast moves first, then charged, each line marked F or C (pick3's own `.pick-move-k`).
     const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
       'section',
     )!;
     const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
     expect(markers).toEqual(['F', 'C', 'C']);
-    // BUBBLE and ICE_BEAM sit in both sets (60 of 60 known battles, 100%); PLAY_ROUGH sits in
-    // only the first (48 of 60, 80%). D2 dropped the old "add up to about 200%" footnote that
-    // used to explain shares like these; the per-line share is the whole explanation now.
     const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
     expect(shares).toEqual(['100%', '100%', '80%']);
-    expect(screen.queryByText(/add up to about 200%/)).toBeNull();
   });
 
-  // Task 4: the worker only records a moveset when the moves it saw were actually known
-  // (workers/counter/src/battles.ts ~255-265), so a species run in 62 battles with only one
-  // moveset actually known must show shares of that 5, not of the 62: dividing by `runs` was the
-  // bug (Melmetal showed 8% for moves known in only 5 of 62 battles).
   it('divides move shares by the battles whose moves are known, not by every run', async () => {
-    const melmetal = {
-      ...species,
-      runs: 62,
-      movesets: [{ fast: 'THUNDER_SHOCK', charged: ['DOUBLE_IRON_BASH', 'DYNAMIC_PUNCH'], battles: 5 }],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: melmetal, meta }), now }} />);
-    expect(await screen.findByText('Moves known in 5 of 62 battles')).toBeInTheDocument();
+    await renderSpecies({
+      detail: {
+        runs: 62,
+        movesets: [
+          { fast: 'THUNDER_SHOCK', charged: ['DOUBLE_IRON_BASH', 'DYNAMIC_PUNCH'], battles: 5 },
+        ],
+      },
+    });
+    expect(screen.getByText('Moves known in 5 of 62 battles')).toBeInTheDocument();
     const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
       'section',
     )!;
@@ -297,36 +280,9 @@ describe('Species', () => {
     expect(shares).toEqual(['100%', '100%', '100%']);
   });
 
-  // Task 4: two known sets sharing a fast move but splitting the charged move (3 of 5 vs. 2 of
-  // 5) still divide by the known total (5), not by `runs` (62): the fast move is in every known
-  // battle (100%), the charged moves split it 60/40.
-  it('splits charged move shares between two known sets while the fast move stays at 100%', async () => {
-    const twoSets = {
-      ...species,
-      runs: 62,
-      movesets: [
-        { fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 3 },
-        { fast: 'BUBBLE', charged: ['PLAY_ROUGH'], battles: 2 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: twoSets, meta }), now }} />);
-    expect(await screen.findByText('Moves known in 5 of 62 battles')).toBeInTheDocument();
-    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
-      'section',
-    )!;
-    const markers = [...card.querySelectorAll('.pick-move-k')].map((el) => el.textContent);
-    expect(markers).toEqual(['F', 'C', 'C']);
-    const shares = [...card.querySelectorAll('.pick-move-share')].map((el) => el.textContent);
-    expect(shares).toEqual(['100%', '60%', '40%']);
-  });
-
-  // Review Focus 4: `runs` known but no moveset is actually known (none recorded, or every one
-  // recorded at zero battles) must say so plainly, never "NaN%" and never a share computed from a
-  // zero denominator.
   it('says moves are not reported rather than showing a zero-battle share', async () => {
-    const noMovesets = { ...species, runs: 62, movesets: [] };
-    render(<App deps={{ fetcher: stubFetch({ species: noMovesets, meta }), now }} />);
-    expect(await screen.findByText('No moves reported yet.')).toBeInTheDocument();
+    await renderSpecies({ detail: { runs: 62, movesets: [] } });
+    expect(screen.getByText('No moves reported yet.')).toBeInTheDocument();
     const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
       'section',
     )!;
@@ -336,111 +292,112 @@ describe('Species', () => {
   });
 
   it('treats an all-zero-battle moveset list the same as no movesets at all', async () => {
-    const zeroMovesets = {
-      ...species,
-      runs: 62,
-      movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 0 }],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: zeroMovesets, meta }), now }} />);
-    expect(await screen.findByText('No moves reported yet.')).toBeInTheDocument();
-    const card = (await screen.findByRole('heading', { name: 'Moves reporters ran' })).closest(
-      'section',
-    )!;
-    expect(card.querySelector('.pick-move-share')).toBeNull();
+    await renderSpecies({
+      detail: { runs: 62, movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 0 }] },
+    });
+    expect(screen.getByText('No moves reported yet.')).toBeInTheDocument();
+  });
+
+  it('reads the singular correctly at n = 1, not "1 battles"', async () => {
+    await renderSpecies({
+      detail: { runs: 1, movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 1 }] },
+    });
+    expect(screen.getByText('Moves known in 1 of 1 battle')).toBeInTheDocument();
+    expect(screen.queryByText(/1 battles\b/)).toBeNull();
   });
 
   it('labels PvPoke as PvPoke', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    const card = (await screen.findByRole('heading', { name: "PvPoke's set" })).closest('section')!;
+    await renderSpecies();
+    const card = (await screen.findByRole('heading', { name: "PvPoke's set" })).closest(
+      'section',
+    )!;
     expect(within(card).getByText(/Not measured play/)).toBeInTheDocument();
   });
 
   it('renders something useful for a species nobody has faced', async () => {
-    render(<App deps={{ fetcher: stubFetch({ meta }), now }} />);
-    expect(await screen.findByText('Azumarill')).toBeInTheDocument();
+    await renderSpecies({ detail: ZERO_DETAIL });
     expect(screen.getByText('No shared battles mention it in this window.')).toBeInTheDocument();
     expect(
       screen.getByText('Nobody who shares battles has run it in this window.'),
     ).toBeInTheDocument();
   });
+});
 
-  it('reads the singular correctly at n = 1, not "1 battles"', async () => {
-    // Fix round 1: every hand-spliced `{count(n)} battles` read "1 battles" at n = 1, and this
-    // site launches with samples this small routinely, not as an edge case.
-    const one = {
-      ...species,
-      runs: 1,
-      movesets: [{ fast: 'BUBBLE', charged: ['ICE_BEAM'], battles: 1 }],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: one, meta }), now }} />);
-    expect(await screen.findByText('Moves known in 1 of 1 battle')).toBeInTheDocument();
-    expect(screen.queryByText(/1 battles\b/)).toBeNull();
+describe('Species, weekly', () => {
+  it('renders with 3 weeks in the window', async () => {
+    await renderSpecies();
+    expect(screen.getByRole('heading', { name: 'Faced, week by week' })).toBeInTheDocument();
   });
 
-  // Fix round 3 ("FIX 1a"): a literal tie between two well-attested weeks is exactly what
-  // trendPoints treats as "nothing to say" (its 95% band never excludes a difference of zero),
-  // so the card now shows no change clause at all here rather than round 2's "about the same as
-  // the first week" text, which claimed a fact (no movement) the statistic does not actually
-  // assert. See the fixture below this one for the case where trendLabel's own "even" wording
-  // still applies: a real, statistically significant difference that happens to round near zero.
-  it('shows no change clause when the two weeks are an exact tie', async () => {
-    const flat = {
-      ...species,
-      weekly: [
-        { week: '2026-W36', battles: 500, sightings: 100 },
-        { week: '2026-W37', battles: 500, sightings: 100 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: flat, meta }), now }} />);
-    // A4: whole percentages; 100 / 500 is exactly 20%.
-    expect(await screen.findByText('20% latest')).toBeInTheDocument();
-    expect(screen.queryByText(/pts since the first week/)).toBeNull();
-    expect(screen.queryByText(/about the same/)).toBeNull();
-    expect(screen.queryByText(/even/)).toBeNull();
+  it('is absent with only 2 weeks in the window', async () => {
+    await renderSpecies({
+      detail: {
+        weekly: [
+          { week: '2026-W36', battles: 500, sightings: 75 },
+          { week: '2026-W37', battles: 500, sightings: 109 },
+        ],
+      },
+    });
+    expect(screen.queryByRole('heading', { name: 'Faced, week by week' })).toBeNull();
   });
 
-  // Fix round 3 ("FIX 1"). Task 12's tests missed this because every fixture week had 500
-  // battles: a species faced once in a two-battle week and not at all in a three-battle week
-  // used to render "0% latest, -50.0 pts since the first week", a trend and a share the data
-  // cannot support. Neither a percentage nor a sparkline should appear; the raw counts should.
-  //
-  // Fix round 4: the rule that removes a bad share must not itself invent a chart. A per-week
-  // filter (this test's original fix) drops thin weeks from wherever they fall, and Sparkline
-  // spaces points evenly by index with no labels, so a thin week in the MIDDLE of the series
-  // used to draw a straight line between two weeks that are not actually adjacent, and a thin
-  // week at the END used to let an older week masquerade as "latest". The rule is now
-  // all-or-nothing: any thin week anywhere drops the whole series to the counts fallback. The
-  // four cases below pin that rule directly rather than relying on one fixture to imply it.
-  it('shows counts only, no chart, when every week is thin', async () => {
-    const thin = {
-      ...species,
-      sightings: 1,
-      weekly: [
-        { week: '2026-W36', battles: 2, sightings: 1 },
-        { week: '2026-W37', battles: 3, sightings: 0 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: thin, meta }), now }} />);
+  it('charts a share and quotes the real latest week when every week clears SHARE_MIN', async () => {
+    await renderSpecies();
     const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
       'section',
     )!;
-    expect(within(card).getByText('Faced 1 time in 5 battles over 2 weeks')).toBeInTheDocument();
+    // 109 of 500 in the latest week (2026-W37) is 21.8%, rounded to 22%.
+    expect(within(card).getByText(/22% latest/)).toBeInTheDocument();
+    expect(card.querySelector('svg')).not.toBeNull();
+    const ticks = [...card.querySelectorAll('.spark-ticks span')].map((el) => el.textContent);
+    expect(ticks).toEqual(['W35', 'W36', 'W37']);
+  });
+
+  it('shows no change clause when the first and the latest week are an exact tie', async () => {
+    await renderSpecies({
+      detail: {
+        weekly: [
+          { week: '2026-W35', battles: 500, sightings: 100 },
+          { week: '2026-W36', battles: 500, sightings: 150 },
+          { week: '2026-W37', battles: 500, sightings: 100 },
+        ],
+      },
+    });
+    expect(await screen.findByText('20% latest')).toBeInTheDocument();
+    expect(screen.queryByText(/pts since the first week/)).toBeNull();
+    expect(screen.queryByText(/about the same/)).toBeNull();
+  });
+
+  it('shows counts only, no chart, when every week is thin', async () => {
+    await renderSpecies({
+      detail: {
+        sightings: 1,
+        weekly: [
+          { week: '2026-W35', battles: 2, sightings: 1 },
+          { week: '2026-W36', battles: 3, sightings: 0 },
+          { week: '2026-W37', battles: 4, sightings: 0 },
+        ],
+      },
+    });
+    const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
+      'section',
+    )!;
+    expect(within(card).getByText('Faced 1 time in 9 battles over 3 weeks')).toBeInTheDocument();
     expect(within(card).queryByText(/%/)).toBeNull();
-    expect(within(card).queryByText(/pts since the first week/)).toBeNull();
     expect(card.querySelector('svg')).toBeNull();
   });
 
   it('shows counts only, not a chart that skips it, when a thin week sits in the middle', async () => {
-    const middleThin = {
-      ...species,
-      sightings: 205,
-      weekly: [
-        { week: '2026-W34', battles: 500, sightings: 100 },
-        { week: '2026-W35', battles: 10, sightings: 5 },
-        { week: '2026-W36', battles: 500, sightings: 100 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: middleThin, meta }), now }} />);
+    await renderSpecies({
+      detail: {
+        sightings: 205,
+        weekly: [
+          { week: '2026-W34', battles: 500, sightings: 100 },
+          { week: '2026-W35', battles: 10, sightings: 5 },
+          { week: '2026-W36', battles: 500, sightings: 100 },
+        ],
+      },
+    });
     const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
       'section',
     )!;
@@ -448,110 +405,77 @@ describe('Species', () => {
       within(card).getByText('Faced 205 times in 1,010 battles over 3 weeks'),
     ).toBeInTheDocument();
     expect(within(card).queryByText(/%/)).toBeNull();
-    // The bug this pins: a per-week filter would have kept only the two 500-battle weeks and
-    // drawn a line straight across the thin one between them, as if they were adjacent.
     expect(card.querySelector('svg')).toBeNull();
   });
 
   it('shows counts only, not an older week mislabelled "latest", when only the newest week is thin', async () => {
-    const endThin = {
-      ...species,
-      sightings: 205,
-      weekly: [
-        { week: '2026-W36', battles: 500, sightings: 100 },
-        { week: '2026-W37', battles: 500, sightings: 100 },
-        { week: '2026-W38', battles: 10, sightings: 5 },
-      ],
-    };
-    render(<App deps={{ fetcher: stubFetch({ species: endThin, meta }), now }} />);
+    await renderSpecies({
+      detail: {
+        sightings: 205,
+        weekly: [
+          { week: '2026-W36', battles: 500, sightings: 100 },
+          { week: '2026-W37', battles: 500, sightings: 100 },
+          { week: '2026-W38', battles: 10, sightings: 5 },
+        ],
+      },
+    });
     const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
       'section',
     )!;
     expect(
       within(card).getByText('Faced 205 times in 1,010 battles over 3 weeks'),
     ).toBeInTheDocument();
-    // The bug this pins: a per-week filter would have dropped the thin, in-progress current
-    // week and called the prior (500-battle) week "latest", which it is not.
     expect(within(card).queryByText(/latest/)).toBeNull();
     expect(card.querySelector('svg')).toBeNull();
   });
+});
 
-  it('charts a share and quotes the real latest week when every week clears SHARE_MIN', async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    const card = (await screen.findByRole('heading', { name: 'Faced, week by week' })).closest(
-      'section',
-    )!;
-    // The fixture's own two weeks are both 500 battles: 109 of 500 in 2026-W37, the later one,
-    // is 21.8%, rounded to 22% (A4: whole percentages). D1 moved this onto the chart itself
-    // (`.spark-label`) rather than a separate line of text below it.
-    expect(within(card).getByText(/22% latest/)).toBeInTheDocument();
-    expect(card.querySelector('svg')).not.toBeNull();
-    // D1: a week tick under each point, labelling the real weeks the worker's own key ids name.
-    const ticks = [...card.querySelectorAll('.spark-ticks span')].map((el) => el.textContent);
-    expect(ticks).toEqual(['W36', 'W37']);
-  });
-
-  // Fix round 2: a single win or loss is not a hypothetical on a site this new, and neither is
-  // facing a species exactly once before the league clears the measured threshold.
+describe('Species, record with a single result', () => {
   it('reads a single win and a single loss correctly, not "1 wins, 1 losses"', async () => {
-    const oneEach = { ...species, wins: 1, losses: 1 };
-    render(<App deps={{ fetcher: stubFetch({ species: oneEach, meta }), now }} />);
-    expect(await screen.findByText('1 win, 1 loss')).toBeInTheDocument();
+    await renderSpecies({ detail: { wins: 1, losses: 1 } });
+    expect(screen.getByText('1 win, 1 loss')).toBeInTheDocument();
   });
 
-  // Task 14 fix round 1: the header's new "N of M battles (P%)" phrasing dropped the old
-  // "time"/"times" wording this test used to pin, but `battlesText` still inflects on 1, so the
-  // singular risk moved to the total ("1 battle", not "1 battles") rather than disappearing.
   it('reads "1 battle", not "1 battles", when the whole window is a single battle', async () => {
-    const oneSighting = { ...species, sightings: 1 };
-    const oneBattle = { battles: 1, devices: 1 };
-    render(<App deps={{ fetcher: stubFetch({ species: oneSighting, meta: oneBattle }), now }} />);
-    expect(await screen.findByText('1 of 1 battle (100%)')).toBeInTheDocument();
-  });
-
-  // Task 14 fix round 1 (IMPORTANT 5): a blended rank without the say figure next to it can
-  // mislead (a row can lead the blended list on a say of a few percent, almost entirely PvPoke's
-  // own prior). Pokemon.tsx and Teams.tsx both print this figure above their own lists; Species
-  // now does too, through the same `sourceHeaderLine` helper (Task 14), so this pins the same
-  // "shared battles" word order pokemon.test.tsx and teams.test.tsx pin for the `all` source,
-  // rather than the old inline copy's "battles shared" order.
-  it("gives the same 'how far along it is' figure Pokemon and Teams print", async () => {
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    // measuredSay(1000, 120) rounds to 77% (min(1000/1300, 120/125) = 1000/1300 = 0.7692...).
+    await renderSpecies({ detail: { sightings: 1 }, meta: { battles: 1, devices: 1 } });
     expect(
-      await screen.findByText('77% measured, from 1,000 shared battles by 120 devices'),
+      screen.getByText('100% of what players face · 1 of 1 battle'),
     ).toBeInTheDocument();
   });
+});
 
-  it('says no shared battles yet, rather than a made-up percentage, when the league has none', async () => {
-    const empty = { battles: 0, devices: 0 };
-    render(<App deps={{ fetcher: stubFetch({ species, meta: empty }), now }} />);
-    expect(await screen.findByText('No shared battles in this window yet.')).toBeInTheDocument();
-  });
+const BLOCK = {
+  picks: 34,
+  game1Picks: 21,
+  wins: 12,
+  losses: 18,
+  byDepth: [4, 6, 8, 6, 4, 3, 2, 1, 0],
+  unresolvedForms: 3,
+  broughtBy: 4,
+  rosterSize: 16,
+  pickedOnStream: 34,
+  movesets: [
+    { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], entries: 3 },
+    { fast: 'BUBBLE', charged: ['ICE_BEAM'], entries: 1 },
+  ],
+  movesetsKnown: 4,
+};
 
-  const BLOCK = {
-    picks: 34,
-    game1Picks: 21,
-    wins: 12,
-    losses: 18,
-    byDepth: [4, 6, 8, 6, 4, 3, 2, 1, 0],
-    unresolvedForms: 3,
-    broughtBy: 4,
-    rosterSize: 16,
-    pickedOnStream: 34,
-    movesets: [
-      { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], entries: 3 },
-      { fast: 'BUBBLE', charged: ['ICE_BEAM'], entries: 1 },
-    ],
-    movesetsKnown: 4,
-  };
-
+describe('Species, tournaments', () => {
   it('prints the tournaments row with picks, game one picks and the record', async () => {
     await renderSpecies({ detail: { tournament: BLOCK } });
     expect(
       screen.getByText('Tournaments: 34 picks, 21 in game one, players went 12-18'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Form not confirmed for 3 picks.')).toBeInTheDocument();
+    // Ruling 7: "Form not confirmed for N picks." becomes this sentence.
+    expect(
+      screen.getByText("3 picks didn't show whether it was Shadow."),
+    ).toBeInTheDocument();
+  });
+
+  it('reads the singular form line correctly, not "1 picks"', async () => {
+    await renderSpecies({ detail: { tournament: { ...BLOCK, unresolvedForms: 1 } } });
+    expect(screen.getByText("1 pick didn't show whether it was Shadow.")).toBeInTheDocument();
   });
 
   it('prints the roster join as one sentence', async () => {
@@ -570,17 +494,35 @@ describe('Species', () => {
     ).toBeInTheDocument();
   });
 
-  it('lists the sets from the roster, over known sets only, marking PvPoke own', async () => {
+  it('lists the sets from the roster, over known sets only, marking PvPoke own with a Tag', async () => {
     await renderSpecies({ detail: { tournament: BLOCK } });
-    const card = (
-      await screen.findByRole('heading', { name: 'Moves at tournaments' })
-    ).closest('section')!;
+    const card = (await screen.findByRole('heading', { name: 'Moves at tournaments' })).closest(
+      'section',
+    )!;
     expect(within(card).getByText('From 4 known sets of 4 roster entries')).toBeInTheDocument();
     // Only BLOCK's first set (BUBBLE, Ice Beam + Play Rough) matches the baseline's recommended
     // set; the second (BUBBLE, Ice Beam alone) does not, so exactly one of the two roster sets
-    // carries the marker. Scoped to this card: the page's separate "PvPoke's set" card (its own
-    // heading, unrelated to the roster) carries that same text too.
-    expect(within(card).getAllByText("PvPoke's set").length).toBe(1);
+    // carries the marker.
+    const tag = within(card).getByText("PvPoke's set");
+    expect(tag.className).toContain('ui-tag');
+  });
+
+  it('names Dynamic Punch+ as its own move, not a stray mark', async () => {
+    await renderSpecies({
+      detail: {
+        tournament: {
+          ...BLOCK,
+          movesets: [
+            { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'], entries: 3 },
+            { fast: 'BUBBLE', charged: ['DYNAMIC_PUNCH_PLUS'], entries: 1 },
+          ],
+        },
+      },
+    });
+    const card = (await screen.findByRole('heading', { name: 'Moves at tournaments' })).closest(
+      'section',
+    )!;
+    expect(within(card).getByText(/Dynamic Punch\+/)).toBeInTheDocument();
   });
 
   it('says banned instead of a zeroed row for a species the cup bans', async () => {
@@ -593,10 +535,6 @@ describe('Species', () => {
     expect(await screen.findByText('Banned at tournaments')).toBeInTheDocument();
     expect(screen.queryByText(/Tournaments: /)).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Moves at tournaments' })).not.toBeInTheDocument();
-    // BLOCK (spread onto `picks: 0` above) still carries `broughtBy: 4` and `pickedOnStream: 34`,
-    // which would otherwise print "Brought by 4 of 16 players seen on stream, picked in 34 of
-    // their streamed battles." right next to "Banned at tournaments": self-contradictory copy a
-    // banned species cannot show.
     expect(screen.queryByText(/seen on stream/)).not.toBeInTheDocument();
   });
 
@@ -605,67 +543,111 @@ describe('Species', () => {
     expect(screen.queryByText(/Tournaments: /)).not.toBeInTheDocument();
     expect(screen.queryByText(/seen on stream/)).not.toBeInTheDocument();
   });
+});
 
-  // Final whole-branch review, Finding 1, symptom 1: this screen used to read query.source nowhere
-  // past building the header line, so under `source=prior` (where sourceHeaderLine correctly says
-  // "Nothing measured") every card below it still rendered the real, unfiltered numbers (speciesUrl
-  // maps `prior` to the worker's `all` source, so `detail` carries them regardless). None of the
-  // measured cards should draw here, and the body's own share line must not restate the real count.
-  it('under source=prior, shows nothing measured below the header, not the real ladder cards', async () => {
-    window.history.replaceState(null, '', '/great/p/azumarill?source=prior');
-    render(<App deps={{ fetcher: stubFetch({ species, meta }), now }} />);
-    await screen.findByText('Azumarill');
+describe('Species, source', () => {
+  it('under PvPoke, reads "Nothing measured" below the header, not the real ladder cards', async () => {
+    await renderSpecies({ path: '/great/p/azumarill?source=prior' });
     expect(screen.getByText('Nothing measured')).toBeInTheDocument();
     expect(screen.queryByText(/184 of/)).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Faced, week by week' })).toBeNull();
     expect(screen.queryByRole('heading', { name: "Reporters' record against it" })).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Record against it, by rank' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Seen next to' })).toBeNull();
   });
 
-  // Finding 1, symptoms 2-4. `metaUrl` (api.ts) never sends a `source` param, so the `meta` this
-  // screen holds is always the ladder-scoped `source=all` summary (1,000 ladder battles below);
-  // dividing a tournament pick count by it, as the header used to, understates the real share by
-  // 25x here (20 of 40 tournament battles is 50%, not 20 of 1,000 which would read 2%).
-  it('under source=tournament, the share uses the tournament battle count and hides the ladder-only cards', async () => {
+  it('under Tournaments, the hero and the record read from the tournament battle count, and the ladder-only cards hide', async () => {
     window.history.replaceState(null, '', '/great/p/azumarill?source=tournament');
     const tournamentMeta = {
-      ...meta,
       tournament: {
         events: 3,
         battles: 40,
         eventsOther: 0,
         species: [
-          { speciesId: 'azumarill', picks: 20, game1Picks: 10, wins: 9, losses: 11, unresolvedForms: 0 },
+          {
+            speciesId: 'azumarill',
+            picks: 20,
+            game1Picks: 10,
+            wins: 9,
+            losses: 11,
+            unresolvedForms: 0,
+          },
         ],
       },
     };
-    render(
-      <App
-        deps={{
-          fetcher: stubFetch({
-            species: { ...species, tournament: { ...BLOCK, picks: 20, game1Picks: 10, wins: 9, losses: 11 } },
-            meta: tournamentMeta,
-          }),
-          now,
-        }}
-      />,
-    );
-    await screen.findByText('Azumarill');
-    // Symptom 2: the corrected share, from the tournament total (ranking.tournamentBattles), not
-    // the ladder total (meta.battles, 1,000, which would have printed "20 of 1,000 battles (2%)").
-    expect(screen.getByText('20 of 40 battles (50%)')).toBeInTheDocument();
+    await renderSpecies({
+      detail: { tournament: { ...BLOCK, picks: 20, game1Picks: 10, wins: 9, losses: 11 } },
+      meta: tournamentMeta,
+    });
+    // The corrected share, from the tournament total (ranking.tournamentBattles), not the ladder
+    // total (meta.battles, 1,000, which would have printed "of 1,000").
+    expect(
+      screen.getByText('50% of tournament battles · 20 of 40 picks'),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/1,000/)).toBeNull();
-    // Symptom 3: the ladder-labeled "Reporters' record against it" card must not also print this
-    // same tournament record under a name that implies a different (ladder) population; the
-    // tournament population's own "players went W-L" sentence (tournamentRow) is enough.
     expect(screen.queryByRole('heading', { name: "Reporters' record against it" })).toBeNull();
     expect(screen.getByRole('heading', { name: 'At tournaments' })).toBeInTheDocument();
     expect(
       screen.getByText('Tournaments: 20 picks, 10 in game one, players went 9-11'),
     ).toBeInTheDocument();
-    // Symptom 4: a broadcast reports no rank band (tournamentSpeciesDetail zeroes every band), so
-    // the card would otherwise show five all-zero rows.
     expect(screen.queryByRole('heading', { name: 'Record against it, by rank' })).toBeNull();
   });
+});
+
+describe('Species, not found', () => {
+  it('shows Empty for an id this site has no species for, with a link back to the list', async () => {
+    window.history.replaceState(null, '', '/great/p/doesnotexist');
+    render(<App deps={{ fetcher: stubFetch({}), now }} />);
+    expect(
+      await screen.findByText('No Pokémon by that name in Great League.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Pokémon list/ })).toHaveAttribute(
+      'href',
+      '/great/pokemon',
+    );
+  });
+
+  it('decides not found from the static data alone, never waiting on the species or meta fetch', async () => {
+    // The static files (species.json etc.) still have to load once, or there is no data to check
+    // the id against at all; what must NOT gate the Empty state is the species detail or the meta
+    // summary fetch, which this fetcher never resolves.
+    const base = stubFetch({});
+    const hang: typeof fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.startsWith('/api/v1/species/') || url.startsWith('/api/v1/meta')) {
+        return new Promise<Response>(() => {});
+      }
+      return base(input);
+    }) as typeof fetch;
+    window.history.replaceState(null, '', '/great/p/doesnotexist');
+    render(<App deps={{ fetcher: hang, now }} />);
+    expect(
+      await screen.findByText('No Pokémon by that name in Great League.'),
+    ).toBeInTheDocument();
+  });
+});
+
+describe('Species, load failure', () => {
+  it('shows ErrorState when the species record fails to load, and Try again recovers it', async () => {
+    let failing = true;
+    const base = stubFetch({ species, meta: metaFor(species) });
+    const flaky: typeof fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.startsWith('/api/v1/species/') && failing) {
+        throw new Error('network down');
+      }
+      return base(input);
+    }) as typeof fetch;
+    render(<App deps={{ fetcher: flaky, now }} />);
+    expect(
+      await screen.findByText("Could not load this Pokémon's record.", {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    failing = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() =>
+      expect(screen.queryByText("Could not load this Pokémon's record.")).toBeNull(),
+    );
+    expect(
+      await screen.findByText('Moves known in 60 of 60 battles', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+  }, 15_000);
 });

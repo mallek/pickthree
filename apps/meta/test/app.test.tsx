@@ -191,19 +191,23 @@ describe('App, static load failure', () => {
 // App.tsx's retryBoard rather than by calling Teams directly, so the wiring from a failed request
 // to a working retry (useTeams' own attempt counter, App.tsx's retryBoard only retrying the
 // source that actually failed) is what is under test, not just the component in isolation.
+//
+// Controller ruling (task-8-brief.md): this used to fail intermittently on a first-call-only
+// counter, the same class of flake "App, ranking load failure" below already worked around. The
+// "This meta" window can move once the epoch list loads (a season-start guess before it, the real
+// epoch-adjusted start after), which refetches the team board on its own between mount and the
+// assertions below; a counter keyed to "the first call fails" races that incidental refetch. A
+// flag the test itself clears does not.
 describe('App, team board load failure', () => {
   // A loaded run (the full suite in parallel) can take longer than findBy/waitFor's default
   // second (see "puts the chosen source in the url" above), so every wait here is explicit.
-  it('shows ErrorState for the team board when the teams request fails once, and Try again recovers it', async () => {
-    let teamsCalls = 0;
+  it('shows ErrorState for the team board when the teams request fails, and Try again recovers it', async () => {
+    let failing = true;
     const base = stubFetch({});
     const flaky: typeof fetch = (async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input.toString();
-      if (url.startsWith('/api/v1/teams')) {
-        teamsCalls += 1;
-        if (teamsCalls === 1) {
-          throw new Error('network down');
-        }
+      if (url.startsWith('/api/v1/teams') && failing) {
+        throw new Error('network down');
       }
       return base(input);
     }) as typeof fetch;
@@ -212,13 +216,13 @@ describe('App, team board load failure', () => {
     expect(
       await screen.findByText('Could not load the team board.', {}, { timeout: 5000 }),
     ).toBeInTheDocument();
+    failing = false;
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     // Recovered: the error is gone and the board's own controls (Sort) are on screen.
     await waitFor(() => expect(screen.queryByText('Could not load the team board.')).toBeNull(), {
       timeout: 5000,
     });
     expect(await screen.findByLabelText('Sort', {}, { timeout: 5000 })).toBeInTheDocument();
-    expect(teamsCalls).toBe(2);
   }, 15_000);
 });
 
