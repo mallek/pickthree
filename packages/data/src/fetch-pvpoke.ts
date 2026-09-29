@@ -25,13 +25,17 @@ export function currentCheckoutCommit(): string | null {
 export async function ensurePvPokeCheckout(): Promise<void> {
   const lock = readLock();
   if (currentCheckoutCommit() === lock.commit) {
+    // Checkouts made before 2026-09-29 were shallow; freshness needs the file history.
+    if (git(['rev-parse', '--is-shallow-repository'], PVPOKE_DIR) === 'true') {
+      git(['fetch', '-q', '--unshallow', '--filter=blob:none', 'origin'], PVPOKE_DIR);
+    }
     return;
   }
   fs.rmSync(PVPOKE_DIR, { recursive: true, force: true });
   fs.mkdirSync(PVPOKE_DIR, { recursive: true });
   git(['init', '-q'], PVPOKE_DIR);
   git(['remote', 'add', 'origin', lock.repository], PVPOKE_DIR);
-  git(['fetch', '-q', '--depth', '1', 'origin', lock.commit], PVPOKE_DIR);
+  git(['fetch', '-q', '--filter=blob:none', 'origin', lock.commit], PVPOKE_DIR);
   git(['-c', 'advice.detachedHead=false', 'checkout', '-q', 'FETCH_HEAD'], PVPOKE_DIR);
   const head = git(['rev-parse', 'HEAD'], PVPOKE_DIR);
   if (head !== lock.commit) {

@@ -14,6 +14,7 @@ import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { readRawGameMaster } from './build-gamedata.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
 import { EPOCHS_PATH, GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
+import { readSchedule, SCHEDULE_PATH } from './schedule-feed.js';
 import { readSeasons, SEASONS_PATH } from './seasons.js';
 
 async function main(): Promise<void> {
@@ -67,6 +68,12 @@ async function main(): Promise<void> {
   fs.writeFileSync(path.join(OUTPUT_DIR, 'leagues.json'), JSON.stringify(leagues));
   readSeasons(); // validates before we ship it
   fs.copyFileSync(SEASONS_PATH, path.join(OUTPUT_DIR, 'seasons.json'));
+  readSchedule(); // validates before we ship it
+  if (fs.existsSync(SCHEDULE_PATH)) {
+    fs.copyFileSync(SCHEDULE_PATH, path.join(OUTPUT_DIR, 'schedule.json'));
+  } else {
+    fs.writeFileSync(path.join(OUTPUT_DIR, 'schedule.json'), '[]');
+  }
   // Validated, not copied: a malformed reset list must fail the build, as it fails the meta bake.
   fs.writeFileSync(
     path.join(OUTPUT_DIR, 'epochs.json'),

@@ -1,8 +1,11 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { CupFilter, League } from '@pickthree/engine';
-import { minCpFor } from '@pickthree/engine';
+import { minCpFor, runsOf } from '@pickthree/engine';
+import { readLock } from './lock.js';
 import { GROUPS_DIR, PVPOKE_DIR, RANKINGS_DIR } from './paths.js';
+import { readSchedule } from './schedule-feed.js';
 
 interface RawCup {
   name: string;
@@ -31,12 +34,42 @@ function readCup(name: string): RawCup {
   return readJson<RawCup>(path.join(CUPS_DIR, `${name}.json`));
 }
 
-function hasRankings(cup: string, cp: number): boolean {
+export function hasRankings(cup: string, cp: number): boolean {
   return fs.existsSync(path.join(RANKINGS_DIR, cup, 'overall', `rankings-${cp}.json`));
 }
 
-function hasGroup(meta: string): boolean {
+export function hasGroup(meta: string): boolean {
   return fs.existsSync(path.join(GROUPS_DIR, `${meta}.json`));
+}
+
+export const STALE_DAYS = 30;
+
+/** PvPoke's meta group name for a cup: formats.json's `meta` when the cup is listed, else the slug. */
+export function metaGroupFor(cup: string): string {
+  const formats = readJson<RawFormat[]>(FORMATS_PATH);
+  return formats.find((f) => f.cup === cup)?.meta ?? cup;
+}
+
+/** The day PvPoke last changed the cup's overall rankings at the pinned commit, or null. */
+export function rankingsUpdated(cup: string, cp: number): string | null {
+  const rel = path.posix.join('src', 'data', 'rankings', cup, 'overall', `rankings-${cp}.json`);
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cs', 'HEAD', '--', rel], {
+      cwd: PVPOKE_DIR,
+      encoding: 'utf8',
+    }).trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(out) ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Rankings older than the run by more than STALE_DAYS, or of unknown age. */
+export function isStale(updated: string | null, runStart: string): boolean {
+  if (updated === null) {
+    return true;
+  }
+  return Date.parse(runStart) - Date.parse(`${updated}T00:00:00Z`) > STALE_DAYS * 86_400_000;
 }
 
 const STANDARD: { id: string; title: string; short: string; cp: number; meta: string }[] = [
@@ -124,6 +157,37 @@ export function readLeagues(): League[] {
       include: cup.include ?? [],
       exclude: cup.exclude ?? [],
       metaSize: 0,
+    });
+  }
+  // GO Battle League cups from the schedule, whatever today's date: the build depends only on
+  // committed files. The phone decides which are live or upcoming.
+  const schedule = readSchedule();
+  const pinDate = Date.parse(`${readLock().date}T00:00:00Z`);
+  for (const id of [...new Set(schedule.map((e) => e.league))]) {
+    const first = schedule.find((e) => e.league === id)!;
+    if (!hasRankings(first.cup, first.cp)) {
+      console.log(`no rankings: ${first.cup} at ${first.cp} (league ${id} not built)`);
+      continue;
+    }
+    const runs = runsOf(schedule, id);
+    // Staleness is judged against the run in play at the pinned commit's date, else the next.
+    const run = runs.find((r) => Date.parse(r.end) > pinDate) ?? runs[runs.length - 1]!;
+    const updated = rankingsUpdated(first.cup, first.cp);
+    const cup = readCup(first.cup);
+    out.push({
+      id,
+      title: first.title,
+      short: shortTitle(first.title),
+      cp: first.cp,
+      cup: first.cup,
+      meta: metaGroupFor(first.cup),
+      kind: 'rotation',
+      minCp: minCpFor(first.cp),
+      include: cup.include ?? [],
+      exclude: cup.exclude ?? [],
+      metaSize: 0,
+      ...(updated ? { rankingsUpdated: updated } : {}),
+      stale: isStale(updated, run.start),
     });
   }
   // Special cups are built only when asked for. The rules work, but the app does not yet know

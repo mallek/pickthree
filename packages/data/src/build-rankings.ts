@@ -68,8 +68,23 @@ export function readMeta(group: string): MetaEntry[] {
   return raw.map((m) => ({
     speciesId: m.speciesId,
     fastMove: m.fastMove,
-    chargedMoves: [...m.chargedMoves],
+    // PvPoke pads a one-charged-move entry with "NONE" (little.json's wynaut); it is not a move.
+    chargedMoves: m.chargedMoves.filter((id) => id.toUpperCase() !== 'NONE'),
   }));
+}
+
+export const META_FALLBACK_SIZE = 48;
+
+/** A meta for a cup PvPoke has no group for: its top n ranked, each with a charged move. */
+export function metaFromRankings(entries: RankingEntry[], n: number): MetaEntry[] {
+  return entries
+    .filter((e) => e.moveset.length >= 2)
+    .slice(0, n)
+    .map((e) => ({
+      speciesId: e.speciesId,
+      fastMove: e.moveset[0]!,
+      chargedMoves: e.moveset.slice(1, 3),
+    }));
 }
 
 export function readGreatMeta(): MetaEntry[] {
@@ -143,7 +158,9 @@ export function writeLeagueRankings(outDir: string, league: League): { meta: Met
     );
   }
   fs.mkdirSync(path.join(outDir, 'meta'), { recursive: true });
-  const meta = readMeta(league.meta);
+  const meta = fs.existsSync(path.join(GROUPS_DIR, `${league.meta}.json`))
+    ? readMeta(league.meta)
+    : metaFromRankings(readRankings(league.cup, league.cp, 'overall'), META_FALLBACK_SIZE);
   fs.writeFileSync(path.join(outDir, 'meta', `${league.id}.json`), JSON.stringify(meta));
   fs.mkdirSync(path.join(outDir, 'overrides'), { recursive: true });
   fs.writeFileSync(

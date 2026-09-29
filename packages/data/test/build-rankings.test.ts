@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   effectiveMoveset,
+  metaFromRankings,
   readGreatMeta,
   readGreatOverrides,
   readGreatRankings,
@@ -50,5 +51,38 @@ describe.skipIf(!havePvPoke)('great league rankings extraction', () => {
     const azu = effectiveMoveset('azumarill', overall, overrides);
     expect(azu[0]).toBe('BUBBLE');
     expect(azu.length).toBe(3);
+  });
+});
+
+describe('metaFromRankings', () => {
+  const r = (id: string, moveset: string[]) =>
+    ({
+      speciesId: id,
+      moveset,
+      score: 90,
+      rating: 500,
+      fastMoves: [],
+      chargedMoves: [],
+      matchups: [],
+      counters: [],
+      statProduct: null,
+    }) as never;
+
+  it('takes the top n with a fast move and up to two charged moves', () => {
+    expect(
+      metaFromRankings(
+        [r('a', ['F', 'C1', 'C2', 'C3']), r('b', ['F', 'C1']), r('c', ['F', 'C1'])],
+        2,
+      ),
+    ).toEqual([
+      { speciesId: 'a', fastMove: 'F', chargedMoves: ['C1', 'C2'] },
+      { speciesId: 'b', fastMove: 'F', chargedMoves: ['C1'] },
+    ]);
+  });
+
+  it('skips an entry with no charged move and still fills n', () => {
+    expect(
+      metaFromRankings([r('a', ['F']), r('b', ['F', 'C1'])], 1).map((m) => m.speciesId),
+    ).toEqual(['b']);
   });
 });
