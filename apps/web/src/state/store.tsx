@@ -1137,10 +1137,22 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
 
   /** True while a verdict run is out, so two callers in one commit never start two. */
   const verdictsInFlight = useRef(false);
+  /**
+   * The verdicts the last run delivered. Screens ask whenever verdicts are empty, so an empty
+   * answer would send them straight back for the same verdicts, forever. While state still holds
+   * this exact object the answer stands; every reset puts a fresh object in its place.
+   */
+  const verdictsDelivered = useRef<Record<string, Verdict> | null>(null);
   const loadVerdicts = useCallback(async () => {
     const h = hostRef.current as WorkerHost;
     const s = stateRef.current;
-    if (!s.collection || s.verdictsLoading || !s.leagueInfo || verdictsInFlight.current) {
+    if (
+      !s.collection ||
+      s.verdictsLoading ||
+      !s.leagueInfo ||
+      verdictsInFlight.current ||
+      s.verdicts === verdictsDelivered.current
+    ) {
       return;
     }
     verdictsInFlight.current = true;
@@ -1160,6 +1172,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       if (bad.length > 0) {
         recordError('verdict-row', new Error(`${bad.length} could not be judged: ${bad[0]!.line}`));
       }
+      verdictsDelivered.current = verdicts;
       dispatch({ type: 'verdicts-done', verdicts });
       // Legacy per-copy exclusions convert here, when verdicts are in, in the same update as the
       // verdicts so no screen sees one without the other; never from verdicts of a league that is

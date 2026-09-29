@@ -467,6 +467,20 @@ describe('Pokémon detail', () => {
     expect(screen.getByRole('heading', { name: 'Azumarill' })).toBeInTheDocument();
   });
 
+  it('takes an empty verdict answer as the answer, not a reason to ask again', async () => {
+    // Screens ask whenever verdicts are empty. Without a guard an empty answer sent them straight
+    // back, over and over, until something else broke the loop.
+    const verdicts = vi.fn(async () => ({}));
+    await boot(verdicts);
+    await go({ screen: 'specimen', id: 'b' });
+    await go({ screen: 'collection' });
+    await go({ screen: 'specimen', id: 'a' });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(verdicts).toHaveBeenCalledTimes(1);
+  });
+
   it('on a fresh load of its link, shows Loading, not "not in the collection", until the collection is read', async () => {
     await seed();
     window.location.hash = '#/collection/b';
