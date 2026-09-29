@@ -78,7 +78,8 @@ export function mergeSeasons(
 
 export function writeSeasons(seasons: readonly Season[], file: string = SEASONS_PATH): void {
   const lines = seasons.map(
-    (s) => `  ${JSON.stringify({ id: s.id, name: s.name, start: s.start })}`,
+    (s) =>
+      `  { "id": ${s.id}, "name": ${JSON.stringify(s.name)}, "start": ${JSON.stringify(s.start)} }`,
   );
   fs.writeFileSync(file, `[\n${lines.join(',\n')}\n]\n`);
 }

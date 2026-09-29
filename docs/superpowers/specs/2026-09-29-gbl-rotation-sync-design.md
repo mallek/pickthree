@@ -49,18 +49,18 @@ manual fallback.
 
 The season as read on 2026-09-29 (non-mega cups in bold):
 
-| Week of | Formats |
-|---|---|
-| 09-22 | UL, ML Mega Edition, **Retro Cup (GL)** |
-| 09-29 | ML, Mega Color Cup (GL) |
-| 10-06 | GL, UL and ML Mega Editions |
-| 10-13 | GL, UL Mega Edition, **Little Cup** |
-| 10-20 | UL, ML Mega Edition, **Fantasy Cup (GL)** |
-| 10-27 | ML, Mega Halloween Cup (GL) |
-| 11-03 | GL, UL and ML Mega Editions |
-| 11-10 | GL, UL Mega Edition, **2026 GO LAIC Cup** |
-| 11-18 | UL, ML Mega Edition, **2026 GO LAIC Cup** |
-| 11-24 | ML, Mega Catch Cup (GL) |
+| Week of | Formats                                   |
+| ------- | ----------------------------------------- |
+| 09-22   | UL, ML Mega Edition, **Retro Cup (GL)**   |
+| 09-29   | ML, Mega Color Cup (GL)                   |
+| 10-06   | GL, UL and ML Mega Editions               |
+| 10-13   | GL, UL Mega Edition, **Little Cup**       |
+| 10-20   | UL, ML Mega Edition, **Fantasy Cup (GL)** |
+| 10-27   | ML, Mega Halloween Cup (GL)               |
+| 11-03   | GL, UL and ML Mega Editions               |
+| 11-10   | GL, UL Mega Edition, **2026 GO LAIC Cup** |
+| 11-18   | UL, ML Mega Edition, **2026 GO LAIC Cup** |
+| 11-24   | ML, Mega Catch Cup (GL)                   |
 
 ## Data pipeline
 
@@ -68,12 +68,12 @@ The season as read on 2026-09-29 (non-mega cups in bold):
 
 `packages/data/src/schedule.ts`. For each `go-battle-league` entry:
 
-1. Split the name on ` | `: the left side is the formats, the right side the season name.
-2. Split the formats on `, ` and `, and ` / ` and `.
+1. Split the name on `|`: the left side is the formats, the right side the season name.
+2. Split the formats on `, ` and `, and ` / `and`.
 3. Classify each format:
    - `Great League`, `Ultra League`, `Master League`: an open league, always on. Skipped.
    - Contains `Mega`: out of scope. Skipped and logged (`skipped mega: Mega Color Cup: Great League
-     Edition`).
+Edition`).
    - Otherwise a cup. Strip a trailing `: Great League Edition` / `: Ultra League Edition` /
      `: Master League Edition` to get the cup title and the CP cap (1500 / 2500 / 10000).
 4. Look the cup title up in `packages/data/cup-aliases.json`:
@@ -83,7 +83,11 @@ The season as read on 2026-09-29 (non-mega cups in bold):
      "Retro Cup": { "cup": "retro" },
      "Fantasy Cup": { "cup": "fantasy" },
      "Little Cup": { "cup": "little", "cp": 500 },
-     "2026 GO LAIC Cup": { "cup": "laic2027", "cp": 1500, "note": "unconfirmed: check the rules match" }
+     "2026 GO LAIC Cup": {
+       "cup": "laic2027",
+       "cp": 1500,
+       "note": "unconfirmed: check the rules match"
+     }
    }
    ```
 
@@ -91,6 +95,7 @@ The season as read on 2026-09-29 (non-mega cups in bold):
    the PvPoke cup slug (`retro`, `little`), suffixed only when the cap comes from an Ultra or Master
    edition suffix (`fantasy-ultra`, `fantasy-master`), so one cup at two caps gets two leagues. A
    cap set in the alias is the cup's own and takes no suffix.
+
 5. An unmapped title fails the step with the title in the message, and the job files an issue:
    "Map GBL cup 'Spooky Cup' to a PvPoke cup in packages/data/cup-aliases.json". Mapped entries are
    still written, so one unknown cup never blocks the rest.
@@ -105,16 +110,22 @@ Committed, machine-written, sorted by start:
 
 ```json
 [
-  { "league": "retro", "cup": "retro", "cp": 1500, "title": "Retro Cup",
-    "start": "2026-09-22T20:00:00.000Z", "end": "2026-09-29T20:00:00.000Z",
-    "season": "Twilight Trails" }
+  {
+    "league": "retro",
+    "cup": "retro",
+    "cp": 1500,
+    "title": "Retro Cup",
+    "start": "2026-09-22T20:00:00.000Z",
+    "end": "2026-09-29T20:00:00.000Z",
+    "season": "Twilight Trails"
+  }
 ]
 ```
 
 One entry per cup per week; runs are derived, not stored. Weeks that have already ended are kept
 until the season changes, so the Your meta run window (below) can see the start of a run that began
-before the feed dropped its first week. When a new season's first week is written, the previous
-season's entries are dropped.
+before the feed dropped its first week. Once a newer season has started, the previous season's
+entries are dropped (an announced but unstarted season keeps the current one in place).
 
 ### `seasons.json` automation
 
