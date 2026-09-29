@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { League, ScheduleEntry } from '@pickthree/engine';
 import { LeagueSwitcher } from '../src/components/LeagueSwitcher.tsx';
 import { sheetLeagues } from '../src/leagues.ts';
@@ -214,5 +214,75 @@ describe('sheetLeagues', () => {
   it('never lists special formats', () => {
     const { more } = sheetLeagues(ALL, SCHEDULE, 'great', now);
     expect(more.map((m) => m.league.id)).not.toContain('remix');
+  });
+});
+
+describe('sheetLeagues ordering', () => {
+  const now = new Date('2026-09-24T00:00:00.000Z');
+  const mk = (id: string): League => ({ ...RETRO, id, title: id, short: id, cup: id });
+  const [liveLate, liveSoon, upLate, upSoon] = ['liveLate', 'liveSoon', 'upLate', 'upSoon'].map(mk);
+
+  it('orders live cups by soonest end, then upcoming cups by soonest start, whatever the schedule order', () => {
+    // Schedule and league lists are deliberately in the reverse of the expected order.
+    const schedule = [
+      entry(upLate, '2026-09-28T20:00:00.000Z', '2026-10-05T20:00:00.000Z'),
+      entry(upSoon, '2026-09-26T20:00:00.000Z', '2026-10-03T20:00:00.000Z'),
+      entry(liveLate, '2026-09-20T20:00:00.000Z', '2026-10-01T20:00:00.000Z'),
+      entry(liveSoon, '2026-09-21T20:00:00.000Z', '2026-09-27T20:00:00.000Z'),
+    ];
+    const { more } = sheetLeagues(
+      [GREAT, upLate, upSoon, liveLate, liveSoon],
+      schedule,
+      'great',
+      now,
+    );
+    expect(more.map((m) => m.league.id)).toEqual([
+      'great',
+      'liveSoon',
+      'liveLate',
+      'upSoon',
+      'upLate',
+    ]);
+  });
+});
+
+describe('LeagueSwitcher rotation cup in play', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    latest = null;
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-24T00:00:00.000Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows the selected rotation cup in the overflow slot', async () => {
+    const host = fakeHost({
+      ready: async () => ({
+        ...(await fakeHost().ready()),
+        leagues: [GREAT, ULTRA, MASTER, TOURNAMENT, RETRO],
+        schedule: SCHEDULE,
+      }),
+    });
+    render(
+      <AppProvider host={host}>
+        <Probe />
+        <LeagueSwitcher />
+      </AppProvider>,
+    );
+    await waitUntilReady();
+    fireEvent.click(screen.getByRole('button', { name: 'More leagues and cups' }));
+    const sheet = await screen.findByRole('dialog');
+    await act(async () => {
+      fireEvent.click(within(sheet).getByRole('radio', { name: /Retro Cup/ }));
+    });
+    await waitFor(() => expect(latest?.settings.league).toBe('retro'));
+    const overflow = screen.getByRole('button', {
+      name: 'Retro Cup League, More leagues and cups',
+    });
+    expect(overflow).toHaveClass('on');
+    expect(overflow.textContent).toContain('Retro');
   });
 });
