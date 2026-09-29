@@ -59,17 +59,17 @@ function when(at: string): string {
   });
 }
 
-/**
- * Progress to the 15 battles, said once on the page. Under 15: the count, what is left and the
- * bar; from 15: that the meta is weighting, with a full bar. When the log is not the Teams source,
- * the state line alone.
- */
 /** A GBL cup: its Your meta window is the current run, not the GBL season. */
 function isRunLeague(s: ReturnType<typeof useAppState>): boolean {
   const id = s.settings.league ?? 'great';
   return s.data?.leagues.find((l) => l.id === id)?.kind === 'rotation';
 }
 
+/**
+ * Progress to the 15 battles, said once on the page. Under 15: the count, what is left and the
+ * bar; from 15: that the meta is weighting, with a full bar. When the log is not the Teams source,
+ * the state line alone.
+ */
 function ProgressLine() {
   const s = useAppState();
   const logCount = useLogCount();
@@ -487,7 +487,7 @@ export function YourMeta() {
                 <b>{run ? 'Earlier runs' : 'Earlier seasons'}</b>
                 <span className="small muted">
                   {stats.earlier.length} {stats.earlier.length === 1 ? 'bucket' : 'buckets'}, kept
-                  apart because the meta changes each season.
+                  apart because the meta changes each {run ? 'run' : 'season'}.
                 </span>
               </span>
               <span className="chev">
