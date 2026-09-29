@@ -215,4 +215,5 @@ From the 2026-09-28 whole-branch review fix wave (final fix pass, `.superpowers/
 
 ## Sign-off
 
-- [ ] Travis, <date>
+- [x] Travis, 2026-09-28 (used the live site after `39b344c` shipped: "things are looking good",
+  "sign everything as good for now"; the open items and copy calls stand as recorded).
