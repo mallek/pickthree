@@ -1,0 +1,10 @@
+{
+  "Retro Cup": { "cup": "retro" },
+  "Fantasy Cup": { "cup": "fantasy" },
+  "Little Cup": { "cup": "little", "cp": 500 },
+  "2026 GO LAIC Cup": {
+    "cup": "laic2027",
+    "cp": 1500,
+    "note": "unconfirmed: check the rules match"
+  }
+}
