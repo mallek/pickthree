@@ -25,6 +25,7 @@
     "data:fetch": "npm -w @pickthree/data run fetch",
     "data:build": "npm -w @pickthree/data run build",
     "data:refresh": "npm -w @pickthree/data run refresh",
+    "schedule:refresh": "npm -w @pickthree/data run schedule:refresh",
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
     "fixtures:derive": "tsx fixtures/derive-fixtures.ts",
     "fixtures:tournament": "tsx fixtures/make-tournament.ts",

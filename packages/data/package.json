@@ -8,7 +8,8 @@
     "fetch": "tsx src/fetch-pvpoke.ts",
     "build": "tsx src/build.ts",
     "refresh": "tsx src/refresh.ts",
-    "seasons:check": "tsx src/check-seasons.ts"
+    "schedule:refresh": "tsx src/refresh-schedule.ts",
+    "schedule:check": "tsx src/check-schedule.ts"
   },
   "dependencies": {
     "@pickthree/engine": "0.0.0",
