@@ -114,4 +114,45 @@ describe.skipIf(!haveStaticData())('toSpecimens keeps the Mega mark', () => {
     expect(out[0]?.speciesId).toBe('sableye');
     expect(out[0]?.megaForm).toBe('mega');
   });
+
+  function csvOf(rows: Record<string, string>[]): string {
+    const fixture = fs.readFileSync(path.join(FIXTURES_DIR, 'pokegenie-sample.csv'), 'utf8');
+    const header = (fixture.split('\n')[0] ?? '').trim();
+    const cols = header.split(',');
+    const lines = rows.map((r) => cols.map((c) => r[c] ?? '').join(','));
+    return [header, ...lines, ''].join('\n');
+  }
+  const base = {
+    Index: '1',
+    Name: 'Sableye',
+    CP: '804',
+    HP: '78',
+    'Atk IV': '10',
+    'Def IV': '15',
+    'Sta IV': '14',
+  };
+
+  it.each([
+    ['marked scan is older', 'Mega', '2026-08-01 10:00', '', '2026-08-31 10:00'],
+    ['marked scan is newer', '', '2026-08-01 10:00', 'Mega', '2026-08-31 10:00'],
+  ])('keeps the mark when duplicates merge (%s)', (_label, f1, d1, f2, d2) => {
+    const csv = csvOf([
+      { ...base, Form: f1, 'Scan Date': d1 },
+      { ...base, Form: f2, 'Scan Date': d2 },
+    ]);
+    const { specimens: out, report } = toSpecimens(parseCollectionCsv(csv, index), index);
+    expect(report.duplicatesMerged).toBe(1);
+    expect(out).toHaveLength(1);
+    expect(out[0]?.megaForm).toBe('mega');
+  });
+
+  it('never marks a shadow row as Mega', () => {
+    const csv = csvOf([
+      { ...base, Form: 'Mega', 'Shadow/Purified': 'Shadow', 'Scan Date': '2026-08-31 10:00' },
+    ]);
+    const { specimens: out } = toSpecimens(parseCollectionCsv(csv, index), index);
+    expect(out).toHaveLength(1);
+    expect(out[0]?.shadow).toBe(true);
+    expect(out[0]?.megaForm).toBeNull();
+  });
 });

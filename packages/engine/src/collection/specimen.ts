@@ -127,7 +127,7 @@ export function toSpecimens(
       currentMoves: { fast: moveId(row.fastMove, index), charged },
       scannedAt: row.scanDate,
       raw: row,
-      megaForm: MEGA_FORMS[row.form.trim()] ?? null,
+      megaForm: shadow ? null : (MEGA_FORMS[row.form.trim()] ?? null),
     };
     if (newest === null || row.scanDate > newest) {
       newest = row.scanDate;
@@ -135,9 +135,11 @@ export function toSpecimens(
     const prev = byId.get(id);
     if (prev) {
       duplicates += 1;
-      if (specimen.scannedAt > prev.scannedAt) {
-        byId.set(id, specimen);
-      }
+      const [winner, loser] =
+        specimen.scannedAt > prev.scannedAt ? [specimen, prev] : [prev, specimen];
+      // The id ignores the Mega mark, so the newer scan must not erase it.
+      winner.megaForm = winner.megaForm ?? loser.megaForm ?? null;
+      byId.set(id, winner);
     } else {
       byId.set(id, specimen);
     }
