@@ -62,6 +62,8 @@ import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from 
 import { parseLogFile, serializeLog } from '../storage/logFile.ts';
 import { facingInput, facingSettings, isCommunity, logBattles } from './facing.ts';
 import { newId } from './yourMeta.ts';
+import { NUDGED_KEEP, rotationNotice } from '../rotation.ts';
+import { appNow } from '../clock.ts';
 
 /**
  * A layout the resolver was unsure about, or one it had to work out from values while a header
@@ -1632,6 +1634,45 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     },
     [],
   );
+
+  // GO Battle League cups, once per app open once boot data and settings are in: an ended cup
+  // goes back to Great League; otherwise one nudge per live cup run.
+  const rotationChecked = useRef(false);
+  useEffect(() => {
+    if (rotationChecked.current || state.boot !== 'ready' || !state.settingsLoaded || !state.data) {
+      return;
+    }
+    rotationChecked.current = true;
+    const n = rotationNotice({
+      leagues: state.data.leagues,
+      schedule: state.data.schedule,
+      league: state.settings.league ?? 'great',
+      nudged: state.settings.nudged ?? [],
+      now: appNow(),
+    });
+    if (!n) {
+      return;
+    }
+    if (n.kind === 'ended') {
+      updateSettings((cur) => ({ ...cur, league: 'great' }));
+      notify(n.message, 'info');
+      return;
+    }
+    updateSettings((cur) => ({
+      ...cur,
+      nudged: [...(cur.nudged ?? []), n.key].slice(-NUDGED_KEEP),
+    }));
+    notify(n.message, 'info', { label: 'Switch', run: () => setLeague(n.league.id) });
+  }, [
+    state.boot,
+    state.settingsLoaded,
+    state.data,
+    state.settings.league,
+    state.settings.nudged,
+    updateSettings,
+    notify,
+    setLeague,
+  ]);
 
   /**
    * Sends unsent battles to the community meta and stamps them, when sharing is on and this is

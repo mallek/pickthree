@@ -12,7 +12,7 @@ import {
   filterKey,
 } from '../src/state/store.tsx';
 import type { AppState } from '../src/state/store.tsx';
-import type { TeamAnalysis } from '@pickthree/engine';
+import type { League, TeamAnalysis } from '@pickthree/engine';
 import { DEFAULT_SETTINGS } from '../src/storage/db.ts';
 import { emptyLayoutValue } from '../src/format.ts';
 import { resetCommunityMetaCache } from '../src/communityMeta.ts';
@@ -960,5 +960,74 @@ describe('battle log actions', () => {
     });
     expect(r).toEqual({ added: 1, skipped: 0 });
     expect(latest!.state.sets).toHaveLength(2);
+  });
+});
+
+describe('rotation on open', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetCommunityMetaCache();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  const RETRO_L: League = {
+    ...GREAT,
+    id: 'retro',
+    title: 'Retro Cup',
+    short: 'Retro',
+    cup: 'retro',
+    kind: 'rotation',
+  };
+  const rotationHost = () =>
+    fakeHost({
+      ready: async () => ({
+        ...(await fakeHost().ready()),
+        leagues: [GREAT, RETRO_L],
+        schedule: [
+          {
+            league: 'retro',
+            cup: 'retro',
+            cp: 1500,
+            title: 'Retro Cup',
+            start: '2026-09-22T20:00:00.000Z',
+            end: '2026-09-29T20:00:00.000Z',
+            season: 'Twilight Trails',
+          },
+        ],
+      }),
+    });
+
+  it('nudges once toward a live cup and remembers it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-23T00:00:00Z'));
+    try {
+      await mount(rotationHost());
+      await waitFor(() => expect(latest?.state.notice).toBe('Retro Cup is live this week.'));
+      expect(latest?.state.noticeAction?.label).toBe('Switch');
+      await waitFor(() =>
+        expect(latest?.state.settings.nudged).toEqual(['retro@2026-09-22T20:00:00.000Z']),
+      );
+      await act(async () => {
+        latest!.state.noticeAction!.run();
+      });
+      expect(latest?.state.settings.league).toBe('retro');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('sends a player on an ended cup back to Great League with a notice', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T00:00:00Z'));
+    try {
+      await storage.saveSettings({ ...DEFAULT_SETTINGS, league: 'retro' });
+      await mount(rotationHost());
+      await waitFor(() => expect(latest?.state.settings.league).toBe('great'));
+      expect(latest?.state.notice).toBe('Retro Cup ended. Back to Great League.');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

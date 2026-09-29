@@ -35,6 +35,9 @@ export interface Settings {
   excludedSpecies?: string[];
   /** League id in play; absent in older saves means Great League. */
   league?: string;
+  /** Added 2026-09-29. GO Battle League cup runs already nudged, as `<league>@<run start>`,
+   *  newest last, at most 20. Absent in older saves means none. */
+  nudged?: string[];
   /** Pokémon pictures on the tokens. Absent in older saves means on. */
   sprites?: boolean;
   /** Anonymous error reports to the counter worker. Absent in older saves means on. */
