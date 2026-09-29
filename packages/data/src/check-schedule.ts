@@ -1,6 +1,7 @@
 /**
- * Warnings for the daily job, printed as a JSON array of { title, body }. The workflow opens one
- * issue per title (or comments on the open one). Titles are stable so issues deduplicate.
+ * Output for the daily job, printed as JSON { warnings: [{ title, body }], judged: { feed,
+ * rankings } }. The workflow opens one issue per warning title (or comments on the open one) and
+ * closes an issue only when its kind was judged. Titles are stable so issues deduplicate.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -79,6 +80,18 @@ export function scheduleWarnings(input: {
   return out;
 }
 
+/** What the CLI prints: the warnings plus which kinds of warning this run could judge. */
+export function checkOutput(input: {
+  warnings: Warning[];
+  report: { ok: boolean } | null;
+  pvpoke: boolean;
+}): { warnings: Warning[]; judged: { feed: boolean; rankings: boolean } } {
+  return {
+    warnings: input.warnings,
+    judged: { feed: input.report?.ok === true, rankings: input.pvpoke },
+  };
+}
+
 if (process.argv[1] && process.argv[1].endsWith('check-schedule.ts')) {
   const reportFile = path.join(DATA_PACKAGE_DIR, '.cache', 'schedule-report.json');
   const report = fs.existsSync(reportFile)
@@ -89,13 +102,14 @@ if (process.argv[1] && process.argv[1].endsWith('check-schedule.ts')) {
         error: string | null;
       })
     : null;
+  const pvpoke = fs.existsSync(GAMEMASTER_PATH);
   const warnings = scheduleWarnings({
     schedule: readSchedule(),
     report,
     ranked: hasRankings,
     updated: rankingsUpdated,
     now: new Date(),
-    pvpoke: fs.existsSync(GAMEMASTER_PATH),
+    pvpoke,
   });
-  process.stdout.write(`${JSON.stringify(warnings)}\n`);
+  process.stdout.write(`${JSON.stringify(checkOutput({ warnings, report, pvpoke }))}\n`);
 }

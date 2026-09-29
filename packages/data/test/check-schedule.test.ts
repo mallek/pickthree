@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ScheduleEntry } from '@pickthree/engine';
-import { scheduleWarnings } from '../src/check-schedule.js';
+import { checkOutput, scheduleWarnings } from '../src/check-schedule.js';
 
 const wk = (league: string, cp: number, start: string, end: string): ScheduleEntry => ({
   league,
@@ -73,5 +73,27 @@ describe('scheduleWarnings', () => {
       "Map GBL cup 'Spooky Cup' to a PvPoke cup",
       'GBL schedule feed failing',
     ]);
+  });
+});
+
+describe('checkOutput', () => {
+  const ok = { ok: true, unmapped: [], error: null };
+  it('judges the feed only when a report exists with ok true', () => {
+    expect(checkOutput({ warnings: [], report: null, pvpoke: true }).judged.feed).toBe(false);
+    expect(
+      checkOutput({ warnings: [], report: { ...ok, ok: false, error: 'x' }, pvpoke: true }).judged
+        .feed,
+    ).toBe(false);
+    expect(checkOutput({ warnings: [], report: ok, pvpoke: true }).judged.feed).toBe(true);
+  });
+
+  it('judges rankings as the pvpoke flag says', () => {
+    expect(checkOutput({ warnings: [], report: ok, pvpoke: true }).judged.rankings).toBe(true);
+    expect(checkOutput({ warnings: [], report: ok, pvpoke: false }).judged.rankings).toBe(false);
+  });
+
+  it('carries the warnings through', () => {
+    const warnings = [{ title: 'T', body: 'B' }];
+    expect(checkOutput({ warnings, report: ok, pvpoke: true }).warnings).toEqual(warnings);
   });
 });

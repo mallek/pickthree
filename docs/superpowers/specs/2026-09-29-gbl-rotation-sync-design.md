@@ -179,6 +179,12 @@ Rotation leagues go into `leagues.json` with their other fields; the schedule it
    - a scheduled cup starting within 7 days whose rankings are stale;
    - a GBL week in the feed whose name carries no season;
    - the feed unreachable or unparseable (filed on the first failed day, closed on the next good day: the workflow token cannot keep a counter between runs).
+
+   An issue closes only when its kind was checked that day: the check reports whether the feed
+   and the PvPoke checkout were judged (a failed feed day or a missing checkout leaves those
+   issues open), and unrecognized titles are never closed. If the check output is empty or
+   malformed the step fails before filing or closing anything.
+
 4. After a push, the job dispatches `pages.yml` (a push made with the workflow token starts no workflows on its own).
 
 Main's protection: the bot pushes with the workflow token (`contents: write`), as the refresh PR

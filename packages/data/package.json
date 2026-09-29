@@ -9,7 +9,8 @@
     "build": "tsx src/build.ts",
     "refresh": "tsx src/refresh.ts",
     "schedule:refresh": "tsx src/refresh-schedule.ts",
-    "schedule:check": "tsx src/check-schedule.ts"
+    "schedule:check": "tsx src/check-schedule.ts",
+    "schedule:issues": "tsx src/schedule-issues-cli.ts"
   },
   "dependencies": {
     "@pickthree/engine": "0.0.0",

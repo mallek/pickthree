@@ -100,11 +100,17 @@ jobs:
       - name: Warnings
         if: always()
         run: |
-          warnings=$(npm -s -w @pickthree/data run schedule:check)
-          echo "$warnings"
+          # The check output must be valid before anything is filed or closed: an empty or
+          # malformed print must never read as "no warnings". A failure here fails the step.
+          check=$(npm -s -w @pickthree/data run schedule:check)
+          echo "$check"
+          lines=$(npm -s -w @pickthree/data run schedule:issues -- warnings "$check")
           gh label create schedule --description "GBL schedule and cup data" --color 5319e7 --force >/dev/null
-          echo "$warnings" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{for(const w of JSON.parse(s||'[]'))console.log(JSON.stringify(w))})" |
+          printf '%s\n' "$lines" |
           while IFS= read -r line; do
+            if [ -z "$line" ]; then
+              continue
+            fi
             title=$(node -e "console.log(JSON.parse(process.argv[1]).title)" "$line")
             body=$(node -e "console.log(JSON.parse(process.argv[1]).body)" "$line")
             existing=$(gh issue list --label schedule --state open --json number,title | jq -r --arg t "$title" '.[] | select(.title == $t) | .number' | head -1)
@@ -115,15 +121,10 @@ jobs:
             fi
           done
           # Close what is no longer warned (a stale cup PvPoke refreshed, rankings that landed, a
-          # cup now mapped). The feed-failing issue keeps its own rule below.
+          # cup now mapped), but only kinds the check could judge today. The feed-failing issue
+          # keeps its own rule below; unrecognized titles stay open.
           open=$(gh issue list --label schedule --state open --limit 200 --json number,title)
-          closable=$(node -e "
-            const warned = new Set(JSON.parse(process.argv[1] || '[]').map((w) => w.title));
-            for (const i of JSON.parse(process.argv[2])) {
-              if (i.title !== 'GBL schedule feed failing' && !warned.has(i.title)) {
-                console.log(i.number);
-              }
-            }" "$warnings" "$open")
+          closable=$(npm -s -w @pickthree/data run schedule:issues -- close "$check" "$open")
           for n in $closable; do
             gh issue close "$n" --comment "No longer warned as of $(date -u +%F)."
           done
