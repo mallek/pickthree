@@ -110,3 +110,50 @@ describe.skipIf(!fs.existsSync(GAMEMASTER_PATH))('megaOf on live data', () => {
     }
   });
 });
+
+function rawMon(speciesId: string, tags: string[], family: { id: string } | null) {
+  return {
+    speciesId,
+    speciesName: speciesId,
+    dex: 1,
+    types: ['water', 'none'],
+    baseStats: { atk: 1, def: 1, hp: 1 },
+    fastMoves: [],
+    chargedMoves: [],
+    tags,
+    ...(family ? { family } : {}),
+  };
+}
+
+describe('mega family', () => {
+  it('gives a Mega with no family the family of its base species', () => {
+    const data = buildGameData({
+      greatLeagueIneligible: [],
+      moves: [],
+      rankingScenarios: [],
+      settings: { maxBuffStages: 4, buffDivisor: 4 },
+      timestamp: 't',
+      pokemon: [
+        rawMon('swampert_mega', ['mega'], null),
+        rawMon('swampert', [], { id: 'FAMILY_MUDKIP' }),
+        rawMon('sableye_mega', ['mega'], { id: 'FAMILY_OWN' }),
+        rawMon('sableye', [], { id: 'FAMILY_SABLEYE' }),
+      ],
+    });
+    const family = (id: string) => data.species.find((s) => s.speciesId === id)?.familyId;
+    expect(family('swampert_mega')).toBe('FAMILY_MUDKIP');
+    expect(family('sableye_mega')).toBe('FAMILY_OWN');
+  });
+});
+
+describe.skipIf(!fs.existsSync(GAMEMASTER_PATH))('mega family on live data', () => {
+  it('every Mega shares its base species family', () => {
+    const data = buildGameData(JSON.parse(fs.readFileSync(GAMEMASTER_PATH, 'utf8')) as unknown);
+    const byId = new Map(data.species.map((s) => [s.speciesId, s]));
+    const megas = data.species.filter((s) => s.megaOf);
+    expect(megas.length).toBeGreaterThan(0);
+    for (const m of megas) {
+      expect(m.familyId, m.speciesId).toBe(byId.get(m.megaOf as string)?.familyId);
+    }
+  });
+});

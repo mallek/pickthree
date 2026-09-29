@@ -155,10 +155,14 @@ export function buildGameData(input: unknown): GameData {
     };
   });
 
-  const speciesIds = new Set(species.map((s) => s.speciesId));
+  const byId = new Map(species.map((s) => [s.speciesId, s]));
   for (const s of species) {
-    if (s.megaOf && !speciesIds.has(s.megaOf)) {
+    if (s.megaOf && !byId.has(s.megaOf)) {
       throw new Error(`mega base missing: ${s.speciesId} -> ${s.megaOf}`);
+    }
+    // PvPoke leaves some Megas without a family; they belong to their base species' family.
+    if (s.megaOf && s.familyId === null) {
+      s.familyId = byId.get(s.megaOf)?.familyId ?? null;
     }
   }
 
