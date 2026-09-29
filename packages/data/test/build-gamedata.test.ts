@@ -59,7 +59,7 @@ describe.skipIf(!havePvPoke)('buildGameData', () => {
   });
 });
 
-import { pvpokeEvolutionStage } from '../src/build-gamedata.js';
+import { megaBaseId, pvpokeEvolutionStage } from '../src/build-gamedata.js';
 
 describe('pvpokeEvolutionStage', () => {
   it('mirrors PvPoke, where any evolutions key counts, even without inferred children', () => {
@@ -80,6 +80,33 @@ describe.skipIf(!fs.existsSync(GAMEMASTER_PATH))('evolution stage on live data',
     expect(ranked.length).toBeGreaterThan(0);
     for (const r of ranked) {
       expect(byId.get(r.speciesId)?.evolutionStage, r.speciesId).toBe(1);
+    }
+  });
+});
+
+describe('megaBaseId', () => {
+  it('names the base species of a Mega or Primal id', () => {
+    expect(megaBaseId('charizard_mega_x')).toBe('charizard');
+    expect(megaBaseId('charizard_mega_y')).toBe('charizard');
+    expect(megaBaseId('sableye_mega')).toBe('sableye');
+    expect(megaBaseId('kyogre_primal')).toBe('kyogre');
+  });
+
+  it('returns null for anything else', () => {
+    expect(megaBaseId('charizard')).toBeNull();
+    expect(megaBaseId('meganium')).toBeNull();
+  });
+});
+
+describe.skipIf(!fs.existsSync(GAMEMASTER_PATH))('megaOf on live data', () => {
+  it('links every mega-tagged species to a species that exists', () => {
+    const data = buildGameData(JSON.parse(fs.readFileSync(GAMEMASTER_PATH, 'utf8')) as unknown);
+    const ids = new Set(data.species.map((s) => s.speciesId));
+    const megas = data.species.filter((s) => s.tags.includes('mega'));
+    expect(megas.length).toBeGreaterThan(0);
+    for (const m of megas) {
+      expect(m.megaOf, m.speciesId).toBeDefined();
+      expect(ids.has(m.megaOf as string), m.speciesId).toBe(true);
     }
   });
 });

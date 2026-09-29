@@ -49,6 +49,8 @@ export interface Species {
   eliteMoves: string[];
   legacyMoves: string[];
   tags: string[];
+  /** For a Mega or Primal entry: the PvPoke id of the species it evolves from. Absent otherwise. */
+  megaOf?: string;
   familyId: string | null;
   parentId: string | null;
   evolutionIds: string[];

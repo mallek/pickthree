@@ -3,12 +3,21 @@ import type { Move, Species } from './types.js';
 /** Fast lookups over the normalized game data. */
 export class GameDataIndex {
   private readonly byId = new Map<string, Species>();
+  private readonly megas = new Map<string, Species[]>();
   private readonly moveMap = new Map<string, Move>();
   private readonly moveByName = new Map<string, Move>();
 
   constructor(species: Species[], moves: Move[]) {
     for (const s of species) {
       this.byId.set(s.speciesId, s);
+      if (s.megaOf) {
+        const list = this.megas.get(s.megaOf) ?? [];
+        list.push(s);
+        this.megas.set(s.megaOf, list);
+      }
+    }
+    for (const list of this.megas.values()) {
+      list.sort((a, b) => (a.speciesId < b.speciesId ? -1 : a.speciesId > b.speciesId ? 1 : 0));
     }
     for (const m of moves) {
       this.moveMap.set(m.moveId, m);
@@ -30,6 +39,11 @@ export class GameDataIndex {
 
   allSpecies(): Species[] {
     return [...this.byId.values()];
+  }
+
+  /** The Mega and Primal forms of a species, sorted by id; empty when it has none. */
+  megasOf(speciesId: string): Species[] {
+    return [...(this.megas.get(speciesId) ?? [])];
   }
 
   move(id: string): Move | undefined {

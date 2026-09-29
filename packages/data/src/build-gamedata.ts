@@ -81,6 +81,13 @@ export function pvpokeEvolutionStage(
   return stage;
 }
 
+const MEGA_SUFFIX = /_(mega_x|mega_y|mega|primal)$/;
+
+/** The species a Mega or Primal entry evolves from, by PvPoke id; null for anything else. */
+export function megaBaseId(speciesId: string): string | null {
+  return MEGA_SUFFIX.test(speciesId) ? speciesId.replace(MEGA_SUFFIX, '') : null;
+}
+
 export function buildGameData(input: unknown): GameData {
   const gm = input as RawGameMaster;
   const banned = new Set(gm.greatLeagueIneligible);
@@ -98,6 +105,7 @@ export function buildGameData(input: unknown): GameData {
   const species: Species[] = gm.pokemon.map((p) => {
     const tags = p.tags ?? [];
     const evolutions = p.family?.evolutions ?? children.get(p.speciesId) ?? [];
+    const base = tags.includes('mega') ? megaBaseId(p.speciesId) : null;
     return {
       speciesId: p.speciesId,
       speciesName: p.speciesName,
@@ -109,6 +117,7 @@ export function buildGameData(input: unknown): GameData {
       eliteMoves: [...(p.eliteMoves ?? [])],
       legacyMoves: [...(p.legacyMoves ?? [])],
       tags: [...tags],
+      ...(base ? { megaOf: base } : {}),
       familyId: p.family?.id ?? null,
       parentId: p.family?.parent ?? null,
       evolutionIds: [...evolutions].sort(),
@@ -145,6 +154,13 @@ export function buildGameData(input: unknown): GameData {
         : null,
     };
   });
+
+  const speciesIds = new Set(species.map((s) => s.speciesId));
+  for (const s of species) {
+    if (s.megaOf && !speciesIds.has(s.megaOf)) {
+      throw new Error(`mega base missing: ${s.speciesId} -> ${s.megaOf}`);
+    }
+  }
 
   const moves: Move[] = gm.moves.map((m) => ({
     moveId: m.moveId,
