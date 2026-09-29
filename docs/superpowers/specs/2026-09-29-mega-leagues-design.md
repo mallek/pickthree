@@ -27,6 +27,9 @@ makes those formats buildable from the player's own collection.
    map them to PvPoke cups; they build, show, nudge and fall back exactly as the rotation spec
    says.
 7. **Add Pokemon gets a Mega mark**, so a hand-added Pokemon can count as ready.
+8. **Mega Level 4 is set per Pokemon.** Only Megas PvPoke tags `supermega` can reach it (16 at
+   the pin). A Level 4 Mega battles 2 levels above the stored base Pokemon (level cap 52), so its
+   base CP target is lower. Poke Genie does not export Mega Level; the player sets it.
 
 ## Game rules this rests on
 
@@ -40,6 +43,12 @@ makes those formats buildable from the player's own collection.
   1475.
 - Shadow Pokemon cannot Mega Evolve. Purified Pokemon can (confirmed by Travis 2026-09-29).
 - Mega Energy costs are not in PvPoke's data. pick3 states that energy is needed, never an amount.
+- Mega Level 4 (Super Max): the Mega battles 2 levels above the base Pokemon, level cap 52
+  (PvPoke commit 82a974f, "Mega Level 4 CP Boost", 2026-09-02). Only species tagged `supermega`
+  can reach it: at the pin Beedrill, Raichu X/Y, Victreebel, Starmie, Dragonite, Mewtwo X/Y,
+  Skarmory, Houndoom, Staraptor, Chesnaught, Delphox, Greninja, Malamar, Falinks. Mega Levels are
+  tracked per Pokemon and, since 2026-05-18, per Mega form. Super Max Megas also gain an extra
+  charged attack in GBL; that is out of scope here (see Out of scope).
 
 ## Engine
 
@@ -56,6 +65,8 @@ makes those formats buildable from the player's own collection.
   `Mega X`, `Mega Y` (and the folded `Name (Mega)` spellings it already splits) to the base species
   as today, and records the form here. Absent in collections saved before this change: read as
   `null`.
+- `Specimen.megaLevel4?: boolean`: set by the player (never by import), meaningful only with a
+  `megaForm` whose Mega species is tagged `supermega`. Absent means false.
 - Level derivation is unchanged: Poke Genie's CP for a Mega-marked row is the base form's CP.
 
 ### Builds
@@ -74,7 +85,12 @@ The Build gains:
 
 - `mega: { ready: boolean } | null`: `ready` when the specimen's `megaForm` matches this Mega
   (`mewtwo` marked `mega_y` is ready as `mewtwo_mega_y`, not as `mewtwo_mega_x`);
-- `baseCp: number`: the base form's CP at the build level (equal to `cp` for non-Mega builds).
+- `baseCp: number`: the base form's CP at the level the player powers the base to (equal to `cp`
+  for non-Mega builds);
+- `baseLevel: number`: that level. For a Level 4 Mega (ready, `megaLevel4`, species tagged
+  `supermega`) the Mega battles at `baseLevel + 2`, the build's `level` is the battle level, the
+  level cap is 52, and the cap and floor checks use the battle level; otherwise
+  `baseLevel === level`.
 
 ### Cost
 
@@ -137,7 +153,12 @@ needs energy). No amount is ever shown.
 - **Collection:** Mega-marked specimens show the pill on their row; the Pokemon page lists the
   Mega build per league next to the base build.
 - **Add Pokemon:** a "Mega-evolved before" checkbox under the IV fields. For species with two
-  Megas it is a choice: Mega X or Mega Y. It sets `megaForm`.
+  Megas it is a choice: Mega X or Mega Y. It sets `megaForm`. When the chosen Mega can reach Level
+  4, a "Mega Level 4" checkbox follows; it sets `megaLevel4`.
+- **Pokemon page:** for a Mega-marked specimen whose Mega can reach Level 4, the same "Mega Level
+  4" toggle, saved on the specimen (collection specimens come from the CSV, so this is the way to
+  set it for them).
+- **Level 4 wording:** "Power up to CP <base> (<mega> as Mega, Level 4)".
 - **Search:** Megas are findable for logging opponents in Mega leagues (via `allSpecies` and the
   legal list).
 
@@ -145,6 +166,11 @@ needs energy). No amount is ever shown.
 
 Synthetic data for logic; live PvPoke data only for invariants.
 
+- Level 4: a synthetic `supermega` Mega marked Level 4 battles at base level + 2; its base CP is
+  computed at the base level; the cap check uses the battle level; the level cap is 52 (a Master
+  League Level 4 Mega battles at 52 from a level 50 base); an unmarked or non-`supermega` Mega
+  never gets the boost; Add Pokemon and the Pokemon page only offer the toggle for `supermega`
+  Megas.
 - Mega build level and both CPs under a cap; the Sableye case from Travis's data as a fixed
   example (base stats and IVs 10/15/14 from the game master: level 27.5, base CP 1118, Mega CP
   1475).
@@ -172,6 +198,7 @@ Mega) wherever it is suggested.
 
 ## Out of scope
 
-- Mega Energy amounts and the Mega level system.
+- Mega Energy amounts, and Mega Levels 1 to 3 (they do not change stats).
+- The extra charged attack Super Max Megas gain in GBL, until PvPoke's simulator models it.
 - Primal and Mega Rayquaza rules beyond what PvPoke's cup filters already encode.
 - Mega Halloween and Mega Catch cups until PvPoke publishes them.
