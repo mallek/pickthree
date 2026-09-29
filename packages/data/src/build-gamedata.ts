@@ -62,6 +62,25 @@ function asType(t: string | undefined): PokemonType | 'none' {
   return (t ?? 'none') as PokemonType | 'none';
 }
 
+/** PvPoke's Pokemon.getEvolutionStage, verbatim: an evolutions key counts whatever it holds. */
+export function pvpokeEvolutionStage(
+  family: { id: string; parent?: string; evolutions?: string[] } | undefined,
+): number {
+  let stage = 0;
+  if (family) {
+    if (family.evolutions && !family.parent) {
+      stage = 1;
+    }
+    if (family.evolutions && family.parent) {
+      stage = 2;
+    }
+    if (!family.evolutions && family.parent) {
+      stage = 3;
+    }
+  }
+  return stage;
+}
+
 export function buildGameData(input: unknown): GameData {
   const gm = input as RawGameMaster;
   const banned = new Set(gm.greatLeagueIneligible);
@@ -93,6 +112,7 @@ export function buildGameData(input: unknown): GameData {
       familyId: p.family?.id ?? null,
       parentId: p.family?.parent ?? null,
       evolutionIds: [...evolutions].sort(),
+      evolutionStage: pvpokeEvolutionStage(p.family),
       shadow: tags.includes('shadow'),
       shadowEligible: tags.includes('shadoweligible'),
       released: p.released !== false,

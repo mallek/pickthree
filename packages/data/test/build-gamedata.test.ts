@@ -1,7 +1,8 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildGameData } from '../src/build-gamedata.js';
-import { GAMEMASTER_PATH } from '../src/paths.js';
+import { GAMEMASTER_PATH, RANKINGS_DIR } from '../src/paths.js';
 
 const havePvPoke = fs.existsSync(GAMEMASTER_PATH);
 if (!havePvPoke && process.env.PICKTHREE_REQUIRE_PVPOKE === '1') {
@@ -55,5 +56,30 @@ describe.skipIf(!havePvPoke)('buildGameData', () => {
     }
     expect(data.settings).toEqual({ maxBuffStages: 4, buffDivisor: 4 });
     expect(data.gamemasterTimestamp).toMatch(/^\d{4}-\d{2}-\d{2}/);
+  });
+});
+
+import { pvpokeEvolutionStage } from '../src/build-gamedata.js';
+
+describe('pvpokeEvolutionStage', () => {
+  it('mirrors PvPoke, where any evolutions key counts, even without inferred children', () => {
+    expect(pvpokeEvolutionStage(undefined)).toBe(0);
+    expect(pvpokeEvolutionStage({ id: 'F' })).toBe(0);
+    expect(pvpokeEvolutionStage({ id: 'F', evolutions: ['marill'] })).toBe(1);
+    expect(pvpokeEvolutionStage({ id: 'F', parent: 'azurill', evolutions: ['azumarill'] })).toBe(2);
+    expect(pvpokeEvolutionStage({ id: 'F', parent: 'marill' })).toBe(3);
+  });
+});
+
+describe.skipIf(!fs.existsSync(GAMEMASTER_PATH))('evolution stage on live data', () => {
+  it('puts every species PvPoke ranks in Little Cup at stage 1', () => {
+    const file = path.join(RANKINGS_DIR, 'little', 'overall', 'rankings-500.json');
+    const ranked = JSON.parse(fs.readFileSync(file, 'utf8')) as { speciesId: string }[];
+    const data = buildGameData(JSON.parse(fs.readFileSync(GAMEMASTER_PATH, 'utf8')) as unknown);
+    const byId = new Map(data.species.map((s) => [s.speciesId, s]));
+    expect(ranked.length).toBeGreaterThan(0);
+    for (const r of ranked) {
+      expect(byId.get(r.speciesId)?.evolutionStage, r.speciesId).toBe(1);
+    }
   });
 });

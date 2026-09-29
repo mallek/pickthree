@@ -5,6 +5,7 @@ import {
   minCpFor,
   type League,
 } from '../../src/gamedata/league.js';
+import type { Species } from '../../src/gamedata/types.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { haveStaticData, loadStaticData } from '../fixtures.js';
 
@@ -70,5 +71,58 @@ describe.skipIf(!haveStaticData())('league eligibility', () => {
     expect(allowedInLeague(sp('swampert_mega'), mega)).toBe(true);
     expect(allowedInLeague(sp('mewtwo_mega_x'), mega)).toBe(false);
     expect(allowedInLeague(sp('mewtwo_mega_x'), { ...mega, cp: 10000 })).toBe(true);
+  });
+});
+
+describe('evolution filter', () => {
+  const base = (id: string, evolutionStage: number | undefined): Species =>
+    ({
+      speciesId: id,
+      speciesName: id,
+      dex: 1,
+      types: ['normal', 'none'],
+      baseStats: { atk: 100, def: 100, hp: 100 },
+      fastMoves: [],
+      chargedMoves: [],
+      eliteMoves: [],
+      legacyMoves: [],
+      tags: [],
+      familyId: null,
+      parentId: null,
+      evolutionIds: [],
+      shadow: false,
+      shadowEligible: false,
+      released: true,
+      thirdMoveCost: 50000,
+      levelCap: null,
+      levelFloor: null,
+      greatLeagueIneligible: false,
+      defaultIVs: {},
+      formChange: null,
+      ...(evolutionStage === undefined ? {} : { evolutionStage }),
+    }) as Species;
+  const little: League = {
+    ...GREAT_LEAGUE_DEF,
+    id: 'little',
+    cp: 500,
+    cup: 'little',
+    kind: 'cup',
+    include: [{ filterType: 'evolution', values: [1] }],
+    exclude: [{ filterType: 'id', values: ['shuckle', 'smeargle'] }],
+  };
+
+  it('admits stage 1 only', () => {
+    expect(allowedInLeague(base('azurill', 1), little)).toBe(true);
+    expect(allowedInLeague(base('marill', 2), little)).toBe(false);
+    expect(allowedInLeague(base('azumarill', 3), little)).toBe(false);
+    expect(allowedInLeague(base('tauros', 0), little)).toBe(false);
+  });
+
+  it('treats a species built before the field existed as stage 0', () => {
+    expect(allowedInLeague(base('azurill', undefined), little)).toBe(false);
+  });
+
+  it('still applies the id exclude', () => {
+    expect(allowedInLeague(base('shuckle', 1), little)).toBe(false);
   });
 });

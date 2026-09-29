@@ -52,6 +52,13 @@ export interface Species {
   familyId: string | null;
   parentId: string | null;
   evolutionIds: string[];
+  /**
+   * PvPoke's Pokemon.getEvolutionStage, from the raw family: 0 no family (or neither link),
+   * 1 evolves and has no parent, 2 evolves and has a parent, 3 does not evolve and has a parent.
+   * Baked at build time because evolutionIds is inferred and can disagree. Absent in data built
+   * before 2026-09-29; the evolution filter then reads it as 0.
+   */
+  evolutionStage?: number;
   shadow: boolean;
   shadowEligible: boolean;
   released: boolean;

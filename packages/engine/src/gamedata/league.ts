@@ -84,8 +84,10 @@ function matches(filter: CupFilter, sp: Species, include: boolean): boolean {
     }
     case 'cost':
       return filter.values.includes(sp.thirdMoveCost);
+    case 'evolution':
+      return filter.values.map(Number).includes(sp.evolutionStage ?? 0);
     default:
-      // move, moveType, evolution, distance: not modelled; PvPoke's rankings already reflect them.
+      // move, moveType, distance: not modelled; PvPoke's rankings already reflect them.
       return false;
   }
 }

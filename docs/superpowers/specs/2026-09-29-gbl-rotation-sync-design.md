@@ -172,8 +172,9 @@ branch does today. If a ruleset ever blocks it, the job falls back to a PR and s
 - **`evolution` filter** in `gamedata/league.ts` `matches()`, mirroring PvPoke's
   `Pokemon.getEvolutionStage()`: 0 no family, 1 evolves and has no parent, 2 evolves and has a
   parent, 3 does not evolve and has a parent; the filter matches when the stage is in `values`.
-  Uses `Species.parentId` and `Species.evolutionIds`. Removes `evolution` from the "not modelled"
-  comment.
+  Uses `Species.evolutionStage`, baked at build time from PvPoke's raw family (our
+  `evolutionIds` is inferred from parent links and disagreed with PvPoke for 3 species on
+  2026-09-29).
 - **`League`** gains `kind: 'rotation'` and optional `rankingsUpdated?: string` and
   `stale?: boolean`.
 - **500 CP.** Caps are already per league (`buildOptionsFor`, `minCpFor`), so no change is expected.
