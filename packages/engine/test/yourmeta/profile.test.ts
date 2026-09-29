@@ -178,6 +178,11 @@ describe('facingLine', () => {
     sightings: 0,
     source: 'log' as const,
   };
+  it('says this run for a cup', () => {
+    const p = { ...base, outsiders: [], battles: 42, engaged: true, reason: 'engaged' as const };
+    expect(facingLine(p, 'teams', undefined, 'run')).toContain('battles this run');
+    expect(facingLine(p, 'teams')).toContain('battles this season');
+  });
   it('describes each state', () => {
     expect(facingLine({ ...base, outsiders: [], battles: 40, engaged: false, reason: 'off' })).toBe(
       'PvPoke weights only (your log is switched off)',

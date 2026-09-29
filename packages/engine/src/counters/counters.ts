@@ -329,7 +329,12 @@ export function metaCounters(
   }
   return {
     entries: out,
-    facing: facingLine(profile, 'counters'),
+    facing: facingLine(
+      profile,
+      'counters',
+      undefined,
+      live?.league.kind === 'rotation' ? 'run' : 'season',
+    ),
     blended: profile.engaged,
     battles: profile.battles,
   };

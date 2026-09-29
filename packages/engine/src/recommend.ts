@@ -161,7 +161,9 @@ export function assumptionsFor(
     ivs: 'Your exact specimens versus opponents at PvPoke default IVs',
     metaName: `PvPoke ${data.league.title} meta group`,
     metaSize: data.meta.length,
-    facing: profile ? facingLine(profile) : 'PvPoke weights only',
+    facing: profile
+      ? facingLine(profile, 'teams', undefined, data.league.kind === 'rotation' ? 'run' : 'season')
+      : 'PvPoke weights only',
     source: profile?.source ?? 'prior',
     pvpokeCommit: data.manifest.pvpokeCommit,
     pvpokeDate: data.manifest.pvpokeDate,

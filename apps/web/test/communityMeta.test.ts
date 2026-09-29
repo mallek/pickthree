@@ -141,4 +141,8 @@ describe('loadCommunity', () => {
     await loadCommunity(later, { fetcher: bad });
     expect(bad).toHaveBeenCalledTimes(2);
   });
+
+  it('reads a rotation cup under its own id', () => {
+    expect(communityLeague({ id: 'retro', kind: 'rotation', meta: 'retro' })).toBe('retro');
+  });
 });

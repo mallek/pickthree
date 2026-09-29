@@ -19,6 +19,7 @@ import { metaTags, SEP, shortName, speciesDisplayName } from './format.ts';
 import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
+import { seasonsFor } from './state/seasonsFor.ts';
 import { useActions, useAppState } from './state/store.tsx';
 import { logBattles } from './state/facing.ts';
 import {
@@ -525,7 +526,7 @@ export function useLogCount(): number {
   const s = useAppState();
   const battles = logBattles(
     s.sets,
-    s.data?.seasons ?? [],
+    seasonsFor(s.data, s.settings.league ?? 'great'),
     s.settings,
     s.settings.league ?? 'great',
   );

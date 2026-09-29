@@ -51,6 +51,9 @@ export function communityLeague(league: Pick<League, 'id' | 'kind' | 'meta'>): s
   if (league.kind === 'cup') {
     return league.meta;
   }
+  if (league.kind === 'rotation') {
+    return league.id;
+  }
   return null;
 }
 

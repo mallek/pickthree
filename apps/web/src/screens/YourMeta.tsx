@@ -34,6 +34,7 @@ import { shareEnabled } from '../metaShare.ts';
 import { shareLink } from '../share.ts';
 import { teamLink } from '../teamLink.ts';
 import { contributedCount } from '../state/contribution.ts';
+import { seasonsFor } from '../state/seasonsFor.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { facingSettings } from '../state/facing.ts';
 import { storage } from '../storage/db.ts';
@@ -63,9 +64,16 @@ function when(at: string): string {
  * bar; from 15: that the meta is weighting, with a full bar. When the log is not the Teams source,
  * the state line alone.
  */
+/** A GBL cup: its Your meta window is the current run, not the GBL season. */
+function isRunLeague(s: ReturnType<typeof useAppState>): boolean {
+  const id = s.settings.league ?? 'great';
+  return s.data?.leagues.find((l) => l.id === id)?.kind === 'rotation';
+}
+
 function ProgressLine() {
   const s = useAppState();
   const logCount = useLogCount();
+  const run = isRunLeague(s);
   const min = DEFAULT_PROFILE_OPTIONS.minBattles;
   if (facingSettings(s.settings).source !== 'log') {
     return (
@@ -79,7 +87,7 @@ function ProgressLine() {
     <>
       <p className="meta ym-line">
         {logCount >= min
-          ? `Your meta is weighting Teams, Counters and Build · ${logCount} battles this season`
+          ? `Your meta is weighting Teams, Counters and Build · ${logCount} battles this ${run ? 'run' : 'season'}`
           : `${logCount} of ${min} battles · ${min - logCount} more until your meta weights Teams, Counters and Build`}
       </p>
       <div
@@ -358,9 +366,10 @@ function sorted(stats: SeasonStats, sort: Sort): SpeciesRecord[] {
 
 export function YourMeta() {
   const s = useAppState();
+  const run = isRunLeague(s);
   const { startFresh, openSheet } = useActions();
   const leagueId = s.settings.league ?? 'great';
-  const seasons = s.data?.seasons ?? [];
+  const seasons = seasonsFor(s.data, leagueId);
   const freshFrom = s.settings.yourMeta?.freshFrom?.[leagueId] ?? null;
   const meta = s.leagueInfo?.meta ?? [];
   const fallback = useMemo(() => {
@@ -372,7 +381,7 @@ export function YourMeta() {
     [s.sets, seasons, freshFrom, fallback],
   );
   const min = DEFAULT_PROFILE_OPTIONS.minBattles;
-  const stale = seasonListStale(seasons);
+  const stale = seasonListStale(s.data?.seasons ?? []);
   const [sort, setSort] = useSticky<Sort>('meta.sort', 'faced');
   const [explained, setExplained] = useSticky('meta.explained', false);
   const [earlierOpen, setEarlierOpen] = useState(false);
@@ -414,7 +423,11 @@ export function YourMeta() {
         {confirmFresh ? (
           <ConfirmSheet
             title="Start fresh?"
-            line="Battles before now move to Earlier seasons. Nothing is deleted."
+            line={
+              run
+                ? 'Battles before now move to Earlier runs. Nothing is deleted.'
+                : 'Battles before now move to Earlier seasons. Nothing is deleted.'
+            }
             confirmLabel="Start fresh"
             cancelLabel="Cancel"
             onConfirm={() => {
@@ -471,7 +484,7 @@ export function YourMeta() {
           <div className="stack" style={{ gap: 10 }}>
             <button type="button" className="action-row" onClick={() => setEarlierOpen((o) => !o)}>
               <span>
-                <b>Earlier seasons</b>
+                <b>{run ? 'Earlier runs' : 'Earlier seasons'}</b>
                 <span className="small muted">
                   {stats.earlier.length} {stats.earlier.length === 1 ? 'bucket' : 'buckets'}, kept
                   apart because the meta changes each season.

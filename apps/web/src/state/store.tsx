@@ -61,6 +61,7 @@ import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
 import { parseLogFile, serializeLog } from '../storage/logFile.ts';
 import { facingInput, facingSettings, isCommunity, logBattles } from './facing.ts';
+import { seasonsFor } from './seasonsFor.ts';
 import { newId } from './yourMeta.ts';
 import { NUDGED_KEEP, rotationNotice } from '../rotation.ts';
 import { appNow } from '../clock.ts';
@@ -729,7 +730,13 @@ function requestFor(s: AppState, now: Date): CommunityRequest | null {
   }
   const league = s.data?.leagues.find((l) => l.id === (s.settings.league ?? 'great'));
   return league
-    ? communityRequest(league, choice.window, s.data?.seasons ?? [], s.data?.epochs ?? [], now)
+    ? communityRequest(
+        league,
+        choice.window,
+        seasonsFor(s.data, league.id),
+        s.data?.epochs ?? [],
+        now,
+      )
     : null;
 }
 
@@ -750,7 +757,7 @@ export function boardWindow(
   return communityRequest(
     info,
     isCommunity(choice.source) ? choice.window : 'meta',
-    s.data?.seasons ?? [],
+    seasonsFor(s.data, league),
     s.data?.epochs ?? [],
   );
 }
@@ -1100,7 +1107,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       choice,
       battles:
         choice.source === 'log'
-          ? logBattles(s.sets, s.data?.seasons ?? [], s.settings, league)
+          ? logBattles(s.sets, seasonsFor(s.data, league), s.settings, league)
           : [],
       request,
       payload,

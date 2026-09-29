@@ -215,6 +215,7 @@ export function facingLine(
   p: FacingProfile,
   mode: 'teams' | 'counters' = 'teams',
   minBattles: number = DEFAULT_PROFILE_OPTIONS.minBattles,
+  period: 'season' | 'run' = 'season',
 ): string {
   if (p.reason === 'prior') {
     return 'PvPoke weights only';
@@ -231,7 +232,7 @@ export function facingLine(
   if (p.reason === 'too-few') {
     return `PvPoke weights only (${p.battles} of ${minBattles} battles logged)`;
   }
-  const head = `Weighted by your log: ${p.battles} battles this season`;
+  const head = `Weighted by your log: ${p.battles} battles this ${period}`;
   if (mode === 'counters') {
     return p.outsiders.length === 0
       ? `${head}, no opponents outside PvPoke's list`
