@@ -210,15 +210,23 @@ describe('weighted drafting', () => {
 });
 
 describe('generateTrios team rules', () => {
-  const withMega = (c: Candidate, specimenId: string, mega: boolean): Candidate =>
+  const withMega = (
+    c: Candidate,
+    specimenId: string,
+    mega: boolean,
+    speciesId = c.build.speciesId,
+  ): Candidate =>
     ({
       ...c,
       build: {
         ...c.build,
         specimenId,
+        speciesId,
         mega: mega ? { ready: true, level4: false } : null,
       },
     }) as Candidate;
+  const baseOf = (id: string): string => id.replace(/_mega$/, '');
+  const typesWithBase = { ...types, baseOf };
 
   it('never drafts two Megas or one specimen twice', () => {
     const { view, pool } = fakeWorld();
@@ -230,17 +238,45 @@ describe('generateTrios team rules', () => {
       withMega(pool[3]!, 'shared', false),
       withMega(pool[4]!, 'se', false),
     ];
-    const { drafts, scored } = generateTrios(cands, view, types, {
+    const { drafts, scored } = generateTrios(cands, view, typesWithBase, {
       ...DEFAULT_TRIO_OPTIONS,
       finalists: 50,
     });
     expect(drafts.length).toBeGreaterThan(0);
-    // 10 trios, minus 3 (both Megas) and 3 (both sharing a specimen) and 0 overlap between them.
+    // 10 trios, minus 3 (both Megas) and 3 (both sharing a specimen); the two sets do not overlap.
     expect(scored).toBe(4);
     for (const d of drafts) {
       const builds = d.slots.map((s) => s.build);
       expect(builds.filter((b) => b.mega !== null).length).toBeLessThanOrEqual(1);
       expect(new Set(builds.map((b) => b.specimenId)).size).toBe(3);
     }
+  });
+
+  it('never drafts a species and its Mega from two specimens', () => {
+    const { view, pool } = fakeWorld();
+    // a is the base, b is its Mega from another specimen; c, d, e are unrelated and plain.
+    const cands = [
+      withMega(pool[0]!, 'sa', false, 'a'),
+      withMega(pool[1]!, 'sb', true, 'a_mega'),
+      withMega(pool[2]!, 'sc', false),
+      withMega(pool[3]!, 'sd', false),
+      withMega(pool[4]!, 'se', false),
+    ];
+    const { drafts, scored } = generateTrios(cands, view, typesWithBase, {
+      ...DEFAULT_TRIO_OPTIONS,
+      finalists: 50,
+    });
+    // 10 trios minus the 3 that hold both a and a_mega.
+    expect(scored).toBe(7);
+    for (const d of drafts) {
+      const ids = d.slots.map((s) => baseOf(s.build.speciesId));
+      expect(new Set(ids).size).toBe(3);
+    }
+  });
+
+  it('still drafts one Mega alongside plain teammates', () => {
+    const { view, pool } = fakeWorld();
+    const cands = [withMega(pool[0]!, 'sa', true), pool[1]!, pool[2]!];
+    expect(generateTrios(cands, view, typesWithBase).scored).toBe(1);
   });
 });

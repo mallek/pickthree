@@ -48,6 +48,7 @@ function cand(id: string, row: number, opts: { specimen?: string; mega?: boolean
 }
 
 const owned = new Set<string>();
+const baseOf = (id: string): string => id.replace(/_mega$/, '');
 
 describe('teammate core search team rules', () => {
   it('offers no Mega fill when a Mega is pinned', () => {
@@ -86,5 +87,30 @@ describe('teammate core search team rules', () => {
     const pool = [cand('b', 1, { specimen: 'shared', mega: true }), cand('c', 2, {})];
     const cores = search(ctx, ctx, [pin], pool, 1, owned);
     expect(cores.map((c) => c.key)).toEqual(['c']);
+  });
+
+  it('never fills with the Mega of the pinned species, or the base of a pinned Mega', () => {
+    const { view } = world();
+    const ctx = strengthContext(view);
+    // A species-pinned stand-in (specimen species:x) against an owned Mega fill of x.
+    const stand = cand('x', 0, { specimen: 'species:x' });
+    const pool = [cand('x_mega', 1, { mega: true }), cand('c', 2, {}), cand('d', 3, {})];
+    const cores = search(ctx, ctx, [stand], pool, 1, owned, baseOf);
+    expect(cores.map((c) => c.key)).toEqual(['c', 'd']);
+
+    const megaPin = cand('x_mega', 0, { mega: true });
+    const basePool = [cand('x', 1, {}), cand('c', 2, {})];
+    expect(search(ctx, ctx, [megaPin], basePool, 1, owned, baseOf).map((c) => c.key)).toEqual([
+      'c',
+    ]);
+  });
+
+  it('never fills two slots with a species and its Mega', () => {
+    const { view } = world();
+    const ctx = strengthContext(view);
+    const pin = cand('a', 0, {});
+    const pool = [cand('x', 1, {}), cand('x_mega', 2, { mega: true }), cand('d', 3, {})];
+    const cores = search(ctx, ctx, [pin], pool, 2, owned, baseOf);
+    expect(cores.map((c) => c.key).sort()).toEqual(['d+x', 'd+x_mega']);
   });
 });

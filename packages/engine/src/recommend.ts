@@ -243,7 +243,10 @@ export function recommend(
   const { pool, dropped } = candidatePool(builds, deps.data.rankings, view, index, opts);
   progress('candidates', 1, 1);
 
-  const typesOf = { types: (id: string) => index.mustSpecies(id).types };
+  const typesOf = {
+    types: (id: string) => index.mustSpecies(id).types,
+    baseOf: (id: string) => index.mustSpecies(id).megaOf ?? id,
+  };
   const profile = profileFor(deps.data, view, opts.facing);
   const baseTrio = { ...DEFAULT_TRIO_OPTIONS, finalists: opts.finalists, style: opts.style };
   const trioOpts = profile.engaged

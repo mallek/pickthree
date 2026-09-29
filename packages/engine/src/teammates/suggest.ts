@@ -310,7 +310,15 @@ export function suggestTeammates(
   const heaviest = [...facing.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_META);
   const topCtx = strengthContext(view, new Map(heaviest));
 
-  const cores = search(ctx, topCtx, pins, pool, emptySlots.length, mineSpecies);
+  const cores = search(
+    ctx,
+    topCtx,
+    pins,
+    pool,
+    emptySlots.length,
+    mineSpecies,
+    (id) => index.mustSpecies(id).megaOf ?? id,
+  );
   countSightings(cores, pins, opts.community);
 
   // Stand-ins the collection forced on us are free. Reaching one past that is a chase, and a
@@ -395,12 +403,18 @@ export function search(
   pool: Candidate[],
   slots: number,
   mineSpecies: Set<string>,
+  baseOf: (speciesId: string) => string = (id) => id,
 ): Core[] {
   const out: Core[] = [];
   const s11 = ctx.view.scenarioIndex([1, 1]);
   const consider = (fills: Candidate[]): void => {
     const members = [...pins, ...fills];
-    if (teamRuleViolation(members.map((c) => c.build)) !== null) {
+    if (
+      teamRuleViolation(
+        members.map((c) => c.build),
+        baseOf,
+      ) !== null
+    ) {
       return;
     }
     const rows = members.map((c) => c.matrixRow) as [number, number, number];

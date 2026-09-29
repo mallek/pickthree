@@ -14,17 +14,17 @@
  * A generated team is a baked prior. It is never written into the battle store, because then
  * "from 480 battles shared by 9 devices" would count battles nobody fought.
  */
-import type { PokemonType } from '../gamedata/types.js';
 import { bestStrength, strengthContext } from '../score/simStrength.js';
 import type { Candidate } from '../search/candidates.js';
 import type { MatrixView } from '../search/matrixView.js';
-import { teamRuleViolation } from '../search/teamRules.js';
+import { trioBreaksRules } from '../search/teamRules.js';
 import {
   DEFAULT_TRIO_OPTIONS,
   evaluateTrio,
   prepare,
   type Prepared,
   type Structure,
+  type TrioIndex,
 } from '../search/trios.js';
 
 /** How many uncovered top opponents a card names before it stops listing them. */
@@ -65,7 +65,7 @@ interface Scored {
 export function generateColdStartTeams(
   pool: readonly Candidate[],
   view: MatrixView,
-  types: { types(id: string): [PokemonType, PokemonType | 'none'] },
+  types: TrioIndex,
   opts: GenerateOptions,
 ): GeneratedTeam[] {
   const ctx = strengthContext(view, opts.weights);
@@ -82,11 +82,9 @@ export function generateColdStartTeams(
           prepared[k] as Prepared,
         ];
         const ids = members.map((m) => m.c.build.speciesId);
-        // One species per team, even across specimens, the same rule generateTrios keeps.
-        if (new Set(ids).size < 3) {
-          continue;
-        }
-        if (teamRuleViolation(members.map((m) => m.c.build)) !== null) {
+        // One species per team, even across specimens, a Mega counting as its base, and one Mega:
+        // the same rules generateTrios keeps.
+        if (trioBreaksRules(members[0].rule, members[1].rule, members[2].rule)) {
           continue;
         }
         const rows: [number, number, number] = [

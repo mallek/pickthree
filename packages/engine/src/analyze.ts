@@ -287,7 +287,10 @@ export function analyzeTeam(
   }
   progress('candidates', 1, 1);
 
-  const typesOf = { types: (id: string) => index.mustSpecies(id).types };
+  const typesOf = {
+    types: (id: string) => index.mustSpecies(id).types,
+    baseOf: (id: string) => index.mustSpecies(id).megaOf ?? id,
+  };
   const prepared = prepare(cands, view, typesOf) as [Prepared, Prepared, Prepared];
   const orderings = opts.order === 'given' ? [ALL_ORDERINGS[0]!] : ALL_ORDERINGS;
   const profile = profileFor(deps.data, view, opts.facing);

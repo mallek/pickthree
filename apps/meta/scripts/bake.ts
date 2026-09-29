@@ -247,7 +247,10 @@ export function generateFor(input: {
   return generateColdStartTeams(
     pool,
     view,
-    { types: (id: string) => input.index.mustSpecies(id).types },
+    {
+      types: (id: string) => input.index.mustSpecies(id).types,
+      baseOf: (id: string) => input.index.mustSpecies(id).megaOf ?? id,
+    },
     { results: COLD_TEAMS, weights },
   );
 }

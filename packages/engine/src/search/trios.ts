@@ -2,7 +2,7 @@ import type { PokemonType } from '../gamedata/types.js';
 import type { Candidate, Role } from './candidates.js';
 import { heaviestColumns } from './heaviest.js';
 import type { MatrixView } from './matrixView.js';
-import { teamRuleViolation } from './teamRules.js';
+import { ruleKeyOf, trioBreaksRules, type RuleKey } from './teamRules.js';
 
 export type Structure = 'ABB' | 'ABC';
 export type TeamStyle = 'any' | 'balanced' | 'abb';
@@ -77,13 +77,17 @@ export interface Prepared {
   win00: boolean[];
   counters: number[];
   types: Set<PokemonType>;
+  rule: RuleKey;
 }
 
-export function prepare(
-  pool: Candidate[],
-  view: MatrixView,
-  index: { types(id: string): [PokemonType, PokemonType | 'none'] },
-): Prepared[] {
+/** What drafting reads from the game data. `baseOf` folds a Mega id to its base; absent means none. */
+export interface TrioIndex {
+  types(id: string): [PokemonType, PokemonType | 'none'];
+  baseOf?(id: string): string;
+}
+
+export function prepare(pool: Candidate[], view: MatrixView, index: TrioIndex): Prepared[] {
+  const baseOf = index.baseOf ?? ((id: string) => id);
   const s11 = view.scenarioIndex([1, 1]);
   const s00 = view.scenarioIndex([0, 0]);
   return pool.map((c) => {
@@ -99,7 +103,14 @@ export function prepare(
     if (t[1] !== 'none') {
       types.add(t[1]);
     }
-    return { c, win11, win00: view.wins(c.matrixRow, s00), counters, types };
+    return {
+      c,
+      win11,
+      win00: view.wins(c.matrixRow, s00),
+      counters,
+      types,
+      rule: ruleKeyOf(c.build, baseOf),
+    };
   });
 }
 
@@ -224,7 +235,7 @@ export function evaluateTrio(
 export function generateTrios(
   pool: Candidate[],
   view: MatrixView,
-  index: { types(id: string): [PokemonType, PokemonType | 'none'] },
+  index: TrioIndex,
   opts: TrioOptions = DEFAULT_TRIO_OPTIONS,
   onProgress?: (done: number, total: number) => void,
 ): { drafts: TrioDraft[]; scored: number } {
@@ -239,16 +250,8 @@ export function generateTrios(
         const a = prepared[i] as Prepared;
         const b = prepared[j] as Prepared;
         const c = prepared[k] as Prepared;
-        // One species per team, even across specimens.
-        if (
-          a.c.build.speciesId === b.c.build.speciesId ||
-          a.c.build.speciesId === c.c.build.speciesId ||
-          b.c.build.speciesId === c.c.build.speciesId
-        ) {
-          continue;
-        }
-        // One use of each Pokemon and at most one Mega per team.
-        if (teamRuleViolation([a.c.build, b.c.build, c.c.build]) !== null) {
+        // One use of each specimen and species (a Mega counts as its base) and at most one Mega.
+        if (trioBreaksRules(a.rule, b.rule, c.rule)) {
           continue;
         }
         all.push(evaluateTrio([a, b, c], view, opts));
