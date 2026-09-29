@@ -1,0 +1,119 @@
+name: daily-refresh
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Schedule from the GBL feed
+        id: schedule
+        run: |
+          set +e
+          npm -w @pickthree/data run schedule:refresh
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - name: PvPoke pin
+        id: bump
+        run: |
+          before=$(node -p "require('./packages/data/pvpoke.lock.json').commit")
+          npm run data:refresh
+          after=$(node -p "require('./packages/data/pvpoke.lock.json').commit")
+          echo "changed=$([ "$before" != "$after" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "after=$after" >> "$GITHUB_OUTPUT"
+      - name: Build and test whatever changed
+        id: build
+        run: |
+          npm run data:fetch
+          npm -w @pickthree/sim-pvpoke run vendor:sync
+          if git diff --quiet -- packages/data/schedule.json packages/data/seasons.json packages/data/pvpoke.lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          npm run data:build
+          PICKTHREE_REQUIRE_PVPOKE=1 npm test
+          if git diff --quiet -- packages/sim-pvpoke/vendor packages/sim-pvpoke/LICENSE-pvpoke; then
+            echo "vendor=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "vendor=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit data straight to main
+        id: push
+        if: steps.build.outputs.changed == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add packages/data/schedule.json packages/data/seasons.json
+          if [ "${{ steps.build.outputs.vendor }}" != 'true' ]; then
+            git add packages/data/pvpoke.lock.json
+          fi
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "Data: daily refresh (schedule, seasons, PvPoke data)"
+          if git push origin HEAD:main; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::push to main refused; falling back to a PR"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "fallback=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: PR for PvPoke battle code (or a refused push)
+        if: steps.build.outputs.vendor == 'true' || steps.push.outputs.fallback == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: data-refresh/${{ steps.bump.outputs.after }}
+          title: 'Refresh PvPoke data to ${{ steps.bump.outputs.after }}'
+          commit-message: 'Refresh PvPoke data to ${{ steps.bump.outputs.after }}'
+          body: |
+            PvPoke's battle code changed, so this refresh waits for review. Golden simulator tests passed.
+            Review the vendor diff before merging.
+          add-paths: |
+            packages/data/pvpoke.lock.json
+            packages/data/schedule.json
+            packages/data/seasons.json
+            packages/sim-pvpoke/vendor/**
+            packages/sim-pvpoke/LICENSE-pvpoke
+      - name: Deploy
+        # A push made with the workflow token starts no workflows, so ask for the deploy.
+        if: steps.push.outputs.pushed == 'true'
+        run: gh workflow run pages.yml --ref main
+      - name: Warnings
+        if: always()
+        run: |
+          warnings=$(npm -s -w @pickthree/data run schedule:check)
+          echo "$warnings"
+          gh label create schedule --description "GBL schedule and cup data" --color 5319e7 --force >/dev/null
+          echo "$warnings" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{for(const w of JSON.parse(s||'[]'))console.log(JSON.stringify(w))})" |
+          while IFS= read -r line; do
+            title=$(node -e "console.log(JSON.parse(process.argv[1]).title)" "$line")
+            body=$(node -e "console.log(JSON.parse(process.argv[1]).body)" "$line")
+            existing=$(gh issue list --label schedule --state open --search "\"$title\" in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "Still true as of $(date -u +%F)."
+            else
+              gh issue create --title "$title" --label schedule --body "$body"
+            fi
+          done
+          case "${{ steps.schedule.outputs.code }}" in
+            0|3)
+              for n in $(gh issue list --label schedule --state open --search '"GBL schedule feed failing" in:title' --json number --jq '.[].number'); do
+                gh issue close "$n" --comment "Feed read fine on $(date -u +%F)."
+              done
+              ;;
+          esac

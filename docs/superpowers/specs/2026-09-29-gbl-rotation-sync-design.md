@@ -172,7 +172,7 @@ Rotation leagues go into `leagues.json` with their other fields; the schedule it
    - an unmapped cup title;
    - a scheduled cup starting within 7 days with no rankings at its cap;
    - a scheduled cup starting within 7 days whose rankings are stale;
-   - the feed unreachable or unparseable 3 days running (a counter in the issue body).
+   - the feed unreachable or unparseable (filed on the first failed day, closed on the next good day: the workflow token cannot keep a counter between runs).
 4. A push from steps 1 or 2 triggers `pages.yml`, which builds and deploys.
 
 Main's protection: the bot pushes with the workflow token (`contents: write`), as the refresh PR
