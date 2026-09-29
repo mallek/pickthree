@@ -16,6 +16,28 @@ function Notify({ message, tone }: { message: string; tone?: NoticeTone | undefi
   );
 }
 
+function NotifyAction({ run }: { run: () => void }) {
+  const { notify } = useActions();
+  return (
+    <button
+      type="button"
+      onClick={() => notify('Retro Cup is live this week.', 'info', { label: 'Switch', run })}
+    >
+      raise with action
+    </button>
+  );
+}
+
+function renderActionNotice(run: () => void) {
+  render(
+    <AppProvider host={fakeHost()}>
+      <NotifyAction run={run} />
+      <NoticeToast />
+    </AppProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'raise with action' }));
+}
+
 function renderNotice(message: string, tone?: NoticeTone) {
   render(
     <AppProvider host={fakeHost()}>
@@ -130,5 +152,35 @@ describe('NoticeToast', () => {
     await waitFor(() => expect(document.querySelector('.result-bar')).not.toBeNull());
     expect(screen.getByRole('status')).toHaveStyle({ bottom: '132px' });
     vi.restoreAllMocks();
+  });
+
+  it('shows an action button on an info notice, runs it, and clears the notice', () => {
+    const run = vi.fn();
+    renderActionNotice(run);
+    expect(screen.getByRole('status')).toHaveTextContent('Retro Cup is live this week.');
+    fireEvent.click(screen.getByRole('button', { name: 'Switch' }));
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('lets an action notice be dismissed without running the action', () => {
+    const run = vi.fn();
+    renderActionNotice(run);
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('keeps an action notice up for 8 seconds, not the 3 of a plain confirmation', () => {
+    vi.useFakeTimers();
+    renderActionNotice(vi.fn());
+    act(() => {
+      vi.advanceTimersByTime(7900);
+    });
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(screen.queryByRole('status')).toBeNull();
   });
 });

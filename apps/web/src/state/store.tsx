@@ -85,6 +85,12 @@ function normalizeOpponents(opponents: string[]): string[] {
 
 export type NoticeTone = 'warn' | 'info';
 
+/** One button an info notice can carry beside its message, such as Switch on a league notice. */
+export interface NoticeAction {
+  label: string;
+  run: () => void;
+}
+
 export type Route =
   | { screen: 'welcome' }
   | { screen: 'import' }
@@ -159,6 +165,8 @@ export interface AppState {
   notice: string | null;
   /** How the notice reads: warn (amber, announced at once) or info (a neutral confirmation). */
   noticeTone: NoticeTone;
+  /** The button an info notice carries, if any. */
+  noticeAction: NoticeAction | null;
   /** True while Build holds a team that arrived by link, until a pick is changed by hand. */
   sharedTeam: boolean;
   scanList: ScanList | null;
@@ -213,7 +221,7 @@ type Action =
   | { type: 'counters-partial'; counters: CountersResult }
   | { type: 'counters-done'; counters: CountersResult | null }
   | { type: 'counters-error'; message: string }
-  | { type: 'notice'; message: string | null; tone: NoticeTone }
+  | { type: 'notice'; message: string | null; tone: NoticeTone; action?: NoticeAction }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
   | { type: 'picks'; picks: AppState['picks']; shared: boolean }
@@ -256,6 +264,7 @@ const initial: AppState = {
   countersEpoch: 0,
   notice: null,
   noticeTone: 'warn',
+  noticeAction: null,
   sharedTeam: false,
   scanList: null,
   picks: [null, null, null],
@@ -410,7 +419,7 @@ function reducer(s: AppState, a: Action): AppState {
         countersError: a.message,
       };
     case 'notice':
-      return { ...s, notice: a.message, noticeTone: a.tone };
+      return { ...s, notice: a.message, noticeTone: a.tone, noticeAction: a.action ?? null };
     case 'scanlist':
       return { ...s, scanList: a.scanList };
     case 'suggest-start':
@@ -816,7 +825,7 @@ interface Actions {
    * Show (or clear with null) the floating one-line notice. `warn` (the default) is for trouble,
    * such as a refused save; `info` is a neutral confirmation, such as a logged battle.
    */
-  notify(message: string | null, tone?: NoticeTone): void;
+  notify(message: string | null, tone?: NoticeTone, action?: NoticeAction): void;
   /** Community meta sharing on or off. Off also asks the worker to drop what this phone sent. */
   setShareEnabled(on: boolean): Promise<void>;
   /** Battles before now move to earlier seasons for the league in play. Nothing is deleted. */
@@ -1615,9 +1624,14 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     updateSettings((s) => ({ ...s, excludedSpecimenIds: [], excludedSpecies: [] }));
   }, [updateSettings]);
 
-  const notify = useCallback((message: string | null, tone: NoticeTone = 'warn') => {
-    dispatch({ type: 'notice', message, tone });
-  }, []);
+  const notify = useCallback(
+    (message: string | null, tone: NoticeTone = 'warn', action?: NoticeAction) => {
+      dispatch(
+        action ? { type: 'notice', message, tone, action } : { type: 'notice', message, tone },
+      );
+    },
+    [],
+  );
 
   /**
    * Sends unsent battles to the community meta and stamps them, when sharing is on and this is

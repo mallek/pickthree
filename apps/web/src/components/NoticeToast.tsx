@@ -32,14 +32,15 @@ export function NoticeToast() {
   const { notify } = useActions();
   const message = s.notice;
   const info = s.noticeTone === 'info';
+  const action = s.noticeAction;
   const [bottom, setBottom] = useState(FOOT_GAP);
   useEffect(() => {
     if (!message) {
       return undefined;
     }
-    const t = window.setTimeout(() => notify(null), info ? INFO_MS : WARN_MS);
+    const t = window.setTimeout(() => notify(null), info && !action ? INFO_MS : WARN_MS);
     return () => window.clearTimeout(t);
-  }, [message, info, notify]);
+  }, [message, info, action, notify]);
   // Measured again when the page changes under a confirmation, since the new page's foot bar
   // (the tab bar, or Log a Battle's taller result bar) sets where it must sit.
   const route = s.route;
@@ -50,6 +51,29 @@ export function NoticeToast() {
   }, [message, info, route]);
   if (!message) {
     return null;
+  }
+  if (info && action) {
+    return (
+      <div
+        className="update-toast notice-toast notice-info notice-foot"
+        role="status"
+        style={{ bottom }}
+      >
+        <span>{message}</span>
+        <button
+          type="button"
+          onClick={() => {
+            action.run();
+            notify(null);
+          }}
+        >
+          {action.label}
+        </button>
+        <button type="button" onClick={() => notify(null)} aria-label="Dismiss">
+          Not now
+        </button>
+      </div>
+    );
   }
   if (info) {
     return (
