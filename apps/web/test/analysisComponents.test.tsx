@@ -435,6 +435,7 @@ describe('PokemonDetails', () => {
       secondMoveUnlock: true,
       powerUpSteps: 5,
       estimated: true,
+      megaEnergy: null,
       weight: 999999,
     };
     wrap(

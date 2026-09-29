@@ -110,6 +110,7 @@ function verdict(
       evolutionCandy: 0,
       powerUpSteps: 0,
       estimated: false,
+      megaEnergy: null,
       weight: 0,
     },
     perfectDelta: null,

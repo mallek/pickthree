@@ -95,6 +95,7 @@ function candidateFor(speciesId: string, id: string, matrixRow: number) {
       secondMoveUnlock: false,
       powerUpSteps: 3,
       estimated: false,
+      megaEnergy: null,
       weight: 15000,
     },
     score: 80,

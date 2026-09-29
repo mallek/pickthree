@@ -59,6 +59,7 @@ describe('format helpers', () => {
       secondMoveUnlock: false,
       powerUpSteps: 0,
       estimated: false,
+      megaEnergy: null,
       weight: 0,
     };
     // A non-breaking space before each dot keeps it with the word before it, and inside each part
@@ -80,6 +81,7 @@ describe('format helpers', () => {
       secondMoveUnlock: false,
       powerUpSteps: 0,
       estimated: false,
+      megaEnergy: null,
       weight: 0,
     };
     expect(costParts(base)).toEqual([

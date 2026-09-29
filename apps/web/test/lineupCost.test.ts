@@ -11,6 +11,7 @@ const cost = (stardust: number, xlCandy = 0): Cost => ({
   secondMoveUnlock: false,
   powerUpSteps: 0,
   estimated: false,
+  megaEnergy: null,
   weight: stardust,
 });
 const mine = (id: string): TeamPick => ({ kind: 'specimen', id });
