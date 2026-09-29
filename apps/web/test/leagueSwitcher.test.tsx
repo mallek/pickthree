@@ -220,7 +220,10 @@ describe('sheetLeagues', () => {
 describe('sheetLeagues ordering', () => {
   const now = new Date('2026-09-24T00:00:00.000Z');
   const mk = (id: string): League => ({ ...RETRO, id, title: id, short: id, cup: id });
-  const [liveLate, liveSoon, upLate, upSoon] = ['liveLate', 'liveSoon', 'upLate', 'upSoon'].map(mk);
+  const liveLate = mk('liveLate');
+  const liveSoon = mk('liveSoon');
+  const upLate = mk('upLate');
+  const upSoon = mk('upSoon');
 
   it('orders live cups by soonest end, then upcoming cups by soonest start, whatever the schedule order', () => {
     // Schedule and league lists are deliberately in the reverse of the expected order.
