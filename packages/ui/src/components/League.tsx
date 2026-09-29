@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import type { ChoiceOption } from './Select.tsx';
 
 export const LEAGUE_COLORS: Record<string, string> = {
@@ -223,20 +223,42 @@ export function LeagueList<T extends string>({
 }) {
   return (
     <div className="ui-league-list" role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={o.value === value}
-          disabled={o.disabled ?? false}
-          className={`ui-league-row${o.value === value ? ' on' : ''}`}
-          onClick={() => onChange(o.value)}
-        >
-          <LeagueShield id={o.value} />
-          <span className="ui-league-row-label">{o.label}</span>
-        </button>
-      ))}
+      {options.map((o) => {
+        const detailId = o.detail && o.detail.length > 0 ? `league-detail-${o.value}` : undefined;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={o.value === value}
+            aria-labelledby={detailId ? `league-label-${o.value}` : undefined}
+            aria-describedby={detailId}
+            disabled={o.disabled ?? false}
+            className={`ui-league-row${o.value === value ? ' on' : ''}`}
+            onClick={() => onChange(o.value)}
+          >
+            <LeagueShield id={o.value} />
+            <span className="ui-league-row-text">
+              <span
+                id={detailId ? `league-label-${o.value}` : undefined}
+                className="ui-league-row-label"
+              >
+                {o.label}
+              </span>
+              {detailId ? (
+                <span id={detailId}>
+                  {o.detail!.map((d, i) => (
+                    <Fragment key={d}>
+                      {i > 0 ? ' ' : null}
+                      <span className="ui-league-row-detail">{d}</span>
+                    </Fragment>
+                  ))}
+                </span>
+              ) : null}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -5,6 +5,8 @@ export interface ChoiceOption<T extends string> {
   value: T;
   label: string;
   disabled?: boolean;
+  /** Extra lines under the label where a list shows them (LeagueList); a select ignores them. */
+  detail?: readonly string[];
 }
 
 /** A labelled native select. The label is always visible, so a reader knows what the field is a
