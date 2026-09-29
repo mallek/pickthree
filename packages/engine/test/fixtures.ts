@@ -53,30 +53,41 @@ export interface StaticData {
   manifest: DataManifest;
 }
 
-let cached: StaticData | null = null;
+const cached = new Map<string, StaticData>();
 
-export function loadStaticData(): StaticData {
-  if (cached) {
-    return cached;
+/** True when the built static data lists this league in leagues.json. */
+export function haveLeague(id: string): boolean {
+  const file = path.join(STATIC_DATA_DIR, 'leagues.json');
+  if (!fs.existsSync(file)) {
+    return false;
+  }
+  return (JSON.parse(fs.readFileSync(file, 'utf8')) as League[]).some((l) => l.id === id);
+}
+
+export function loadStaticData(leagueId = 'great'): StaticData {
+  const hit = cached.get(leagueId);
+  if (hit) {
+    return hit;
   }
   const read = <T>(rel: string): T =>
     JSON.parse(fs.readFileSync(path.join(STATIC_DATA_DIR, rel), 'utf8')) as T;
-  cached = {
+  const data: StaticData = {
     species: read<Species[]>('pokemon.json'),
     moves: read<Move[]>('moves.json'),
     rankings: {
-      overall: read<RankingEntry[]>('rankings/great/overall.json'),
-      leads: read<RankingEntry[]>('rankings/great/leads.json'),
-      switches: read<RankingEntry[]>('rankings/great/switches.json'),
-      closers: read<RankingEntry[]>('rankings/great/closers.json'),
-      chargers: read<RankingEntry[]>('rankings/great/chargers.json'),
+      overall: read<RankingEntry[]>(`rankings/${leagueId}/overall.json`),
+      leads: read<RankingEntry[]>(`rankings/${leagueId}/leads.json`),
+      switches: read<RankingEntry[]>(`rankings/${leagueId}/switches.json`),
+      closers: read<RankingEntry[]>(`rankings/${leagueId}/closers.json`),
+      chargers: read<RankingEntry[]>(`rankings/${leagueId}/chargers.json`),
     },
-    league: read<League[]>('leagues.json').find((l) => l.id === 'great') as League,
-    meta: read<MetaEntry[]>('meta/great.json'),
-    matrix: read<MatchupMatrix>('matrix/great.json'),
+    league: read<League[]>('leagues.json').find((l) => l.id === leagueId) as League,
+    meta: read<MetaEntry[]>(`meta/${leagueId}.json`),
+    matrix: read<MatchupMatrix>(`matrix/${leagueId}.json`),
     manifest: read<DataManifest>('data-manifest.json'),
   };
-  return cached;
+  cached.set(leagueId, data);
+  return data;
 }
 
 /** PvPoke's raw game master, as the data build copies it next to the static data. */

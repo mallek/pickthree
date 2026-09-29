@@ -5,8 +5,15 @@ import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { toSpecimens } from '../src/collection/specimen.js';
 import { parseCollectionCsv } from '../src/csv/parse.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
+import { allowedInLeague } from '../src/gamedata/league.js';
 import { compareTeamScores, recommend, verdictsFor } from '../src/recommend.js';
-import { REPO_ROOT, haveStaticData, loadFixtureCsv, loadStaticData } from './fixtures.js';
+import {
+  REPO_ROOT,
+  haveLeague,
+  haveStaticData,
+  loadFixtureCsv,
+  loadStaticData,
+} from './fixtures.js';
 
 const gmPath = path.join(
   REPO_ROOT,
@@ -108,5 +115,31 @@ describe.skipIf(!ready)('recommend end to end', () => {
     expect(report.missingIvs.count).toBe(
       Object.values(verdicts).filter((v) => v.label === 'Needs rescan').length,
     );
+  });
+});
+
+describe.skipIf(!ready || !haveLeague('little'))('recommend at Little Cup', () => {
+  const data = loadStaticData('little');
+  const index = new GameDataIndex(data.species, data.moves);
+  const sim = new PvPokeSimulator(loadPvPokeInNode(JSON.parse(fs.readFileSync(gmPath, 'utf8'))));
+  const { specimens } = toSpecimens(parseCollectionCsv(loadFixtureCsv(), index), index);
+
+  it('builds legal teams at or under 500 CP from the fixture collection', () => {
+    const rec = recommend(specimens, {}, { data, sim });
+    console.log(
+      `little e2e: ${rec.stats.specimens} specimens, ${rec.stats.eligibleBuilds} builds, ${rec.stats.dropped.length} dropped, ${rec.teams.length} teams`,
+    );
+    expect(data.league.cp).toBe(500);
+    expect(rec.stats.eligibleBuilds).toBeGreaterThanOrEqual(0);
+    for (const team of rec.teams) {
+      for (const slot of team.slots) {
+        const sp = index.species(slot.candidate.build.speciesId);
+        expect(sp, slot.candidate.build.speciesId).toBeDefined();
+        expect(allowedInLeague(sp!, data.league)).toBe(true);
+        expect(slot.candidate.build.cp).toBeLessThanOrEqual(500);
+      }
+      expect(new Set(team.slots.map((s) => s.candidate.build.speciesId)).size).toBe(3);
+      expect(team.cost.stardust).toBeGreaterThanOrEqual(0);
+    }
   });
 });
