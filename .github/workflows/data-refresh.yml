@@ -28,8 +28,8 @@ jobs:
         run: |
           npm run data:fetch
           npm -w @pickthree/sim-pvpoke run vendor:sync
-          PICKTHREE_REQUIRE_PVPOKE=1 npm test
           npm run data:build
+          PICKTHREE_REQUIRE_PVPOKE=1 npm test
       - if: steps.bump.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
