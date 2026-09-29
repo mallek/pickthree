@@ -106,7 +106,7 @@ describe('evolution filter', () => {
     id: 'little',
     cp: 500,
     cup: 'little',
-    kind: 'cup',
+    kind: 'rotation',
     include: [{ filterType: 'evolution', values: [1] }],
     exclude: [{ filterType: 'id', values: ['shuckle', 'smeargle'] }],
   };

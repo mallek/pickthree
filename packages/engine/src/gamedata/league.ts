@@ -24,14 +24,19 @@ export interface League {
   cup: string;
   /** PvPoke meta group name. */
   meta: string;
-  /** `standard` is an open league, `special` a PvPoke format behind PICKTHREE_SPECIAL_CUPS, and
-   *  `cup` a shipped tournament ruleset (the Play! ban list) that is always built. */
-  kind: 'standard' | 'special' | 'cup';
+  /** `standard` is an open league, `special` a PvPoke format behind PICKTHREE_SPECIAL_CUPS, `cup`
+   *  a shipped tournament ruleset (the Play! ban list) that is always built, and `rotation` a GO
+   *  Battle League cup from the schedule, shown while live or upcoming. */
+  kind: 'standard' | 'special' | 'cup' | 'rotation';
   /** Builds whose best CP under the cap is below this are not competitive. */
   minCp: number;
   include: CupFilter[];
   exclude: CupFilter[];
   metaSize: number;
+  /** Rotation leagues: the day PvPoke last changed this cup's rankings (YYYY-MM-DD). */
+  rankingsUpdated?: string;
+  /** Rotation leagues: rankings older than the run by more than 30 days. */
+  stale?: boolean;
 }
 
 export const GREAT_LEAGUE_DEF: League = {
