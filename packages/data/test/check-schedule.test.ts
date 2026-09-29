@@ -81,8 +81,7 @@ describe('checkOutput', () => {
   it('judges the feed only when a report exists with ok true', () => {
     expect(checkOutput({ warnings: [], report: null, pvpoke: true }).judged.feed).toBe(false);
     expect(
-      checkOutput({ warnings: [], report: { ...ok, ok: false, error: 'x' }, pvpoke: true }).judged
-        .feed,
+      checkOutput({ warnings: [], report: { ...ok, ok: false }, pvpoke: true }).judged.feed,
     ).toBe(false);
     expect(checkOutput({ warnings: [], report: ok, pvpoke: true }).judged.feed).toBe(true);
   });
