@@ -70,6 +70,31 @@ describe('parseFeed', () => {
       expect.objectContaining({ league: 'fantasy-ultra', cup: 'fantasy', cp: 2500 }),
     ]);
   });
+
+  it('skips a GBL week whose name carries no season and reports it', () => {
+    const name = 'Great League and Fantasy Cup: Great League Edition';
+    const noSeason = parseFeed(
+      [
+        {
+          name,
+          eventType: 'go-battle-league',
+          start: '2026-12-01T21:00:00.000Z',
+          end: '2026-12-08T21:00:00.000Z',
+        },
+        {
+          name: 'Great League and Retro Cup: Great League Edition | Twilight Trails',
+          eventType: 'go-battle-league',
+          start: '2026-12-08T21:00:00.000Z',
+          end: '2026-12-15T21:00:00.000Z',
+        },
+      ],
+      readAliases(),
+    );
+    expect(noSeason.noSeason).toEqual([name]);
+    expect(noSeason.entries.map((e) => e.league)).toEqual(['retro']);
+    expect(noSeason.seasons.map((x) => x.name)).toEqual(['Twilight Trails']);
+    expect(parsed.noSeason).toEqual([]);
+  });
 });
 
 import { mergeSchedule } from '../src/schedule-feed.js';

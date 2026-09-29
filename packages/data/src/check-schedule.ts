@@ -16,7 +16,13 @@ export interface Warning {
 
 export function scheduleWarnings(input: {
   schedule: ScheduleEntry[];
-  report: { ok: boolean; unmapped: string[]; error: string | null } | null;
+  report: {
+    ok: boolean;
+    unmapped: string[];
+    /** Missing in a report written before the field existed. */
+    noSeason?: string[];
+    error: string | null;
+  } | null;
   ranked: (cup: string, cp: number) => boolean;
   updated: (cup: string, cp: number) => string | null;
   now: Date;
@@ -28,6 +34,12 @@ export function scheduleWarnings(input: {
     out.push({
       title: `Map GBL cup '${title}' to a PvPoke cup`,
       body: `The GBL feed names '${title}'. Add it to packages/data/cup-aliases.json with its PvPoke cup slug (and cp if the name carries no edition), after checking the rules match.`,
+    });
+  }
+  for (const name of input.report?.noSeason ?? []) {
+    out.push({
+      title: `GBL feed week without a season: ${name}`,
+      body: `The GBL feed lists '${name}' with no " | Season" part, so schedule:refresh skipped that week. It comes back on its own once the feed names the season; if the feed changed its naming, update parseFeed in packages/data/src/schedule-feed.ts.`,
     });
   }
   if (input.report && !input.report.ok) {
@@ -73,6 +85,7 @@ if (process.argv[1] && process.argv[1].endsWith('check-schedule.ts')) {
     ? (JSON.parse(fs.readFileSync(reportFile, 'utf8')) as {
         ok: boolean;
         unmapped: string[];
+        noSeason?: string[];
         error: string | null;
       })
     : null;

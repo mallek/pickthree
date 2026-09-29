@@ -28,6 +28,8 @@ export interface ParsedFeed {
   skippedMega: string[];
   /** Cup titles with no alias, each once. */
   unmapped: string[];
+  /** GBL events skipped because their name carries no " | Season" part, as the feed names them. */
+  noSeason: string[];
   /** Season names in the feed with their earliest GBL week start, oldest first. */
   seasons: { name: string; start: string }[];
 }
@@ -62,6 +64,7 @@ export function parseFeed(
   const entries: ScheduleEntry[] = [];
   const skippedMega = new Set<string>();
   const unmapped = new Set<string>();
+  const noSeason: string[] = [];
   const seasonStart = new Map<string, string>();
   for (const ev of events) {
     if (ev.eventType !== 'go-battle-league') {
@@ -69,13 +72,15 @@ export function parseFeed(
     }
     const [formatsPart, seasonPart] = ev.name.split(' | ');
     const season = (seasonPart ?? '').trim();
+    if (!season) {
+      noSeason.push(ev.name);
+      continue;
+    }
     const start = iso(ev.start);
     const end = iso(ev.end);
-    if (season) {
-      const prev = seasonStart.get(season);
-      if (!prev || Date.parse(start) < Date.parse(prev)) {
-        seasonStart.set(season, start);
-      }
+    const prev = seasonStart.get(season);
+    if (!prev || Date.parse(start) < Date.parse(prev)) {
+      seasonStart.set(season, start);
     }
     for (const format of splitFormats(formatsPart ?? '')) {
       if (OPEN.has(format)) {
@@ -117,6 +122,7 @@ export function parseFeed(
     entries,
     skippedMega: [...skippedMega],
     unmapped: [...unmapped],
+    noSeason,
     seasons: [...seasonStart]
       .map(([name, start]) => ({ name, start }))
       .sort((a, b) => Date.parse(a.start) - Date.parse(b.start)),

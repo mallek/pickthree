@@ -51,6 +51,17 @@ describe('scheduleWarnings', () => {
     ]);
   });
 
+  it('warns once per feed week that names no season', () => {
+    const w = scheduleWarnings({
+      ...base,
+      report: { ok: true, unmapped: [], noSeason: ['Great League and Retro Cup'], error: null },
+      now: new Date('2026-10-01T00:00:00Z'),
+    });
+    expect(w.map((x) => x.title)).toEqual([
+      'GBL feed week without a season: Great League and Retro Cup',
+    ]);
+  });
+
   it('skips rankings and staleness warnings when the PvPoke checkout is missing', () => {
     const w = scheduleWarnings({
       ...base,
