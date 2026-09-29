@@ -1153,11 +1153,17 @@ console.log(`  own or can build: ${buildRows} of ${allRows} rows`);
 if (buildRows === 0 || buildRows >= allRows) {
   throw new Error(`counters filter: own or can build left ${buildRows} of ${allRows} rows`);
 }
-// Two links on a row stay on one line (a wrap stacks a second 44px line under the row).
-const linkLines = await page.$eval('.counter-row .counter-links:has(.ui-btn + .ui-btn)', (l) => {
-  const [a, b] = [...l.querySelectorAll('.ui-btn')].map((x) => x.getBoundingClientRect().top);
-  return a === b ? 1 : 2;
-});
+// Two links on a row stay on one line (a wrap stacks a second 44px line under the row). The second
+// link names the Pokemon and the rows follow PvPoke's rankings, so measure the row with the
+// shortest labels: a long name may wrap (checked below), a short one must not.
+const linkLines = await page.$$eval(
+  '.counter-row .counter-links:has(.ui-btn + .ui-btn)',
+  (lists) => {
+    const l = [...lists].sort((x, y) => x.textContent.length - y.textContent.length)[0];
+    const [a, b] = [...l.querySelectorAll('.ui-btn')].map((x) => x.getBoundingClientRect().top);
+    return a === b ? 1 : 2;
+  },
+);
 if (linkLines !== 1) {
   throw new Error('counters: a row with two links wraps them onto two lines');
 }
