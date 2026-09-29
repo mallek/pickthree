@@ -1,4 +1,4 @@
-import type { Layout, MetaRank } from '@pickthree/engine';
+import type { Layout, League, LeagueStatus, MetaRank } from '@pickthree/engine';
 import type { Cost, IvRankResult, Species } from '@pickthree/engine';
 
 // Re-exported, not duplicated: SpeciesToken (packages/ui) needs its own copy internally, and
@@ -228,4 +228,47 @@ export function emptyLayoutValue(): Layout {
     ivOrderAssumed: false,
     confidence: 1,
   };
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/** "Tue 9/29" in the phone's own time zone. */
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  return `${WEEKDAYS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/** The Leagues sheet's lines under a cup: when it runs, and whether PvPoke's data is old. */
+export function leagueDetail(
+  status: LeagueStatus,
+  league: Pick<League, 'kind' | 'stale' | 'rankingsUpdated'>,
+): string[] {
+  if (league.kind !== 'rotation') {
+    return [];
+  }
+  const out: string[] = [];
+  if (status.state === 'live') {
+    out.push(`Live, ends ${dayLabel(status.end)}`);
+  } else if (status.state === 'upcoming') {
+    out.push(`Starts ${dayLabel(status.start)}`);
+  }
+  if (league.stale && league.rankingsUpdated) {
+    const [y, m] = league.rankingsUpdated.split('-');
+    out.push(`PvPoke last updated ${MONTHS[Number(m) - 1]} ${y}`);
+  }
+  return out;
 }

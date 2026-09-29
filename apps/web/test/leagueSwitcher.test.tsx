@@ -2,8 +2,9 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { League } from '@pickthree/engine';
+import type { League, ScheduleEntry } from '@pickthree/engine';
 import { LeagueSwitcher } from '../src/components/LeagueSwitcher.tsx';
+import { sheetLeagues } from '../src/leagues.ts';
 import { AppProvider, useAppState, type AppState } from '../src/state/store.tsx';
 import { resetDbForTests } from '../src/storage/db.ts';
 import { GREAT, fakeHost } from './fakeHost.ts';
@@ -28,7 +29,13 @@ const TOURNAMENT: League = {
   metaSize: 3,
 };
 
-const REMIX: League = { ...TOURNAMENT, id: 'remix', title: 'Remix', short: 'Remix', kind: 'special' };
+const REMIX: League = {
+  ...TOURNAMENT,
+  id: 'remix',
+  title: 'Remix',
+  short: 'Remix',
+  kind: 'special',
+};
 
 let latest: AppState | null = null;
 function Probe() {
@@ -127,8 +134,85 @@ describe('LeagueSwitcher', () => {
       fireEvent.click(radio);
     });
     await waitFor(() => expect(latest?.settings.league).toBe('championshipseries'));
-    const overflow = screen.getByRole('button', { name: 'Tournament League, More leagues and cups' });
+    const overflow = screen.getByRole('button', {
+      name: 'Tournament League, More leagues and cups',
+    });
     expect(overflow).toHaveClass('on');
     expect(overflow.textContent).toContain('Tournament');
+  });
+});
+
+const RETRO: League = {
+  ...TOURNAMENT,
+  id: 'retro',
+  title: 'Retro Cup',
+  short: 'Retro',
+  cup: 'retro',
+  kind: 'rotation',
+};
+const LITTLE: League = {
+  ...TOURNAMENT,
+  id: 'little',
+  title: 'Little Cup',
+  short: 'Little',
+  cup: 'little',
+  cp: 500,
+  kind: 'rotation',
+  stale: true,
+  rankingsUpdated: '2024-03-04',
+};
+const LAIC: League = {
+  ...TOURNAMENT,
+  id: 'laic2027',
+  title: '2026 GO LAIC Cup',
+  short: '2026 GO LAIC',
+  cup: 'laic2027',
+  kind: 'rotation',
+};
+const entry = (l: League, start: string, end: string): ScheduleEntry => ({
+  league: l.id,
+  cup: l.cup,
+  cp: l.cp,
+  title: l.title,
+  start,
+  end,
+  season: 'Twilight Trails',
+});
+const SCHEDULE: ScheduleEntry[] = [
+  entry(RETRO, '2026-09-22T20:00:00.000Z', '2026-09-29T20:00:00.000Z'),
+  entry(LITTLE, '2026-09-26T20:00:00.000Z', '2026-10-03T20:00:00.000Z'),
+  entry(LAIC, '2026-11-10T21:00:00.000Z', '2026-11-17T21:00:00.000Z'),
+];
+const ALL = [GREAT, ULTRA, MASTER, TOURNAMENT, REMIX, RETRO, LITTLE, LAIC];
+
+describe('sheetLeagues', () => {
+  const now = new Date('2026-09-24T00:00:00.000Z');
+
+  it('lists open leagues, then Tournament, then live cups, then upcoming, and hides the rest', () => {
+    const { open, more } = sheetLeagues(ALL, SCHEDULE, 'great', now);
+    expect(open.map((l) => l.id)).toEqual(['great', 'ultra', 'master']);
+    expect(more.map((m) => m.league.id)).toEqual([
+      'great',
+      'ultra',
+      'master',
+      'championshipseries',
+      'retro',
+      'little',
+    ]);
+    expect(more.find((m) => m.league.id === 'retro')?.detail).toEqual(['Live, ends Tue 9/29']);
+    expect(more.find((m) => m.league.id === 'little')?.detail).toEqual([
+      'Starts Sat 9/26',
+      'PvPoke last updated March 2024',
+    ]);
+  });
+
+  it('keeps the selected cup listed even when it is off, so the sheet never hides where you are', () => {
+    const { more } = sheetLeagues(ALL, SCHEDULE, 'laic2027', now);
+    expect(more.map((m) => m.league.id)).toContain('laic2027');
+  });
+
+  it('never lists special formats', () => {
+    const { more } = sheetLeagues(ALL, SCHEDULE, 'great', now);
+    expect(more.map((m) => m.league.id)).not.toContain('remix');
   });
 });

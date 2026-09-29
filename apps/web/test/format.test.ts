@@ -4,6 +4,7 @@ import {
   costParts,
   coversLine,
   initialOf,
+  leagueDetail,
   scanAge,
   speciesDisplayName,
   topPct,
@@ -128,5 +129,35 @@ describe('hash router', () => {
     }
     expect(parseHash('')).toEqual({ screen: 'welcome' });
     expect(parseHash('#/nonsense')).toEqual({ screen: 'welcome' });
+  });
+});
+
+describe('leagueDetail', () => {
+  const rotation = { kind: 'rotation' as const };
+  // 20:00 UTC is the same calendar day from UTC-12 to UTC+3, which covers CI (UTC) and the
+  // developer's machine; the weekday and date below hold in all of them.
+  it('says when a live cup ends', () => {
+    expect(leagueDetail({ state: 'live', end: '2026-09-29T20:00:00.000Z' }, rotation)).toEqual([
+      'Live, ends Tue 9/29',
+    ]);
+  });
+
+  it('says when an upcoming cup starts', () => {
+    expect(
+      leagueDetail({ state: 'upcoming', start: '2026-10-13T20:00:00.000Z' }, rotation),
+    ).toEqual(['Starts Tue 10/13']);
+  });
+
+  it('adds the PvPoke date for stale rankings', () => {
+    expect(
+      leagueDetail(
+        { state: 'upcoming', start: '2026-10-13T20:00:00.000Z' },
+        { ...rotation, stale: true, rankingsUpdated: '2024-03-04' },
+      ),
+    ).toEqual(['Starts Tue 10/13', 'PvPoke last updated March 2024']);
+  });
+
+  it('says nothing for an open league', () => {
+    expect(leagueDetail({ state: 'off' }, { kind: 'standard' })).toEqual([]);
   });
 });

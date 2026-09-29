@@ -7,6 +7,8 @@ import {
   LEAGUE_COLORS,
 } from '@pickthree/ui';
 import type { League } from '@pickthree/engine';
+import { appNow } from '../clock.ts';
+import { sheetLeagues } from '../leagues.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 export { LEAGUE_COLORS, LeagueShield };
@@ -32,7 +34,8 @@ export function useLeague(): League {
 
 /**
  * The open leagues (Great, Ultra, Master) in the row, always with shields; the shipped tournament
- * cups (League.kind 'cup') sit behind the "..." overflow, which opens a sheet listing every league
+ * cups (League.kind 'cup') and the GO Battle League rotation cups (League.kind 'rotation', live
+ * first, then upcoming) sit behind the "..." overflow, which opens a sheet listing every league
  * and cup. When the current league is a cup, the overflow slot shows that cup instead of "..." so
  * the row still names what is in play. The PICKTHREE_SPECIAL_CUPS formats stay out entirely: their
  * rules work, but the app does not yet know enough about them (megas in the Mega cups, for one) to
@@ -42,18 +45,29 @@ export function LeagueSwitcher({ compact }: { compact?: boolean }) {
   const s = useAppState();
   const { setLeague } = useActions();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const leagues = (s.data?.leagues ?? []).filter((l) => l.kind !== 'special');
-  const openLeagues = leagues.filter((l) => l.kind === 'standard');
-  const cups = leagues.filter((l) => l.kind === 'cup');
-  const currentLeague = leagues.find((l) => l.id === (s.settings.league ?? 'great'));
+  const current = s.settings.league ?? 'great';
+  const { open: openLeagues, more: listed } = sheetLeagues(
+    s.data?.leagues ?? [],
+    s.data?.schedule ?? [],
+    current,
+    appNow(),
+  );
+  const cups = listed.filter((m) => m.league.kind !== 'standard');
+  const currentLeague = listed.find((m) => m.league.id === current)?.league;
   const more =
     cups.length === 0
       ? undefined
       : {
           label: 'More leagues and cups',
           onClick: () => setSheetOpen(true),
-          ...(currentLeague?.kind === 'cup'
-            ? { current: { id: currentLeague.id, label: currentLeague.short, srLabel: currentLeague.title } }
+          ...(currentLeague?.kind === 'cup' || currentLeague?.kind === 'rotation'
+            ? {
+                current: {
+                  id: currentLeague.id,
+                  label: currentLeague.short,
+                  srLabel: currentLeague.title,
+                },
+              }
             : {}),
         };
   return (
@@ -81,7 +95,11 @@ export function LeagueSwitcher({ compact }: { compact?: boolean }) {
                   setLeague(id);
                   nav.close();
                 }}
-                options={leagues.map((l) => ({ value: l.id, label: l.title }))}
+                options={listed.map((m) => ({
+                  value: m.league.id,
+                  label: m.league.title,
+                  detail: m.detail,
+                }))}
               />
             ),
           }}
