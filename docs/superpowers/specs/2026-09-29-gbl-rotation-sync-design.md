@@ -83,7 +83,7 @@ The season as read on 2026-09-29 (non-mega cups in bold):
      "Retro Cup": { "cup": "retro" },
      "Fantasy Cup": { "cup": "fantasy" },
      "Little Cup": { "cup": "little", "cp": 500 },
-     "2026 GO LAIC Cup": { "cup": "laic2027", "note": "unconfirmed: check the rules match" }
+     "2026 GO LAIC Cup": { "cup": "laic2027", "cp": 1500, "note": "unconfirmed: check the rules match" }
    }
    ```
 
