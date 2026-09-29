@@ -28,6 +28,7 @@ import {
   type MetaEntry,
   type Move,
   type RankingEntry,
+  type ScheduleEntry,
   type Season,
   type Species,
 } from '@pickthree/engine';
@@ -55,6 +56,7 @@ interface Env {
   sim: BattleSimulator;
   index: GameDataIndex;
   seasons: Season[];
+  schedule: ScheduleEntry[];
   /** Meta resets, for the community read's This meta window. */
   epochs: Epoch[];
   /** PvPoke's own game master, for the default-IV stand-ins the matchup matrix was built from. */
@@ -85,15 +87,17 @@ type BootStep = (step: string, done: number) => void;
 
 async function boot(step: BootStep): Promise<Env> {
   step('fetching game data', 0);
-  const [species, moves, manifest, leagues, gamemaster, seasons, epochs] = await Promise.all([
-    json<Species[]>('/data/pokemon.json'),
-    json<Move[]>('/data/moves.json'),
-    json<DataManifest>('/data/data-manifest.json'),
-    json<League[]>('/data/leagues.json'),
-    json<unknown>('/data/gamemaster.json'),
-    json<Season[]>('/data/seasons.json').catch(() => [] as Season[]),
-    json<Epoch[]>('/data/epochs.json').catch(() => [] as Epoch[]),
-  ]);
+  const [species, moves, manifest, leagues, gamemaster, seasons, epochs, schedule] =
+    await Promise.all([
+      json<Species[]>('/data/pokemon.json'),
+      json<Move[]>('/data/moves.json'),
+      json<DataManifest>('/data/data-manifest.json'),
+      json<League[]>('/data/leagues.json'),
+      json<unknown>('/data/gamemaster.json'),
+      json<Season[]>('/data/seasons.json').catch(() => [] as Season[]),
+      json<Epoch[]>('/data/epochs.json').catch(() => [] as Epoch[]),
+      json<ScheduleEntry[]>('/data/schedule.json').catch(() => [] as ScheduleEntry[]),
+    ]);
   // The vendored PvPoke bundle reads the game master from this global when its shimmed ajax
   // callback is flushed (see packages/sim-pvpoke/src/globals-shim.js).
   step('loading simulator', 1);
@@ -116,7 +120,7 @@ async function boot(step: BootStep): Promise<Env> {
   const sim = new PvPokeSimulator(runtime);
   const index = new GameDataIndex(species, moves);
   step('ready', 4);
-  return { species, moves, manifest, leagues, sim, index, seasons, epochs, gamemaster };
+  return { species, moves, manifest, leagues, sim, index, seasons, schedule, epochs, gamemaster };
 }
 
 function ensureReady(step: BootStep): Promise<Env> {
@@ -228,6 +232,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
             .filter((sp) => sp.released && !sp.tags.includes('mega'))
             .map((sp) => sp.speciesId),
           seasons: env.seasons,
+          schedule: env.schedule,
           epochs: env.epochs,
           moves: Object.fromEntries(
             env.moves.map((m) => [m.moveId, { name: m.name, type: m.type }]),

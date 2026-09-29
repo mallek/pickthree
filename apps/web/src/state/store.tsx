@@ -15,6 +15,7 @@ import {
   type Recommendation,
   type RecommendOptions,
   type ScanList,
+  type ScheduleEntry,
   type Season,
   type Specimen,
   type SuggestResult,
@@ -112,6 +113,7 @@ export interface DataInfo {
   /** Released, non-mega species for adding by hand. */
   allSpecies: string[];
   seasons: Season[];
+  schedule: ScheduleEntry[];
   /** Meta resets, for the community read's This meta window. */
   epochs: Epoch[];
   /** Move id to display name and type, for the `@word` search term. */
@@ -892,6 +894,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
               leagues: r.leagues,
               allSpecies: r.allSpecies,
               seasons: r.seasons,
+              schedule: r.schedule ?? [],
               epochs: r.epochs,
               moves: r.moves,
             },

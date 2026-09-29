@@ -37,6 +37,7 @@ import type {
   RecommendOptions,
   ScanList,
   ScanListOptions,
+  ScheduleEntry,
   Season,
   Specimen,
   SuggestOptions,
@@ -128,6 +129,8 @@ export type WorkerResult =
       allSpecies: string[];
       /** Go Battle League seasons, oldest first. Empty when the data build predates the list. */
       seasons: Season[];
+      /** GO Battle League cup weeks. Empty when the data build predates the schedule. */
+      schedule: ScheduleEntry[];
       /** Meta reset list (meta.pick3.gg's epochs.json). Empty when the data build predates it. */
       epochs: Epoch[];
       /** Move id to display name and type, for the `@word` search term. */

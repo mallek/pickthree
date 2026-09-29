@@ -90,6 +90,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
       leagues: [GREAT],
       allSpecies: ['tinkaton', 'azumarill', 'clodsire', 'medicham', 'dragonite_shadow'],
       seasons: SEASONS,
+      schedule: [],
       epochs: [],
       moves: {
         MUD_SHOT: { name: 'Mud Shot', type: 'ground' },
