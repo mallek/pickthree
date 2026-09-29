@@ -2,6 +2,7 @@ import type { Layout } from '../csv/layout.js';
 import type { IVs, ParsedCsv, RawScan, RowProblem } from '../csv/parse.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import { mapSpecies } from '../mapping/mapSpecies.js';
+import { MEGA_FORMS } from '../mapping/tables.js';
 
 export interface Specimen {
   id: string;
@@ -19,6 +20,15 @@ export interface Specimen {
   raw: RawScan;
   /** Absent for Poke Genie scans; manual for Pokémon typed in by hand. */
   source?: 'manual';
+  /** Poke Genie's Mega mark. Absent on older saves; read it with megaFormOf. */
+  megaForm?: 'mega' | 'mega_x' | 'mega_y' | null;
+  /** The player has this Mega at Level 4 (set by the app). Absent means false. */
+  megaLevel4?: boolean;
+}
+
+/** The Mega mark of a specimen; an old save without the field is unmarked. */
+export function megaFormOf(sp: Pick<Specimen, 'megaForm'>): 'mega' | 'mega_x' | 'mega_y' | null {
+  return sp.megaForm ?? null;
 }
 
 export interface ImportReport {
@@ -117,6 +127,7 @@ export function toSpecimens(
       currentMoves: { fast: moveId(row.fastMove, index), charged },
       scannedAt: row.scanDate,
       raw: row,
+      megaForm: MEGA_FORMS[row.form.trim()] ?? null,
     };
     if (newest === null || row.scanDate > newest) {
       newest = row.scanDate;

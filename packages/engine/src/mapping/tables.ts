@@ -90,8 +90,15 @@ export const FORM_SUFFIX: Record<string, string> = {
   Plumage: '_green',
 };
 
+/** Poke Genie Form values that mark a Mega, and the mark the specimen keeps. */
+export const MEGA_FORMS: Record<string, 'mega' | 'mega_x' | 'mega_y'> = {
+  Mega: 'mega',
+  'Mega X': 'mega_x',
+  'Mega Y': 'mega_y',
+};
+
 /** Forms that map to a base species for open Great League play (the player owns the base). */
-export const FORMS_TO_BASE = new Set(['Mega', 'Mega X', 'Mega Y']);
+export const FORMS_TO_BASE = new Set(Object.keys(MEGA_FORMS));
 
 export interface Override {
   /** slug of the Poke Genie name */
