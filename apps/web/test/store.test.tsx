@@ -1031,3 +1031,28 @@ describe('rotation on open', () => {
     }
   });
 });
+
+describe('updateSettings', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetCommunityMetaCache();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  it('keeps both fields when two writes land in one commit', async () => {
+    await mount();
+    await act(async () => {
+      latest!.actions.updateSettings({ sprites: false });
+      latest!.actions.updateSettings({ errorReports: false });
+    });
+    expect(latest!.state.settings.sprites).toBe(false);
+    expect(latest!.state.settings.errorReports).toBe(false);
+    await waitFor(async () => {
+      const saved = await storage.loadSettings();
+      expect(saved.sprites).toBe(false);
+      expect(saved.errorReports).toBe(false);
+    });
+  });
+});

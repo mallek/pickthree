@@ -1018,6 +1018,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       typeof patch === 'function'
         ? patch(stateRef.current.settings)
         : { ...stateRef.current.settings, ...patch };
+    // Ahead of the render, so a second write in the same commit builds on this one.
+    stateRef.current = { ...stateRef.current, settings: next };
     dispatch({ type: 'settings', settings: next });
     void storage.saveSettings(next);
   }, []);
