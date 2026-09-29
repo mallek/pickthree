@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readSeasons, seasonsStale } from '../src/seasons.js';
+import { readSeasons, seasonsStale, mergeSeasons } from '../src/seasons.js';
 
 describe('seasons.json', () => {
   const seasons = readSeasons();
@@ -23,5 +23,41 @@ describe('seasons.json', () => {
     expect(seasonsStale(list, new Date('2026-03-01T00:00:00Z'), 90)).toBe(false);
     expect(seasonsStale(list, new Date('2026-04-15T00:00:00Z'), 90)).toBe(true);
     expect(seasonsStale([], new Date('2026-04-15T00:00:00Z'), 90)).toBe(true);
+  });
+});
+
+describe('mergeSeasons', () => {
+  const listed = [
+    { id: 28, name: 'Twilight Trails', start: '2026-09-08T13:00:00-07:00' },
+    { id: 29, name: 'Season 29', start: '2026-12-01T13:00:00-08:00' },
+  ];
+
+  it('changes nothing for a season already listed by name', () => {
+    expect(
+      mergeSeasons(listed, [{ name: 'Twilight Trails', start: '2026-09-22T20:00:00.000Z' }]),
+    ).toEqual(listed);
+  });
+
+  it('renames a placeholder that starts within a day of the new season', () => {
+    expect(
+      mergeSeasons(listed, [{ name: 'Frost Fair', start: '2026-12-01T21:00:00.000Z' }]),
+    ).toEqual([listed[0], { id: 29, name: 'Frost Fair', start: '2026-12-01T13:00:00-08:00' }]);
+  });
+
+  it('appends an unlisted season with the next id and an offset time', () => {
+    const only = [listed[0]!];
+    expect(mergeSeasons(only, [{ name: 'Frost Fair', start: '2026-12-01T21:00:00.000Z' }])).toEqual(
+      [listed[0], { id: 29, name: 'Frost Fair', start: '2026-12-01T21:00:00+00:00' }],
+    );
+  });
+
+  it('never appends the same season twice', () => {
+    const once = mergeSeasons(
+      [listed[0]!],
+      [{ name: 'Frost Fair', start: '2026-12-01T21:00:00.000Z' }],
+    );
+    expect(mergeSeasons(once, [{ name: 'Frost Fair', start: '2026-12-01T21:00:00.000Z' }])).toEqual(
+      once,
+    );
   });
 });

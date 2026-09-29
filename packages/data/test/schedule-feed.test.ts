@@ -71,3 +71,55 @@ describe('parseFeed', () => {
     ]);
   });
 });
+
+import { mergeSchedule } from '../src/schedule-feed.js';
+import type { ScheduleEntry } from '@pickthree/engine';
+
+const wk = (
+  league: string,
+  start: string,
+  end: string,
+  season = 'Twilight Trails',
+): ScheduleEntry => ({
+  league,
+  cup: league,
+  cp: 1500,
+  title: league,
+  start,
+  end,
+  season,
+});
+
+describe('mergeSchedule', () => {
+  const retro = wk('retro', '2026-09-22T20:00:00.000Z', '2026-09-29T20:00:00.000Z');
+  const little = wk('little', '2026-10-13T20:00:00.000Z', '2026-10-20T20:00:00.000Z');
+  const fantasy = wk('fantasy', '2026-10-20T20:00:00.000Z', '2026-10-27T20:00:00.000Z');
+
+  it('keeps an ended week the feed no longer lists', () => {
+    const now = new Date('2026-10-01T00:00:00.000Z');
+    expect(mergeSchedule([retro, little], [little], now)).toEqual([retro, little]);
+  });
+
+  it('drops a future week the feed no longer lists (the schedule changed)', () => {
+    const now = new Date('2026-10-01T00:00:00.000Z');
+    expect(mergeSchedule([retro, little, fantasy], [fantasy], now)).toEqual([retro, fantasy]);
+  });
+
+  it('drops the previous season once a newer season has started', () => {
+    const next = wk('retro', '2026-12-08T21:00:00.000Z', '2026-12-15T21:00:00.000Z', 'Season 29');
+    const now = new Date('2026-12-02T00:00:00.000Z');
+    const firstOfNext = wk(
+      'little',
+      '2026-12-01T21:00:00.000Z',
+      '2026-12-08T21:00:00.000Z',
+      'Season 29',
+    );
+    expect(mergeSchedule([retro, little], [firstOfNext, next], now)).toEqual([firstOfNext, next]);
+  });
+
+  it('keeps the current season while the next is only announced', () => {
+    const next = wk('retro', '2026-12-08T21:00:00.000Z', '2026-12-15T21:00:00.000Z', 'Season 29');
+    const now = new Date('2026-11-01T00:00:00.000Z');
+    expect(mergeSchedule([retro], [next], now)).toEqual([retro, next]);
+  });
+});

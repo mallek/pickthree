@@ -38,3 +38,47 @@ export function seasonsStale(seasons: Season[], now: Date, days: number): boolea
   }
   return now.getTime() - Date.parse(newest.start) > days * 86_400_000;
 }
+
+const DAY_MS = 86_400_000;
+
+/** A feed time (`...Z`) in the offset form readSeasons requires. */
+function withOffset(iso: string): string {
+  return new Date(iso).toISOString().replace(/\.\d{3}Z$/, '+00:00');
+}
+
+/**
+ * Seasons seen in the GBL feed folded into the list: a listed name changes nothing; a
+ * placeholder ("Season 29") starting within a day is renamed; anything else is appended with
+ * the next id.
+ */
+export function mergeSeasons(
+  seasons: readonly Season[],
+  seen: readonly { name: string; start: string }[],
+): Season[] {
+  const out = [...seasons].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  for (const s of seen) {
+    if (out.some((x) => x.name === s.name)) {
+      continue;
+    }
+    const placeholder = out.find(
+      (x) =>
+        /^Season \d+$/.test(x.name) &&
+        Math.abs(Date.parse(x.start) - Date.parse(s.start)) <= DAY_MS,
+    );
+    if (placeholder) {
+      out[out.indexOf(placeholder)] = { ...placeholder, name: s.name };
+      continue;
+    }
+    const nextId = out.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+    out.push({ id: nextId, name: s.name, start: withOffset(s.start) });
+    out.sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  }
+  return out;
+}
+
+export function writeSeasons(seasons: readonly Season[], file: string = SEASONS_PATH): void {
+  const lines = seasons.map(
+    (s) => `  ${JSON.stringify({ id: s.id, name: s.name, start: s.start })}`,
+  );
+  fs.writeFileSync(file, `[\n${lines.join(',\n')}\n]\n`);
+}

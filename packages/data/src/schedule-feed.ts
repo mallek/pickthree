@@ -5,6 +5,7 @@ import { DATA_PACKAGE_DIR } from './paths.js';
 
 export const FEED_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
 export const ALIASES_PATH = path.join(DATA_PACKAGE_DIR, 'cup-aliases.json');
+export const SCHEDULE_PATH = path.join(DATA_PACKAGE_DIR, 'schedule.json');
 
 /** One ScrapedDuck event, trimmed to what the parser reads. */
 export interface FeedEvent {
@@ -120,4 +121,72 @@ export function parseFeed(
       .map(([name, start]) => ({ name, start }))
       .sort((a, b) => Date.parse(a.start) - Date.parse(b.start)),
   };
+}
+
+const key = (e: ScheduleEntry): string => `${e.league}|${e.start}`;
+
+/**
+ * The feed decides every week that has not ended. Ended weeks stay until a newer season has
+ * started, so a run that began before the feed dropped its first week keeps its start.
+ */
+export function mergeSchedule(
+  existing: readonly ScheduleEntry[],
+  fresh: readonly ScheduleEntry[],
+  now: Date,
+): ScheduleEntry[] {
+  const t = now.getTime();
+  const byKey = new Map<string, ScheduleEntry>();
+  for (const e of existing) {
+    if (Date.parse(e.end) <= t) {
+      byKey.set(key(e), e);
+    }
+  }
+  for (const e of fresh) {
+    byKey.set(key(e), e);
+  }
+  const all = [...byKey.values()].sort(
+    (a, b) => Date.parse(a.start) - Date.parse(b.start) || a.league.localeCompare(b.league),
+  );
+  const started = all.filter((e) => Date.parse(e.start) <= t);
+  const currentSeason = started[started.length - 1]?.season;
+  if (currentSeason === undefined) {
+    return all;
+  }
+  const currentStart = Math.min(
+    ...all.filter((e) => e.season === currentSeason).map((e) => Date.parse(e.start)),
+  );
+  return all.filter((e) => e.season === currentSeason || Date.parse(e.start) > currentStart);
+}
+
+export function readSchedule(file: string = SCHEDULE_PATH): ScheduleEntry[] {
+  if (!fs.existsSync(file)) {
+    return [];
+  }
+  const raw: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (!Array.isArray(raw)) {
+    throw new Error(`${file}: expected an array`);
+  }
+  return raw.map((x, i) => {
+    const e = x as Partial<ScheduleEntry>;
+    for (const f of ['league', 'cup', 'title', 'start', 'end', 'season'] as const) {
+      if (typeof e[f] !== 'string' || e[f] === '') {
+        throw new Error(`${file}: entry ${i} needs ${f}`);
+      }
+    }
+    if (
+      typeof e.cp !== 'number' ||
+      Number.isNaN(Date.parse(e.start!)) ||
+      Number.isNaN(Date.parse(e.end!))
+    ) {
+      throw new Error(`${file}: entry ${i} needs a numeric cp and ISO start and end`);
+    }
+    return e as ScheduleEntry;
+  });
+}
+
+export function writeSchedule(
+  entries: readonly ScheduleEntry[],
+  file: string = SCHEDULE_PATH,
+): void {
+  fs.writeFileSync(file, `${JSON.stringify(entries, null, 2)}\n`);
 }
