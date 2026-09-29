@@ -66,14 +66,16 @@ The season as read on 2026-09-29 (non-mega cups in bold):
 
 ### Feed parser
 
-`packages/data/src/schedule.ts`. For each `go-battle-league` entry:
+`packages/data/src/schedule-feed.ts`. For each `go-battle-league` entry:
 
-1. Split the name on `|`: the left side is the formats, the right side the season name.
-2. Split the formats on `, ` and `, and ` / `and`.
+1. Split the name on `' | '` (a bar with a space each side): the left side is the formats, the
+   right side the season name. A name with no season part is skipped and reported (`noSeason`),
+   and the daily job files a warning for it.
+2. Split the formats on `', '`, `', and '` and `' and '`.
 3. Classify each format:
    - `Great League`, `Ultra League`, `Master League`: an open league, always on. Skipped.
-   - Contains `Mega`: out of scope. Skipped and logged (`skipped mega: Mega Color Cup: Great League
-Edition`).
+   - Contains `Mega`: out of scope. Skipped and logged
+     (`skipped mega: Mega Color Cup: Great League Edition`).
    - Otherwise a cup. Strip a trailing `: Great League Edition` / `: Ultra League Edition` /
      `: Master League Edition` to get the cup title and the CP cap (1500 / 2500 / 10000).
 4. Look the cup title up in `packages/data/cup-aliases.json`:
@@ -169,15 +171,20 @@ Rotation leagues go into `leagues.json` with their other fields; the schedule it
 2. **PvPoke step.** As today (`data:refresh`, fetch, `vendor:sync`, `data:build`, tests). Then:
    - The vendor diff is empty (only the lock moved): commit the lock to main directly.
    - The vendor diff is not empty: open the PR as today, for review.
-3. **Warnings**, each an issue deduplicated by title as the seasons check does today:
+3. **Warnings**, each an issue deduplicated by title as the seasons check does today, and closed
+   with a comment on the first run that no longer warns it (so a stale cup's issue closes itself
+   once PvPoke refreshes; the feed-failing issue keeps its own rule, below):
    - an unmapped cup title;
    - a scheduled cup starting within 7 days with no rankings at its cap;
    - a scheduled cup starting within 7 days whose rankings are stale;
+   - a GBL week in the feed whose name carries no season;
    - the feed unreachable or unparseable (filed on the first failed day, closed on the next good day: the workflow token cannot keep a counter between runs).
 4. After a push, the job dispatches `pages.yml` (a push made with the workflow token starts no workflows on its own).
 
 Main's protection: the bot pushes with the workflow token (`contents: write`), as the refresh PR
-branch does today. If a ruleset ever blocks it, the job falls back to a PR and says so in the log.
+branch does today. A refused push is retried once after `git pull --rebase`; if a ruleset still
+blocks it, the job falls back to a PR and says so in the log. Runs never overlap (one concurrency
+group, not cancelled).
 
 ## Engine
 
@@ -220,7 +227,8 @@ branch does today. If a ruleset ever blocks it, the job falls back to a PR and s
   `upcoming`: a player building ahead for next week keeps their choice), set
   it to `great` and show "Retro Cup ended. Back to Great League." once. Logs under the cup id stay
   in IndexedDB and reappear when the cup runs again.
-- **A cup opened from an old link or setting while off**: treated the same way (fall back, notice).
+- A cup opened from a link while off stays selected: the player followed it on purpose, and the
+  Leagues sheet keeps a selected off cup listed. Only a saved setting is checked, once per app open.
 - **Your meta window**: `seasonWindow` (engine `yourmeta/season.ts`) takes an optional run; for a
   rotation league the window starts at `currentRun().start` instead of the season start. Stats
   bucket by run for rotation leagues ("This run", then earlier runs). The community board query
@@ -263,8 +271,8 @@ Logic is tested on synthetic data; live PvPoke data only gets invariants (the ru
 4. Ship before 2026-10-13. Retro ends 2026-09-29, so Little Cup's first run is the live proof.
 
 **Done** when, on 2026-10-13 at 20:00 UTC, pick3 lists Little Cup as live with no deploy that day,
-the nudge fires once, and CI has already reported the state of Fantasy Cup's Great League rankings
-(missing, or present once PvPoke publishes them).
+the nudge fires once, and CI has reported the state of Fantasy Cup's Great League rankings by
+2026-10-14 (the first daily run within 7 days of its start).
 
 ## Out of scope
 
