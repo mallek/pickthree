@@ -28,6 +28,7 @@ import {
 } from '../score/simStrength.js';
 import { candidateFor, candidatePool, type Candidate } from '../search/candidates.js';
 import { MatrixView } from '../search/matrixView.js';
+import { teamRuleViolation } from '../search/teamRules.js';
 import { withSimulatedRows, type MatrixFighter } from '../sim/matrixSim.js';
 import { bestBuild } from '../verdicts/worth.js';
 import { coverLines, weakPinLine } from './lines.js';
@@ -387,7 +388,7 @@ export interface Core {
 }
 
 /** Every combination of `slots` candidates that can sit alongside the pins. */
-function search(
+export function search(
   ctx: StrengthContext,
   topCtx: StrengthContext,
   pins: Candidate[],
@@ -399,6 +400,9 @@ function search(
   const s11 = ctx.view.scenarioIndex([1, 1]);
   const consider = (fills: Candidate[]): void => {
     const members = [...pins, ...fills];
+    if (teamRuleViolation(members.map((c) => c.build)) !== null) {
+      return;
+    }
     const rows = members.map((c) => c.matrixRow) as [number, number, number];
     const beaten = new Array<boolean>(ctx.view.opponents.length).fill(false);
     for (const m of members) {

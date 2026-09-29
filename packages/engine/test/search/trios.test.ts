@@ -208,3 +208,39 @@ describe('weighted drafting', () => {
     }
   });
 });
+
+describe('generateTrios team rules', () => {
+  const withMega = (c: Candidate, specimenId: string, mega: boolean): Candidate =>
+    ({
+      ...c,
+      build: {
+        ...c.build,
+        specimenId,
+        mega: mega ? { ready: true, level4: false } : null,
+      },
+    }) as Candidate;
+
+  it('never drafts two Megas or one specimen twice', () => {
+    const { view, pool } = fakeWorld();
+    // a and b are the strongest pair and both Mega; c and d share a specimen; e is plain.
+    const cands = [
+      withMega(pool[0]!, 'sa', true),
+      withMega(pool[1]!, 'sb', true),
+      withMega(pool[2]!, 'shared', false),
+      withMega(pool[3]!, 'shared', false),
+      withMega(pool[4]!, 'se', false),
+    ];
+    const { drafts, scored } = generateTrios(cands, view, types, {
+      ...DEFAULT_TRIO_OPTIONS,
+      finalists: 50,
+    });
+    expect(drafts.length).toBeGreaterThan(0);
+    // 10 trios, minus 3 (both Megas) and 3 (both sharing a specimen) and 0 overlap between them.
+    expect(scored).toBe(4);
+    for (const d of drafts) {
+      const builds = d.slots.map((s) => s.build);
+      expect(builds.filter((b) => b.mega !== null).length).toBeLessThanOrEqual(1);
+      expect(new Set(builds.map((b) => b.specimenId)).size).toBe(3);
+    }
+  });
+});

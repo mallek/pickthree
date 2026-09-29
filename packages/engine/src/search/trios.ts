@@ -2,6 +2,7 @@ import type { PokemonType } from '../gamedata/types.js';
 import type { Candidate, Role } from './candidates.js';
 import { heaviestColumns } from './heaviest.js';
 import type { MatrixView } from './matrixView.js';
+import { teamRuleViolation } from './teamRules.js';
 
 export type Structure = 'ABB' | 'ABC';
 export type TeamStyle = 'any' | 'balanced' | 'abb';
@@ -244,6 +245,10 @@ export function generateTrios(
           a.c.build.speciesId === c.c.build.speciesId ||
           b.c.build.speciesId === c.c.build.speciesId
         ) {
+          continue;
+        }
+        // One use of each Pokemon and at most one Mega per team.
+        if (teamRuleViolation([a.c.build, b.c.build, c.c.build]) !== null) {
           continue;
         }
         all.push(evaluateTrio([a, b, c], view, opts));

@@ -29,6 +29,7 @@ import {
 import { candidateFor, candidatePool, type Candidate } from './search/candidates.js';
 import { simulateFinalists } from './search/finalists.js';
 import { MatrixView } from './search/matrixView.js';
+import { teamRuleViolation } from './search/teamRules.js';
 import { withSimulatedRows, type MatrixFighter } from './sim/matrixSim.js';
 import {
   ALL_ORDERINGS,
@@ -94,6 +95,8 @@ export interface TeamAnalysis {
    * against the meta group on the device before the analysis ran; their role scores are zero.
    */
   unranked: string[];
+  /** More than one pick is a Mega. Not a legal team, but it is analyzed all the same. */
+  twoMegas: boolean;
   assumptions: Assumptions;
   ms: number;
 }
@@ -328,6 +331,7 @@ export function analyzeTeam(
     hypothetical: resolved.filter((r) => r.hypothetical).map((r) => r.build.speciesId),
     chosenMoves: resolved.filter((_, i) => picks[i]?.moves).map((r) => r.build.speciesId),
     unranked: missing.map((m) => m.speciesId),
+    twoMegas: teamRuleViolation(cands.map((c) => c.build)) === 'two-megas',
     assumptions: assumptionsFor(deps.data, opts, profile),
     ms: Date.now() - started,
   };

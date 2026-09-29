@@ -18,6 +18,7 @@ import type { PokemonType } from '../gamedata/types.js';
 import { bestStrength, strengthContext } from '../score/simStrength.js';
 import type { Candidate } from '../search/candidates.js';
 import type { MatrixView } from '../search/matrixView.js';
+import { teamRuleViolation } from '../search/teamRules.js';
 import {
   DEFAULT_TRIO_OPTIONS,
   evaluateTrio,
@@ -83,6 +84,9 @@ export function generateColdStartTeams(
         const ids = members.map((m) => m.c.build.speciesId);
         // One species per team, even across specimens, the same rule generateTrios keeps.
         if (new Set(ids).size < 3) {
+          continue;
+        }
+        if (teamRuleViolation(members.map((m) => m.c.build)) !== null) {
           continue;
         }
         const rows: [number, number, number] = [
