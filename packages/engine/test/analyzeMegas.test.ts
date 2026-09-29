@@ -5,7 +5,13 @@ import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { analyzeTeam, hypotheticalSpecimen, type TeamPick } from '../src/analyze.js';
 import { buildOptionsFor } from '../src/builds/eligibility.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
-import { REPO_ROOT, haveLeague, haveStaticData, loadStaticData } from './fixtures.js';
+import {
+  REPO_ROOT,
+  haveLeague,
+  haveStaticData,
+  loadStaticData,
+  type StaticData,
+} from './fixtures.js';
 
 const gmPath = path.join(
   REPO_ROOT,
@@ -26,12 +32,13 @@ describe.skipIf(!ready)('analyze a team with two Megas', () => {
     mewtwo_mega_y: 'mewtwo',
     charizard_mega_y: 'charizard',
   };
-  const data = {
+  const data: StaticData = {
     ...base,
     league: { ...base.league, include: [], exclude: [] },
-    species: base.species.map((s) =>
-      megaOf[s.speciesId] ? { ...s, megaOf: megaOf[s.speciesId] } : s,
-    ),
+    species: base.species.map((s) => {
+      const parent = megaOf[s.speciesId];
+      return parent ? { ...s, megaOf: parent } : s;
+    }),
   };
   const index = new GameDataIndex(data.species, data.moves);
   const sim = new PvPokeSimulator(loadPvPokeInNode(JSON.parse(fs.readFileSync(gmPath, 'utf8'))));
