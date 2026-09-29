@@ -58,8 +58,22 @@ describe.skipIf(!ready)('recommend end to end', () => {
         expect(slot.sim.results.length).toBe(data.meta.length);
       }
     }
-    const sorted = [...rec.teams].sort((a, b) => compareTeamScores(a.score, b.score));
-    expect(rec.teams.map((t) => t.id)).toEqual(sorted.map((t) => t.id));
+    // diversify's contract: teams sharing at most one species with every team above them come
+    // first in score order, then, only if those ran short, the near-duplicates in score order.
+    const speciesOf = (t: (typeof rec.teams)[number]) =>
+      t.slots.map((s) => s.candidate.build.speciesId);
+    const varied: typeof rec.teams = [];
+    const fallback: typeof rec.teams = [];
+    for (const team of rec.teams) {
+      const mine = speciesOf(team);
+      const clash = varied.some((v) => speciesOf(v).filter((id) => mine.includes(id)).length >= 2);
+      (clash ? fallback : varied).push(team);
+    }
+    const inOrder = (ts: typeof rec.teams) =>
+      ts.every((t, i) => i === 0 || compareTeamScores(ts[i - 1]!.score, t.score) <= 0);
+    expect(rec.teams).toEqual([...varied, ...fallback]);
+    expect(inOrder(varied)).toBe(true);
+    expect(inOrder(fallback)).toBe(true);
     const first = rec.teams[0]!;
     console.log(
       `top team: ${first.slots.map((s) => s.candidate.build.speciesId).join(' / ')} (${first.structure}, ${first.score.fit}, ${first.score.difficulty}) cost ${first.cost.stardust} dust ${first.cost.candy} candy ${first.cost.xlCandy} xl ${first.cost.eliteTm} etm\n  why: ${first.explanation.why}\n  wins: ${first.explanation.keyWins.map((w) => w.opponentName).join(', ')}\n  threats: ${first.explanation.keyThreats.map((w) => w.opponentName).join(', ')}`,

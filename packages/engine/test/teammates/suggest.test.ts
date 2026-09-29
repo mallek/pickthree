@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
-import { suggestTeammates } from '../../src/teammates/suggest.js';
+import {
+  CHEAP_DISCOUNT,
+  choose,
+  pickCore,
+  suggestTeammates,
+  type Core,
+} from '../../src/teammates/suggest.js';
 import { toSpecimens } from '../../src/collection/specimen.js';
 import { parseCollectionCsv } from '../../src/csv/parse.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
@@ -164,7 +170,10 @@ run('suggestTeammates', () => {
     expect(result.pinLine).toBeNull();
   });
 
-  it('buys a cheaper core without giving away the meta', () => {
+  it('a cheapest core, when offered, costs less and does not give away the meta', () => {
+    // Whether a separate cheap core exists depends on PvPoke's numbers this week: when the
+    // safest core is also the cheap one there is nothing else to offer. The rules are pinned on
+    // synthetic cores in 'cheapest on synthetic cores'; this holds them on the real data.
     const result = suggestTeammates(
       [{ kind: 'species', id: 'skarmory' }, null, null],
       collection(),
@@ -175,11 +184,12 @@ run('suggestTeammates', () => {
     const safest = result.suggestions.find((s) => s.character === 'safest');
     const cheapest = result.suggestions.find((s) => s.character === 'cheapest');
     expect(safest).toBeDefined();
-    expect(cheapest).toBeDefined();
-    expect(cheapest!.cost).toBeLessThan(safest!.cost);
-    // Cheap must not mean useless. A core that saves dust by covering nothing is a trap, not a
-    // suggestion, so it may give up at most a fifth of what the safest core covers.
-    expect(cheapest!.coverage).toBeGreaterThanOrEqual(Math.floor(safest!.coverage * 0.8));
+    if (cheapest) {
+      expect(cheapest.cost).toBeLessThan(safest!.cost);
+      // Cheap must not mean useless. A core that saves dust by covering nothing is a trap, not a
+      // suggestion, so it may give up at most a fifth of what the safest core covers.
+      expect(cheapest.coverage).toBeGreaterThanOrEqual(Math.floor(safest!.coverage * 0.8));
+    }
   });
 
   it('keeps a chase pick in its own tier rather than slipping it into the caught one', () => {
@@ -223,7 +233,10 @@ run('suggestTeammates', () => {
         gameMaster: readGameMaster(),
         characters: ['community'],
         community: [
-          { species: ['azumarill', 'registeel'], thirds: [{ speciesId: 'mandibuzz', sightings: 40 }] },
+          {
+            species: ['azumarill', 'registeel'],
+            thirds: [{ speciesId: 'mandibuzz', sightings: 40 }],
+          },
         ],
       },
       deps(),
@@ -298,5 +311,51 @@ run('suggestTeammates', () => {
       expect(['safest', 'cheapest', 'antimeta']).toContain(s.character);
       expect(s.label.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/** A core with only the numbers pickCore and choose read. */
+function core(key: string, strength: number, cost: number, owned = true): Core {
+  return {
+    fills: [],
+    strength,
+    topStrength: strength,
+    cost,
+    coverage: 0,
+    owned,
+    standIns: owned ? 0 : 1,
+    sightings: 0,
+    key,
+  };
+}
+
+describe('cheapest on synthetic cores', () => {
+  it('trades a little strength for a much cheaper core', () => {
+    const dear = core('a+b', 80, 200000);
+    const cheap = core('c+d', 75, 10000);
+    expect(pickCore([dear, cheap], 'safest')).toBe(dear);
+    expect(pickCore([dear, cheap], 'cheapest')).toBe(cheap);
+  });
+
+  it('does not buy a free core that covers nothing', () => {
+    // The discount is CHEAP_DISCOUNT strength points at most, so a free core that is weaker by
+    // more than that still loses to the dearest one.
+    const dear = core('a+b', 80, 200000);
+    const free = core('c+d', 80 - CHEAP_DISCOUNT - 1, 0);
+    expect(pickCore([dear, free], 'cheapest')).toBe(dear);
+  });
+
+  it('only ever offers what the player has caught', () => {
+    const owned = core('a+b', 80, 200000);
+    const uncaught = core('c+d', 80, 0, false);
+    expect(pickCore([owned, uncaught], 'cheapest')).toBe(owned);
+    expect(pickCore([uncaught], 'cheapest')).toBeNull();
+  });
+
+  it('drops cheapest when it lands on the core safest already took', () => {
+    const both = core('a+b', 80, 10000);
+    const worse = core('c+d', 60, 5000);
+    const picked = choose([both, worse], ['safest', 'cheapest']);
+    expect(picked.map((p) => p.character)).toEqual(['safest']);
   });
 });

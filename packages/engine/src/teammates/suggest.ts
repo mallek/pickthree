@@ -9,17 +9,17 @@
  * Spec: docs/superpowers/specs/2026-09-19-suggest-teammates-design.md
  */
 import type { TeamPick } from '../analyze.js';
-import { buildOptionsFor, buildsFor, type Build, type BuildOptions } from '../builds/eligibility.js';
+import {
+  buildOptionsFor,
+  buildsFor,
+  type Build,
+  type BuildOptions,
+} from '../builds/eligibility.js';
 import { movesetFrom, rankingsById, recommendMoveset } from '../builds/moves.js';
 import { coldStartBuilds, coldStartSpecimens, spreadsFromGameMaster } from '../coldstart/pool.js';
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
-import {
-  assumptionsFor,
-  profileFor,
-  type Assumptions,
-  type EngineDeps,
-} from '../recommend.js';
+import { assumptionsFor, profileFor, type Assumptions, type EngineDeps } from '../recommend.js';
 import {
   bestStrength,
   strengthContext,
@@ -233,7 +233,14 @@ export function suggestTeammates(
     pinStandIns.get(speciesId) ?? standInBuilds.get(speciesId) ?? null;
 
   const pinBuilds = pinnedSlots.map((i) =>
-    resolvePin(board[i] as TeamPick, specimens, index, { ...opts, minCp: 0 }, overall as never, standIn),
+    resolvePin(
+      board[i] as TeamPick,
+      specimens,
+      index,
+      { ...opts, minCp: 0 },
+      overall as never,
+      standIn,
+    ),
   );
 
   // The one thing here that simulates. A pin PvPoke does not rank has no matrix row, so one row
@@ -313,10 +320,7 @@ export function suggestTeammates(
   const best = chosen.find((x) => x.character === 'safest')?.core ?? null;
   const reach = cores
     .filter((c) => c.standIns === need + 1)
-    .reduce<Core | null>(
-      (acc, c) => (!acc || c.strength > acc.strength ? c : acc),
-      null,
-    );
+    .reduce<Core | null>((acc, c) => (!acc || c.strength > acc.strength ? c : acc), null);
   if (reach && (!best || reach.strength >= best.strength + CHASE_MARGIN)) {
     chosen.push({ character: 'safest', core: reach, chase: true });
   }
@@ -362,7 +366,7 @@ function pickFor(c: Candidate, mineSpecies: Set<string>): TeamPick {
   return { kind: 'species', id: c.build.speciesId };
 }
 
-interface Core {
+export interface Core {
   fills: Candidate[];
   /** Matrix team score against the full facing profile, 0 to 100. */
   strength: number;
@@ -448,7 +452,11 @@ function search(
  * The board only ever reorders cores the matrix already produced. It never adds a candidate and
  * it never moves a number, so an empty or unreachable board leaves every other character alone.
  */
-function countSightings(cores: Core[], pins: Candidate[], board: CommunityPairing[] | undefined): void {
+function countSightings(
+  cores: Core[],
+  pins: Candidate[],
+  board: CommunityPairing[] | undefined,
+): void {
   if (!board || board.length === 0) {
     return;
   }
@@ -481,7 +489,7 @@ function countSightings(cores: Core[], pins: Candidate[], board: CommunityPairin
 export const CHEAP_DISCOUNT = 25;
 
 /** The best core for one character, or null when that character has nothing to offer. */
-function pickCore(cores: Core[], character: Character): Core | null {
+export function pickCore(cores: Core[], character: Character): Core | null {
   let best: Core | null = null;
   if (character === 'cheapest') {
     // Cheapest means cheapest to field now, so it only ever offers what the player has caught.
@@ -502,7 +510,11 @@ function pickCore(cores: Core[], character: Character): Core | null {
       continue;
     }
     const of = (x: Core): number =>
-      character === 'antimeta' ? x.topStrength : character === 'community' ? x.sightings : x.strength;
+      character === 'antimeta'
+        ? x.topStrength
+        : character === 'community'
+          ? x.sightings
+          : x.strength;
     const value = of(c);
     const against = best ? of(best) : -1;
     if (!best || value > against || (value === against && c.key.localeCompare(best.key) < 0)) {
@@ -516,7 +528,10 @@ function pickCore(cores: Core[], character: Character): Core | null {
  * One core per character, in the order asked for, dropping a character that has nothing to offer
  * and one that landed on a core an earlier character already took.
  */
-function choose(cores: Core[], characters: Character[]): { character: Character; core: Core }[] {
+export function choose(
+  cores: Core[],
+  characters: Character[],
+): { character: Character; core: Core }[] {
   const taken = new Set<string>();
   const out: { character: Character; core: Core }[] = [];
   for (const character of characters) {
