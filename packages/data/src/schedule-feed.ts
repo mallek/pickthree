@@ -24,6 +24,8 @@ export interface CupAlias {
   cup: string;
   cp?: number;
   id?: string;
+  /** Short league name, when the title is too long for the league row. */
+  short?: string;
   note?: string;
 }
 
@@ -110,6 +112,7 @@ export function parseFeed(
         cup: alias.cup,
         cp,
         title: whole ? format : title,
+        ...(alias.short ? { short: alias.short } : {}),
         ...(format.includes('Mega') ? { mega: true } : {}),
         start,
         end,

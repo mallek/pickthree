@@ -20,6 +20,8 @@ export interface ScheduleEntry {
    * is not a Mega format always bans Megas, whatever PvPoke's cup file allows (readLeagues).
    */
   mega?: true;
+  /** Short league name from the cup alias, when the title is too long for the league row. */
+  short?: string;
 }
 
 export type LeagueStatus =

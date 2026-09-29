@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CupFilter, League } from '@pickthree/engine';
+import type { CupFilter, League, ScheduleEntry } from '@pickthree/engine';
 import { minCpFor, runsOf } from '@pickthree/engine';
 import { readLock } from './lock.js';
 import { GROUPS_DIR, PVPOKE_DIR, RANKINGS_DIR } from './paths.js';
@@ -115,10 +115,21 @@ export const DERIVES_FROM: Record<string, string> = Object.fromEntries(
 
 const MEGA_BAN: CupFilter = { filterType: 'tag', values: ['mega'] };
 
-/** The filters plus a ban on Megas, unless they already ban them. */
-function withMegaBan(exclude: readonly CupFilter[]): CupFilter[] {
-  const banned = exclude.some((f) => f.filterType === 'tag' && f.values.includes('mega'));
-  return banned ? [...exclude] : [...exclude, MEGA_BAN];
+function bansMega(exclude: readonly CupFilter[]): boolean {
+  return exclude.some((f) => f.filterType === 'tag' && f.values.includes('mega'));
+}
+
+/**
+ * The exclude list of a rotation league. A league from a GBL format that is not a Mega format
+ * always bans Megas, whatever PvPoke's cup file allows (its laic2027 cup allows them, GBL's LAIC
+ * Cup does not). An entry without the flag falls back to "Mega" in its title.
+ */
+export function rotationExclude(
+  cupExclude: readonly CupFilter[],
+  entry: Pick<ScheduleEntry, 'mega' | 'title'>,
+): CupFilter[] {
+  const isMegaFormat = entry.mega ?? /Mega/.test(entry.title);
+  return isMegaFormat || bansMega(cupExclude) ? [...cupExclude] : [...cupExclude, MEGA_BAN];
 }
 
 function shortTitle(title: string): string {
@@ -188,14 +199,14 @@ export function readLeagues(): League[] {
     out.push({
       id,
       title: first.title,
-      short: shortTitle(first.title),
+      short: first.short ?? shortTitle(first.title),
       cp: first.cp,
       cup: first.cup,
       meta: metaGroupFor(first.cup, first.cp),
       kind: 'rotation',
       minCp: minCpFor(first.cp),
       include: cup.include ?? [],
-      exclude: first.mega ? (cup.exclude ?? []) : withMegaBan(cup.exclude ?? []),
+      exclude: rotationExclude(cup.exclude ?? [], first),
       metaSize: 0,
       ...(updated ? { rankingsUpdated: updated } : {}),
       stale: isStale(updated, run.start),

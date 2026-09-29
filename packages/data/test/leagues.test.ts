@@ -9,6 +9,7 @@ import {
   hasRankings,
   isStale,
   metaGroupFor,
+  rotationExclude,
   readLeagues,
 } from '../src/leagues.js';
 import { GAMEMASTER_PATH, OUTPUT_DIR } from '../src/paths.js';
@@ -75,17 +76,15 @@ describe.skipIf(!havePvPoke)('readLeagues', () => {
     expect(new Set(rotation.map((l) => l.id)).size).toBe(rotation.length);
   });
 
-  it('bans Megas in a rotation league whose GBL format is not a Mega format', () => {
-    const rotation = readLeagues().filter((l) => l.kind === 'rotation');
-    const banned = (id: string) =>
-      rotation
-        .find((l) => l.id === id)
-        ?.exclude.filter((f) => f.filterType === 'tag' && f.values.includes('mega')).length;
-    expect(banned('laic2027')).toBe(1);
-    for (const id of ['colormega', 'mega-great']) {
-      const l = rotation.find((x) => x.id === id);
-      if (l) {
-        expect(banned(id), id).toBe(0);
+  it('every built rotation league from a non-Mega GBL format bans Megas', () => {
+    const schedule = readSchedule();
+    for (const l of readLeagues().filter((x) => x.kind === 'rotation')) {
+      const first = schedule.find((e) => e.league === l.id)!;
+      if (first.mega !== true) {
+        expect(
+          l.exclude.some((f) => f.filterType === 'tag' && f.values.includes('mega')),
+          l.id,
+        ).toBe(true);
       }
     }
   });
@@ -133,6 +132,29 @@ describe.skipIf(!havePvPoke)('metaGroupFor', () => {
 
   it('falls back to the cup slug when formats.json does not list it', () => {
     expect(metaGroupFor('no-such-cup', 1500)).toBe('no-such-cup');
+  });
+});
+
+describe('rotationExclude', () => {
+  const tag = { filterType: 'tag', values: ['mega'] };
+  const id = { filterType: 'id', values: ['mimikyu'] };
+
+  it('adds the Mega ban for a non-Mega format', () => {
+    expect(rotationExclude([id], { title: 'Retro Cup' })).toEqual([id, tag]);
+    expect(rotationExclude([], { title: 'Retro Cup' })).toEqual([tag]);
+  });
+
+  it('does not duplicate a ban the cup already has', () => {
+    expect(rotationExclude([tag, id], { title: 'Retro Cup' })).toEqual([tag, id]);
+  });
+
+  it('leaves a Mega format alone', () => {
+    expect(rotationExclude([id], { title: 'Mega Color Cup', mega: true })).toEqual([id]);
+  });
+
+  it('reads a flagless entry from its title', () => {
+    expect(rotationExclude([id], { title: 'Great League: Mega Edition' })).toEqual([id]);
+    expect(rotationExclude([id], { title: '2026 GO LAIC Cup' })).toEqual([id, tag]);
   });
 });
 

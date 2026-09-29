@@ -51,6 +51,14 @@ describe('parseFeed', () => {
     expect(byLeague('mega-master')).toMatchObject({ cup: 'mega', cp: 10000, mega: true });
   });
 
+  it('carries the alias short name on the Mega Edition entries only', () => {
+    const short = (league: string) => parsed.entries.find((e) => e.league === league)?.short;
+    expect(short('mega-great')).toBe('Mega Great');
+    expect(short('mega-ultra')).toBe('Mega Ultra');
+    expect(short('mega-master')).toBe('Mega Master');
+    expect(short('colormega')).toBeUndefined();
+  });
+
   it('leaves the mega flag off a format whose text has no Mega in it', () => {
     expect(parsed.entries.find((e) => e.league === 'laic2027')?.mega).toBeUndefined();
     expect(parsed.entries.find((e) => e.league === 'retro')?.mega).toBeUndefined();
