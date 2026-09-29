@@ -1,10 +1,10 @@
 {
-  "commit": "00e56418f479c344051ae77da5d5c774d22094af",
+  "commit": "e87448291024aff808f21a2e5f74e69f68b521df",
   "files": [
     {
       "name": "GameMaster.js",
       "source": "src/js/GameMaster.js",
-      "sha256": "31a5b8859cacc6c1f0ae443321e5cd4e6976ac4f9df65fc51b64811be155e622"
+      "sha256": "0fe69a85368197dc8266218cc4cd19a54ea7df72fdbfee73eb88d92d00e46b0d"
     },
     {
       "name": "TimelineEvent.js",
@@ -44,7 +44,7 @@
     {
       "name": "Battle.js",
       "source": "src/js/battle/Battle.js",
-      "sha256": "52e423ab0d876ac265c61b68b33cce4cc6781ff97e6c58743486472e59437a63"
+      "sha256": "5b5a981aa8f552f425bf415b0b56726c8fbe66e17437d8f209d993f3d4a2bdb9"
     }
   ]
 }
