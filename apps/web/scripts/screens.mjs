@@ -366,7 +366,8 @@ const SEEDED_EXCLUDED = ['melmetal', 'greninja_shadow'];
 // GBL cups: pin the app's clock to a moment when one built cup is live and another is upcoming,
 // so the Leagues sheet captures do not depend on the day this runs. With no such moment in the
 // schedule (a cup not built yet leaves a gap), fall back to one day into any built cup's week and
-// capture a live cup only.
+// capture a live cup only. With no built cup week at all (between seasons, or no cup has rankings
+// yet), the clock is left alone and the cup captures are skipped: data is not a reason to fail.
 const cupPin = await (async () => {
   const [schedule, leagues] = await Promise.all([
     fetch(`${base}/data/schedule.json`).then((r) => r.json()),
@@ -387,27 +388,34 @@ const cupPin = await (async () => {
     }
   }
   if (weeks.length === 0) {
-    throw new Error('screens: schedule.json has no built cup week to pin the clock to');
+    return null;
   }
   console.log('  no upcoming cup to capture');
   return { iso: new Date(Date.parse(weeks[0].start) + 86_400_000).toISOString(), upcoming: false };
 })();
-await page.evaluateOnNewDocument((iso) => localStorage.setItem('pick3.now', iso), cupPin.iso);
-console.log(`  cups pinned at ${cupPin.iso}`);
+if (cupPin) {
+  await page.evaluateOnNewDocument((iso) => localStorage.setItem('pick3.now', iso), cupPin.iso);
+  console.log(`  cups pinned at ${cupPin.iso}`);
+} else {
+  console.log('  no built cup week: cup captures skipped');
+}
 
 const t0 = Date.now();
 console.log('welcome');
 await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('h1');
 // The one-time cup nudge shows on a fresh profile's first boot. It is captured and dismissed
-// before any other shot, so it never sits over another capture.
-await page.waitForSelector('.notice-toast.notice-foot', { timeout: 10_000 }).catch(() => null);
-if (await page.$('.notice-toast .notice-quiet')) {
-  await shot('cup-nudge', false, { mustShow: '.notice-toast' });
-  await page.click('.notice-toast .notice-quiet');
-  await page.waitForSelector('.notice-toast', { hidden: true });
-} else {
-  throw new Error('cup nudge: the first boot with a live cup showed no nudge');
+// before any other shot, so it never sits over another capture. With a cup live at the pin, a
+// missing nudge is a real failure.
+if (cupPin) {
+  await page.waitForSelector('.notice-toast.notice-foot', { timeout: 10_000 }).catch(() => null);
+  if (await page.$('.notice-toast .notice-quiet')) {
+    await shot('cup-nudge', false, { mustShow: '.notice-toast' });
+    await page.click('.notice-toast .notice-quiet');
+    await page.waitForSelector('.notice-toast', { hidden: true });
+  } else {
+    throw new Error('cup nudge: the first boot with a live cup showed no nudge');
+  }
 }
 await shot('00-welcome', false);
 
@@ -1300,22 +1308,24 @@ await shot('08c-leagues-sheet', false);
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
 
-console.log('leagues sheet, GBL cups');
-await page.click('.page-head .league-more');
-await page.waitForSelector('.ui-league-list .ui-league-row-detail');
-await shot('leagues-sheet-cups', false, { mustShow: '.ui-league-list .ui-league-row-detail' });
-const cupDetails = await page.$$eval('.ui-league-row-detail', (els) =>
-  els.map((e) => e.textContent),
-);
-console.log(`  detail lines: ${JSON.stringify(cupDetails)}`);
-if (!cupDetails.some((d) => d.startsWith('Live, ends '))) {
-  throw new Error('leagues sheet: no live cup line');
+if (cupPin) {
+  console.log('leagues sheet, GBL cups');
+  await page.click('.page-head .league-more');
+  await page.waitForSelector('.ui-league-list .ui-league-row-detail');
+  await shot('leagues-sheet-cups', false, { mustShow: '.ui-league-list .ui-league-row-detail' });
+  const cupDetails = await page.$$eval('.ui-league-row-detail', (els) =>
+    els.map((e) => e.textContent),
+  );
+  console.log(`  detail lines: ${JSON.stringify(cupDetails)}`);
+  if (!cupDetails.some((d) => d.startsWith('Live, ends '))) {
+    throw new Error('leagues sheet: no live cup line');
+  }
+  if (cupPin.upcoming && !cupDetails.some((d) => d.startsWith('Starts '))) {
+    throw new Error('leagues sheet: no upcoming cup line');
+  }
+  await page.click('.ui-sheet-done');
+  await page.waitForSelector('.ui-sheet', { hidden: true });
 }
-if (cupPin.upcoming && !cupDetails.some((d) => d.startsWith('Starts '))) {
-  throw new Error('leagues sheet: no upcoming cup line');
-}
-await page.click('.ui-sheet-done');
-await page.waitForSelector('.ui-sheet', { hidden: true });
 
 console.log('counters, an unranked opponent');
 // Magikarp is not in PvPoke's Great League rankings, so there is no moveset to simulate it with.
