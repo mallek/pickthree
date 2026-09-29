@@ -156,7 +156,12 @@ export function Build() {
   const stageOf = (sp: Specimen): string => s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId;
   const usable = (sp: Specimen): boolean => {
     const v = s.verdicts[sp.id];
-    return Boolean(sp.ivs) && v?.label !== 'Not eligible' && v?.label !== 'Needs rescan';
+    return (
+      Boolean(sp.ivs) &&
+      v?.label !== 'Not eligible' &&
+      v?.label !== 'Needs rescan' &&
+      (s.leagueInfo?.legal ?? []).includes(stageOf(sp))
+    );
   };
   const byWorth = (a: Specimen, b: Specimen): number => {
     const oa = s.verdicts[a.id] ? ORDER[s.verdicts[a.id]!.label] : 9;
@@ -201,7 +206,7 @@ export function Build() {
       })
       .slice(0, 30);
     // stageOf, usable and byWorth read s.verdicts, which is in the list.
-  }, [s.collection, s.verdicts, s.data, parsed, name, species]);
+  }, [s.collection, s.verdicts, s.leagueInfo, s.data, parsed, name, species]);
 
   /** Your best specimen that plays as this species, or null when you have none. */
   const bestOwned = (stageId: string): Specimen | null => {

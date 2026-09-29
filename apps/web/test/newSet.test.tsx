@@ -15,8 +15,8 @@ import { NewSet } from '../src/screens/NewSet.tsx';
 import { AppProvider, useActions, useAppState, type AppState } from '../src/state/store.tsx';
 import { canGoBack, resetHistoryForTests } from '../src/state/history.ts';
 import { emptyLayoutValue } from '../src/format.ts';
-import { resetDbForTests, storage } from '../src/storage/db.ts';
-import { fakeHost } from './fakeHost.ts';
+import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
+import { fakeHost, GREAT } from './fakeHost.ts';
 import { makeTeam } from './teamFixture.ts';
 
 let latest: { state: AppState; actions: ReturnType<typeof useActions> } | null = null;
@@ -348,4 +348,57 @@ describe("Cancel escapes Log a Battle's own no-set redirect", () => {
       await waitFor(() => expect(window.location.hash).toBe('#/meta'));
     },
   );
+});
+
+describe('New Set in a cup', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetHistoryForTests();
+    latest = null;
+    window.history.replaceState(null, '', '#/meta/new');
+  });
+
+  it('does not offer your own Pokemon the cup does not admit', async () => {
+    await saveEmptyCollection();
+    const stored = (await storage.loadCollection())!;
+    await storage.saveCollection({
+      ...stored,
+      specimens: [
+        {
+          id: 'z1',
+          speciesId: 'azumarill',
+          familyId: 'azumarill',
+          ivs: { atk: 0, def: 15, sta: 15 },
+          level: { min: 20, max: 20 },
+          cp: 1400,
+          hp: 150,
+          shadow: false,
+        } as unknown as (typeof stored.specimens)[number],
+      ],
+    });
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, league: 'retro' });
+    const base = fakeHost();
+    const bootReply = await base.ready();
+    const retro = {
+      ...GREAT,
+      id: 'retro',
+      title: 'Retro Cup',
+      short: 'Retro',
+      kind: 'cup' as const,
+    };
+    const host = fakeHost({
+      ready: vi.fn(async () => ({ ...bootReply, leagues: [retro] })),
+      leagueInfo: vi.fn(async (id: string) => ({
+        ...(await base.leagueInfo(id)),
+        legal: ['tinkaton', 'clodsire', 'medicham'],
+      })),
+    });
+    await renderReady(host);
+    fireEvent.change(screen.getByPlaceholderText('Search any Pokémon'), {
+      target: { value: 'azu' },
+    });
+    expect(await screen.findByText('Not allowed in Retro Cup: Azumarill')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
+  });
 });

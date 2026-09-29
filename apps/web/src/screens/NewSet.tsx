@@ -95,14 +95,16 @@ export function NewSet() {
       return [];
     }
     const moves = s.data?.moves;
+    const legal = new Set(s.leagueInfo?.legal ?? []);
     const seen = new Set<string>();
     return s.collection.specimens
+      .filter((sp) => legal.has(sp.speciesId))
       .filter((sp) =>
         matchesQuery(parsed, specimenRecord(sp, name(sp.speciesId), species(sp.speciesId), moves)),
       )
       .filter((sp) => (seen.has(sp.speciesId) ? false : seen.add(sp.speciesId)))
       .slice(0, 30);
-  }, [query, s.collection, s.data, name, species]);
+  }, [query, s.collection, s.data, s.leagueInfo, name, species]);
 
   /** Collection matches first, then the rest of the species search, for the Pick three grid. */
   const picks = useMemo(() => {
