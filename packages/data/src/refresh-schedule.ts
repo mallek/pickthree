@@ -21,7 +21,6 @@ const REPORT = path.join(DATA_PACKAGE_DIR, '.cache', 'schedule-report.json');
 function report(r: {
   ok: boolean;
   unmapped: string[];
-  skippedMega: string[];
   noSeason: string[];
   error: string | null;
 }): void {
@@ -44,7 +43,7 @@ async function main(): Promise<number> {
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error(`feed unusable: ${error}`);
-    report({ ok: false, unmapped: [], skippedMega: [], noSeason: [], error });
+    report({ ok: false, unmapped: [], noSeason: [], error });
     return 4;
   }
   const gbl = events.filter((e) => e.eventType === 'go-battle-league');
@@ -53,7 +52,6 @@ async function main(): Promise<number> {
     report({
       ok: false,
       unmapped: [],
-      skippedMega: [],
       noSeason: [],
       error: 'no go-battle-league events',
     });
@@ -66,9 +64,6 @@ async function main(): Promise<number> {
   console.log(
     `schedule: ${schedule.length} cup weeks (${[...new Set(schedule.map((e) => e.league))].join(', ')})`,
   );
-  for (const m of parsed.skippedMega) {
-    console.log(`skipped mega: ${m}`);
-  }
   for (const u of parsed.unmapped) {
     console.log(`UNMAPPED: ${u} (add it to packages/data/cup-aliases.json)`);
   }
@@ -78,7 +73,6 @@ async function main(): Promise<number> {
   report({
     ok: true,
     unmapped: parsed.unmapped,
-    skippedMega: parsed.skippedMega,
     noSeason: parsed.noSeason,
     error: null,
   });

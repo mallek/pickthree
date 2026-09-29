@@ -44,10 +44,13 @@ export function hasGroup(meta: string): boolean {
 
 export const STALE_DAYS = 30;
 
-/** PvPoke's meta group name for a cup: formats.json's `meta` when the cup is listed, else the slug. */
-export function metaGroupFor(cup: string): string {
+/**
+ * PvPoke's meta group name for a cup at a cap: formats.json's `meta` for the format that lists
+ * the cup at that cap, else the slug. The cap matters: the Mega cup has a different group per league.
+ */
+export function metaGroupFor(cup: string, cp: number): string {
   const formats = readJson<RawFormat[]>(FORMATS_PATH);
-  return formats.find((f) => f.cup === cup)?.meta ?? cup;
+  return formats.find((f) => f.cup === cup && f.cp === cp)?.meta ?? cup;
 }
 
 /** The day PvPoke last changed the cup's overall rankings at the pinned commit, or null. */
@@ -109,6 +112,14 @@ export const SHIPPED_CUPS: readonly ShippedCup[] = [
 export const DERIVES_FROM: Record<string, string> = Object.fromEntries(
   SHIPPED_CUPS.map((c) => [c.id, c.derivesFrom]),
 );
+
+const MEGA_BAN: CupFilter = { filterType: 'tag', values: ['mega'] };
+
+/** The filters plus a ban on Megas, unless they already ban them. */
+function withMegaBan(exclude: readonly CupFilter[]): CupFilter[] {
+  const banned = exclude.some((f) => f.filterType === 'tag' && f.values.includes('mega'));
+  return banned ? [...exclude] : [...exclude, MEGA_BAN];
+}
 
 function shortTitle(title: string): string {
   return title
@@ -180,11 +191,11 @@ export function readLeagues(): League[] {
       short: shortTitle(first.title),
       cp: first.cp,
       cup: first.cup,
-      meta: metaGroupFor(first.cup),
+      meta: metaGroupFor(first.cup, first.cp),
       kind: 'rotation',
       minCp: minCpFor(first.cp),
       include: cup.include ?? [],
-      exclude: cup.exclude ?? [],
+      exclude: first.mega ? (cup.exclude ?? []) : withMegaBan(cup.exclude ?? []),
       metaSize: 0,
       ...(updated ? { rankingsUpdated: updated } : {}),
       stale: isStale(updated, run.start),

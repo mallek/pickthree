@@ -8,6 +8,7 @@ import {
   hasGroup,
   hasRankings,
   isStale,
+  metaGroupFor,
   readLeagues,
 } from '../src/leagues.js';
 import { GAMEMASTER_PATH, OUTPUT_DIR } from '../src/paths.js';
@@ -74,12 +75,37 @@ describe.skipIf(!havePvPoke)('readLeagues', () => {
     expect(new Set(rotation.map((l) => l.id)).size).toBe(rotation.length);
   });
 
+  it('bans Megas in a rotation league whose GBL format is not a Mega format', () => {
+    const rotation = readLeagues().filter((l) => l.kind === 'rotation');
+    const banned = (id: string) =>
+      rotation
+        .find((l) => l.id === id)
+        ?.exclude.filter((f) => f.filterType === 'tag' && f.values.includes('mega')).length;
+    expect(banned('laic2027')).toBe(1);
+    for (const id of ['colormega', 'mega-great']) {
+      const l = rotation.find((x) => x.id === id);
+      if (l) {
+        expect(banned(id), id).toBe(0);
+      }
+    }
+  });
+
   it.skipIf(!fs.existsSync(path.join(OUTPUT_DIR, 'leagues.json')))(
     'every built rotation league has rankings, a non-empty meta (at most 48 when derived from rankings) and a matrix covering it',
     () => {
       const read = <T>(...parts: string[]): T =>
         JSON.parse(fs.readFileSync(path.join(OUTPUT_DIR, ...parts), 'utf8')) as T;
       const built = read<League[]>('leagues.json');
+      const scheduled = new Set(readSchedule().map((e) => e.league));
+      for (const id of ['colormega', 'mega-great', 'mega-ultra', 'mega-master']) {
+        // Covered by the loop below whenever the schedule carries the league this run.
+        if (scheduled.has(id)) {
+          expect(
+            built.some((x) => x.id === id && x.kind === 'rotation'),
+            id,
+          ).toBe(true);
+        }
+      }
       for (const l of built.filter((x) => x.kind === 'rotation')) {
         const overall = read<unknown[]>('rankings', l.id, 'overall.json');
         const meta = read<{ speciesId: string }[]>('meta', `${l.id}.json`);
@@ -95,6 +121,19 @@ describe.skipIf(!havePvPoke)('readLeagues', () => {
       }
     },
   );
+});
+
+describe.skipIf(!havePvPoke)('metaGroupFor', () => {
+  it("reads PvPoke's meta group for a cup at a cap", () => {
+    expect(metaGroupFor('mega', 1500)).toBe('megagreat');
+    expect(metaGroupFor('mega', 2500)).toBe('megaultra');
+    expect(metaGroupFor('mega', 10000)).toBe('mega');
+    expect(metaGroupFor('colormega', 1500)).toBe('colormega');
+  });
+
+  it('falls back to the cup slug when formats.json does not list it', () => {
+    expect(metaGroupFor('no-such-cup', 1500)).toBe('no-such-cup');
+  });
 });
 
 describe('isStale', () => {

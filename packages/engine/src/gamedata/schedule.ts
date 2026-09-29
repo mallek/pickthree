@@ -15,6 +15,11 @@ export interface ScheduleEntry {
   end: string;
   /** GO Battle League season name. */
   season: string;
+  /**
+   * True when the feed's format text says Mega. Absent otherwise. A rotation league whose format
+   * is not a Mega format always bans Megas, whatever PvPoke's cup file allows (readLeagues).
+   */
+  mega?: true;
 }
 
 export type LeagueStatus =

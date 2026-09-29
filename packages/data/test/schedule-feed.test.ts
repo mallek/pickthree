@@ -32,16 +32,39 @@ describe('parseFeed', () => {
     expect(parsed.entries.filter((e) => e.league === 'laic2027')).toHaveLength(2);
   });
 
-  it('never lists an open league or a mega format as a cup', () => {
+  it('never lists an open league as a cup', () => {
     for (const e of parsed.entries) {
-      expect(e.title).not.toMatch(/Mega|^Great League$|^Ultra League$|^Master League$/);
+      expect(e.title).not.toMatch(/^Great League$|^Ultra League$|^Master League$/);
     }
-    expect(parsed.skippedMega).toContain('Mega Color Cup: Great League Edition');
-    expect(parsed.skippedMega).toContain('Master League: Mega Edition');
+  });
+
+  it('turns the Mega formats into rotation leagues flagged mega', () => {
+    const byLeague = (league: string) => parsed.entries.find((e) => e.league === league);
+    expect(byLeague('colormega')).toMatchObject({
+      cup: 'colormega',
+      cp: 1500,
+      title: 'Mega Color Cup',
+      mega: true,
+    });
+    expect(byLeague('mega-great')).toMatchObject({ cup: 'mega', cp: 1500, mega: true });
+    expect(byLeague('mega-ultra')).toMatchObject({ cup: 'mega', cp: 2500, mega: true });
+    expect(byLeague('mega-master')).toMatchObject({ cup: 'mega', cp: 10000, mega: true });
+  });
+
+  it('leaves the mega flag off a format whose text has no Mega in it', () => {
+    expect(parsed.entries.find((e) => e.league === 'laic2027')?.mega).toBeUndefined();
+    expect(parsed.entries.find((e) => e.league === 'retro')?.mega).toBeUndefined();
+  });
+
+  it('reports an unmapped Mega cup by its cup title and has no skippedMega field', () => {
+    expect(parsed.unmapped).toContain('Mega Halloween Cup');
+    expect(parsed).not.toHaveProperty('skippedMega');
   });
 
   it('reports a cup it cannot map, once, and still writes the rest', () => {
-    expect(parsed.unmapped).toEqual(['Spooky Cup']);
+    expect(parsed.unmapped).toEqual(
+      expect.arrayContaining(['Spooky Cup', 'Mega Halloween Cup', 'Mega Catch Cup']),
+    );
     expect(parsed.entries.length).toBeGreaterThan(0);
   });
 

@@ -6,5 +6,9 @@
     "cup": "laic2027",
     "cp": 1500,
     "note": "confirmed by Travis 2026-09-29 (rules match GBL 2026 GO LAIC Cup; GBL also bans megas, which pick3 never recommends)"
-  }
+  },
+  "Mega Color Cup": { "cup": "colormega" },
+  "Great League: Mega Edition": { "cup": "mega", "cp": 1500, "id": "mega-great" },
+  "Ultra League: Mega Edition": { "cup": "mega", "cp": 2500, "id": "mega-ultra" },
+  "Master League: Mega Edition": { "cup": "mega", "cp": 10000, "id": "mega-master" }
 }

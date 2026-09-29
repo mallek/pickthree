@@ -15,17 +15,20 @@ export interface FeedEvent {
   end: string;
 }
 
-/** A feed cup title mapped to a PvPoke cup; `cp` for a cup whose name carries no edition. */
+/**
+ * A feed cup title (or a whole format text such as "Great League: Mega Edition") mapped to a
+ * PvPoke cup; `cp` for a cup whose name carries no edition, `id` to set the pick3 league id
+ * instead of deriving it from the cup and edition.
+ */
 export interface CupAlias {
   cup: string;
   cp?: number;
+  id?: string;
   note?: string;
 }
 
 export interface ParsedFeed {
   entries: ScheduleEntry[];
-  /** Formats left out because they need mega support, as the feed names them. */
-  skippedMega: string[];
   /** Cup titles with no alias, each once. */
   unmapped: string[];
   /** GBL events skipped because their name carries no " | Season" part, as the feed names them. */
@@ -62,7 +65,6 @@ export function parseFeed(
   aliases: Record<string, CupAlias>,
 ): ParsedFeed {
   const entries: ScheduleEntry[] = [];
-  const skippedMega = new Set<string>();
   const unmapped = new Set<string>();
   const noSeason: string[] = [];
   const seasonStart = new Map<string, string>();
@@ -86,14 +88,13 @@ export function parseFeed(
       if (OPEN.has(format)) {
         continue;
       }
-      if (format.includes('Mega')) {
-        skippedMega.add(format);
-        continue;
-      }
       const [titlePart, editionPart] = format.split(': ');
       const title = (titlePart ?? '').trim();
       const edition = editionPart ? EDITIONS[editionPart.trim()] : undefined;
-      const alias = aliases[title];
+      // The whole format text first ("Great League: Mega Edition" names a league by itself),
+      // then the cup title.
+      const whole = aliases[format];
+      const alias = whole ?? aliases[title];
       if (!alias) {
         unmapped.add(title);
         continue;
@@ -105,10 +106,11 @@ export function parseFeed(
       }
       const suffix = alias.cp === undefined ? (edition?.suffix ?? '') : '';
       entries.push({
-        league: `${alias.cup}${suffix}`,
+        league: alias.id ?? `${alias.cup}${suffix}`,
         cup: alias.cup,
         cp,
-        title,
+        title: whole ? format : title,
+        ...(format.includes('Mega') ? { mega: true } : {}),
         start,
         end,
         season,
@@ -120,7 +122,6 @@ export function parseFeed(
   );
   return {
     entries,
-    skippedMega: [...skippedMega],
     unmapped: [...unmapped],
     noSeason,
     seasons: [...seasonStart]
