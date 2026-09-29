@@ -49,6 +49,17 @@ describe('rotationNotice', () => {
     expect(rotationNotice({ ...base, nudged, now: new Date('2026-11-19T00:00:00Z') })).toBeNull();
   });
 
+  it('does not nudge again in week two when the real feed leaves a day between the weeks', () => {
+    const schedule = [
+      wk(LAIC, '2026-11-10T21:00:00.000Z', '2026-11-17T21:00:00.000Z'),
+      wk(LAIC, '2026-11-18T21:00:00.000Z', '2026-11-25T21:00:00.000Z'),
+    ];
+    const nudged = ['laic2027@2026-11-10T21:00:00.000Z'];
+    for (const now of ['2026-11-18T00:00:00Z', '2026-11-20T00:00:00Z']) {
+      expect(rotationNotice({ ...base, schedule, nudged, now: new Date(now) })).toBeNull();
+    }
+  });
+
   it('does not nudge a player already on the cup', () => {
     expect(
       rotationNotice({ ...base, league: 'retro', now: new Date('2026-09-23T00:00:00Z') }),

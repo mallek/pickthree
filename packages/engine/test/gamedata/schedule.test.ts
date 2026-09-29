@@ -3,6 +3,7 @@ import {
   currentRun,
   leagueStatus,
   runSeasons,
+  RUN_GAP_DAYS,
   runsOf,
   type ScheduleEntry,
 } from '../../src/gamedata/schedule.js';
@@ -21,6 +22,10 @@ const RETRO = week('retro', '2026-09-22T20:00:00.000Z', '2026-09-29T20:00:00.000
 const LAIC_1 = week('laic2027', '2026-11-10T21:00:00.000Z', '2026-11-17T21:00:00.000Z');
 const LAIC_2 = week('laic2027', '2026-11-17T21:00:00.000Z', '2026-11-24T21:00:00.000Z');
 const SCHEDULE = [RETRO, LAIC_1, LAIC_2];
+// The real feed leaves a one-day gap between LAIC's two weeks.
+const REAL_LAIC_1 = week('laic2027', '2026-11-10T21:00:00.000Z', '2026-11-17T21:00:00.000Z');
+const REAL_LAIC_2 = week('laic2027', '2026-11-18T21:00:00.000Z', '2026-11-25T21:00:00.000Z');
+const REAL = [RETRO, REAL_LAIC_1, REAL_LAIC_2];
 const at = (iso: string) => new Date(iso);
 
 describe('leagueStatus', () => {
@@ -49,6 +54,13 @@ describe('leagueStatus', () => {
     });
   });
 
+  it('stays live through a gap of a day between two weeks of one run', () => {
+    expect(leagueStatus(REAL, 'laic2027', at('2026-11-18T00:00:00.000Z'))).toEqual({
+      state: 'live',
+      end: REAL_LAIC_2.end,
+    });
+  });
+
   it('is off for a league the schedule does not name', () => {
     expect(leagueStatus(SCHEDULE, 'great', at('2026-09-23T00:00:00.000Z')).state).toBe('off');
   });
@@ -57,6 +69,10 @@ describe('leagueStatus', () => {
 describe('runs', () => {
   it('merges weeks whose end meets the next start', () => {
     expect(runsOf(SCHEDULE, 'laic2027')).toEqual([{ start: LAIC_1.start, end: LAIC_2.end }]);
+  });
+
+  it(`merges weeks whose next start is within ${RUN_GAP_DAYS} days of the last end`, () => {
+    expect(runsOf(REAL, 'laic2027')).toEqual([{ start: REAL_LAIC_1.start, end: REAL_LAIC_2.end }]);
   });
 
   it('keeps separate weeks separate', () => {
@@ -70,6 +86,14 @@ describe('runs', () => {
     );
     expect(currentRun(SCHEDULE, 'retro', at('2026-10-05T00:00:00.000Z'))?.start).toBe(RETRO.start);
     expect(currentRun(SCHEDULE, 'retro', at('2026-09-01T00:00:00.000Z'))).toBeNull();
+  });
+
+  it('currentRun between two separate runs is the earlier run', () => {
+    const later = week('retro', '2026-10-27T21:00:00.000Z', '2026-11-03T21:00:00.000Z');
+    expect(currentRun([RETRO, later], 'retro', at('2026-10-10T00:00:00.000Z'))).toEqual({
+      start: RETRO.start,
+      end: RETRO.end,
+    });
   });
 
   it('runSeasons names each run by the cup and its start date, oldest first', () => {

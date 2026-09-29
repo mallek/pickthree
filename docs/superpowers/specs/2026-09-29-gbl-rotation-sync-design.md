@@ -197,8 +197,8 @@ branch does today. If a ruleset ever blocks it, the job falls back to a PR and s
     `now`; `{ state: 'upcoming', start }` when its next week starts within 7 days; else
     `{ state: 'off' }`. Start is inclusive, end exclusive.
   - `currentRun(schedule, leagueId, now)`: `{ start, end }` of the run containing `now`, or of the
-    last run if none does, or `null`. A run is consecutive weeks whose end and next start are
-    equal.
+    last run if none does, or `null`. A run is weeks of one league where each next start is at or
+    before the last end plus `RUN_GAP_DAYS` (2): the feed leaves a day between LAIC's two weeks.
 
 ## App
 

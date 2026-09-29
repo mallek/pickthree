@@ -23,6 +23,9 @@ export type LeagueStatus =
 /** How far ahead a cup shows as upcoming. */
 export const UPCOMING_DAYS = 7;
 
+/** Weeks of one league are one run when the next starts within this many days of the last end. */
+export const RUN_GAP_DAYS = 2;
+
 const DAY_MS = 86_400_000;
 
 export interface Run {
@@ -30,7 +33,10 @@ export interface Run {
   end: string;
 }
 
-/** The league's weeks merged into runs: weeks whose end meets the next start are one run. */
+/**
+ * The league's weeks merged into runs: a week starting at or before the last week's end plus
+ * RUN_GAP_DAYS joins that run (the feed can leave a day between two weeks of one cup).
+ */
 export function runsOf(schedule: readonly ScheduleEntry[], leagueId: string): Run[] {
   const weeks = schedule
     .filter((e) => e.league === leagueId)
@@ -38,8 +44,10 @@ export function runsOf(schedule: readonly ScheduleEntry[], leagueId: string): Ru
   const runs: Run[] = [];
   for (const w of weeks) {
     const last = runs[runs.length - 1];
-    if (last && Date.parse(last.end) === Date.parse(w.start)) {
-      last.end = w.end;
+    if (last && Date.parse(w.start) <= Date.parse(last.end) + RUN_GAP_DAYS * DAY_MS) {
+      if (Date.parse(w.end) > Date.parse(last.end)) {
+        last.end = w.end;
+      }
     } else {
       runs.push({ start: w.start, end: w.end });
     }
