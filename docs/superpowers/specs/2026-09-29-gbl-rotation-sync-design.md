@@ -163,8 +163,9 @@ Rotation leagues go into `leagues.json` with their other fields; the schedule it
 
 `.github/workflows/data-refresh.yml` becomes `daily-refresh.yml`, cron once a day (`17 6 * * *`):
 
-1. **Schedule step.** Fetch the feed, rewrite `schedule.json` and `seasons.json`. If either changed,
-   commit to main as the workflow bot ("Schedule: <what changed>").
+1. **Schedule step.** Fetch the feed, rewrite `schedule.json` and `seasons.json`. The schedule and
+   seasons changes are built and tested together with the PvPoke step, then committed to main in one
+   bot commit when the build passes.
 2. **PvPoke step.** As today (`data:refresh`, fetch, `vendor:sync`, `data:build`, tests). Then:
    - The vendor diff is empty (only the lock moved): commit the lock to main directly.
    - The vendor diff is not empty: open the PR as today, for review.
@@ -173,7 +174,7 @@ Rotation leagues go into `leagues.json` with their other fields; the schedule it
    - a scheduled cup starting within 7 days with no rankings at its cap;
    - a scheduled cup starting within 7 days whose rankings are stale;
    - the feed unreachable or unparseable (filed on the first failed day, closed on the next good day: the workflow token cannot keep a counter between runs).
-4. A push from steps 1 or 2 triggers `pages.yml`, which builds and deploys.
+4. After a push, the job dispatches `pages.yml` (a push made with the workflow token starts no workflows on its own).
 
 Main's protection: the bot pushes with the workflow token (`contents: write`), as the refresh PR
 branch does today. If a ruleset ever blocks it, the job falls back to a PR and says so in the log.

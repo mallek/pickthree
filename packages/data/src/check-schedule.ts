@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { UPCOMING_DAYS, runsOf, type ScheduleEntry } from '@pickthree/engine';
 import { hasRankings, isStale, rankingsUpdated } from './leagues.js';
-import { DATA_PACKAGE_DIR } from './paths.js';
+import { DATA_PACKAGE_DIR, GAMEMASTER_PATH } from './paths.js';
 import { readSchedule } from './schedule-feed.js';
 
 export interface Warning {
@@ -20,6 +20,8 @@ export function scheduleWarnings(input: {
   ranked: (cup: string, cp: number) => boolean;
   updated: (cup: string, cp: number) => string | null;
   now: Date;
+  /** False when the PvPoke checkout is missing; rankings and staleness cannot be judged then. */
+  pvpoke?: boolean;
 }): Warning[] {
   const out: Warning[] = [];
   for (const title of input.report?.unmapped ?? []) {
@@ -33,6 +35,9 @@ export function scheduleWarnings(input: {
       title: 'GBL schedule feed failing',
       body: `schedule:refresh could not use the feed (${input.report.error ?? 'unknown'}). schedule.json was left as it was. This closes itself on the next good run.`,
     });
+  }
+  if (input.pvpoke === false) {
+    return out;
   }
   const t = input.now.getTime();
   for (const league of [...new Set(input.schedule.map((e) => e.league))]) {
@@ -77,6 +82,7 @@ if (process.argv[1] && process.argv[1].endsWith('check-schedule.ts')) {
     ranked: hasRankings,
     updated: rankingsUpdated,
     now: new Date(),
+    pvpoke: fs.existsSync(GAMEMASTER_PATH),
   });
   process.stdout.write(`${JSON.stringify(warnings)}\n`);
 }

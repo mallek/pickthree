@@ -46,7 +46,7 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
           npm run data:build
           PICKTHREE_REQUIRE_PVPOKE=1 npm test
-          if git diff --quiet -- packages/sim-pvpoke/vendor packages/sim-pvpoke/LICENSE-pvpoke; then
+          if git diff --quiet -- packages/sim-pvpoke/vendor ':!packages/sim-pvpoke/vendor/MANIFEST.json' packages/sim-pvpoke/LICENSE-pvpoke; then
             echo "vendor=false" >> "$GITHUB_OUTPUT"
           else
             echo "vendor=true" >> "$GITHUB_OUTPUT"
@@ -59,7 +59,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add packages/data/schedule.json packages/data/seasons.json
           if [ "${{ steps.build.outputs.vendor }}" != 'true' ]; then
-            git add packages/data/pvpoke.lock.json
+            git add packages/data/pvpoke.lock.json packages/sim-pvpoke/vendor/MANIFEST.json
           fi
           if git diff --cached --quiet; then
             echo "pushed=false" >> "$GITHUB_OUTPUT"
@@ -78,11 +78,9 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           branch: data-refresh/${{ steps.bump.outputs.after }}
-          title: 'Refresh PvPoke data to ${{ steps.bump.outputs.after }}'
+          title: ${{ steps.push.outputs.fallback == 'true' && 'Daily refresh (push to main was refused)' || format('Refresh PvPoke data to {0}', steps.bump.outputs.after) }}
           commit-message: 'Refresh PvPoke data to ${{ steps.bump.outputs.after }}'
-          body: |
-            PvPoke's battle code changed, so this refresh waits for review. Golden simulator tests passed.
-            Review the vendor diff before merging.
+          body: ${{ steps.push.outputs.fallback == 'true' && 'The direct push to main was refused, so this PR carries the daily data refresh. Tests passed.' || 'PvPoke battle code changed, so this refresh waits for review. Golden simulator tests passed. Review the vendor diff before merging.' }}
           add-paths: |
             packages/data/pvpoke.lock.json
             packages/data/schedule.json
@@ -103,7 +101,7 @@ jobs:
           while IFS= read -r line; do
             title=$(node -e "console.log(JSON.parse(process.argv[1]).title)" "$line")
             body=$(node -e "console.log(JSON.parse(process.argv[1]).body)" "$line")
-            existing=$(gh issue list --label schedule --state open --search "\"$title\" in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+            existing=$(gh issue list --label schedule --state open --json number,title | jq -r --arg t "$title" '.[] | select(.title == $t) | .number' | head -1)
             if [ -n "$existing" ]; then
               gh issue comment "$existing" --body "Still true as of $(date -u +%F)."
             else

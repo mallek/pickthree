@@ -50,4 +50,17 @@ describe('scheduleWarnings', () => {
       'GBL schedule feed failing',
     ]);
   });
+
+  it('skips rankings and staleness warnings when the PvPoke checkout is missing', () => {
+    const w = scheduleWarnings({
+      ...base,
+      report: { ok: false, unmapped: ['Spooky Cup'], error: 'HTTP 500' },
+      pvpoke: false,
+      now: new Date('2026-10-15T00:00:00Z'),
+    });
+    expect(w.map((x) => x.title)).toEqual([
+      "Map GBL cup 'Spooky Cup' to a PvPoke cup",
+      'GBL schedule feed failing',
+    ]);
+  });
 });
