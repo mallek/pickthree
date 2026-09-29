@@ -72,7 +72,7 @@ export function scheduleWarnings(input: {
     if (isStale(updated, run.start)) {
       out.push({
         title: `${first.title} starts ${day} on stale PvPoke rankings`,
-        body: `PvPoke last changed '${first.cup}' rankings on ${updated ?? 'an unknown date'}. The app labels the cup; the daily job clears this once PvPoke refreshes.`,
+        body: `PvPoke last changed '${first.cup}' rankings on ${updated ?? 'an unknown date'}. The app labels the cup. This issue closes itself on the first daily run after PvPoke refreshes them.`,
       });
     }
   }

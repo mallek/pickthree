@@ -8,6 +8,9 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
+concurrency:
+  group: daily-refresh
+  cancel-in-progress: false
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -68,7 +71,10 @@ jobs:
           git commit -m "Data: daily refresh (schedule, seasons, PvPoke data)"
           if git push origin HEAD:main; then
             echo "pushed=true" >> "$GITHUB_OUTPUT"
+          elif git pull --rebase origin main && git push origin HEAD:main; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
           else
+            git rebase --abort 2>/dev/null || true
             echo "::warning::push to main refused; falling back to a PR"
             echo "pushed=false" >> "$GITHUB_OUTPUT"
             echo "fallback=true" >> "$GITHUB_OUTPUT"
@@ -107,6 +113,19 @@ jobs:
             else
               gh issue create --title "$title" --label schedule --body "$body"
             fi
+          done
+          # Close what is no longer warned (a stale cup PvPoke refreshed, rankings that landed, a
+          # cup now mapped). The feed-failing issue keeps its own rule below.
+          open=$(gh issue list --label schedule --state open --limit 200 --json number,title)
+          closable=$(node -e "
+            const warned = new Set(JSON.parse(process.argv[1] || '[]').map((w) => w.title));
+            for (const i of JSON.parse(process.argv[2])) {
+              if (i.title !== 'GBL schedule feed failing' && !warned.has(i.title)) {
+                console.log(i.number);
+              }
+            }" "$warnings" "$open")
+          for n in $closable; do
+            gh issue close "$n" --comment "No longer warned as of $(date -u +%F)."
           done
           case "${{ steps.schedule.outputs.code }}" in
             0|3)
