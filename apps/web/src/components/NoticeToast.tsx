@@ -59,7 +59,7 @@ export function NoticeToast() {
         role="status"
         style={{ bottom }}
       >
-        <span>{message}</span>
+        <span className="notice-msg">{message}</span>
         <button
           type="button"
           onClick={() => {
@@ -69,7 +69,7 @@ export function NoticeToast() {
         >
           {action.label}
         </button>
-        <button type="button" onClick={() => notify(null)} aria-label="Dismiss">
+        <button type="button" className="notice-quiet" onClick={() => notify(null)}>
           Not now
         </button>
       </div>

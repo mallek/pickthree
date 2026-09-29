@@ -1582,6 +1582,16 @@ textarea.paste {
 .notice-toast > span {
   min-width: 0;
 }
+/* The action notice's message keeps the inset the plain notice's text has (.notice-foot zeroes
+   the pill's padding). */
+.notice-foot .notice-msg {
+  padding: 8px 0 8px 18px;
+}
+/* Not now: text only, so the action beside it is the one that reads as the choice. */
+.update-toast button.notice-quiet {
+  background: transparent;
+  color: var(--muted);
+}
 /* A 44px target; --accent-lo under --on-accent clears 4.5:1 in both themes, as the primary
    button's gradient end does. */
 .update-toast button {

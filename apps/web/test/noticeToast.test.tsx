@@ -166,7 +166,7 @@ describe('NoticeToast', () => {
   it('lets an action notice be dismissed without running the action', () => {
     const run = vi.fn();
     renderActionNotice(run);
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(run).not.toHaveBeenCalled();
     expect(screen.queryByRole('status')).toBeNull();
   });
