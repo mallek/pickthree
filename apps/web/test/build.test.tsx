@@ -597,9 +597,14 @@ describe('Build lead link', () => {
       metaSize: 3,
       metaRanks: { azumarill: { overall: 1, score: 90, role: null, roleRank: null } },
       analyzable: ['azumarill'],
+      legal: ['azumarill'],
     };
     const leagueInfo = vi.fn((id: string) =>
-      id === 'great' ? base.leagueInfo('great') : id === 'ultra' ? Promise.resolve(ultraInfo) : new Promise<never>(() => {}),
+      id === 'great'
+        ? base.leagueInfo('great')
+        : id === 'ultra'
+          ? Promise.resolve(ultraInfo)
+          : new Promise<never>(() => {}),
     );
     window.location.hash = '#/build?lead=azumarill&l=ultra';
     render(
@@ -618,7 +623,7 @@ describe('Build lead link', () => {
     expect(screen.getByRole('radio', { name: 'Ultra League' })).toBeChecked();
   });
 
-  it('waits for the target league\'s own bundle before judging eligibility or dropping the lead', async () => {
+  it("waits for the target league's own bundle before judging eligibility or dropping the lead", async () => {
     // Great (in play at boot) offers azumarill; Ultra (the link's target) does not. If the
     // effect ever checked analyzable against the wrong league's still-loaded bundle, it would
     // set the pick from Great's list and drop the lead before Ultra's own bundle arrived.
@@ -657,6 +662,7 @@ describe('Build lead link', () => {
       metaSize: 3,
       metaRanks: { clodsire: { overall: 1, score: 90, role: null, roleRank: null } },
       analyzable: ['clodsire'],
+      legal: ['clodsire'],
     });
     await waitFor(() => expect(window.location.hash).toBe('#/build'));
     expect(screen.getByRole('button', { name: 'Lead, empty' })).toBeInTheDocument();
@@ -694,9 +700,7 @@ describe('Build lead link', () => {
     let resolveReady: (r: typeof bootReply) => void = () => {};
     window.location.hash = '#/build?lead=azumarill';
     render(
-      <AppProvider
-        host={fakeHost({ ready: vi.fn(() => new Promise((r) => (resolveReady = r))) })}
-      >
+      <AppProvider host={fakeHost({ ready: vi.fn(() => new Promise((r) => (resolveReady = r))) })}>
         <Build />
       </AppProvider>,
     );

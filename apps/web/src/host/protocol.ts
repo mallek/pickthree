@@ -17,6 +17,9 @@ export interface LeagueInfo {
   metaRanks: Record<string, MetaRank>;
   /** Species with a matchup matrix row in this league, so they can be hand-picked for a team. */
   analyzable: string[];
+  /** Every species the league admits (include/exclude rules), whether or not it has a matrix
+   * row. Search offers exactly these; `analyzable` is only the matrix subset. */
+  legal: string[];
 }
 
 import type {

@@ -6,6 +6,7 @@ import {
   useName,
   useShortName,
   useSpecies,
+  NothingMatches,
   useSpeciesSearch,
 } from '../components.tsx';
 import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
@@ -63,7 +64,7 @@ export function NewSet() {
    * carries its moves and specimens. */
   const [chosen, setChosen] = useState<TeamRef | null>(null);
   const [query, setQuery] = useState('');
-  const hits = useSpeciesSearch(query, 30);
+  const hits = useSpeciesSearch(query, 30, { legalOnly: true });
 
   const recent = useMemo(() => {
     const seen = new Set<string>();
@@ -217,9 +218,7 @@ export function NewSet() {
               ))}
             </div>
             {picks.length === 0 ? (
-              <p className="muted small" style={{ margin: 0 }}>
-                Nothing matches.
-              </p>
+              <NothingMatches query={query} legalOnly style={{ margin: 0 }} />
             ) : null}
           </div>
         ) : null}

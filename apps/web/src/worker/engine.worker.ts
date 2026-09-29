@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import { legalSpeciesIds } from './legalSpecies.ts';
 import {
   analyzeTeam,
   suggestTeammates,
@@ -199,6 +200,7 @@ function leagueInfo(env: Env, data: StaticData): LeagueInfo {
       const sp = env.index.species(id);
       return Boolean(sp && sp.released);
     }),
+    legal: legalSpeciesIds(env.species, data.league),
   };
 }
 

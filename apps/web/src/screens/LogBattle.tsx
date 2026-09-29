@@ -7,7 +7,13 @@ import {
 } from '@pickthree/engine';
 import { Button, Header, Term, type ButtonVariant } from '@pickthree/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PokemonToken, useName, useShortName, useSpeciesSearch } from '../components.tsx';
+import {
+  NothingMatches,
+  PokemonToken,
+  useName,
+  useShortName,
+  useSpeciesSearch,
+} from '../components.tsx';
 import { OpponentCard } from '../components/OpponentCard.tsx';
 import { communityCores, likelyTeammates } from '../community.ts';
 import { boardWindow, useActions, useAppState } from '../state/store.tsx';
@@ -62,7 +68,7 @@ export function LogBattle() {
   const [focused, setFocused] = useState(false);
   /** Set by the third pick: the grid stays hidden until the search is typed in or tapped again. */
   const [picked, setPicked] = useState(false);
-  const hits = useSpeciesSearch(query, 30);
+  const hits = useSpeciesSearch(query, 30, { legalOnly: true });
 
   useEffect(() => {
     if (s.setsLoaded && !open && !editing) {
@@ -96,9 +102,12 @@ export function LogBattle() {
       ),
     [s.leagueInfo],
   );
+  // The log is per league, so nothing should drop out here; it guards a log or board that
+  // carries a species from another league's rules.
+  const legalIds = useMemo(() => new Set(s.leagueInfo?.legal ?? []), [s.leagueInfo]);
   const recent = useMemo(
-    () => recentOpponents(s.sets, fallback, RECENT_LIMIT, ranks),
-    [s.sets, fallback, ranks],
+    () => recentOpponents(s.sets, fallback, RECENT_LIMIT, ranks).filter((id) => legalIds.has(id)),
+    [s.sets, fallback, ranks, legalIds],
   );
 
   // Likely teammates of the first opponent, from the community team board. The read is the whole
@@ -127,8 +136,11 @@ export function LogBattle() {
     };
   }, [wantBoard, s.settings, league, board]);
   const often = useMemo(
-    () => (first && cores && slots.length < 3 ? likelyTeammates(cores, first, slots) : []),
-    [cores, first, slots],
+    () =>
+      first && cores && slots.length < 3
+        ? likelyTeammates(cores, first, slots).filter((id) => legalIds.has(id))
+        : [],
+    [cores, first, slots, legalIds],
   );
 
   const searching = query.trim().length > 0;
@@ -320,9 +332,7 @@ export function LogBattle() {
             <span className="meta">{searching ? 'Matches' : 'Recent'}</span>
             <div className="recent-row matches">{gridIds.map(token)}</div>
             {searching && gridIds.length === 0 ? (
-              <p className="muted small" style={{ margin: 0 }}>
-                Nothing matches.
-              </p>
+              <NothingMatches query={query} legalOnly style={{ margin: 0 }} />
             ) : null}
             {atCap ? (
               <p className="muted small" style={{ margin: 0 }}>

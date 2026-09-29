@@ -13,6 +13,7 @@ import {
   useMemo,
   useRef,
   useSyncExternalStore,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import { metaTags, SEP, shortName, speciesDisplayName } from './format.ts';
@@ -20,6 +21,7 @@ import type { SpeciesLite } from './host/protocol.ts';
 import { matchesQuery, parseQuery } from './search.ts';
 import { familyContext, speciesRecord } from './searchRecords.ts';
 import { seasonsFor } from './state/seasonsFor.ts';
+import { useLeague } from './components/LeagueSwitcher.tsx';
 import { useActions, useAppState } from './state/store.tsx';
 import { logBattles } from './state/facing.ts';
 import {
@@ -171,34 +173,91 @@ export function ShareGlyph() {
   );
 }
 
-/** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
- * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
- * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair. */
-export function useSpeciesSearch(query: string, limit = 30): string[] {
+/** How many illegal species the "Not allowed" line names. */
+const BLOCKED_NAMES = 3;
+
+/** Matching species ids, most likely first: league-legal by meta rank, then legal but unranked
+ * by name, then everything else by name. With `legalOnly`, only `leagueInfo.legal` species
+ * count, and none do until the league info has loaded. Returns the sorted matches and, for
+ * `legalOnly`, the ones filtered out (also sorted). */
+function useSpeciesMatches(
+  query: string,
+  legalOnly: boolean,
+): { hits: string[]; blocked: string[] } {
   const s = useAppState();
   const name = useName();
   const species = useSpecies();
   const parsed = useMemo(() => parseQuery(query), [query]);
-  if (parsed.length === 0) {
-    return [];
-  }
-  const legal = new Set(s.leagueInfo?.analyzable ?? []);
-  const all = s.data?.allSpecies ?? [];
-  const ctx = familyContext(all, name, species);
-  const hits = all.filter((id) =>
-    matchesQuery(parsed, speciesRecord(id, name(id), species(id)), ctx),
-  );
-  // Most likely first: league-legal species by meta rank, then legal but unranked by name,
-  // then everything else by name.
-  const ranks = s.leagueInfo?.metaRanks ?? {};
-  const rankOf = (id: string): number => ranks[id]?.overall ?? Number.MAX_SAFE_INTEGER;
-  hits.sort(
-    (a, b) =>
-      Number(legal.has(b)) - Number(legal.has(a)) ||
+  return useMemo(() => {
+    if (parsed.length === 0) {
+      return { hits: [], blocked: [] };
+    }
+    const info = s.leagueInfo;
+    const analyzable = new Set(info?.analyzable ?? []);
+    const all = s.data?.allSpecies ?? [];
+    const ctx = familyContext(all, name, species);
+    const matched = all.filter((id) =>
+      matchesQuery(parsed, speciesRecord(id, name(id), species(id)), ctx),
+    );
+    const ranks = info?.metaRanks ?? {};
+    const rankOf = (id: string): number => ranks[id]?.overall ?? Number.MAX_SAFE_INTEGER;
+    const order = (a: string, b: string): number =>
+      Number(analyzable.has(b)) - Number(analyzable.has(a)) ||
       rankOf(a) - rankOf(b) ||
-      name(a).localeCompare(name(b)),
-  );
+      name(a).localeCompare(name(b));
+    if (!legalOnly) {
+      return { hits: matched.sort(order), blocked: [] };
+    }
+    if (!info) {
+      return { hits: [], blocked: [] };
+    }
+    const legal = new Set(info.legal);
+    return {
+      hits: matched.filter((id) => legal.has(id)).sort(order),
+      blocked: matched.filter((id) => !legal.has(id)).sort(order),
+    };
+  }, [parsed, s.leagueInfo, s.data, name, species, legalOnly]);
+}
+
+/** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
+ * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
+ * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair.
+ * `legalOnly` keeps only species the league in play admits (the screens where a pick must be
+ * playable in it); pair it with `NothingMatches` for the empty state. */
+export function useSpeciesSearch(
+  query: string,
+  limit = 30,
+  opts: { legalOnly?: boolean | undefined } = {},
+): string[] {
+  const { hits } = useSpeciesMatches(query, opts.legalOnly === true);
   return hits.slice(0, limit);
+}
+
+/** The empty state under a search grid: "Nothing matches.", or, when `legalOnly` filtered out
+ * every match, which banned species the query found ("Not allowed in Retro Cup: Azumarill"). */
+export function NothingMatches({
+  query,
+  legalOnly,
+  className = 'muted small',
+  style,
+}: {
+  query: string;
+  legalOnly?: boolean | undefined;
+  className?: string;
+  style?: CSSProperties | undefined;
+}) {
+  const { blocked } = useSpeciesMatches(query, legalOnly === true);
+  const name = useName();
+  const league = useLeague();
+  const text =
+    blocked.length > 0
+      ? `Not allowed in ${league.title}: ${blocked.slice(0, BLOCKED_NAMES).map(name).join(', ')}`
+      : 'Nothing matches.';
+  return (
+    <p className={className} style={style}>
+      {text}
+    </p>
+  );
 }
 
 /** "#18 overall" and "#5 closer" pills for a species, nothing outside the top 50. `overall`

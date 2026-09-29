@@ -108,6 +108,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
         clodsire: { overall: 3, score: 90, role: null, roleRank: null },
       },
       analyzable: ['tinkaton', 'azumarill', 'clodsire'],
+      legal: ['tinkaton', 'azumarill', 'clodsire', 'medicham', 'dragonite_shadow'],
     })),
     importCsv: vi.fn(),
     recommend: vi.fn(async (): Promise<Recommendation> => ({

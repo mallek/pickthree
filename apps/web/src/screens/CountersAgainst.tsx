@@ -1,6 +1,12 @@
 import { Chevron, Sheet } from '@pickthree/ui';
 import { useEffect, useRef, useState } from 'react';
-import { PokemonToken, useName, useShortName, useSpeciesSearch } from '../components.tsx';
+import {
+  NothingMatches,
+  PokemonToken,
+  useName,
+  useShortName,
+  useSpeciesSearch,
+} from '../components.tsx';
 
 /** Log a Battle's cap: past it the grid asks for more letters instead of growing. */
 const CAP = 30;
@@ -13,7 +19,7 @@ function AgainstBody({ onPick }: { onPick: (vs: string | null) => void }) {
   const [query, setQuery] = useState('');
   const name = useName();
   const short = useShortName();
-  const hits = useSpeciesSearch(query, CAP);
+  const hits = useSpeciesSearch(query, CAP, { legalOnly: true });
   const searching = query.trim().length > 0;
   const input = useRef<HTMLInputElement>(null);
   // The search takes focus once the sheet is up, as Log a Battle's does. A frame later: the Sheet
@@ -51,7 +57,9 @@ function AgainstBody({ onPick }: { onPick: (vs: string | null) => void }) {
               </button>
             ))}
           </div>
-          {hits.length === 0 ? <p className="muted small counters-note">Nothing matches.</p> : null}
+          {hits.length === 0 ? (
+            <NothingMatches query={query} legalOnly className="muted small counters-note" />
+          ) : null}
           {hits.length >= CAP ? (
             <p className="muted small counters-note">Keep typing to narrow it down.</p>
           ) : null}

@@ -38,6 +38,7 @@ async function twoLeagueHost() {
       clodsire: { overall: 3, score: 90, role: null, roleRank: null },
     },
     analyzable: ['tinkaton', 'azumarill', 'clodsire'],
+    legal: ['tinkaton', 'azumarill', 'clodsire', 'medicham', 'dragonite_shadow'],
   }));
   const counters = vi.fn(async () => EMPTY_COUNTERS);
   const base = fakeHost();
@@ -329,6 +330,15 @@ async function pageHost(
         clodsire: { overall: 3, score: 90, role: null, roleRank: null },
       },
       analyzable: ['tinkaton', 'azumarill', 'clodsire', 'medicham'],
+      legal: [
+        'tinkaton',
+        'azumarill',
+        'clodsire',
+        'medicham',
+        'dragonite_shadow',
+        'rookidee',
+        'corviknight',
+      ],
     })),
   });
 }

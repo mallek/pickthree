@@ -24,6 +24,7 @@ import {
   useName,
   useShortName,
   useSpecies,
+  NothingMatches,
   useSpeciesSearch,
 } from '../components.tsx';
 import { costLine, ivLine, SEP, topPct } from '../format.ts';
@@ -148,7 +149,7 @@ export function Build() {
   ]);
 
   const parsed = useMemo(() => parseQuery(query), [query]);
-  const hits = useSpeciesSearch(query, 30);
+  const hits = useSpeciesSearch(query, 30, { legalOnly: true });
   const searching = query.trim().length > 0;
 
   /** The stage a specimen would be built to, which is the species it plays as. */
@@ -250,7 +251,10 @@ export function Build() {
     [s.leagueInfo],
   );
   const suggested = useMemo((): GridItem[] => {
-    const ids = recentOpponents(s.sets, fallback, RECENT_LIMIT, ranks);
+    const legal = new Set(s.leagueInfo?.legal ?? []);
+    const ids = recentOpponents(s.sets, fallback, RECENT_LIMIT, ranks).filter((id) =>
+      legal.has(id),
+    );
     return ids.map((id) => {
       const sp = bestOwned(id);
       return {
@@ -263,7 +267,7 @@ export function Build() {
       };
     });
     // bestOwned reads the collection and verdicts, both in the list.
-  }, [s.sets, fallback, ranks, s.collection, s.verdicts]);
+  }, [s.sets, fallback, ranks, s.leagueInfo, s.collection, s.verdicts]);
   const grid = searching ? picksGrid : suggested;
 
   /** Open the search for one empty slot. */
@@ -575,9 +579,7 @@ export function Build() {
               ))}
             </div>
             {grid.length === 0 ? (
-              <p className="muted small" style={{ margin: 0 }}>
-                Nothing matches.
-              </p>
+              <NothingMatches query={query} legalOnly style={{ margin: 0 }} />
             ) : null}
             {!s.collection ? (
               <p className="small muted" style={{ margin: 0 }}>

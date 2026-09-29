@@ -10,7 +10,7 @@ import { LogBattle } from '../src/screens/LogBattle.tsx';
 import { AppProvider } from '../src/state/store.tsx';
 import { resetHistoryForTests } from '../src/state/history.ts';
 import { DEFAULT_SETTINGS, resetDbForTests, storage } from '../src/storage/db.ts';
-import { fakeHost } from './fakeHost.ts';
+import { fakeHost, GREAT } from './fakeHost.ts';
 
 // New Set's own tests live in newSet.test.tsx.
 describe('Log a battle', () => {
@@ -542,5 +542,51 @@ describe('Log a Battle on the foundation', () => {
     expect(await screen.findByText('0 logged with this team')).toBeInTheDocument();
     expect(screen.getByText('Log a Battle')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
+  });
+});
+
+describe('Log a battle in a cup', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+  });
+
+  it('leaves out species the cup does not admit and says why', async () => {
+    const base = fakeHost();
+    const bootReply = await base.ready();
+    const retro = {
+      ...GREAT,
+      id: 'retro',
+      title: 'Retro Cup',
+      short: 'Retro',
+      kind: 'cup' as const,
+    };
+    await storage.saveSettings({ ...DEFAULT_SETTINGS, league: 'retro' });
+    await storage.saveSet({
+      id: 's1',
+      league: 'retro',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'clodsire', 'medicham'] },
+      battles: [],
+      closed: false,
+    });
+    render(
+      <AppProvider
+        host={fakeHost({
+          ready: vi.fn(async () => ({ ...bootReply, leagues: [retro] })),
+          leagueInfo: vi.fn(async (id: string) => ({
+            ...(await base.leagueInfo(id)),
+            legal: ['tinkaton', 'clodsire', 'medicham'],
+          })),
+        })}
+      >
+        <LogBattle />
+      </AppProvider>,
+    );
+    const search = await screen.findByPlaceholderText('Search any Pokémon');
+    fireEvent.change(search, { target: { value: 'azu' } });
+    expect(await screen.findByText('Not allowed in Retro Cup: Azumarill')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
   });
 });
