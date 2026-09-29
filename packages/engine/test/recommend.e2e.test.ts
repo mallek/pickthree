@@ -130,7 +130,7 @@ describe.skipIf(!ready || !haveLeague('little'))('recommend at Little Cup', () =
       `little e2e: ${rec.stats.specimens} specimens, ${rec.stats.eligibleBuilds} builds, ${rec.stats.dropped.length} dropped, ${rec.teams.length} teams`,
     );
     expect(data.league.cp).toBe(500);
-    expect(rec.stats.eligibleBuilds).toBeGreaterThanOrEqual(0);
+    expect(rec.teams.length).toBeGreaterThan(0);
     for (const team of rec.teams) {
       for (const slot of team.slots) {
         const sp = index.species(slot.candidate.build.speciesId);
