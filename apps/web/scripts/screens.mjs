@@ -243,6 +243,9 @@ await page.evaluateOnNewDocument(() => {
 async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
   captured.add(name);
   await new Promise((r) => setTimeout(r, 350));
+  if (name !== 'cup-nudge' && (await page.$('.notice-toast .notice-quiet'))) {
+    throw new Error(`${name}: the cup nudge is on the page, so this capture would show it`);
+  }
   // A full-page shot resizes the viewport to the page instead of stitching past it, so the fixed
   // tab bar lands at the true bottom rather than across the middle of the page.
   const options = fullPage ? { fullPage, captureBeyondViewport: false } : { fullPage };
@@ -396,14 +399,17 @@ const t0 = Date.now();
 console.log('welcome');
 await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('h1');
-await shot('00-welcome', false);
-// The one-time cup nudge shows on a fresh profile's first boot, so it is captured here.
+// The one-time cup nudge shows on a fresh profile's first boot. It is captured and dismissed
+// before any other shot, so it never sits over another capture.
 await page.waitForSelector('.notice-toast.notice-foot', { timeout: 10_000 }).catch(() => null);
 if (await page.$('.notice-toast .notice-quiet')) {
   await shot('cup-nudge', false, { mustShow: '.notice-toast' });
+  await page.click('.notice-toast .notice-quiet');
+  await page.waitForSelector('.notice-toast', { hidden: true });
 } else {
   throw new Error('cup nudge: the first boot with a live cup showed no nudge');
 }
+await shot('00-welcome', false);
 
 console.log('import');
 await page.goto(`${base}/#/import`, { waitUntil: 'networkidle0' });
