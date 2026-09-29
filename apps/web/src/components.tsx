@@ -183,6 +183,7 @@ const BLOCKED_NAMES = 3;
 function useSpeciesMatches(
   query: string,
   legalOnly: boolean,
+  megas = true,
 ): { hits: string[]; blocked: string[] } {
   const s = useAppState();
   const name = useName();
@@ -194,7 +195,8 @@ function useSpeciesMatches(
     }
     const info = s.leagueInfo;
     const analyzable = new Set(info?.analyzable ?? []);
-    const all = s.data?.allSpecies ?? [];
+    const every = s.data?.allSpecies ?? [];
+    const all = megas ? every : every.filter((id) => !species(id)?.megaOf);
     const ctx = familyContext(all, name, species);
     const matched = all.filter((id) =>
       matchesQuery(parsed, speciesRecord(id, name(id), species(id)), ctx),
@@ -216,20 +218,20 @@ function useSpeciesMatches(
       hits: matched.filter((id) => legal.has(id)).sort(order),
       blocked: matched.filter((id) => !legal.has(id)).sort(order),
     };
-  }, [parsed, s.leagueInfo, s.data, name, species, legalOnly]);
+  }, [parsed, s.leagueInfo, s.data, name, species, legalOnly, megas]);
 }
 
 /** Species ids matching the query (see `search.ts` for the grammar: name/type words, cp/hp/star
- * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` excludes
- * megas but includes shadow ids, so "dra" lists Dragonite, Shadow Dragonite and Dragonair.
+ * filters, flags, `@move` and `+family`), league-legal ones first, capped. `allSpecies` includes
+ * shadow and Mega ids (`megas: false` drops the Megas), so "dra" lists Dragonite, Shadow Dragonite and Dragonair.
  * `legalOnly` keeps only species the league in play admits (the screens where a pick must be
  * playable in it); pair it with `NothingMatches` for the empty state. */
 export function useSpeciesSearch(
   query: string,
   limit = 30,
-  opts: { legalOnly?: boolean | undefined } = {},
+  opts: { legalOnly?: boolean | undefined; megas?: boolean | undefined } = {},
 ): string[] {
-  const { hits } = useSpeciesMatches(query, opts.legalOnly === true);
+  const { hits } = useSpeciesMatches(query, opts.legalOnly === true, opts.megas !== false);
   return hits.slice(0, limit);
 }
 

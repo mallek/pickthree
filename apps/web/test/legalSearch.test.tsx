@@ -149,3 +149,75 @@ describe('legalSpeciesIds', () => {
     expect(ids).toEqual(['b', 'd']);
   });
 });
+
+describe('Megas in the species universe', () => {
+  const VENUSAUR = { name: 'Venusaur', types: ['grass', 'poison'], familyId: 'bulbasaur', dex: 3 };
+  const MEGA = {
+    name: 'Mega Venusaur',
+    types: ['grass', 'poison'],
+    familyId: 'bulbasaur',
+    dex: 3,
+    megaOf: 'venusaur',
+  };
+
+  function megaHost(legal: string[]) {
+    const base = fakeHost();
+    return fakeHost({
+      ready: vi.fn(async () => {
+        const r = await base.ready();
+        return {
+          ...r,
+          species: { ...r.species, venusaur: VENUSAUR, venusaur_mega: MEGA },
+          allSpecies: [...r.allSpecies, 'venusaur', 'venusaur_mega'],
+        };
+      }),
+      leagueInfo: vi.fn(async (id: string) => ({ ...(await base.leagueInfo(id)), legal })),
+    });
+  }
+
+  async function mountMega(
+    legal: string[],
+    props: { query: string; legalOnly?: boolean; megas?: boolean },
+  ) {
+    function MegaProbe() {
+      const s = useAppState();
+      const hits = useSpeciesSearch(props.query, 30, {
+        legalOnly: props.legalOnly,
+        megas: props.megas,
+      });
+      return (
+        <div>
+          <span data-testid="loaded">{s.leagueInfo ? 'yes' : 'no'}</span>
+          <span data-testid="hits">{hits.join(',')}</span>
+        </div>
+      );
+    }
+    render(
+      <AppProvider host={megaHost(legal)}>
+        <MegaProbe />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('loaded')).toHaveTextContent('yes'));
+  }
+
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+  });
+
+  it('lists Mega Venusaur where the league admits it', async () => {
+    await mountMega(['venusaur', 'venusaur_mega'], { query: 'venusaur', legalOnly: true });
+    expect(screen.getByTestId('hits').textContent?.split(',')).toContain('venusaur_mega');
+  });
+
+  it('does not list Mega Venusaur where the league does not admit it', async () => {
+    await mountMega(['venusaur'], { query: 'venusaur', legalOnly: true });
+    expect(screen.getByTestId('hits').textContent?.split(',')).toEqual(['venusaur']);
+  });
+
+  it('leaves Megas out when the caller asks for base forms only', async () => {
+    await mountMega(['venusaur', 'venusaur_mega'], { query: 'venusaur', megas: false });
+    expect(screen.getByTestId('hits').textContent?.split(',')).toEqual(['venusaur']);
+  });
+});

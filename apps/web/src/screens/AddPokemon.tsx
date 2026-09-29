@@ -43,7 +43,7 @@ export function AddPokemon() {
   );
 
   const searching = query.trim().length > 0;
-  const matches = useSpeciesSearch(query, 30);
+  const matches = useSpeciesSearch(query, 30, { megas: false });
 
   const iv = (v: string): number => Number.parseInt(v, 10);
   const ready =

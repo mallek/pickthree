@@ -226,13 +226,12 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
                 types: sp.types,
                 familyId: sp.familyId,
                 dex: sp.dex,
+                ...(sp.megaOf ? { megaOf: sp.megaOf } : {}),
               },
             ]),
           ),
           leagues: env.leagues,
-          allSpecies: env.species
-            .filter((sp) => sp.released && !sp.tags.includes('mega'))
-            .map((sp) => sp.speciesId),
+          allSpecies: env.species.filter((sp) => sp.released).map((sp) => sp.speciesId),
           seasons: env.seasons,
           schedule: env.schedule,
           epochs: env.epochs,

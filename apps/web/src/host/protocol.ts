@@ -5,6 +5,8 @@ export interface SpeciesLite {
   familyId: string | null;
   /** Pokedex number. */
   dex: number;
+  /** The base species id, on a Mega form only. */
+  megaOf?: string | undefined;
 }
 
 /** What the UI needs about the league in play, computed in the worker. */
@@ -128,7 +130,7 @@ export type WorkerResult =
       manifest: { pvpokeCommit: string; pvpokeDate: string; builtAt: string };
       species: Record<string, SpeciesLite>;
       leagues: League[];
-      /** Released, non-mega species ids for adding a Pokémon by hand. */
+      /** Released species ids, Megas included (a Mega carries `megaOf` in `species`). */
       allSpecies: string[];
       /** Go Battle League seasons, oldest first. Empty when the data build predates the list. */
       seasons: Season[];
