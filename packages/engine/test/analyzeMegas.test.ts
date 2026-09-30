@@ -29,6 +29,7 @@ describe.skipIf(!ready)('analyze a team with two Megas', () => {
   // A league with no exclusions, so Mega forms are allowed (the real Mega leagues arrive later).
   // The built static data may predate the Mega link, so the two forms used here carry it.
   const megaOf: Record<string, string> = {
+    mewtwo_mega_x: 'mewtwo',
     mewtwo_mega_y: 'mewtwo',
     charizard_mega_y: 'charizard',
   };
@@ -100,6 +101,17 @@ describe.skipIf(!ready)('analyze a team with two Megas', () => {
       { kind: 'specimen', id: swampert.id },
     ];
     const r = analyzeTeam(picks, specimens, { order: 'given' }, { data, sim });
+    expect(r.twoMegas).toBe(true);
+  });
+
+  it('flags two Megas even when they are also the same species', () => {
+    const twin = { ...mewtwo, id: 'mewtwo-twin' };
+    const picks: [TeamPick, TeamPick, TeamPick] = [
+      { kind: 'specimen', id: mewtwo.id, asSpeciesId: 'mewtwo_mega_x' },
+      { kind: 'specimen', id: twin.id, asSpeciesId: 'mewtwo_mega_y' },
+      { kind: 'specimen', id: swampert.id },
+    ];
+    const r = analyzeTeam(picks, [...specimens, twin], { order: 'given' }, { data, sim });
     expect(r.twoMegas).toBe(true);
   });
 });
