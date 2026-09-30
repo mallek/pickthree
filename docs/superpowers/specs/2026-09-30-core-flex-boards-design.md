@@ -17,8 +17,11 @@ is wired in a later change.
 
 ## Rules
 
-1. **Core.** An unordered pair of two Pokemon. A Shadow or Mega counts as its base species for every
-   rule below. No lead, switch or closer is shown or implied.
+1. **Core.** An unordered pair of two different base species. A Shadow or Mega counts as its base
+   species for the cap, for "same core", and for telling flex options apart. The core itself keeps the
+   exact forms shown (a Shadow core member stays a Shadow), and every flex team must contain both
+   core members in exactly those forms, so the link for a flex option matches the core on the image.
+   No lead, switch or closer is shown or implied.
 2. **Row.** One core plus up to 4 flex options. Each flex option is a distinct third Pokemon (by base
    species) that completes a legal team with the core. Flex options are listed best first; the best
    flex completes the row's headline team. The row's strength and "Watch for" line are those of the core
