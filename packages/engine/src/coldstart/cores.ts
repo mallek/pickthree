@@ -1,7 +1,10 @@
 /**
  * Core + flex selection for the cup boards (spec 2026-09-30-core-flex-boards-design.md, rules 2 to 4
- * and 7). Legal trios come in strongest first; each row is a two-Pokemon core plus up to `flexMax`
- * near-tied thirds. Generic over the trio so it can be tested on plain data.
+ * and 7). Legal trios come in strongest first (`items` MUST be sorted strongest first); each row is
+ * a two-Pokemon core plus up to `flexMax` near-tied thirds. A trio holding an earlier row's core pair
+ * (compared by base species) belongs to that core: it cannot start a later row and cannot be a later
+ * row's flex, even when it fell outside that core's flex window. Generic over the trio so it can be
+ * tested on plain data.
  */
 export interface CoreOptions<T> {
   /** Rows wanted (5). */
@@ -46,7 +49,14 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
   const shown = new Set<string>();
   const uses = new Map<string, number>();
   const usedPairs = new Set<string>();
+  const usedBasePairs: [string, string][] = [];
   const rows: CoreRow<T>[] = [];
+
+  /** True when the trio holds both base species of an already recorded core. */
+  const covered = (item: T): boolean => {
+    const bases = opts.speciesOf(item).map((id) => opts.base(id));
+    return usedBasePairs.some(([x, y]) => bases.includes(x) && bases.includes(y));
+  };
 
   const flexFor = (start: T, members: [string, string]): CoreFlex<T>[] => {
     const floor = opts.strengthOf(start);
@@ -60,7 +70,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       if (strength < floor - opts.megaWindow) {
         break;
       }
-      if (shown.has(opts.keyOf(item))) {
+      if (shown.has(opts.keyOf(item)) || covered(item)) {
         continue;
       }
       // Both raw core ids must be in the trio (a Shadow or Mega form is not its base); the third
@@ -97,7 +107,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
     if (rows.length >= opts.rows) {
       break;
     }
-    if (shown.has(opts.keyOf(start))) {
+    if (shown.has(opts.keyOf(start)) || covered(start)) {
       continue;
     }
     const ids = opts.speciesOf(start);
@@ -141,6 +151,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       uses.set(b, (uses.get(b) ?? 0) + 1);
     }
     usedPairs.add(best.pairKey);
+    usedBasePairs.push(best.bases);
   }
   return rows;
 }

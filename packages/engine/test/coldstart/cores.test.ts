@@ -64,17 +64,83 @@ describe('selectCores', () => {
     expect(rows[0]!.flex[0]!.trio).toBe(items[0]);
   });
 
-  it('leaves out a third below the window', () => {
-    const rows = selectCores([trio(['a', 'b', 'c1'], 10), trio(['a', 'b', 'c2'], 8.9)], opts());
-    expect(thirds(rows[0]!)).toEqual(['c1']);
+  it('includes a regular third at exactly the window and excludes one just outside', () => {
+    const rows = selectCores(
+      [trio(['a', 'b', 'c1'], 10), trio(['a', 'b', 'c2'], 9), trio(['a', 'b', 'c3'], 8.99)],
+      opts({ rows: 1 }),
+    );
+    expect(thirds(rows[0]!)).toEqual(['c1', 'c2']);
+  });
+
+  it('includes a Mega third at exactly megaWindow and excludes one just outside', () => {
+    const items = [
+      trio(['a', 'b', 'c1'], 10),
+      trio(['a', 'b', 'c2'], 9.2),
+      trio(['a', 'b', 'x_mega'], 8),
+      trio(['a', 'b', 'y_mega'], 7.99),
+    ];
+    const rows = selectCores(items, opts({ rows: 1 }));
+    expect(thirds(rows[0]!)).toEqual(['c1', 'c2', 'x_mega']);
   });
 
   it('allows a Mega third 2.0 below but not a regular third 1.5 below', () => {
     const rows = selectCores(
-      [trio(['a', 'b', 'c1'], 10), trio(['a', 'b', 'x_mega'], 8.1), trio(['a', 'b', 'c2'], 8.5)],
+      [trio(['a', 'b', 'c1'], 10), trio(['a', 'b', 'c2'], 8.5), trio(['a', 'b', 'x_mega'], 8.1)],
       opts({ rows: 1 }),
     );
     expect(thirds(rows[0]!)).toEqual(['c1', 'x_mega']);
+  });
+
+  it('does not start row 2 from, or flex, a trio holding row 1 core just outside its window', () => {
+    const items = [
+      trio(['a', 'b', 'c'], 10),
+      trio(['a', 'b', 'd'], 8.5),
+      trio(['b', 'd', 'e'], 8),
+      trio(['b', 'd', 'f'], 7.9),
+    ];
+    const rows = selectCores(items, opts());
+    expect(rows.map((r) => r.core)).toEqual([
+      ['a', 'b'],
+      ['b', 'd'],
+    ]);
+    expect(rows[0]!.flex.map((f) => f.trio.key)).toEqual([items[0]!.key]);
+    expect(rows[1]!.flex.map((f) => f.trio.key)).toEqual([items[2]!.key, items[3]!.key]);
+    const all = rows.flatMap((r) => r.flex.map((f) => f.trio.key));
+    expect(all).not.toContain(items[1]!.key);
+  });
+
+  it('does not let a Shadow variant of row 1 flex start a row or join a later flex', () => {
+    const items = [
+      trio(['a', 'b', 'c'], 10),
+      trio(['a', 'b', 'c_shadow'], 5),
+      trio(['a', 'd', 'e'], 4),
+      trio(['a_shadow', 'b', 'c_shadow'], 3.9),
+      trio(['a', 'd', 'f'], 3.8),
+    ];
+    const rows = selectCores(items, opts());
+    expect(rows.map((r) => r.core)).toEqual([
+      ['a', 'b'],
+      ['a', 'd'],
+    ]);
+    const all = rows.flatMap((r) => r.flex.map((f) => f.trio.key));
+    expect(all).not.toContain(items[1]!.key);
+    expect(all).not.toContain(items[3]!.key);
+  });
+
+  it('still forms a later row with its own flex when its pair does not overlap a used pair', () => {
+    const items = [trio(['a', 'b', 'c'], 10), trio(['d', 'e', 'f'], 9), trio(['d', 'e', 'g'], 8.5)];
+    const rows = selectCores(items, opts());
+    expect(rows.map((r) => r.core)).toEqual([
+      ['a', 'b'],
+      ['d', 'e'],
+    ]);
+    expect(thirds(rows[1]!)).toEqual(['f', 'g']);
+  });
+
+  it('returns fewer rows than asked when only covered trios remain', () => {
+    const items = [trio(['a', 'b', 'c'], 10), trio(['a', 'b', 'd'], 5), trio(['a', 'b', 'e'], 4)];
+    const rows = selectCores(items, opts());
+    expect(rows).toHaveLength(1);
   });
 
   it('caps a species at two rows as a core member', () => {
@@ -94,13 +160,9 @@ describe('selectCores', () => {
       trio(['a', 'b_shadow', 'z'], 4),
     ];
     const rows = selectCores(items, opts({ window: 0 }));
-    const keys = rows.map((r) =>
-      r.core
-        .map((m) => m.replace('_shadow', ''))
-        .sort()
-        .join('+'),
-    );
-    expect(new Set(keys).size).toBe(keys.length);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.core).toEqual(['a', 'b']);
+    expect(thirds(rows[0]!)).toEqual(['x']);
   });
 
   it('never shows a trio twice across the flex lists', () => {
