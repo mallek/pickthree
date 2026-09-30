@@ -245,7 +245,7 @@ export function recommend(
 
   const typesOf = {
     types: (id: string) => index.mustSpecies(id).types,
-    baseOf: (id: string) => index.mustSpecies(id).megaOf ?? id,
+    teamSpeciesOf: (id: string) => index.teamSpeciesOf(id),
   };
   const profile = profileFor(deps.data, view, opts.facing);
   const baseTrio = { ...DEFAULT_TRIO_OPTIONS, finalists: opts.finalists, style: opts.style };

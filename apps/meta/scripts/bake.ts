@@ -249,7 +249,7 @@ export function generateFor(input: {
     view,
     {
       types: (id: string) => input.index.mustSpecies(id).types,
-      baseOf: (id: string) => input.index.mustSpecies(id).megaOf ?? id,
+      teamSpeciesOf: (id: string) => input.index.teamSpeciesOf(id),
     },
     { results: COLD_TEAMS, weights },
   );

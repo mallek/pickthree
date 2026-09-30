@@ -4,8 +4,8 @@ import type { MatchupMatrix } from '../../src/gamedata/types.js';
 import type { Candidate } from '../../src/search/candidates.js';
 import { MatrixView } from '../../src/search/matrixView.js';
 
-const baseOf = (id: string): string => id.replace(/_mega$/, '');
-const types = { types: () => ['normal', 'none'] as ['normal', 'none'], baseOf };
+const teamSpeciesOf = (id: string): string => id.replace(/_mega$/, '');
+const types = { types: () => ['normal', 'none'] as ['normal', 'none'], teamSpeciesOf };
 
 /** Five fighters with distinct win patterns over six opponents; identity comes from the ids. */
 function world(ids: string[], megas: string[]): { view: MatrixView; pool: Candidate[] } {
@@ -63,7 +63,7 @@ describe('generateColdStartTeams team rules', () => {
     // 10 trios minus the 3 holding both a and a_mega.
     expect(teams).toHaveLength(7);
     for (const t of teams) {
-      expect(new Set(t.species.map(baseOf)).size).toBe(3);
+      expect(new Set(t.species.map(teamSpeciesOf)).size).toBe(3);
     }
   });
 

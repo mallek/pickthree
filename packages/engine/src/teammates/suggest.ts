@@ -28,7 +28,7 @@ import {
 } from '../score/simStrength.js';
 import { candidateFor, candidatePool, type Candidate } from '../search/candidates.js';
 import { MatrixView } from '../search/matrixView.js';
-import { teamRuleViolation } from '../search/teamRules.js';
+import { teamRuleViolation, type TeamSpeciesOf } from '../search/teamRules.js';
 import { withSimulatedRows, type MatrixFighter } from '../sim/matrixSim.js';
 import { bestBuild } from '../verdicts/worth.js';
 import { coverLines, weakPinLine } from './lines.js';
@@ -310,14 +310,8 @@ export function suggestTeammates(
   const heaviest = [...facing.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_META);
   const topCtx = strengthContext(view, new Map(heaviest));
 
-  const cores = search(
-    ctx,
-    topCtx,
-    pins,
-    pool,
-    emptySlots.length,
-    mineSpecies,
-    (id) => index.mustSpecies(id).megaOf ?? id,
+  const cores = search(ctx, topCtx, pins, pool, emptySlots.length, mineSpecies, (id) =>
+    index.teamSpeciesOf(id),
   );
   countSightings(cores, pins, opts.community);
 
@@ -403,7 +397,7 @@ export function search(
   pool: Candidate[],
   slots: number,
   mineSpecies: Set<string>,
-  baseOf: (speciesId: string) => string = (id) => id,
+  teamSpeciesOf: TeamSpeciesOf,
 ): Core[] {
   const out: Core[] = [];
   const s11 = ctx.view.scenarioIndex([1, 1]);
@@ -412,7 +406,7 @@ export function search(
     if (
       teamRuleViolation(
         members.map((c) => c.build),
-        baseOf,
+        teamSpeciesOf,
       ) !== null
     ) {
       return;

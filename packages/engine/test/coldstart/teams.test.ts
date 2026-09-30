@@ -33,7 +33,15 @@ run('generateColdStartTeams', () => {
       excludedSpecimenIds: [],
       excludedSpecies: [],
     });
-    return { data, view, pool, types: { types: (id: string) => index.mustSpecies(id).types } };
+    return {
+      data,
+      view,
+      pool,
+      types: {
+        types: (id: string) => index.mustSpecies(id).types,
+        teamSpeciesOf: (id: string) => index.teamSpeciesOf(id),
+      },
+    };
   }
 
   it('emits the number of teams asked for, strongest first', () => {

@@ -293,7 +293,7 @@ export function analyzeTeam(
 
   const typesOf = {
     types: (id: string) => index.mustSpecies(id).types,
-    baseOf: (id: string) => index.mustSpecies(id).megaOf ?? id,
+    teamSpeciesOf: (id: string) => index.teamSpeciesOf(id),
   };
   const prepared = prepare(cands, view, typesOf) as [Prepared, Prepared, Prepared];
   const orderings = opts.order === 'given' ? [ALL_ORDERINGS[0]!] : ALL_ORDERINGS;
@@ -338,7 +338,11 @@ export function analyzeTeam(
     hypothetical: resolved.filter((r) => r.hypothetical).map((r) => r.build.speciesId),
     chosenMoves: resolved.filter((_, i) => picks[i]?.moves).map((r) => r.build.speciesId),
     unranked: missing.map((m) => m.speciesId),
-    twoMegas: teamRuleViolation(cands.map((c) => c.build)) === 'two-megas',
+    twoMegas:
+      teamRuleViolation(
+        cands.map((c) => c.build),
+        (id) => index.teamSpeciesOf(id),
+      ) === 'two-megas',
     assumptions: assumptionsFor(deps.data, opts, profile),
     ms: Date.now() - started,
   };

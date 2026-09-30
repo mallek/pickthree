@@ -81,7 +81,10 @@ function fakeWorld(): { view: MatrixView; pool: Candidate[] } {
   return { view, pool };
 }
 
-const types = { types: () => ['normal', 'none'] as ['normal', 'none'] };
+const types = {
+  types: () => ['normal', 'none'] as ['normal', 'none'],
+  teamSpeciesOf: (id: string) => id,
+};
 
 describe('generateTrios', () => {
   it('finds the ABB line where both back-liners beat the lead counters', () => {
@@ -151,7 +154,10 @@ const trioOf = (d: { slots: Candidate[] }): string =>
 describe('weighted drafting', () => {
   it('is today exactly when no weights are given', () => {
     const { view, pool } = fakeWorld();
-    const typesOf = { types: () => ['water', 'none'] as ['water', 'none'] };
+    const typesOf = {
+      types: () => ['water', 'none'] as ['water', 'none'],
+      teamSpeciesOf: (id: string) => id,
+    };
     const plain = generateTrios(pool, view, typesOf, DEFAULT_TRIO_OPTIONS);
     const again = generateTrios(pool, view, typesOf, { ...DEFAULT_TRIO_OPTIONS });
     expect(again.drafts.map((d) => d.draftScore)).toEqual(plain.drafts.map((d) => d.draftScore));
@@ -159,7 +165,10 @@ describe('weighted drafting', () => {
 
   it('promotes the trio that covers the heavy column', () => {
     const { view, pool } = fakeWorld();
-    const typesOf = { types: () => ['water', 'none'] as ['water', 'none'] };
+    const typesOf = {
+      types: () => ['water', 'none'] as ['water', 'none'],
+      teamSpeciesOf: (id: string) => id,
+    };
     // All the weight on o5. In fakeWorld's wins table only b and c beat o5.
     const weights = new Map(view.opponents.map((id) => [id, id === 'o5' ? 1 : 0] as const));
     const opts = weightedTrioOptions({ ...DEFAULT_TRIO_OPTIONS, finalists: 1 }, view, weights);
@@ -172,7 +181,10 @@ describe('weighted drafting', () => {
 
   it('ranks two equally broad trios by which column they miss', () => {
     const { view, pool } = fakeWorld();
-    const typesOf = { types: () => ['water', 'none'] as ['water', 'none'] };
+    const typesOf = {
+      types: () => ['water', 'none'] as ['water', 'none'],
+      teamSpeciesOf: (id: string) => id,
+    };
     // a, d and e beat everything but o5; b, c and e beat everything but o1.
     const on = (heavy: string) => {
       const weights = new Map(view.opponents.map((id) => [id, id === heavy ? 1 : 0] as const));
@@ -195,7 +207,10 @@ describe('weighted drafting', () => {
 
   it('survives weights that sum to zero', () => {
     const { view, pool } = fakeWorld();
-    const typesOf = { types: () => ['water', 'none'] as ['water', 'none'] };
+    const typesOf = {
+      types: () => ['water', 'none'] as ['water', 'none'],
+      teamSpeciesOf: (id: string) => id,
+    };
     const zero = new Map(view.opponents.map((id) => [id, 0] as const));
     const drafts = generateTrios(
       pool,
@@ -225,8 +240,8 @@ describe('generateTrios team rules', () => {
         mega: mega ? { ready: true, level4: false } : null,
       },
     }) as Candidate;
-  const baseOf = (id: string): string => id.replace(/_mega$/, '');
-  const typesWithBase = { ...types, baseOf };
+  const teamSpeciesOf = (id: string): string => id.replace(/_mega$/, '');
+  const typesWithBase = { ...types, teamSpeciesOf };
 
   it('never drafts two Megas or one specimen twice', () => {
     const { view, pool } = fakeWorld();
@@ -269,7 +284,7 @@ describe('generateTrios team rules', () => {
     // 10 trios minus the 3 that hold both a and a_mega.
     expect(scored).toBe(7);
     for (const d of drafts) {
-      const ids = d.slots.map((s) => baseOf(s.build.speciesId));
+      const ids = d.slots.map((s) => teamSpeciesOf(s.build.speciesId));
       expect(new Set(ids).size).toBe(3);
     }
   });

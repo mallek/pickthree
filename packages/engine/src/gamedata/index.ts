@@ -71,6 +71,14 @@ export class GameDataIndex {
     return id.replace(/_shadow$/, '');
   }
 
+  /**
+   * The species this id counts as on a team: a Mega or Primal folds to its base form, so a Mega and
+   * its base collide. Unlike baseOf, a shadow stays itself.
+   */
+  teamSpeciesOf(id: string): string {
+    return this.byId.get(id)?.megaOf ?? id;
+  }
+
   shadowVariant(id: string): Species | undefined {
     return this.byId.get(`${this.baseOf(id)}_shadow`);
   }

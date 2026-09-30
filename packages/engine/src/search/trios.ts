@@ -80,14 +80,13 @@ export interface Prepared {
   rule: RuleKey;
 }
 
-/** What drafting reads from the game data. `baseOf` folds a Mega id to its base; absent means none. */
+/** What drafting reads from the game data. `teamSpeciesOf` folds a Mega id to its base form. */
 export interface TrioIndex {
   types(id: string): [PokemonType, PokemonType | 'none'];
-  baseOf?(id: string): string;
+  teamSpeciesOf(id: string): string;
 }
 
 export function prepare(pool: Candidate[], view: MatrixView, index: TrioIndex): Prepared[] {
-  const baseOf = index.baseOf ?? ((id: string) => id);
   const s11 = view.scenarioIndex([1, 1]);
   const s00 = view.scenarioIndex([0, 0]);
   return pool.map((c) => {
@@ -109,7 +108,7 @@ export function prepare(pool: Candidate[], view: MatrixView, index: TrioIndex): 
       win00: view.wins(c.matrixRow, s00),
       counters,
       types,
-      rule: ruleKeyOf(c.build, baseOf),
+      rule: ruleKeyOf(c.build, (id) => index.teamSpeciesOf(id)),
     };
   });
 }
