@@ -331,5 +331,50 @@ describe('selectCores', () => {
       expect(rows[1]!.flex[0]!.trio).toBe(items[2]);
       expect(rows[1]!.flex).toHaveLength(1);
     });
+
+    it('checks the cap on the actual headline third, not the start trio third', () => {
+      // Pair (k, x): the start trio's third is ks (same species as k), so the headline is [k, x, q].
+      const items = [
+        trio(['q', 'm', 'n'], 11), // row 1: core m+n, headline q (q at cap 1)
+        trio(['k', 'k_shadow', 'x'], 10),
+        trio(['k', 'x', 'q'], 9.5),
+      ];
+      const rows = selectCores(items, opts({ cap: 1 }));
+      expect(rows).toHaveLength(1);
+    });
+
+    it('records the row with the flex[0] third as headline and counts each species once', () => {
+      const items = [
+        trio(['k', 'k_shadow', 'x'], 10),
+        trio(['k', 'x', 'q'], 9.5),
+        trio(['a', 'b', 'k'], 9), // k was counted once as a core member, so it may headline (cap 2)
+        trio(['c', 'd', 'q'], 8.9), // q headlined once
+        trio(['e', 'f', 'q'], 8.8), // q now at the cap
+      ];
+      const rows = selectCores(items, opts({ cap: 2 }));
+      expect(rows[0]!.core).toEqual(['k', 'x']);
+      expect(rows[0]!.flex[0]!.third).toBe('q');
+      expect(rows.map((r) => r.core)).toEqual([
+        ['k', 'x'],
+        ['a', 'b'],
+        ['c', 'd'],
+      ]);
+    });
+
+    it('a trio of two forms of one species burns no cap and never joins a flex', () => {
+      const items = [
+        trio(['kingdra', 'kingdra_shadow', 'x'], 10),
+        trio(['a', 'b', 'kingdra'], 9),
+        trio(['c', 'd', 'kingdra'], 8),
+        trio(['e', 'f', 'kingdra'], 7),
+      ];
+      const rows = selectCores(items, opts());
+      expect(rows.map((r) => r.core)).toEqual([
+        ['a', 'b'],
+        ['c', 'd'],
+      ]);
+      const keys = rows.flatMap((r) => r.flex.map((f) => f.trio.key));
+      expect(keys).not.toContain(items[0]!.key);
+    });
   });
 });

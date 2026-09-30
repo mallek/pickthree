@@ -4,11 +4,11 @@
  * a two-Pokemon core plus up to `flexMax` near-tied thirds. A trio holding an earlier row's core pair
  * (compared by base species) belongs to that core: it cannot start a later row and cannot be a later
  * row's flex, even when it fell outside that core's flex window. The cap counts a base species once
- * per row as a core member or as the row's headline third (the start trio's third for the chosen
- * pair); non-headline flex options are free. Flex is scanned from the start trio onward, so the
- * start trio is always the row's best trio and headline; trios ahead of it were shown, covered or
- * blocked, and never rejoin a row. Generic over the trio so it can be
- * tested on plain data.
+ * per row as a core member or as the row's headline third (flex[0] is the headline, whose third is
+ * checked against the cap); non-headline flex options are free. Flex is scanned from the start trio
+ * onward; the start trio is the row's best trio and, unless its third shares a base with a core
+ * member, its headline (flex[0]). Trios ahead of the start were shown, covered or blocked, and never
+ * rejoin a row. Generic over the trio so it can be tested on plain data.
  */
 export interface CoreOptions<T> {
   /** Rows wanted (5). */
@@ -46,7 +46,7 @@ interface PairChoice<T> {
   pairKey: string;
   members: [string, string];
   bases: [string, string];
-  /** Base species of the start trio's third for this pair (the row's headline third). */
+  /** Base species of flex[0]'s third (the row's headline third), set once the flex is known. */
   thirdBase: string;
   flex: CoreFlex<T>[];
 }
@@ -136,7 +136,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
           pairKey: [...bases].sort().join('+'),
           members: [a, b],
           bases,
-          thirdBase: opts.base(ids[3 - i - j]!),
+          thirdBase: '',
           flex: [],
         });
       }
@@ -148,10 +148,18 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       if (usedPairs.has(pair.pairKey)) {
         continue;
       }
-      if ([...pair.bases, pair.thirdBase].some((b) => (uses.get(b) ?? 0) >= opts.cap)) {
+      if (pair.bases.some((b) => (uses.get(b) ?? 0) >= opts.cap)) {
         continue;
       }
       pair.flex = flexFor(at, pair.members);
+      if (pair.flex.length === 0) {
+        continue;
+      }
+      // The headline is flex[0]: the cap is checked on its third, whatever the start trio's third was.
+      pair.thirdBase = opts.base(pair.flex[0]!.third);
+      if ((uses.get(pair.thirdBase) ?? 0) >= opts.cap) {
+        continue;
+      }
       if (best === null || pair.flex.length > best.flex.length) {
         best = pair;
       }
