@@ -107,6 +107,8 @@ export const HYPOTHETICAL_TOP_SHARE = 0.1;
 /**
  * A stand-in specimen for a species you do not own: a top-10% IV spread rather than the perfect
  * one, since that is what a player is likely to actually have. Level 1, no moves yet.
+ * For a Mega the stand-in is its base Pokemon, never Mega-evolved before, with the spread ranked
+ * on the Mega form (the form the cap applies to), so its build is a Mega build like any owned one.
  */
 export function hypotheticalSpecimen(
   speciesId: string,
@@ -114,21 +116,23 @@ export function hypotheticalSpecimen(
   opts: BuildOptions,
 ): Specimen {
   const sp = index.mustSpecies(speciesId);
+  const stored = sp.megaOf ? index.mustSpecies(sp.megaOf) : sp;
   const levelCap = opts.allowXl ? opts.levelCap : Math.min(opts.levelCap, 40);
-  const spreads = allSpreads(sp.baseStats, opts.cpCap, levelCap, sp.levelFloor ?? 1);
+  const spreads = allSpreads(sp.baseStats, opts.cpCap, levelCap, stored.levelFloor ?? 1);
   const best = spreads[Math.max(0, Math.ceil(spreads.length * HYPOTHETICAL_TOP_SHARE) - 1)];
   if (!best) {
     throw new Error(`${sp.speciesName} cannot fit under ${opts.cpCap} CP.`);
   }
   return {
     id: `species:${speciesId}`,
-    speciesId,
-    familyId: sp.familyId,
+    speciesId: stored.speciesId,
+    familyId: stored.familyId,
     ivs: best.ivs,
     level: { min: 1, max: 1 },
-    cp: cpFor(sp.baseStats, best.ivs, 1),
+    cp: cpFor(stored.baseStats, best.ivs, 1),
     hp: 0,
-    shadow: sp.shadow,
+    shadow: stored.shadow,
+    megaForm: null,
     purified: false,
     lucky: false,
     currentMoves: { fast: null, charged: [] },

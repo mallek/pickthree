@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { hypotheticalSpecimen } from '../../src/analyze.js';
+import { buildCost } from '../../src/builds/cost.js';
+import type { Moveset } from '../../src/builds/moves.js';
 import {
   DEFAULT_BUILD_OPTIONS,
   MEGA_BARRED_FOR,
@@ -311,5 +314,41 @@ describe('Mega builds', () => {
       expect(b.cp).toBe(1475);
       expect(b.baseCp).toBe(1118);
     });
+  });
+});
+
+describe('a Mega picked by species', () => {
+  const moveset: Moveset = {
+    fast: { moveId: 'F', name: 'F', dps: 1 } as unknown as Moveset['fast'],
+    charged: [],
+    source: 'fallback',
+    eliteTmCount: 0,
+  };
+
+  it('stands in as the base Pokemon, so its build is a Mega that still needs Mega Energy', () => {
+    const s = hypotheticalSpecimen('sableye_mega', index, greatMega);
+    expect(s.id).toBe('species:sableye_mega');
+    expect(s.speciesId).toBe('sableye');
+    expect(s.shadow).toBe(false);
+    expect(s.megaForm ?? null).toBeNull();
+    expect(s.cp).toBe(cpFor(SABLEYE, s.ivs!, 1));
+
+    const b = must(buildsFor(s, index, greatMega), 'sableye_mega');
+    expect(b.specimenId).toBe('species:sableye_mega');
+    expect(b.mega).toEqual({ ready: false, level4: false });
+    // The cap is on the Mega form; the player powers up the base form.
+    expect(b.cp).toBeLessThanOrEqual(1500);
+    expect(b.cp).toBe(cpFor(SABLEYE_MEGA, s.ivs!, b.level));
+    expect(b.baseLevel).toBe(b.level);
+    expect(b.baseCp).toBe(cpFor(SABLEYE, s.ivs!, b.baseLevel));
+    expect(b.baseCp).toBeLessThan(b.cp);
+    expect(buildCost(b, moveset, index).megaEnergy).toBe('needed');
+  });
+
+  it('keeps a plain species pick as it was', () => {
+    const s = hypotheticalSpecimen('sableye', index, greatMega);
+    expect(s.id).toBe('species:sableye');
+    expect(s.speciesId).toBe('sableye');
+    expect(must(buildsFor(s, index, greatMega), 'sableye').mega).toBeNull();
   });
 });
