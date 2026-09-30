@@ -51,6 +51,26 @@ export function memberDisplay(speciesName: string, speciesId: string): MemberDis
   return { name, sprite: speciesId.replace(/_shadow$/, ''), tags };
 }
 
+/**
+ * The name a "Watch for" caution uses. Unlike the row name it keeps what changes the threat: a
+ * region in front ("Galarian Corsola") and the Mega or Primal tag in front ("Mega Charizard X").
+ * Shadow folds into the base, and other form tags (Midnight, Zen) are dropped.
+ */
+export function cautionName(speciesName: string, speciesId: string): string {
+  const d = memberDisplay(speciesName, speciesId);
+  const front = d.tags.filter((t) => t.kind === 'region' || t.kind === 'mega');
+  if (front.length === 0) {
+    return d.name;
+  }
+  const mega = front.find((t) => t.kind === 'mega');
+  const region = front.find((t) => t.kind === 'region');
+  if (mega && mega.text.startsWith('Mega')) {
+    const letter = mega.text.slice(4);
+    return `${region ? `${region.text} ` : ''}Mega ${d.name}${letter}`;
+  }
+  return [mega?.text, region?.text, d.name].filter((x) => x !== undefined).join(' ');
+}
+
 /** The first `max` distinct names among the ids, in order: a Shadow and its base read the same. */
 export function cautionNames(
   ids: readonly string[],

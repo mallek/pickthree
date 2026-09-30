@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import {
   GameDataIndex,
+  cautionName,
   cautionNames,
   cupBoards,
   memberDisplay,
@@ -21,7 +22,14 @@ import { readEpochs, resolveWindow } from '@pickthree/engine/meta';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { priorWeights } from '../bake.js';
 import { loadCupData } from './data.js';
-import { assertAscii, fillBoards, type BoardId, type BoardView, type MemberView, type RowView } from './fill.js';
+import {
+  assertAscii,
+  fillBoards,
+  type BoardId,
+  type BoardView,
+  type MemberView,
+  type RowView,
+} from './fill.js';
 import { postMarkdown, teamsJson, type PostBoard, type PostTeam } from './markdown.js';
 import { blendedWeights, fetchSummary, mixLine, runLabel, type WeightMix } from './weights.js';
 
@@ -40,14 +48,26 @@ const MASCOT: Record<BoardId, string> = {
 };
 
 function parseArgs(argv: string[]): { league: string; prior: boolean; date: string | null } {
-  const league = argv.find((a) => !a.startsWith('--'));
+  const league = argv.find((a, i) => !a.startsWith('--') && argv[i - 1] !== '--date');
   if (!league) {
     throw new Error('Usage: npm run post -- <league> [--prior] [--date YYYY-MM-DD]');
   }
+  const unknown = argv.find((a) => a.startsWith('--') && a !== '--prior' && a !== '--date');
+  if (unknown) {
+    throw new Error(
+      `Unknown flag ${unknown}. Usage: npm run post -- <league> [--prior] [--date YYYY-MM-DD]`,
+    );
+  }
   const at = argv.indexOf('--date');
   const date = at >= 0 ? (argv[at + 1] ?? null) : null;
-  if (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    throw new Error(`--date wants YYYY-MM-DD, got "${date}"`);
+  if (at >= 0) {
+    const real =
+      date !== null &&
+      /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+      new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) === date;
+    if (!real) {
+      throw new Error(`--date wants a real date as YYYY-MM-DD, got "${date ?? ''}"`);
+    }
   }
   return { league, prior: argv.includes('--prior'), date };
 }
@@ -89,8 +109,7 @@ async function main(): Promise<void> {
     mega,
   });
 
-  const nameOf = (id: string): string =>
-    memberDisplay(index.mustSpecies(id).speciesName, id).name;
+  const nameOf = (id: string): string => cautionName(index.mustSpecies(id).speciesName, id);
   const memberView = (row: BoardRow, j: number): MemberView => {
     const c = row.members[j]!;
     const id = c.build.speciesId;
@@ -105,7 +124,11 @@ async function main(): Promise<void> {
         ...d.tags,
         ...(c.moveset.eliteTmCount > 0 ? [{ kind: 'elite' as const, text: 'Elite TM' }] : []),
       ],
-      moves: [c.moveset.fast.name, ...c.moveset.charged.map((m) => m.name)] as [string, string, ...string[]],
+      moves: [c.moveset.fast.name, ...c.moveset.charged.map((m) => m.name)] as [
+        string,
+        string,
+        ...string[],
+      ],
       hero: row.megaId === id,
     };
   };
@@ -116,12 +139,15 @@ async function main(): Promise<void> {
   });
   const postTeam = (row: BoardRow): PostTeam => ({
     species: row.team.species,
-    names: row.members.map((c) => index.mustSpecies(c.build.speciesId).speciesName) as [string, string, string],
-    moves: row.members.map((c) => [c.moveset.fast.moveId, ...c.moveset.charged.map((m) => m.moveId)]) as [
-      string[],
-      string[],
-      string[],
+    names: row.members.map((c) => index.mustSpecies(c.build.speciesId).speciesName) as [
+      string,
+      string,
+      string,
     ],
+    moves: row.members.map((c) => [
+      c.moveset.fast.moveId,
+      ...c.moveset.charged.map((m) => m.moveId),
+    ]) as [string[], string[], string[]],
     strength: row.team.strength,
     coverage: row.team.coverage,
     consistency: row.team.consistency,
@@ -142,7 +168,9 @@ async function main(): Promise<void> {
   const present: [BoardId, BoardRow[]][] = [
     ['top', boards.top],
     ['budget', boards.budget],
-    ...(boards.mega && boards.mega.length > 0 ? [['mega', boards.mega] as [BoardId, BoardRow[]]] : []),
+    ...(boards.mega && boards.mega.length > 0
+      ? [['mega', boards.mega] as [BoardId, BoardRow[]]]
+      : []),
   ];
   const views: BoardView[] = present.map(([id, rows]) => ({
     id,
@@ -161,12 +189,13 @@ async function main(): Promise<void> {
   writeFileSync(tmp, html);
   const pngs = new Map<BoardId, Uint8Array>();
   const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-  const browser = await puppeteer.launch({
-    executablePath: chrome,
-    headless: true,
-    args: ['--no-first-run', '--disable-gpu'],
-  });
+  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
   try {
+    browser = await puppeteer.launch({
+      executablePath: chrome,
+      headless: true,
+      args: ['--no-first-run', '--disable-gpu'],
+    });
     for (const [id] of present) {
       const page = await browser.newPage();
       await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 1 });
@@ -176,16 +205,21 @@ async function main(): Promise<void> {
       });
       const broken = await page.evaluate((board: string) => {
         const imgs = Array.from(document.querySelectorAll<HTMLImageElement>(`#${board} img`));
-        return imgs.filter((i) => !i.complete || i.naturalWidth === 0).map((i) => i.src.slice(0, 80));
+        return imgs
+          .filter((i) => !i.complete || i.naturalWidth === 0)
+          .map((i) => i.src.slice(0, 80));
       }, id);
       if (broken.length > 0) {
         throw new Error(`Images failed to load on the ${id} board: ${broken.join(', ')}`);
       }
-      pngs.set(id, await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1080, height: 1350 } }));
+      pngs.set(
+        id,
+        await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1080, height: 1350 } }),
+      );
       await page.close();
     }
   } finally {
-    await browser.close();
+    await browser?.close();
     rmSync(tmp, { force: true });
   }
 
@@ -201,6 +235,8 @@ async function main(): Promise<void> {
     mixLine: source[1],
     pvpoke: { commit: data.manifest.pvpokeCommit, date: data.manifest.pvpokeDate },
     weights: mix.kind,
+    battles: mix.kind === 'blend' ? mix.battles : 0,
+    events: mix.kind === 'blend' ? mix.events : 0,
     resimulated: boards.resimulated,
     boards: postBoards,
   };
@@ -220,6 +256,6 @@ async function main(): Promise<void> {
 }
 
 await main().catch((err: unknown) => {
-  process.stderr.write(`post failed: ${(err as Error).message}\n`);
+  process.stderr.write(`post failed: ${err instanceof Error ? err.message : String(err)}\n`);
   process.exitCode = 1;
 });

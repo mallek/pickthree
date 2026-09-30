@@ -29,6 +29,9 @@ export interface PostRun {
   mixLine: string;
   pvpoke: { commit: string; date: string };
   weights: 'prior' | 'blend';
+  /** Shared battles and tournament events behind the blend; 0 and 0 for the prior. */
+  battles: number;
+  events: number;
   resimulated: Record<string, string[]>;
   boards: PostBoard[];
 }
@@ -79,6 +82,8 @@ export function teamsJson(run: PostRun): string {
       cup: run.cupTitle,
       day: run.day.toISOString(),
       weights: run.weights,
+      battles: run.battles,
+      events: run.events,
       mix: run.mixLine,
       pvpoke: run.pvpoke,
       resimulated: run.resimulated,

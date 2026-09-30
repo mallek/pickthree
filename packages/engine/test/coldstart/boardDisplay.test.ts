@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cautionNames, memberDisplay } from '../../src/coldstart/boardDisplay.js';
+import { cautionName, cautionNames, memberDisplay } from '../../src/coldstart/boardDisplay.js';
 
 describe('memberDisplay', () => {
   it('keeps the Mega letter as its tag', () => {
@@ -80,5 +80,31 @@ describe('cautionNames', () => {
     expect(
       cautionNames(['kingdra', 'kingdra_shadow', 'a', 'b', 'c'], (id) => names[id] ?? id),
     ).toEqual(['Kingdra', 'Alpha', 'Beta']);
+  });
+});
+
+describe('cautionName', () => {
+  it('keeps the region and the Mega tag, folds Shadow and drops other forms', () => {
+    expect(cautionName('Corsola (Galarian)', 'corsola_galarian')).toBe('Galarian Corsola');
+    expect(cautionName('Corsola', 'corsola')).toBe('Corsola');
+    expect(cautionName('Marowak (Alolan) (Shadow)', 'marowak_alolan_shadow')).toBe(
+      'Alolan Marowak',
+    );
+    expect(cautionName('Charizard (Mega X)', 'charizard_mega_x')).toBe('Mega Charizard X');
+    expect(cautionName('Venusaur (Mega)', 'venusaur_mega')).toBe('Mega Venusaur');
+    expect(cautionName('Kyogre (Primal)', 'kyogre_primal')).toBe('Primal Kyogre');
+    expect(cautionName('Kingdra (Shadow)', 'kingdra_shadow')).toBe('Kingdra');
+    expect(cautionName('Darmanitan (Galarian Zen)', 'darmanitan_galarian_zen')).toBe(
+      'Galarian Darmanitan',
+    );
+  });
+  it('still dedups a Shadow with its base through cautionNames', () => {
+    const names: Record<string, [string, string]> = {
+      a: ['Corsola (Galarian)', 'corsola_galarian'],
+      b: ['Corsola', 'corsola'],
+      c: ['Corsola (Galarian) (Shadow)', 'corsola_galarian_shadow'],
+    };
+    const nameOf = (id: string): string => cautionName(...names[id]!);
+    expect(cautionNames(['a', 'b', 'c'], nameOf)).toEqual(['Galarian Corsola', 'Corsola']);
   });
 });

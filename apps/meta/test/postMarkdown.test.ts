@@ -24,6 +24,8 @@ const run = (withMega: boolean): PostRun => ({
   mixLine: 'PvPoke meta only - Oct 6, 2026',
   pvpoke: { commit: 'abc123', date: '2026-09-29' },
   weights: 'prior',
+  battles: 412,
+  events: 3,
   resimulated: { top: [], budget: ['marowak_alolan'], mega: [] },
   boards: [
     { id: 'top', heading: 'Top Teams', teams: [team('alpha', 'beta', 'gamma', 91.2)] },
