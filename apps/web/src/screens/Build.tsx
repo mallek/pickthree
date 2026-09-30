@@ -154,10 +154,16 @@ export function Build() {
 
   /** The stage a specimen would be built to, which is the species it plays as. */
   const stageOf = (sp: Specimen): string => s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId;
+  /**
+   * Only a Pokemon its verdict gave a build in this league: analyze runs that build, and throws
+   * for one with none (over the cap). One not judged yet is left out rather than guessed at, so a
+   * token never stands for a copy that cannot fit; the species token covers it meanwhile.
+   */
   const usable = (sp: Specimen): boolean => {
     const v = s.verdicts[sp.id];
     return (
       Boolean(sp.ivs) &&
+      Boolean(v?.build) &&
       v?.label !== 'Not eligible' &&
       v?.label !== 'Needs rescan' &&
       (s.leagueInfo?.legal ?? []).includes(stageOf(sp))
