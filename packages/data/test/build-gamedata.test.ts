@@ -125,6 +125,28 @@ function rawMon(speciesId: string, tags: string[], family: { id: string } | null
   };
 }
 
+describe('great league ban', () => {
+  it('bans by exact species id: a shadow form is not banned by its base species', () => {
+    const data = buildGameData({
+      greatLeagueIneligible: ['legend', 'legend_origin'],
+      moves: [],
+      rankingScenarios: [],
+      settings: { maxBuffStages: 4, buffDivisor: 4 },
+      timestamp: 't',
+      pokemon: [
+        rawMon('legend', ['legendary', 'shadoweligible'], null),
+        rawMon('legend_shadow', ['legendary', 'shadow'], null),
+        rawMon('legend_origin', ['legendary'], null),
+      ],
+    });
+    const banned = (id: string): boolean | undefined =>
+      data.species.find((s) => s.speciesId === id)?.greatLeagueIneligible;
+    expect(banned('legend')).toBe(true);
+    expect(banned('legend_origin')).toBe(true);
+    expect(banned('legend_shadow')).toBe(false);
+  });
+});
+
 describe('mega family', () => {
   it('gives a Mega with no family the family of its base species', () => {
     const data = buildGameData({

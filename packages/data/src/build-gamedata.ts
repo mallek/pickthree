@@ -129,9 +129,11 @@ export function buildGameData(input: unknown): GameData {
       thirdMoveCost: typeof p.thirdMoveCost === 'number' ? p.thirdMoveCost : 0,
       levelCap: p.levelCap ?? null,
       levelFloor: p.levelFloor ?? null,
-      // GO bans the species; PvPoke's list names the base ids, so shadows inherit it.
-      greatLeagueIneligible:
-        banned.has(p.speciesId) || banned.has(p.speciesId.replace(/_shadow$/, '')),
+      // The ban is exact by species id, as PvPoke's own filter (GameMaster.generateFilteredPokemonList)
+      // applies it: its list names `palkia`, not `palkia_shadow`, and its rankings rank Shadow Palkia
+      // in Great League and Mega Color Cup. Shadows do NOT inherit their base species' ban (they
+      // used to; a reader could not build Shadow Palkia for Mega Color Cup).
+      greatLeagueIneligible: banned.has(p.speciesId),
       defaultIVs: { ...(p.defaultIVs ?? {}) },
       formChange: p.formChange
         ? {
