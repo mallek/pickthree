@@ -21,7 +21,6 @@ import { assertAscii, fillCoreBoard } from './fillCores.js';
 import {
   assertPostText,
   postMarkdownCores,
-  postTitleCores,
   teamsJsonCores,
   type PostCoreRun,
 } from './markdown.js';
@@ -128,8 +127,6 @@ async function main(): Promise<void> {
   };
   const markdown = postMarkdownCores(run);
   assertPostText(markdown);
-  const postTitle = postTitleCores(run);
-  assertAscii(postTitle);
 
   const outDir = join(REPO, 'posts', `${day}-${data.league.id}`);
   const tmps: string[] = [];
@@ -183,10 +180,9 @@ async function main(): Promise<void> {
     writeFileSync(join(outDir, `${id}.png`), png);
   }
   writeFileSync(join(outDir, 'post.md'), markdown);
-  writeFileSync(join(outDir, 'title.txt'), `${postTitle}\n`);
   writeFileSync(join(outDir, 'teams.json'), teamsJsonCores(run));
   process.stdout.write(
-    `wrote ${outDir}: ${[...pngs.keys()].map((k) => `${k}.png`).join(', ')}, post.md, title.txt, teams.json\n` +
+    `wrote ${outDir}: ${[...pngs.keys()].map((k) => `${k}.png`).join(', ')}, post.md, teams.json\n` +
       `re-simulated rows: top ${boards.resimulated.top.length}, budget ${boards.resimulated.budget.length}, mega ${boards.resimulated.mega.length}\n`,
   );
 }

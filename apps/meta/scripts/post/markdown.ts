@@ -126,7 +126,7 @@ export interface PostCoreRun {
   boards: PostCoreBoard[];
 }
 
-/** The post title, kept out of the body: it goes in Reddit's separate title field (title.txt). */
+/** The post title: the first line of post.md, for copying into Reddit's title field. */
 export function postTitleCores(run: PostCoreRun): string {
   const hasMega = run.boards.some((b) => b.id === 'mega');
   const what = hasMega
@@ -136,7 +136,7 @@ export function postTitleCores(run: PostCoreRun): string {
 }
 
 /**
- * The post body in the shape Travis hand-edited it to: an intro paragraph, then per board a bold
+ * The post in the shape Travis hand-edited it to: a Title line, an intro paragraph, then per board a bold
  * heading, a numbered core line and one `*` bullet per flex option. The link text is just the added
  * Pokemon (the flex option's own name), the link opens the whole team with moves, and the
  * strength follows after an escaped dash. "Pokemon" is spelled with the accent in prose (the
@@ -144,6 +144,8 @@ export function postTitleCores(run: PostCoreRun): string {
  */
 export function postMarkdownCores(run: PostCoreRun): string {
   const lines = [
+    `Title: ${postTitleCores(run)}`,
+    '',
     `Each row is a core (keep both Pokémon) plus one flex pick for the third slot, ranked by projected strength against the ${run.cupTitle} meta. The flex options under a core are close, so pick whichever you own or like. Every link opens the full team analysis on [pick3.gg](https://pick3.gg), run against your own Pokémon if you have imported them.`,
   ];
   for (const b of run.boards) {

@@ -1,3 +1,5 @@
+Title: Mega Color Cup: top cores, budget cores and the best Mega picks (pick3 sims)
+
 Each row is a core (keep both Pokémon) plus one flex pick for the third slot, ranked by projected strength against the Mega Color Cup meta. The flex options under a core are close, so pick whichever you own or like. Every link opens the full team analysis on [pick3.gg](https://pick3.gg), run against your own Pokémon if you have imported them.
 
 **Top Cores**

@@ -129,19 +129,25 @@ const coreRun = (withMega: boolean): PostCoreRun => ({
 });
 
 describe('post.md for core boards', () => {
-  it('keeps the title out of the body and builds it with and without a Mega clause', () => {
+  it('starts with a Title line, with and without a Mega clause, in the same file', () => {
     expect(postTitleCores(coreRun(true))).toBe(
       'Great League: Mega Edition: top cores, budget cores and the best Mega picks (pick3 sims)',
     );
     expect(postTitleCores(coreRun(false))).toBe(
       'Great League: Mega Edition: top cores and budget cores (pick3 sims)',
     );
-    expect(postMarkdownCores(coreRun(true))).not.toMatch(/^Title:/m);
+    expect(postMarkdownCores(coreRun(true)).split('\n')[0]).toBe(
+      'Title: Great League: Mega Edition: top cores, budget cores and the best Mega picks (pick3 sims)',
+    );
+    expect(postMarkdownCores(coreRun(false)).split('\n')[0]).toBe(
+      'Title: Great League: Mega Edition: top cores and budget cores (pick3 sims)',
+    );
+    expect(postMarkdownCores(coreRun(true)).split('\n')[1]).toBe('');
   });
 
-  it('opens with the intro paragraph, with the accent and a linked pick3.gg', () => {
+  it('follows the title with the intro paragraph, with the accent and a linked pick3.gg', () => {
     const md = postMarkdownCores(coreRun(true));
-    expect(md.split('\n')[0]).toBe(
+    expect(md.split('\n')[2]).toBe(
       'Each row is a core (keep both Pokémon) plus one flex pick for the third slot, ranked by projected strength against the Great League: Mega Edition meta. The flex options under a core are close, so pick whichever you own or like. Every link opens the full team analysis on [pick3.gg](https://pick3.gg), run against your own Pokémon if you have imported them.',
     );
   });
