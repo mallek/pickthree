@@ -1,0 +1,146 @@
+/**
+ * Core + flex selection for the cup boards (spec 2026-09-30-core-flex-boards-design.md, rules 2 to 4
+ * and 7). Legal trios come in strongest first; each row is a two-Pokemon core plus up to `flexMax`
+ * near-tied thirds. Generic over the trio so it can be tested on plain data.
+ */
+export interface CoreOptions<T> {
+  /** Rows wanted (5). */
+  rows: number;
+  /** Rows any base species may be a core member of (2). */
+  cap: number;
+  /** Most flex options a row lists (4). */
+  flexMax: number;
+  /** Points below the row's best trio a regular third may sit (1.0). */
+  window: number;
+  /** The same, when the third is a Mega (2.0). */
+  megaWindow: number;
+  /** The trio's three species ids. */
+  speciesOf: (t: T) => readonly string[];
+  strengthOf: (t: T) => number;
+  /** Unique per trio. */
+  keyOf: (t: T) => string;
+  /** Shadow and Mega fold to their base species. */
+  base: (id: string) => string;
+  isMega: (id: string) => boolean;
+}
+
+export interface CoreFlex<T> {
+  third: string;
+  trio: T;
+}
+
+export interface CoreRow<T> {
+  core: [string, string];
+  /** flex[0].trio is the row's best trio. */
+  flex: CoreFlex<T>[];
+}
+
+interface PairChoice<T> {
+  pairKey: string;
+  members: [string, string];
+  bases: [string, string];
+  flex: CoreFlex<T>[];
+}
+
+export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreRow<T>[] {
+  const shown = new Set<string>();
+  const uses = new Map<string, number>();
+  const usedPairs = new Set<string>();
+  const rows: CoreRow<T>[] = [];
+
+  const flexFor = (start: T, bases: [string, string]): CoreFlex<T>[] => {
+    const floor = opts.strengthOf(start);
+    const seenThirds = new Set<string>();
+    const flex: CoreFlex<T>[] = [];
+    for (const item of items) {
+      if (flex.length >= opts.flexMax) {
+        break;
+      }
+      const strength = opts.strengthOf(item);
+      if (strength < floor - opts.megaWindow) {
+        break;
+      }
+      if (shown.has(opts.keyOf(item))) {
+        continue;
+      }
+      const ids = opts.speciesOf(item);
+      const itemBases = ids.map((id) => opts.base(id));
+      const left = [...itemBases];
+      let both = true;
+      for (const b of bases) {
+        const at = left.indexOf(b);
+        if (at < 0) {
+          both = false;
+          break;
+        }
+        left.splice(at, 1);
+      }
+      if (!both || left.length !== 1) {
+        continue;
+      }
+      const thirdBase = left[0]!;
+      const thirdId = ids[itemBases.lastIndexOf(thirdBase)]!;
+      if (seenThirds.has(thirdBase)) {
+        continue;
+      }
+      const reach = opts.isMega(thirdId) ? opts.megaWindow : opts.window;
+      if (strength < floor - reach) {
+        continue;
+      }
+      seenThirds.add(thirdBase);
+      flex.push({ third: thirdId, trio: item });
+    }
+    return flex;
+  };
+
+  for (const start of items) {
+    if (rows.length >= opts.rows) {
+      break;
+    }
+    if (shown.has(opts.keyOf(start))) {
+      continue;
+    }
+    const ids = opts.speciesOf(start);
+    const pairs: PairChoice<T>[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const a = ids[i]!;
+        const b = ids[j]!;
+        const bases: [string, string] = [opts.base(a), opts.base(b)];
+        pairs.push({
+          pairKey: [...bases].sort().join('+'),
+          members: [a, b],
+          bases,
+          flex: [],
+        });
+      }
+    }
+    pairs.sort((x, y) => (x.pairKey < y.pairKey ? -1 : x.pairKey > y.pairKey ? 1 : 0));
+
+    let best: PairChoice<T> | null = null;
+    for (const pair of pairs) {
+      if (usedPairs.has(pair.pairKey)) {
+        continue;
+      }
+      if (pair.bases.some((b) => (uses.get(b) ?? 0) >= opts.cap)) {
+        continue;
+      }
+      pair.flex = flexFor(start, pair.bases);
+      if (best === null || pair.flex.length > best.flex.length) {
+        best = pair;
+      }
+    }
+    if (best === null) {
+      continue;
+    }
+    rows.push({ core: best.members, flex: best.flex });
+    for (const f of best.flex) {
+      shown.add(opts.keyOf(f.trio));
+    }
+    for (const b of best.bases) {
+      uses.set(b, (uses.get(b) ?? 0) + 1);
+    }
+    usedPairs.add(best.pairKey);
+  }
+  return rows;
+}

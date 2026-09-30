@@ -1,0 +1,134 @@
+import { describe, expect, it } from 'vitest';
+import { selectCores, type CoreOptions } from '../../src/coldstart/cores.js';
+
+interface Trio {
+  key: string;
+  species: string[];
+  strength: number;
+}
+const trio = (species: string[], strength: number): Trio => ({
+  key: [...species].join('|') + '@' + strength,
+  species,
+  strength,
+});
+const opts = (over: Partial<CoreOptions<Trio>> = {}): CoreOptions<Trio> => ({
+  rows: 5,
+  cap: 2,
+  flexMax: 4,
+  window: 1,
+  megaWindow: 2,
+  speciesOf: (t) => t.species,
+  strengthOf: (t) => t.strength,
+  keyOf: (t) => t.key,
+  base: (id) => id.replace(/_shadow$|_mega.*$/, ''),
+  isMega: (id) => id.includes('_mega'),
+  ...over,
+});
+const thirds = (row: { flex: { third: string }[] }): string[] => row.flex.map((f) => f.third);
+
+describe('selectCores', () => {
+  it('groups near-tied thirds under one core, best first, capped at flexMax', () => {
+    const items = [
+      trio(['a', 'b', 'c1'], 10),
+      trio(['a', 'b', 'c2'], 9.9),
+      trio(['a', 'b', 'c3'], 9.8),
+      trio(['a', 'b', 'c4'], 9.7),
+      trio(['a', 'b', 'c5'], 9.6),
+    ];
+    const rows = selectCores(items, opts({ rows: 1 }));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.core).toEqual(['a', 'b']);
+    expect(thirds(rows[0]!)).toEqual(['c1', 'c2', 'c3', 'c4']);
+    expect(rows[0]!.flex[0]!.trio).toBe(items[0]);
+  });
+
+  it('leaves out a third below the window', () => {
+    const rows = selectCores([trio(['a', 'b', 'c1'], 10), trio(['a', 'b', 'c2'], 8.9)], opts());
+    expect(thirds(rows[0]!)).toEqual(['c1']);
+  });
+
+  it('allows a Mega third 2.0 below but not a regular third 1.5 below', () => {
+    const rows = selectCores(
+      [trio(['a', 'b', 'c1'], 10), trio(['a', 'b', 'x_mega'], 8.1), trio(['a', 'b', 'c2'], 8.5)],
+      opts({ rows: 1 }),
+    );
+    expect(thirds(rows[0]!)).toEqual(['c1', 'x_mega']);
+  });
+
+  it('caps a species at two rows as a core member', () => {
+    const items = [trio(['a', 'b', 'x'], 10), trio(['a', 'c', 'y'], 9), trio(['a', 'd', 'z'], 8)];
+    const rows = selectCores(items, opts());
+    expect(rows.map((r) => r.core)).toEqual([
+      ['a', 'b'],
+      ['a', 'c'],
+      ['d', 'z'],
+    ]);
+  });
+
+  it('never starts two rows with the same base-species pair', () => {
+    const items = [
+      trio(['a', 'b', 'x'], 10),
+      trio(['a_shadow', 'b', 'y'], 5),
+      trio(['a', 'b_shadow', 'z'], 4),
+    ];
+    const rows = selectCores(items, opts({ window: 0 }));
+    const keys = rows.map((r) =>
+      r.core
+        .map((m) => m.replace('_shadow', ''))
+        .sort()
+        .join('+'),
+    );
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('never shows a trio twice across the flex lists', () => {
+    const items = [
+      trio(['a', 'b', 'c'], 10),
+      trio(['a', 'b', 'd'], 9.9),
+      trio(['a', 'c', 'd'], 9.8),
+      trio(['b', 'c', 'd'], 9.7),
+      trio(['a', 'e', 'f'], 9.6),
+    ];
+    const rows = selectCores(items, opts());
+    const keys = rows.flatMap((r) => r.flex.map((f) => f.trio.key));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('counts a third and its shadow as one, keeping the stronger', () => {
+    const rows = selectCores(
+      [trio(['a', 'b', 'c'], 10), trio(['a', 'b', 'c_shadow'], 9.9)],
+      opts(),
+    );
+    expect(thirds(rows[0]!)).toEqual(['c']);
+  });
+
+  it('breaks a symmetric trio by earliest sorted pair key, but prefers more flex', () => {
+    const symmetric = selectCores([trio(['c', 'b', 'a'], 10)], opts());
+    expect(symmetric[0]!.core.slice().sort()).toEqual(['a', 'b']);
+
+    const withFlex = selectCores(
+      [trio(['a', 'b', 'c'], 10), trio(['b', 'c', 'd'], 9.9), trio(['b', 'c', 'e'], 9.8)],
+      opts({ rows: 1 }),
+    );
+    expect(withFlex[0]!.core.slice().sort()).toEqual(['b', 'c']);
+    expect(thirds(withFlex[0]!)).toEqual(['a', 'd', 'e']);
+  });
+
+  it('returns fewer rows than asked when trios run out', () => {
+    const rows = selectCores([trio(['a', 'b', 'c'], 10)], opts());
+    expect(rows).toHaveLength(1);
+  });
+
+  it('does not depend on the order of equal-strength items', () => {
+    const one = [
+      trio(['a', 'b', 'c'], 10),
+      trio(['d', 'e', 'f'], 10),
+      trio(['a', 'b', 'g'], 9.5),
+      trio(['d', 'e', 'h'], 9.5),
+    ];
+    const two = [one[3]!, one[1]!, one[2]!, one[0]!].sort((x, y) => y.strength - x.strength);
+    const shape = (rows: ReturnType<typeof selectCores<Trio>>): string[] =>
+      rows.map((r) => r.core.slice().sort().join('+') + ':' + thirds(r).slice().sort().join(','));
+    expect(shape(selectCores(two, opts())).sort()).toEqual(shape(selectCores(one, opts())).sort());
+  });
+});
