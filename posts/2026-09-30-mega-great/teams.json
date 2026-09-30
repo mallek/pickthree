@@ -1,0 +1,1955 @@
+{
+  "league": "mega-great",
+  "cup": "Great League: Mega Edition",
+  "day": "2026-09-30T15:54:17.664Z",
+  "weights": "prior",
+  "battles": 0,
+  "events": 0,
+  "mix": "PvPoke meta only - Sep 30, 2026",
+  "pvpoke": {
+    "commit": "e87448291024aff808f21a2e5f74e69f68b521df",
+    "date": "2026-09-29"
+  },
+  "resimulated": {
+    "top": [],
+    "budget": [
+      "melmetal",
+      "corviknight",
+      "ninetales_shadow",
+      "corviknight_shadow",
+      "tinkaton",
+      "empoleon_shadow",
+      "ninetales",
+      "lapras",
+      "empoleon",
+      "feraligatr",
+      "jumpluff",
+      "jumpluff_shadow",
+      "hydreigon_shadow",
+      "altaria",
+      "florges",
+      "walrein",
+      "charjabug",
+      "feraligatr_shadow",
+      "charjabug_shadow",
+      "umbreon",
+      "thievul",
+      "blastoise",
+      "quagsire_shadow",
+      "quagsire"
+    ],
+    "mega": []
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Melmetal",
+          "Mimikyu"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Rillaboom",
+            "strength": 87.8,
+            "coverage": 100,
+            "consistency": 71.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Quagsire (Shadow)",
+            "strength": 87,
+            "coverage": 100,
+            "consistency": 68.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "quagsire_shadow"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "MUD_SHOT",
+                "AQUA_TAIL",
+                "STONE_EDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+quagsire_shadow.MUD_SHOT.AQUA_TAIL.STONE_EDGE"
+          },
+          {
+            "name": "Sableye (Mega)",
+            "strength": 86.1,
+            "coverage": 100,
+            "consistency": 64.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "melmetal"
+            ],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "sableye_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "FOUL_PLAY",
+                "DAZZLING_GLEAM"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+sableye_mega.SHADOW_CLAW.FOUL_PLAY.DAZZLING_GLEAM"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Jumpluff",
+          "Mimikyu"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Turtonator",
+            "strength": 86.6,
+            "coverage": 100,
+            "consistency": 66.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "jumpluff",
+              "mimikyu",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW"
+          },
+          {
+            "name": "Quagsire (Shadow)",
+            "strength": 85.9,
+            "coverage": 98.9,
+            "consistency": 66,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corviknight"
+            ],
+            "species": [
+              "jumpluff",
+              "mimikyu",
+              "quagsire_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "MUD_SHOT",
+                "AQUA_TAIL",
+                "STONE_EDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+quagsire_shadow.MUD_SHOT.AQUA_TAIL.STONE_EDGE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 85.8,
+            "coverage": 98.9,
+            "consistency": 65.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "jumpluff",
+              "mimikyu",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          },
+          {
+            "name": "Charjabug (Shadow)",
+            "strength": 85.6,
+            "coverage": 100,
+            "consistency": 62.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "charjabug_shadow",
+              "mimikyu",
+              "jumpluff"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/charjabug_shadow.VOLT_SWITCH.X_SCISSOR.DISCHARGE+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Tinkaton",
+          "Vigoroth"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Quagsire (Shadow)",
+            "strength": 85,
+            "coverage": 97.7,
+            "consistency": 64.5,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corviknight",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "quagsire_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "MUD_SHOT",
+                "AQUA_TAIL",
+                "STONE_EDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+quagsire_shadow.MUD_SHOT.AQUA_TAIL.STONE_EDGE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 84.8,
+            "coverage": 97.7,
+            "consistency": 63.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          },
+          {
+            "name": "Turtonator",
+            "strength": 84.6,
+            "coverage": 96.8,
+            "consistency": 64.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW"
+          },
+          {
+            "name": "Ninetales",
+            "strength": 84.5,
+            "coverage": 99.1,
+            "consistency": 59.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "ninetales"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "EMBER",
+                "WEATHER_BALL_FIRE",
+                "ENERGY_BALL"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+ninetales.EMBER.WEATHER_BALL_FIRE.ENERGY_BALL"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Altaria",
+          "Vigoroth"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Melmetal",
+            "strength": 84.9,
+            "coverage": 98.9,
+            "consistency": 61.6,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "altaria"
+            ],
+            "species": [
+              "altaria",
+              "vigoroth",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Corviknight (Shadow)",
+            "strength": 84.2,
+            "coverage": 100,
+            "consistency": 57,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "altaria",
+              "corsola_galarian"
+            ],
+            "species": [
+              "altaria",
+              "vigoroth",
+              "corviknight_shadow"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "SAND_ATTACK",
+                "AIR_CUTTER",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+corviknight_shadow.SAND_ATTACK.AIR_CUTTER.IRON_HEAD"
+          },
+          {
+            "name": "Clodsire",
+            "strength": 84,
+            "coverage": 98.9,
+            "consistency": 58.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "clodsire",
+              "vigoroth",
+              "altaria"
+            ],
+            "moves": [
+              [
+                "POISON_STING",
+                "EARTHQUAKE",
+                "STONE_EDGE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/clodsire.POISON_STING.EARTHQUAKE.STONE_EDGE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Charjabug (Shadow)",
+          "Kingdra (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Corviknight (Shadow)",
+            "strength": 81,
+            "coverage": 100,
+            "consistency": 64,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "altaria",
+              "mimikyu",
+              "corsola_galarian"
+            ],
+            "species": [
+              "charjabug_shadow",
+              "kingdra_shadow",
+              "corviknight_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "SAND_ATTACK",
+                "AIR_CUTTER",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/charjabug_shadow.VOLT_SWITCH.X_SCISSOR.DISCHARGE+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+corviknight_shadow.SAND_ATTACK.AIR_CUTTER.IRON_HEAD"
+          },
+          {
+            "name": "Mimikyu",
+            "strength": 80.9,
+            "coverage": 95,
+            "consistency": 63.7,
+            "safety": 70,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "charjabug_shadow",
+              "mimikyu",
+              "kingdra_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/charjabug_shadow.VOLT_SWITCH.X_SCISSOR.DISCHARGE+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT"
+          },
+          {
+            "name": "Melmetal",
+            "strength": 80.6,
+            "coverage": 97,
+            "consistency": 68.3,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "altaria",
+              "clodsire"
+            ],
+            "species": [
+              "charjabug_shadow",
+              "kingdra_shadow",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/charjabug_shadow.VOLT_SWITCH.X_SCISSOR.DISCHARGE+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Mimikyu",
+          "Rillaboom"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Umbreon",
+            "strength": 86.5,
+            "coverage": 98.9,
+            "consistency": 68.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "umbreon",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "SNARL",
+                "DARK_PULSE",
+                "FOUL_PLAY"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/umbreon.SNARL.DARK_PULSE.FOUL_PLAY+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Ninetales",
+            "strength": 86,
+            "coverage": 100,
+            "consistency": 64,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "rillaboom",
+              "mimikyu",
+              "ninetales"
+            ],
+            "moves": [
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FIRE_SPIN",
+                "WEATHER_BALL_FIRE",
+                "PSYSHOCK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+ninetales.FIRE_SPIN.WEATHER_BALL_FIRE.PSYSHOCK"
+          },
+          {
+            "name": "Stunfisk (Galarian)",
+            "strength": 86,
+            "coverage": 100,
+            "consistency": 64,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "stunfisk_galarian",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Mandibuzz",
+            "strength": 85.8,
+            "coverage": 100,
+            "consistency": 63.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "mandibuzz",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "SNARL",
+                "DARK_PULSE",
+                "SHADOW_BALL"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/mandibuzz.SNARL.DARK_PULSE.SHADOW_BALL+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Mimikyu",
+          "Altaria"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Morpeko (Full Belly)",
+            "strength": 86,
+            "coverage": 100,
+            "consistency": 64,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "mimikyu",
+              "altaria"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK"
+          },
+          {
+            "name": "Marowak",
+            "strength": 85.9,
+            "coverage": 100,
+            "consistency": 63.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "marowak",
+              "mimikyu",
+              "altaria"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "ROCK_SLIDE"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/marowak.MUD_SLAP.BONE_CLUB.ROCK_SLIDE+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK"
+          },
+          {
+            "name": "Florges",
+            "strength": 85.5,
+            "coverage": 100,
+            "consistency": 61.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "altaria",
+              "mimikyu",
+              "florges"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Spidops",
+            "strength": 85.1,
+            "coverage": 99.1,
+            "consistency": 62.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "altaria",
+              "mimikyu",
+              "spidops"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "LUNGE",
+                "ROCK_TOMB"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+spidops.SHADOW_CLAW.LUNGE.ROCK_TOMB"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Spidops",
+          "Marowak"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Vigoroth",
+            "strength": 83.9,
+            "coverage": 100,
+            "consistency": 55.6,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "spidops",
+              "vigoroth",
+              "marowak"
+            ],
+            "moves": [
+              [
+                "SHADOW_CLAW",
+                "LUNGE",
+                "ROCK_TOMB"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "ROCK_SLIDE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/spidops.SHADOW_CLAW.LUNGE.ROCK_TOMB+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+marowak.MUD_SLAP.BONE_CLUB.ROCK_SLIDE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Vigoroth",
+          "Florges"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Ninetales",
+            "strength": 83.8,
+            "coverage": 97.9,
+            "consistency": 59.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corsola_galarian",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "ninetales",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "FIRE_SPIN",
+                "WEATHER_BALL_FIRE",
+                "PSYSHOCK"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/ninetales.FIRE_SPIN.WEATHER_BALL_FIRE.PSYSHOCK+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Turtonator",
+            "strength": 83.4,
+            "coverage": 98.8,
+            "consistency": 56.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corsola_galarian",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "turtonator",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 83.2,
+            "coverage": 97.4,
+            "consistency": 58,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corsola_galarian",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "stunfisk",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Stunfisk (Galarian)",
+            "strength": 82.8,
+            "coverage": 97.4,
+            "consistency": 56.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "stunfisk_galarian",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Cramorant",
+          "Drapion"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Marowak",
+            "strength": 80.6,
+            "coverage": 97.2,
+            "consistency": 68.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "cramorant",
+              "drapion",
+              "marowak"
+            ],
+            "moves": [
+              [
+                "PECK",
+                "DIVE",
+                "FLY"
+              ],
+              [
+                "POISON_STING",
+                "CRUNCH",
+                "AQUA_TAIL"
+              ],
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "ROCK_SLIDE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/cramorant.PECK.DIVE.FLY+drapion.POISON_STING.CRUNCH.AQUA_TAIL+marowak.MUD_SLAP.BONE_CLUB.ROCK_SLIDE"
+          },
+          {
+            "name": "Hippowdon",
+            "strength": 80.2,
+            "coverage": 98.2,
+            "consistency": 64.4,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "cramorant",
+              "drapion",
+              "hippowdon"
+            ],
+            "moves": [
+              [
+                "PECK",
+                "DIVE",
+                "FLY"
+              ],
+              [
+                "POISON_STING",
+                "CRUNCH",
+                "AQUA_TAIL"
+              ],
+              [
+                "SAND_ATTACK",
+                "WEATHER_BALL_ROCK",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/cramorant.PECK.DIVE.FLY+drapion.POISON_STING.CRUNCH.AQUA_TAIL+hippowdon.SAND_ATTACK.WEATHER_BALL_ROCK.EARTH_POWER"
+          },
+          {
+            "name": "Rillaboom",
+            "strength": 79.9,
+            "coverage": 93.8,
+            "consistency": 72,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "cramorant",
+              "drapion",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "PECK",
+                "DIVE",
+                "FLY"
+              ],
+              [
+                "POISON_STING",
+                "CRUNCH",
+                "AQUA_TAIL"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/cramorant.PECK.DIVE.FLY+drapion.POISON_STING.CRUNCH.AQUA_TAIL+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Malamar (Shadow)",
+            "strength": 79.6,
+            "coverage": 98.3,
+            "consistency": 61.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "clodsire"
+            ],
+            "species": [
+              "cramorant",
+              "drapion",
+              "malamar_shadow"
+            ],
+            "moves": [
+              [
+                "PECK",
+                "DIVE",
+                "FLY"
+              ],
+              [
+                "POISON_STING",
+                "CRUNCH",
+                "AQUA_TAIL"
+              ],
+              [
+                "PSYWAVE",
+                "FOUL_PLAY",
+                "SUPER_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/cramorant.PECK.DIVE.FLY+drapion.POISON_STING.CRUNCH.AQUA_TAIL+malamar_shadow.PSYWAVE.FOUL_PLAY.SUPER_POWER"
+          }
+        ]
+      }
+    ],
+    "mega": [
+      {
+        "core": [
+          "Mimikyu",
+          "Melmetal"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Chesnaught (Mega)",
+            "strength": 87.4,
+            "coverage": 100,
+            "consistency": 69.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "chesnaught_mega",
+              "mimikyu",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Heracross (Mega)",
+            "strength": 86.8,
+            "coverage": 100,
+            "consistency": 67,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "melmetal"
+            ],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "heracross_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FURY_CUTTER",
+                "ROCK_TOMB",
+                "UPPER_HAND"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+heracross_mega.FURY_CUTTER.ROCK_TOMB.UPPER_HAND"
+          },
+          {
+            "name": "Sableye (Mega)",
+            "strength": 86.1,
+            "coverage": 100,
+            "consistency": 64.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "melmetal"
+            ],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "sableye_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "FOUL_PLAY",
+                "DAZZLING_GLEAM"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+sableye_mega.SHADOW_CLAW.FOUL_PLAY.DAZZLING_GLEAM"
+          },
+          {
+            "name": "Gallade (Mega)",
+            "strength": 85.8,
+            "coverage": 98.2,
+            "consistency": 66.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "gallade_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "LOW_KICK",
+                "SACRED_SWORD",
+                "LEAF_BLADE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+gallade_mega.LOW_KICK.SACRED_SWORD.LEAF_BLADE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Mimikyu",
+          "Walrein"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Chesnaught (Mega)",
+            "strength": 87,
+            "coverage": 100,
+            "consistency": 67.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "chesnaught_mega",
+              "mimikyu",
+              "walrein"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "POWDER_SNOW",
+                "ICICLE_SPEAR",
+                "EARTHQUAKE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+walrein.POWDER_SNOW.ICICLE_SPEAR.EARTHQUAKE"
+          },
+          {
+            "name": "Latias (Mega)",
+            "strength": 85.2,
+            "coverage": 98.4,
+            "consistency": 64.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "latias_mega",
+              "mimikyu",
+              "walrein"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AURA_SPHERE",
+                "MIST_BALL"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "POWDER_SNOW",
+                "ICICLE_SPEAR",
+                "EARTHQUAKE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/latias_mega.DRAGON_BREATH.AURA_SPHERE.MIST_BALL+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+walrein.POWDER_SNOW.ICICLE_SPEAR.EARTHQUAKE"
+          },
+          {
+            "name": "Medicham (Mega)",
+            "strength": 85.2,
+            "coverage": 98.9,
+            "consistency": 63.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "medicham_mega",
+              "mimikyu",
+              "walrein"
+            ],
+            "moves": [
+              [
+                "PSYCHO_CUT",
+                "DYNAMIC_PUNCH",
+                "ICE_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "POWDER_SNOW",
+                "ICICLE_SPEAR",
+                "EARTHQUAKE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/medicham_mega.PSYCHO_CUT.DYNAMIC_PUNCH.ICE_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+walrein.POWDER_SNOW.ICICLE_SPEAR.EARTHQUAKE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Tinkaton",
+          "Vigoroth"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Charizard (Mega X)",
+            "strength": 84,
+            "coverage": 97.7,
+            "consistency": 60.5,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "charizard_mega_x"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "BLAST_BURN",
+                "AIR_CUTTER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+charizard_mega_x.DRAGON_BREATH.BLAST_BURN.AIR_CUTTER"
+          },
+          {
+            "name": "Swampert (Mega)",
+            "strength": 83.8,
+            "coverage": 98.2,
+            "consistency": 58.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "swampert_mega",
+              "vigoroth",
+              "tinkaton"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "HYDRO_CANNON",
+                "EARTHQUAKE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/swampert_mega.MUD_SHOT.HYDRO_CANNON.EARTHQUAKE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE"
+          },
+          {
+            "name": "Blaziken (Mega)",
+            "strength": 82.5,
+            "coverage": 96.8,
+            "consistency": 56.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "blaziken_mega",
+              "vigoroth",
+              "tinkaton"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/blaziken_mega.EMBER.AURA_SPHERE.BLAZE_KICK+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE"
+          },
+          {
+            "name": "Delphox (Mega)",
+            "strength": 82.1,
+            "coverage": 95.6,
+            "consistency": 57.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corviknight",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "delphox_mega"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BLAST_BURN",
+                "PSYSHOCK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+delphox_mega.SCRATCH.BLAST_BURN.PSYSHOCK"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Vigoroth",
+          "Audino (Mega)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Charjabug (Shadow)",
+            "strength": 83.5,
+            "coverage": 95.3,
+            "consistency": 63.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "charjabug_shadow",
+              "vigoroth",
+              "audino_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "CHARGE_BEAM",
+                "BODY_SLAM",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/charjabug_shadow.VOLT_SWITCH.X_SCISSOR.DISCHARGE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+audino_mega.CHARGE_BEAM.BODY_SLAM.DISARMING_VOICE"
+          },
+          {
+            "name": "Turtonator",
+            "strength": 83.2,
+            "coverage": 92.7,
+            "consistency": 67.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "audino_mega",
+              "vigoroth",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "CHARGE_BEAM",
+                "BODY_SLAM",
+                "DISARMING_VOICE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/audino_mega.CHARGE_BEAM.BODY_SLAM.DISARMING_VOICE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW"
+          },
+          {
+            "name": "Quagsire",
+            "strength": 82.6,
+            "coverage": 92.3,
+            "consistency": 65.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corviknight",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "audino_mega",
+              "vigoroth",
+              "quagsire"
+            ],
+            "moves": [
+              [
+                "CHARGE_BEAM",
+                "BODY_SLAM",
+                "DISARMING_VOICE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "MUD_SHOT",
+                "AQUA_TAIL",
+                "STONE_EDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/audino_mega.CHARGE_BEAM.BODY_SLAM.DISARMING_VOICE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+quagsire.MUD_SHOT.AQUA_TAIL.STONE_EDGE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 82.6,
+            "coverage": 92.3,
+            "consistency": 65.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "audino_mega",
+              "vigoroth",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "CHARGE_BEAM",
+                "BODY_SLAM",
+                "DISARMING_VOICE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/audino_mega.CHARGE_BEAM.BODY_SLAM.DISARMING_VOICE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Fearow",
+          "Melmetal"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Latias (Mega)",
+            "strength": 81,
+            "coverage": 96.4,
+            "consistency": 71.4,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "latias_mega",
+              "fearow",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AURA_SPHERE",
+                "MIST_BALL"
+              ],
+              [
+                "PECK",
+                "DRILL_PECK",
+                "DRILL_RUN"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/latias_mega.DRAGON_BREATH.AURA_SPHERE.MIST_BALL+fearow.PECK.DRILL_PECK.DRILL_RUN+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Latios (Mega)",
+            "strength": 80,
+            "coverage": 97.6,
+            "consistency": 64.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "altaria"
+            ],
+            "species": [
+              "latios_mega",
+              "fearow",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AURA_SPHERE",
+                "LUSTER_PURGE"
+              ],
+              [
+                "PECK",
+                "DRILL_PECK",
+                "DRILL_RUN"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/latios_mega.DRAGON_BREATH.AURA_SPHERE.LUSTER_PURGE+fearow.PECK.DRILL_PECK.DRILL_RUN+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Swampert (Mega)",
+            "strength": 80,
+            "coverage": 96.7,
+            "consistency": 66.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "altaria"
+            ],
+            "species": [
+              "swampert_mega",
+              "fearow",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "HYDRO_CANNON",
+                "EARTHQUAKE"
+              ],
+              [
+                "PECK",
+                "DRILL_PECK",
+                "DRILL_RUN"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/swampert_mega.MUD_SHOT.HYDRO_CANNON.EARTHQUAKE+fearow.PECK.DRILL_PECK.DRILL_RUN+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Sableye (Mega)",
+            "strength": 79.1,
+            "coverage": 93.3,
+            "consistency": 69.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "melmetal",
+              "altaria",
+              "quagsire_shadow",
+              "clodsire"
+            ],
+            "species": [
+              "melmetal",
+              "fearow",
+              "sableye_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "PECK",
+                "DRILL_PECK",
+                "DRILL_RUN"
+              ],
+              [
+                "SHADOW_CLAW",
+                "FOUL_PLAY",
+                "DAZZLING_GLEAM"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+fearow.PECK.DRILL_PECK.DRILL_RUN+sableye_mega.SHADOW_CLAW.FOUL_PLAY.DAZZLING_GLEAM"
+          }
+        ]
+      }
+    ]
+  }
+}

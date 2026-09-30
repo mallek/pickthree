@@ -1,0 +1,1659 @@
+{
+  "league": "colormega",
+  "cup": "Mega Color Cup",
+  "day": "2026-09-30T15:22:32.161Z",
+  "weights": "blend",
+  "battles": 0,
+  "events": 0,
+  "mix": "PvPoke meta only - Sep 30, 2026",
+  "pvpoke": {
+    "commit": "e87448291024aff808f21a2e5f74e69f68b521df",
+    "date": "2026-09-29"
+  },
+  "resimulated": {
+    "top": [],
+    "budget": [
+      "empoleon_shadow",
+      "jumpluff",
+      "empoleon",
+      "lapras",
+      "seaking",
+      "charizard_mega_x",
+      "charjabug",
+      "walrein",
+      "zapdos_shadow",
+      "charjabug_shadow",
+      "marowak_alolan",
+      "jumpluff_shadow",
+      "marowak_alolan_shadow",
+      "walrein_shadow",
+      "delphox_shadow",
+      "lapras_shadow",
+      "venusaur_mega",
+      "delphox_mega",
+      "zapdos",
+      "samurott",
+      "venusaur_shadow",
+      "rapidash"
+    ],
+    "mega": []
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Magnezone (Shadow)",
+          "Kingdra (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Rillaboom",
+            "strength": 92.3,
+            "coverage": 98.5,
+            "consistency": 72.1,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Charjabug",
+            "strength": 92.1,
+            "coverage": 100,
+            "consistency": 68.6,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "rillaboom"
+            ],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "charjabug"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+charjabug.VOLT_SWITCH.X_SCISSOR.DISCHARGE"
+          },
+          {
+            "name": "Blaziken (Shadow)",
+            "strength": 91.8,
+            "coverage": 98.4,
+            "consistency": 70.3,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "blaziken_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK"
+          },
+          {
+            "name": "Marowak (Alolan)",
+            "strength": 91.7,
+            "coverage": 100,
+            "consistency": 66.7,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "marowak_alolan",
+              "kingdra_shadow",
+              "magnezone_shadow"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Kingdra (Shadow)",
+          "Raikou"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Jumpluff (Shadow)",
+            "strength": 90.7,
+            "coverage": 100,
+            "consistency": 62.9,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "cradily"
+            ],
+            "species": [
+              "jumpluff_shadow",
+              "kingdra_shadow",
+              "raikou"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/jumpluff_shadow.FAIRY_WIND.ENERGY_BALL.ACROBATICS+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE"
+          },
+          {
+            "name": "Rillaboom",
+            "strength": 90.3,
+            "coverage": 100,
+            "consistency": 61.1,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "cradily"
+            ],
+            "species": [
+              "rillaboom",
+              "kingdra_shadow",
+              "raikou"
+            ],
+            "moves": [
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE"
+          },
+          {
+            "name": "Cramorant",
+            "strength": 89.8,
+            "coverage": 100,
+            "consistency": 59.2,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "cradily",
+              "kingdra_shadow"
+            ],
+            "species": [
+              "cramorant",
+              "kingdra_shadow",
+              "raikou"
+            ],
+            "moves": [
+              [
+                "PECK",
+                "DIVE",
+                "FLY"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/cramorant.PECK.DIVE.FLY+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE"
+          },
+          {
+            "name": "Venusaur (Mega)",
+            "strength": 89.7,
+            "coverage": 100,
+            "consistency": 58.8,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "cradily"
+            ],
+            "species": [
+              "raikou",
+              "kingdra_shadow",
+              "venusaur_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "VINE_WHIP",
+                "FRENZY_PLANT",
+                "SLUDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+venusaur_mega.VINE_WHIP.FRENZY_PLANT.SLUDGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Magnezone (Shadow)",
+          "Marowak (Alolan)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Rillaboom",
+            "strength": 84.8,
+            "coverage": 98,
+            "consistency": 83.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Jumpluff (Shadow)",
+            "strength": 84.5,
+            "coverage": 100,
+            "consistency": 77.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "jumpluff_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+jumpluff_shadow.FAIRY_WIND.ENERGY_BALL.ACROBATICS"
+          },
+          {
+            "name": "Samurott (Hisuian)",
+            "strength": 84.1,
+            "coverage": 96.2,
+            "consistency": 84.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "samurott_hisuian"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "FURY_CUTTER",
+                "SACRED_SWORD",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+samurott_hisuian.FURY_CUTTER.SACRED_SWORD.DARK_PULSE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Charjabug",
+          "Marowak (Alolan)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Walrein",
+            "strength": 83.5,
+            "coverage": 100,
+            "consistency": 73.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "cradily",
+              "kingdra",
+              "kingdra"
+            ],
+            "species": [
+              "charjabug",
+              "marowak_alolan",
+              "walrein"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "POWDER_SNOW",
+                "ICICLE_SPEAR",
+                "EARTHQUAKE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/charjabug.VOLT_SWITCH.X_SCISSOR.DISCHARGE+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+walrein.POWDER_SNOW.ICICLE_SPEAR.EARTHQUAKE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Jumpluff",
+          "Raikou"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Seaking",
+            "strength": 82.3,
+            "coverage": 100,
+            "consistency": 69.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "toxtricity"
+            ],
+            "species": [
+              "jumpluff",
+              "raikou",
+              "seaking"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "PECK",
+                "DRILL_RUN",
+                "ICY_WIND"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+seaking.PECK.DRILL_RUN.ICY_WIND"
+          },
+          {
+            "name": "Magnezone (Shadow)",
+            "strength": 82,
+            "coverage": 97.8,
+            "consistency": 72.6,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "raikou",
+              "jumpluff"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Magnezone (Shadow)",
+          "Kingdra (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Rillaboom",
+            "strength": 92.3,
+            "coverage": 98.5,
+            "consistency": 72.1,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Jumpluff (Shadow)",
+            "strength": 92.2,
+            "coverage": 98.3,
+            "consistency": 72.1,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "jumpluff_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "AERIAL_ACE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+jumpluff_shadow.FAIRY_WIND.ENERGY_BALL.AERIAL_ACE"
+          },
+          {
+            "name": "Blaziken (Shadow)",
+            "strength": 91.8,
+            "coverage": 98.4,
+            "consistency": 70.3,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "blaziken_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK"
+          },
+          {
+            "name": "Charjabug",
+            "strength": 91.7,
+            "coverage": 98.4,
+            "consistency": 70.1,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "charjabug"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "BUG_BITE",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+charjabug.BUG_BITE.X_SCISSOR.DISCHARGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Electivire (Shadow)",
+          "Charjabug (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Kingdra (Shadow)",
+            "strength": 90.5,
+            "coverage": 100,
+            "consistency": 62,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "cradily",
+              "kingdra",
+              "kingdra"
+            ],
+            "species": [
+              "electivire_shadow",
+              "kingdra_shadow",
+              "charjabug_shadow"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "ICE_PUNCH",
+                "WILD_CHARGE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "BUG_BITE",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/electivire_shadow.THUNDER_SHOCK.ICE_PUNCH.WILD_CHARGE+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+charjabug_shadow.BUG_BITE.X_SCISSOR.DISCHARGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Blaziken (Shadow)",
+          "Raikou"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Samurott (Hisuian)",
+            "strength": 82,
+            "coverage": 98.3,
+            "consistency": 71.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "blaziken_shadow",
+              "raikou",
+              "samurott_hisuian"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "FURY_CUTTER",
+                "SACRED_SWORD",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+samurott_hisuian.FURY_CUTTER.SACRED_SWORD.DARK_PULSE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 81.5,
+            "coverage": 97.5,
+            "consistency": 71,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "blaziken_shadow",
+              "raikou",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          },
+          {
+            "name": "Mantine",
+            "strength": 81.2,
+            "coverage": 98.3,
+            "consistency": 68.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "blaziken_shadow",
+              "raikou",
+              "mantine"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "WING_ATTACK",
+                "TWISTER",
+                "WATER_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+mantine.WING_ATTACK.TWISTER.WATER_PULSE"
+          },
+          {
+            "name": "Cradily",
+            "strength": 81.1,
+            "coverage": 99.1,
+            "consistency": 66.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "cradily",
+              "raikou",
+              "blaziken_shadow"
+            ],
+            "moves": [
+              [
+                "ACID",
+                "ROCK_TOMB",
+                "GRASS_KNOT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/cradily.ACID.ROCK_TOMB.GRASS_KNOT+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Raikou",
+          "Charjabug"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Marowak (Alolan)",
+            "strength": 82,
+            "coverage": 97.2,
+            "consistency": 73.4,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "cradily",
+              "kingdra_shadow"
+            ],
+            "species": [
+              "marowak_alolan",
+              "raikou",
+              "charjabug"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "BONE_CLUB",
+                "FLAME_WHEEL"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "BUG_BITE",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/marowak_alolan.HEX.BONE_CLUB.FLAME_WHEEL+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+charjabug.BUG_BITE.X_SCISSOR.DISCHARGE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 81.1,
+            "coverage": 93.8,
+            "consistency": 76.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "cradily",
+              "kingdra_shadow"
+            ],
+            "species": [
+              "stunfisk",
+              "raikou",
+              "charjabug"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "BUG_BITE",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+charjabug.BUG_BITE.X_SCISSOR.DISCHARGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Magnezone (Shadow)",
+          "Marowak (Alolan)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Jumpluff (Shadow)",
+            "strength": 75,
+            "coverage": 98,
+            "consistency": 84.2,
+            "safety": 20,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "jumpluff_shadow"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "FLAME_WHEEL"
+              ],
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "AERIAL_ACE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.FLAME_WHEEL+jumpluff_shadow.FAIRY_WIND.ENERGY_BALL.AERIAL_ACE"
+          },
+          {
+            "name": "Rillaboom",
+            "strength": 74.7,
+            "coverage": 98,
+            "consistency": 82.8,
+            "safety": 20,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "FLAME_WHEEL"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.FLAME_WHEEL+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Samurott (Hisuian)",
+            "strength": 74,
+            "coverage": 96.2,
+            "consistency": 83.9,
+            "safety": 20,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "samurott_hisuian"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "FLAME_WHEEL"
+              ],
+              [
+                "FURY_CUTTER",
+                "SACRED_SWORD",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.FLAME_WHEEL+samurott_hisuian.FURY_CUTTER.SACRED_SWORD.DARK_PULSE"
+          }
+        ]
+      }
+    ],
+    "mega": [
+      {
+        "core": [
+          "Magnezone (Shadow)",
+          "Kingdra (Shadow)"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Blaziken (Mega)",
+            "strength": 91.8,
+            "coverage": 98.4,
+            "consistency": 70.5,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "blaziken_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+blaziken_mega.EMBER.AURA_SPHERE.BLAZE_KICK"
+          },
+          {
+            "name": "Venusaur (Mega)",
+            "strength": 91.4,
+            "coverage": 100,
+            "consistency": 65.7,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "venusaur_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "VINE_WHIP",
+                "FRENZY_PLANT",
+                "SLUDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+venusaur_mega.VINE_WHIP.FRENZY_PLANT.SLUDGE"
+          },
+          {
+            "name": "Slowbro (Mega)",
+            "strength": 90.5,
+            "coverage": 94.9,
+            "consistency": 72.1,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "rillaboom"
+            ],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "slowbro_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "CONFUSION",
+                "DRAIN_PUNCH",
+                "ICE_BEAM"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+slowbro_mega.CONFUSION.DRAIN_PUNCH.ICE_BEAM"
+          },
+          {
+            "name": "Sceptile (Mega)",
+            "strength": 90.3,
+            "coverage": 96.9,
+            "consistency": 67.2,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "kingdra_shadow",
+              "sceptile_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "FURY_CUTTER",
+                "LEAF_BLADE",
+                "BREAKING_SWIPE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+sceptile_mega.FURY_CUTTER.LEAF_BLADE.BREAKING_SWIPE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Chesnaught (Mega)",
+          "Kingdra (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Emolga",
+            "strength": 90.6,
+            "coverage": 100,
+            "consistency": 62.5,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "chesnaught_mega",
+              "kingdra_shadow",
+              "emolga"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "ACROBATICS",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+emolga.THUNDER_SHOCK.ACROBATICS.DISCHARGE"
+          },
+          {
+            "name": "Charjabug (Shadow)",
+            "strength": 90.2,
+            "coverage": 98.6,
+            "consistency": 63.6,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "charjabug_shadow",
+              "kingdra_shadow",
+              "chesnaught_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/charjabug_shadow.VOLT_SWITCH.X_SCISSOR.DISCHARGE+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER"
+          },
+          {
+            "name": "Toxtricity",
+            "strength": 89.8,
+            "coverage": 100,
+            "consistency": 59.2,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "toxapex"
+            ],
+            "species": [
+              "chesnaught_mega",
+              "kingdra_shadow",
+              "toxtricity"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "SURF",
+                "SWIFT"
+              ],
+              [
+                "ACID",
+                "WILD_CHARGE",
+                "SWIFT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+kingdra_shadow.DRAGON_BREATH.SURF.SWIFT+toxtricity.ACID.WILD_CHARGE.SWIFT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Magnezone (Shadow)",
+          "Marowak (Alolan)"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Gyarados (Mega)",
+            "strength": 83,
+            "coverage": 94.3,
+            "consistency": 83.3,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "magnezone_shadow",
+              "marowak_alolan",
+              "gyarados_mega"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "CRUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+gyarados_mega.DRAGON_BREATH.AQUA_TAIL.CRUNCH"
+          },
+          {
+            "name": "Chesnaught (Mega)",
+            "strength": 82.9,
+            "coverage": 98,
+            "consistency": 75.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "chesnaught_mega",
+              "marowak_alolan",
+              "magnezone_shadow"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT"
+          },
+          {
+            "name": "Swampert (Mega)",
+            "strength": 82.8,
+            "coverage": 99.1,
+            "consistency": 72.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "swampert_mega",
+              "marowak_alolan",
+              "magnezone_shadow"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "HYDRO_CANNON",
+                "EARTHQUAKE"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/swampert_mega.MUD_SHOT.HYDRO_CANNON.EARTHQUAKE+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT"
+          },
+          {
+            "name": "Abomasnow (Mega)",
+            "strength": 82.5,
+            "coverage": 98,
+            "consistency": 73.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "abomasnow_mega",
+              "marowak_alolan",
+              "magnezone_shadow"
+            ],
+            "moves": [
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "ENERGY_BALL"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "VOLT_SWITCH",
+                "WILD_CHARGE",
+                "MIRROR_SHOT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/abomasnow_mega.POWDER_SNOW.WEATHER_BALL_ICE.ENERGY_BALL+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+magnezone_shadow.VOLT_SWITCH.WILD_CHARGE.MIRROR_SHOT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Marowak (Alolan)",
+          "Chesnaught (Mega)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Bellibolt",
+            "strength": 82.8,
+            "coverage": 98.7,
+            "consistency": 73.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "bellibolt",
+              "marowak_alolan",
+              "chesnaught_mega"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "ZAP_CANNON",
+                "PARABOLIC_CHARGE"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/bellibolt.THUNDER_SHOCK.ZAP_CANNON.PARABOLIC_CHARGE+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER"
+          },
+          {
+            "name": "Raikou",
+            "strength": 82.8,
+            "coverage": 98,
+            "consistency": 75.4,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "chesnaught_mega",
+              "raikou",
+              "marowak_alolan"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE"
+          },
+          {
+            "name": "Morpeko (Full Belly)",
+            "strength": 82.5,
+            "coverage": 100,
+            "consistency": 69.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "jumpluff"
+            ],
+            "species": [
+              "chesnaught_mega",
+              "marowak_alolan",
+              "morpeko_full_belly"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS"
+          },
+          {
+            "name": "Pelipper",
+            "strength": 82.5,
+            "coverage": 98.2,
+            "consistency": 73.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "cramorant"
+            ],
+            "species": [
+              "chesnaught_mega",
+              "marowak_alolan",
+              "pelipper"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "THUNDER_PUNCH",
+                "SUPER_POWER"
+              ],
+              [
+                "HEX",
+                "BONE_CLUB",
+                "SHADOW_BONE"
+              ],
+              [
+                "WING_ATTACK",
+                "WEATHER_BALL_WATER",
+                "HURRICANE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/chesnaught_mega.LOW_KICK.THUNDER_PUNCH.SUPER_POWER+marowak_alolan.HEX.BONE_CLUB.SHADOW_BONE+pelipper.WING_ATTACK.WEATHER_BALL_WATER.HURRICANE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Raikou",
+          "Blaziken (Shadow)"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Gyarados (Mega)",
+            "strength": 82,
+            "coverage": 96.7,
+            "consistency": 74.6,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "gyarados_mega",
+              "raikou",
+              "blaziken_shadow"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "CRUNCH"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/gyarados_mega.DRAGON_BREATH.AQUA_TAIL.CRUNCH+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK"
+          },
+          {
+            "name": "Swampert (Mega)",
+            "strength": 80.1,
+            "coverage": 100,
+            "consistency": 60.3,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "blaziken_shadow",
+              "raikou",
+              "swampert_mega"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "AURA_SPHERE",
+                "BLAZE_KICK"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "WILD_CHARGE",
+                "AURA_SPHERE"
+              ],
+              [
+                "MUD_SHOT",
+                "HYDRO_CANNON",
+                "EARTHQUAKE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/colormega/blaziken_shadow.EMBER.AURA_SPHERE.BLAZE_KICK+raikou.THUNDER_SHOCK.WILD_CHARGE.AURA_SPHERE+swampert_mega.MUD_SHOT.HYDRO_CANNON.EARTHQUAKE"
+          }
+        ]
+      }
+    ]
+  }
+}

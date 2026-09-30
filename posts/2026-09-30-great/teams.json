@@ -1,0 +1,1032 @@
+{
+  "league": "great",
+  "cup": "Great League",
+  "day": "2026-09-30T15:21:17.601Z",
+  "weights": "blend",
+  "battles": 109,
+  "events": 2,
+  "mix": "PvPoke meta + 109 shared battles + 2 events - Sep 30, 2026",
+  "pvpoke": {
+    "commit": "e87448291024aff808f21a2e5f74e69f68b521df",
+    "date": "2026-09-29"
+  },
+  "resimulated": {
+    "top": [],
+    "budget": [
+      "melmetal",
+      "corviknight",
+      "ninetales_shadow",
+      "corviknight_shadow",
+      "empoleon_shadow",
+      "ninetales",
+      "tinkaton",
+      "lapras",
+      "empoleon",
+      "feraligatr",
+      "jumpluff",
+      "jumpluff_shadow",
+      "feraligatr_shadow",
+      "hydreigon_shadow",
+      "walrein",
+      "altaria",
+      "thievul",
+      "charjabug",
+      "blastoise",
+      "charjabug_shadow",
+      "umbreon",
+      "greninja_shadow",
+      "quagsire",
+      "quagsire_shadow",
+      "lapras_shadow",
+      "florges"
+    ],
+    "mega": []
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Melmetal",
+          "Mimikyu"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Rillaboom",
+            "strength": 88.7,
+            "coverage": 100,
+            "consistency": 74.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Turtonator",
+            "strength": 87.7,
+            "coverage": 99.1,
+            "consistency": 72.6,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "melmetal",
+              "mimikyu",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Jumpluff",
+          "Mimikyu"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Turtonator",
+            "strength": 86.7,
+            "coverage": 100,
+            "consistency": 66.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "jumpluff",
+              "mimikyu",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 86.2,
+            "coverage": 99.2,
+            "consistency": 66.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "jumpluff",
+              "mimikyu",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Vigoroth",
+          "Melmetal"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Rillaboom",
+            "strength": 86.6,
+            "coverage": 98.8,
+            "consistency": 68.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "sableye_shadow",
+              "altaria"
+            ],
+            "species": [
+              "rillaboom",
+              "vigoroth",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Araquanid",
+            "strength": 85.8,
+            "coverage": 98.8,
+            "consistency": 65.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "altaria"
+            ],
+            "species": [
+              "araquanid",
+              "vigoroth",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "INFESTATION",
+                "WATER_PULSE",
+                "MIRROR_COAT"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/araquanid.INFESTATION.WATER_PULSE.MIRROR_COAT+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Vigoroth",
+          "Stunfisk"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Jumpluff",
+            "strength": 85.1,
+            "coverage": 98.7,
+            "consistency": 63.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "jumpluff",
+              "vigoroth",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "ENERGY_BALL",
+                "ACROBATICS"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/jumpluff.FAIRY_WIND.ENERGY_BALL.ACROBATICS+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          },
+          {
+            "name": "Tinkaton",
+            "strength": 84.2,
+            "coverage": 96.3,
+            "consistency": 64.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "tinkaton",
+              "vigoroth",
+              "stunfisk"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "GIGATON_HAMMER",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/tinkaton.FAIRY_WIND.GIGATON_HAMMER.BULLDOZE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Charjabug",
+          "Dunsparce"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Corviknight",
+            "strength": 82,
+            "coverage": 100,
+            "consistency": 68.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "charjabug",
+              "dunsparce",
+              "corviknight"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "BITE",
+                "DRILL_RUN",
+                "ROCK_SLIDE"
+              ],
+              [
+                "SAND_ATTACK",
+                "AIR_CUTTER",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/charjabug.VOLT_SWITCH.X_SCISSOR.DISCHARGE+dunsparce.BITE.DRILL_RUN.ROCK_SLIDE+corviknight.SAND_ATTACK.AIR_CUTTER.IRON_HEAD"
+          },
+          {
+            "name": "Rillaboom",
+            "strength": 81.6,
+            "coverage": 98.1,
+            "consistency": 70.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "charjabug",
+              "dunsparce",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "X_SCISSOR",
+                "DISCHARGE"
+              ],
+              [
+                "BITE",
+                "DRILL_RUN",
+                "ROCK_SLIDE"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/charjabug.VOLT_SWITCH.X_SCISSOR.DISCHARGE+dunsparce.BITE.DRILL_RUN.ROCK_SLIDE+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Mimikyu",
+          "Rillaboom"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Umbreon",
+            "strength": 87.1,
+            "coverage": 99.2,
+            "consistency": 70,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "umbreon",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "SNARL",
+                "DARK_PULSE",
+                "FOUL_PLAY"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/umbreon.SNARL.DARK_PULSE.FOUL_PLAY+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Mandibuzz",
+            "strength": 86.5,
+            "coverage": 100,
+            "consistency": 65.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "mandibuzz",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "SNARL",
+                "DARK_PULSE",
+                "SHADOW_BALL"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/mandibuzz.SNARL.DARK_PULSE.SHADOW_BALL+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Ninetales",
+            "strength": 86.4,
+            "coverage": 100,
+            "consistency": 65.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "rillaboom",
+              "mimikyu",
+              "ninetales"
+            ],
+            "moves": [
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FIRE_SPIN",
+                "WEATHER_BALL_FIRE",
+                "PSYSHOCK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+ninetales.FIRE_SPIN.WEATHER_BALL_FIRE.PSYSHOCK"
+          },
+          {
+            "name": "Morpeko (Full Belly)",
+            "strength": 86.3,
+            "coverage": 99.2,
+            "consistency": 66.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "mimikyu",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Morpeko (Full Belly)",
+          "Mimikyu"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Dragonair (Shadow)",
+            "strength": 85.9,
+            "coverage": 99.2,
+            "consistency": 65.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "mimikyu",
+              "dragonair_shadow"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "WRAP",
+                "AQUA_TAIL"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+dragonair_shadow.DRAGON_BREATH.WRAP.AQUA_TAIL"
+          },
+          {
+            "name": "Altaria",
+            "strength": 85.7,
+            "coverage": 100,
+            "consistency": 63,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "mimikyu",
+              "altaria"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK"
+          },
+          {
+            "name": "Tinkaton",
+            "strength": 85.5,
+            "coverage": 99.1,
+            "consistency": 63.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "mimikyu",
+              "tinkaton"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FAIRY_WIND",
+                "BULLDOZE",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+tinkaton.FAIRY_WIND.BULLDOZE.PLAY_ROUGH"
+          },
+          {
+            "name": "Turtonator",
+            "strength": 85.4,
+            "coverage": 99.1,
+            "consistency": 63.5,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "mimikyu",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Cramorant",
+          "Stunfisk (Galarian)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Vigoroth",
+            "strength": 84.1,
+            "coverage": 99.5,
+            "consistency": 57.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "cramorant",
+              "vigoroth",
+              "stunfisk_galarian"
+            ],
+            "moves": [
+              [
+                "PECK",
+                "DIVE",
+                "FLY"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/cramorant.PECK.DIVE.FLY+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Vigoroth",
+          "Florges"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Ninetales (Shadow)",
+            "strength": 83.3,
+            "coverage": 98.9,
+            "consistency": 55.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corsola_galarian",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "ninetales_shadow",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "FIRE_SPIN",
+                "WEATHER_BALL_FIRE",
+                "PSYSHOCK"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/ninetales_shadow.FIRE_SPIN.WEATHER_BALL_FIRE.PSYSHOCK+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Turtonator",
+            "strength": 83.2,
+            "coverage": 99.4,
+            "consistency": 53.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corsola_galarian",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "turtonator",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "INCINERATE",
+                "BRUTAL_SWING",
+                "DRAGON_CLAW"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/turtonator.INCINERATE.BRUTAL_SWING.DRAGON_CLAW+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Stunfisk",
+            "strength": 83.1,
+            "coverage": 98.2,
+            "consistency": 55.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "corsola_galarian",
+              "quagsire_shadow"
+            ],
+            "species": [
+              "stunfisk",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "MUD_BOMB",
+                "DISCHARGE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/stunfisk.THUNDER_SHOCK.MUD_BOMB.DISCHARGE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Stunfisk (Galarian)",
+            "strength": 82.5,
+            "coverage": 98.5,
+            "consistency": 53,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "quagsire_shadow"
+            ],
+            "species": [
+              "stunfisk_galarian",
+              "vigoroth",
+              "florges"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Clodsire",
+          "Rillaboom"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Umbreon",
+            "strength": 83.2,
+            "coverage": 98.8,
+            "consistency": 75,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "thievul"
+            ],
+            "species": [
+              "umbreon",
+              "clodsire",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "SNARL",
+                "DARK_PULSE",
+                "FOUL_PLAY"
+              ],
+              [
+                "POISON_STING",
+                "EARTHQUAKE",
+                "STONE_EDGE"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/umbreon.SNARL.DARK_PULSE.FOUL_PLAY+clodsire.POISON_STING.EARTHQUAKE.STONE_EDGE+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Vigoroth",
+            "strength": 83.1,
+            "coverage": 95.7,
+            "consistency": 61.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "sableye_shadow",
+              "corviknight"
+            ],
+            "species": [
+              "clodsire",
+              "vigoroth",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "POISON_STING",
+                "EARTHQUAKE",
+                "STONE_EDGE"
+              ],
+              [
+                "SCRATCH",
+                "BODY_SLAM",
+                "BULLDOZE"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/clodsire.POISON_STING.EARTHQUAKE.STONE_EDGE+vigoroth.SCRATCH.BODY_SLAM.BULLDOZE+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Mandibuzz",
+            "strength": 82.3,
+            "coverage": 99.4,
+            "consistency": 70.3,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "thievul"
+            ],
+            "species": [
+              "mandibuzz",
+              "clodsire",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "SNARL",
+                "DARK_PULSE",
+                "SHADOW_BALL"
+              ],
+              [
+                "POISON_STING",
+                "EARTHQUAKE",
+                "STONE_EDGE"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/mandibuzz.SNARL.DARK_PULSE.SHADOW_BALL+clodsire.POISON_STING.EARTHQUAKE.STONE_EDGE+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          },
+          {
+            "name": "Morpeko (Full Belly)",
+            "strength": 82.2,
+            "coverage": 98.8,
+            "consistency": 71.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "morpeko_full_belly",
+              "clodsire",
+              "rillaboom"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "AURA_WHEEL_ELECTRIC",
+                "PSYCHIC_FANGS"
+              ],
+              [
+                "POISON_STING",
+                "EARTHQUAKE",
+                "STONE_EDGE"
+              ],
+              [
+                "SCRATCH",
+                "DRUM_BEATING",
+                "EARTH_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/great/morpeko_full_belly.THUNDER_SHOCK.AURA_WHEEL_ELECTRIC.PSYCHIC_FANGS+clodsire.POISON_STING.EARTHQUAKE.STONE_EDGE+rillaboom.SCRATCH.DRUM_BEATING.EARTH_POWER"
+          }
+        ]
+      }
+    ]
+  }
+}
