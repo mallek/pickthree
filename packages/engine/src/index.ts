@@ -26,6 +26,7 @@ export * from './builds/moves.js';
 export * from './builds/cost.js';
 export * from './coldstart/pool.js';
 export * from './coldstart/teams.js';
+export * from './coldstart/boards.js';
 export * from './search/matrixView.js';
 export * from './search/candidates.js';
 export * from './search/trios.js';
