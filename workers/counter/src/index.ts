@@ -30,6 +30,7 @@ import { DurableObject } from 'cloudflare:workers';
 import {
   aggregate,
   DEFAULT_SOURCE,
+  LEAGUE_ID,
   parseBatch,
   type Band,
   type BattleRow,
@@ -597,7 +598,7 @@ export default {
     }
     if (request.method === 'GET' && url.pathname === '/meta') {
       const league = url.searchParams.get('league') ?? 'great';
-      if (!/^[a-z0-9_]+$/.test(league)) {
+      if (!LEAGUE_ID.test(league)) {
         return Response.json({ error: 'bad league' }, { status: 400, headers });
       }
       const days = Math.min(365, Math.max(1, Number(url.searchParams.get('days') ?? 90) || 90));

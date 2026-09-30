@@ -53,6 +53,19 @@ describe('parseBatch', () => {
     expect(r!.battles[0]!.band).toBeNull();
   });
 
+  it('accepts a Mega Edition league id, which carries a hyphen', () => {
+    const r = parseBatch({
+      device,
+      client: 'pick3',
+      battles: [{ ...battle, league: 'mega-great' }],
+    });
+    expect(r!.battles[0]!.league).toBe('mega-great');
+    const bad = (patch: Record<string, unknown>) =>
+      parseBatch({ device, client: 'pick3', battles: [{ ...battle, ...patch }] });
+    expect(bad({ league: 'Mega Great' })).toBeNull();
+    expect(bad({ team: ['tinkaton', 'azu-marill', 'clodsire'] })).toBeNull();
+  });
+
   it('rejects anything off the shape, whole batch at a time', () => {
     const bad = (patch: Record<string, unknown>) =>
       parseBatch({ device, client: 'pick3', battles: [{ ...battle, ...patch }] });

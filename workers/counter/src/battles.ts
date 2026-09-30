@@ -47,6 +47,8 @@ export interface SharedBatch {
 
 export const MAX_BATCH = 200;
 const ID = /^[a-z0-9_]+$/;
+/** League ids may carry a hyphen (mega-great, mega-ultra, mega-master); species ids never do. */
+export const LEAGUE_ID = /^[a-z0-9_-]+$/;
 const BATTLE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DEVICE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const MOVE = /^[A-Z0-9_]+$/;
@@ -85,7 +87,7 @@ function parseBattle(x: unknown): SharedBattle | null {
   if (typeof id !== 'string' || !BATTLE_ID.test(id)) {
     return null;
   }
-  if (typeof league !== 'string' || !ID.test(league)) {
+  if (typeof league !== 'string' || !LEAGUE_ID.test(league)) {
     return null;
   }
   if (!(season === null || (typeof season === 'number' && Number.isInteger(season)))) {

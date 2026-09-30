@@ -23,6 +23,10 @@ describe('readParams', () => {
     expect(params(`${ok}&band=legend`)).not.toHaveProperty('band');
   });
 
+  it('accepts a Mega Edition league id, which carries a hyphen', () => {
+    expect(params(ok.replace('great', 'mega-great'))).toMatchObject({ league: 'mega-great' });
+  });
+
   it('refuses a league that is not an id', () => {
     expect(params(ok.replace('great', 'Great League'))).toEqual({ error: 'bad league' });
   });

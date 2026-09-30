@@ -3,7 +3,7 @@
  * battle records. Pure functions over BattleRow[], so they are tested without a Durable Object.
  * The older `aggregate` in battles.ts still backs GET /meta and is deliberately left alone.
  */
-import { BANDS, type BattleRow, type SharedMoves } from './battles.js';
+import { BANDS, LEAGUE_ID, type BattleRow, type SharedMoves } from './battles.js';
 
 /** The most days one read request may span. */
 export const MAX_SPAN_DAYS = 400;
@@ -19,12 +19,10 @@ export interface ReadParams {
   source: string;
 }
 
-const LEAGUE = /^[a-z0-9_]+$/;
-
 /** Parses and clamps the window every read endpoint shares. */
 export function readParams(url: URL): ReadParams | { error: string } {
   const league = url.searchParams.get('league') ?? 'great';
-  if (!LEAGUE.test(league)) {
+  if (!LEAGUE_ID.test(league)) {
     return { error: 'bad league' };
   }
   const sinceRaw = url.searchParams.get('since') ?? '';
