@@ -149,7 +149,11 @@ export async function auditPage(page, report) {
           const x = (left + right) / 2;
           const y = (top + bottom) / 2;
           const inView = x >= 0 && y >= 0 && x < window.innerWidth && y < window.innerHeight;
-          const at = inView ? document.elementFromPoint(x, y) : null;
+          // The first thing at that spot other than the decoration itself, so a decoration that
+          // takes pointer events (a count badge) is checked the same as one that does not.
+          const at = inView
+            ? (document.elementsFromPoint(x, y).find((e) => e !== d && !d.contains(e)) ?? null)
+            : null;
           return (
             !inView ||
             (at !== null && (t.parentElement.contains(at) || at.contains(t.parentElement)))

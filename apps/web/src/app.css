@@ -258,8 +258,6 @@ a {
   position: absolute;
   left: 50%;
   bottom: 0;
-  /* Over the next token in an overlapping stack (Teams rows), which would cover its end. */
-  z-index: 1;
   transform: translateX(-50%);
   padding: 0 6px;
   border-radius: 999px;
@@ -274,6 +272,18 @@ a {
 }
 .token-stack {
   display: flex;
+}
+/* Overlapping token stacks (these and Teams' .team-summary-sprites): the Mega pill lifts over the
+   next token, which would cover its end, and no further, since the stack isolates it: never over
+   page-level bars (the tab bar, a sticky head). Outside a stack the pill needs no z-index: it
+   follows its own (isolated) token, so it paints over it. */
+.token-stack,
+.team-summary-sprites {
+  isolation: isolate;
+}
+.token-stack .token-mega-pill,
+.team-summary-sprites .token-mega-pill {
+  z-index: 1;
 }
 .token-stack > * + * {
   margin-left: -8px;
