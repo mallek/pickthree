@@ -5,7 +5,7 @@
  * "Pokemon". Drives a puppeteer page that is already on the screen to check.
  * axe-core is injected into the page for the check only; it never ships in either app.
  */
-/* global document, window, getComputedStyle, HTMLElement, SVGElement, DOMRect */
+/* global document, window, getComputedStyle, HTMLElement, SVGElement, DOMRect, NodeFilter */
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -79,15 +79,18 @@ export async function auditPage(page, report) {
       if (el.textContent.trim() === '') {
         continue;
       }
-      // A decoration that hangs over an edge on purpose (a count badge on a button's corner) is
-      // marked data-audit-overhang. Overflow that the marked overhang alone explains is not
-      // clipping; anything wider than that still is.
+      // A decoration that hangs over an edge on purpose (a count badge on a button's corner, the
+      // Mega pill wider than a small token) is marked data-audit-overhang. Its own box is its parent
+      // (the button, the token). Overflow that the mark's hang past its own box explains is not
+      // clipping; anything wider than that still is, including an own box that itself overflows.
       const marked = el.querySelectorAll('[data-audit-overhang]');
       if (marked.length > 0) {
         const padRight = el.getBoundingClientRect().right - parseFloat(cs.borderRightWidth);
         let hang = 0;
         for (const d of marked) {
-          hang = Math.max(hang, d.getBoundingClientRect().right - padRight);
+          const right = d.getBoundingClientRect().right;
+          const own = d.parentElement ? d.parentElement.getBoundingClientRect().right : right;
+          hang = Math.max(hang, Math.min(right - padRight, right - own));
         }
         if (hang > 0 && el.scrollWidth - el.clientWidth <= Math.ceil(hang) + 1) {
           continue;
@@ -100,12 +103,78 @@ export async function auditPage(page, report) {
   });
   findings.push(...clipped);
 
+  // The overhang mark excuses the hang, never what it lands on: a marked decoration over text
+  // outside its own box (the Mega pill on a token's name) hides that text. Text under something
+  // else at that spot (a sticky header over both) is left out; off screen there is nothing to ask,
+  // so it counts.
+  const overhangs = await page.evaluate(() => {
+    const out = [];
+    const marked = [...document.querySelectorAll('[data-audit-overhang]')].filter((d) => {
+      const cs = getComputedStyle(d);
+      const r = d.getBoundingClientRect();
+      return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+    });
+    if (marked.length === 0) {
+      return out;
+    }
+    const texts = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const parent = n.parentElement;
+      if (!parent || n.textContent.trim() === '' || parent.closest('.vh')) {
+        continue;
+      }
+      if (getComputedStyle(parent).visibility === 'hidden') {
+        continue;
+      }
+      texts.push(n);
+    }
+    for (const d of marked) {
+      const box = d.getBoundingClientRect();
+      const own = d.parentElement ?? d;
+      for (const t of texts) {
+        if (own.contains(t)) {
+          continue;
+        }
+        const range = document.createRange();
+        range.selectNodeContents(t);
+        const hit = [...range.getClientRects()].find((r) => {
+          const left = Math.max(r.left, box.left);
+          const right = Math.min(r.right, box.right);
+          const top = Math.max(r.top, box.top);
+          const bottom = Math.min(r.bottom, box.bottom);
+          if (right - left <= 0.5 || bottom - top <= 0.5) {
+            return false;
+          }
+          const x = (left + right) / 2;
+          const y = (top + bottom) / 2;
+          const inView = x >= 0 && y >= 0 && x < window.innerWidth && y < window.innerHeight;
+          const at = inView ? document.elementFromPoint(x, y) : null;
+          return (
+            !inView ||
+            (at !== null && (t.parentElement.contains(at) || at.contains(t.parentElement)))
+          );
+        });
+        if (hit) {
+          const mark = (d.textContent ?? '').trim().slice(0, 20) || d.className;
+          const text = (t.textContent ?? '').trim().slice(0, 40);
+          out.push(`overlap: the marked overhang "${mark}" lies over "${text}"`);
+        }
+      }
+    }
+    return out;
+  });
+  findings.push(...overhangs);
+
   const small = await page.evaluate(() => {
     const out = [];
     const sel =
       'button, a[href], select, input:not([type="hidden"]), textarea, summary, [role="button"], [role="radio"], [role="tab"], [role="switch"], [role="checkbox"]';
     for (const el of document.querySelectorAll(sel)) {
-      if (el.closest('[data-inline-control], [data-audit-exempt]') || el.hasAttribute('data-inline-control')) {
+      if (
+        el.closest('[data-inline-control], [data-audit-exempt]') ||
+        el.hasAttribute('data-inline-control')
+      ) {
         continue;
       }
       const cs = getComputedStyle(el);
@@ -118,7 +187,11 @@ export async function auditPage(page, report) {
       }
       // Visually hidden (a .vh input behind a styled label, 1 by 1 or clipped away): the target a
       // finger meets is whatever stands in for it, not this element.
-      if ((r.width <= 1 && r.height <= 1) || (cs.clipPath !== 'none' && cs.clipPath !== '') || cs.clip.startsWith('rect')) {
+      if (
+        (r.width <= 1 && r.height <= 1) ||
+        (cs.clipPath !== 'none' && cs.clipPath !== '') ||
+        cs.clip.startsWith('rect')
+      ) {
         continue;
       }
       // An input inside a label: tapping anywhere on the label hits it, so the label is the target.
@@ -130,7 +203,9 @@ export async function auditPage(page, report) {
         }
       }
       if (r.width < 44 || r.height < 44) {
-        const name = (el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 40);
+        const name = (el.getAttribute('aria-label') || el.textContent || el.tagName)
+          .trim()
+          .slice(0, 40);
         out.push(`tap target: "${name}" is ${Math.round(r.width)}x${Math.round(r.height)}`);
       }
     }
