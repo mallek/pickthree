@@ -321,7 +321,9 @@ export function PokemonToken({
   const mega = (Boolean(sp?.megaOf) || markedMega) && size >= 32;
   // axe cannot see past the wrapper's ::before glow, so a Shadow letter's contrast is checked by
   // test/shadowToken.test.tsx for every type instead of by the page audit.
-  const audit = shadow ? { 'data-audit-contrast': 'static' } : {};
+  // The Mega pill overlaps the sprite, which axe also cannot see past: its pair is checked by
+  // test/contrast.test.ts.
+  const audit = shadow || mega ? { 'data-audit-contrast': 'static' } : {};
   return (
     <span
       className={
@@ -337,7 +339,11 @@ export function PokemonToken({
         showInitial={showInitial}
         {...(src !== undefined ? { src } : {})}
       />
-      {mega ? <span className="token-mega-pill">Mega</span> : null}
+      {mega ? (
+        <span className="token-mega-pill" data-audit-overhang>
+          Mega
+        </span>
+      ) : null}
     </span>
   );
 }

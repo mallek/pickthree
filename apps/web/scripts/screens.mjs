@@ -383,7 +383,10 @@ const cupPin = await (async () => {
         Date.parse(e.start) > t &&
         Date.parse(e.start) - t <= 7 * 86_400_000,
     );
-    if (upcoming) {
+    // Exactly one cup live: the app nudges once per page load, so a second live cup would put a
+    // nudge on the page after the import's reload.
+    const liveNow = weeks.filter((e) => Date.parse(e.start) <= t && t < Date.parse(e.end));
+    if (upcoming && new Set(liveNow.map((e) => e.league)).size === 1) {
       return { iso: new Date(t).toISOString(), upcoming: true };
     }
   }
@@ -398,6 +401,32 @@ if (cupPin) {
   console.log(`  cups pinned at ${cupPin.iso}`);
 } else {
   console.log('  no built cup week: cup captures skipped');
+}
+
+// Mega Color Cup: a moment one day into its built week, for the Mega captures. Null (captures
+// skipped, with a log line) when no such week exists. It needs cupPin: without one the clock is
+// not pinned, so the cup captures all go together.
+const megaPin = await (async () => {
+  if (!cupPin) {
+    return null;
+  }
+  const [schedule, leagues] = await Promise.all([
+    fetch(`${base}/data/schedule.json`).then((r) => r.json()),
+    fetch(`${base}/data/leagues.json`).then((r) => r.json()),
+  ]);
+  const built = leagues.some((l) => l.id === 'colormega' && l.kind === 'rotation');
+  const week = schedule.find((e) => e.league === 'colormega');
+  if (!built || !week) {
+    return null;
+  }
+  return { iso: new Date(Date.parse(week.start) + 86_400_000).toISOString() };
+})();
+if (megaPin) {
+  AUDIT_ENFORCED.add('teams-mega-cup');
+  AUDIT_ENFORCED.add('analysis-two-megas');
+  console.log(`  mega cup pinned at ${megaPin.iso}`);
+} else {
+  console.log('  no built Mega Color Cup week: Mega team captures skipped');
 }
 
 const t0 = Date.now();
@@ -2370,6 +2399,143 @@ if (!(await page.$('.ui-sheet .settings-rows'))) {
 }
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
+
+console.log('add pokemon, mega control');
+// Low-level Megas (Gyarados, Venusaur, Ampharos): the sample's Megas are far too strong for a
+// 1500 cap (a Mega build is judged at the Pokémon's current level), so Mega Color Cup gets ones
+// that fit. Venusaur and Ampharos are also the two-Mega team below (a species token would give a
+// hypothetical build that is not marked Mega). The CP typed is the base form's, as in game.
+for (const [query, cp] of [
+  ['gyarados', '700'],
+  ['venusaur', '600'],
+  ['ampharos', '600'],
+]) {
+  await page.goto(`${base}/#/add`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('.search');
+  await page.type('.search', query);
+  // The plain species, not its Shadow form (which cannot Mega Evolve and offers no control).
+  const plain = `.recent-row .recent-token[aria-label="${query[0].toUpperCase()}${query.slice(1)}"]`;
+  await page.waitForSelector(plain);
+  await page.click(plain);
+  await page.waitForSelector('.pick-slot');
+  await page.type('.field input[placeholder]', cp);
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.scroll label')].some((l) =>
+      l.textContent?.includes('Mega-evolved before'),
+    ),
+  );
+  await page.$$eval('.scroll label', (els) =>
+    els.find((l) => l.textContent?.includes('Mega-evolved before'))?.click(),
+  );
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.scroll label input[type="checkbox"]')].some(
+      (i) => i.checked && i.parentElement?.textContent?.includes('Mega-evolved before'),
+    ),
+  );
+  if (query === 'gyarados') {
+    await page.$$eval('.scroll label', (els) =>
+      els
+        .find((l) => l.textContent?.includes('Mega-evolved before'))
+        ?.scrollIntoView({ block: 'center' }),
+    );
+    await shot('add-mega-control', false);
+  }
+  await page.$eval('.scroll > .btn', (el) => el.scrollIntoView({ block: 'center' }));
+  await page.click('.scroll > .btn');
+  await page.waitForSelector('.stat3, .verdict-tag', { timeout: 60_000 });
+  await new Promise((r) => setTimeout(r, 600));
+  console.log(`  mega ${query} added, landed at ${page.url()}`);
+}
+
+// Mega captures: the two Megas added above, in a Mega Color Cup week. The clock is re-pinned
+// inside that cup's week for these captures only, then put back. With no built Mega Color Cup week
+// (between seasons, or the cup has no rankings yet) the captures are skipped.
+if (megaPin) {
+  console.log('mega color cup teams');
+  await page.evaluate((iso) => localStorage.setItem('pick3.now', iso), megaPin.iso);
+  await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('.page-head .league-more');
+  await page.click('.page-head .league-more');
+  await page.waitForSelector('.ui-sheet .ui-league-row');
+  await page.$$eval('.ui-sheet .ui-league-row', (rows) =>
+    rows.find((r) => r.textContent?.includes('Mega Color Cup'))?.click(),
+  );
+  await page.waitForSelector('.ui-sheet', { hidden: true });
+  for (let i = 0; i < 2; i++) {
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.league-switcher[data-league="colormega"]') &&
+        document.querySelector('.ui-expand-head') &&
+        !document.querySelector('.ui-loading'),
+      { timeout: 120_000 },
+    );
+    await new Promise((r) => setTimeout(r, 750));
+  }
+  if (!(await page.$('.teams-list .token-mega-pill'))) {
+    throw new Error('mega color cup: no team on Teams shows a Mega pill');
+  }
+  // The recommendation is ranked, so the team with a Mega may not be the first card: bring the
+  // first Mega token's card into view.
+  await page.$eval('.teams-list .token-mega-pill', (el) => el.scrollIntoView({ block: 'center' }));
+  await shot('teams-mega-cup', false, { mustShow: '.teams-list .token-mega-pill' });
+
+  console.log('two megas, team analysis');
+  await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('.pick-card');
+  await clearBuildPicks();
+  const twoMegaPicks = ['Venusaur', 'Ampharos', 'Azumarill'];
+  for (const q of twoMegaPicks) {
+    await page.$eval('.pick-card.empty', (el) => el.click());
+    await page.waitForSelector('.search');
+    await page.click('.search', { clickCount: 3 });
+    await page.type('.search', q);
+    await page.waitForSelector('.recent-token', { timeout: 15_000 });
+    // Through the DOM: right after the search renders, the token node can detach under a click.
+    await page.$$eval(
+      '.recent-token',
+      (els, name) => els.find((e) => e.getAttribute('aria-label') === name)?.click(),
+      q,
+    );
+    await page.waitForFunction(
+      (n) => document.querySelectorAll('.pick-card.filled').length >= n,
+      {},
+      twoMegaPicks.indexOf(q) + 1,
+    );
+  }
+  await page.$eval('.scroll > .ui-btn-primary', (el) => el.scrollIntoView({ block: 'center' }));
+  await page.click('.scroll > .ui-btn-primary');
+  await page.waitForSelector('.custom-note, .ui-error', { timeout: 120_000 });
+  const megaAnalyzeError = await page.$eval('.ui-error', (e) => e.textContent).catch(() => null);
+  if (megaAnalyzeError) {
+    throw new Error(`two megas: analyze failed: ${megaAnalyzeError}`);
+  }
+  const twoMegaWarning = await page
+    .$eval('.scroll p.error[role="alert"]', (e) => e.textContent)
+    .catch(() => '');
+  if (twoMegaWarning !== 'Only one Mega per team in GBL. Swap one out.') {
+    throw new Error(`two megas: the warning did not show (read: ${twoMegaWarning})`);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await shot('analysis-two-megas', false, { mustShow: '.scroll p.error[role="alert"]' });
+  await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('.pick-card');
+  await clearBuildPicks();
+}
+
+// Back to Great League and the run's clock before the steps that follow.
+if (megaPin) {
+  await page.evaluate((iso) => localStorage.setItem('pick3.now', iso), cupPin.iso);
+  await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('.league-switcher button:nth-child(1)');
+  await page.click('.league-switcher button:nth-child(1)');
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.league-switcher[data-league="great"]') &&
+      document.querySelector('.ui-expand-head') &&
+      !document.querySelector('.ui-loading'),
+    { timeout: 120_000 },
+  );
+}
 
 console.log('light theme');
 await page.emulateMediaFeatures([
