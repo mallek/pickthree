@@ -2403,8 +2403,8 @@ await page.waitForSelector('.ui-sheet', { hidden: true });
 console.log('add pokemon, mega control');
 // Low-level Megas (Gyarados, Venusaur, Ampharos): the sample's Megas are far too strong for a
 // 1500 cap (a Mega build is judged at the Pokémon's current level), so Mega Color Cup gets ones
-// that fit. Venusaur and Ampharos are also the two-Mega team below (a species token would give a
-// hypothetical build that is not marked Mega). The CP typed is the base form's, as in game.
+// that fit. Venusaur and Ampharos are also the two-Mega team below. The CP typed is the base
+// form's, as in game.
 for (const [query, cp] of [
   ['gyarados', '700'],
   ['venusaur', '600'],
@@ -2480,10 +2480,19 @@ if (megaPin) {
   await shot('teams-mega-cup', false, { mustShow: '.teams-list .token-mega-pill' });
 
   console.log('two megas, team analysis');
+  // Build offers your own Pokemon only once their verdicts say they fit the league, so the
+  // Collection judges them first (hash navigation keeps the verdicts in memory).
+  await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(
+    () => document.querySelector('.scroll .verdict-tag') && !document.querySelector('.ui-loading'),
+    { timeout: 120_000 },
+  );
   await page.goto(`${base}/#/build`, { waitUntil: 'networkidle0' });
   await page.waitForSelector('.pick-card');
   await clearBuildPicks();
-  const twoMegaPicks = ['Venusaur', 'Ampharos', 'Azumarill'];
+  // The Mega tokens: your own Mega where its best build is the Mega, listed first, otherwise the
+  // top-10% stand-in, which is a Mega build too.
+  const twoMegaPicks = ['Mega Venusaur', 'Mega Ampharos', 'Azumarill'];
   for (const q of twoMegaPicks) {
     await page.$eval('.pick-card.empty', (el) => el.click());
     await page.waitForSelector('.search');
