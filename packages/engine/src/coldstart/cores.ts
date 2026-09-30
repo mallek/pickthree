@@ -3,7 +3,11 @@
  * and 7). Legal trios come in strongest first (`items` MUST be sorted strongest first); each row is
  * a two-Pokemon core plus up to `flexMax` near-tied thirds. A trio holding an earlier row's core pair
  * (compared by base species) belongs to that core: it cannot start a later row and cannot be a later
- * row's flex, even when it fell outside that core's flex window. Generic over the trio so it can be
+ * row's flex, even when it fell outside that core's flex window. The cap counts a base species once
+ * per row as a core member or as the row's headline third (the start trio's third for the chosen
+ * pair); non-headline flex options are free. Flex is scanned from the start trio onward, so the
+ * start trio is always the row's best trio and headline; trios ahead of it were shown, covered or
+ * blocked, and never rejoin a row. Generic over the trio so it can be
  * tested on plain data.
  */
 export interface CoreOptions<T> {
@@ -42,6 +46,8 @@ interface PairChoice<T> {
   pairKey: string;
   members: [string, string];
   bases: [string, string];
+  /** Base species of the start trio's third for this pair (the row's headline third). */
+  thirdBase: string;
   flex: CoreFlex<T>[];
 }
 
@@ -58,11 +64,13 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
     return usedBasePairs.some(([x, y]) => bases.includes(x) && bases.includes(y));
   };
 
-  const flexFor = (start: T, members: [string, string]): CoreFlex<T>[] => {
+  const flexFor = (startAt: number, members: [string, string]): CoreFlex<T>[] => {
+    const start = items[startAt]!;
     const floor = opts.strengthOf(start);
     const seenThirds = new Set<string>();
     const flex: CoreFlex<T>[] = [];
-    for (const item of items) {
+    for (let k = startAt; k < items.length; k++) {
+      const item = items[k]!;
       if (flex.length >= opts.flexMax) {
         break;
       }
@@ -106,7 +114,8 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
     return flex;
   };
 
-  for (const start of items) {
+  for (let at = 0; at < items.length; at++) {
+    const start = items[at]!;
     if (rows.length >= opts.rows) {
       break;
     }
@@ -127,6 +136,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
           pairKey: [...bases].sort().join('+'),
           members: [a, b],
           bases,
+          thirdBase: opts.base(ids[3 - i - j]!),
           flex: [],
         });
       }
@@ -138,10 +148,10 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       if (usedPairs.has(pair.pairKey)) {
         continue;
       }
-      if (pair.bases.some((b) => (uses.get(b) ?? 0) >= opts.cap)) {
+      if ([...pair.bases, pair.thirdBase].some((b) => (uses.get(b) ?? 0) >= opts.cap)) {
         continue;
       }
-      pair.flex = flexFor(start, pair.members);
+      pair.flex = flexFor(at, pair.members);
       if (best === null || pair.flex.length > best.flex.length) {
         best = pair;
       }
@@ -153,7 +163,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
     for (const f of best.flex) {
       shown.add(opts.keyOf(f.trio));
     }
-    for (const b of best.bases) {
+    for (const b of [...best.bases, best.thirdBase]) {
       uses.set(b, (uses.get(b) ?? 0) + 1);
     }
     usedPairs.add(best.pairKey);

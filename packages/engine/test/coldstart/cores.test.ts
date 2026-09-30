@@ -149,8 +149,9 @@ describe('selectCores', () => {
     expect(rows.map((r) => r.core)).toEqual([
       ['a', 'b'],
       ['a', 'c'],
-      ['d', 'z'],
     ]);
+    // the third trio (a, d, z) has no valid pair: a is at the cap as a core member, and every
+    // other pair would leave a as the headline third.
   });
 
   it('never starts two rows with the same base-species pair', () => {
@@ -219,9 +220,9 @@ describe('selectCores', () => {
   it('never makes a core of two forms of one species', () => {
     const items = [
       trio(['kingdra', 'kingdra_shadow', 'x'], 10),
-      trio(['kingdra', 'a', 'b'], 9),
-      trio(['kingdra', 'c', 'd'], 8),
-      trio(['kingdra', 'e', 'f'], 7),
+      trio(['a', 'b', 'c'], 9),
+      trio(['d', 'e', 'f'], 8),
+      trio(['g', 'h', 'i'], 7),
     ];
     const rows = selectCores(items, opts());
     for (const row of rows) {
@@ -238,5 +239,97 @@ describe('selectCores', () => {
     const rows = selectCores(items, opts({ rows: 1 }));
     expect(rows[0]!.core).toEqual(['kingdra', 'a']);
     expect(thirds(rows[0]!)).toEqual(['x']);
+  });
+
+  describe('headline cap', () => {
+    it('does not start a row whose headline third is a species already at the cap', () => {
+      // zed headlines row 1 (core p+q, best flex zed) and row 2 (core r+s, best flex zed).
+      const items = [
+        trio(['p', 'q', 'zed'], 10),
+        trio(['r', 's', 'zed'], 9),
+        trio(['t', 'u', 'zed'], 8),
+        trio(['t', 'v', 'w'], 7),
+      ];
+      const rows = selectCores(items, opts());
+      // pair choice for trio 1 ties on flex, the earliest key p+q wins.
+      expect(rows.map((r) => r.core)).toEqual([
+        ['p', 'q'],
+        ['r', 's'],
+        ['t', 'v'],
+      ]);
+      expect(rows[2]!.flex[0]!.trio).toBe(items[3]);
+    });
+
+    it('counts zed as core member or headline in any mix', () => {
+      const items = [
+        trio(['zed', 'a', 'b'], 10), // core a+zed (most flex), headline b; zed used once
+        trio(['zed', 'a', 'c'], 9.9),
+        trio(['r', 's', 'zed'], 9), // core r+s, headline zed; zed used twice
+        trio(['t', 'u', 'zed'], 8), // zed is the third of every pair with t,u; pairs with zed need zed
+        trio(['x', 'y', 'z'], 7),
+      ];
+      const rows = selectCores(items, opts());
+      expect(rows.map((r) => r.core)).toEqual([
+        ['zed', 'a'],
+        ['r', 's'],
+        ['x', 'y'],
+      ]);
+    });
+
+    it('still allows zed as a non-headline flex in several rows', () => {
+      const items = [
+        trio(['a', 'b', 'c'], 10),
+        trio(['a', 'b', 'zed'], 9.5),
+        trio(['e', 'f', 'g'], 9),
+        trio(['e', 'f', 'zed'], 8.5),
+        trio(['h', 'i', 'j'], 8),
+        trio(['h', 'i', 'zed'], 7.5),
+      ];
+      const rows = selectCores(items, opts());
+      expect(rows.map((r) => r.core)).toEqual([
+        ['a', 'b'],
+        ['e', 'f'],
+        ['h', 'i'],
+      ]);
+      for (const row of rows) {
+        expect(thirds(row)).toEqual([row.flex[0]!.third, 'zed']);
+      }
+    });
+
+    it('counts by base species (a Shadow and its base share one count)', () => {
+      const items = [
+        trio(['p', 'q', 'zed'], 10),
+        trio(['r', 's', 'zed_shadow'], 9),
+        trio(['t', 'u', 'zed'], 8),
+      ];
+      const rows = selectCores(items, opts());
+      expect(rows.map((r) => r.core)).toEqual([
+        ['p', 'q'],
+        ['r', 's'],
+      ]);
+    });
+
+    it('returns fewer rows than asked when only zed-headlined starts remain', () => {
+      const items = [
+        trio(['p', 'q', 'zed'], 10),
+        trio(['r', 's', 'zed'], 9),
+        trio(['t', 'u', 'zed'], 8),
+        trio(['v', 'w', 'zed'], 7),
+      ];
+      const rows = selectCores(items, opts());
+      expect(rows).toHaveLength(2);
+    });
+
+    it('never lets a trio blocked by the cap ahead of the start trio become a later headline', () => {
+      const items = [
+        trio(['p', 'q', 'x'], 10),
+        trio(['p', 'r', 's'], 9), // p is at the cap of 1: no valid pair
+        trio(['r', 's', 't'], 8),
+      ];
+      const rows = selectCores(items, opts({ cap: 1 }));
+      expect(rows).toHaveLength(2);
+      expect(rows[1]!.flex[0]!.trio).toBe(items[2]);
+      expect(rows[1]!.flex).toHaveLength(1);
+    });
   });
 });
