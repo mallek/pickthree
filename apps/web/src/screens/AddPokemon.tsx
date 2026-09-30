@@ -1,5 +1,5 @@
 import type { ManualResult } from '@pickthree/engine';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Header,
   MetaTags,
@@ -11,6 +11,8 @@ import {
   useSpeciesSearch,
 } from '../components.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
+
+type MegaForm = 'mega' | 'mega_x' | 'mega_y';
 
 /** Type a Pokémon in by hand: species, IVs from the appraisal screen, and the CP on its card. */
 export function AddPokemon() {
@@ -26,6 +28,8 @@ export function AddPokemon() {
   const [sta, setSta] = useState('15');
   const [cp, setCp] = useState('');
   const [lucky, setLucky] = useState(false);
+  const [megaForm, setMegaForm] = useState<MegaForm | null>(null);
+  const [level4, setLevel4] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -41,6 +45,24 @@ export function AddPokemon() {
     },
     [],
   );
+
+  // The Megas this species has: every Mega species pointing back at it. A shadow has none to offer
+  // (a shadow cannot Mega Evolve), and its own id is never a Mega's base.
+  const megas = useMemo(() => {
+    const found: { form: MegaForm; superMega: boolean }[] = [];
+    const all = s.data?.species ?? {};
+    if (!speciesId || speciesId.endsWith('_shadow')) {
+      return found;
+    }
+    for (const [id, sp] of Object.entries(all)) {
+      const form = sp.megaOf === speciesId ? id.slice(speciesId.length + 1) : '';
+      if (form === 'mega' || form === 'mega_x' || form === 'mega_y') {
+        found.push({ form, superMega: sp.superMega === true });
+      }
+    }
+    return found.sort((a, b) => a.form.localeCompare(b.form));
+  }, [s.data, speciesId]);
+  const chosenMega = megas.find((m) => m.form === megaForm);
 
   const searching = query.trim().length > 0;
   const matches = useSpeciesSearch(query, 30, { megas: false });
@@ -61,12 +83,17 @@ export function AddPokemon() {
     setError(null);
     setNote(null);
     try {
-      const r: ManualResult = await addManual({
-        speciesId,
-        ivs: { atk: iv(atk), def: iv(def), sta: iv(sta) },
-        cp: iv(cp),
-        lucky,
-      });
+      const r: ManualResult = await addManual(
+        {
+          speciesId,
+          ivs: { atk: iv(atk), def: iv(def), sta: iv(sta) },
+          cp: iv(cp),
+          lucky,
+        },
+        megaForm
+          ? { megaForm, ...(chosenMega?.superMega && level4 ? { megaLevel4: true } : {}) }
+          : undefined,
+      );
       if (!r.exactCp) {
         setNote(
           `No level gives exactly CP ${cp} with those IVs. Saved at level ${r.level}, CP ${r.matchedCp}. Check the IVs if that looks wrong.`,
@@ -129,6 +156,8 @@ export function AddPokemon() {
                     key={id}
                     onClick={() => {
                       setSpeciesId(id);
+                      setMegaForm(null);
+                      setLevel4(false);
                       setQuery('');
                     }}
                     aria-label={name(id)}
@@ -151,6 +180,8 @@ export function AddPokemon() {
               className="pick-slot open"
               onClick={() => {
                 setSpeciesId(null);
+                setMegaForm(null);
+                setLevel4(false);
                 setQuery('');
               }}
             >
@@ -179,6 +210,48 @@ export function AddPokemon() {
             {ivField('Defense', def, setDef)}
             {ivField('HP', sta, setSta)}
           </div>
+          {megas.length === 1 ? (
+            <label className="row small" style={{ gap: 8, alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={megaForm !== null}
+                onChange={(e) => {
+                  setMegaForm(e.target.checked ? megas[0]!.form : null);
+                  setLevel4(false);
+                }}
+              />
+              Mega-evolved before
+            </label>
+          ) : null}
+          {megas.length > 1 ? (
+            <label className="field">
+              <span>Mega-evolved before</span>
+              <select
+                value={megaForm ?? ''}
+                onChange={(e) => {
+                  setMegaForm((e.target.value || null) as MegaForm | null);
+                  setLevel4(false);
+                }}
+              >
+                <option value="">No</option>
+                {megas.map((m) => (
+                  <option key={m.form} value={m.form}>
+                    {m.form === 'mega_x' ? 'Mega X' : m.form === 'mega_y' ? 'Mega Y' : 'Mega'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {chosenMega?.superMega ? (
+            <label className="row small" style={{ gap: 8, alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={level4}
+                onChange={(e) => setLevel4(e.target.checked)}
+              />
+              Mega Level 4
+            </label>
+          ) : null}
         </div>
 
         <div className="stack" style={{ gap: 8 }}>

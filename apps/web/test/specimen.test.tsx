@@ -672,3 +672,161 @@ describe('Pokémon detail', () => {
     );
   });
 });
+
+/** Species for the Add form's Mega marks: one Mega (Tinkaton, from the fake data), two (Charizard),
+ * a supermega pair (Mewtwo), and a shadow. */
+function addMegaSpecies(): Parameters<typeof fakeHost>[0] {
+  const base = withMegas() as { ready: ReturnType<typeof fakeHost>['ready'] };
+  return {
+    ...base,
+    ready: vi.fn(async () => {
+      const r = await base.ready();
+      const sp = (name: string, id: string, extra: object = {}) => ({
+        name,
+        types: ['fire', 'flying'] as ['fire', 'flying'],
+        familyId: id,
+        dex: 6,
+        ...extra,
+      });
+      return {
+        ...r,
+        species: {
+          ...r.species,
+          charizard: sp('Charizard', 'charizard'),
+          charizard_mega_x: sp('Charizard (Mega X)', 'charizard', { megaOf: 'charizard' }),
+          charizard_mega_y: sp('Charizard (Mega Y)', 'charizard', { megaOf: 'charizard' }),
+          mewtwo: sp('Mewtwo', 'mewtwo'),
+          mewtwo_mega_x: sp('Mewtwo (Mega X)', 'mewtwo', { megaOf: 'mewtwo', superMega: true }),
+          mewtwo_mega_y: sp('Mewtwo (Mega Y)', 'mewtwo', { megaOf: 'mewtwo', superMega: true }),
+          bulbasaur: sp('Bulbasaur', 'bulbasaur'),
+        },
+        allSpecies: [...r.allSpecies, 'charizard', 'mewtwo', 'bulbasaur'],
+      };
+    }),
+  };
+}
+
+describe('Add Pokemon Mega marks', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetHistoryForTests();
+    window.history.replaceState(null, '', window.location.pathname);
+    window.matchMedia = vi
+      .fn()
+      .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+    latest = null;
+  });
+
+  const manual = () =>
+    vi.fn(async (input: { speciesId: string }) => ({
+      specimen: specimen('n', input.speciesId, { manual: true }),
+      level: 20,
+      exactCp: true,
+      matchedCp: 1400,
+    }));
+
+  async function openAdd(m: ReturnType<typeof manual>, pick: string, term: string): Promise<void> {
+    await boot(undefined, { manual: m as never, ...addMegaSpecies() });
+    await go({ screen: 'add' });
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('Search any Pokemon, e.g. shadow swampert'), {
+        target: { value: term },
+      });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: pick }));
+    });
+  }
+
+  async function save(): Promise<void> {
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('e.g. 1487'), { target: { value: '1400' } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to my collection' }));
+    });
+    await waitFor(() => expect(latest?.state.route.screen).toBe('specimen'));
+  }
+
+  const saved = async () => (await storage.loadCollection())!.specimens.find((x) => x.id === 'n')!;
+
+  it('offers a checkbox for a species with one Mega, and saves megaForm mega', async () => {
+    await openAdd(manual(), 'Tinkaton', 'tinkaton');
+    const box = screen.getByRole('checkbox', { name: 'Mega-evolved before' });
+    expect(screen.queryByRole('checkbox', { name: 'Mega Level 4' })).toBeNull();
+    await act(async () => {
+      fireEvent.click(box);
+    });
+    expect(screen.queryByRole('checkbox', { name: 'Mega Level 4' })).toBeNull();
+    await save();
+    expect((await saved()).megaForm).toBe('mega');
+    expect((await saved()).megaLevel4).toBeUndefined();
+  });
+
+  it('saves no mark when the box is left alone', async () => {
+    await openAdd(manual(), 'Tinkaton', 'tinkaton');
+    await save();
+    expect((await saved()).megaForm ?? null).toBeNull();
+  });
+
+  it('offers none, Mega X and Mega Y for a species with two, and saves the choice', async () => {
+    await openAdd(manual(), 'Charizard', 'charizard');
+    const pick = screen.getByRole('combobox', { name: 'Mega-evolved before' });
+    expect(
+      within(pick)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['No', 'Mega X', 'Mega Y']);
+    await act(async () => {
+      fireEvent.change(pick, { target: { value: 'mega_y' } });
+    });
+    await save();
+    expect((await saved()).megaForm).toBe('mega_y');
+  });
+
+  it('shows no control for a species with no Mega', async () => {
+    await openAdd(manual(), 'Bulbasaur', 'bulbasaur');
+    expect(screen.queryByLabelText('Mega-evolved before')).toBeNull();
+  });
+
+  it('shows no control for a shadow', async () => {
+    await openAdd(manual(), 'Shadow Dragonite', 'shadow dragonite');
+    expect(screen.queryByLabelText('Mega-evolved before')).toBeNull();
+  });
+
+  it('offers Mega Level 4 only once a supermega form is chosen, and saves it', async () => {
+    await openAdd(manual(), 'Mewtwo', 'mewtwo');
+    const pick = screen.getByRole('combobox', { name: 'Mega-evolved before' });
+    expect(screen.queryByRole('checkbox', { name: 'Mega Level 4' })).toBeNull();
+    await act(async () => {
+      fireEvent.change(pick, { target: { value: 'mega_y' } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Mega Level 4' }));
+    });
+    await save();
+    const sp = await saved();
+    expect(sp.megaForm).toBe('mega_y');
+    expect(sp.megaLevel4).toBe(true);
+  });
+
+  it('drops Mega Level 4 when the mark is cleared', async () => {
+    await openAdd(manual(), 'Mewtwo', 'mewtwo');
+    const pick = screen.getByRole('combobox', { name: 'Mega-evolved before' });
+    await act(async () => {
+      fireEvent.change(pick, { target: { value: 'mega_x' } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Mega Level 4' }));
+    });
+    await act(async () => {
+      fireEvent.change(pick, { target: { value: '' } });
+    });
+    expect(screen.queryByRole('checkbox', { name: 'Mega Level 4' })).toBeNull();
+    await save();
+    const sp = await saved();
+    expect(sp.megaForm ?? null).toBeNull();
+    expect(sp.megaLevel4).toBeUndefined();
+  });
+});

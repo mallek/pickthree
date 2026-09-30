@@ -763,6 +763,12 @@ export function boardWindow(
   );
 }
 
+/** The Mega marks a hand-added Pokémon can carry. */
+export interface ManualMegaMarks {
+  megaForm: 'mega' | 'mega_x' | 'mega_y' | null;
+  megaLevel4?: boolean;
+}
+
 interface Actions {
   /**
    * Go to a screen. `replace` swaps the current history entry for it instead of adding one, for a
@@ -801,7 +807,8 @@ interface Actions {
     fastId: string | null,
     current: { fast: string | null; charged: string[] },
   ): Promise<MovePool>;
-  addManual(input: ManualInput): Promise<ManualResult>;
+  /** Type a Pokémon in. `marks` carries what the appraisal screen cannot: a Mega mark. */
+  addManual(input: ManualInput, marks?: ManualMegaMarks): Promise<ManualResult>;
   /** The in-battle card for one opponent against the set's team. Null when it could not run. */
   faceoff(team: TeamRef, opponent: string): Promise<Faceoff | null>;
   removeSpecimen(id: string): Promise<void>;
@@ -1581,9 +1588,19 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     dispatch({ type: 'import-done', collection });
   }, []);
   const addManual = useCallback(
-    async (input: ManualInput) => {
+    async (input: ManualInput, marks?: ManualMegaMarks) => {
       const h = hostRef.current as WorkerHost;
-      const r = await h.manual(input);
+      const made = await h.manual(input);
+      const r: ManualResult = marks?.megaForm
+        ? {
+            ...made,
+            specimen: {
+              ...made.specimen,
+              megaForm: marks.megaForm,
+              ...(marks.megaLevel4 ? { megaLevel4: true } : {}),
+            },
+          }
+        : made;
       const existing = stateRef.current.collection?.specimens ?? [];
       const without = existing.filter((x) => x.id !== r.specimen.id);
       await saveSpecimens([...without, r.specimen], 'typed in by hand');
