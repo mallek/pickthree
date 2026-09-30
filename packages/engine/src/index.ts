@@ -28,6 +28,7 @@ export * from './coldstart/pool.js';
 export * from './coldstart/teams.js';
 export * from './coldstart/boards.js';
 export * from './coldstart/cores.js';
+export * from './coldstart/coreBoards.js';
 export * from './coldstart/boardDisplay.js';
 export * from './search/matrixView.js';
 export * from './search/candidates.js';

@@ -141,7 +141,7 @@ export interface CupBoards {
   resimulated: { top: string[]; budget: string[]; mega: string[] };
 }
 
-function poolOf(
+export function boardPool(
   input: CupBoardsInput,
   view: MatrixView,
   allowEliteTm: boolean,
@@ -166,7 +166,7 @@ function poolOf(
 }
 
 /** A view whose rows match the pool's movesets, re-simulating the rows that do not. */
-function honestView(
+export function honestBoardView(
   input: CupBoardsInput,
   pool: readonly Candidate[],
 ): { view: MatrixView; resimulated: string[] } {
@@ -205,16 +205,16 @@ export function cupBoards(input: CupBoardsInput): CupBoards {
   };
   const noMega = (): null => null;
 
-  const topPool = poolOf(input, shipped, true, BOARD_POOL);
-  const top = honestView(input, topPool);
+  const topPool = boardPool(input, shipped, true, BOARD_POOL);
+  const top = honestBoardView(input, topPool);
   const topRows = rowsOf(
     selectVaried(scoreTrios(topPool, top.view, types, input.weights), speciesOf, select),
     top.view,
     noMega,
   );
 
-  const budgetPool = poolOf(input, shipped, false, BOARD_POOL);
-  const budget = honestView(input, budgetPool);
+  const budgetPool = boardPool(input, shipped, false, BOARD_POOL);
+  const budget = honestBoardView(input, budgetPool);
   const budgetRows = rowsOf(
     selectVaried(scoreTrios(budgetPool, budget.view, types, input.weights), speciesOf, select),
     budget.view,
@@ -224,9 +224,11 @@ export function cupBoards(input: CupBoardsInput): CupBoards {
   let megaRows: BoardRow[] | null = null;
   let megaResim: string[] = [];
   if (input.mega) {
-    const megas = poolOf(input, shipped, true, MEGA_SCAN).filter((c) => isMega(c.build.speciesId));
+    const megas = boardPool(input, shipped, true, MEGA_SCAN).filter((c) =>
+      isMega(c.build.speciesId),
+    );
     const megaPool = [...topPool.filter((c) => !isMega(c.build.speciesId)), ...megas];
-    const mega = honestView(input, megaPool);
+    const mega = honestBoardView(input, megaPool);
     megaResim = mega.resimulated;
     const megaOf = (t: ScoredTrio): string | null =>
       t.members.find((m) => isMega(m.c.build.speciesId))?.c.build.speciesId ?? null;
