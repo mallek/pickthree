@@ -197,18 +197,26 @@ a {
 /* token: the shared base (border-radius, place-items, flex, position, the letter's color and
    outline) lives in packages/ui/base.css. `display` stays here since it is not the same value as
    meta's (see the comment on .token in base.css). */
+/* isolation: the sprite's z-index lifts it over the disc inside the token and no further, so what
+   sits on a token (Log a Battle's remove button, the Mega pill) paints over the picture. */
 .token {
   display: inline-grid;
   font-weight: 600;
+  isolation: isolate;
 }
 .token.has-sprite {
   overflow: hidden;
 }
+/* Square, like the disc: the pictures are trimmed to their art (Armarouge is 58 by 96), and the
+   token's auto grid row leaves height: 86% unresolved, so a tall picture's box ran past the disc,
+   over the name under it and the remove button above it. The overflow clip hid the art, not the
+   box. aspect-ratio keeps the box square and object-fit fits the art inside it. */
 .token .sprite {
   position: relative;
   z-index: 1;
   width: 86%;
   height: 86%;
+  aspect-ratio: 1;
   object-fit: contain;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
   pointer-events: none;
@@ -240,14 +248,18 @@ a {
     radial-gradient(ellipse 45% 65% at 68% 100%, rgba(150, 60, 240, 0.9), transparent 70%),
     radial-gradient(ellipse 80% 60% at 50% 100%, rgba(120, 40, 220, 0.7), transparent 75%);
 }
-/* Mega builds: a small pill across the bottom of the token, same shape as the .mtag pills. */
+/* Mega builds: a small pill across the bottom of the token, same shape as the .mtag pills. It
+   stays inside the token's height, so it never lands on the name under the token; only its width
+   may hang past a small token's sides (data-audit-overhang). */
 .token-mega-wrap {
   position: relative;
 }
 .token-mega-pill {
   position: absolute;
   left: 50%;
-  bottom: -4px;
+  bottom: 0;
+  /* Over the next token in an overlapping stack (Teams rows), which would cover its end. */
+  z-index: 1;
   transform: translateX(-50%);
   padding: 0 6px;
   border-radius: 999px;
