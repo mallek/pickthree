@@ -170,6 +170,30 @@ export function Build() {
       (s.leagueInfo?.legal ?? []).includes(stageOf(sp))
     );
   };
+  /**
+   * The owned tokens of one specimen: the stage its verdict builds, and when that build is a Mega,
+   * its base form as well, so the player can run their own copy without Mega Evolving it. A Mega
+   * token names its build (asSpeciesId), so two Mega tokens stay two Megas for Team Analysis to
+   * flag; a pick left to default would run the second as its base form.
+   */
+  type OwnedToken = { sp: Specimen; stage: string; pick: TeamPick };
+  const tokensOf = (sp: Specimen): OwnedToken[] => {
+    const v = s.verdicts[sp.id];
+    const stage = stageOf(sp);
+    if (!v?.build?.mega) {
+      return [{ sp, stage, pick: { kind: 'specimen', id: sp.id } }];
+    }
+    const out: OwnedToken[] = [
+      { sp, stage, pick: { kind: 'specimen', id: sp.id, asSpeciesId: stage } },
+    ];
+    const base = species(stage)?.megaOf;
+    if (base && v.buildSpecies.includes(base) && (s.leagueInfo?.legal ?? []).includes(base)) {
+      out.push({ sp, stage: base, pick: { kind: 'specimen', id: sp.id, asSpeciesId: base } });
+    }
+    return out;
+  };
+  const tokenKey = (t: OwnedToken): string =>
+    t.pick.kind === 'specimen' && t.pick.asSpeciesId ? `${t.sp.id}:${t.stage}` : t.sp.id;
   const byWorth = (a: Specimen, b: Specimen): number => {
     const oa = s.verdicts[a.id] ? ORDER[s.verdicts[a.id]!.label] : 9;
     const ob = s.verdicts[b.id] ? ORDER[s.verdicts[b.id]!.label] : 9;
@@ -185,11 +209,9 @@ export function Build() {
     const moves = s.data?.moves;
     const seen = new Set<string>();
     return s.collection.specimens
-      .filter((sp) => {
-        if (!usable(sp)) {
-          return false;
-        }
-        const stage = stageOf(sp);
+      .filter(usable)
+      .flatMap(tokensOf)
+      .filter(({ sp, stage }) => {
         // One merged record (both names, union of both types), not an OR of two matches, so a
         // negated term correctly excludes a specimen whose stage differs from its owned species.
         const record = stagedSpecimenRecord(
@@ -202,9 +224,8 @@ export function Build() {
         );
         return matchesQuery(parsed, record);
       })
-      .sort(byWorth)
-      .filter((sp) => {
-        const stage = stageOf(sp);
+      .sort((a, b) => byWorth(a.sp, b.sp))
+      .filter(({ stage }) => {
         if (seen.has(stage)) {
           return false;
         }
@@ -212,14 +233,16 @@ export function Build() {
         return true;
       })
       .slice(0, 30);
-    // stageOf, usable and byWorth read s.verdicts, which is in the list.
+    // stageOf, usable, tokensOf and byWorth read s.verdicts, which is in the list.
   }, [s.collection, s.verdicts, s.leagueInfo, s.data, parsed, name, species]);
 
-  /** Your best specimen that plays as this species, or null when you have none. */
-  const bestOwned = (stageId: string): Specimen | null => {
+  /** The token of your best specimen that plays as this species, or null when you have none. */
+  const bestOwned = (stageId: string): OwnedToken | null => {
     const owned = (s.collection?.specimens ?? [])
-      .filter((sp) => usable(sp) && stageOf(sp) === stageId)
-      .sort(byWorth);
+      .filter(usable)
+      .flatMap(tokensOf)
+      .filter((t) => t.stage === stageId)
+      .sort((a, b) => byWorth(a.sp, b.sp));
     return owned[0] ?? null;
   };
 
@@ -247,11 +270,11 @@ export function Build() {
     if (!searching) {
       return [];
     }
-    const mineStages = new Set(mine.map(stageOf));
-    const fromMine = mine.map((sp) => ({
-      key: sp.id,
-      speciesId: stageOf(sp),
-      pick: { kind: 'specimen', id: sp.id } as TeamPick,
+    const mineStages = new Set(mine.map((t) => t.stage));
+    const fromMine = mine.map((t) => ({
+      key: tokenKey(t),
+      speciesId: t.stage,
+      pick: t.pick,
       mine: true,
     }));
     const others = hits
@@ -286,12 +309,12 @@ export function Build() {
       legal.has(id),
     );
     return ids.map((id) => {
-      const sp = bestOwned(id);
+      const owned = bestOwned(id);
       return {
         key: id,
         speciesId: id,
-        pick: sp ? ({ kind: 'specimen', id: sp.id } as TeamPick) : speciesPick(id),
-        mine: sp !== null,
+        pick: owned ? owned.pick : speciesPick(id),
+        mine: owned !== null,
       };
     });
     // bestOwned and speciesPick read the collection, verdicts and species, all in the list.
@@ -333,7 +356,7 @@ export function Build() {
     if (!sp) {
       return { title: 'Missing', speciesId: '' };
     }
-    const stage = stageOf(sp);
+    const stage = p.asSpeciesId ?? stageOf(sp);
     return { title: name(stage), speciesId: stage };
   };
 
@@ -350,7 +373,7 @@ export function Build() {
     if (!sp) {
       return null;
     }
-    return { speciesId: stageOf(sp), current: sp.currentMoves };
+    return { speciesId: p.asSpeciesId ?? stageOf(sp), current: sp.currentMoves };
   };
   const league = s.settings.league ?? 'great';
   const poolKey = (t: Target, fastId: string | null): string =>
@@ -677,7 +700,9 @@ export function Build() {
             }
             const types = species(info.speciesId)?.types ?? ['normal', 'none'];
             const sp = specimenOf(p);
-            const build = sp ? (s.verdicts[sp.id]?.build ?? null) : null;
+            // The verdict's build, unless the pick runs another one (a Mega's base form).
+            const verdictBuild = sp ? (s.verdicts[sp.id]?.build ?? null) : null;
+            const build = verdictBuild?.speciesId === info.speciesId ? verdictBuild : null;
             return (
               <div
                 className={`slot-wrap${overClass}`}

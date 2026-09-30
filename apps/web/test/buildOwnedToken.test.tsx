@@ -146,3 +146,91 @@ describe("Build's species token", () => {
     expect(await pickTinkaton()).toEqual({ kind: 'species', id: 'tinkaton' });
   });
 });
+
+describe("Build's tokens for your own Mega", () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    resetHistoryForTests();
+    latest = null;
+  });
+
+  const SAB: Specimen = { ...specimen('sab', 20), speciesId: 'sableye', familyId: 'sableye' };
+  const megaVerdict = {
+    ...verdict('sab', true),
+    build: {
+      speciesId: 'sableye_mega',
+      stageOffset: 0,
+      mega: { ready: false, level4: false },
+      ivRank: { rank: 40, total: 4096 },
+    },
+    buildSpecies: ['sableye', 'sableye_mega'],
+  } as unknown as Verdict;
+
+  function megaHost() {
+    const base = fakeHost();
+    return fakeHost({
+      verdicts: vi.fn(async () => ({ sab: megaVerdict })),
+      ready: vi.fn(async () => {
+        const r = await base.ready();
+        return {
+          ...r,
+          species: {
+            ...r.species,
+            sableye: { name: 'Sableye', types: ['dark', 'ghost'], familyId: 'sableye', dex: 302 },
+            sableye_mega: {
+              name: 'Sableye (Mega)',
+              types: ['dark', 'ghost'],
+              familyId: 'sableye',
+              dex: 302,
+              megaOf: 'sableye',
+            },
+          },
+          allSpecies: [...r.allSpecies, 'sableye', 'sableye_mega'],
+        };
+      }),
+      leagueInfo: vi.fn(async () => {
+        const info = await base.leagueInfo();
+        return { ...info, legal: [...info.legal, 'sableye', 'sableye_mega'] };
+      }),
+    } as never);
+  }
+
+  async function pickSableye(label: string) {
+    await seed([SAB]);
+    render(
+      <AppProvider host={megaHost()}>
+        <Probe />
+        <Build />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(latest?.verdicts['sab']).toBeDefined());
+    fireEvent.click(await screen.findByRole('button', { name: 'Lead, empty' }));
+    fireEvent.change(await screen.findByPlaceholderText('Search any Pokémon for Lead'), {
+      target: { value: 'sableye' },
+    });
+    await screen.findByRole('button', { name: 'Mega Sableye' });
+    fireEvent.click(await screen.findByRole('button', { name: label }));
+    await waitFor(() => expect(latest?.picks[0]).not.toBeNull());
+    return latest!.picks[0];
+  }
+
+  it('offers the base form of your Mega as its own token', async () => {
+    expect(await pickSableye('Sableye')).toEqual({
+      kind: 'specimen',
+      id: 'sab',
+      asSpeciesId: 'sableye',
+    });
+    // The card plays the base form, not the verdict's Mega.
+    expect(await screen.findByRole('button', { name: 'Sableye moves' })).toBeTruthy();
+  });
+
+  it('keeps the Mega token, naming the Mega build', async () => {
+    expect(await pickSableye('Mega Sableye')).toEqual({
+      kind: 'specimen',
+      id: 'sab',
+      asSpeciesId: 'sableye_mega',
+    });
+  });
+});
