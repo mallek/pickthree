@@ -128,14 +128,19 @@ function simWins(
 }
 
 /**
- * Nothing left to power up or evolve. A Mega build compares against the level the player powers
- * up to (baseLevel), not the Mega's battle level, which a Level 4 Mega raises by two.
+ * Nothing left to power up, evolve or Mega Evolve. A Mega build compares against the level the
+ * player powers up to (baseLevel), not the Mega's battle level, which a Level 4 Mega raises by
+ * two, and is only built once the specimen carries that Mega's mark.
  */
 export function isAlreadyBuilt(
-  build: Pick<Build, 'stageOffset' | 'baseLevel'>,
+  build: Pick<Build, 'stageOffset' | 'baseLevel' | 'mega'>,
   specimen: Pick<Specimen, 'level'>,
 ): boolean {
-  return build.baseLevel <= specimen.level.max + 0.5 && build.stageOffset === 0;
+  return (
+    build.baseLevel <= specimen.level.max + 0.5 &&
+    build.stageOffset === 0 &&
+    (build.mega === null || build.mega.ready)
+  );
 }
 
 export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
