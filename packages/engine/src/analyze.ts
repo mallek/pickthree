@@ -29,6 +29,7 @@ import {
 import { candidateFor, candidatePool, type Candidate } from './search/candidates.js';
 import { simulateFinalists } from './search/finalists.js';
 import { MatrixView } from './search/matrixView.js';
+import { oneMegaByDefault } from './search/teamRules.js';
 import { withSimulatedRows, type MatrixFighter } from './sim/matrixSim.js';
 import {
   ALL_ORDERINGS,
@@ -215,18 +216,30 @@ export function analyzeTeam(
   const overall = rankingsById(deps.data.rankings.overall);
 
   progress('eligibility', 0, 3);
-  const resolved = picks.map((p) => {
+  const defaulted = picks.map((p) => p.kind === 'specimen' && !p.asSpeciesId);
+  const buildsOf = (id: string): Build[] =>
+    buildsFor(specimens.find((x) => x.id === id) as Specimen, index, opts);
+  const first = picks.map((p, i) => {
     const r = resolvePick(p, specimens, index, opts);
-    if (p.kind === 'specimen' && !p.asSpeciesId) {
+    if (defaulted[i]) {
       // Default stage: the one PvPoke rates highest, same rule the verdicts use.
-      const s = specimens.find((x) => x.id === p.id) as Specimen;
-      const best = bestBuild(buildsFor(s, index, opts), overall);
+      const best = bestBuild(buildsOf(p.id), overall);
       if (best) {
         return { build: best, hypothetical: false };
       }
     }
     return r;
   });
+  const builds = oneMegaByDefault(
+    first.map((r) => r.build),
+    defaulted,
+    (i) =>
+      bestBuild(
+        buildsOf((picks[i] as TeamPick).id).filter((b) => !b.mega),
+        overall,
+      ),
+  );
+  const resolved = first.map((r, i) => ({ ...r, build: builds[i] as Build }));
   const ids = new Set(resolved.map((r) => r.build.specimenId));
   if (ids.size < 3) {
     throw new Error('Pick three different Pokémon.');

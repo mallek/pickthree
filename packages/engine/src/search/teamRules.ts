@@ -74,3 +74,32 @@ export function teamRuleViolation(
   }
   return null;
 }
+
+/**
+ * One Mega per team where the player left the build to pick3. A pick that named its build keeps
+ * it, even a second Mega (Team Analysis flags that). A pick left to default whose build is a Mega
+ * runs as `plain(i)`, its best non-Mega build, when a Mega is already on the team: a named one, or
+ * an earlier default. With no non-Mega build it stays a Mega.
+ */
+export function oneMegaByDefault<B extends Pick<Build, 'mega'>>(
+  builds: readonly B[],
+  defaulted: readonly boolean[],
+  plain: (i: number) => B | null,
+): B[] {
+  let megas = builds.filter((b, i) => !defaulted[i] && b.mega).length;
+  return builds.map((b, i) => {
+    if (!defaulted[i] || !b.mega) {
+      return b;
+    }
+    if (megas === 0) {
+      megas = 1;
+      return b;
+    }
+    const alt = plain(i);
+    if (alt) {
+      return alt;
+    }
+    megas += 1;
+    return b;
+  });
+}

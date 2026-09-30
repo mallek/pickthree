@@ -28,7 +28,7 @@ import {
 } from '../score/simStrength.js';
 import { candidateFor, candidatePool, type Candidate } from '../search/candidates.js';
 import { MatrixView } from '../search/matrixView.js';
-import { teamRuleViolation, type TeamSpeciesOf } from '../search/teamRules.js';
+import { oneMegaByDefault, teamRuleViolation, type TeamSpeciesOf } from '../search/teamRules.js';
 import { withSimulatedRows, type MatrixFighter } from '../sim/matrixSim.js';
 import { bestBuild } from '../verdicts/worth.js';
 import { coverLines, weakPinLine } from './lines.js';
@@ -233,15 +233,20 @@ export function suggestTeammates(
   const standIn = (speciesId: string): Build | null =>
     pinStandIns.get(speciesId) ?? standInBuilds.get(speciesId) ?? null;
 
-  const pinBuilds = pinnedSlots.map((i) =>
-    resolvePin(
-      board[i] as TeamPick,
-      specimens,
-      index,
-      { ...opts, minCp: 0 },
-      overall as never,
-      standIn,
-    ),
+  const pinPicks = pinnedSlots.map((i) => board[i] as TeamPick);
+  const pinOpts = { ...opts, minCp: 0 };
+  // A pin left to default runs its best build, and as its best non-Mega build when a Mega is
+  // already pinned, so two Pokemon whose best build is a Mega still leave room for suggestions.
+  const pinBuilds = oneMegaByDefault(
+    pinPicks.map((p) => resolvePin(p, specimens, index, pinOpts, overall as never, standIn)),
+    pinPicks.map((p) => p.kind === 'specimen' && !p.asSpeciesId),
+    (n) => {
+      const s = specimens.find((x) => x.id === (pinPicks[n] as TeamPick).id) as Specimen;
+      return bestBuild(
+        buildsFor(s, index, pinOpts).filter((b) => !b.mega),
+        overall as never,
+      );
+    },
   );
 
   // The one thing here that simulates. A pin PvPoke does not rank has no matrix row, so one row

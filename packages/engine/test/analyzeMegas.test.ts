@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { analyzeTeam, hypotheticalSpecimen, type TeamPick } from '../src/analyze.js';
 import { buildOptionsFor } from '../src/builds/eligibility.js';
+import type { Specimen } from '../src/collection/specimen.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
 import {
   REPO_ROOT,
@@ -115,3 +116,70 @@ describe.skipIf(!ready)('analyze a team with two Megas', () => {
     expect(r.twoMegas).toBe(true);
   });
 });
+
+describe.skipIf(!(haveStaticData() && haveLeague('mega-master') && fs.existsSync(gmPath)))(
+  'analyze three Pokemon whose best build is a Mega',
+  () => {
+    const data = loadStaticData('mega-master');
+    const index = new GameDataIndex(data.species, data.moves);
+    const sim = new PvPokeSimulator(loadPvPokeInNode(JSON.parse(fs.readFileSync(gmPath, 'utf8'))));
+    const opts = buildOptionsFor(data.league);
+    const score = new Map(data.rankings.overall.map((r) => [r.speciesId, r.score]));
+    // Megas PvPoke rates above their base form, so a pick left to default runs the Mega.
+    const bases = new Set<string>();
+    const megaIds = data.rankings.overall
+      .map((r) => r.speciesId)
+      .filter((id) => {
+        const base = index.species(id)?.megaOf;
+        if (!base || bases.has(base) || (score.get(id) ?? 0) <= (score.get(base) ?? 0)) {
+          return false;
+        }
+        bases.add(base);
+        return true;
+      })
+      .slice(0, 3);
+    const specimens = megaIds.map((id, n) => ({
+      ...hypotheticalSpecimen(id, index, opts),
+      id: `owned-${n}`,
+    }));
+    const [a, b, c] = specimens as [Specimen, Specimen, Specimen];
+    const megaCount = (r: ReturnType<typeof analyzeTeam>): number =>
+      r.team.slots.filter((s) => s.candidate.build.mega).length;
+
+    it('runs the base token as the base form and the next default Mega as its base form', () => {
+      const picks: [TeamPick, TeamPick, TeamPick] = [
+        { kind: 'specimen', id: a.id },
+        { kind: 'specimen', id: b.id, asSpeciesId: b.speciesId },
+        { kind: 'specimen', id: c.id },
+      ];
+      const r = analyzeTeam(picks, specimens, { order: 'given' }, { data, sim });
+      expect(r.twoMegas).toBe(false);
+      expect(megaCount(r)).toBe(1);
+      const byId = new Map(r.team.slots.map((s) => [s.candidate.build.specimenId, s]));
+      expect(byId.get(a.id)?.candidate.build.speciesId).toBe(megaIds[0]);
+      expect(byId.get(b.id)?.candidate.build.speciesId).toBe(b.speciesId);
+      expect(byId.get(c.id)?.candidate.build.mega).toBeNull();
+    });
+
+    it('keeps one Mega when all three are left to default', () => {
+      const picks: [TeamPick, TeamPick, TeamPick] = [
+        { kind: 'specimen', id: a.id },
+        { kind: 'specimen', id: b.id },
+        { kind: 'specimen', id: c.id },
+      ];
+      const r = analyzeTeam(picks, specimens, { order: 'given' }, { data, sim });
+      expect(r.twoMegas).toBe(false);
+      expect(megaCount(r)).toBe(1);
+    });
+
+    it('still flags two Megas the player named', () => {
+      const picks: [TeamPick, TeamPick, TeamPick] = [
+        { kind: 'specimen', id: a.id, asSpeciesId: megaIds[0] as string },
+        { kind: 'specimen', id: b.id, asSpeciesId: megaIds[1] as string },
+        { kind: 'specimen', id: c.id, asSpeciesId: c.speciesId },
+      ];
+      const r = analyzeTeam(picks, specimens, { order: 'given' }, { data, sim });
+      expect(r.twoMegas).toBe(true);
+    });
+  },
+);

@@ -410,6 +410,44 @@ describe.skipIf(!haveStaticData() || !haveLeague('mega-great'))(
   },
 );
 
+describe.skipIf(!haveStaticData() || !haveLeague('mega-master'))(
+  'two pins whose best build is a Mega',
+  () => {
+    it('runs the second pin as its base form and still suggests', () => {
+      const data = loadStaticData('mega-master');
+      const index = new GameDataIndex(data.species, data.moves);
+      const rows = new Set(data.matrix.candidates);
+      const score = new Map(data.rankings.overall.map((r) => [r.speciesId, r.score]));
+      const bases = new Set<string>();
+      const megaIds = data.rankings.overall
+        .map((r) => r.speciesId)
+        .filter((id) => {
+          const base = index.species(id)?.megaOf;
+          if (!base || !rows.has(base) || bases.has(base)) {
+            return false;
+          }
+          bases.add(base);
+          return (score.get(id) ?? 0) > (score.get(base) ?? 0);
+        })
+        .slice(0, 2);
+      const owned = megaIds.map((id, n) => ({
+        ...hypotheticalSpecimen(id, index, buildOptionsFor(data.league)),
+        id: `owned-${n}`,
+      }));
+      const result = suggestTeammates(
+        [{ kind: 'specimen', id: 'owned-0' }, { kind: 'specimen', id: 'owned-1' }, null],
+        owned,
+        { gameMaster: readGameMaster() },
+        { data, sim: noSim },
+      );
+      expect(result.suggestions.length).toBeGreaterThan(0);
+      for (const s of result.suggestions) {
+        expect(s.fills.filter((f) => index.species(f.speciesId)?.megaOf)).toEqual([]);
+      }
+    });
+  },
+);
+
 describe('cheapest on synthetic cores', () => {
   it('trades a little strength for a much cheaper core', () => {
     const dear = core('a+b', 80, 200000);

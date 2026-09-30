@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  oneMegaByDefault,
   ruleKeyOf,
   teamRuleViolation,
   trioBreaksRules,
@@ -80,5 +81,46 @@ describe('trioBreaksRules', () => {
       }
     }
     expect(legal).toBeGreaterThan(0);
+  });
+});
+
+describe('oneMegaByDefault', () => {
+  type B = ReturnType<typeof plain> | ReturnType<typeof mega>;
+  const ids = (bs: { speciesId: string }[]) => bs.map((b) => b.speciesId);
+  const plainOf =
+    (bs: B[]) =>
+    (i: number): B =>
+      plain(bs[i]!.specimenId, `${bs[i]!.specimenId}_base`);
+
+  it('runs a later default Mega as its plain build', () => {
+    const bs: B[] = [mega('a'), mega('b'), plain('c')];
+    expect(ids(oneMegaByDefault(bs, [true, true, true], plainOf(bs)))).toEqual([
+      'a_mega',
+      'b_base',
+      'c',
+    ]);
+  });
+
+  it('gives a named Mega the slot ahead of an earlier default', () => {
+    const bs: B[] = [mega('a'), mega('b'), plain('c')];
+    expect(ids(oneMegaByDefault(bs, [true, false, true], plainOf(bs)))).toEqual([
+      'a_base',
+      'b_mega',
+      'c',
+    ]);
+  });
+
+  it('keeps two named Megas, and a default Mega with no plain build', () => {
+    const bs: B[] = [mega('a'), mega('b'), mega('c')];
+    expect(ids(oneMegaByDefault(bs, [false, false, true], plainOf(bs)))).toEqual([
+      'a_mega',
+      'b_mega',
+      'c_base',
+    ]);
+    expect(ids(oneMegaByDefault(bs, [true, true, false], () => null))).toEqual([
+      'a_mega',
+      'b_mega',
+      'c_mega',
+    ]);
   });
 });
