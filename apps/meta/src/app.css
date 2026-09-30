@@ -15,10 +15,12 @@ body {
   font-family: Inter, system-ui, sans-serif;
 }
 
-/* Phone-width column by default, clipped sideways rather than scrollable: never put overflow-x
-   on html or body, which would move the PWA tab bar on iOS. */
+/* One column, clipped sideways rather than scrollable: never put overflow-x on html or body,
+   which would move the PWA tab bar on iOS. 560px wide at most, the same column as pick3's own
+   .app, so the fixed tab bar (packages/ui/base.css .tabs, also 560px) lines up with the page at
+   every width. */
 .page {
-  max-width: 430px;
+  max-width: 560px;
   margin-inline: auto;
   /* The bottom tab bar is fixed and sits on top of the page, so the scrollable content needs at
      least its full height clear underneath it, safe-area inset included, or the last thing on
@@ -36,7 +38,6 @@ body {
    a side column on desktop, which broke the top-to-bottom order the phone layout is built on. */
 @media (min-width: 900px) {
   .page {
-    max-width: 560px;
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 32px);
   }
 }
@@ -209,11 +210,11 @@ section > .stat-n,
   gap: 10px;
 }
 
-/* Bottom tab bar: fixed, matching apps/web's own .tabs geometry (apps/web/src/app.css) so the
-   two sites read as one product on a phone. Real <a href> elements, not buttons: this site
-   routes on real paths, not a hash, and a tab has to stay openable in a new tab. */
+/* Bottom tab bar: the shared .tabs (packages/ui/base.css) at its own width, the same bar pick3
+   draws, so the two sites read as one product at every width. Only the column count is this
+   site's. Real <a href> elements, not buttons: this site routes on real paths, not a hash, and a
+   tab has to stay openable in a new tab. */
 .tabs {
-  max-width: 430px;
   grid-template-columns: repeat(3, 1fr);
 }
 
