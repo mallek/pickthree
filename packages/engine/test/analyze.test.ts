@@ -63,6 +63,24 @@ describe.skipIf(!ready)('analyze a hand-built team', () => {
     expect(lead.ivRank.rank).toBe(Math.min(...ranks));
   });
 
+  it('a species pick that prefers owned falls back to the stand-in when no copy fits', () => {
+    // A Swampert of yours already over 1500 CP: it has no build, so the pick runs the top-10%
+    // stand-in instead of throwing.
+    const stand = hypotheticalSpecimen('swampert', index, DEFAULT_BUILD_OPTIONS);
+    const over = { ...stand, id: 'mine-over', level: { min: 50, max: 50 } };
+    expect(buildsFor(over, index, { ...DEFAULT_BUILD_OPTIONS, minCp: 0 })).toEqual([]);
+    const picks: [TeamPick, TeamPick, TeamPick] = [
+      { kind: 'species', id: 'swampert', preferOwned: true },
+      { kind: 'species', id: 'azumarill' },
+      { kind: 'species', id: 'tinkaton' },
+    ];
+    const r = analyzeTeam(picks, [over], { order: 'given' }, deps);
+    const lead = r.team.slots[0]!.candidate.build;
+    expect(lead.speciesId).toBe('swampert');
+    expect(lead.specimenId).toBe('species:swampert');
+    expect(r.hypothetical).toContain('swampert');
+  });
+
   it('tries all six orders and keeps the best', () => {
     const picks: [TeamPick, TeamPick, TeamPick] = [
       { kind: 'specimen', id: a!.id },

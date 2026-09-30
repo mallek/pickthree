@@ -157,7 +157,8 @@ export function Build() {
   /**
    * Only a Pokemon its verdict gave a build in this league: analyze runs that build, and throws
    * for one with none (over the cap). One not judged yet is left out rather than guessed at, so a
-   * token never stands for a copy that cannot fit; the species token covers it meanwhile.
+   * token never stands for a copy that cannot fit; the species token covers it meanwhile, and
+   * prefers owned (speciesPick) so analyze still runs your copy that fits.
    */
   const usable = (sp: Specimen): boolean => {
     const v = s.verdicts[sp.id];
@@ -222,6 +223,23 @@ export function Build() {
     return owned[0] ?? null;
   };
 
+  /**
+   * The pick for a species token. While a copy of yours in the species' family has no verdict
+   * (not judged yet, or the verdicts failed), nothing says which copy fits, so the pick prefers
+   * owned: analyze runs your best copy that fits as this species, and the top-10% stand-in only
+   * when none does. Once every copy is judged, a species token means the stand-in.
+   */
+  const speciesPick = (id: string): TeamPick => {
+    const family = species(id)?.familyId ?? null;
+    const unjudged = (s.collection?.specimens ?? []).some(
+      (sp) =>
+        Boolean(sp.ivs) &&
+        (s.verdictsError !== null || !s.verdicts[sp.id]) &&
+        (sp.speciesId === id || (family !== null && sp.familyId === family)),
+    );
+    return unjudged ? { kind: 'species', id, preferOwned: true } : { kind: 'species', id };
+  };
+
   type GridItem = { key: string; speciesId: string; pick: TeamPick; mine: boolean };
 
   /** Collection matches first, then the rest of the species search, for the search grid. */
@@ -241,11 +259,12 @@ export function Build() {
       .map((id) => ({
         key: id,
         speciesId: id,
-        pick: { kind: 'species', id } as TeamPick,
+        pick: speciesPick(id),
         mine: false,
       }));
     return [...fromMine, ...others];
-  }, [searching, mine, hits, s.verdicts]);
+    // speciesPick reads the collection, verdicts and species, all in the list.
+  }, [searching, mine, hits, s.verdicts, s.verdictsError, s.collection, species]);
 
   /** With nothing typed: the same weighted list Log a Battle shows, your own where you have one. */
   const fallback = useMemo(() => {
@@ -271,14 +290,12 @@ export function Build() {
       return {
         key: id,
         speciesId: id,
-        pick: sp
-          ? ({ kind: 'specimen', id: sp.id } as TeamPick)
-          : ({ kind: 'species', id } as TeamPick),
+        pick: sp ? ({ kind: 'specimen', id: sp.id } as TeamPick) : speciesPick(id),
         mine: sp !== null,
       };
     });
-    // bestOwned reads the collection and verdicts, both in the list.
-  }, [s.sets, fallback, ranks, s.leagueInfo, s.collection, s.verdicts]);
+    // bestOwned and speciesPick read the collection, verdicts and species, all in the list.
+  }, [s.sets, fallback, ranks, s.leagueInfo, s.collection, s.verdicts, s.verdictsError, species]);
   const grid = searching ? picksGrid : suggested;
 
   /** Open the search for one empty slot. */

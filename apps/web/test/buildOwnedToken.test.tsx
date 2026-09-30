@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import type { Specimen, Verdict } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Build } from '../src/screens/Build.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
 import { resetHistoryForTests } from '../src/state/history.ts';
@@ -110,6 +110,10 @@ describe("Build's species token", () => {
     latest = null;
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('picks your Tinkaton that fits, not the one over the cap', async () => {
     await open([HIGH, LOW], async () => ({
       high: verdict('high', false),
@@ -119,10 +123,21 @@ describe("Build's species token", () => {
     expect(await pickTinkaton()).toEqual({ kind: 'specimen', id: 'low' });
   });
 
-  it('offers none of yours before the verdicts say which fit', async () => {
-    // Verdicts that never arrive: nothing yet says the first Tinkaton is over the cap.
+  it('before the verdicts say which fit, the token prefers your copy that fits', async () => {
+    // Verdicts that never arrive: nothing yet says the first Tinkaton is over the cap, so no
+    // copy is named; analyze runs your best copy that fits (resolvePick's preferOwned).
     await open([HIGH, LOW], () => new Promise(() => {}));
-    expect(await pickTinkaton()).toEqual({ kind: 'species', id: 'tinkaton' });
+    expect(await pickTinkaton()).toEqual({ kind: 'species', id: 'tinkaton', preferOwned: true });
+  });
+
+  it('with the verdicts failed, your copies still resolve through preferOwned', async () => {
+    // recordError's device summary reads matchMedia, which jsdom does not implement.
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    await open([HIGH, LOW], async () => {
+      throw new Error('worker died');
+    });
+    await waitFor(() => expect(latest?.verdictsError).not.toBeNull());
+    expect(await pickTinkaton()).toEqual({ kind: 'species', id: 'tinkaton', preferOwned: true });
   });
 
   it('with none of yours fitting, the token is the top-10% stand-in', async () => {
