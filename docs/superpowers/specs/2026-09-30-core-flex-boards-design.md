@@ -30,7 +30,12 @@ is wired in a later change.
    Rows are added until there are 5.
 4. **Variety.** The cap is two rows per base species **as a core member**. Flex options are free. Two
    rows may not have the same core (same base-species pair). No completed team is shown twice, as a
-   headline or as a flex.
+   headline or as a flex. A trio that contains an earlier row's core pair (by base species) belongs to
+   that core: it cannot start a later row and cannot be a later row's flex, even when it fell outside
+   that core's flex window. This keeps later rows from re-labelling the same team (for example the
+   Shadow and non-Shadow builds of the same three species, or the top core with a different third).
+   Later rows may therefore be weaker or have fewer flex options; that is the truth of the data and
+   is shown as it is.
 5. **Mega boards.** Only teams with exactly one Mega are considered (the ruleset allows one Mega). So a
    core with no Mega has Megas as its flex (up to 4), and a core containing the Mega has regular thirds
    as its flex. Both row types can be on one board. A row reports which kind its flex is.
