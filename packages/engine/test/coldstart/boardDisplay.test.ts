@@ -40,6 +40,32 @@ describe('memberDisplay', () => {
     });
     expect(memberDisplay('Mimikyu', 'mimikyu').tags).toEqual([]);
   });
+
+  it('handles Type Null and Mime Jr. with name overrides', () => {
+    expect(memberDisplay('Type (Null)', 'type_null')).toEqual({
+      name: 'Type: Null',
+      sprite: 'type_null',
+      tags: [],
+    });
+    expect(memberDisplay('Mime (Jr)', 'mime_jr')).toEqual({
+      name: 'Mime Jr.',
+      sprite: 'mime_jr',
+      tags: [],
+    });
+  });
+
+  it('handles Primal and Mega Y', () => {
+    expect(memberDisplay('Kyogre (Primal)', 'kyogre_primal')).toEqual({
+      name: 'Kyogre',
+      sprite: 'kyogre_primal',
+      tags: [{ kind: 'mega', text: 'Primal' }],
+    });
+    expect(memberDisplay('Charizard (Mega Y)', 'charizard_mega_y')).toEqual({
+      name: 'Charizard',
+      sprite: 'charizard_mega_y',
+      tags: [{ kind: 'mega', text: 'Mega Y' }],
+    });
+  });
 });
 
 describe('cautionNames', () => {

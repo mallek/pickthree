@@ -15,8 +15,18 @@ export interface MemberDisplay {
 
 const REGIONS = ['Alolan', 'Galarian', 'Hisuian', 'Paldean'];
 const ORDER: TagKind[] = ['mega', 'region', 'form', 'shadow'];
+const NAMES: Record<string, string> = {
+  type_null: 'Type: Null',
+  mime_jr: 'Mime Jr.',
+};
 
 export function memberDisplay(speciesName: string, speciesId: string): MemberDisplay {
+  // Check for name override (handles cases where parentheses parse incorrectly)
+  const baseId = speciesId.replace(/_shadow$/, '');
+  if (baseId in NAMES) {
+    return { name: NAMES[baseId]!, sprite: speciesId.replace(/_shadow$/, ''), tags: [] };
+  }
+
   const name = speciesName.split(' (')[0]!.trim();
   const tags: { kind: TagKind; text: string }[] = [];
   for (const m of speciesName.matchAll(/\(([^)]+)\)/g)) {
