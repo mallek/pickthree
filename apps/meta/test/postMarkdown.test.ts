@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertPostText,
   linkOf,
   postMarkdown,
   postMarkdownCores,
+  postTitleCores,
   teamsJson,
   teamsJsonCores,
   type PostCoreRun,
@@ -127,33 +129,46 @@ const coreRun = (withMega: boolean): PostCoreRun => ({
 });
 
 describe('post.md for core boards', () => {
-  it('titles with and without a Mega clause', () => {
-    expect(postMarkdownCores(coreRun(true)).split('\n')[0]).toBe(
-      'Title: Great League: Mega Edition: top cores, budget cores and the best Mega picks (pick3 sims)',
+  it('keeps the title out of the body and builds it with and without a Mega clause', () => {
+    expect(postTitleCores(coreRun(true))).toBe(
+      'Great League: Mega Edition: top cores, budget cores and the best Mega picks (pick3 sims)',
     );
-    expect(postMarkdownCores(coreRun(false)).split('\n')[0]).toBe(
-      'Title: Great League: Mega Edition: top cores and budget cores (pick3 sims)',
+    expect(postTitleCores(coreRun(false))).toBe(
+      'Great League: Mega Edition: top cores and budget cores (pick3 sims)',
+    );
+    expect(postMarkdownCores(coreRun(true))).not.toMatch(/^Title:/m);
+  });
+
+  it('opens with the intro paragraph, with the accent and a linked pick3.gg', () => {
+    const md = postMarkdownCores(coreRun(true));
+    expect(md.split('\n')[0]).toBe(
+      'Each row is a core (keep both Pokémon) plus one flex pick for the third slot, ranked by projected strength against the Great League: Mega Edition meta. The flex options under a core are close, so pick whichever you own or like. Every link opens the full team analysis on [pick3.gg](https://pick3.gg), run against your own Pokémon if you have imported them.',
     );
   });
 
-  it('lists each core once with a linked sub-bullet per flex', () => {
+  it('lists each core once with a * bullet per flex: link text is the added Pokemon', () => {
     const md = postMarkdownCores(coreRun(true));
     expect(md).toContain('**Top Cores**');
-    expect(md).toContain('1. Alpha + Beta - add one:');
+    expect(md).toContain('\n1. Alpha + Beta -\n');
     expect(md).toContain(
-      `   - [Alpha / Beta / Gamma](${linkOf('mega-great', team('alpha', 'beta', 'gamma', 1))}) - 91.2`,
+      `   * [Gamma](${linkOf('mega-great', team('alpha', 'beta', 'gamma', 1))}) \\- 91.2\n`,
     );
-    expect(md).toMatch(/\n {3}- \[[^\]]+\]\(https:\/\/pick3\.gg\/#\/t\/mega-great\/[^)\s]+\) - 90\.0\n/);
-    // No bare URLs: every link is embedded as markdown text.
+    expect(md).toMatch(/\n {3}\* \[[^\]]+\]\(https:\/\/pick3\.gg\/#\/t\/mega-great\/[^)\s]+\) \\- 90\.0\n/);
+    // No bare URLs and no "add one:" wording: the row line ends with a dash.
     expect(md).not.toMatch(/(^|\s)https:\/\/pick3\.gg/m);
-    expect(md).toContain('1. Delta + Beta - add a Mega:');
-    expect(md).toContain('projection, not a measured win rate');
-    expect(md).toContain('PvPoke meta only - Oct 6, 2026');
-    expect(md).toContain('2026-09-29');
+    expect(md).not.toContain('add one:');
+    expect(md).not.toContain('add a Mega:');
+    expect(md).toContain('\n1. Delta + Beta -\n');
+    expect(md).toContain(
+      'How the number works: pick3 simulates each team against the Great League: Mega Edition meta, weighted by what players face (PvPoke meta combined with trainer reported matches on pick3). It is a projection, not a measured win rate.',
+    );
   });
 
-  it('is 7-bit ASCII', () => {
-    expect(postMarkdownCores(coreRun(true))).not.toMatch(/[^\t\n\r\x20-\x7e]/);
+  it('allows only the e-acute outside 7-bit ASCII in the post text', () => {
+    const md = postMarkdownCores(coreRun(true));
+    expect(() => assertPostText(md)).not.toThrow();
+    expect(md.replace(/é/g, 'e')).not.toMatch(/[^\t\n\r\x20-\x7e]/);
+    expect(() => assertPostText('Flabèbè')).toThrow(/U\+00E8/);
   });
 });
 

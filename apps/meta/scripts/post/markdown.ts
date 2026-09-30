@@ -126,36 +126,52 @@ export interface PostCoreRun {
   boards: PostCoreBoard[];
 }
 
-export function postMarkdownCores(run: PostCoreRun): string {
+/** The post title, kept out of the body: it goes in Reddit's separate title field (title.txt). */
+export function postTitleCores(run: PostCoreRun): string {
   const hasMega = run.boards.some((b) => b.id === 'mega');
   const what = hasMega
     ? 'top cores, budget cores and the best Mega picks'
     : 'top cores and budget cores';
+  return `${run.cupTitle}: ${what} (pick3 sims)`;
+}
+
+/**
+ * The post body in the shape Travis hand-edited it to: an intro paragraph, then per board a bold
+ * heading, a numbered core line and one `*` bullet per flex option. The link text is just the added
+ * Pokemon (the flex option's own name), the link opens the whole team with moves, and the
+ * strength follows after an escaped dash. "Pokemon" is spelled with the accent in prose (the
+ * only non-ASCII character this text allows; see assertPostText).
+ */
+export function postMarkdownCores(run: PostCoreRun): string {
   const lines = [
-    `Title: ${run.cupTitle}: ${what} (pick3 sims)`,
-    '',
-    `Each row is a core (keep both Pokemon) plus one flex pick for the third slot, ranked by projected strength against the ${run.cupTitle} meta. The flex options under a core are close, so pick whichever you own or like.`,
-    'Every link opens the full analysis on pick3.gg, run against your own Pokemon if you have imported them.',
+    `Each row is a core (keep both Pokémon) plus one flex pick for the third slot, ranked by projected strength against the ${run.cupTitle} meta. The flex options under a core are close, so pick whichever you own or like. Every link opens the full team analysis on [pick3.gg](https://pick3.gg), run against your own Pokémon if you have imported them.`,
   ];
   for (const b of run.boards) {
     lines.push('', `**${b.heading}**`, '');
     b.rows.forEach((row, i) => {
-      const add = row.flexKind === 'mega' ? 'add a Mega:' : 'add one:';
-      lines.push(`${i + 1}. ${row.coreNames.join(' + ')} - ${add}`);
+      lines.push(`${i + 1}. ${row.coreNames.join(' + ')} -`);
       for (const f of row.flex) {
-        // The link text is the whole team in battle order, so the post reads as text, not raw URLs.
-        lines.push(
-          `   - [${f.team.names.join(' / ')}](${linkOf(run.leagueId, f.team)}) - ${f.team.strength.toFixed(1)}`,
-        );
+        lines.push(`   * [${f.name}](${linkOf(run.leagueId, f.team)}) \\- ${f.team.strength.toFixed(1)}`);
       }
     });
   }
   lines.push(
     '',
-    `How the number works: pick3 simulates each team against the ${run.cupTitle} meta, weighted by what players face (${run.mixLine}). It is a projection, not a measured win rate. PvPoke data from ${run.pvpoke.date}.`,
+    `How the number works: pick3 simulates each team against the ${run.cupTitle} meta, weighted by what players face (PvPoke meta combined with trainer reported matches on pick3). It is a projection, not a measured win rate.`,
     '',
   );
   return lines.join('\n');
+}
+
+/** Post text may hold the letter e-acute (Pokémon) and nothing else outside 7-bit ASCII. */
+export function assertPostText(text: string): void {
+  const m = /[^\t\n\r\x20-\x7eé]/.exec(text);
+  if (m) {
+    const code = m[0].codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0');
+    throw new Error(
+      `Unexpected character U+${code} in the post text, near "${text.slice(Math.max(0, m.index - 20), m.index + 20)}"`,
+    );
+  }
 }
 
 export function teamsJsonCores(run: PostCoreRun): string {

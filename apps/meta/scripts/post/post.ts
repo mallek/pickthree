@@ -18,7 +18,13 @@ import { priorWeights } from '../bake.js';
 import { MASCOT, coreBoardView, postCoreBoard, type CoreBoardId } from './coreViews.js';
 import { loadCupData } from './data.js';
 import { assertAscii, fillCoreBoard } from './fillCores.js';
-import { postMarkdownCores, teamsJsonCores, type PostCoreRun } from './markdown.js';
+import {
+  assertPostText,
+  postMarkdownCores,
+  postTitleCores,
+  teamsJsonCores,
+  type PostCoreRun,
+} from './markdown.js';
 import { blendedWeights, fetchSummary, mixLine, runLabel, type WeightMix } from './weights.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -121,7 +127,9 @@ async function main(): Promise<void> {
     boards: present.map(([id, rows]) => postCoreBoard(index, id, rows)),
   };
   const markdown = postMarkdownCores(run);
-  assertAscii(markdown);
+  assertPostText(markdown);
+  const postTitle = postTitleCores(run);
+  assertAscii(postTitle);
 
   const outDir = join(REPO, 'posts', `${day}-${data.league.id}`);
   const tmps: string[] = [];
@@ -175,9 +183,10 @@ async function main(): Promise<void> {
     writeFileSync(join(outDir, `${id}.png`), png);
   }
   writeFileSync(join(outDir, 'post.md'), markdown);
+  writeFileSync(join(outDir, 'title.txt'), `${postTitle}\n`);
   writeFileSync(join(outDir, 'teams.json'), teamsJsonCores(run));
   process.stdout.write(
-    `wrote ${outDir}: ${[...pngs.keys()].map((k) => `${k}.png`).join(', ')}, post.md, teams.json\n` +
+    `wrote ${outDir}: ${[...pngs.keys()].map((k) => `${k}.png`).join(', ')}, post.md, title.txt, teams.json\n` +
       `re-simulated rows: top ${boards.resimulated.top.length}, budget ${boards.resimulated.budget.length}, mega ${boards.resimulated.mega.length}\n`,
   );
 }
