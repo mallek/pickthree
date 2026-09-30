@@ -23,7 +23,11 @@ export async function getJson<T>(url: string, fetcher: Fetcher = fetch): Promise
   if (!res.ok) {
     throw new Error(`Could not read ${url}: HTTP ${res.status}`);
   }
-  return (await res.json()) as T;
+  try {
+    return (await res.json()) as T;
+  } catch (err) {
+    throw new Error('Could not parse ' + url + ': ' + (err as Error).message, { cause: err });
+  }
 }
 
 export interface CupData {
