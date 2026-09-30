@@ -77,8 +77,20 @@ function move(moveId: string, name: string, type: string): MoveChoice {
 function verdict(
   sp: Specimen,
   label: VerdictLabel,
-  build: { level: number; stageOffset?: number },
-  cost: { stardust: number; candy: number; xlCandy: number; secondMoveUnlock?: boolean },
+  build: {
+    level: number;
+    stageOffset?: number;
+    baseLevel?: number;
+    baseCp?: number;
+    mega?: { ready: boolean; level4: boolean };
+  },
+  cost: {
+    stardust: number;
+    candy: number;
+    xlCandy: number;
+    secondMoveUnlock?: boolean;
+    megaEnergy?: 'needed' | 'ready';
+  },
 ): Verdict {
   return {
     specimenId: sp.id,
@@ -93,6 +105,9 @@ function verdict(
       stageOffset: build.stageOffset ?? 0,
       level: build.level,
       cp: 1498,
+      baseCp: build.baseCp ?? 1498,
+      baseLevel: build.baseLevel ?? build.level,
+      mega: build.mega ?? null,
       ivs: { atk: 0, def: 15, sta: 15 },
       ivRank: { rank: 12, total: 4096 },
       needsXl: false,
@@ -110,7 +125,7 @@ function verdict(
       evolutionCandy: 0,
       powerUpSteps: 0,
       estimated: false,
-      megaEnergy: null,
+      megaEnergy: cost.megaEnergy ?? null,
       weight: 0,
     },
     perfectDelta: null,
@@ -130,7 +145,8 @@ const BUILDING = specimen('b', 'azumarill');
 const MANUAL = specimen('m', 'clodsire', { manual: true });
 const UNLOCK = specimen('u', 'medicham');
 const HALF = specimen('h', 'dragonite_shadow');
-const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF];
+const MEGA = specimen('g', 'tinkaton', { level: 40 });
+const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF, MEGA];
 const IDS = SPECIMENS.map((x) => x.id);
 
 const VERDICTS: Record<string, Verdict> = {
@@ -149,6 +165,13 @@ const VERDICTS: Record<string, Verdict> = {
     { stardust: 10000, candy: 25, xlCandy: 0, secondMoveUnlock: true },
   ),
   h: verdict(HALF, 'Built', { level: 20.5 }, { stardust: 2500, candy: 2, xlCandy: 0 }),
+  // A Level 4 Mega: battles two levels above the level it was powered to.
+  g: verdict(
+    MEGA,
+    'Built',
+    { level: 42, baseLevel: 40, baseCp: 1200, mega: { ready: true, level4: true } },
+    { stardust: 0, candy: 0, xlCandy: 0, megaEnergy: 'ready' },
+  ),
 };
 
 async function seed(): Promise<void> {
@@ -292,6 +315,15 @@ describe('Pokémon detail', () => {
     }
     expect(screen.queryByText(/Level 20 to 20/)).toBeNull();
     expect(screen.queryByText(/second move unlock/i)).toBeNull();
+  });
+
+  it('for a Mega build, reads the base level and CP, and names the Mega Energy cost', async () => {
+    await fromCounters('g');
+    await judged();
+    expect(screen.getByText('Already at level 40.')).toBeInTheDocument();
+    expect(screen.queryByText(/Level 40 to/)).toBeNull();
+    expect(screen.getByText('Power up to CP 1200 (1498 as Mega, Level 4)')).toBeInTheDocument();
+    expect(screen.getByText('Mega Energy (mega-evolved before)')).toBeInTheDocument();
   });
 
   it('at its build level, still shows the second move unlock and only the non-zero tiles', async () => {

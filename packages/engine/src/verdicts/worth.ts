@@ -127,6 +127,17 @@ function simWins(
   return wins;
 }
 
+/**
+ * Nothing left to power up or evolve. A Mega build compares against the level the player powers
+ * up to (baseLevel), not the Mega's battle level, which a Level 4 Mega raises by two.
+ */
+export function isAlreadyBuilt(
+  build: Pick<Build, 'stageOffset' | 'baseLevel'>,
+  specimen: Pick<Specimen, 'level'>,
+): boolean {
+  return build.baseLevel <= specimen.level.max + 0.5 && build.stageOffset === 0;
+}
+
 export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   const metaSize = deps.meta.length;
   const base = {
@@ -207,7 +218,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
         : `The best IV spread would win ${perfectDelta} more of ${metaSize} meta matchups (${productGap}% more stat product).`;
   }
 
-  const alreadyBuilt = build.level <= s.level.max + 0.5 && build.stageOffset === 0;
+  const alreadyBuilt = isAlreadyBuilt(build, s);
   const evoNote = build.stageOffset > 0 ? ` as ${stageName}` : '';
   const metaRank = deps.metaRanks.get(build.speciesId) ?? null;
   const note = formNote(build.speciesId, deps.index);

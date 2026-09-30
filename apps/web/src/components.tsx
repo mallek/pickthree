@@ -314,12 +314,16 @@ export function PokemonToken({
   const types = sp ? sp.types.filter((t) => t !== 'none') : ['normal'];
   const src = spritesOn ? `/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp` : undefined;
   const shadow = speciesId.endsWith('_shadow');
+  // The pill needs room; a tiny token's name sits in the text beside it.
+  const mega = Boolean(sp?.megaOf) && size >= 32;
   // axe cannot see past the wrapper's ::before glow, so a Shadow letter's contrast is checked by
   // test/shadowToken.test.tsx for every type instead of by the page audit.
   const audit = shadow ? { 'data-audit-contrast': 'static' } : {};
   return (
     <span
-      className={shadow ? 'token-wrap token-shadow-wrap' : 'token-wrap'}
+      className={
+        shadow ? 'token-wrap token-shadow-wrap' : mega ? 'token-wrap token-mega-wrap' : 'token-wrap'
+      }
       style={shadow ? { width: size, height: size } : undefined}
       {...audit}
     >
@@ -330,6 +334,7 @@ export function PokemonToken({
         showInitial={showInitial}
         {...(src !== undefined ? { src } : {})}
       />
+      {mega ? <span className="token-mega-pill">Mega</span> : null}
     </span>
   );
 }

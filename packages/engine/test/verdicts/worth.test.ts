@@ -4,6 +4,7 @@ import { DEFAULT_BUILD_OPTIONS } from '../../src/builds/eligibility.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { verdictsFor } from '../../src/recommend.js';
 import type { Specimen } from '../../src/collection/specimen.js';
+import { isAlreadyBuilt } from '../../src/verdicts/worth.js';
 import { haveStaticData, loadStaticData } from '../fixtures.js';
 
 /**
@@ -83,5 +84,28 @@ describe.skipIf(!haveStaticData())('verdict buildSpecies', () => {
       'e1'
     ]!;
     expect(v.buildSpecies).toEqual([]);
+  });
+});
+
+/**
+ * A Mega build's level is the Mega's battle level; what the player has to power up to is its
+ * base level. A specimen already at that base level reads as built, however high the Mega's own
+ * level is (Level 4 battles two levels above it).
+ */
+describe('isAlreadyBuilt', () => {
+  const at = (max: number) => ({ level: { min: max, max } }) as never;
+
+  it('compares the specimen against the level the player powers up to', () => {
+    const level4 = {
+      stageOffset: 0,
+      level: 44,
+      baseLevel: 42,
+      mega: { ready: true, level4: true },
+    };
+    expect(isAlreadyBuilt(level4 as never, at(42))).toBe(true);
+    expect(isAlreadyBuilt(level4 as never, at(41))).toBe(false);
+    const plain = { stageOffset: 0, level: 30, baseLevel: 30, mega: null };
+    expect(isAlreadyBuilt(plain as never, at(30))).toBe(true);
+    expect(isAlreadyBuilt({ ...plain, stageOffset: 1 } as never, at(30))).toBe(false);
   });
 });

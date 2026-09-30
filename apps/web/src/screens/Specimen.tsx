@@ -29,6 +29,7 @@ import {
   judgeFailedLine,
   levelLabel,
   num,
+  powerUpLine,
   scanAge,
 } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -152,7 +153,7 @@ export function SpecimenScreen({ id }: { id: string }) {
   // No power-up and no evolution to do reads "Already at level L." in place of "Level A to B",
   // and drops the zero tiles; whatever still costs something (a second move unlock) keeps its
   // tile. Half a level short is not already there, whatever the verdict's own margin says.
-  const alreadyThere = build !== null && build.stageOffset === 0 && build.level <= sp.level.max;
+  const alreadyThere = build !== null && build.stageOffset === 0 && build.baseLevel <= sp.level.max;
   const tiles: [string, number][] = v?.cost
     ? (
         [
@@ -277,13 +278,14 @@ export function SpecimenScreen({ id }: { id: string }) {
               </>
             ) : (
               <div className="small muted">
-                Level {sp.level.max} to {build.level}
+                Level {sp.level.max} to {build.baseLevel}
                 {v.cost.secondMoveUnlock ? ' · includes second move unlock' : ''}
                 {v.cost.evolutionCandy > 0
                   ? ` · includes ${v.cost.evolutionCandy} candy to evolve`
                   : ''}
               </div>
             )}
+            {build.mega ? <p className="small">{powerUpLine(build)}</p> : null}
             {tiles.length > 0 ? (
               <div className="stat3">
                 {tiles.map(([label, value]) => (
@@ -293,6 +295,13 @@ export function SpecimenScreen({ id }: { id: string }) {
                   </div>
                 ))}
               </div>
+            ) : null}
+            {v.cost.megaEnergy ? (
+              <p className="small muted">
+                {v.cost.megaEnergy === 'ready'
+                  ? 'Mega Energy (mega-evolved before)'
+                  : 'Mega Energy'}
+              </p>
             ) : null}
             {v.cost.eliteTm > 0 ? (
               <p className="small muted">Plus {v.cost.eliteTm} Elite TM.</p>

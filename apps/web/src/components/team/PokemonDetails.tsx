@@ -11,7 +11,7 @@ import {
   TypeChips,
   useName,
 } from '../../components.tsx';
-import { costParts, ivLine, SEP, topPct } from '../../format.ts';
+import { costParts, ivLine, powerUpLine, SEP, topPct } from '../../format.ts';
 
 const ORDER = ['First', 'Second', 'Third'];
 
@@ -157,7 +157,7 @@ export function PokemonDetails({
                       <span className="muted">Yours</span>
                       <span className="muted">
                         Not in your collection. The numbers assume a top-10% IV spread (
-                        {ivLine(c.build.ivs)}) at level {c.build.level}.
+                        {ivLine(c.build.ivs)}) at level {c.build.baseLevel}.
                       </span>
                     </div>
                   ) : (
@@ -182,14 +182,20 @@ export function PokemonDetails({
                       <div className="kv">
                         <span className="muted">To build</span>
                         <span>
-                          {c.build.level > sp.level.max
-                            ? `Level ${sp.level.max} to ${c.build.level}${SEP}`
+                          {c.build.baseLevel > sp.level.max
+                            ? `Level ${sp.level.max} to ${c.build.baseLevel}${SEP}`
                             : `Already at level${SEP}`}
                           <CostBreakdown cost={c.cost} />
                           {c.cost.secondMoveUnlock ? `${SEP}second\u00a0move\u00a0unlock` : ''}
                           {c.cost.estimated ? ' (evolution candy estimated)' : ''}
                         </span>
                       </div>
+                      {c.build.mega ? (
+                        <div className="kv">
+                          <span className="muted">Power up</span>
+                          <span>{powerUpLine(c.build)}</span>
+                        </div>
+                      ) : null}
                     </>
                   )}
                 </div>

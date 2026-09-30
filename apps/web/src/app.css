@@ -240,6 +240,26 @@ a {
     radial-gradient(ellipse 45% 65% at 68% 100%, rgba(150, 60, 240, 0.9), transparent 70%),
     radial-gradient(ellipse 80% 60% at 50% 100%, rgba(120, 40, 220, 0.7), transparent 75%);
 }
+/* Mega builds: a small pill across the bottom of the token, same shape as the .mtag pills. */
+.token-mega-wrap {
+  position: relative;
+}
+.token-mega-pill {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  transform: translateX(-50%);
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 14px;
+  color: var(--accent-text);
+  background: var(--accent-tint);
+  border: 1px solid var(--surface);
+  white-space: nowrap;
+  pointer-events: none;
+}
 .token-stack {
   display: flex;
 }

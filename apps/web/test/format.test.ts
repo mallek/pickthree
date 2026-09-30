@@ -5,6 +5,7 @@ import {
   coversLine,
   initialOf,
   leagueDetail,
+  powerUpLine,
   scanAge,
   speciesDisplayName,
   topPct,
@@ -161,5 +162,53 @@ describe('leagueDetail', () => {
 
   it('says nothing for an open league', () => {
     expect(leagueDetail({ state: 'off' }, { kind: 'standard' })).toEqual([]);
+  });
+});
+
+describe('Mega builds in format helpers', () => {
+  const cost = {
+    stardust: 1000,
+    candy: 10,
+    xlCandy: 0,
+    eliteTm: 0,
+    evolutionCandy: 0,
+    secondMoveUnlock: false,
+    powerUpSteps: 0,
+    estimated: false,
+    megaEnergy: null,
+    weight: 0,
+  };
+
+  it('adds a Mega Energy part when the build needs it, and says so when it was mega-evolved before', () => {
+    expect(costParts({ ...cost, megaEnergy: 'needed' }).map((p) => p.text)).toContain(
+      'Mega Energy',
+    );
+    expect(costParts({ ...cost, megaEnergy: 'ready' }).map((p) => p.text)).toContain(
+      'Mega Energy (mega-evolved before)',
+    );
+    const none = costParts({ ...cost, megaEnergy: null }).map((p) => p.text);
+    expect(none.some((t) => t.includes('Mega Energy'))).toBe(false);
+    expect(costParts({ ...cost, megaEnergy: 'needed' }).at(-1)?.amount).toBe('');
+  });
+
+  it('names a Mega with the word first', () => {
+    expect(speciesDisplayName('sableye_mega', { speciesName: 'Sableye (Mega)' } as never)).toBe(
+      'Mega Sableye',
+    );
+    expect(
+      speciesDisplayName('charizard_mega_y', { speciesName: 'Charizard (Mega Y)' } as never),
+    ).toBe('Mega Charizard Y');
+    expect(speciesDisplayName('raichu_alolan', { speciesName: 'Raichu (Alolan)' } as never)).toBe(
+      'Alolan Raichu',
+    );
+  });
+
+  it('writes the power-up line with the base CP first, the Mega CP after', () => {
+    const plain = { cp: 1498, baseCp: 1498, mega: null };
+    expect(powerUpLine(plain)).toBe('Power up to CP 1498');
+    const mega = { cp: 1475, baseCp: 1118, mega: { ready: true, level4: false } };
+    expect(powerUpLine(mega)).toBe('Power up to CP 1118 (1475 as Mega)');
+    const l4 = { cp: 1490, baseCp: 1200, mega: { ready: true, level4: true } };
+    expect(powerUpLine(l4)).toBe('Power up to CP 1200 (1490 as Mega, Level 4)');
   });
 });

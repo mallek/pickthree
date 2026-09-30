@@ -164,3 +164,18 @@ describe('switchPlanFor, one meaning of unanswered with the key threats', () => 
     expect(plan[2]!.line).toBe('Switch to b, wins.');
   });
 });
+
+describe('Mega names', () => {
+  const sp = (speciesId: string, speciesName: string) =>
+    ({ speciesId, speciesName, tags: ['mega'], evolutionIds: [] }) as never;
+  const index = new GameDataIndex(
+    [sp('sableye_mega', 'Sableye (Mega)'), sp('charizard_mega_y', 'Charizard (Mega Y)')],
+    [],
+  );
+
+  it('puts the Mega word first', async () => {
+    const { displayName } = await import('../../src/explain/explain.js');
+    expect(displayName('sableye_mega', index)).toBe('Mega Sableye');
+    expect(displayName('charizard_mega_y', index)).toBe('Mega Charizard Y');
+  });
+});

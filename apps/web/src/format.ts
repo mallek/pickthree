@@ -24,7 +24,11 @@ export function speciesDisplayName(speciesId: string, species: Species | undefin
     }
   }
   const m = /^(.*) \(([^)]+)\)$/.exec(name);
-  if (m) {
+  const mega = m ? /^Mega( [XY])?$/.exec(m[2] ?? '') : null;
+  if (m && mega) {
+    // PvPoke "Charizard (Mega Y)" -> "Mega Charizard Y".
+    name = `Mega ${m[1]}${mega[1] ?? ''}`;
+  } else if (m) {
     name = `${m[1]} (${m[2]})`;
   }
   return speciesId.endsWith('_shadow') ? `Shadow ${name}` : name;
@@ -82,7 +86,28 @@ export function costParts(c: Cost): CostPart[] {
   if (c.eliteTm > 0) {
     parts.push(costPart(String(c.eliteTm), 'Elite TM', 'Elite TM'));
   }
+  if (c.megaEnergy !== null) {
+    // No amount on purpose: the label alone says a Mega Evolution is part of the cost.
+    const label = c.megaEnergy === 'ready' ? 'Mega Energy (mega-evolved before)' : 'Mega Energy';
+    parts.push({ amount: '', unit: label, text: label });
+  }
   return parts;
+}
+
+/**
+ * What to power up to: the base form's CP, the number on the screen while powering up. A Mega
+ * build adds the Mega form's CP in battle, and says so when it is a Level 4 Mega.
+ */
+export function powerUpLine(build: {
+  cp: number;
+  baseCp: number;
+  mega: { level4: boolean } | null;
+}): string {
+  if (!build.mega) {
+    return `Power up to CP ${build.baseCp}`;
+  }
+  const level4 = build.mega.level4 ? ', Level 4' : '';
+  return `Power up to CP ${build.baseCp} (${build.cp} as Mega${level4})`;
 }
 
 export function costLine(c: Cost): string {

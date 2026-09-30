@@ -102,6 +102,11 @@ export function displayName(speciesId: string, index: GameDataIndex): string {
   if (m && m[2] && REGIONAL_PREFIX[m[2]]) {
     return `${REGIONAL_PREFIX[m[2]]} ${m[1]}`;
   }
+  // PvPoke "Charizard (Mega Y)" -> "Mega Charizard Y".
+  const mega = m ? /^Mega( [XY])?$/.exec(m[2] ?? '') : null;
+  if (m && mega) {
+    return `Mega ${m[1]}${mega[1] ?? ''}`;
+  }
   // The form you bring in is just the Pokemon: "Morpeko (Full Belly)" is Morpeko.
   if (m && m[1] && isDefaultToggleForm(s)) {
     return m[1];
