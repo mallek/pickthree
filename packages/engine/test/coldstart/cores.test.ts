@@ -27,6 +27,28 @@ const opts = (over: Partial<CoreOptions<Trio>> = {}): CoreOptions<Trio> => ({
 const thirds = (row: { flex: { third: string }[] }): string[] => row.flex.map((f) => f.third);
 
 describe('selectCores', () => {
+  it('does not put a trio with plain kingdra under a kingdra_shadow core', () => {
+    const items = [
+      trio(['kingdra_shadow', 'magnezone_shadow', 'x'], 10),
+      trio(['kingdra', 'magnezone_shadow', 'y'], 9.9),
+      trio(['kingdra_shadow', 'magnezone_shadow', 'z'], 9.8),
+    ];
+    const rows = selectCores(items, opts({ rows: 1 }));
+    expect(rows[0]!.core).toEqual(['kingdra_shadow', 'magnezone_shadow']);
+    expect(thirds(rows[0]!)).toEqual(['x', 'z']);
+  });
+
+  it('does not put a plain-form trio under a Mega core', () => {
+    const items = [
+      trio(['charizard_mega_x', 'b', 'c1'], 10),
+      trio(['charizard', 'b', 'c2_mega'], 9.5),
+      trio(['charizard_mega_x', 'b', 'c3'], 9.4),
+    ];
+    const rows = selectCores(items, opts({ rows: 1 }));
+    expect(rows[0]!.core).toEqual(['charizard_mega_x', 'b']);
+    expect(thirds(rows[0]!)).toEqual(['c1', 'c3']);
+  });
+
   it('groups near-tied thirds under one core, best first, capped at flexMax', () => {
     const items = [
       trio(['a', 'b', 'c1'], 10),

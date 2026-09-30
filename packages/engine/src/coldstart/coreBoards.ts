@@ -58,20 +58,17 @@ export function hasExactlyOneMega(
 }
 
 /**
- * Flex kind and the core's Mega. On the Mega board a core without a Mega takes Mega thirds
- * ('mega'); a core holding the Mega takes regular thirds. Everywhere else it is 'regular'.
+ * Flex kind and the core's Mega, from the actual rows. A core holding a Mega takes regular
+ * thirds; otherwise 'mega' exactly when there are flex thirds and every one is a Mega.
  */
 export function coreRowKind(
   coreIds: readonly string[],
-  _flexThirdIds: readonly string[],
+  flexThirdIds: readonly string[],
   isMega: (id: string) => boolean,
-  onMegaBoard: boolean,
 ): { flexKind: 'mega' | 'regular'; megaInCore: string | null } {
   const megaInCore = coreIds.find(isMega) ?? null;
-  return {
-    flexKind: onMegaBoard && megaInCore === null ? 'mega' : 'regular',
-    megaInCore,
-  };
+  const allMega = flexThirdIds.length > 0 && flexThirdIds.every(isMega);
+  return { flexKind: megaInCore === null && allMega ? 'mega' : 'regular', megaInCore };
 }
 
 export function coreBoards(input: CupBoardsInput): CoreBoards {
@@ -115,17 +112,16 @@ export function coreBoards(input: CupBoardsInput): CoreBoards {
         };
       });
       const head = flex[0]!.team.members;
-      const core = head.filter((c) => row.core.includes(c.build.speciesId)) as [
-        Candidate,
-        Candidate,
-      ];
+      const core = head.filter((c) => row.core.includes(c.build.speciesId));
+      if (core.length !== 2) {
+        throw new Error(`core ${row.core.join('+')} not found in its headline team`);
+      }
       const kind = coreRowKind(
         row.core,
         flex.map((f) => f.third.build.speciesId),
         isMega,
-        onMegaBoard,
       );
-      return { core, ...kind, flex };
+      return { core: core as [Candidate, Candidate], ...kind, flex };
     });
   };
 

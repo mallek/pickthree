@@ -48,7 +48,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
   const usedPairs = new Set<string>();
   const rows: CoreRow<T>[] = [];
 
-  const flexFor = (start: T, bases: [string, string]): CoreFlex<T>[] => {
+  const flexFor = (start: T, members: [string, string]): CoreFlex<T>[] => {
     const floor = opts.strengthOf(start);
     const seenThirds = new Set<string>();
     const flex: CoreFlex<T>[] = [];
@@ -63,12 +63,12 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       if (shown.has(opts.keyOf(item))) {
         continue;
       }
-      const ids = opts.speciesOf(item);
-      const itemBases = ids.map((id) => opts.base(id));
-      const left = [...itemBases];
+      // Both raw core ids must be in the trio (a Shadow or Mega form is not its base); the third
+      // is the raw id left over.
+      const left = [...opts.speciesOf(item)];
       let both = true;
-      for (const b of bases) {
-        const at = left.indexOf(b);
+      for (const m of members) {
+        const at = left.indexOf(m);
         if (at < 0) {
           both = false;
           break;
@@ -78,8 +78,8 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       if (!both || left.length !== 1) {
         continue;
       }
-      const thirdBase = left[0]!;
-      const thirdId = ids[itemBases.lastIndexOf(thirdBase)]!;
+      const thirdId = left[0]!;
+      const thirdBase = opts.base(thirdId);
       if (seenThirds.has(thirdBase)) {
         continue;
       }
@@ -125,7 +125,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       if (pair.bases.some((b) => (uses.get(b) ?? 0) >= opts.cap)) {
         continue;
       }
-      pair.flex = flexFor(start, pair.bases);
+      pair.flex = flexFor(start, pair.members);
       if (best === null || pair.flex.length > best.flex.length) {
         best = pair;
       }

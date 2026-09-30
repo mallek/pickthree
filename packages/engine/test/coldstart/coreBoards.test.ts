@@ -13,24 +13,33 @@ describe('coreRowKind and hasExactlyOneMega (plain data)', () => {
     expect(hasExactlyOneMega(['a_mega', 'b_mega', 'c'], isMega)).toBe(false);
   });
 
-  it('a core with no Mega on the Mega board gets Mega flex thirds', () => {
-    expect(coreRowKind(['a', 'b'], ['c_mega', 'd_mega'], isMega, true)).toEqual({
+  it('a core with no Mega and all-Mega thirds is the mega kind', () => {
+    expect(coreRowKind(['a', 'b'], ['c_mega', 'd_mega'], isMega)).toEqual({
       flexKind: 'mega',
       megaInCore: null,
     });
   });
 
-  it('a core holding a Mega gets regular flex thirds and names the Mega', () => {
-    expect(coreRowKind(['a_mega', 'b'], ['c', 'd'], isMega, true)).toEqual({
+  it('a core holding a Mega is regular and names the Mega', () => {
+    expect(coreRowKind(['a_mega', 'b'], ['c', 'd'], isMega)).toEqual({
       flexKind: 'regular',
       megaInCore: 'a_mega',
     });
   });
 
-  it('is always regular off the Mega board', () => {
-    expect(coreRowKind(['a', 'b'], ['c', 'd'], isMega, false)).toEqual({
+  it('a core with no Mega and regular thirds is regular', () => {
+    expect(coreRowKind(['a', 'b'], ['c', 'd'], isMega)).toEqual({
       flexKind: 'regular',
       megaInCore: null,
+    });
+  });
+
+  it('mixed thirds, no thirds, or a Mega core with Mega thirds are regular, never mega', () => {
+    expect(coreRowKind(['a', 'b'], ['c_mega', 'd'], isMega).flexKind).toBe('regular');
+    expect(coreRowKind(['a', 'b'], [], isMega).flexKind).toBe('regular');
+    expect(coreRowKind(['a_mega', 'b'], ['c_mega'], isMega)).toEqual({
+      flexKind: 'regular',
+      megaInCore: 'a_mega',
     });
   });
 });
@@ -150,14 +159,25 @@ describe.skipIf(!haveStaticData())('coreBoards on the built data', () => {
       for (const f of r.flex) {
         expect(f.team.team.species.filter(isMega)).toHaveLength(1);
         expect(f.team.megaId).not.toBeNull();
+        for (const id of coreIds) {
+          expect(f.team.team.species).toContain(id);
+        }
       }
-      expect(r.flexKind === 'regular').toBe(coreMegas.length > 0);
-      if (coreMegas.length > 0) {
-        expect(r.megaInCore).toBe(coreMegas[0]);
+      if (r.megaInCore !== null) {
+        expect(coreMegas).toEqual([r.megaInCore]);
+        expect(r.flexKind).toBe('regular');
+        for (const f of r.flex) {
+          expect(f.team.team.species).toContain(r.megaInCore);
+        }
+      } else {
+        expect(coreMegas).toHaveLength(0);
+      }
+      if (r.flexKind === 'regular') {
+        for (const f of r.flex) {
+          expect(isMega(f.third.build.speciesId)).toBe(false);
+        }
       } else {
         expect(r.megaInCore).toBeNull();
-      }
-      if (r.flexKind === 'mega') {
         for (const f of r.flex) {
           expect(isMega(f.third.build.speciesId)).toBe(true);
         }
