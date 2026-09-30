@@ -96,3 +96,75 @@ export function withSimulatedRows(
     ratings: [...matrix.ratings, ...extra.ratings],
   };
 }
+
+/** Same fast move and the same charged moves, in any order. */
+export function sameMoveset(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length || a[0] !== b[0]) {
+    return false;
+  }
+  const rest = (m: readonly string[]): string => [...m.slice(1)].sort().join('+');
+  return rest(a) === rest(b);
+}
+
+/**
+ * Fighters that have a matrix row whose moveset is not the one they will be shown with. The
+ * first fighter named for a species decides; later ones are ignored.
+ */
+export function movesetDrift(
+  fighters: readonly MatrixFighter[],
+  matrix: MatchupMatrix,
+): MatrixFighter[] {
+  const seen = new Set<string>();
+  const out: MatrixFighter[] = [];
+  for (const f of fighters) {
+    if (seen.has(f.speciesId)) {
+      continue;
+    }
+    seen.add(f.speciesId);
+    const row = matrix.candidateMovesets[f.speciesId];
+    if (row === undefined) {
+      continue;
+    }
+    if (!sameMoveset(f.moveset, row)) {
+      out.push({ speciesId: f.speciesId, moveset: [...f.moveset] });
+    }
+  }
+  return out;
+}
+
+/**
+ * The matrix with the given species' rows re-simulated at the given movesets, in place: same
+ * candidates, same row indexes, so a Candidate's matrixRow still points at its own row. Species
+ * the matrix does not have are ignored (withSimulatedRows adds those).
+ */
+export function withReplacedRows(
+  matrix: MatchupMatrix,
+  rows: readonly MatrixFighter[],
+  deps: MatrixSimDeps,
+): MatchupMatrix {
+  const known = rows.filter((r) => matrix.candidates.includes(r.speciesId));
+  if (known.length === 0) {
+    return matrix;
+  }
+  const opponents = matrix.opponents.map((id) => ({
+    speciesId: id,
+    moveset: matrix.opponentMovesets[id] ?? [],
+  }));
+  const fresh = simulateMatrix(matrix, [...known], opponents, deps);
+  const ratings = [...matrix.ratings];
+  fresh.candidates.forEach((id, fi) => {
+    const ci = matrix.candidates.indexOf(id);
+    for (let oi = 0; oi < matrix.opponents.length; oi++) {
+      for (let si = 0; si < matrix.scenarios.length; si++) {
+        ratings[matrixIndex(matrix, ci, oi, si)] = fresh.ratings[
+          matrixIndex(fresh, fi, oi, si)
+        ] as number;
+      }
+    }
+  });
+  return {
+    ...matrix,
+    candidateMovesets: { ...matrix.candidateMovesets, ...fresh.candidateMovesets },
+    ratings,
+  };
+}

@@ -24,6 +24,7 @@ import {
   prepare,
   type Prepared,
   type Structure,
+  type TrioOptions,
   type TrioIndex,
 } from '../search/trios.js';
 
@@ -51,7 +52,8 @@ export interface GenerateOptions {
   weights?: ReadonlyMap<string, number>;
 }
 
-interface Scored {
+/** One legal trio and its matrix strength, in the order that strength was computed for. */
+export interface ScoredTrio {
   members: [Prepared, Prepared, Prepared];
   /** Indexes into members: lead, switch, closer. */
   order: [number, number, number];
@@ -59,20 +61,25 @@ interface Scored {
   coverage: number;
   consistency: number;
   safety: number;
+  /** Sorted species ids joined with '+', the tie-break. */
   key: string;
 }
 
-export function generateColdStartTeams(
+/**
+ * Every legal trio of the pool (one species per team, a Mega counting as its base, one Mega),
+ * scored by simStrength, strongest first; the sorted species key breaks a tie so the same pool
+ * always gives the same list however it was ordered.
+ */
+export function scoreTrios(
   pool: readonly Candidate[],
   view: MatrixView,
   types: TrioIndex,
-  opts: GenerateOptions,
-): GeneratedTeam[] {
-  const ctx = strengthContext(view, opts.weights);
+  weights?: ReadonlyMap<string, number>,
+): ScoredTrio[] {
+  const ctx = strengthContext(view, weights);
   const prepared: Prepared[] = prepare([...pool], view, types);
   const n = prepared.length;
-  const all: Scored[] = [];
-
+  const all: ScoredTrio[] = [];
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       for (let k = j + 1; k < n; k++) {
@@ -81,12 +88,10 @@ export function generateColdStartTeams(
           prepared[j] as Prepared,
           prepared[k] as Prepared,
         ];
-        const ids = members.map((m) => m.c.build.speciesId);
-        // One species per team, even across specimens, a Mega counting as its base, and one Mega:
-        // the same rules generateTrios keeps.
         if (trioBreaksRules(members[0].rule, members[1].rule, members[2].rule)) {
           continue;
         }
+        const ids = members.map((m) => m.c.build.speciesId);
         const rows: [number, number, number] = [
           members[0].c.matrixRow,
           members[1].c.matrixRow,
@@ -111,13 +116,45 @@ export function generateColdStartTeams(
       }
     }
   }
-
-  // Strongest first; the sorted species key breaks a tie, so the same pool always gives the same
-  // board however the pool happened to be ordered.
   all.sort((x, y) => y.strength - x.strength || x.key.localeCompare(y.key));
+  return all;
+}
 
-  const picked: Scored[] = [];
-  const speciesOf = (item: Scored): string[] => item.members.map((m) => m.c.build.speciesId);
+/**
+ * A scored trio as a card: the engine's own draft evaluated for exactly the order the strength
+ * was computed for, so the card's "ABB line" and exposure describe the team as it is presented.
+ */
+export function presentTeam(
+  item: ScoredTrio,
+  view: MatrixView,
+  trioOpts: TrioOptions = DEFAULT_TRIO_OPTIONS,
+): GeneratedTeam {
+  const draft = evaluateTrio(item.members, view, trioOpts, [item.order]);
+  const species = item.order.map((idx) => item.members[idx]!.c.build.speciesId) as [
+    string,
+    string,
+    string,
+  ];
+  return {
+    species,
+    strength: item.strength,
+    coverage: item.coverage,
+    consistency: item.consistency,
+    safety: item.safety,
+    structure: draft.structure,
+    exposure: draft.exposure.slice(0, EXPOSURE_SHOWN),
+  };
+}
+
+export function generateColdStartTeams(
+  pool: readonly Candidate[],
+  view: MatrixView,
+  types: TrioIndex,
+  opts: GenerateOptions,
+): GeneratedTeam[] {
+  const all = scoreTrios(pool, view, types, opts.weights);
+  const picked: ScoredTrio[] = [];
+  const speciesOf = (item: ScoredTrio): string[] => item.members.map((m) => m.c.build.speciesId);
   for (const item of all) {
     if (picked.length >= opts.results) {
       break;
@@ -139,24 +176,5 @@ export function generateColdStartTeams(
       picked.push(item);
     }
   }
-
-  return picked.map((item) => {
-    // The engine's own draft, evaluated for exactly the order the strength was computed for, so
-    // the card's "ABB line" describes the team as it is presented.
-    const draft = evaluateTrio(item.members, view, DEFAULT_TRIO_OPTIONS, [item.order]);
-    const species = item.order.map((idx) => item.members[idx]!.c.build.speciesId) as [
-      string,
-      string,
-      string,
-    ];
-    return {
-      species,
-      strength: item.strength,
-      coverage: item.coverage,
-      consistency: item.consistency,
-      safety: item.safety,
-      structure: draft.structure,
-      exposure: draft.exposure.slice(0, EXPOSURE_SHOWN),
-    };
-  });
+  return picked.map((item) => presentTeam(item, view));
 }

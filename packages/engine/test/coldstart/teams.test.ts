@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateColdStartTeams } from '../../src/coldstart/teams.js';
+import { generateColdStartTeams, presentTeam, scoreTrios } from '../../src/coldstart/teams.js';
 import {
   coldStartBuilds,
   coldStartSpecimens,
@@ -112,5 +112,25 @@ run('generateColdStartTeams', () => {
     generateColdStartTeams(pool, view, types, { results: 24 });
     // Measured at roughly 300 ms for 34220 trios over six orderings; ten times that is a failure.
     expect(Date.now() - started).toBeLessThan(5000);
+  });
+
+  it('scoreTrios lists every legal trio, strongest first', () => {
+    const { view, pool, types } = setup(20);
+    const all = scoreTrios(pool, view, types);
+    expect(all.length).toBeGreaterThan(100);
+    for (let i = 1; i < all.length; i++) {
+      expect(all[i - 1]!.strength).toBeGreaterThanOrEqual(all[i]!.strength);
+    }
+    for (const t of all) {
+      const ids = t.members.map((m) => types.teamSpeciesOf(m.c.build.speciesId));
+      expect(new Set(ids).size).toBe(3);
+    }
+  });
+
+  it('generateColdStartTeams is presentTeam over scoreTrios', () => {
+    const { view, pool, types } = setup(20);
+    const top = scoreTrios(pool, view, types)[0]!;
+    const first = generateColdStartTeams(pool, view, types, { results: 1 })[0]!;
+    expect(presentTeam(top, view)).toEqual(first);
   });
 });
