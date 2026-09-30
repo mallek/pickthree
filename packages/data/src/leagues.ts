@@ -46,11 +46,24 @@ export const STALE_DAYS = 30;
 
 /**
  * PvPoke's meta group name for a cup at a cap: formats.json's `meta` for the format that lists
- * the cup at that cap, else the slug. The cap matters: the Mega cup has a different group per league.
+ * the cup at that cap, else for the first format that lists the cup at any cap, else the slug.
+ * The cap matters: the Mega cup has a different group per league.
  */
 export function metaGroupFor(cup: string, cp: number): string {
-  const formats = readJson<RawFormat[]>(FORMATS_PATH);
-  return formats.find((f) => f.cup === cup && f.cp === cp)?.meta ?? cup;
+  return metaGroupIn(readJson<RawFormat[]>(FORMATS_PATH), cup, cp);
+}
+
+/** metaGroupFor over a given formats list. */
+export function metaGroupIn(
+  formats: readonly Pick<RawFormat, 'cup' | 'cp' | 'meta'>[],
+  cup: string,
+  cp: number,
+): string {
+  return (
+    formats.find((f) => f.cup === cup && f.cp === cp)?.meta ??
+    formats.find((f) => f.cup === cup)?.meta ??
+    cup
+  );
 }
 
 /** The day PvPoke last changed the cup's overall rankings at the pinned commit, or null. */

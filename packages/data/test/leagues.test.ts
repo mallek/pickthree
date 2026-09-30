@@ -9,6 +9,7 @@ import {
   hasRankings,
   isStale,
   metaGroupFor,
+  metaGroupIn,
   rotationExclude,
   readLeagues,
 } from '../src/leagues.js';
@@ -120,6 +121,23 @@ describe.skipIf(!havePvPoke)('readLeagues', () => {
       }
     },
   );
+});
+
+describe('metaGroupIn', () => {
+  const formats = [
+    { title: 'Mega Great', cup: 'mega', cp: 1500, meta: 'megagreat' },
+    { title: 'Mega Master', cup: 'mega', cp: 10000, meta: 'mega' },
+  ];
+
+  it('matches the cup at the cap first', () => {
+    expect(metaGroupIn(formats, 'mega', 10000)).toBe('mega');
+    expect(metaGroupIn(formats, 'mega', 1500)).toBe('megagreat');
+  });
+
+  it('falls back to the cup at any cap before the slug', () => {
+    expect(metaGroupIn(formats, 'mega', 2500)).toBe('megagreat');
+    expect(metaGroupIn(formats, 'other', 1500)).toBe('other');
+  });
 });
 
 describe.skipIf(!havePvPoke)('metaGroupFor', () => {
