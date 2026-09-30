@@ -140,8 +140,12 @@ describe('post.md for core boards', () => {
     const md = postMarkdownCores(coreRun(true));
     expect(md).toContain('**Top Cores**');
     expect(md).toContain('1. Alpha + Beta - add one:');
-    expect(md).toContain(`   - Gamma (91.2) - ${linkOf('mega-great', team('alpha', 'beta', 'gamma', 1))}`);
-    expect(md).toMatch(/\n {3}- Eps \(Shadow\) \(90\.0\) - https:\/\/pick3\.gg\/#\/t\/mega-great\//);
+    expect(md).toContain(
+      `   - [Alpha / Beta / Gamma](${linkOf('mega-great', team('alpha', 'beta', 'gamma', 1))}) - 91.2`,
+    );
+    expect(md).toMatch(/\n {3}- \[[^\]]+\]\(https:\/\/pick3\.gg\/#\/t\/mega-great\/[^)\s]+\) - 90\.0\n/);
+    // No bare URLs: every link is embedded as markdown text.
+    expect(md).not.toMatch(/(^|\s)https:\/\/pick3\.gg/m);
     expect(md).toContain('1. Delta + Beta - add a Mega:');
     expect(md).toContain('projection, not a measured win rate');
     expect(md).toContain('PvPoke meta only - Oct 6, 2026');

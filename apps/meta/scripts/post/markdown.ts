@@ -143,7 +143,10 @@ export function postMarkdownCores(run: PostCoreRun): string {
       const add = row.flexKind === 'mega' ? 'add a Mega:' : 'add one:';
       lines.push(`${i + 1}. ${row.coreNames.join(' + ')} - ${add}`);
       for (const f of row.flex) {
-        lines.push(`   - ${f.name} (${f.team.strength.toFixed(1)}) - ${linkOf(run.leagueId, f.team)}`);
+        // The link text is the whole team in battle order, so the post reads as text, not raw URLs.
+        lines.push(
+          `   - [${f.team.names.join(' / ')}](${linkOf(run.leagueId, f.team)}) - ${f.team.strength.toFixed(1)}`,
+        );
       }
     });
   }
