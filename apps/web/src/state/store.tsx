@@ -804,6 +804,8 @@ interface Actions {
   /** The in-battle card for one opponent against the set's team. Null when it could not run. */
   faceoff(team: TeamRef, opponent: string): Promise<Faceoff | null>;
   removeSpecimen(id: string): Promise<void>;
+  /** Mark one Pokémon as a Level 4 Mega (or not); verdicts and teams are judged again. */
+  setMegaLevel4(id: string, on: boolean): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
   setLeague(id: string): void;
   /** Leave a Pokémon, as it battles, out of team recommendations, or let it back in. */
@@ -1599,6 +1601,17 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [saveSpecimens],
   );
 
+  const setMegaLevel4 = useCallback(
+    async (id: string, on: boolean) => {
+      const existing = stateRef.current.collection?.specimens ?? [];
+      await saveSpecimens(
+        existing.map((x) => (x.id === id ? { ...x, megaLevel4: on } : x)),
+        null,
+      );
+    },
+    [saveSpecimens],
+  );
+
   const setLeague = useCallback(
     (id: string) => {
       updateSettings((cur) => ({ ...cur, league: id }));
@@ -1917,6 +1930,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       faceoff,
       addManual,
       removeSpecimen,
+      setMegaLevel4,
       updateSettings,
       setLeague,
       toggleExcludedSpecies,
@@ -1951,6 +1965,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       faceoff,
       addManual,
       removeSpecimen,
+      setMegaLevel4,
       updateSettings,
       setLeague,
       toggleExcludedSpecies,

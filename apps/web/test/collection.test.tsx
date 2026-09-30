@@ -87,12 +87,12 @@ const VERDICTS: Record<string, Verdict> = {
   f: verdict('f', 'Built', 20),
 };
 
-async function seed(): Promise<void> {
+async function seed(specimens: Specimen[] = SPECIMENS): Promise<void> {
   await storage.saveCollection({
-    specimens: SPECIMENS,
+    specimens,
     report: {
-      scansRead: SPECIMENS.length,
-      recognized: SPECIMENS.length,
+      scansRead: specimens.length,
+      recognized: specimens.length,
       duplicatesMerged: 0,
       missingIvs: { count: 0, names: [] },
       unrecognized: [],
@@ -107,8 +107,9 @@ async function seed(): Promise<void> {
 
 async function open(
   verdicts: () => Promise<Record<string, Verdict>> = async () => VERDICTS,
+  specimens: Specimen[] = SPECIMENS,
 ): Promise<void> {
-  await seed();
+  await seed(specimens);
   render(
     <AppProvider host={fakeHost({ verdicts: vi.fn(verdicts) })}>
       <Probe />
@@ -181,6 +182,19 @@ describe('Collection', () => {
       .fn()
       .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
     latest = null;
+  });
+
+  it('shows a Mega pill on a Mega-marked row and none on the others', async () => {
+    const marked = { ...specimen('m', 'tinkaton'), megaForm: 'mega' } as Specimen;
+    await open(
+      async () => ({ m: verdict('m', 'Built', 30), a: verdict('a', 'Built', 10) }),
+      [marked, specimen('a', 'azumarill')],
+    );
+    await waitFor(() => expect(document.querySelectorAll('.spec-row .verdict-tag').length).toBe(2));
+    const pills = [...document.querySelectorAll('.spec-row .token-mega-pill')];
+    expect(pills).toHaveLength(1);
+    expect(pills[0]!.textContent).toBe('Mega');
+    expect(pills[0]!.closest('.spec-row')).toHaveTextContent('Tinkaton');
   });
 
   it('has one Settings cog, a plus to Add Pokémon and the meta.pick3.gg link in its header', async () => {

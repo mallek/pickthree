@@ -274,6 +274,11 @@ export function TeamDetail({ id }: { id: string }) {
     <div className="screen">
       {header}
       <div className="scroll" style={{ gap: 24 }}>
+        {custom && s.analysis?.twoMegas ? (
+          <p className="error" role="alert">
+            Only one Mega per team in GBL. Swap one out.
+          </p>
+        ) : null}
         <ScoreCard
           team={team}
           custom={notes}

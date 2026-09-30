@@ -227,6 +227,7 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
                 familyId: sp.familyId,
                 dex: sp.dex,
                 ...(sp.megaOf ? { megaOf: sp.megaOf } : {}),
+                ...(sp.megaOf && sp.tags.includes('supermega') ? { superMega: true } : {}),
               },
             ]),
           ),

@@ -7,6 +7,8 @@ export interface SpeciesLite {
   dex: number;
   /** The base species id, on a Mega form only. */
   megaOf?: string | undefined;
+  /** A Mega that can be Level 4 (tagged supermega), on a Mega form only. */
+  superMega?: boolean | undefined;
 }
 
 /** What the UI needs about the league in play, computed in the worker. */

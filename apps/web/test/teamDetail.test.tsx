@@ -111,8 +111,10 @@ function analysisOf(team: TeamRecommendation): TeamAnalysis {
 }
 
 /** Boot the store, analyze three species picks into `team`, and show the custom analysis. */
-async function mountCustom(team: TeamRecommendation) {
-  const host = fakeHost({ analyze: vi.fn(async () => analysisOf(team)) });
+async function mountCustom(team: TeamRecommendation, twoMegas = false) {
+  const host = fakeHost({
+    analyze: vi.fn(async () => ({ ...analysisOf(team), twoMegas })),
+  });
   render(
     <AppProvider host={host}>
       <Probe />
@@ -421,6 +423,19 @@ describe('Team Analysis', () => {
       'azumarill',
       'dragonite_shadow',
     ]);
+  });
+
+  it('warns above the results when the team has two Megas', async () => {
+    await mountCustom(TEAM, true);
+    const warning = await screen.findByText('Only one Mega per team in GBL. Swap one out.');
+    const card = screen.getByRole('region', { name: 'Battle score' });
+    expect(warning.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows no Mega warning for a team with at most one', async () => {
+    await mountCustom(TEAM);
+    await screen.findByRole('region', { name: 'Battle score' });
+    expect(screen.queryByText(/Only one Mega per team/)).toBeNull();
   });
 
   it('Edit team on a hand-built team opens Build with its picks as they are', async () => {

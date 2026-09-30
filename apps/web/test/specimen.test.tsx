@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { MoveChoice, Specimen, Verdict, VerdictLabel } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddPokemon } from '../src/screens/AddPokemon.tsx';
 import { SpecimenScreen } from '../src/screens/Specimen.tsx';
@@ -146,8 +146,28 @@ const MANUAL = specimen('m', 'clodsire', { manual: true });
 const UNLOCK = specimen('u', 'medicham');
 const HALF = specimen('h', 'dragonite_shadow');
 const MEGA = specimen('g', 'tinkaton', { level: 40 });
-const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF, MEGA];
+/** Marked as a Mega Sableye (its Mega is a supermega), and a marked Tinkaton (its Mega is not). */
+const MARKED = {
+  ...specimen('k', 'sableye', { level: 30 }),
+  megaForm: 'mega',
+} as Specimen;
+const MARKED_PLAIN = {
+  ...specimen('p', 'tinkaton', { level: 30 }),
+  megaForm: 'mega',
+} as Specimen;
+const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF, MEGA, MARKED, MARKED_PLAIN];
 const IDS = SPECIMENS.map((x) => x.id);
+
+/** A Mega build of Sableye: the Mega species battles, the base form is what gets powered up. */
+function megaVerdict(sp: Specimen): Verdict {
+  const v = verdict(
+    sp,
+    'Built',
+    { level: 30, baseLevel: 30, baseCp: 1300, mega: { ready: true, level4: false } },
+    { stardust: 0, candy: 0, xlCandy: 0, megaEnergy: 'ready' },
+  );
+  return { ...v, build: { ...v.build!, speciesId: 'sableye_mega', cp: 1498 } } as Verdict;
+}
 
 const VERDICTS: Record<string, Verdict> = {
   a: verdict(BUILT, 'Built', { level: 20 }, { stardust: 0, candy: 0, xlCandy: 0 }),
@@ -166,6 +186,8 @@ const VERDICTS: Record<string, Verdict> = {
   ),
   h: verdict(HALF, 'Built', { level: 20.5 }, { stardust: 2500, candy: 2, xlCandy: 0 }),
   // A Level 4 Mega: battles two levels above the level it was powered to.
+  k: megaVerdict(MARKED),
+  p: verdict(MARKED_PLAIN, 'Built', { level: 30 }, { stardust: 0, candy: 0, xlCandy: 0 }),
   g: verdict(
     MEGA,
     'Built',
@@ -192,13 +214,40 @@ async function seed(): Promise<void> {
   });
 }
 
+/** Sableye and its Mega (a supermega), Tinkaton and its Mega (not one), on top of the fake data. */
+function withMegas(): Parameters<typeof fakeHost>[0] {
+  const base = fakeHost();
+  return {
+    ready: vi.fn(async () => {
+      const r = await base.ready();
+      const sp = (name: string, id: string, extra: object = {}) => ({
+        name,
+        types: ['dark', 'ghost'] as ['dark', 'ghost'],
+        familyId: id,
+        dex: 302,
+        ...extra,
+      });
+      return {
+        ...r,
+        species: {
+          ...r.species,
+          sableye: sp('Sableye', 'sableye'),
+          sableye_mega: sp('Sableye (Mega)', 'sableye', { megaOf: 'sableye', superMega: true }),
+          tinkaton_mega: sp('Tinkaton (Mega)', 'tinkaton', { megaOf: 'tinkaton' }),
+        },
+        allSpecies: [...r.allSpecies, 'sableye', 'sableye_mega'],
+      };
+    }),
+  };
+}
+
 async function mount(
   verdicts: () => Promise<Record<string, Verdict>> = async () => VERDICTS,
   more: Parameters<typeof fakeHost>[0] = {},
 ): Promise<void> {
   await seed();
   render(
-    <AppProvider host={fakeHost({ verdicts: vi.fn(verdicts), ...more })}>
+    <AppProvider host={fakeHost({ verdicts: vi.fn(verdicts), ...withMegas(), ...more })}>
       <Probe />
       <Gate />
     </AppProvider>,
@@ -324,6 +373,69 @@ describe('Pokémon detail', () => {
     expect(screen.queryByText(/Level 40 to/)).toBeNull();
     expect(screen.getByText('Power up to CP 1200 (1498 as Mega, Level 4)')).toBeInTheDocument();
     expect(screen.getByText('Mega Energy (mega-evolved before)')).toBeInTheDocument();
+  });
+
+  it('shows the Mega build beside the base build: the Mega token and the base CP power-up line', async () => {
+    await fromCounters('k');
+    await judged();
+    const block = screen.getByRole('group', { name: 'Mega build' });
+    expect(within(block).getByText('Mega Sableye')).toBeInTheDocument();
+    expect(block.querySelector('.token-mega-pill')?.textContent).toBe('Mega');
+    expect(within(block).getByText('Power up to CP 1300 (1498 as Mega)')).toBeInTheDocument();
+    expect(screen.getAllByText('Power up to CP 1300 (1498 as Mega)')).toHaveLength(1);
+  });
+
+  it('offers Mega Level 4 for a marked Mega whose Mega is a supermega, and saves it', async () => {
+    await fromCounters('k');
+    await judged();
+    const sw = screen.getByRole('switch', { name: 'Mega Level 4' });
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    await act(async () => {
+      fireEvent.click(sw);
+    });
+    await waitFor(() =>
+      expect(latest?.state.collection?.specimens.find((x) => x.id === 'k')?.megaLevel4).toBe(true),
+    );
+    const saved = await storage.loadCollection();
+    expect(saved?.specimens.find((x) => x.id === 'k')?.megaLevel4).toBe(true);
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: 'Mega Level 4' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      ),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Mega Level 4' }));
+    });
+    await waitFor(() =>
+      expect(latest?.state.collection?.specimens.find((x) => x.id === 'k')?.megaLevel4).toBe(false),
+    );
+  });
+
+  it('re-judges after the Level 4 toggle: verdicts clear and load again', async () => {
+    const verdicts = vi.fn(async () => VERDICTS);
+    await mount(verdicts);
+    await waitFor(() => expect(latest?.state.route.screen).toBe('teams'));
+    await go({ screen: 'specimen', id: 'k' });
+    await judged();
+    const before = verdicts.mock.calls.length;
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Mega Level 4' }));
+    });
+    await waitFor(() => expect(verdicts.mock.calls.length).toBeGreaterThan(before));
+  });
+
+  it('has no Mega Level 4 switch for a Pokemon that is not a marked supermega', async () => {
+    for (const id of ['a', 'p']) {
+      await fromCounters(id);
+      await judged();
+      expect(screen.queryByRole('switch', { name: 'Mega Level 4' })).toBeNull();
+      cleanup();
+      globalThis.indexedDB = new IDBFactory();
+      resetDbForTests();
+      resetHistoryForTests();
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   });
 
   it('at its build level, still shows the second move unlock and only the non-zero tiles', async () => {

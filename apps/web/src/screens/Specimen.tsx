@@ -48,8 +48,15 @@ function metaLine(rank: MetaRank | undefined): string {
 
 export function SpecimenScreen({ id }: { id: string }) {
   const s = useAppState();
-  const { back, navigate, openSheet, loadVerdicts, toggleExcludedSpecies, removeSpecimen } =
-    useActions();
+  const {
+    back,
+    navigate,
+    openSheet,
+    loadVerdicts,
+    toggleExcludedSpecies,
+    removeSpecimen,
+    setMegaLevel4,
+  } = useActions();
   const league = useLeague();
   const name = useName();
   const species = useSpecies();
@@ -135,6 +142,9 @@ export function SpecimenScreen({ id }: { id: string }) {
     ? (s.settings.excludedSpecies ?? []).includes(battles) || legacy.includes(sp.id)
     : legacy.includes(sp.id);
   const showSwitch = !(v && !battles);
+  // Level 4 is only for a Mega the player has marked whose Mega form is a supermega.
+  const markedMega = sp.megaForm ? species(`${sp.speciesId}_${sp.megaForm}`) : undefined;
+  const canLevel4 = markedMega?.superMega === true;
   const switchReady = battles !== null && !s.verdictsLoading && !legacy.includes(sp.id);
   const covers =
     battles && !s.verdictsLoading
@@ -176,7 +186,7 @@ export function SpecimenScreen({ id }: { id: string }) {
             alignItems: 'center',
           }}
         >
-          <PokemonToken speciesId={sp.speciesId} size={64} />
+          <PokemonToken speciesId={sp.speciesId} size={64} markedMega={Boolean(sp.megaForm)} />
           <div>
             <h2>{display}</h2>
             <div
@@ -256,6 +266,19 @@ export function SpecimenScreen({ id }: { id: string }) {
           </div>
         ) : null}
 
+        {build?.mega ? (
+          <div className="evo" role="group" aria-label="Mega build">
+            <PokemonToken speciesId={build.speciesId} size={36} showInitial={false} />
+            <div>
+              <div className="role" style={{ display: 'block' }}>
+                Mega build
+              </div>
+              <div style={{ fontSize: 15 }}>{name(build.speciesId)}</div>
+              <div className="small muted">{powerUpLine(build)}</div>
+            </div>
+          </div>
+        ) : null}
+
         {v?.moveset ? (
           <div className="stack" style={{ gap: 6 }}>
             <h3>Recommended moves</h3>
@@ -285,7 +308,6 @@ export function SpecimenScreen({ id }: { id: string }) {
                   : ''}
               </div>
             )}
-            {build.mega ? <p className="small">{powerUpLine(build)}</p> : null}
             {tiles.length > 0 ? (
               <div className="stat3">
                 {tiles.map(([label, value]) => (
@@ -349,6 +371,18 @@ export function SpecimenScreen({ id }: { id: string }) {
             </button>
           ))}
         </div>
+
+        {canLevel4 ? (
+          <div className="card">
+            <Switch
+              label="Mega Level 4"
+              checked={sp.megaLevel4 === true}
+              onChange={() => {
+                void setMegaLevel4(sp.id, sp.megaLevel4 !== true);
+              }}
+            />
+          </div>
+        ) : null}
 
         {/* At the end of the page, in the flow: nothing sits over the content. */}
         {/* A Pokémon with no build in this league never reaches a team: nothing to switch. */}

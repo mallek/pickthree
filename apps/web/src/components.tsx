@@ -302,11 +302,14 @@ export function PokemonToken({
   size = 44,
   showInitial = true,
   title,
+  markedMega = false,
 }: {
   speciesId: string;
   size?: number;
   showInitial?: boolean;
   title?: string;
+  /** The Pokémon is marked as a Mega in the player's collection: the pill shows on its base form. */
+  markedMega?: boolean;
 }) {
   const sp = useSpecies()(speciesId);
   const name = useName()(speciesId);
@@ -315,7 +318,7 @@ export function PokemonToken({
   const src = spritesOn ? `/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp` : undefined;
   const shadow = speciesId.endsWith('_shadow');
   // The pill needs room; a tiny token's name sits in the text beside it.
-  const mega = Boolean(sp?.megaOf) && size >= 32;
+  const mega = (Boolean(sp?.megaOf) || markedMega) && size >= 32;
   // axe cannot see past the wrapper's ::before glow, so a Shadow letter's contrast is checked by
   // test/shadowToken.test.tsx for every type instead of by the page audit.
   const audit = shadow ? { 'data-audit-contrast': 'static' } : {};

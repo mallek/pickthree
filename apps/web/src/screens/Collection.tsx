@@ -364,7 +364,11 @@ export function Collection() {
                 className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}`}
                 href={hashFor({ screen: 'specimen', id: sp.id })}
               >
-                <PokemonToken speciesId={sp.speciesId} size={44} />
+                <PokemonToken
+                  speciesId={sp.speciesId}
+                  size={44}
+                  markedMega={Boolean(sp.megaForm)}
+                />
                 <span style={{ minWidth: 0 }}>
                   <span className="spec-name">
                     {name(sp.speciesId).replace(/^Shadow /, '')}
