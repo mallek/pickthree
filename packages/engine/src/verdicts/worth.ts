@@ -12,6 +12,12 @@ import { statProduct } from '../math/cp.js';
 import type { MatrixView } from '../search/matrixView.js';
 import type { BattleSimulator, SimOptions } from '../sim/BattleSimulator.js';
 
+/** What the Pokemon page prints for one Mega build: the Mega, its CP, and the base CP to reach. */
+export type MegaBuildLine = Pick<
+  Build,
+  'speciesId' | 'level' | 'cp' | 'baseCp' | 'baseLevel' | 'mega'
+>;
+
 export type VerdictLabel =
   'Built' | 'Worth building' | 'Wait for better IVs' | 'Not eligible' | 'Needs rescan';
 
@@ -27,6 +33,11 @@ export interface Verdict {
    * this copy's build of it from teams.
    */
   buildSpecies: string[];
+  /**
+   * The specimen's Mega builds in the league, best or not; empty when the league bars Megas or the
+   * specimen has none. The Pokemon page lists them beside the verdict's build.
+   */
+  megaBuilds: MegaBuildLine[];
   moveset: Moveset | null;
   cost: Cost | null;
   /** Wins the rank-1 twin gets minus this specimen's wins across the meta, 1-1 shields. */
@@ -149,6 +160,7 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     specimenId: s.id,
     build: null,
     buildSpecies: [] as string[],
+    megaBuilds: [] as MegaBuildLine[],
     moveset: null,
     cost: null,
     perfectDelta: null,
@@ -170,6 +182,16 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
   const builds = buildsFor(s, deps.index, { ...deps.buildOptions, minCp: 0 });
   const build = bestBuild(builds, deps.overall);
   const buildSpecies = [...new Set(builds.map((b) => b.speciesId))];
+  base.megaBuilds = builds
+    .filter((b) => b.mega)
+    .map(({ speciesId, level, cp, baseCp, baseLevel, mega }) => ({
+      speciesId,
+      level,
+      cp,
+      baseCp,
+      baseLevel,
+      mega,
+    }));
   if (!build) {
     const sp = deps.index.species(s.speciesId);
     const banned = Boolean(sp && !allowedInLeague(sp, deps.league));

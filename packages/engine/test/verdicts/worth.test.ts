@@ -8,7 +8,7 @@ import { GameDataIndex } from '../../src/gamedata/index.js';
 import { verdictsFor } from '../../src/recommend.js';
 import type { Specimen } from '../../src/collection/specimen.js';
 import { isAlreadyBuilt } from '../../src/verdicts/worth.js';
-import { haveStaticData, loadStaticData } from '../fixtures.js';
+import { haveLeague, haveStaticData, loadStaticData } from '../fixtures.js';
 
 /**
  * "Ready to use" became "Built" (design program piece 4, round 2: Collection and the Pokémon
@@ -176,3 +176,33 @@ describe('isAlreadyBuilt on a Mega build', () => {
     expect(isAlreadyBuilt(b, s)).toBe(true);
   });
 });
+
+describe.skipIf(!haveStaticData() || !haveLeague('mega-great'))(
+  'the Mega builds a verdict lists',
+  () => {
+    const mega = loadStaticData('mega-great');
+    const index = new GameDataIndex(mega.species, mega.moves);
+    const megaId = mega.rankings.overall
+      .map((r) => r.speciesId)
+      .find((id) => index.species(id)?.megaOf) as string;
+    const s = hypotheticalSpecimen(megaId, index, buildOptionsFor(mega.league));
+
+    it('lists every Mega build of the specimen in a league that allows them', () => {
+      const v = verdictsFor([s], {}, { data: mega, sim: null } as never)[s.id]!;
+      const expected = buildsFor(s, index, { ...buildOptionsFor(mega.league), minCp: 0 })
+        .filter((b) => b.mega)
+        .map((b) => b.speciesId);
+      expect(expected).toContain(megaId);
+      expect(v.megaBuilds.map((b) => b.speciesId)).toEqual(expected);
+      for (const b of v.megaBuilds) {
+        expect(b.mega).not.toBeNull();
+        expect(b.baseCp).toBeLessThanOrEqual(b.cp);
+      }
+    });
+
+    it('lists none in a league that bars Megas', () => {
+      const v = verdictsFor([s], {}, { data: loadStaticData('great'), sim: null } as never)[s.id]!;
+      expect(v.megaBuilds).toEqual([]);
+    });
+  },
+);

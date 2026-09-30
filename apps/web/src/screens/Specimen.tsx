@@ -266,18 +266,19 @@ export function SpecimenScreen({ id }: { id: string }) {
           </div>
         ) : null}
 
-        {build?.mega ? (
-          <div className="evo" role="group" aria-label="Mega build">
-            <PokemonToken speciesId={build.speciesId} size={36} showInitial={false} />
+        {/* Every Mega build the league allows, beside the verdict's build whichever is best. */}
+        {(v?.megaBuilds ?? []).map((mb) => (
+          <div className="evo" role="group" aria-label="Mega build" key={mb.speciesId}>
+            <PokemonToken speciesId={mb.speciesId} size={36} showInitial={false} />
             <div>
               <div className="role" style={{ display: 'block' }}>
                 Mega build
               </div>
-              <div style={{ fontSize: 15 }}>{name(build.speciesId)}</div>
-              <div className="small muted">{powerUpLine(build)}</div>
+              <div style={{ fontSize: 15 }}>{name(mb.speciesId)}</div>
+              <div className="small muted">{powerUpLine(mb)}</div>
             </div>
           </div>
-        ) : null}
+        ))}
 
         {canLevel4 ? (
           <div className="card">

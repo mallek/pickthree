@@ -351,6 +351,7 @@ export function verdictsFor(
         line: `pick3 could not judge this one: ${e instanceof Error ? e.message : String(e)}`,
         build: null,
         buildSpecies: [],
+        megaBuilds: [],
         moveset: null,
         cost: null,
         perfectDelta: null,

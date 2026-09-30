@@ -92,11 +92,12 @@ function verdict(
     megaEnergy?: 'needed' | 'ready';
   },
 ): Verdict {
-  return {
+  const v = {
     specimenId: sp.id,
     label,
     line: `${label} line for ${sp.id}.`,
     buildSpecies: [sp.speciesId],
+    megaBuilds: [] as unknown[],
     build: {
       specimenId: sp.id,
       specimen: sp,
@@ -135,7 +136,11 @@ function verdict(
     metaRank: null,
     formNote: null,
     ineligible: null,
-  } as unknown as Verdict;
+  };
+  if (v.build.mega) {
+    v.megaBuilds = [v.build];
+  }
+  return v as unknown as Verdict;
 }
 
 /** Tinkaton, already built; Azumarill, worth powering up; Clodsire, typed in by hand; Medicham,
@@ -155,7 +160,9 @@ const MARKED_PLAIN = {
   ...specimen('p', 'tinkaton', { level: 30 }),
   megaForm: 'mega',
 } as Specimen;
-const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF, MEGA, MARKED, MARKED_PLAIN];
+/** Sableye whose best build is its base form, with a Mega build beside it all the same. */
+const UNMARKED = specimen('s', 'sableye', { level: 20 });
+const SPECIMENS = [BUILT, BUILDING, MANUAL, UNLOCK, HALF, MEGA, MARKED, MARKED_PLAIN, UNMARKED];
 const IDS = SPECIMENS.map((x) => x.id);
 
 /** A Mega build of Sableye: the Mega species battles, the base form is what gets powered up. */
@@ -166,7 +173,26 @@ function megaVerdict(sp: Specimen): Verdict {
     { level: 30, baseLevel: 30, baseCp: 1300, mega: { ready: true, level4: false } },
     { stardust: 0, candy: 0, xlCandy: 0, megaEnergy: 'ready' },
   );
-  return { ...v, build: { ...v.build!, speciesId: 'sableye_mega', cp: 1498 } } as Verdict;
+  const build = { ...v.build!, speciesId: 'sableye_mega', cp: 1498 };
+  return { ...v, build, megaBuilds: [build] } as Verdict;
+}
+
+function baseBestVerdict(sp: Specimen): Verdict {
+  const v = verdict(
+    sp,
+    'Worth building',
+    { level: 25 },
+    { stardust: 10000, candy: 10, xlCandy: 0 },
+  );
+  const mega = {
+    speciesId: 'sableye_mega',
+    level: 27.5,
+    cp: 1475,
+    baseCp: 1118,
+    baseLevel: 27.5,
+    mega: { ready: false, level4: false },
+  };
+  return { ...v, megaBuilds: [mega] } as Verdict;
 }
 
 const VERDICTS: Record<string, Verdict> = {
@@ -187,6 +213,7 @@ const VERDICTS: Record<string, Verdict> = {
   h: verdict(HALF, 'Built', { level: 20.5 }, { stardust: 2500, candy: 2, xlCandy: 0 }),
   // A Level 4 Mega: battles two levels above the level it was powered to.
   k: megaVerdict(MARKED),
+  s: baseBestVerdict(UNMARKED),
   p: verdict(MARKED_PLAIN, 'Built', { level: 30 }, { stardust: 0, candy: 0, xlCandy: 0 }),
   g: verdict(
     MEGA,
@@ -383,6 +410,14 @@ describe('Pokémon detail', () => {
     expect(block.querySelector('.token-mega-pill')?.textContent).toBe('Mega');
     expect(within(block).getByText('Power up to CP 1300 (1498 as Mega)')).toBeInTheDocument();
     expect(screen.getAllByText('Power up to CP 1300 (1498 as Mega)')).toHaveLength(1);
+  });
+
+  it('lists the Mega build when the best build is the base form', async () => {
+    await fromCounters('s');
+    await judged();
+    const block = screen.getByRole('group', { name: 'Mega build' });
+    expect(within(block).getByText('Mega Sableye')).toBeInTheDocument();
+    expect(within(block).getByText('Power up to CP 1118 (1475 as Mega)')).toBeInTheDocument();
   });
 
   it('offers Mega Level 4 for a marked Mega whose Mega is a supermega, and saves it', async () => {
