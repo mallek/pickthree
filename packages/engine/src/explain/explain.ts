@@ -6,6 +6,7 @@ import { formNote, isDefaultToggleForm } from '../gamedata/forms.js';
 import type { Candidate, Role } from '../search/candidates.js';
 import type { SlotSim, TeamSim } from '../search/finalists.js';
 import type { MatrixView } from '../search/matrixView.js';
+import { teamRuleViolation } from '../search/teamRules.js';
 import { nameOf, type TeamScore } from '../score/score.js';
 
 export interface KeyMatchup {
@@ -411,17 +412,20 @@ export function alternativesFor(
   view: MatrixView,
   index: GameDataIndex,
 ): Alternative[] {
-  const inTeam = new Set(t.slots.map((s) => s.candidate.build.speciesId));
   const s11 = view.scenarioIndex([1, 1]);
+  const teamSpeciesOf = (id: string): string => index.teamSpeciesOf(id);
   const out: Alternative[] = [];
   t.slots.forEach((slot, i) => {
     const role = slot.role;
     const current = slot.candidate;
+    // The two that stay: an alternative has to make a legal team with them.
+    const rest = t.slots.filter((_, j) => j !== i).map((s) => s.candidate.build);
     const others = pool
       .filter(
         (c) =>
-          !inTeam.has(c.build.speciesId) &&
-          index.baseOf(c.build.speciesId) !== index.baseOf(current.build.speciesId),
+          index.baseOf(c.build.speciesId) !== index.baseOf(current.build.speciesId) &&
+          teamSpeciesOf(c.build.speciesId) !== teamSpeciesOf(current.build.speciesId) &&
+          teamRuleViolation([...rest, c.build], teamSpeciesOf) === null,
       )
       .sort((a, b) => roleScore(b, role) - roleScore(a, role));
     const alt = others[0];

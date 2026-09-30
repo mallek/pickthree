@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { explainTeam, switchPlanFor } from '../../src/explain/explain.js';
+import { alternativesFor, explainTeam, switchPlanFor } from '../../src/explain/explain.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import type { MatchupMatrix } from '../../src/gamedata/types.js';
 import type { MetaRank } from '../../src/gamedata/metaRank.js';
@@ -177,5 +177,67 @@ describe('Mega names', () => {
     const { displayName } = await import('../../src/explain/explain.js');
     expect(displayName('sableye_mega', index)).toBe('Mega Sableye');
     expect(displayName('charizard_mega_y', index)).toBe('Mega Charizard Y');
+  });
+});
+
+describe('alternatives you own obey the team rules', () => {
+  const sp = (speciesId: string, megaOf?: string) =>
+    ({
+      speciesId,
+      speciesName: speciesId,
+      tags: megaOf ? ['mega'] : [],
+      evolutionIds: [],
+      megaOf,
+    }) as never;
+  const altIndex = new GameDataIndex(
+    ['a_mega', 'b', 'c', 'd', 'e', 'x']
+      .map((id) => sp(id))
+      .concat([sp('b_mega', 'b'), sp('x_mega', 'x')]),
+    [],
+  );
+  const cand = (speciesId: string, specimenId: string, mega: boolean, score: number): Candidate =>
+    ({
+      build: {
+        speciesId,
+        specimenId,
+        mega: mega ? { ready: true, level4: false } : null,
+        needsXl: false,
+        shadow: false,
+      },
+      moveset: { fast: { moveId: 'F' }, charged: [], eliteTmCount: 0 },
+      cost: { weight: 1000 },
+      roleScores: { leads: score, switches: score, closers: score },
+      matrixRow: 0,
+    }) as unknown as Candidate;
+  const at = (c: Candidate, role: SlotSim['role']): SlotSim => ({
+    candidate: c,
+    role,
+    results: [],
+    wins: 0,
+    winsWithShield: null,
+  });
+  // A Mega lead, and two plain teammates.
+  const t: TeamSim = {
+    draft: { structure: 'ABC' } as TrioDraft,
+    slots: [
+      at(cand('a_mega', 'sa', true, 0), 'lead'),
+      at(cand('b', 'sb', false, 0), 'switch'),
+      at(cand('c', 'sc', false, 0), 'closer'),
+    ],
+    scenario: { lead: '', switch: '', closer: '' },
+  };
+  const pool = [
+    cand('b_mega', 'sb2', true, 100), // the Mega form of b, which is on the team
+    cand('x_mega', 'sx', true, 90), // a second Mega unless it replaces the lead
+    cand('d', 'sc', false, 80), // another stage of the closer's own specimen
+    cand('e', 'se', false, 10),
+  ];
+
+  it('offers no second Mega, no Mega of a teammate, and no specimen already on the team', () => {
+    const alts = alternativesFor(t, pool, view(['o1']), altIndex);
+    const bySlot = new Map(alts.map((a) => [a.slot, a.candidate.build.speciesId]));
+    expect(bySlot.get(0)).toBe('x_mega');
+    expect(bySlot.get(1)).toBe('e');
+    expect(bySlot.get(2)).toBe('d');
   });
 });
