@@ -131,3 +131,59 @@ export function teamsJsonCores(run: PostCoreRun): string
 `postMarkdownCores`: first line `Title: <cup>: top cores, budget cores and the best Mega picks (pick3 sims)` (omit the Mega clause when there is no `mega` board); an intro saying each row is a core (keep both) plus one flex pick, ranked by projected strength, and that every link opens the full analysis; per board a `**<heading>**` and for each row `N. <core A> + <core B> - add one:` followed by indented sub-bullets `   - <flex name> (<strength to one decimal>) - <link>` (flex kind 'mega' says `add a Mega:` instead of `add one:`); a closing line explaining the number is a projection, not a measured win rate, with `run.mixLine` and the PvPoke date. 7-bit ASCII only (assert in the test). `teamsJsonCores`: JSON with league, cup, day, weights, `battles`, `events`, mix, pvpoke, resimulated, and per board an array of rows `{ core, flexKind, flex: [{ name, strength, coverage, consistency, safety, structure, exposure, species, moves, link }] }`. Reuse `linkOf` for the links.
 
 - [ ] Steps: failing tests (title with and without a Mega board; row and flex lines with links; 'add a Mega:' wording for a mega row; ASCII; teams.json shape and numeric `battles`/`events`); implement; run `npx vitest run apps/meta/test/postMarkdown.test.ts`, typecheck, lint; commit `git add apps/meta/scripts/post/markdown.ts apps/meta/test/postMarkdown.test.ts` "Meta: post text and record for core + flex boards".
+
+---
+
+### Task 4 (added after real-data runs): covered core pairs and same-species guard
+
+Done in commits a93f1fe and 7e1011e (`cores.ts`): a trio holding an earlier core's base-species pair cannot start a later row or be its flex; a core is two different base species; a row with no flex is skipped. Spec rules 1 and 4 amended.
+
+### Task 5: the cap counts the best flex
+
+Done in a following commit (`cores.ts`): a base species may appear in at most `cap` rows as a core member or as the row's best flex (headline third). Non-headline flex stays free. Spec rule 4 amended.
+
+---
+
+### Task 6: core-board template and fill
+
+**Files:** Create `docs/design/infographic/core-flex/` (copy of the design agent's exports, see below); Create `apps/meta/scripts/post/template-cores.html` (derived from `pick3-mega-core-flex.html`, the superset design); Create `apps/meta/scripts/post/assets/` (reuse the existing mascot PNGs); Create `apps/meta/scripts/post/fillCores.ts`; Test `apps/meta/test/postFillCores.test.ts`.
+
+**Source design (read first):** `C:\Users\travi\AppData\Local\Temp\claude\D--Skunkworks-pickthree\0bfcfefb-482b-4245-a49b-e6ba6220fb85\scratchpad\megaflex\pick3-mega-core-flex.html` and its README `pick3-mega-core-flex-README.txt`; the Top/Budget version is `...\scratchpad\coreflex\pick3-core-flex.html` + `README.txt`. The Mega file is a superset (`.core-board` base plus `.mega-core-board` overrides, `.mega-in-flex` / `.mega-in-core` rows, `.mega-core`, `.mega-marker`, `.mega-choice`, `.mega-tag-marker`, `.best-flex`, `.flex-choice` with `.flex-strength` in the tile label). Use the `mega-core-board` class for ALL three boards; Top and Budget rows simply have no Mega markup and no row-type class.
+
+**Brand logo (Travis, 2026-09-30).** The design HTML draws an approximate mark (three circles with a "3") plus the text "pick3.gg" in the header `.brand` and a large text "pick3.gg" in the footer `.footer-url`. Replace both with the real lockup, `packages/ui/brand/lockup.svg` (the dark-background version, text fill #E9E9ED; do NOT use lockup-light.svg), inlined into `template-cores.html` as an `<svg>` with its `aria-label="pick3"` kept: header at about 34px tall in place of the mark + wordmark (keep the small `FREE PVP TEAM BUILDER` note text), footer at about 40px tall in place of the big URL text. The lockup reads "pick3" with no ".gg", so keep the URL visible as small text: footer caption `pick3.gg - Find your three.` Small text elsewhere stays text. Remove the now-unused `.mark` / `.wordmark` / `.footer-url` CSS only if nothing else uses it. The logo SVG is the source of truth: do not redraw it.
+
+**One board per document.** The design HTML holds exactly one `<section class="board core-board mega-core-board">`. `fillCoreBoard(template, board)` returns the whole page for ONE board; the caller fills the same template once per board (different mascot, title, rows).
+
+**Interfaces (produces):**
+
+```ts
+export type CoreTagKind = 'mega' | 'region' | 'form' | 'shadow' | 'elite';
+export interface CoreTag { kind: CoreTagKind; text: string }
+export interface CoreMemberView { name: string; sprite: string; type: string; tags: CoreTag[]; moves: [string, string, ...string[]]; isMega: boolean }
+export interface FlexView { name: string; sprite: string; type: string; tags: CoreTag[]; strength: number; isMega: boolean }
+export interface CoreRowView {
+  core: [CoreMemberView, CoreMemberView];
+  flexKind: 'mega' | 'regular';   // 'mega' => label PICK A MEGA and row class mega-in-flex; 'regular' with a core Mega => CHOOSE 1 OF N and mega-in-core; 'regular' without a Mega => CHOOSE 1 OF N, no row-type class
+  flex: FlexView[];               // best first, 1 to 4; flex[0] is the .best-flex tile
+  strength: number;               // the headline team, = flex[0] completed-team strength
+  caution: string[];              // 0 to 3 names
+}
+export interface CoreBoardView { id: 'top' | 'budget' | 'mega'; title: string; subtitle: string; readingLine: string; label: string; source: [string, string, string]; mascot: string; rows: CoreRowView[] }
+export function fillCoreBoard(template: string, board: CoreBoardView): string
+```
+
+Reuse `escapeHtml` and `assertAscii` from `./fill.js`. Rows: `article.team` (+ `winner` on row 1, + the row type class), `--strength:<n.n>%`, aria-label `Core N, best completed team strength X.X`, rank chip `CORE #N`, core block (two members, each with name, exact tags, full moves; `.shadow-member` for Shadow; `.mega-core` plus the original `.mega-marker` spark for a Mega core member), flex block (label per flexKind, N = flex.length), each tile with name, tags (Mega tag uses `.mega-tag-marker`), strength to one decimal in the tile label, the best tile `.best-flex` (labelled BEST FLEX), Mega tiles `.mega-choice`, Shadow tiles `.shadow-choice`, then score (big number, `--strength`), `.score-context`, and the caution line (`Nothing in the meta beats all three` clear, or `Watch for: <names>` alert). Copy the exact markup patterns for these from the design HTML rows (view one `mega-in-flex` and one `mega-in-core` article) so the CSS applies; do not invent classes. Header: h1 = title (add `long-title` to the section when the title is longer than 18 characters, as the design does), subtitle, reading line, sample label (`board.label`), footer source lines. Replace the design's mascot SVG block with one `<img class="mascot-img" src="...">` slot filled from `board.mascot` (as the earlier template did). No text from the design's sample data may remain (search the output for `PROVISIONAL`, `placeholder`, `Kingdra` when not in the rows, `ILLUSTRATIVE`).
+
+**Tests** (synthetic rows, real template file): five-row board fills; row 1 `.winner`; both row types (mega-in-flex label `PICK A MEGA`, mega-in-core label `CHOOSE 1 OF N` with N = number of flex, a regular row without a Mega has neither row-type class nor Mega markup); flex counts 1 to 4 render only that many tiles; best tile is `.best-flex` and shows its strength; Mega core member gets `.mega-core`; three-tag member keeps all tags in order mega, region, form, shadow, elite; text with `<`, `&`, `"` and `$` is escaped (function replacers, no back-references); fewer than five rows; strengths and `--strength` match; output is 7-bit ASCII (`assertAscii`) and the shipped template is ASCII; no leftover sample text.
+
+Commit: `git add apps/meta/scripts/post/template-cores.html apps/meta/scripts/post/fillCores.ts apps/meta/test/postFillCores.test.ts docs/design/infographic/core-flex` "Meta: core + flex board template and fill".
+
+---
+
+### Task 7: wire `npm run post` to the core boards
+
+**Files:** Modify `apps/meta/scripts/post/post.ts` (and only what it needs).
+
+Replace the team-board path with the core boards: `coreBoards(...)` instead of `cupBoards(...)`; per board build a `CoreBoardView` and fill `template-cores.html` with `fillCoreBoard`; capture each board from its own temp HTML file (same puppeteer flow, same "every failure stops the run and writes nothing" ordering, same ASCII guards on every page and on `post.md`); build `PostCoreRun` from the engine output and write `post.md` with `postMarkdownCores` and `teams.json` with `teamsJsonCores`. Views: member and flex names/tags/sprites via `memberDisplay`, flex `strength` from `flex[i].team.team.strength`, row `strength` from `flex[0]`, caution from `cautionNames(flex[0].team.team.exposure, nameOf)` with `nameOf = cautionName`, moves from each core Candidate's moveset (fast then charged), Elite TM tag from `eliteTmCount`. Subtitles: top `Top Cores + Flex Picks`; budget `Budget Cores - No Elite TM`; mega `Cores + Your Mega`. Reading lines: top and budget `Keep the pair. Choose one flex. That makes your team of three.`; mega `Keep the pair. Choose one flex. Every team gets one Mega.` Source lines: `Strength: pick3 sims vs the <cup> meta`, the existing mix line, `Flex moves and team order: full analysis in the post`. Board headings for post.md: `Top Cores`, `Budget Cores - No Elite TM`, `Cores + Your Mega`. Keep `--prior` and `--date`. The old team-board template/fill/`cupBoards` stay in the repo (unused by the command); say so in a comment.
+
+Verification (controller, not the implementer): typecheck, lint, then real runs on production data: `npm run post -- colormega`, `npm run post -- great`, `npm run post -- mega-great --prior`; the controller views the PNGs.
