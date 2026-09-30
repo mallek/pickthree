@@ -31,7 +31,11 @@ is wired in a later change.
    whose sorted base-species key sorts first, so results do not depend on input order). Flex window:
    1.0 strength points below the row's best trio for regular thirds, 2.0 when the thirds are Megas.
    Rows are added until there are 5.
-4. **Variety.** The cap is two rows per base species **as a core member**. Flex options are free. Two
+4. **Variety.** The cap is two rows per base species as a core member **or as the row's best flex**
+   (the third Pokemon of the row's headline team). Non-headline flex options are free. So no Pokemon
+   headlines more than two rows, and a dominant Pokemon cannot fill the third slot of every later row.
+   A start trio whose chosen core would leave a capped species as its headline third is not used for
+   that pair; the next pair or the next trio is tried. Two
    rows may not have the same core (same base-species pair). No completed team is shown twice, as a
    headline or as a flex. A trio that contains an earlier row's core pair (by base species) belongs to
    that core: it cannot start a later row and cannot be a later row's flex, even when it fell outside
