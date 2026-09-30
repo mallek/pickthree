@@ -215,4 +215,28 @@ describe('selectCores', () => {
       rows.map((r) => r.core.slice().sort().join('+') + ':' + thirds(r).slice().sort().join(','));
     expect(shape(selectCores(two, opts())).sort()).toEqual(shape(selectCores(one, opts())).sort());
   });
+
+  it('never makes a core of two forms of one species', () => {
+    const items = [
+      trio(['kingdra', 'kingdra_shadow', 'x'], 10),
+      trio(['kingdra', 'a', 'b'], 9),
+      trio(['kingdra', 'c', 'd'], 8),
+      trio(['kingdra', 'e', 'f'], 7),
+    ];
+    const rows = selectCores(items, opts());
+    for (const row of rows) {
+      const bases = row.core.map((m) => m.replace(/_shadow$/, ''));
+      expect(new Set(bases).size).toBe(2);
+    }
+    const shownKeys = rows.flatMap((r) => r.flex.map((f) => f.trio.key));
+    expect(shownKeys).not.toContain(items[0]!.key);
+    expect(rows).toHaveLength(3);
+  });
+
+  it('does not offer another form of a core member as flex', () => {
+    const items = [trio(['kingdra', 'a', 'x'], 10), trio(['kingdra', 'a', 'kingdra_shadow'], 9.9)];
+    const rows = selectCores(items, opts({ rows: 1 }));
+    expect(rows[0]!.core).toEqual(['kingdra', 'a']);
+    expect(thirds(rows[0]!)).toEqual(['x']);
+  });
 });

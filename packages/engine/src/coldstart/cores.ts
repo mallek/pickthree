@@ -90,6 +90,9 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
       }
       const thirdId = left[0]!;
       const thirdBase = opts.base(thirdId);
+      if (members.some((m) => opts.base(m) === thirdBase)) {
+        continue;
+      }
       if (seenThirds.has(thirdBase)) {
         continue;
       }
@@ -117,6 +120,9 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
         const a = ids[i]!;
         const b = ids[j]!;
         const bases: [string, string] = [opts.base(a), opts.base(b)];
+        if (bases[0] === bases[1]) {
+          continue; // a core is two different base species
+        }
         pairs.push({
           pairKey: [...bases].sort().join('+'),
           members: [a, b],
@@ -140,7 +146,7 @@ export function selectCores<T>(items: readonly T[], opts: CoreOptions<T>): CoreR
         best = pair;
       }
     }
-    if (best === null) {
+    if (best === null || best.flex.length === 0) {
       continue;
     }
     rows.push({ core: best.members, flex: best.flex });
