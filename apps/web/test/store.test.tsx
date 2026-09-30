@@ -1056,3 +1056,47 @@ describe('updateSettings', () => {
     });
   });
 });
+
+describe('re-importing a CSV', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    latest = null;
+  });
+
+  it('keeps a Mega Level 4 mark the CSV cannot carry', async () => {
+    const specimen = {
+      id: 'k',
+      speciesId: 'sableye',
+      shadow: false,
+      ivs: { atk: 3, def: 15, sta: 15 },
+    };
+    const report = {
+      scansRead: 1,
+      recognized: 1,
+      duplicatesMerged: 0,
+      missingIvs: { count: 0, names: [] },
+      unrecognized: [],
+      rowProblems: [],
+      layout: emptyLayoutValue(),
+      newestScan: null,
+    };
+    const host = fakeHost({
+      importCsv: vi.fn(async () => ({ specimens: [{ ...specimen }], report })),
+    } as never);
+    await mount(host);
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    await act(async () => {
+      await latest!.actions.setMegaLevel4('k', true);
+    });
+    expect(latest!.state.collection?.specimens[0]?.megaLevel4).toBe(true);
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    expect(latest!.state.collection?.specimens[0]?.megaLevel4).toBe(true);
+    const saved = await storage.loadCollection();
+    expect(saved?.specimens[0]?.megaLevel4).toBe(true);
+  });
+});

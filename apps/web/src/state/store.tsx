@@ -1,3 +1,4 @@
+import { carryMegaLevel4 } from '../megaMarks.ts';
 import {
   type BattleSet,
   type CountersResult,
@@ -1035,7 +1036,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         noteLayout(report.layout, 'ok');
         const collection: StoredCollection = {
           key: 'current',
-          specimens,
+          specimens: carryMegaLevel4(stateRef.current.collection?.specimens ?? [], specimens),
           report,
           importedAt: new Date().toISOString(),
           fileName,

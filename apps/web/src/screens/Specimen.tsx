@@ -279,6 +279,18 @@ export function SpecimenScreen({ id }: { id: string }) {
           </div>
         ) : null}
 
+        {canLevel4 ? (
+          <div className="card">
+            <Switch
+              label="Mega Level 4"
+              checked={sp.megaLevel4 === true}
+              onChange={() => {
+                void setMegaLevel4(sp.id, sp.megaLevel4 !== true);
+              }}
+            />
+          </div>
+        ) : null}
+
         {v?.moveset ? (
           <div className="stack" style={{ gap: 6 }}>
             <h3>Recommended moves</h3>
@@ -371,18 +383,6 @@ export function SpecimenScreen({ id }: { id: string }) {
             </button>
           ))}
         </div>
-
-        {canLevel4 ? (
-          <div className="card">
-            <Switch
-              label="Mega Level 4"
-              checked={sp.megaLevel4 === true}
-              onChange={() => {
-                void setMegaLevel4(sp.id, sp.megaLevel4 !== true);
-              }}
-            />
-          </div>
-        ) : null}
 
         {/* At the end of the page, in the flow: nothing sits over the content. */}
         {/* A Pokémon with no build in this league never reaches a team: nothing to switch. */}
