@@ -190,8 +190,8 @@ describe("Build's tokens for your own Mega", () => {
           allSpecies: [...r.allSpecies, 'sableye', 'sableye_mega'],
         };
       }),
-      leagueInfo: vi.fn(async () => {
-        const info = await base.leagueInfo();
+      leagueInfo: vi.fn(async (league: string) => {
+        const info = await base.leagueInfo(league);
         return { ...info, legal: [...info.legal, 'sableye', 'sableye_mega'] };
       }),
     } as never);
