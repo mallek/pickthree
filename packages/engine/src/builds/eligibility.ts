@@ -74,7 +74,10 @@ function allowed(species: Species, opts: BuildOptions): boolean {
     : !species.greatLeagueIneligible && !species.tags.includes('mega') && species.released;
 }
 
-/** The build of one evolution stage, or null when it cannot fit the league. */
+/**
+ * The build of one evolution stage, or null when it cannot fit the league. A stage that is a Mega
+ * species is a Mega build: it counts toward the one-Mega rule and still needs Mega Energy.
+ */
 function stageBuild(
   species: Species,
   common: Common,
@@ -105,7 +108,8 @@ function stageBuild(
     cp,
     baseCp: cp,
     baseLevel: level,
-    mega: null,
+    // A cold-start stand-in's specimen is the Mega species itself.
+    mega: species.megaOf ? { ready: false, level4: false } : null,
     ivRank: ivRank(species.baseStats, ivs, opts.cpCap, levelCap),
     needsXl: level > 40,
   };

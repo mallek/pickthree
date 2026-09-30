@@ -5,13 +5,23 @@ import {
   spreadsFromGameMaster,
 } from '../../src/coldstart/pool.js';
 import { buildOptionsFor } from '../../src/builds/eligibility.js';
-import { haveStaticData, loadIndex, loadStaticData, readGameMaster } from '../fixtures.js';
+import { GameDataIndex } from '../../src/gamedata/index.js';
+import {
+  haveLeague,
+  haveStaticData,
+  loadIndex,
+  loadStaticData,
+  readGameMaster,
+} from '../fixtures.js';
 
 describe('spreadsFromGameMaster', () => {
   it('reads PvPoke defaultIVs for the cap it was asked for', () => {
     const gm = {
       pokemon: [
-        { speciesId: 'azumarill', defaultIVs: { cp1500: [43, 4, 15, 13], cp2500: [50, 15, 15, 15] } },
+        {
+          speciesId: 'azumarill',
+          defaultIVs: { cp1500: [43, 4, 15, 13], cp2500: [50, 15, 15, 15] },
+        },
       ],
     };
     expect(spreadsFromGameMaster(gm, 1500)('azumarill')).toEqual({
@@ -80,6 +90,25 @@ run('the cold start pool over the real data', () => {
     for (const m of data.meta) {
       const b = byId.get(m.speciesId);
       expect(b?.level).toBe(spreads(m.speciesId)?.level);
+    }
+  });
+});
+
+describe.skipIf(!haveStaticData() || !haveLeague('mega-great'))('Mega stand-ins', () => {
+  it('builds every Mega stand-in as a Mega build', () => {
+    const data = loadStaticData('mega-great');
+    const index = new GameDataIndex(data.species, data.moves);
+    const ids = data.matrix.candidates;
+    const spreads = spreadsFromGameMaster(readGameMaster(), data.league.cp);
+    const builds = coldStartBuilds(
+      coldStartSpecimens(ids, spreads, index),
+      index,
+      buildOptionsFor(data.league),
+    );
+    const megas = builds.filter((b) => index.species(b.speciesId)?.megaOf);
+    expect(megas.length).toBeGreaterThan(0);
+    for (const b of builds) {
+      expect(b.mega !== null).toBe(Boolean(index.species(b.speciesId)?.megaOf));
     }
   });
 });

@@ -345,6 +345,14 @@ describe('a Mega picked by species', () => {
     expect(buildCost(b, moveset, index).megaEnergy).toBe('needed');
   });
 
+  it('builds a specimen whose species is itself a Mega as a Mega that still needs Mega Energy', () => {
+    // coldStartSpecimens makes stand-ins like this: the specimen is the Mega species itself.
+    const s = specimen({ speciesId: 'sableye_mega', ivs: IV15, level: { min: 1, max: 1 } });
+    const b = must(buildsFor(s, index, greatMega), 'sableye_mega');
+    expect(b.mega).toEqual({ ready: false, level4: false });
+    expect(buildCost(b, moveset, index).megaEnergy).toBe('needed');
+  });
+
   it('keeps a plain species pick as it was', () => {
     const s = hypotheticalSpecimen('sableye', index, greatMega);
     expect(s.id).toBe('species:sableye');

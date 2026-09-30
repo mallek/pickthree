@@ -13,7 +13,15 @@ import { GameDataIndex } from '../../src/gamedata/index.js';
 import { MatrixView } from '../../src/search/matrixView.js';
 import type { BattleSimulator } from '../../src/sim/BattleSimulator.js';
 import type { EngineDeps } from '../../src/recommend.js';
-import { haveStaticData, loadFixtureCsv, loadStaticData, readGameMaster } from '../fixtures.js';
+import { hypotheticalSpecimen } from '../../src/analyze.js';
+import { buildOptionsFor } from '../../src/builds/eligibility.js';
+import {
+  haveLeague,
+  haveStaticData,
+  loadFixtureCsv,
+  loadStaticData,
+  readGameMaster,
+} from '../fixtures.js';
 
 const run = haveStaticData() ? describe : describe.skip;
 
@@ -328,6 +336,79 @@ function core(key: string, strength: number, cost: number, owned = true): Core {
     key,
   };
 }
+
+describe.skipIf(!haveStaticData() || !haveLeague('mega-great'))(
+  'suggestions in a Mega league',
+  () => {
+    const full = loadStaticData('mega-great');
+    const index = new GameDataIndex(full.species, full.moves);
+    const rows = new Set(full.matrix.candidates);
+    const isMega = (id: string): boolean => Boolean(index.species(id)?.megaOf);
+    const ranked = full.rankings.overall.filter((r) => rows.has(r.speciesId));
+    // Every ranked Mega and only three plain species, so the stand-in pool is mostly Megas and a
+    // search that miscounted a Mega stand-in as plain would put two on the team.
+    const plains = ranked.filter((r) => !isMega(r.speciesId)).slice(0, 3);
+    const megas = ranked.filter((r) => isMega(r.speciesId));
+    const data = {
+      ...full,
+      rankings: {
+        ...full.rankings,
+        overall: ranked.filter((r) => megas.includes(r) || plains.includes(r)),
+      },
+    };
+    const megaId = (megas[0] as { speciesId: string }).speciesId;
+    const plainId = (plains[0] as { speciesId: string }).speciesId;
+    const megaDeps = (): EngineDeps => ({ data, sim: noSim });
+
+    it('never fills with a Mega next to an owned Mega pin', () => {
+      // A collection of one, so the fill has to come from the stand-ins.
+      const owned = {
+        ...hypotheticalSpecimen(megaId, index, buildOptionsFor(data.league)),
+        id: 'owned-mega',
+      };
+      const result = suggestTeammates(
+        [
+          { kind: 'specimen', id: owned.id, asSpeciesId: megaId },
+          { kind: 'species', id: plainId },
+          null,
+        ],
+        [owned],
+        { gameMaster: readGameMaster() },
+        megaDeps(),
+      );
+      expect(result.suggestions.length).toBeGreaterThan(0);
+      for (const s of result.suggestions) {
+        expect(s.fills.filter((f) => isMega(f.speciesId))).toEqual([]);
+      }
+    });
+
+    it('never fills with a Mega next to a Mega pinned by species', () => {
+      const result = suggestTeammates(
+        [{ kind: 'species', id: megaId }, null, null],
+        [],
+        { gameMaster: readGameMaster() },
+        megaDeps(),
+      );
+      expect(result.suggestions.length).toBeGreaterThan(0);
+      for (const s of result.suggestions) {
+        expect(s.fills.filter((f) => isMega(f.speciesId))).toEqual([]);
+      }
+    });
+
+    it('never fills both slots with Megas next to a plain pin', () => {
+      const result = suggestTeammates(
+        [{ kind: 'species', id: plainId }, null, null],
+        [],
+        { gameMaster: readGameMaster() },
+        megaDeps(),
+      );
+      expect(result.suggestions.length).toBeGreaterThan(0);
+      for (const s of result.suggestions) {
+        expect(s.fills.filter((f) => isMega(f.speciesId)).length).toBeLessThanOrEqual(1);
+      }
+    });
+  },
+);
 
 describe('cheapest on synthetic cores', () => {
   it('trades a little strength for a much cheaper core', () => {
