@@ -12,6 +12,7 @@ import {
 import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { specimenRecord } from '../searchRecords.ts';
+import { useLeague } from '../components/LeagueSwitcher.tsx';
 import { useActions, useAppState } from '../state/store.tsx';
 
 /** The picks a recommended team's slots resolved to, for starting a set from it directly. */
@@ -70,6 +71,10 @@ export function NewSet() {
   // the address. The slots are seeded from it once, as soon as the league and game data are known,
   // keeping only species legal in the league in play and known to the data; later edits stay.
   const seeded = useRef(false);
+  /** Known species the seed left out because the league does not allow them, named until the
+   * first slot change. Unknown ids are dropped without a word. */
+  const [notAllowed, setNotAllowed] = useState<string[]>([]);
+  const league = useLeague();
   const routeTeam = s.route.screen === 'meta-new' ? s.route.team : undefined;
   useEffect(() => {
     if (seeded.current || !routeTeam || !s.data || !s.leagueInfo) {
@@ -78,7 +83,9 @@ export function NewSet() {
     seeded.current = true;
     const legal = new Set(s.leagueInfo.legal);
     const known = s.data.species;
-    const kept = routeTeam.filter((id) => legal.has(id) && known[id] !== undefined).slice(0, 3);
+    const wanted = routeTeam.filter((id) => known[id] !== undefined);
+    const kept = wanted.filter((id) => legal.has(id)).slice(0, 3);
+    setNotAllowed(wanted.filter((id) => !legal.has(id)));
     setSlots([kept[0] ?? null, kept[1] ?? null, kept[2] ?? null]);
   }, [routeTeam, s.data, s.leagueInfo]);
 
@@ -146,6 +153,7 @@ export function NewSet() {
   }, [query, mine, hits]);
 
   const fill = (speciesId: string, specimenId?: string): void => {
+    setNotAllowed([]);
     setSlots((cur) => {
       const i = cur.findIndex((x) => x === null);
       if (i === -1 || cur.some((x) => x !== null && parts(x)[0] === speciesId)) {
@@ -179,12 +187,14 @@ export function NewSet() {
 
   /** A From pick3 or Recent teams tap fills the three slots; Start set then starts it. */
   const fillTeam = (team: TeamRef): void => {
+    setNotAllowed([]);
     setSlots(team.species.map((_, i) => slotValue(team, i)));
     setChosen(team);
     setQuery('');
   };
 
   const clearSlot = (i: number): void => {
+    setNotAllowed([]);
     setSlots((cur) => cur.map((x, j) => (j === i ? null : x)));
     setChosen(null);
   };
@@ -265,6 +275,12 @@ export function NewSet() {
             </button>
           ))}
         </div>
+        {notAllowed.length > 0 ? (
+          <p className="meta" style={{ margin: 0 }}>
+            {notAllowed.map(name).join(', ')} {notAllowed.length === 1 ? 'is' : 'are'} not allowed
+            in {league.title}.
+          </p>
+        ) : null}
         {quickPicks && fromPick3.length > 0 ? (
           <div className="stack" style={{ gap: 6 }}>
             <b>From pick3</b>

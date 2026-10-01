@@ -807,6 +807,23 @@ describe('Add Pokemon Mega marks', () => {
     expect(screen.queryByText('Change')).toBeNull();
   });
 
+  it('does not prefill an id the picker cannot search (in species but not released)', async () => {
+    const more = addMegaSpecies() as { ready: ReturnType<typeof fakeHost>['ready'] };
+    await boot(undefined, {
+      manual: manual() as never,
+      ...more,
+      ready: vi.fn(async () => {
+        const r = await more.ready();
+        return { ...r, allSpecies: r.allSpecies.filter((id: string) => id !== 'bulbasaur') };
+      }),
+    });
+    await go({ screen: 'add', species: 'bulbasaur' });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.queryByText('Change')).toBeNull();
+  });
+
   it('offers a checkbox for a species with one Mega, and saves megaForm mega', async () => {
     await openAdd(manual(), 'Tinkaton', 'tinkaton');
     const box = screen.getByRole('checkbox', { name: 'Mega-evolved before' });

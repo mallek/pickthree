@@ -24,7 +24,7 @@ export function AddPokemon() {
   const [query, setQuery] = useState('');
   const [speciesId, setSpeciesId] = useState<string | null>(null);
   // `#/add?species=<id>` (from a species page) starts with that Pokémon picked, once the game data
-  // can say the id exists. It only ever fills an empty pick, once, so the player's own changes win.
+  // lists the id among the released species the picker searches. It only ever fills an empty pick, once, so the player's own changes win.
   const prefilled = useRef(false);
   const routeSpecies = s.route.screen === 'add' ? s.route.species : undefined;
   useEffect(() => {
@@ -32,7 +32,7 @@ export function AddPokemon() {
       return;
     }
     prefilled.current = true;
-    if (s.data.species[routeSpecies] !== undefined) {
+    if (s.data.allSpecies.includes(routeSpecies)) {
       setSpeciesId(routeSpecies);
     }
   }, [routeSpecies, s.data]);

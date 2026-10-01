@@ -449,6 +449,25 @@ describe('New Set in a cup', () => {
     expect(screen.getByRole('button', { name: 'Start set' })).toBeDisabled();
   });
 
+  it('names a dropped illegal species under the slots until a slot changes, and never an unknown id', async () => {
+    window.history.replaceState(null, '', '#/meta/new?team=tinkaton+azumarill+notamon');
+    const base = fakeHost();
+    const host = fakeHost({
+      leagueInfo: vi.fn(async (id: string) => ({
+        ...(await base.leagueInfo(id)),
+        legal: ['tinkaton', 'clodsire', 'medicham'],
+      })),
+    });
+    await renderReady(host);
+    const note = await screen.findByText('Azumarill is not allowed in Great League.');
+    expect(note).toHaveClass('meta');
+    expect(screen.queryByText(/notamon/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Tinkaton' }));
+    await waitFor(() =>
+      expect(screen.queryByText('Azumarill is not allowed in Great League.')).not.toBeInTheDocument(),
+    );
+  });
+
   it('seeds once: a slot cleared afterwards stays empty', async () => {
     window.history.replaceState(null, '', '#/meta/new?team=tinkaton+azumarill+clodsire');
     await renderReady(hostWith([]));
