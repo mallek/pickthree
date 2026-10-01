@@ -96,12 +96,17 @@ function MostSeen({ league }: { league: string }) {
   const ranked = useMetaRanking(league, { ...READ, community: true });
   const data = ranked.data;
   let body;
+  // Nothing measured: the list is PvPoke's order, so the subtitle must not claim a share.
+  let sub = 'Share of reported battles';
   if (ranked.state === 'error' || data?.offline) {
     body = <Failed retry={ranked.retry} />;
   } else if (!data) {
     body = <Loading label="Loading the community meta" />;
   } else {
     const measured = data.ranking.battles > 0;
+    if (!measured) {
+      sub = "PvPoke's meta group. No battles shared yet.";
+    }
     const byId = new Map(data.ranking.rows.map((r) => [r.speciesId, r]));
     const top = data.order
       .slice(0, 5)
@@ -135,7 +140,7 @@ function MostSeen({ league }: { league: string }) {
     <div className="mh-card">
       <div className="mh-card-head">
         <b>Most seen Pokémon</b>
-        <span className="meta">Share of reported battles</span>
+        <span className="meta">{sub}</span>
       </div>
       {body}
       <a className="mh-more" href={hashFor({ screen: 'collection' })}>
@@ -223,7 +228,11 @@ function MostLogged({ league, caption }: { league: string; caption: boolean }) {
             );
           })}
           {caption ? (
-            <span className="meta">Results from trainers logging their own teams.</span>
+            <span className="meta">
+              {rows.some((t) => t.source === 'observed')
+                ? 'Results from trainers logging their own teams.'
+                : "Projected from PvPoke's meta group until players log teams."}
+            </span>
           ) : null}
         </>
       );

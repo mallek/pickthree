@@ -239,6 +239,7 @@ describe('Meta landing', () => {
       return c;
     });
     expect(within(seen).getByText('Share of reported battles')).toBeInTheDocument();
+    expect(within(seen).queryByText(/No battles shared yet/)).toBeNull();
     const rows = [...seen.querySelectorAll('a.mh-seen')];
     expect(rows[0]).toHaveAttribute('href', '#/species/clodsire');
     expect(rows[0]).toHaveTextContent('Clodsire');
@@ -266,6 +267,7 @@ describe('Meta landing', () => {
     expect(
       within(teams).getByText('Results from trainers logging their own teams.'),
     ).toBeInTheDocument();
+    expect(within(teams).queryByText(/until players log teams/)).toBeNull();
     expect(within(teams).getByRole('link', { name: /Explore teams/ })).toHaveAttribute(
       'href',
       '#/meta/teams',
@@ -426,6 +428,11 @@ describe('Meta landing', () => {
     ]);
     expect(seen.querySelector('.ui-measured-num')).toBeNull();
     expect(seen).not.toHaveTextContent('%');
+    // PvPoke's order is not a measured share: the subtitle says so.
+    expect(
+      within(seen).getByText("PvPoke's meta group. No battles shared yet."),
+    ).toBeInTheDocument();
+    expect(within(seen).queryByText('Share of reported battles')).toBeNull();
     // The teams card falls back to the generated baseline, marked Projected.
     const teams = await waitFor(() => {
       const c = card('Most logged teams');
@@ -433,6 +440,27 @@ describe('Meta landing', () => {
       return c;
     });
     expect(teams).toHaveTextContent('Projected');
+  });
+
+  it('first visit with only projected teams: the caption says projected, not logged', async () => {
+    const net = freshNet();
+    net.teams = { ...TEAMS, battles: 0, teams: [] };
+    stubNet(net);
+    renderHome();
+    const teams = await waitFor(() => {
+      const c = card('Most logged teams');
+      expect(c.querySelectorAll('.team-row')).toHaveLength(1);
+      return c;
+    });
+    // Every row shown is projected, so the caption never speaks of logged results.
+    expect(
+      within(teams).getByText("Projected from PvPoke's meta group until players log teams."),
+    ).toBeInTheDocument();
+    expect(within(teams).queryByText('Results from trainers logging their own teams.')).toBeNull();
+    // Shares are still measured here, so Most seen keeps its subtitle.
+    expect(
+      within(card('Most seen Pokémon')).getByText('Share of reported battles'),
+    ).toBeInTheDocument();
   });
 
   it('reads a hyphenated league by its own id', async () => {
