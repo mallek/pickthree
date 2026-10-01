@@ -602,6 +602,25 @@ describe('Species page', () => {
     await waitFor(() => expect(latest?.settings.excludedSpecies).toEqual(['clodsire']));
   });
 
+  it('lists a copy that needs a rescan under Yours, marked, to its specimen page', async () => {
+    const noIvs = { ...specimen('r1', 'azumarill', 1200, 28), ivs: null } as unknown as Specimen;
+    await seed([...SPECIMENS, noIvs]);
+    stubNet(freshNet());
+    const rescan = {
+      ...verdict('r1', 'azumarill', 'Needs rescan', 0),
+      build: null,
+      buildSpecies: [],
+    } as unknown as Verdict;
+    renderPage(host({ verdicts: vi.fn(async () => ({ ...VERDICTS, r1: rescan })) }));
+
+    const yours = await waitFor(() => section('Yours'));
+    await waitFor(() => expect(within(yours).getAllByRole('link')).toHaveLength(5));
+    const last = within(yours).getAllByRole('link')[4]!;
+    expect(last).toHaveAttribute('href', '#/collection/r1');
+    expect(last).toHaveTextContent('CP 1200 · IVs unknown');
+    expect(last.querySelector('.verdict-tag')).toHaveAttribute('data-verdict', 'Needs rescan');
+  });
+
   it('a failed read says so under the hero; Yours and the actions stay; Try again reads again', async () => {
     await seed();
     const net = freshNet({ apiStatus: 503 });

@@ -479,6 +479,39 @@ describe('Collection', () => {
     expect(tags).toEqual(['Built', 'Built']);
   });
 
+  it('shows a Needs rescan copy like a not-collected row, opening its species page', async () => {
+    const rescan = { ...verdict('d', 'Needs rescan', 0), build: null } as unknown as Verdict;
+    await open(async () => ({ ...VERDICTS, d: rescan }));
+    await judged();
+    const rowOf = (n: string) =>
+      [...document.querySelectorAll<HTMLElement>('.spec-row:not(.sub)')].find(
+        (r) => r.querySelector('.spec-name')?.firstChild?.textContent === n,
+      )!;
+    const row = rowOf('Clodsire');
+    expect(row).toHaveAttribute('href', hashFor({ screen: 'species', id: 'clodsire' }));
+    // No CP or IV line: the meta tag line a not-collected row has, the verdict on the right.
+    expect(row).not.toHaveTextContent('CP 1400');
+    expect(row).not.toHaveTextContent('IVs unknown');
+    await waitFor(() =>
+      expect([...row.querySelectorAll('.mtags .mtag')].map((t) => t.textContent)).toEqual([
+        '#3 meta',
+      ]),
+    );
+    expect(row.lastElementChild).toHaveAttribute('data-verdict', 'Needs rescan');
+    // Every other row still opens its own specimen page.
+    expect(rowOf('Azumarill')).toHaveAttribute('href', hashFor({ screen: 'specimen', id: 'c' }));
+
+    // The Rescan pill keeps finding it.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Rescan' }));
+    });
+    expect(names()).toEqual(['Clodsire']);
+    expect(rowOf('Clodsire')).toHaveAttribute(
+      'href',
+      hashFor({ screen: 'species', id: 'clodsire' }),
+    );
+  });
+
   it('sorts from a visible dropdown; Name orders the rows by name', async () => {
     await open();
     await judged();

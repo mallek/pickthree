@@ -552,6 +552,10 @@ export function Collection() {
           }
           const sp = g.best;
           const v = s.verdicts[sp.id];
+          // A copy whose IVs never came through has nothing of its own to show: it reads like a
+          // not-collected row (the meta tag line, no CP or IVs) with its verdict on the right, and
+          // opens the species page, where Yours lists it for a rescan or Enter values.
+          const rescan = v?.label === 'Needs rescan';
           const isOpen = open.has(g.key);
           const nextBest = g.others[0];
           const nextRaw = nextBest ? rankLabel(nextBest, s.verdicts[nextBest.id]) : null;
@@ -560,7 +564,11 @@ export function Collection() {
             <div className="spec-group" key={g.key}>
               <a
                 className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}`}
-                href={hashFor({ screen: 'specimen', id: sp.id })}
+                href={hashFor(
+                  rescan
+                    ? { screen: 'species', id: ownSpeciesId(sp) }
+                    : { screen: 'specimen', id: sp.id },
+                )}
               >
                 <PokemonToken
                   speciesId={sp.speciesId}
@@ -573,11 +581,13 @@ export function Collection() {
                     {sp.shadow ? <span className="shadow-flag">Shadow</span> : null}
                     {v?.ineligible === 'banned' ? <span className="ban-flag">Banned</span> : null}
                   </span>
-                  <span className="meta" style={{ display: 'block' }}>
-                    CP {sp.cp} · {rankLabel(sp, v)}
-                  </span>
+                  {rescan ? null : (
+                    <span className="meta" style={{ display: 'block' }}>
+                      CP {sp.cp} · {rankLabel(sp, v)}
+                    </span>
+                  )}
                   <span className="mtags">
-                    {rankTags(v?.build?.speciesId ?? sp.speciesId)}
+                    {rankTags(v?.build?.speciesId ?? (rescan ? ownSpeciesId(sp) : sp.speciesId))}
                     <HundoTag delta={v?.perfectDelta ?? null} />
                     {isExcluded(sp.id) ? <Tag tone="neutral">Excluded</Tag> : null}
                   </span>
@@ -614,7 +624,11 @@ export function Collection() {
                       <a
                         className="spec-row sub"
                         key={o.id}
-                        href={hashFor({ screen: 'specimen', id: o.id })}
+                        href={hashFor(
+                          ov?.label === 'Needs rescan'
+                            ? { screen: 'species', id: ownSpeciesId(o) }
+                            : { screen: 'specimen', id: o.id },
+                        )}
                       >
                         <span />
                         <span style={{ minWidth: 0 }}>
