@@ -2946,7 +2946,7 @@ input[type='range'] {
   font-size: 11px;
 }
 /* Your Meta's faced list: full-width rows on the card surface, a thin frequency bar inside the
-   row under its content, "Who beats it" leading to Counters. */
+   row under its content, a chevron leading to the species page. */
 .faced-row {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr) auto auto;

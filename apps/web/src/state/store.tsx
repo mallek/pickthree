@@ -563,7 +563,7 @@ export function parseHash(hash: string): Route {
     const vs = params.get('vs');
     // A link from meta.pick3.gg names the league; the app's own links never do.
     const league = leagueParam(params.get('l'));
-    // The back mark: set by Your Meta's "Who beats it" jump and kept by the Against picker's
+    // The back mark: set by a jump into the page and kept by the Against picker's
     // replace-navigation. A meta.pick3.gg link never carries it.
     const from = params.get('from') === '1' ? ({ from: true } as const) : {};
     if (vs && league) {

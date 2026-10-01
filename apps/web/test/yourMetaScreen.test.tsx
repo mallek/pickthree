@@ -112,9 +112,9 @@ describe('Your battles screen', () => {
     const medicham = screen.getByText('Medicham').closest('.faced-row');
     expect(medicham).toHaveTextContent('faced 3');
     expect(medicham).toHaveTextContent('2-1');
-    expect(medicham).toHaveTextContent('Who beats it');
+    expect(medicham).not.toHaveTextContent('Who beats');
     expect(medicham).toHaveAttribute('href', '#/species/medicham');
-    expect(screen.getByRole('link', { name: /^Who beats Medicham/ })).toBe(medicham);
+    expect(screen.getByRole('link', { name: /^Medicham: faced 3, 2-1/ })).toBe(medicham);
     // The frequency bar is a thin bar inside the row, sized by how often it was faced.
     expect(medicham?.querySelector('.faced-bar')).toHaveStyle({ width: '100%' });
     expect(screen.getByText('2-1', { selector: '.team-row b' })).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe('Your battles screen', () => {
     ).toHaveLength(1);
     expect(screen.queryByText(/outside the meta/)).toBeNull();
     expect(
-      screen.getByRole('link', { name: /^Who beats Medicham.*outside PvPoke's meta group/ }),
+      screen.getByRole('link', { name: /^Medicham: faced.*outside PvPoke's meta group/ }),
     ).toBeInTheDocument();
   });
 

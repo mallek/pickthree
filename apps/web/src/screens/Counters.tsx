@@ -44,7 +44,7 @@ const SHIELDS_NOTE =
 /**
  * Counters, and Who Beats X: one page. The Against picker switches between the whole meta and
  * one opponent in place (replacing the history entry), so Back always leaves the page for where
- * the player came from. Opened by a jump (Your Meta's "Who beats it", marked `from` on the route)
+ * the player came from. Opened by a jump (marked `from` on the route)
  * with pick3 history behind it, the header is a sub header with Back; otherwise the tab's own.
  */
 export function Counters() {

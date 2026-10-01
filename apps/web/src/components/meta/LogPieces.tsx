@@ -259,7 +259,7 @@ export function SpeciesRows({
             className="faced-row"
             key={r.speciesId}
             href={hashFor({ screen: 'species', id: r.speciesId })}
-            aria-label={`Who beats ${name(r.speciesId)}: faced ${r.faced}, ${rec}${out ? ", outside PvPoke's meta group" : ''}`}
+            aria-label={`${name(r.speciesId)}: faced ${r.faced}, ${rec}${out ? ", outside PvPoke's meta group" : ''}`}
           >
             <PokemonToken speciesId={r.speciesId} size={36} />
             <span className="faced-name">
@@ -275,7 +275,6 @@ export function SpeciesRows({
             </span>
             <b className="faced-rec">{rec}</b>
             <span className="faced-go">
-              Who beats it
               <Chevron />
             </span>
             <span
