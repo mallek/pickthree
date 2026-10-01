@@ -988,6 +988,10 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           } else if (collection && initialRoute.screen === 'welcome') {
             dispatch({ type: 'route', route: { screen: 'teams' } });
             window.location.hash = hashFor({ screen: 'teams' });
+          } else if (!collection && settings.startedWithout && initialRoute.screen === 'welcome') {
+            // Chose "Start without a collection" on an earlier visit: Meta is home.
+            dispatch({ type: 'route', route: { screen: 'meta' } });
+            window.location.hash = hashFor({ screen: 'meta' });
           } else {
             dispatch({ type: 'route', route: initialRoute });
           }

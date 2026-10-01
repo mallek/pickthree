@@ -374,7 +374,7 @@ describe('Collection', () => {
     expect(pills[0]!.closest('.spec-row')).toHaveTextContent('Tinkaton');
   });
 
-  it('has one Settings cog and a plus to Add Pokémon in its header, no meta.pick3.gg link', async () => {
+  it('has one Settings cog and a plus to Add Pokémon in its header, no outside meta link', async () => {
     await open();
     await judged();
     expect(screen.getByRole('heading', { name: 'Collection' })).toBeInTheDocument();

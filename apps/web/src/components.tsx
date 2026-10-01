@@ -452,10 +452,6 @@ export function Mark({ height = 22 }: { height?: number }) {
   );
 }
 
-/** The community meta site: still used for the action-row link on Your Meta (the header's own
- * icon link is `SiteLink` from `@pickthree/ui` now). */
-export const META_URL = 'https://meta.pick3.gg';
-
 /** Web's `types` tuple carries a literal `'none'` for a single-typed species' absent second slot
  * (`[PokemonType, PokemonType | 'none']`, see `packages/engine/src/gamedata/types.ts`), unlike
  * meta's plain `string[]` with no such sentinel. The shared `TypeChips` has no filter for that,
@@ -776,11 +772,11 @@ export function Header({
   );
 }
 
-/** Empty state for Teams, Collection and Counters: three full-width ways in, none paid. */
+/** Empty state for Teams and Counters: four full-width ways in, none paid. */
 export function NoCollection({
   navigate,
 }: {
-  navigate: (r: { screen: 'import' | 'add' | 'build' }) => void;
+  navigate: (r: { screen: 'import' | 'add' | 'build' | 'meta' }) => void;
 }) {
   return (
     <div className="boot choices">
@@ -811,6 +807,15 @@ export function NoCollection({
         </span>
         <Button variant="primary" onClick={() => navigate({ screen: 'import' })}>
           Import a CSV
+        </Button>
+      </div>
+      <div className="choice-card">
+        <b>See the live meta</b>
+        <span className="small muted">
+          What the community is playing right now, and the top teams. No collection needed.
+        </span>
+        <Button variant="secondary" onClick={() => navigate({ screen: 'meta' })}>
+          See the live meta
         </Button>
       </div>
     </div>

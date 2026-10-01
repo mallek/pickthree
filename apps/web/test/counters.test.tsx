@@ -409,14 +409,12 @@ describe('Counters page', () => {
     latest = null;
   });
 
-  it('carries the top header with the meta.pick3.gg link and Settings', async () => {
+  it('carries the top header with Settings and no outside meta link', async () => {
     await boot();
     await go({ screen: 'counters' });
     const header = document.querySelector('header')!;
     expect(within(header).getByRole('heading', { name: 'Counters' })).toBeInTheDocument();
-    expect(
-      within(header).getByRole('link', { name: 'meta.pick3.gg, the community meta' }),
-    ).toHaveAttribute('href', 'https://meta.pick3.gg');
+    expect(within(header).queryByRole('link')).toBeNull();
     fireEvent.click(within(header).getByRole('button', { name: 'Settings' }));
     expect(latest?.state.sheetOpen).toBe(true);
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();

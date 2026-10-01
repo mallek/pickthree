@@ -544,13 +544,15 @@ describe('Settings, Community', () => {
     ).toBeInTheDocument();
   });
 
-  it('links to the community meta site', async () => {
+  it('opens the in-app meta, closing the sheet, with no outside link', async () => {
     await open();
     await push('Community');
-    expect(screen.getByRole('link', { name: 'Open meta.pick3.gg' })).toHaveAttribute(
-      'href',
-      'https://meta.pick3.gg',
-    );
+    expect(screen.queryByRole('link', { name: /meta.pick3.gg/ })).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'See the live meta' }));
+    });
+    await waitFor(() => expect(latest?.state.route).toEqual({ screen: 'meta' }));
+    expect(latest?.state.sheetOpen).toBe(false);
   });
 });
 

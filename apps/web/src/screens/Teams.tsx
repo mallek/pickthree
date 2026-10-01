@@ -9,7 +9,6 @@ import {
   IconButton,
   ProgressCard,
   Select,
-  SiteLink,
 } from '@pickthree/ui';
 import { useEffect } from 'react';
 import {
@@ -55,7 +54,7 @@ export function filterCount(settings: Settings): number {
   );
 }
 
-/** The tab's own header: its title, the meta.pick3.gg link and Settings. */
+/** The tab's own header: its title and Settings. */
 function TeamsHeader({ openSheet }: { openSheet: () => void }) {
   return (
     <Header
@@ -63,7 +62,6 @@ function TeamsHeader({ openSheet }: { openSheet: () => void }) {
       title="Your Teams"
       actions={
         <>
-          <SiteLink site="meta" />
           <IconButton label="Settings" onClick={openSheet}>
             <CogGlyph />
           </IconButton>

@@ -3,7 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MetaPreview } from '../src/components/MetaPreview.tsx';
 import { AppProvider } from '../src/state/store.tsx';
-import { fakeHost } from './fakeHost.ts';
+import { storage } from '../src/storage/db.ts';
+import { fakeHost, GREAT } from './fakeHost.ts';
 
 /** The card is rendered inside the provider so PokemonToken and useName have a store to read. */
 function mount() {
@@ -23,11 +24,11 @@ afterEach(() => {
 });
 
 describe('MetaPreview', () => {
-  it('always offers a way into the meta site, whatever the network did', async () => {
+  it('always offers a way into the in-app meta, whatever the network did', async () => {
     vi.stubGlobal('fetch', reply({ battles: 0, species: [] }));
     mount();
     const link = await screen.findByRole('link');
-    expect(link.getAttribute('href')).toBe('https://meta.pick3.gg');
+    expect(link.getAttribute('href')).toBe('#/meta');
     expect(screen.getByText(/Explore the live meta/)).toBeTruthy();
   });
 
@@ -78,5 +79,42 @@ describe('MetaPreview', () => {
     expect(Date.parse(url.searchParams.get('since') ?? '')).toBeLessThan(
       Date.parse(url.searchParams.get('until') ?? ''),
     );
+  });
+});
+
+describe('MetaPreview follows the app league', () => {
+  const ULTRA = {
+    ...GREAT,
+    id: 'ultra',
+    title: 'Ultra League',
+    short: 'Ultra',
+    cp: 2500,
+    meta: 'ultra',
+  };
+
+  async function mountIn(league: string) {
+    await storage.saveSettings({ ...(await storage.loadSettings()), league });
+    const host = fakeHost();
+    const ready = host.ready;
+    host.ready = vi.fn(async () => ({
+      ...(await ready.call(host)),
+      leagues: [GREAT, ULTRA],
+    })) as typeof host.ready;
+    return render(
+      <AppProvider host={host}>
+        <MetaPreview />
+      </AppProvider>,
+    );
+  }
+
+  it('reads and names the league the app is in', async () => {
+    const f = reply({ battles: 0, species: [] });
+    vi.stubGlobal('fetch', f);
+    await mountIn('ultra');
+    await waitFor(() => expect(f).toHaveBeenCalled());
+    const first = f.mock.calls[0] as unknown as [string];
+    expect(new URL(String(first[0])).searchParams.get('league')).toBe('ultra');
+    expect(screen.getByText('Ultra League')).toBeTruthy();
+    expect(screen.getByRole('link').getAttribute('aria-label')).toContain('Ultra League');
   });
 });

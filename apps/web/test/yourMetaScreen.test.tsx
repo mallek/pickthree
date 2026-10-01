@@ -199,7 +199,7 @@ describe('Your battles screen', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/meta'));
   });
 
-  it('has no meta.pick3.gg link, no action row to it, and none of the landing cards', async () => {
+  it('has no outside meta link, no action row to it, and none of the landing cards', async () => {
     await storage.saveSet(openSet(MIXED));
     const { container } = renderBattles();
     await screen.findByText('Twilight Trails · 3 battles');

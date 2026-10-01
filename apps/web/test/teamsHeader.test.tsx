@@ -91,8 +91,10 @@ describe('filterCount', () => {
   });
 
   it('counts a window other than This meta only while a community source is picked', () => {
-    const on = (source: 'ladder' | 'tournament' | 'all' | 'log' | 'prior', window: 'meta' | '30' | '7') =>
-      filterCount({ ...DEFAULT_SETTINGS, facing: { source, window } });
+    const on = (
+      source: 'ladder' | 'tournament' | 'all' | 'log' | 'prior',
+      window: 'meta' | '30' | '7',
+    ) => filterCount({ ...DEFAULT_SETTINGS, facing: { source, window } });
     expect(on('ladder', '7')).toBe(1);
     expect(on('tournament', '30')).toBe(1);
     expect(on('all', '7')).toBe(1);
@@ -243,7 +245,7 @@ describe('Teams without a collection', () => {
     latest = null;
   });
 
-  it('keeps the page title, the meta link and Settings above the ways in, with no league or controls', async () => {
+  it('keeps the page title and Settings above the ways in, with no league or controls', async () => {
     render(
       <AppProvider host={fakeHost()}>
         <Probe />
@@ -256,8 +258,10 @@ describe('Teams without a collection', () => {
     });
     expect(latest?.state.collection).toBeNull();
     expect(screen.getByRole('heading', { level: 2, name: 'Your Teams' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /meta\.pick3\.gg/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /meta[.]pick3[.]gg/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Import a CSV' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'See the live meta' }));
+    await waitFor(() => expect(latest!.state.route).toEqual({ screen: 'meta' }));
     expect(screen.queryByRole('radiogroup', { name: 'League' })).toBeNull();
     expect(screen.queryByLabelText('Source')).toBeNull();
     expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();

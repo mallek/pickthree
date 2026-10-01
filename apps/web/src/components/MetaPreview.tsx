@@ -1,21 +1,24 @@
 import { LeagueShield } from '@pickthree/ui';
 import { useEffect, useState, type ReactElement } from 'react';
 import { PokemonToken, useName } from '../components.tsx';
+import { communityLeague } from '../communityMeta.ts';
 import { COUNTER_ORIGIN } from '../counter.ts';
+import { useAppState } from '../state/store.tsx';
 import { ArrowGlyph, BarsGlyph } from './LandingGlyphs.tsx';
+import { useLeague } from './LeagueSwitcher.tsx';
 
 /**
  * A compact read of what has actually been logged lately, so a first-time visitor sees real
- * output before deciding whether to hand over a collection. The whole card opens meta.pick3.gg.
+ * output before deciding whether to hand over a collection. The whole card opens the in-app Meta (`#/meta`),
+ * and reads the league the app is in.
  *
  * The wording is deliberately "recently logged" rather than anything about what is strongest or
  * most played: this is a count of battles people chose to share, which is what the number can
  * honestly support, and it stays true as more sources feed the same API.
  *
- * Share is sightings over battles, the same denominator meta.pick3.gg uses, so the two surfaces
+ * Share is sightings over battles, the same denominator Meta uses, so the two surfaces
  * cannot disagree about the same window.
  */
-const META_SITE = 'https://meta.pick3.gg';
 const WINDOW_DAYS = 30;
 const SHOWN = 3;
 
@@ -36,13 +39,26 @@ export function MetaPreview() {
   const [status, setStatus] = useState<Status>('loading');
   const [rows, setRows] = useState<Row[]>([]);
   const name = useName();
+  const { data, settingsLoaded } = useAppState();
+  const league = useLeague();
+  // The league's community id (a cup reads its meta league), or null for one with no community
+  // data. Held back until settings and game data are in, so the first read is the right league.
+  const leagueId = data && settingsLoaded ? communityLeague(league) : undefined;
 
   useEffect(() => {
+    if (leagueId === undefined) {
+      return;
+    }
+    if (leagueId === null) {
+      setStatus('empty');
+      return;
+    }
+    setStatus('loading');
     const ctrl = new AbortController();
     const until = new Date();
     const since = new Date(until.getTime() - WINDOW_DAYS * 86_400_000);
     const q = new URLSearchParams({
-      league: 'great',
+      league: leagueId,
       since: since.toISOString(),
       until: until.toISOString(),
     });
@@ -71,7 +87,7 @@ export function MetaPreview() {
         setStatus('unavailable');
       });
     return () => ctrl.abort();
-  }, []);
+  }, [leagueId]);
 
   // Three columns of the same width, so loading, ready, empty and unavailable all occupy the same
   // space and the button below never jumps when the network answers.
@@ -106,8 +122,8 @@ export function MetaPreview() {
       <div className="mp-rows mp-rows-note">
         <p className="small muted" style={{ margin: 0 }}>
           {status === 'empty'
-            ? 'No battles logged in this window yet. The meta site has the full picture.'
-            : 'Could not load the latest numbers. The meta site has them.'}
+            ? 'No battles logged in this window yet. Meta has the full picture.'
+            : 'Could not load the latest numbers. Meta has them.'}
         </p>
       </div>
     );
@@ -116,19 +132,19 @@ export function MetaPreview() {
   return (
     <a
       className="mp-card"
-      href={META_SITE}
-      aria-label="Recently logged battles in Great League, on the pick3 meta site"
+      href="#/meta"
+      aria-label={`Recently logged battles in ${league.title}, in the pick3 meta`}
     >
       <span className="mp-head">
         <span className="mp-kicker">
           <BarsGlyph />
           Recently logged
         </span>
-        {/* The league reads as a label, not a control: the whole card is one link to the meta
-         * site, and a chevron here would promise a menu that is not there. */}
+        {/* The league reads as a label, not a control: the whole card is one link to Meta, and a
+         * chevron here would promise a menu that is not there. */}
         <span className="mp-league">
-          <span className="mp-league-pill">Great League</span>
-          <LeagueShield id="great" size={20} />
+          <span className="mp-league-pill">{league.title}</span>
+          <LeagueShield id={league.id} size={20} />
         </span>
       </span>
       {body()}

@@ -8,7 +8,6 @@ import {
   Header,
   IconButton,
   InlineSelect,
-  SiteLink,
   Term,
   type ChoiceOption,
 } from '@pickthree/ui';
@@ -161,16 +160,7 @@ export function Counters() {
       actions={settings}
     />
   ) : (
-    <Header
-      variant="top"
-      title="Counters"
-      actions={
-        <>
-          <SiteLink site="meta" />
-          {settings}
-        </>
-      }
-    />
+    <Header variant="top" title="Counters" actions={settings} />
   );
 
   const metaSize = s.leagueInfo?.metaSize;

@@ -33,6 +33,11 @@ export interface Settings {
    * left out of team recommendations, from every copy. Absent in older saves means none.
    */
   excludedSpecies?: string[];
+  /**
+   * Added 2026-09-30. Absent means false: the player has not chosen to start without a
+   * collection. Set by Welcome's third button; with no collection it routes boot to Meta.
+   */
+  startedWithout?: boolean;
   /** League id in play; absent in older saves means Great League. */
   league?: string;
   /** Added 2026-09-29. GO Battle League cup runs already nudged, as `<league>@<run start>`,

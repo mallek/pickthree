@@ -2,13 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MoveChoice, VerdictLabel } from '@pickthree/engine';
 import { MetaGlyph } from '@pickthree/ui';
-import {
-  MoveRows,
-  Progress,
-  NoCollection,
-  CogGlyph,
-  VerdictTag,
-} from '../src/components.tsx';
+import { MoveRows, Progress, NoCollection, CogGlyph, VerdictTag } from '../src/components.tsx';
 
 describe('Progress', () => {
   it('announces the stage label through the shared Loading state', () => {
@@ -21,7 +15,7 @@ describe('Progress', () => {
 });
 
 describe('NoCollection', () => {
-  it('offers the three ways in as buttons, import as the main one', async () => {
+  it('offers four ways in as buttons, import as the main one, the live meta last', async () => {
     const calls: string[] = [];
     render(<NoCollection navigate={(r) => calls.push(r.screen)} />);
     const importBtn = screen.getByRole('button', { name: 'Import a CSV' });
@@ -29,7 +23,8 @@ describe('NoCollection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a Pokémon' }));
     fireEvent.click(screen.getByRole('button', { name: 'Build a team' }));
     fireEvent.click(importBtn);
-    expect(calls).toEqual(['add', 'build', 'import']);
+    fireEvent.click(screen.getByRole('button', { name: 'See the live meta' }));
+    expect(calls).toEqual(['add', 'build', 'import', 'meta']);
   });
 });
 

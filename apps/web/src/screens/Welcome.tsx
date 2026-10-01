@@ -24,7 +24,7 @@ import { useActions, useAppState } from '../state/store.tsx';
  */
 export function Welcome() {
   const { boot, bootError } = useAppState();
-  const { navigate } = useActions();
+  const { navigate, updateSettings } = useActions();
   const count = useTrainerCount();
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -100,6 +100,18 @@ export function Welcome() {
             onClick={() => navigate({ screen: 'add' })}
           >
             Add a few by hand
+            <ArrowGlyph />
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-cta"
+            disabled={boot !== 'ready'}
+            onClick={() => {
+              updateSettings({ startedWithout: true });
+              navigate({ screen: 'meta' });
+            }}
+          >
+            Start without a collection
             <ArrowGlyph />
           </button>
         </div>

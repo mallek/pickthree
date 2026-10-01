@@ -9,11 +9,11 @@ export const STOP_LINE =
 
 /**
  * Community: the share switch (turning it off goes through a danger confirm; turning it back on
- * needs none), what a battle record does and does not carry, and the link to meta.pick3.gg.
+ * needs none), what a battle record does and does not carry, and the way to the live meta.
  */
 export function Community() {
   const s = useAppState();
-  const { setShareEnabled } = useActions();
+  const { setShareEnabled, navigate } = useActions();
   const [confirmStop, setConfirmStop] = useState(false);
   const [whatsSent, setWhatsSent] = useState(false);
   const on = shareEnabled(s.settings);
@@ -46,8 +46,8 @@ export function Community() {
             </p>
           </div>
         </ExpandRow>
-        <Button variant="secondary" href="https://meta.pick3.gg">
-          Open meta.pick3.gg
+        <Button variant="secondary" onClick={() => navigate({ screen: 'meta' })}>
+          See the live meta
         </Button>
       </section>
       {confirmStop ? (
