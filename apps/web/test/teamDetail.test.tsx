@@ -425,16 +425,6 @@ describe('Team Analysis', () => {
     ]);
   });
 
-  it('Run this team opens Pick Your Team with the team filled in', async () => {
-    await mountRecommended('a');
-    fireEvent.click(screen.getByRole('button', { name: 'Run this team' }));
-    await waitFor(() =>
-      expect(window.location.hash).toBe(
-        hashFor({ screen: 'meta-new', team: ['medicham', 'azumarill', 'dragonite_shadow'] }),
-      ),
-    );
-  });
-
   it('warns above the results when the team has two Megas', async () => {
     await mountCustom(TEAM, true);
     const warning = await screen.findByText('Only one Mega per team in GBL. Swap one out.');

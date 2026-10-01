@@ -19,10 +19,12 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import {
   CogGlyph,
+  PencilGlyph,
   PokemonToken,
   Seg,
   Share,
   sharePct,
+  ShareGlyph,
   useName,
   useSticky,
 } from '../components.tsx';
@@ -306,8 +308,18 @@ function YourContribution({ open }: { open: BattleSet | undefined }) {
   const rec = open ? setRecord(open) : null;
   return (
     <div className="mh-card mh-accent">
-      <div className="mh-card-head">
+      <div className="between mh-card-head">
         <b>Your contribution</b>
+        {open ? (
+          <span className="row" style={{ gap: 8 }}>
+            <IconButton label="Change team" onClick={() => navigate({ screen: 'meta-new' })}>
+              <PencilGlyph />
+            </IconButton>
+            <IconButton label="Share team" onClick={() => void shareTeam(open)}>
+              <ShareGlyph />
+            </IconButton>
+          </span>
+        ) : null}
       </div>
       <Contribution />
       <ShareSwitch />
@@ -330,14 +342,6 @@ function YourContribution({ open }: { open: BattleSet | undefined }) {
           <Button variant="primary" onClick={() => navigate({ screen: 'meta-log' })}>
             Log a battle
           </Button>
-          <div className="ym-team-actions">
-            <Button variant="text" onClick={() => navigate({ screen: 'meta-new' })}>
-              Change team
-            </Button>
-            <Button variant="text" onClick={() => void shareTeam(open)}>
-              Share team
-            </Button>
-          </div>
         </>
       ) : (
         <>

@@ -246,14 +246,6 @@ export function TeamDetail({ id }: { id: string }) {
     }
   };
 
-  /** Open Pick Your Team with this team's three already filled in. */
-  const runThisTeam = (): void => {
-    navigate({
-      screen: 'meta-new',
-      team: team.slots.map((x) => x.candidate.build.speciesId),
-    });
-  };
-
   /** Make this the team Your meta logs against, then go straight to Log a battle. */
   const takeToBattle = async (): Promise<void> => {
     const species = team.slots.map((x) => x.candidate.build.speciesId);
@@ -291,7 +283,6 @@ export function TeamDetail({ id }: { id: string }) {
           team={team}
           custom={notes}
           onTakeToBattle={() => void takeToBattle()}
-          onRun={runThisTeam}
           onEdit={editInBuild}
           onShowMember={showMember}
         />

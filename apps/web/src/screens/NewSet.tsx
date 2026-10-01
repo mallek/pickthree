@@ -67,7 +67,7 @@ export function NewSet() {
   const [query, setQuery] = useState('');
   const hits = useSpeciesSearch(query, 30, { legalOnly: true });
 
-  // Run this team (from the Top teams board, Teams or Team analysis) arrives with its species in
+  // Run this team (from the Top teams board) arrives with its species in
   // the address. The slots are seeded from it once, as soon as the league and game data are known,
   // keeping only species legal in the league in play and known to the data; later edits stay.
   const seeded = useRef(false);

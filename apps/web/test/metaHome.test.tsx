@@ -337,6 +337,11 @@ describe('Meta landing', () => {
     }
     expect(within(mine).getByRole('button', { name: 'Change team' })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: 'Share team' })).toBeInTheDocument();
+    // Icons beside the card title, not text buttons under Log a battle.
+    for (const label of ['Change team', 'Share team']) {
+      const icon = within(mine).getByRole('button', { name: label });
+      expect(icon.closest('.mh-card-head')).not.toBeNull();
+    }
 
     const meta = card('Your meta');
     expect(within(meta).getByText('3 battles this season')).toBeInTheDocument();
