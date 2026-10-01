@@ -233,6 +233,7 @@ function Loaded({
   movesTitle,
   movesNote,
   cost,
+  pool,
 }: {
   title: string;
   copy: Copy;
@@ -242,35 +243,33 @@ function Loaded({
   movesTitle: string;
   movesNote: string;
   cost: ReactNode;
+  pool?: Pool;
 }) {
   const name = useName();
   return (
     <>
       <div className="stack" style={{ gap: 6 }}>
-        <h3>{title}</h3>
+        <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+          <h3 style={{ flex: 1 }}>{title}</h3>
+          <IconButton
+            label={pinned ? 'Pinned for Great League' : 'Pin for Great League'}
+            onClick={() => undefined}
+          >
+            <PinGlyph on={pinned} />
+          </IconButton>
+          <IconButton label="Edit" onClick={() => undefined}>
+            <PencilGlyph />
+          </IconButton>
+          <IconButton label="Remove from collection" onClick={() => undefined}>
+            <TrashGlyph />
+          </IconButton>
+        </div>
         <div className="card" style={{ gap: 8 }}>
-          <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span className="meta" style={{ display: 'block' }}>
-                {copyLine(copy, name)}
-              </span>
-              <span className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                {pinned ? <Tag tone="neutral">Pinned</Tag> : null}
-                <VerdictTag label={copy.verdict} />
-              </span>
-            </div>
-            <IconButton
-              label={pinned ? 'Pinned for Great League' : 'Pin for Great League'}
-              onClick={() => undefined}
-            >
-              <PinGlyph on={pinned} />
-            </IconButton>
-            <IconButton label="Edit" onClick={() => undefined}>
-              <PencilGlyph />
-            </IconButton>
-            <IconButton label="Remove from collection" onClick={() => undefined}>
-              <TrashGlyph />
-            </IconButton>
+          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+            <span className="meta" style={{ flex: 1 }}>
+              {copyLine(copy, name)}
+            </span>
+            <VerdictTag label={copy.verdict} />
           </div>
           <div className="kv" style={{ alignItems: 'baseline' }}>
             <span className="muted">IVs · Attack / Defense / HP</span>
@@ -287,15 +286,15 @@ function Loaded({
         </div>
       </div>
 
-      <div className="stack" style={{ gap: 6 }}>
-        <h3>{movesTitle}</h3>
-        <div className="card" style={{ padding: '0 14px' }}>
-          <MoveRows fast={moves.fast} charged={moves.charged} />
-        </div>
-        <p className="small muted" style={{ margin: 0 }}>
-          {movesNote}
-        </p>
-      </div>
+      <MovesCard
+        pool={pool ?? UMBREON_POOL}
+        known={
+          movesTitle === 'Its moves'
+            ? new Set([moves.fast.moveId, ...moves.charged.map((m) => m.moveId)])
+            : null
+        }
+        note={movesNote}
+      />
 
       {cost}
 
@@ -355,8 +354,12 @@ function Yours({
               {copyLine(c, name)}
             </span>
             <span className="row" style={{ gap: 6, alignItems: 'center' }}>
-              {c.key === pinned ? <Tag tone="neutral">Pinned</Tag> : null}
-              {c.key === shown && c.key !== pinned ? <Tag tone="neutral">Shown</Tag> : null}
+              {c.key === pinned ? (
+                <span className="muted" style={{ display: 'inline-flex' }} title="Pinned">
+                  <PinGlyph on />
+                </span>
+              ) : null}
+              {c.key === shown && c.key !== pinned && pinned ? <Tag tone="neutral">Shown</Tag> : null}
               <VerdictTag label={c.verdict} />
             </span>
           </a>
@@ -433,12 +436,12 @@ function UmbreonPinned() {
     <Shell>
       <Hero id="umbreon" meta={14} pvpoke={22} have="You have 2, and 3 Eevee that evolve into it" />
       <Loaded
-        title="Your Umbreon for Great League"
+        title="Your Umbreon"
         copy={UMBREONS[0]!}
         pinned
         moves={{ fast: SNARL, charged: [FOUL_PLAY, PSYCHIC] }}
         movesTitle="Its moves"
-        movesNote="Teams use these moves. PvPoke runs Last Resort over Psychic: 1 Elite TM to switch."
+        movesNote="Teams use the ticked moves. Swapping Psychic for Last Resort costs 1 Elite TM."
         cost={<Cost line="Already at level 27.5." tiles={[]} />}
       />
       <Yours
@@ -448,7 +451,6 @@ function UmbreonPinned() {
         foot="Best IV rank for Great League first. Tap one to show it."
       />
       <MetaFacts share="Not faced in this window" />
-      <Recommended fast={SNARL} charged={[FOUL_PLAY, LAST_RESORT]} />
       <Foot id="umbreon" covers="Covers your 2 Umbreon and 3 Eevee." />
     </Shell>
   );
@@ -471,7 +473,7 @@ function UmbreonOther() {
           ],
         }}
         movesTitle="Recommended moves"
-        movesNote="Its moves are not entered, so teams would use the recommended set. Edit to enter them."
+        movesNote="Moves not entered, so teams would use the Recommended ones. Edit to tick what it knows."
         cost={
           <Cost
             line="Level 26 to 27.5 · includes second move unlock"
@@ -502,7 +504,7 @@ function UmbreonFromEevee() {
     <Shell>
       <Hero id="umbreon" meta={14} pvpoke={22} have="You have 3 Eevee that evolve into it" />
       <Loaded
-        title="Your Umbreon for Great League"
+        title="Your Umbreon"
         copy={EEVEES[0]!}
         pinned
         note="Also your pick for Vaporeon and Sylveon. It can only evolve once."
@@ -514,7 +516,7 @@ function UmbreonFromEevee() {
           ],
         }}
         movesTitle="Recommended moves"
-        movesNote="An Eevee's moves change when it evolves, so teams use the recommended set."
+        movesNote="An Eevee's moves change when it evolves, so teams use the Recommended ones."
         cost={
           <Cost
             line="Level 14 to 27 · includes second move unlock · includes 25 candy to evolve"
@@ -565,12 +567,13 @@ function EeveePage() {
     <Shell>
       <Hero id="eevee" meta={412} pvpoke={655} have="You have 3" />
       <Loaded
-        title="Your Eevee for Great League"
+        title="Your Eevee"
+        pool={EEVEE_POOL}
         copy={copies[0]!}
         pinned
         moves={{ fast: QUICK, charged: [SWIFT] }}
         movesTitle="Its moves"
-        movesNote="Teams use these moves. PvPoke runs Body Slam and Last Resort: second move unlock and 2 Elite TM to switch."
+        movesNote="Teams use the ticked moves. The Recommended set costs a second move unlock and 2 Elite TM."
         cost={
           <Cost
             line="Level 22 to 50"
@@ -589,7 +592,6 @@ function EeveePage() {
         foot="Each Eevee is also on the page of every Pokemon it evolves into."
       />
       <MetaFacts share="Not faced in this window" />
-      <Recommended fast={QUICK} charged={[BODY_SLAM, EEVEE_LAST_RESORT]} />
       <Foot id="eevee" covers="Covers your 3 Eevee." />
     </Shell>
   );
@@ -632,11 +634,55 @@ function PinConfirm() {
         title="Pin this Umbreon for Great League?"
         line="pick3 pins your best Umbreon for each league. This overrides that pick for Great League and unpins the CP 1492 one, so teams use this one instead."
         confirmLabel="Pin this one"
-        cancelLabel="Keep the current pin"
+        cancelLabel="Cancel"
         onConfirm={() => undefined}
         onCancel={() => undefined}
       />
     </>
+  );
+}
+
+/** The filled pin tapped: cancel or unpin. */
+function Unpin() {
+  return (
+    <>
+      <UmbreonPinned />
+      <ConfirmSheet
+        title="Unpin this Umbreon for Great League?"
+        line="With no Umbreon pinned, teams use a typical one instead: top 10% IVs and the recommended moves."
+        confirmLabel="Unpin"
+        cancelLabel="Cancel"
+        onConfirm={() => undefined}
+        onCancel={() => undefined}
+      />
+    </>
+  );
+}
+
+/** Umbreon with nothing pinned for the league. */
+function Unpinned() {
+  return (
+    <Shell>
+      <Hero id="umbreon" meta={14} pvpoke={22} have="You have 2, and 3 Eevee that evolve into it" />
+      <Loaded
+        title="Your Umbreon"
+        copy={UMBREONS[0]!}
+        pinned={false}
+        note="No Umbreon is pinned for Great League, so teams use a typical one: top 10% IVs and the recommended moves."
+        moves={{ fast: SNARL, charged: [FOUL_PLAY, PSYCHIC] }}
+        movesTitle="Its moves"
+        movesNote="Pin this one and teams use the ticked moves."
+        cost={<Cost line="Already at level 27.5." tiles={[]} />}
+      />
+      <Yours
+        copies={BY_RANK}
+        pinned=""
+        shown="u1"
+        foot="Best IV rank for Great League first. Tap one to show it."
+      />
+      <MetaFacts share="Not faced in this window" />
+      <Foot id="umbreon" covers="Covers your 2 Umbreon and 3 Eevee." />
+    </Shell>
   );
 }
 
@@ -647,22 +693,53 @@ const EARTHQUAKE = mv('EARTHQUAKE', 'Earthquake', 'ground', 'tm', [8, 7, 7]);
 const MUDDY_WATER = mv('MUDDY_WATER', 'Muddy Water', 'water', 'tm', [4, 4, 4]);
 const SLUDGE_WAVE = mv('SLUDGE_WAVE', 'Sludge Wave', 'poison', 'have', [8, 7, 7]);
 const SURF = mv('SURF', 'Surf', 'water', 'tm', [5, 4, 5]);
-const RECOMMENDED = new Set(['MUD_SHOT', 'HYDRO_CANNON', 'EARTHQUAKE']);
 const KNOWN = new Set(['MUD_SHOT', 'HYDRO_CANNON', 'SLUDGE_WAVE']);
+
+interface Pool {
+  fast: MoveChoice[];
+  charged: MoveChoice[];
+  recommended: Set<string>;
+}
+
+const UMBREON_POOL: Pool = {
+  fast: [SNARL, mv('FEINT_ATTACK', 'Feint Attack', 'dark', 'tm', null)],
+  charged: [
+    FOUL_PLAY,
+    LAST_RESORT,
+    PSYCHIC,
+    mv('DARK_PULSE', 'Dark Pulse', 'dark', 'tm', [4, 4, 4]),
+  ],
+  recommended: new Set(['SNARL', 'FOUL_PLAY', 'LAST_RESORT']),
+};
+
+const EEVEE_POOL: Pool = {
+  fast: [QUICK, mv('TACKLE', 'Tackle', 'normal', 'tm', null)],
+  charged: [BODY_SLAM, EEVEE_LAST_RESORT, SWIFT, mv('DIG', 'Dig', 'ground', 'tm', [9, 8, 8])],
+  recommended: new Set(['QUICK_ATTACK', 'BODY_SLAM', 'LAST_RESORT']),
+};
+
+const SWAMPERT_POOL: Pool = {
+  fast: [MUD_SHOT, WATER_GUN],
+  charged: [HYDRO_CANNON, EARTHQUAKE, MUDDY_WATER, SLUDGE_WAVE, SURF],
+  recommended: new Set(['MUD_SHOT', 'HYDRO_CANNON', 'EARTHQUAKE']),
+};
 
 /** The team move picker's own option row, with a Recommended tag on PvPoke's set. */
 function Option({
   move,
   role,
+  checked,
+  recommended,
   disabled,
   fastName,
 }: {
   move: MoveChoice;
   role: 'radio' | 'checkbox';
+  checked: boolean;
+  recommended: boolean;
   disabled: boolean;
   fastName: string | null;
 }) {
-  const checked = KNOWN.has(move.moveId);
   const count = fastName ? countsText(fastName, move.counts) : null;
   return (
     <button
@@ -678,7 +755,7 @@ function Option({
           <span className="move-name">{move.name}</span>
           <span className="move-tags">
             <TypeChip type={move.type} small />
-            {RECOMMENDED.has(move.moveId) ? <Tag tone="accent">Recommended</Tag> : null}
+            {recommended ? <Tag tone="accent">Recommended</Tag> : null}
           </span>
           {move.tm === 'elite' ? <TmBadge tm="elite" /> : null}
         </span>
@@ -688,34 +765,67 @@ function Option({
   );
 }
 
-function KnownMovesPicker() {
+/**
+ * The one moves card: every move the species can know, the ones this copy knows ticked, PvPoke's
+ * set tagged. Read only on the species page; in Edit the same rows take taps.
+ */
+function MovesCard({
+  pool,
+  known,
+  note,
+  edit = false,
+}: {
+  pool: Pool;
+  /** Null while the moves are not entered. */
+  known: Set<string> | null;
+  note: string;
+  edit?: boolean;
+}) {
+  const fastName =
+    pool.fast.find((m) => (known ? known.has(m.moveId) : pool.recommended.has(m.moveId)))?.name ??
+    null;
+  const full = known !== null && pool.charged.filter((m) => known.has(m.moveId)).length >= 2;
   return (
-    <div className="move-picker">
-      <p className="meta move-picker-rec">Tick the moves this Swampert knows now.</p>
-      <span className="move-picker-kind">Fast move</span>
-      <div className="move-opts">
-        {[MUD_SHOT, WATER_GUN].map((m) => (
-          <Option key={m.moveId} move={m} role="radio" disabled={false} fastName={null} />
-        ))}
+    <div className="stack" style={{ gap: 6 }}>
+      <h3>Moves</h3>
+      <div className="card" style={{ padding: '4px 14px' }}>
+        <div className="move-picker">
+          <span className="move-picker-kind">Fast move</span>
+          <div className="move-opts">
+            {pool.fast.map((m) => (
+              <Option
+                key={m.moveId}
+                move={m}
+                role="radio"
+                checked={known?.has(m.moveId) ?? false}
+                recommended={pool.recommended.has(m.moveId)}
+                disabled={!edit && known !== null && !known.has(m.moveId)}
+                fastName={null}
+              />
+            ))}
+          </div>
+          <span className="move-picker-kind">
+            {edit ? 'Charged moves: one, or two if unlocked' : 'Charged moves'}
+          </span>
+          {edit && full ? <p className="meta">Untick one to pick another</p> : null}
+          <div className="move-opts">
+            {pool.charged.map((m) => (
+              <Option
+                key={m.moveId}
+                move={m}
+                role="checkbox"
+                checked={known?.has(m.moveId) ?? false}
+                recommended={pool.recommended.has(m.moveId)}
+                disabled={known !== null && !known.has(m.moveId) && (!edit || full)}
+                fastName={fastName}
+              />
+            ))}
+          </div>
+        </div>
       </div>
-      <span className="move-picker-kind">Charged moves: one, or two if unlocked</span>
-      <Term term="How move counts work">
-        The numbers after a charged move, like 4-4-3, are how many fast moves it takes to reach that
-        charged move the first, second and third time.
-      </Term>
-      <p className="meta">Untick one to pick another</p>
-      <div className="move-opts">
-        {[HYDRO_CANNON, EARTHQUAKE, MUDDY_WATER, SLUDGE_WAVE, SURF].map((m) => (
-          <Option
-            key={m.moveId}
-            move={m}
-            role="checkbox"
-            disabled={!KNOWN.has(m.moveId)}
-            fastName="Mud Shot"
-          />
-        ))}
-      </div>
-      <Button variant="text">Not entered</Button>
+      <p className="small muted" style={{ margin: 0 }}>
+        {note}
+      </p>
     </div>
   );
 }
@@ -817,27 +927,16 @@ function Edit({ id, sheet }: { id: 'swampert' | 'eevee'; sheet?: boolean }) {
           </div>
         </div>
 
-        <div className="stack" style={{ gap: 8 }}>
-          <b>Moves</b>
-          {eevee ? (
-            <>
-              <span className="small muted">Not entered, so teams use the recommended moves.</span>
-              <div style={{ display: 'flex', marginLeft: -8 }}>
-                <Button variant="text">Enter moves</Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <span className="small muted">The moves it knows now. Teams use exactly these.</span>
-              <div className="card" style={{ padding: '0 14px' }}>
-                <MoveRows fast={MUD_SHOT} charged={[HYDRO_CANNON, SLUDGE_WAVE]} eliteOnly />
-              </div>
-              <div style={{ display: 'flex', marginLeft: -8 }}>
-                <Button variant="text">Change moves</Button>
-              </div>
-            </>
-          )}
-        </div>
+        <MovesCard
+          pool={eevee ? UMBREON_POOL : SWAMPERT_POOL}
+          known={eevee ? null : KNOWN}
+          note={
+            eevee
+              ? 'Tick the moves it knows. With none ticked, teams use the Recommended ones.'
+              : 'Tick the moves it knows now. Teams use exactly these.'
+          }
+          edit
+        />
 
         {eevee ? null : (
           <div className="stack" style={{ gap: 8 }}>
@@ -882,6 +981,10 @@ export function MockSpecies({ variant }: { variant: string }) {
       return <UmbreonOther />;
     case 'pin-confirm':
       return <PinConfirm />;
+    case 'unpin':
+      return <Unpin />;
+    case 'unpinned':
+      return <Unpinned />;
     case 'from-eevee':
       return <UmbreonFromEevee />;
     case 'eevee':

@@ -12,7 +12,7 @@ p.on('console', (m) => {
     errs.push(m.text());
   }
 });
-for (const v of ['umbreon', 'pin-confirm', 'from-eevee', 'edit', 'edit-moves', 'edit-eevee']) {
+for (const v of ['umbreon', 'unpin', 'unpinned', 'pin-confirm', 'from-eevee', 'edit']) {
   await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
   await p.goto(`http://localhost:4173/#/mock/${v}`, { waitUntil: 'networkidle2' });
   await p.reload({ waitUntil: 'networkidle2' });
@@ -33,10 +33,10 @@ for (const v of ['umbreon', 'pin-confirm', 'from-eevee', 'edit', 'edit-moves', '
   const h = await p.evaluate(() =>
     Math.max(844, ...[...document.querySelectorAll('.scroll, .screen, body')].map((e) => e.scrollHeight)),
   );
-  const sheet = v === 'pin-confirm' || v === 'edit-moves';
+  const sheet = v === 'pin-confirm' || v === 'unpin';
   await p.setViewport({ width: 390, height: sheet ? 844 : h + 80, deviceScaleFactor: 2 });
   await new Promise((r) => setTimeout(r, 500));
-  await p.screenshot({ path: `${out}/r2-${v}.png` });
+  await p.screenshot({ path: `${out}/r3-${v}.png` });
   console.log('shot', v);
 }
 console.log(errs.slice(0, 5).join('\n'));
