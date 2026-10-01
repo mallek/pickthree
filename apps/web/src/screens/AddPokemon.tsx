@@ -1,4 +1,5 @@
 import type { ManualResult } from '@pickthree/engine';
+import { Empty, Loading } from '@pickthree/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Header,
@@ -10,14 +11,19 @@ import {
   useSpecies,
   useSpeciesSearch,
 } from '../components.tsx';
+import { ownSpeciesId } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 type MegaForm = 'mega' | 'mega_x' | 'mega_y';
 
-/** Type a Pokémon in by hand: species, IVs from the appraisal screen, and the CP on its card. */
+/**
+ * Type a Pokémon in by hand: species, IVs from the appraisal screen, and the CP on its card. With
+ * `#/add?edit=<id>` the same form is Edit values: it opens filled in from that Pokémon and saving
+ * corrects it in place (a bad scan, a power-up) instead of adding one.
+ */
 export function AddPokemon() {
   const s = useAppState();
-  const { navigate, addManual } = useActions();
+  const { navigate, back, addManual, updateManual } = useActions();
   const name = useName();
   const short = useShortName();
   const species = useSpecies();
@@ -46,6 +52,28 @@ export function AddPokemon() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+
+  // Edit values: the Pokémon being corrected, and the form filled in from it once it is loaded.
+  const editId = s.route.screen === 'add' ? (s.route.edit ?? null) : null;
+  const editing = editId ? (s.collection?.specimens.find((x) => x.id === editId) ?? null) : null;
+  const editFilled = useRef(false);
+  useEffect(() => {
+    if (editFilled.current || !editing || !s.data) {
+      return;
+    }
+    editFilled.current = true;
+    // A Shadow saved with the flag on its plain id is its Shadow form, as everywhere else.
+    const own = ownSpeciesId(editing);
+    setSpeciesId(s.data.species[own] ? own : null);
+    // A copy whose IVs never came through starts blank, so nothing is saved by accident.
+    setAtk(editing.ivs ? String(editing.ivs.atk) : '');
+    setDef(editing.ivs ? String(editing.ivs.def) : '');
+    setSta(editing.ivs ? String(editing.ivs.sta) : '');
+    setCp(String(editing.cp));
+    setLucky(editing.lucky);
+    setMegaForm(editing.shadow ? null : (editing.megaForm ?? null));
+    setLevel4(editing.megaLevel4 === true);
+  }, [editing, s.data]);
   // The new Pokémon's page takes this form's place in history, so Back from it goes where Add was
   // opened from, not to an empty form. A delayed hand-off is dropped if the player leaves first,
   // so it never replaces whatever page they went to.
@@ -96,17 +124,18 @@ export function AddPokemon() {
     setError(null);
     setNote(null);
     try {
-      const r: ManualResult = await addManual(
-        {
-          speciesId,
-          ivs: { atk: iv(atk), def: iv(def), sta: iv(sta) },
-          cp: iv(cp),
-          lucky,
-        },
-        megaForm
-          ? { megaForm, ...(chosenMega?.superMega && level4 ? { megaLevel4: true } : {}) }
-          : undefined,
-      );
+      const input = {
+        speciesId,
+        ivs: { atk: iv(atk), def: iv(def), sta: iv(sta) },
+        cp: iv(cp),
+        lucky,
+      };
+      const marks = megaForm
+        ? { megaForm, ...(chosenMega?.superMega && level4 ? { megaLevel4: true } : {}) }
+        : undefined;
+      const r: ManualResult = editId
+        ? await updateManual(editId, input, marks)
+        : await addManual(input, marks);
       if (!r.exactCp) {
         setNote(
           `No level gives exactly CP ${cp} with those IVs. Saved at level ${r.level}, CP ${r.matchedCp}. Check the IVs if that looks wrong.`,
@@ -139,14 +168,42 @@ export function AddPokemon() {
     </label>
   );
 
+  if (editId && !editing) {
+    return (
+      <div className="screen">
+        <Header
+          title="Edit values"
+          onBack={() => back({ screen: 'collection' })}
+          backLabel="Back"
+        />
+        <div className="scroll">
+          {s.settingsLoaded ? (
+            <Empty line="That Pokémon is not in the current collection." />
+          ) : (
+            <Loading label="Loading your collection" />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="screen">
-      <Header
-        title="Add a Pokémon"
-        sub="No file needed. Type in what the game shows you."
-        onBack={() => navigate(s.collection ? { screen: 'collection' } : { screen: 'welcome' })}
-        backLabel={s.collection ? 'Collection' : 'Start'}
-      />
+      {editId ? (
+        <Header
+          title="Edit values"
+          sub="Type in what the game shows you now."
+          onBack={() => back({ screen: 'specimen', id: editId })}
+          backLabel="Back"
+        />
+      ) : (
+        <Header
+          title="Add a Pokémon"
+          sub="No file needed. Type in what the game shows you."
+          onBack={() => navigate(s.collection ? { screen: 'collection' } : { screen: 'welcome' })}
+          backLabel={s.collection ? 'Collection' : 'Start'}
+        />
+      )}
       <div className="scroll" style={{ gap: 16 }}>
         <div className="stack" style={{ gap: 8 }}>
           <b>Which Pokémon</b>
@@ -156,7 +213,7 @@ export function AddPokemon() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             inputMode="search"
-            autoFocus={speciesId === null}
+            autoFocus={speciesId === null && !editId}
           />
           {searching ? (
             <>
@@ -293,11 +350,18 @@ export function AddPokemon() {
         {error ? <div className="error">{error}</div> : null}
         {note ? <div className="error">{note}</div> : null}
         <button type="button" className="btn" disabled={!ready} onClick={() => void submit()}>
-          {busy ? 'Adding...' : 'Add to my collection'}
+          {editId
+            ? busy
+              ? 'Saving...'
+              : 'Save changes'
+            : busy
+              ? 'Adding...'
+              : 'Add to my collection'}
         </button>
         <p className="meta faint" style={{ margin: 0 }}>
-          Added Pokémon get the same verdicts, teams and costs as scanned ones. You can remove one
-          from its page.
+          {editId
+            ? 'pick3 works out the level from CP and IVs, then judges this Pokémon again.'
+            : 'Added Pokémon get the same verdicts, teams and costs as scanned ones. You can remove one from its page.'}
         </p>
       </div>
     </div>

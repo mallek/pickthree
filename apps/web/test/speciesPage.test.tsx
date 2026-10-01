@@ -602,7 +602,7 @@ describe('Species page', () => {
     await waitFor(() => expect(latest?.settings.excludedSpecies).toEqual(['clodsire']));
   });
 
-  it('lists a copy that needs a rescan under Yours, marked, to its specimen page', async () => {
+  it('lists a copy that needs a rescan under Yours, marked, with Enter values', async () => {
     const noIvs = { ...specimen('r1', 'azumarill', 1200, 28), ivs: null } as unknown as Specimen;
     await seed([...SPECIMENS, noIvs]);
     stubNet(freshNet());
@@ -614,11 +614,16 @@ describe('Species page', () => {
     renderPage(host({ verdicts: vi.fn(async () => ({ ...VERDICTS, r1: rescan })) }));
 
     const yours = await waitFor(() => section('Yours'));
-    await waitFor(() => expect(within(yours).getAllByRole('link')).toHaveLength(5));
-    const last = within(yours).getAllByRole('link')[4]!;
+    await waitFor(() => expect(yours.querySelectorAll('.spec-row')).toHaveLength(5));
+    const last = yours.querySelectorAll<HTMLElement>('.spec-row')[4]!;
     expect(last).toHaveAttribute('href', '#/collection/r1');
     expect(last).toHaveTextContent('CP 1200 · IVs unknown');
     expect(last.querySelector('.verdict-tag')).toHaveAttribute('data-verdict', 'Needs rescan');
+    // Only the copy that needs a rescan offers Enter values, as a text action.
+    const enter = within(yours).getAllByRole('link', { name: 'Enter values' });
+    expect(enter).toHaveLength(1);
+    expect(enter[0]).toHaveAttribute('href', '#/add?edit=r1');
+    expect(enter[0]).toHaveClass('ui-btn-text');
   });
 
   it('a failed read says so under the hero; Yours and the actions stay; Try again reads again', async () => {

@@ -58,7 +58,7 @@ import {
   syncShared,
   unstampAll,
 } from '../metaShare.ts';
-import { describeLayoutLine, emptyLayoutValue } from '../format.ts';
+import { describeLayoutLine, emptyLayoutValue, ownSpeciesId } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
 import { parseLogFile, serializeLog } from '../storage/logFile.ts';
@@ -111,7 +111,8 @@ export type Route =
   /** A Build lead link: the species for pick 0, and the league an inbound link names. */
   | { screen: 'build'; lead?: string; league?: string }
   | { screen: 'custom' }
-  | { screen: 'add'; species?: string }
+  /** Add a Pokémon by hand, optionally prefilled with a species; `edit` names one to correct. */
+  | { screen: 'add'; species?: string; edit?: string }
   | { screen: 'meta' }
   /** Top teams: window and source picks are written to the hash, the league never is. */
   | { screen: 'meta-teams'; w?: WindowKey; src?: SourceKey; league?: string }
@@ -502,6 +503,8 @@ function reducer(s: AppState, a: Action): AppState {
 }
 
 const SPECIES_ID = /^[a-z0-9_]+$/;
+/** A specimen id: the importer's hex hash, or anything as plain from an older save. */
+const SPECIMEN_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const WINDOW_KEYS: readonly string[] = ['meta', '30', '7'];
 const SOURCE_KEYS: readonly string[] = ['all', 'prior', 'ladder', 'tournament'];
 
@@ -589,7 +592,12 @@ export function parseHash(hash: string): Route {
     return league ? { screen: 'build', lead, league } : { screen: 'build', lead };
   }
   if (a === 'add') {
-    const species = new URLSearchParams(query ?? '').get('species');
+    const params = new URLSearchParams(query ?? '');
+    const edit = params.get('edit');
+    if (edit !== null && SPECIMEN_ID.test(edit)) {
+      return { screen: 'add', edit };
+    }
+    const species = params.get('species');
     return species !== null && SPECIES_ID.test(species)
       ? { screen: 'add', species }
       : { screen: 'add' };
@@ -681,6 +689,9 @@ export function hashFor(r: Route): string {
     case 'custom':
       return '#/build/team';
     case 'add':
+      if (r.edit) {
+        return `#/add?edit=${encodeURIComponent(r.edit)}`;
+      }
       return r.species ? `#/add?species=${encodeURIComponent(r.species)}` : '#/add';
     case 'species':
       // The league from a link is never written back.
@@ -897,6 +908,11 @@ interface Actions {
   ): Promise<MovePool>;
   /** Type a Pokémon in. `marks` carries what the appraisal screen cannot: a Mega mark. */
   addManual(input: ManualInput, marks?: ManualMegaMarks): Promise<ManualResult>;
+  /**
+   * Correct one Pokémon with values typed in (a bad scan, a power-up). It keeps its id and its
+   * place in the collection; the level comes from the CP and IVs as for one added by hand.
+   */
+  updateManual(id: string, input: ManualInput, marks?: ManualMegaMarks): Promise<ManualResult>;
   /** The in-battle card for one opponent against the set's team. Null when it could not run. */
   faceoff(team: TeamRef, opponent: string): Promise<Faceoff | null>;
   removeSpecimen(id: string): Promise<void>;
@@ -1702,6 +1718,43 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     },
     [saveSpecimens],
   );
+  const updateManual = useCallback(
+    async (id: string, input: ManualInput, marks?: ManualMegaMarks) => {
+      const h = hostRef.current as WorkerHost;
+      const existing = stateRef.current.collection?.specimens ?? [];
+      const old = existing.find((x) => x.id === id);
+      if (!old) {
+        throw new Error('That Pokémon is not in the current collection.');
+      }
+      const made = await h.manual(input);
+      // The worker's specimen carries the new values; the copy keeps who it is. Its known moves
+      // stay while it is still the same species, and a purified copy stays purified (the form has
+      // no such field). The Mega mark is the form's.
+      const sameSpecies = ownSpeciesId(old) === made.specimen.speciesId;
+      const specimen: Specimen = {
+        ...made.specimen,
+        id: old.id,
+        purified: old.purified && !made.specimen.shadow,
+        currentMoves: sameSpecies ? old.currentMoves : { fast: null, charged: [] },
+        megaForm: marks?.megaForm ?? null,
+      };
+      // A scan stays a scan (so no Remove), one typed in stays typed in.
+      delete specimen.source;
+      delete specimen.megaLevel4;
+      if (old.source) {
+        specimen.source = old.source;
+      }
+      if (marks?.megaForm && marks.megaLevel4) {
+        specimen.megaLevel4 = true;
+      }
+      await saveSpecimens(
+        existing.map((x) => (x.id === id ? specimen : x)),
+        null,
+      );
+      return { ...made, specimen };
+    },
+    [saveSpecimens],
+  );
   const removeSpecimen = useCallback(
     async (id: string) => {
       const existing = stateRef.current.collection?.specimens ?? [];
@@ -2041,6 +2094,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       movePool,
       faceoff,
       addManual,
+      updateManual,
       removeSpecimen,
       setMegaLevel4,
       updateSettings,
@@ -2076,6 +2130,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       movePool,
       faceoff,
       addManual,
+      updateManual,
       removeSpecimen,
       setMegaLevel4,
       updateSettings,

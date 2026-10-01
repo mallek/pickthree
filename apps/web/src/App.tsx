@@ -131,7 +131,8 @@ function renderScreen(r: Route) {
     case 'custom':
       return <TeamDetail id="custom" />;
     case 'add':
-      return <AddPokemon />;
+      // Keyed by the copy being corrected, so moving between forms never carries one's values over.
+      return <AddPokemon key={r.edit ?? 'add'} />;
     case 'meta':
       return <MetaHome />;
     case 'meta-battles':

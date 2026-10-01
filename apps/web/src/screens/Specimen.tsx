@@ -400,32 +400,32 @@ export function SpecimenScreen({ id }: { id: string }) {
 
         {/* At the end of the page, in the flow: nothing sits over the content. */}
         {/* A Pokémon with no build in this league never reaches a team: nothing to switch. */}
-        {showSwitch || sp.source === 'manual' ? (
-          <div className="card">
-            {!showSwitch ? null : (
-              <Switch
-                label={
-                  battles
-                    ? `Use ${name(battles)} in team recommendations`
-                    : 'Use in team recommendations'
+        <div className="card">
+          {!showSwitch ? null : (
+            <Switch
+              label={
+                battles
+                  ? `Use ${name(battles)} in team recommendations`
+                  : 'Use in team recommendations'
+              }
+              {...(covers ? { line: covers } : {})}
+              checked={!excluded}
+              disabled={!switchReady}
+              onChange={() => {
+                if (battles) {
+                  toggleExcludedSpecies(battles);
                 }
-                {...(covers ? { line: covers } : {})}
-                checked={!excluded}
-                disabled={!switchReady}
-                onChange={() => {
-                  if (battles) {
-                    toggleExcludedSpecies(battles);
-                  }
-                }}
-              />
-            )}
-            {sp.source === 'manual' ? (
-              <Button variant="danger" onClick={() => setConfirmRemove(true)}>
-                Remove from collection
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
+              }}
+            />
+          )}
+          {/* Every copy can be corrected: a bad scan, a power-up since. */}
+          <Button href={hashFor({ screen: 'add', edit: sp.id })}>Enter values</Button>
+          {sp.source === 'manual' ? (
+            <Button variant="danger" onClick={() => setConfirmRemove(true)}>
+              Remove from collection
+            </Button>
+          ) : null}
+        </div>
       </div>
       {confirmRemove ? (
         <ConfirmSheet

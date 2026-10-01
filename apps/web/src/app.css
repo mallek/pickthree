@@ -4104,6 +4104,11 @@ input[type='range'] {
 .sp-yours > .spec-row.sub:first-child {
   border-top: 0;
 }
+/* Enter values under a copy that needs a rescan: the text action lines up with the row's text. */
+.sp-yours > .sp-yours-action {
+  display: flex;
+  margin: -4px 0 4px -8px;
+}
 .sp-set {
   display: flex;
   justify-content: space-between;

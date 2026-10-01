@@ -20,7 +20,7 @@ import type {
   WindowKey,
 } from '@pickthree/engine/meta';
 import { Button, Empty, ErrorState, Header, IconButton, Loading, Switch, Tag } from '@pickthree/ui';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   CogGlyph,
   MetaRankTags,
@@ -505,7 +505,7 @@ export function SpeciesPage({ id }: { id: string }) {
             <div className="card sp-yours" style={{ padding: '0 14px', gap: 0 }}>
               {mine.map((sp) => {
                 const v = s.verdicts[sp.id];
-                return (
+                const row = (
                   <a
                     className="spec-row sub"
                     key={sp.id}
@@ -519,6 +519,21 @@ export function SpeciesPage({ id }: { id: string }) {
                     </span>
                     {v ? <VerdictTag label={v.label} /> : <span className="meta">...</span>}
                   </a>
+                );
+                if (v?.label !== 'Needs rescan') {
+                  return row;
+                }
+                // Its IVs never came through: Collection sends it here, and here it can be fixed
+                // by typing in what the appraisal screen shows.
+                return (
+                  <Fragment key={sp.id}>
+                    {row}
+                    <div className="sp-yours-action">
+                      <Button variant="text" href={hashFor({ screen: 'add', edit: sp.id })}>
+                        Enter values
+                      </Button>
+                    </div>
+                  </Fragment>
                 );
               })}
             </div>

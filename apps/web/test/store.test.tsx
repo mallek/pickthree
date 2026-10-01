@@ -154,6 +154,10 @@ describe('routes', () => {
     expect(parseHash('#/add?species=Bad Id')).toEqual({ screen: 'add' });
     expect(hashFor({ screen: 'add' })).toBe('#/add');
     expect(hashFor({ screen: 'add', species: 'azumarill' })).toBe('#/add?species=azumarill');
+    expect(parseHash('#/add?edit=3fa2c01b')).toEqual({ screen: 'add', edit: '3fa2c01b' });
+    expect(parseHash('#/add?edit=')).toEqual({ screen: 'add' });
+    expect(parseHash('#/add?edit=bad%20id')).toEqual({ screen: 'add' });
+    expect(hashFor({ screen: 'add', edit: '3fa2c01b' })).toBe('#/add?edit=3fa2c01b');
     expect(parseHash('#/collection')).toEqual({ screen: 'collection' });
     expect(parseHash('#/collection?l=mega-great')).toEqual({
       screen: 'collection',
