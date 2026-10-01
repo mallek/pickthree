@@ -1,15 +1,16 @@
 /**
  * One species in the meta (`#/species/<id>`), built on the signed specimen page's parts: the hero
  * (token, name, types, the blended "#N meta" with its trend and PvPoke's tags, "#M PvPoke", and
- * how many you have), the facts card, your own copies, the moves players ran against PvPoke's
- * set, tournament sets, what it is seen next to, and Build around it / Who beats it.
+ * how many you have), the facts card, your own copies, PvPoke's recommended moves, the moves
+ * players ran when any were reported, tournament sets, what it is seen next to, and Build around
+ * it / Who beats it.
  *
  * It replaces meta.pick3.gg's Species page. The measured parts read `/api/v1/meta` and
  * `/api/v1/species/:id` for the league and the default window ("This meta", every source).
  * Opening the page is the player's own choice, so it reads whatever the sharing switch says;
  * the read names this page's species and nothing from the collection.
  */
-import type { Specimen } from '@pickthree/engine';
+import type { MoveChoice, MovePool, Specimen } from '@pickthree/engine';
 import type {
   BaselineSpecies,
   MovesetStats,
@@ -23,6 +24,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   CogGlyph,
   MetaRankTags,
+  MoveRows,
   PokemonToken,
   Share,
   sharePct,
@@ -136,7 +138,10 @@ function MoveRow({ kind, moveId, moves }: { kind: string; moveId: string; moves:
   );
 }
 
-/** Moves players ran: the most run fast move and two charged moves, folded across every set. */
+/**
+ * Moves players ran: the most run fast move and two charged moves, folded across every set.
+ * Nothing at all while no battle reported its moves; Recommended moves above says what PvPoke runs.
+ */
 function MovesRan({
   detail,
   entry,
@@ -150,17 +155,7 @@ function MovesRan({
   const known = knownMoveBattles(detail.movesets);
   const fast = aggregateMoves(detail.movesets, (m) => [m.fast])[0];
   if (known === 0 || !fast) {
-    const pv = entry
-      ? ` PvPoke recommends ${joinAnd([entry.fastMove, ...entry.chargedMoves].map(moveName))}.`
-      : '';
-    return (
-      <div className="stack" style={{ gap: 6 }}>
-        <h3>Moves players ran</h3>
-        <p className="small muted" style={{ margin: 0 }}>
-          No moves reported in this window yet.{pv}
-        </p>
-      </div>
-    );
+    return null;
   }
   const charged = aggregateMoves(detail.movesets, (m) => m.charged)
     .slice(0, 2)
@@ -186,6 +181,15 @@ function MovesRan({
       </p>
     </div>
   );
+}
+
+/** PvPoke's set out of a species' move pool: the recommended fast move and charged moves. */
+function recommendedMoves(pool: MovePool): { fast: MoveChoice; charged: MoveChoice[] } | null {
+  const fast = pool.fast.find((m) => m.moveId === pool.recommended.fast);
+  const charged = pool.recommended.charged
+    .map((id) => pool.charged.find((m) => m.moveId === id))
+    .filter((m) => m !== undefined);
+  return fast && charged.length > 0 ? { fast, charged } : null;
 }
 
 /** Sets from tournament rosters: what players brought, over the known sets only. */
@@ -230,7 +234,7 @@ function TournamentMoves({
 
 export function SpeciesPage({ id }: { id: string }) {
   const s = useAppState();
-  const { back, loadVerdicts, navigate, openSheet, setLeague } = useActions();
+  const { back, loadVerdicts, movePool, navigate, openSheet, setLeague } = useActions();
   const name = useName();
   const species = useSpecies();
   const route = s.route.screen === 'species' ? s.route : null;
@@ -279,6 +283,30 @@ export function SpeciesPage({ id }: { id: string }) {
     };
   }, [league]);
   const pvpoke = side && side.league === league ? side.side : null;
+
+  // PvPoke's set for this species in the league in play, from the worker's move pool (the same
+  // path Build's picks take), with PvPoke's elite moves left in whatever the Elite TM setting.
+  const poolKey = info && known ? `${league}|${id}` : null;
+  const [pool, setPool] = useState<{ key: string; pool: MovePool } | null>(null);
+  useEffect(() => {
+    if (!poolKey || s.boot !== 'ready') {
+      return;
+    }
+    let live = true;
+    // Promise.resolve tolerates a test double that returns the pool directly, or nothing.
+    Promise.resolve(movePool(id, null, { fast: null, charged: [] }, { allowEliteTm: true })).then(
+      (p) => {
+        if (live && p) {
+          setPool({ key: poolKey, pool: p });
+        }
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [poolKey, s.boot, movePool, id]);
+  const recommended = pool && pool.key === poolKey ? recommendedMoves(pool.pool) : null;
 
   useEffect(() => {
     if (
@@ -486,6 +514,15 @@ export function SpeciesPage({ id }: { id: string }) {
             </div>
           )}
         </div>
+
+        {recommended ? (
+          <div className="stack" style={{ gap: 6 }}>
+            <h3>Recommended moves</h3>
+            <div className="card" style={{ padding: '0 14px' }}>
+              <MoveRows fast={recommended.fast} charged={recommended.charged} eliteOnly />
+            </div>
+          </div>
+        ) : null}
 
         {settled && d ? <MovesRan detail={d} entry={entry} moves={moves} /> : null}
 

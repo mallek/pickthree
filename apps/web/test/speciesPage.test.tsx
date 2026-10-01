@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { Specimen, Verdict, VerdictLabel } from '@pickthree/engine';
+import type { MoveChoice, MovePool, Specimen, Verdict, VerdictLabel } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -197,6 +197,49 @@ function freshNet(over: Partial<Net> = {}): Net {
   return { api: [], apiStatus: null, banned: [], ...over };
 }
 
+/** A synthetic move choice, as the worker's movePool returns it. */
+function choice(
+  moveId: string,
+  tm: MoveChoice['tm'] = 'tm',
+  counts: number[] | null = null,
+): MoveChoice {
+  const m = MOVES[moveId as keyof typeof MOVES];
+  return {
+    moveId,
+    name: m.name,
+    type: m.type as MoveChoice['type'],
+    tm,
+    energy: 50,
+    energyGain: 4,
+    turns: 1,
+    countFromFast: counts ? counts[0]! : null,
+    counts,
+    effects: [],
+    altType: null,
+  };
+}
+
+/** Synthetic pools: the recommended set, plus a move outside it. Ice Beam stands in as elite. */
+const POOLS: Record<string, MovePool> = {
+  azumarill: {
+    fast: [choice('BUBBLE')],
+    charged: [
+      choice('ICE_BEAM', 'elite', [5, 4, 5]),
+      choice('PLAY_ROUGH', 'tm', [7, 6, 7]),
+      choice('HYDRO_PUMP', 'tm', [9, 9, 8]),
+    ],
+    recommended: { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
+  },
+  tinkaton: {
+    fast: [choice('POISON_STING')],
+    charged: [choice('EARTHQUAKE', 'tm', [6, 6, 6])],
+    recommended: { fast: 'POISON_STING', charged: ['EARTHQUAKE'] },
+  },
+};
+
+/** The pool for a species, or undefined for one the test does not stock. */
+const movePoolFake = () => vi.fn(async (speciesId: string) => POOLS[speciesId]);
+
 /** fakeHost with the moves the synthetic movesets name. */
 function host(overrides: Partial<Record<string, unknown>> = {}) {
   const base = fakeHost();
@@ -219,6 +262,7 @@ function host(overrides: Partial<Record<string, unknown>> = {}) {
         moves: { ...(r.moves as object), ...MOVES },
       };
     }),
+    movePool: movePoolFake(),
     ...overrides,
   });
 }
@@ -402,6 +446,19 @@ describe('Species page', () => {
     expect(within(rows[0]!).getByText('Built')).toBeInTheDocument();
     expect(rows[3]).toHaveTextContent('Marill · CP 1100');
 
+    // Recommended moves: PvPoke's set from the worker's move pool, laid out as the specimen page
+    // lays it out, with move counts. Only the Elite TM badge means anything without a copy.
+    const rec = await waitFor(() => section('Recommended moves'));
+    expect([...rec.querySelectorAll('.move-name')].map((e) => e.textContent)).toEqual([
+      'Bubble',
+      'Ice Beam',
+      'Play Rough',
+    ]);
+    expect(within(rec).getByText('Elite TM')).toBeInTheDocument();
+    expect(within(rec).queryByText('TM')).toBeNull();
+    expect(within(rec).getByText('5-4-5 Bubble')).toBeInTheDocument();
+    expect(within(rec).queryByText('Hydro Pump')).toBeNull();
+
     // Moves players ran: the most run fast move and two charged moves, against PvPoke's set.
     const moves = section('Moves players ran');
     const names = [...moves.querySelectorAll('.move-name')].map((e) => e.textContent);
@@ -484,6 +541,28 @@ describe('Species page', () => {
     ).toBeInTheDocument();
     // Banned at tournaments: no tournament moves card.
     expect(screen.queryByRole('heading', { name: 'Moves at tournaments' })).toBeNull();
+  });
+
+  it('PvPoke set for the league in play, and no reported-moves card when nothing was reported', async () => {
+    window.location.hash = '#/species/tinkaton';
+    stubNet(freshNet());
+    const movePool = movePoolFake();
+    renderPage(host({ movePool }));
+
+    const rec = await waitFor(() => section('Recommended moves'));
+    expect([...rec.querySelectorAll('.move-name')].map((e) => e.textContent)).toEqual([
+      'Poison Sting',
+      'Earthquake',
+    ]);
+    expect(movePool).toHaveBeenCalledWith(
+      'tinkaton',
+      null,
+      { fast: null, charged: [] },
+      { allowEliteTm: true },
+    );
+    await waitFor(() => expect(screen.getByText('Share of battles')).toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: 'Moves players ran' })).toBeNull();
+    expect(screen.queryByText(/No moves reported/)).toBeNull();
   });
 
   it('a failed read says so under the hero; Yours and the actions stay; Try again reads again', async () => {

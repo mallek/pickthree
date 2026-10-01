@@ -593,9 +593,15 @@ export function MoveRows({
   charged,
   reads,
   countNote,
+  eliteOnly = false,
 }: {
   fast: MoveChoice;
   charged: MoveChoice[];
+  /**
+   * Badge only the moves that need an Elite TM. For a set with no copy behind it (a species
+   * page), "Has it" and a plain "TM" say nothing.
+   */
+  eliteOnly?: boolean;
   /** Optional per-charged-move line, e.g. "extra damage on 31 of 48". */
   reads?: Record<string, string>;
   /** Rendered once, after the first charged move's move-count text, set off by a separator. */
@@ -614,7 +620,7 @@ export function MoveRows({
             </span>
           </span>
         </span>
-        <TmBadge tm={fast.tm} />
+        {eliteOnly && fast.tm !== 'elite' ? null : <TmBadge tm={fast.tm} />}
       </div>
       {charged.map((m, mi) => {
         const count = countsText(fast.name, m.counts);
@@ -633,7 +639,7 @@ export function MoveRows({
                 </span>
               </span>
             </span>
-            <TmBadge tm={m.tm} />
+            {eliteOnly && m.tm !== 'elite' ? null : <TmBadge tm={m.tm} />}
             {count || read || note ? (
               <span className="move-sub">
                 {count ? (

@@ -884,11 +884,16 @@ interface Actions {
    * returns fast; Analyze does the real simulation on whatever it puts there.
    */
   suggestTeammates(): Promise<void>;
-  /** Legal moves for one team member, with the recommendation, in the league in play. */
+  /**
+   * Legal moves for one team member, with the recommendation, in the league in play. The Elite
+   * TM setting decides the recommendation unless `options` says otherwise (a species page shows
+   * PvPoke's own set, elite moves and all).
+   */
   movePool(
     speciesId: string,
     fastId: string | null,
     current: { fast: string | null; charged: string[] },
+    options?: { allowEliteTm?: boolean },
   ): Promise<MovePool>;
   /** Type a Pokémon in. `marks` carries what the appraisal screen cannot: a Mega mark. */
   addManual(input: ManualInput, marks?: ManualMegaMarks): Promise<ManualResult>;
@@ -1642,11 +1647,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       speciesId: string,
       fastId: string | null,
       current: { fast: string | null; charged: string[] },
+      options?: { allowEliteTm?: boolean },
     ) => {
       const h = hostRef.current as WorkerHost;
       const base = optionsFrom(stateRef.current.settings);
+      const allowEliteTm = options?.allowEliteTm ?? base.allowEliteTm;
       return h.movePool(speciesId, fastId, current, {
-        ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
+        ...(allowEliteTm !== undefined ? { allowEliteTm } : {}),
       });
     },
     [],
