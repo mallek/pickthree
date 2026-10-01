@@ -14,7 +14,7 @@ import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
 import { Import } from './screens/Import.tsx';
-import { YourMeta } from './screens/YourMeta.tsx';
+import { YourBattles } from './screens/YourBattles.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { NoticeToast } from './components/NoticeToast.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
@@ -131,12 +131,12 @@ function renderScreen(r: Route) {
       return <AddPokemon />;
     case 'meta':
       // Placeholder until the Meta landing screen replaces it.
-      return <YourMeta />;
+      return <YourBattles />;
     case 'meta-battles':
-      return <YourMeta />;
+      return <YourBattles />;
     case 'meta-teams':
       // Placeholder until the Top teams screen replaces it.
-      return <YourMeta />;
+      return <YourBattles />;
     case 'species':
       // Placeholder until the species page replaces it.
       return <Collection />;

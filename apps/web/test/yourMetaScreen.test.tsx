@@ -4,7 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetStickyForTests } from '../src/components.tsx';
-import { YourMeta } from '../src/screens/YourMeta.tsx';
+import { YourBattles } from '../src/screens/YourBattles.tsx';
 import { AppProvider } from '../src/state/store.tsx';
 import { DEFAULT_SETTINGS, resetDbForTests, storage, type Settings } from '../src/storage/db.ts';
 import { fakeHost } from './fakeHost.ts';
@@ -40,10 +40,10 @@ const MIXED: LoggedBattle[] = [
   battle('b4', 20, { opponents: ['azumarill', 'medicham'] }),
 ];
 
-function renderMeta(host = fakeHost()) {
+function renderBattles(host = fakeHost()) {
   return render(
     <AppProvider host={host}>
-      <YourMeta />
+      <YourBattles />
     </AppProvider>,
   );
 }
@@ -52,17 +52,17 @@ async function withSettings(patch: Partial<Settings>): Promise<void> {
   await storage.saveSettings({ ...DEFAULT_SETTINGS, ...patch });
 }
 
-describe('Your meta screen', () => {
+describe('Your battles screen', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
     resetDbForTests();
-    window.location.hash = '';
+    window.location.hash = '#/meta/battles';
     resetStickyForTests();
   });
 
   it('says the progress to 15 once, with the count still to go', async () => {
     await storage.saveSet(openSet(MIXED));
-    renderMeta();
+    renderBattles();
     expect(
       await screen.findByText(
         '3 of 15 battles · 12 more until your meta weights Teams, Counters and Build',
@@ -75,7 +75,7 @@ describe('Your meta screen', () => {
   it('from 15 battles, says the meta is weighting and fills the bar', async () => {
     const many = Array.from({ length: 16 }, (_, i) => battle(`b${i}`, i + 1));
     await storage.saveSet(openSet(many));
-    renderMeta();
+    renderBattles();
     expect(
       await screen.findByText(
         'Your meta is weighting Teams, Counters and Build · 16 battles this season',
@@ -87,7 +87,7 @@ describe('Your meta screen', () => {
 
   it('keeps the state line and drops the bar when the log is not the Teams source', async () => {
     await withSettings({ facing: { source: 'prior', window: 'meta' } });
-    renderMeta();
+    renderBattles();
     expect(
       await screen.findByText(
         'Pick "Your meta" as the Source on Teams to weight teams by these battles.',
@@ -96,94 +96,9 @@ describe('Your meta screen', () => {
     expect(screen.queryByRole('progressbar')).toBeNull();
   });
 
-  it('counts the sent battles in a pink measured line, leaving tanked and unsent out', async () => {
-    const sent = '2026-09-15T11:00:00Z';
-    await storage.saveSet(
-      openSet([
-        battle('b1', 5, { sharedAt: sent }),
-        battle('b2', 10, { sharedAt: sent, result: 'loss' }),
-        battle('b3', 15, { sharedAt: sent, result: null, tanked: true }),
-        battle('b4', 20),
-      ]),
-    );
-    // Another league's sent battle counts too: all leagues and seasons.
-    await storage.saveSet(
-      openSet([battle('u1', 5, { sharedAt: sent })], { id: 'u', league: 'ultra', closed: true }),
-    );
-    const { container } = renderMeta();
-    await waitFor(() =>
-      expect(container.querySelector('.ui-measured-line')).toHaveTextContent(
-        '3 of your battles are in the community meta',
-      ),
-    );
-    expect(container.querySelectorAll('.ui-measured-line')).toHaveLength(1);
-  });
-
-  it('with none sent yet, says battles join as you log them, in plain text', async () => {
-    await storage.saveSet(openSet(MIXED));
-    const { container } = renderMeta();
-    expect(
-      await screen.findByText('Your battles join the community meta as you log them'),
-    ).toBeInTheDocument();
-    expect(container.querySelector('.ui-measured-line')).toBeNull();
-  });
-
-  it('with sharing off, says so in plain text with a way to Settings', async () => {
-    await withSettings({ share: { enabled: false } });
-    const { container } = renderMeta();
-    const line = await screen.findByText('Sharing is off');
-    expect(line.closest('.ui-measured-line')).toBeNull();
-    expect(container.querySelector('.ui-measured-line')).toBeNull();
-    expect(container.querySelector('.page-head')).toContainElement(line);
-    expect(
-      within(line.parentElement as HTMLElement).getByRole('button', { name: 'Settings' }),
-    ).toBeInTheDocument();
-  });
-
-  it('shows the record as wins and losses, tanked left out', async () => {
-    await storage.saveSet(openSet(MIXED));
-    renderMeta();
-    expect(await screen.findByText(/^2-1 since/)).toBeInTheDocument();
-    expect(screen.queryByText(/2-1-1/)).toBeNull();
-    expect(screen.getByText('Current team')).toBeInTheDocument();
-  });
-
-  it('makes each result a button that opens that battle for editing', async () => {
-    await storage.saveSet(openSet(MIXED));
-    renderMeta();
-    const win = await screen.findByRole('button', {
-      name: 'Win against Medicham, Shadow Dragonite',
-    });
-    expect(screen.getByRole('button', { name: /^Loss against Medicham/ })).toBeInTheDocument();
-    // A battle with no opponents logged is named by its result and time.
-    expect(screen.getByRole('button', { name: /^Tanked, / })).toBeInTheDocument();
-    expect(screen.getByText('Tap a result to fix it')).toBeInTheDocument();
-    fireEvent.click(win);
-    await waitFor(() => expect(window.location.hash).toBe('#/meta/log/s1/b1'));
-  });
-
-  it('has one primary action, Log a battle, with Change team and Share as text buttons', async () => {
-    await storage.saveSet(openSet(MIXED));
-    const { container } = renderMeta();
-    const log = await screen.findByRole('button', { name: 'Log a battle' });
-    const primaries = container.querySelectorAll('.ui-btn-primary');
-    expect(primaries).toHaveLength(1);
-    expect(primaries[0]).toBe(log);
-    expect(screen.getByRole('button', { name: 'Change team' })).toHaveClass('ui-btn-text');
-    expect(screen.getByRole('button', { name: 'Share this team' })).toHaveClass('ui-btn-text');
-  });
-
-  it('with no team running, Pick your team is the primary', async () => {
-    const { container } = renderMeta();
-    const pick = await screen.findByRole('button', { name: 'Pick your team' });
-    expect(pick).toHaveClass('ui-btn-primary');
-    expect(container.querySelectorAll('.ui-btn-primary')).toHaveLength(1);
-    expect(screen.getByText('No team picked')).toBeInTheDocument();
-  });
-
   it('lists the faced species under the switch, with the season and its count', async () => {
     await storage.saveSet(openSet(MIXED));
-    renderMeta();
+    renderBattles();
     expect(await screen.findByText('Twilight Trails · 3 battles')).toBeInTheDocument();
     // The switch names the list; no heading repeats it, whichever is picked.
     expect(screen.getAllByText('Most faced')).toHaveLength(1);
@@ -198,7 +113,7 @@ describe('Your meta screen', () => {
     expect(medicham).toHaveTextContent('faced 3');
     expect(medicham).toHaveTextContent('2-1');
     expect(medicham).toHaveTextContent('Who beats it');
-    expect(medicham).toHaveAttribute('href', '#/counters?vs=medicham&from=1');
+    expect(medicham).toHaveAttribute('href', '#/species/medicham');
     expect(screen.getByRole('link', { name: /^Who beats Medicham/ })).toBe(medicham);
     // The frequency bar is a thin bar inside the row, sized by how often it was faced.
     expect(medicham?.querySelector('.faced-bar')).toHaveStyle({ width: '100%' });
@@ -207,7 +122,7 @@ describe('Your meta screen', () => {
 
   it('marks a species outside the meta group quietly and explains the mark once', async () => {
     await storage.saveSet(openSet(MIXED));
-    const { container } = renderMeta();
+    const { container } = renderBattles();
     await screen.findByText('Twilight Trails · 3 battles');
     // The fake meta group is Tinkaton, Azumarill and Clodsire: Medicham and Dragonite are outside.
     const outside = container.querySelectorAll('.faced-out');
@@ -224,7 +139,7 @@ describe('Your meta screen', () => {
   });
 
   it('explains the log once, and the explainer can be dismissed', async () => {
-    renderMeta();
+    renderBattles();
     const copy =
       'Once you log 15 battles, Teams, Counters and Build weigh opponents by how often you face them. Your collection never leaves this phone; battle records are shared anonymously unless you turn sharing off in Settings.';
     expect(await screen.findByText(copy)).toBeInTheDocument();
@@ -233,7 +148,7 @@ describe('Your meta screen', () => {
   });
 
   it('closes with the privacy footer, sharing on', async () => {
-    renderMeta();
+    renderBattles();
     expect(
       await screen.findByText(
         'Your collection stays on this phone. Battle sharing is on and anonymous; change it in Settings.',
@@ -243,7 +158,7 @@ describe('Your meta screen', () => {
 
   it('closes with the privacy footer, sharing off', async () => {
     await withSettings({ share: { enabled: false } });
-    renderMeta();
+    renderBattles();
     expect(
       await screen.findByText('Battle sharing is off; change it in Settings.'),
     ).toBeInTheDocument();
@@ -261,7 +176,7 @@ describe('Your meta screen', () => {
     });
     await storage.saveSet(openSet(MIXED));
     const confirm = vi.spyOn(window, 'confirm');
-    renderMeta(host);
+    renderBattles(host);
     fireEvent.click(await screen.findByRole('button', { name: 'Start fresh' }));
     const sheet = await screen.findByRole('alertdialog', { name: 'Start fresh?' });
     expect(sheet).toHaveTextContent(
@@ -275,18 +190,26 @@ describe('Your meta screen', () => {
     confirm.mockRestore();
   });
 
-  it('links out to the community meta site in one line', async () => {
-    renderMeta();
-    const link = await screen.findByRole('link', { name: /See what everyone else is facing/ });
-    expect(link).toHaveAttribute('href', 'https://meta.pick3.gg');
-    expect(link).toHaveTextContent(/^See what everyone else is facing›?$/);
+  it('is titled Your battles, with Back to Meta and a Settings button', async () => {
+    window.location.hash = '#/meta/battles';
+    renderBattles();
+    expect(await screen.findByText('Your battles')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/meta'));
   });
 
-  it('carries the meta.pick3.gg icon button in its header, next to Settings', async () => {
-    renderMeta();
-    expect(
-      await screen.findByRole('link', { name: 'meta.pick3.gg, the community meta' }),
-    ).toHaveAttribute('href', 'https://meta.pick3.gg');
-    expect(screen.getByRole('heading', { name: 'Your Meta' })).toBeInTheDocument();
+  it('has no meta.pick3.gg link, no action row to it, and none of the landing cards', async () => {
+    await storage.saveSet(openSet(MIXED));
+    const { container } = renderBattles();
+    await screen.findByText('Twilight Trails · 3 battles');
+    expect(screen.queryByRole('link', { name: /meta\.pick3\.gg/ })).toBeNull();
+    expect(screen.queryByText(/See what everyone else is facing/)).toBeNull();
+    expect(container.querySelector('a[href="https://meta.pick3.gg"]')).toBeNull();
+    expect(screen.queryByText('Current team')).toBeNull();
+    expect(screen.queryByText('No team picked')).toBeNull();
+    expect(screen.queryByText(/community meta/)).toBeNull();
+    expect(screen.queryByText('Sharing is off')).toBeNull();
+    expect(container.querySelector('.ui-btn-primary')).toBeNull();
   });
 });

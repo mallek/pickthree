@@ -1,51 +1,27 @@
 import {
   DEFAULT_PROFILE_OPTIONS,
-  seasonListStale,
-  yourMetaStats,
   type BattleSet,
   type LoggedBattle,
-  type SeasonStats,
   type SpeciesRecord,
   type TeamRecord,
 } from '@pickthree/engine';
-import {
-  Button,
-  Chevron,
-  ConfirmSheet,
-  Header,
-  IconButton,
-  MeasuredLine,
-  progressPercent,
-  SiteLink,
-} from '@pickthree/ui';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  CogGlyph,
-  META_URL,
-  PokemonToken,
-  Seg,
-  useLogCount,
-  useName,
-  useSticky,
-} from '../components.tsx';
-import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
-import { dateLabel } from '../format.ts';
-import { shareEnabled } from '../metaShare.ts';
-import { shareLink } from '../share.ts';
-import { teamLink } from '../teamLink.ts';
-import { contributedCount } from '../state/contribution.ts';
-import { seasonsFor } from '../state/seasonsFor.ts';
-import { hashFor, useActions, useAppState } from '../state/store.tsx';
-import { facingSettings } from '../state/facing.ts';
-import { storage } from '../storage/db.ts';
+import { Button, Chevron, MeasuredLine, progressPercent } from '@pickthree/ui';
+import { useEffect, useState } from 'react';
+import { PokemonToken, useLogCount, useName } from '../../components.tsx';
+import { dateLabel } from '../../format.ts';
+import { shareEnabled } from '../../metaShare.ts';
+import { shareLink } from '../../share.ts';
+import { teamLink } from '../../teamLink.ts';
+import { contributedCount } from '../../state/contribution.ts';
+import { facingSettings } from '../../state/facing.ts';
+import { hashFor, useActions, useAppState } from '../../state/store.tsx';
+import { storage } from '../../storage/db.ts';
 
-type Sort = 'faced' | 'losses';
-
-function record(wins: number, losses: number): string {
+export function record(wins: number, losses: number): string {
   return `${wins}-${losses}`;
 }
 
-function battlesWord(n: number): string {
+export function battlesWord(n: number): string {
   return `${n} ${n === 1 ? 'battle' : 'battles'}`;
 }
 
@@ -60,7 +36,7 @@ function when(at: string): string {
 }
 
 /** A GBL cup: its Your meta window is the current run, not the GBL season. */
-function isRunLeague(s: ReturnType<typeof useAppState>): boolean {
+export function isRunLeague(s: ReturnType<typeof useAppState>): boolean {
   const id = s.settings.league ?? 'great';
   return s.data?.leagues.find((l) => l.id === id)?.kind === 'rotation';
 }
@@ -70,7 +46,7 @@ function isRunLeague(s: ReturnType<typeof useAppState>): boolean {
  * bar; from 15: that the meta is weighting, with a full bar. When the log is not the Teams source,
  * the state line alone.
  */
-function ProgressLine() {
+export function ProgressLine() {
   const s = useAppState();
   const logCount = useLogCount();
   const run = isRunLeague(s);
@@ -109,7 +85,7 @@ function ProgressLine() {
  * across every league and season, tanked left out. Sharing off and nothing sent yet are plain
  * text, never pink.
  */
-function Contribution() {
+export function Contribution() {
   const s = useAppState();
   const { openSheet } = useActions();
   const sharing = shareEnabled(s.settings);
@@ -157,7 +133,7 @@ function resultWord(b: LoggedBattle): 'Win' | 'Loss' | 'Tanked' {
 }
 
 /** The last few results with this team, newest last: each a button that opens it for editing. */
-function ResultStrip({ set }: { set: BattleSet }) {
+export function ResultStrip({ set }: { set: BattleSet }) {
   const { navigate } = useActions();
   const name = useName();
   const recent = set.battles.slice(-10);
@@ -194,7 +170,7 @@ function ResultStrip({ set }: { set: BattleSet }) {
   );
 }
 
-function CurrentTeam({ set }: { set: BattleSet }) {
+export function CurrentTeam({ set }: { set: BattleSet }) {
   const { navigate, notify } = useActions();
   const name = useName();
   const share = async (): Promise<void> => {
@@ -246,7 +222,7 @@ function CurrentTeam({ set }: { set: BattleSet }) {
   );
 }
 
-function NoTeam() {
+export function NoTeam() {
   const { navigate } = useActions();
   return (
     <div className="card set-card" style={{ gap: 10 }}>
@@ -261,7 +237,7 @@ function NoTeam() {
   );
 }
 
-function SpeciesRows({
+export function SpeciesRows({
   rows,
   outside,
 }: {
@@ -282,7 +258,7 @@ function SpeciesRows({
           <a
             className="faced-row"
             key={r.speciesId}
-            href={hashFor({ screen: 'counters', vs: r.speciesId, from: true })}
+            href={hashFor({ screen: 'species', id: r.speciesId })}
             aria-label={`Who beats ${name(r.speciesId)}: faced ${r.faced}, ${rec}${out ? ", outside PvPoke's meta group" : ''}`}
           >
             <PokemonToken speciesId={r.speciesId} size={36} />
@@ -314,17 +290,7 @@ function SpeciesRows({
   );
 }
 
-/** The mark's meaning, said once under the list that first shows it. */
-function OutsideLegend({ size }: { size: number }) {
-  return (
-    <p className="meta faced-legend">
-      <span aria-hidden="true">† </span>
-      Outside PvPoke&apos;s {size}: logged here, simulated on this phone.
-    </p>
-  );
-}
-
-function TeamRows({ rows }: { rows: TeamRecord[] }) {
+export function TeamRows({ rows }: { rows: TeamRecord[] }) {
   const s = useAppState();
   const { navigate, setPick } = useActions();
   const openInBuild = (t: TeamRecord): void => {
@@ -354,167 +320,6 @@ function TeamRows({ rows }: { rows: TeamRecord[] }) {
           <b>{record(t.wins, t.losses)}</b>
         </button>
       ))}
-    </div>
-  );
-}
-
-function sorted(stats: SeasonStats, sort: Sort): SpeciesRecord[] {
-  return sort === 'losses'
-    ? [...stats.species].sort((a, b) => b.losses - a.losses || b.faced - a.faced)
-    : stats.species;
-}
-
-export function YourMeta() {
-  const s = useAppState();
-  const run = isRunLeague(s);
-  const { startFresh, openSheet } = useActions();
-  const leagueId = s.settings.league ?? 'great';
-  const seasons = seasonsFor(s.data, leagueId);
-  const freshFrom = s.settings.yourMeta?.freshFrom?.[leagueId] ?? null;
-  const meta = s.leagueInfo?.meta ?? [];
-  const fallback = useMemo(() => {
-    const ranks = s.leagueInfo?.metaRanks ?? {};
-    return [...meta].sort((a, b) => (ranks[a]?.overall ?? 999) - (ranks[b]?.overall ?? 999));
-  }, [meta, s.leagueInfo]);
-  const stats = useMemo(
-    () => yourMetaStats({ sets: s.sets, seasons, freshFrom, fallback }),
-    [s.sets, seasons, freshFrom, fallback],
-  );
-  const min = DEFAULT_PROFILE_OPTIONS.minBattles;
-  const stale = seasonListStale(s.data?.seasons ?? []);
-  const [sort, setSort] = useSticky<Sort>('meta.sort', 'faced');
-  const [explained, setExplained] = useSticky('meta.explained', false);
-  const [earlierOpen, setEarlierOpen] = useState(false);
-  const [confirmFresh, setConfirmFresh] = useState(false);
-  // Before the league's meta group loads, nothing is marked: an empty group would mark every row.
-  const inMeta = useMemo(() => new Set(meta), [meta]);
-  const outside = (id: string): boolean => inMeta.size > 0 && !inMeta.has(id);
-  const hasOutside = (b: SeasonStats): boolean => b.species.some((r) => outside(r.speciesId));
-  const legendInCurrent = hasOutside(stats.current);
-  const legendInEarlier = !legendInCurrent && earlierOpen && stats.earlier.some(hasOutside);
-  const sharing = shareEnabled(s.settings);
-
-  return (
-    <div className="screen">
-      <div className="page-head">
-        <Header
-          variant="top"
-          title="Your Meta"
-          actions={
-            <>
-              <SiteLink site="meta" />
-              <IconButton label="Settings" onClick={openSheet}>
-                <CogGlyph />
-              </IconButton>
-            </>
-          }
-        />
-        <LeagueSwitcher />
-        <ProgressLine />
-        <Contribution />
-      </div>
-      <div className="scroll" style={{ gap: 18 }}>
-        {stale ? (
-          <div className="card" style={{ borderColor: 'var(--warn-tint)', gap: 8 }}>
-            <span className="small">The season list may be out of date.</span>
-            <Button onClick={() => setConfirmFresh(true)}>Start fresh</Button>
-          </div>
-        ) : null}
-        {confirmFresh ? (
-          <ConfirmSheet
-            title="Start fresh?"
-            line={
-              run
-                ? 'Battles before now move to Earlier runs. Nothing is deleted.'
-                : 'Battles before now move to Earlier seasons. Nothing is deleted.'
-            }
-            confirmLabel="Start fresh"
-            cancelLabel="Cancel"
-            onConfirm={() => {
-              setConfirmFresh(false);
-              startFresh();
-            }}
-            onCancel={() => setConfirmFresh(false)}
-          />
-        ) : null}
-        {!explained ? (
-          <div className="card explainer">
-            <button
-              type="button"
-              className="card-x"
-              aria-label="Dismiss"
-              onClick={() => setExplained(true)}
-            >
-              &times;
-            </button>
-            <span className="small">
-              {`Once you log ${min} battles, Teams, Counters and Build weigh opponents by how often you face them. Your collection never leaves this phone; battle records are shared anonymously unless you turn sharing off in Settings.`}
-            </span>
-          </div>
-        ) : null}
-        {stats.openSet ? <CurrentTeam set={stats.openSet} /> : <NoTeam />}
-        <a className="action-row" href={META_URL}>
-          <b>See what everyone else is facing</b>
-          <span className="chev">
-            <Chevron />
-          </span>
-        </a>
-        <div className="stack" style={{ gap: 8 }}>
-          <div className="between ym-list-head">
-            <span className="meta">
-              {stats.current.label} · {battlesWord(stats.current.battles)}
-            </span>
-            <Seg
-              value={sort}
-              onChange={setSort}
-              options={[
-                { value: 'faced', label: 'Most faced' },
-                { value: 'losses', label: 'Worst record' },
-              ]}
-            />
-          </div>
-          <SpeciesRows rows={sorted(stats.current, sort)} outside={outside} />
-          {legendInCurrent ? <OutsideLegend size={meta.length} /> : null}
-        </div>
-        <div className="stack" style={{ gap: 8 }}>
-          <b>Your teams</b>
-          <TeamRows rows={stats.current.teams} />
-        </div>
-        {stats.earlier.length > 0 ? (
-          <div className="stack" style={{ gap: 10 }}>
-            <button type="button" className="action-row" onClick={() => setEarlierOpen((o) => !o)}>
-              <span>
-                <b>{run ? 'Earlier runs' : 'Earlier seasons'}</b>
-                <span className="small muted">
-                  {stats.earlier.length} {stats.earlier.length === 1 ? 'bucket' : 'buckets'}, kept
-                  apart because the meta changes each {run ? 'run' : 'season'}.
-                </span>
-              </span>
-              <span className="chev">
-                <Chevron dir={earlierOpen ? 'down' : 'right'} />
-              </span>
-            </button>
-            {earlierOpen
-              ? stats.earlier.map((b) => (
-                  <div className="card" key={b.label} style={{ gap: 12 }}>
-                    <div className="between">
-                      <b>{b.label}</b>
-                      <span className="meta">{battlesWord(b.battles)}</span>
-                    </div>
-                    <SpeciesRows rows={sorted(b, sort)} outside={outside} />
-                    <TeamRows rows={b.teams} />
-                  </div>
-                ))
-              : null}
-            {legendInEarlier ? <OutsideLegend size={meta.length} /> : null}
-          </div>
-        ) : null}
-        <p className="meta ym-foot">
-          {sharing
-            ? 'Your collection stays on this phone. Battle sharing is on and anonymous; change it in Settings.'
-            : 'Battle sharing is off; change it in Settings.'}
-        </p>
-      </div>
     </div>
   );
 }
