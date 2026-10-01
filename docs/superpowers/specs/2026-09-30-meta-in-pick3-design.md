@@ -122,36 +122,51 @@ the stale-season card. Sub header back to Meta.
 
 ## Collection
 
-No selector at the top: one list, filtered from the filter sheet as now (decided after mock round
-2, which showed a Collected | Not collected switch; that switch is dropped).
+The list carries what decides a row; the species page carries the detail (Travis, after mock
+round 4: "keep the list what really matters"). No selector at the top: one list, filtered from the
+filter sheet as now. Mock: `mock/meta-in-pick3`, views `collection`, `collectionmeta`,
+`collectionnew`.
 
 - **Every Pokemon eligible in the current league is listed**: your specimens as today, plus every
   species legal in the league (`legalSet`) with no specimen in the collection, Shadow forms as
   their own rows as the rankings list them.
-- **A not-collected row** has the same shape and height as yours: token, name with a small neutral
-  "Not collected" `Tag` beside it (where Shadow and Banned flags sit), the meta line "#N PvPoke ·
-  X of Y battles" (or "· not faced in this window"), the meta tags as on your rows, and the share as
-  a `MeasuredValue` in the slot your rows use for the verdict tag. No "Add one" in the list. The row
-  opens the species page.
-- **Filter sheet** gains "Hide not collected", off by default, sticky like the other switches, and
-  counted in the filter button's badge only when on. The existing "Top 50 meta" switch applies to
-  both kinds of row.
-- **Sort** gains Meta (blended weight). Under the existing sorts, not-collected rows follow your
-  own, in Meta order. Window and Source for the shares live in the filter sheet, sharing the Teams
-  Source picker's stored choice.
+- **Every row carries one rank, the blended meta rank**: a tag "#N meta" in the row's tag line,
+  replacing PvPoke's "#N overall" and role tags ("#2 lead", "#8 switch"), which move to the species
+  page. The rank is the league's blended weight order (`communityWeights`, window "This meta",
+  source All), the same order the Meta landing's Most seen card and the species page use.
+- **Trend**: beside the rank tag, a `Tag` in the win tone with an up arrow and the places gained,
+  or the loss tone with a down arrow and the places lost. No movement, no trend tag. The arrow is
+  an icon; the text is the number alone, its accessible name "up 3 places" or "down 3 places".
+  - Baseline: PvPoke's own rank (the blend at 100% prior) until the league has a week of shared
+    battles inside the current season or run; from then on, the league's blended rank as it stood
+    a week earlier (the same "This meta" window, ending seven days ago).
+  - Live, no battle threshold. If it proves too jumpy, a minimum is added later; the threshold is
+    one constant beside the blend's half-say points.
+- **Your rows** keep their line "CP 1491 · Top 1%", the verdict tag on the right, and "N more"
+  grouping. Only the tag line changes (blended rank and trend).
+- **A not-collected row**: token, name (Shadow flag as now), the tag line (rank and trend), and a
+  neutral "Not collected" `Tag` on the right, in the slot your rows use for the verdict. No share,
+  no battle counts, no "Add one". When the collection is empty, the "Not collected" tag is left
+  off: every row would carry it.
+- **Filter sheet** gains "Hide not collected" ("Only the Pokémon you have"), second after "Group
+  same Pokémon", off by default, sticky like the other switches, counted in the filter button's
+  badge only when on. "Top 50 meta" now reads the blended rank and applies to both kinds of row.
+- **Sort** gains Meta (blended rank, the default when the collection is empty). Under the other
+  sorts, not-collected rows follow your own, in Meta order.
 - The count line reads "212 Pokémon · 96 kinds · 142 not collected" (the last part only while they
   show). The quick pills (Built, Worth it, Wait for IVs, Rescan) are verdicts, so turning one on
-  shows your own Pokemon only.
+  shows your own Pokémon only; they are hidden when the collection is empty.
 - Search placeholder becomes "Search Pokémon" and searches both kinds of row.
-- A player with no collection sees the whole league ranked, sorted by Meta, with Import and Add by
-  hand in the header as now.
+- No window or source control here: the list always reads "This meta" and All. The Top teams
+  board keeps its own Window and Source selects.
 
 ## Species page (`#/species/<id>`)
 
 Built on the signed specimen page's parts (mock round 2):
 
-- Sub header, back. Hero: 64px token, name, type chips, "#N in the meta · #M PvPoke", then "You
-  have N" or "Not in your collection".
+- Sub header, back. Hero: 64px token, name, type chips, "#N meta" with its trend tag and
+  "#M PvPoke", PvPoke's role tags ("#2 lead", "#8 switch"), then "You have N" or "Not in your
+  collection".
 - Facts card (`kv` rows): Share of battles (pink, with mark), Players went against it, At
   tournaments (pick share; "Banned at tournaments" from the ban list), then one source line ("This
   meta · N GBL battles from M players and K tournament battles"). Nothing measured: the share row
@@ -199,7 +214,16 @@ and baseline types. UI copy helpers (`format.ts`, `headerCopy.ts`, `boardView.ts
 
 **Reads.** `apps/web/src/communityMeta.ts` and `community.ts` grow the `/api/v1/species/:id` read
 and the window and source parameters. Responses are cached in memory per league, window and
-source for the session; no new storage.
+source for the session; no new storage. The trend needs a second `/api/v1/meta` read for the same
+window ending seven days ago; before the league has a week of history in the season, the baseline
+is PvPoke's rank and no second read is made.
+
+**Collection's reads follow the sharing switch.** Opening Meta, Top teams or a species page is the
+player asking for community data, like the Teams Source picker. Collection is not: it opens all the
+time, so its reads are automatic, and CLAUDE.md's rule for automatic reads applies. With sharing
+on, Collection reuses the cached blend (fetching it if needed). With sharing off, Collection ranks
+by PvPoke alone (the blend at 100% prior), with no community read and no trend; the species page
+still reads when opened.
 
 ## Retiring meta.pick3.gg
 
@@ -228,7 +252,8 @@ teams (ported), Your battles, Collection with not-collected rows, Species. The m
 ## Testing
 
 - Engine: the moved meta modules keep their tests; new tests for not-collected membership (legal,
-  unowned, Shadow forms) and ordering under each sort and for the baseline build per league kind.
+  unowned, Shadow forms), ordering under each sort, and the trend baseline (PvPoke before a week
+  of history, last week's blend after) and for the baseline build per league kind.
 - Web: route parse and print for every new route, `?l=` with hyphenated ids, the boot rule for
   `startedWithout`, the landing's two states and its offline state, Run this team prefill, the
   species page owned and unowned, Collection's Hide not collected
