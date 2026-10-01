@@ -1,0 +1,45 @@
+{
+  "league": "great",
+  "speciesId": "medicham",
+  "since": "2026-09-02T00:00:00.000Z",
+  "until": "2026-09-24T00:10:00.000Z",
+  "source": "all",
+  "sightings": 410,
+  "wins": 200,
+  "losses": 210,
+  "runs": 82,
+  "runWins": 48,
+  "runLosses": 34,
+  "weekly": [
+    { "week": "2026-W36", "battles": 372, "sightings": 118 },
+    { "week": "2026-W37", "battles": 434, "sightings": 139 },
+    { "week": "2026-W38", "battles": 434, "sightings": 153 }
+  ],
+  "bands": [],
+  "alongside": [
+    { "speciesId": "azumarill", "battles": 40 },
+    { "speciesId": "clodsire", "battles": 30 },
+    { "speciesId": "lanturn", "battles": 12 }
+  ],
+  "movesets": [
+    { "fast": "COUNTER", "charged": ["ICE_PUNCH", "PSYCHIC"], "battles": 30 },
+    { "fast": "PSYCHO_CUT", "charged": ["ICE_PUNCH", "DYNAMIC_PUNCH"], "battles": 14 }
+  ],
+  "tournament": {
+    "picks": 90,
+    "game1Picks": 40,
+    "wins": 45,
+    "losses": 45,
+    "byDepth": [40, 30, 20],
+    "unresolvedForms": 0,
+    "broughtBy": 60,
+    "rosterSize": 96,
+    "pickedOnStream": 90,
+    "movesets": [
+      { "fast": "PSYCHO_CUT", "charged": ["ICE_PUNCH", "DYNAMIC_PUNCH"], "entries": 34 },
+      { "fast": "COUNTER", "charged": ["ICE_PUNCH", "PSYCHIC"], "entries": 12 }
+    ],
+    "movesetsKnown": 46
+  },
+  "generatedAt": "2026-09-24T00:05:00.000Z"
+}

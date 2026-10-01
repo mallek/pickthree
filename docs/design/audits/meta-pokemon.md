@@ -261,3 +261,12 @@ From the 2026-09-28 whole-branch review fix wave (final fix pass, `.superpowers/
 
 - [x] Travis, 2026-09-28 (used the live site after `39b344c` shipped: "things are looking good",
   "sign everything as good for now"; the open items and copy calls stand as recorded).
+
+## Moved into pick3 (2026-10-01)
+
+These pages moved into the pick3 app: the Pokémon list became Collection's whole-league list with
+the blended "#N meta" rank and trend on every row (`docs/design/audits/collection.md`, section
+"Meta in pick3"), and the Species page became pick3's species page (`#/species/<id>`, record
+`docs/design/audits/species.md`), both awaiting Travis's review. meta.pick3.gg is being retired
+(spec `docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md`). This record and its sign-off
+stand for the pages as they shipped on meta.pick3.gg.

@@ -48,8 +48,14 @@ const AUDIT_ENFORCED = new Set([
   '14c-shared-team',
   'analysis-confirm',
   'analysis-not-found',
-  '20-your-meta',
-  'your-meta-active',
+  'meta-home-first',
+  'meta-home-log',
+  'meta-home-active',
+  'meta-home-error',
+  'meta-teams',
+  'meta-teams-open',
+  'your-battles',
+  'your-battles-active',
   '21-log-battle',
   'log-battle-card',
   'log-battle-likely',
@@ -79,6 +85,11 @@ const AUDIT_ENFORCED = new Set([
   'collection-judging',
   'collection-empty',
   'collection-excluded',
+  'collection-league',
+  'collection-league-meta',
+  'collection-empty-league',
+  'species-owned',
+  'species-unowned',
   '05-specimen',
   'specimen-built',
   'specimen-evolve',
@@ -152,32 +163,74 @@ page.on('requestfailed', (r) => {
 });
 
 // Automation never writes to the live worker and never reads its community data: the community
-// meta and the team board are answered from synthetic fixtures, and every other call that is not a
-// GET is refused here (counter.ts, diag.ts and the battle share already check navigator.webdriver;
-// the refusal also covers the one step below that lifts that gate). The welcome screen's counter
-// read still goes through, as before. CDP-wide request interception (page.setRequestInterception)
-// pauses every request in the browser, including the ones the compute worker makes for the static
-// game data, and those never get resolved because interception is only handled on the page
-// session, so the app hangs forever waiting on its own boot. Patching window.fetch on the document
-// instead only touches the main thread's fetches, leaving the dedicated worker's fetches alone.
+// meta, the team board and one species' detail are answered from synthetic fixtures, and every
+// other call that is not a GET is refused here (counter.ts, diag.ts and the battle share already
+// check navigator.webdriver; the refusal also covers the one step below that lifts that gate). The
+// welcome screen's counter read still goes through, as before. CDP-wide request interception
+// (page.setRequestInterception) pauses every request in the browser, including the ones the compute
+// worker makes for the static game data, and those never get resolved because interception is only
+// handled on the page session, so the app hangs forever waiting on its own boot. Patching
+// window.fetch on the document instead only touches the main thread's fetches, leaving the
+// dedicated worker's fetches alone.
+//
+// Two more answers, for the Meta captures: a summary read whose window ends a week or more before
+// now (the trend's baseline) gets last week's version of the sample, Medicham rarer and Azumarill
+// commoner, so the trend tags have places to show, up and down; and with localStorage
+// 'pick3.failMeta' set, every community read answers 503, for the landing's failed state.
 const fixture = (name) =>
   fs.readFileSync(path.join(here, '..', '..', '..', 'fixtures', name), 'utf8');
+const speciesFixture = JSON.parse(fixture('community-species-sample.json'));
 await page.evaluateOnNewDocument(
-  (meta, teams) => {
+  (meta, teams, species) => {
     const worker = 'https://pickthree-counter.travis-c82.workers.dev';
     const json = (body) =>
       Promise.resolve(
-        new Response(body, { status: 200, headers: { 'content-type': 'application/json' } }),
+        new Response(typeof body === 'string' ? body : JSON.stringify(body), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
       );
+    const lastWeek = (() => {
+      const m = JSON.parse(meta);
+      const scale = { medicham: 0.1, azumarill: 2.5 };
+      for (const x of m.species) {
+        x.sightings = Math.round(x.sightings * (scale[x.speciesId] ?? 1));
+      }
+      return m;
+    })();
+    /** A species nothing was reported for: the honest empty detail the worker sends. */
+    const nothingFor = (id) => ({
+      ...JSON.parse(species),
+      speciesId: id,
+      sightings: 0,
+      wins: 0,
+      losses: 0,
+      runs: 0,
+      runWins: 0,
+      runLosses: 0,
+      weekly: [],
+      bands: [],
+      alongside: [],
+      movesets: [],
+      tournament: null,
+    });
     const native = window.fetch.bind(window);
     window.fetch = (input, init) => {
       const url =
         typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+      if (url.startsWith(`${worker}/api/v1/`) && localStorage.getItem('pick3.failMeta') === '1') {
+        return Promise.resolve(new Response(null, { status: 503 }));
+      }
       if (url.startsWith(`${worker}/api/v1/meta`)) {
-        return json(meta);
+        const until = Date.parse(new URL(url).searchParams.get('until') ?? '');
+        return json(until < Date.now() - 5 * 86_400_000 ? lastWeek : meta);
       }
       if (url.startsWith(`${worker}/api/v1/teams`)) {
         return json(teams);
+      }
+      if (url.startsWith(`${worker}/api/v1/species/`)) {
+        const id = decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '');
+        return json(id === JSON.parse(species).speciesId ? species : nothingFor(id));
       }
       const method = (
         init?.method ?? (input instanceof Request ? input.method : 'GET')
@@ -190,6 +243,7 @@ await page.evaluateOnNewDocument(
   },
   fixture('community-meta-sample.json'),
   fixture('community-teams-sample.json'),
+  fixture('community-species-sample.json'),
 );
 // The last Counters result the compute worker handed back (its opponent and, against one, the grid
 // time), read off the worker's own messages so the run can log how long the shield grids took on
@@ -505,6 +559,57 @@ await shot('settings-hub-no-collection', false, { mustShow: '.ui-sheet .settings
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
 
+/**
+ * Waits for the Meta landing to settle: Most seen and Most logged in (or failed), the personal
+ * cards drawn, nothing still loading.
+ */
+const metaHomeSettled = () =>
+  page.waitForFunction(
+    () =>
+      document.querySelectorAll('.scroll .mh-card').length >= 3 &&
+      !document.querySelector('.scroll .ui-loading'),
+    { timeout: 60_000 },
+  );
+
+console.log('meta, first visit');
+// Welcome's third button: no collection, no battle log. It saves startedWithout, which only
+// changes where a bare boot lands; every step below navigates by hash.
+await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
+await page.waitForSelector('h1');
+await page.$$eval('button', (bs) =>
+  bs.find((b) => b.textContent?.trim().startsWith('Start without a collection'))?.click(),
+);
+await page.waitForFunction(() => window.location.hash === '#/meta', { timeout: 15_000 });
+await metaHomeSettled();
+await page.waitForSelector('.mh-seen');
+const firstVisit = await page.$$eval('.mh-card-head b', (els) => els.map((e) => e.textContent));
+if (!firstVisit.includes('Help build the meta') || firstVisit.includes('Your contribution')) {
+  throw new Error(`meta, first visit: the wrong cards: ${firstVisit.join(', ')}`);
+}
+await shot('meta-home-first');
+
+console.log('collection, nothing collected');
+// The league's own list, in meta order, with no verdict pills and no "Not collected" tags.
+await page.goto(`${base}/#/collection`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(
+  () =>
+    document.querySelectorAll('.scroll .spec-row').length > 10 &&
+    !document.querySelector('.scroll .ui-loading'),
+  { timeout: 60_000 },
+);
+const emptyLeague = await page.evaluate(() => ({
+  count: document.querySelector('.sort-row .meta')?.textContent ?? '',
+  chips: document.querySelectorAll('.chips.tight').length,
+  tags: [...document.querySelectorAll('.scroll .ui-tag')].filter(
+    (t) => t.textContent === 'Not collected',
+  ).length,
+}));
+console.log(`  ${emptyLeague.count}`);
+if (!/ Pokémon in /.test(emptyLeague.count) || emptyLeague.chips > 0 || emptyLeague.tags > 0) {
+  throw new Error(`collection, nothing collected: ${JSON.stringify(emptyLeague)}`);
+}
+await shot('collection-empty-league', false);
+
 console.log('import sample');
 await page.goto(`${base}/?sample=1#/import`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.kicker', { timeout: 90_000 });
@@ -524,6 +629,34 @@ const summaryBorder = await page.evaluate(() => {
 });
 if (summaryBorder !== '0px') {
   throw new Error(`teams: the row summary has a border (${summaryBorder}); it should have no box`);
+}
+// The open row's three text actions (View analysis, Edit team, Run this team) share one line at
+// 390px: none runs past the row, none wraps onto a second line or inside itself.
+const actionsFit = await page.evaluate(() => {
+  const row = document.querySelector('.teams-actions');
+  if (!row) {
+    return null;
+  }
+  const box = row.getBoundingClientRect();
+  const buttons = [...row.children].map((b) => b.getBoundingClientRect());
+  return {
+    labels: [...row.children].map((b) => b.textContent?.trim()),
+    overflow: row.scrollWidth - row.clientWidth,
+    pastRight: Math.max(...buttons.map((b) => b.right)) - box.right,
+    lines: new Set(buttons.map((b) => Math.round(b.top))).size,
+    heights: buttons.map((b) => Math.round(b.height)),
+  };
+});
+console.log(`  teams actions: ${JSON.stringify(actionsFit)}`);
+if (
+  !actionsFit ||
+  actionsFit.labels.length !== 3 ||
+  actionsFit.overflow > 1 ||
+  actionsFit.pastRight > 1 ||
+  actionsFit.lines !== 1 ||
+  actionsFit.heights.some((h) => h > 48)
+) {
+  throw new Error(`teams: the open row's actions do not fit: ${JSON.stringify(actionsFit)}`);
 }
 // The top header shares the page head's gutter: the title's left edge and the last icon button's
 // right edge line up with the league row under them. The row, not the radiogroup inside it: the
@@ -985,7 +1118,8 @@ await flipCollectionFilter('Group same Pokémon');
 await page.click('.ui-sheet-done');
 await page.waitForSelector('.ui-sheet', { hidden: true });
 const flatCount = await page.$eval('.sort-row .meta', (e) => e.textContent ?? '');
-if (!flatCount.endsWith(' shown')) {
+// "N shown", then the not-collected rows after it while they show.
+if (!/^[\d,]+ shown(\xa0· [\d,]+ not collected)?$/.test(flatCount)) {
   throw new Error(`collection, flat: the count reads "${flatCount}", not "N shown"`);
 }
 await page.evaluate(() => window.scrollTo(0, 0));
@@ -1015,6 +1149,48 @@ await page.waitForSelector('.scroll .ui-empty');
 await shot('collection-empty', false, { mustShow: '.scroll .ui-empty' });
 await page.click('.search-clear');
 await page.waitForFunction(() => !document.querySelector('.scroll .ui-empty'));
+
+console.log('collection, the rest of the league');
+// Under Verdict, the species you have none of follow your own: the capture sits where they start.
+const notCollectedRow = '.spec-row[data-shot-not-collected]';
+await page.evaluate(() => {
+  const tag = [...document.querySelectorAll('.scroll .spec-row .ui-tag')].find(
+    (t) => t.textContent === 'Not collected',
+  );
+  const row = tag?.closest('.spec-row');
+  if (row) {
+    row.setAttribute('data-shot-not-collected', '');
+    const bar = document.querySelector('.sticky-bar')?.getBoundingClientRect().height ?? 0;
+    window.scrollTo(0, window.scrollY + row.getBoundingClientRect().top - bar - 220);
+  }
+});
+if (!(await page.$(notCollectedRow))) {
+  throw new Error('collection: no Not collected row after the collection');
+}
+await shot('collection-league', false, { mustShow: notCollectedRow });
+
+console.log('collection, by meta rank');
+// Meta rank interleaves both kinds of row by the blended rank, each with its trend.
+await page.select('.sort-row select', 'meta');
+await page.waitForFunction(
+  () => {
+    const first = document.querySelector('.scroll .spec-row .mtags');
+    return first && /#\d+ meta/.test(first.textContent ?? '');
+  },
+  { timeout: 30_000 },
+);
+await page.evaluate(() => window.scrollTo(0, 0));
+const trendTags = await page.$$eval('.scroll .spec-row .mtags .trend[aria-label]', (els) =>
+  els.map((e) => e.getAttribute('aria-label')),
+);
+console.log(`  trend tags on screen: ${trendTags.slice(0, 6).join(', ')}`);
+await shot('collection-league-meta', false);
+// The meta's highest-ranked Pokémon you own, for the species page's collected capture below.
+const topOwnedHref = await page.$eval('.scroll .spec-row[href^="#/collection/"]', (a) =>
+  a.getAttribute('href'),
+);
+await page.select('.sort-row select', 'verdict');
+await page.evaluate(() => window.scrollTo(0, 0));
 
 console.log('specimen');
 // Hash navigation keeps the verdicts in memory.
@@ -1416,41 +1592,114 @@ await page.evaluate((v) => {
   }
 }, diagBefore);
 
-console.log('your meta');
+console.log('meta, with a battle log');
+// The sample import brought a battle log, so the landing shows Your contribution and Your meta.
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
-await page.waitForSelector('.set-card', { timeout: 60_000 });
-await page.waitForSelector('.faced-row');
-// The sample log is under 15 battles this season: the progress line and its bar.
+await metaHomeSettled();
+await page.waitForSelector('.mh-seen');
+const withLog = await page.$$eval('.mh-card-head b', (els) => els.map((e) => e.textContent));
+if (!withLog.includes('Your contribution') || withLog.includes('Help build the meta')) {
+  throw new Error(`meta, with a log: the wrong cards: ${withLog.join(', ')}`);
+}
+await shot('meta-home-log');
+
+console.log('meta, community unreachable');
+// Every community read answers 503: both community cards fall back to their own error with Try
+// again, and the personal cards still draw from this phone. A reload, so no read is remembered.
+await page.evaluate(() => localStorage.setItem('pick3.failMeta', '1'));
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForFunction(() => document.querySelectorAll('.scroll .ui-error').length === 2, {
+  timeout: 60_000,
+});
+if (!(await page.$('.mh-accent'))) {
+  throw new Error('meta, unreachable: the personal cards waited on the network');
+}
+await shot('meta-home-error', true, { mustShow: '.scroll .ui-error' });
+await page.evaluate(() => localStorage.removeItem('pick3.failMeta'));
+await page.reload({ waitUntil: 'networkidle0' });
+await metaHomeSettled();
+await page.waitForSelector('.mh-seen');
+
+console.log('top teams');
+await page.click('a.mh-more[href="#/meta/teams"]');
+await page.waitForSelector('.tb-team-rows .row-head', { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
+await assertTitleCentred('top teams');
+await shot('meta-teams');
+
+console.log('top teams, a row open');
+// The first complete team on the board: a core opens into its builds and has no team to run, so
+// a core is shut again and the next row tried.
+const boardHeads = await page.$$('.tb-team-rows .row-head');
+for (const head of boardHeads) {
+  await head.click();
+  await page.waitForSelector('.tb-team-row.open .row-body');
+  const actions = await page.$$eval('.tb-team-row.open .tb-actions .ui-btn', (bs) => bs.length);
+  if (actions > 0) {
+    break;
+  }
+  await head.click();
+  await page.waitForFunction(() => !document.querySelector('.tb-team-row.open'));
+}
+await page.evaluate(() => {
+  const row = document.querySelector('.tb-team-row.open');
+  const head = document.querySelector('.page-head')?.getBoundingClientRect().bottom ?? 0;
+  window.scrollTo(0, window.scrollY + row.getBoundingClientRect().top - head - 8);
+});
+const runThis = await page.$$eval('.tb-team-row.open .row-body .ui-btn', (bs) =>
+  bs.map((b) => b.textContent?.trim()),
+);
+if (!runThis.includes('Run this team')) {
+  throw new Error(`top teams: the open row has no Run this team: ${runThis.join(', ')}`);
+}
+await shot('meta-teams-open', false, { mustShow: '.tb-team-row.open .row-body' });
+await page.click('.page-head .hdr .back');
+await page.waitForFunction(() => window.location.hash === '#/meta', { timeout: 15_000 });
+await metaHomeSettled();
+
+console.log('your battles');
+// Today's lists in full, behind the landing's "View your battle history". The sample log is under
+// 15 battles this season: the progress line and its bar.
+await page.click('a.mh-more[href="#/meta/battles"]');
+await page.waitForSelector('.faced-row', { timeout: 60_000 });
 await page.waitForSelector('.page-head [role="progressbar"]');
+await assertTitleCentred('your battles');
 // Full page, so the set list ("Your teams") is in the capture, and its rows keep their own grid:
 // the Teams summary once shared the .team-row name and turned these rows into a flex line.
-await shot('20-your-meta');
+await shot('your-battles');
 const setRowDisplay = await page.evaluate(() => {
   const row = document.querySelector('.team-row');
   return row ? window.getComputedStyle(row).display : 'grid';
 });
 if (setRowDisplay !== 'grid') {
-  throw new Error(`your meta: a set row is display ${setRowDisplay}, not grid`);
+  throw new Error(`your battles: a set row is display ${setRowDisplay}, not grid`);
 }
 
 console.log('who beats one opponent');
+// A faced row opens that species' page; its Who beats it opens Counters with the back mark.
 const facedHref = await page.$eval('.faced-row', (a) => a.getAttribute('href'));
-if (!facedHref || !facedHref.startsWith('#/counters?vs=')) {
-  throw new Error(`most-faced row does not link to Counters: ${facedHref}`);
+if (!facedHref || !facedHref.startsWith('#/species/')) {
+  throw new Error(`most-faced row does not link to its species page: ${facedHref}`);
 }
-if (!new URLSearchParams(facedHref.split('?')[1]).has('from')) {
-  throw new Error(`most-faced row does not mark the jump (from=1): ${facedHref}`);
+const facedVs = decodeURIComponent(facedHref.slice('#/species/'.length));
+await page.$eval('.faced-row', (a) => a.scrollIntoView({ block: 'center' }));
+await page.click('.faced-row');
+const whoBeats = '.scroll a.ui-btn[href^="#/counters?vs="]';
+await page.waitForSelector(whoBeats, { timeout: 30_000 });
+const whoHref = await page.$eval(whoBeats, (a) => a.getAttribute('href'));
+const whoParams = new URLSearchParams(whoHref.split('?')[1]);
+if (whoParams.get('vs') !== facedVs || !whoParams.has('from')) {
+  throw new Error(`species page: Who beats it does not mark the jump (from=1): ${whoHref}`);
 }
-const facedVs = new URLSearchParams(facedHref.split('?')[1]).get('vs');
-// A tap, not a goto, so Your Meta is the pick3 screen behind Counters and the header is the sub
-// header with Back. The rows land first with empty grid cells, then the grids fill in batches.
+// A tap, not a goto, so the species page is the pick3 screen behind Counters and the header is the
+// sub header with Back. The rows land first with empty grid cells, then the grids fill in batches.
 // The compute worker holds itself at a debugger statement right after it posts the progress for
 // the first batch of grids (the rows with those grids went just before it), so the shots below
 // always find a grid filled, the next one empty and the loading bar up, however fast the machine.
 // The hold is automation only: a wrapper put on the worker's own postMessage through its CDP
 // session (its league bundle has long landed, see teams-loading), fired once and let go after the
-// shots. The row is scrolled to the middle first: at the top of the page it sits half under the
-// tab bar, which would take the tap.
+// shots. The button is scrolled to the middle first: at the foot of the page it sits under the tab
+// bar, which would take the tap.
 const gridWorkers = page.workers();
 const held = [];
 for (const w of gridWorkers) {
@@ -1469,8 +1718,8 @@ for (const w of gridWorkers) {
     })()`,
   });
 }
-await page.$eval('.faced-row', (a) => a.scrollIntoView({ block: 'center' }));
-await page.click('.faced-row');
+await page.$eval(whoBeats, (a) => a.scrollIntoView({ block: 'center' }));
+await page.click(whoBeats);
 let heldTimer;
 await Promise.race([
   Promise.any(held),
@@ -1533,7 +1782,7 @@ if (typeof vsResult.gridMs !== 'number') {
 }
 const vsBack = await page.$eval('.counters-head .hdr .back', (b) => b.textContent ?? '');
 if (vsBack.trim() !== 'Back') {
-  throw new Error(`counters vs from Your Meta: the header's back reads "${vsBack}"`);
+  throw new Error(`counters vs from the species page: the header's back reads "${vsBack}"`);
 }
 await assertTitleCentred('counters vs');
 await page.evaluate(() => window.scrollTo(0, 0));
@@ -1550,11 +1799,12 @@ if (!(Math.abs(linkOffset) <= 1)) {
   throw new Error(`counters vs: the row links are off the text column by ${linkOffset}px`);
 }
 await shot('23-counters-vs', false);
+// Back to the species page it came from, then back again to Your battles.
 await page.click('.counters-head .hdr .back');
-await page.waitForSelector('.set-card', { timeout: 60_000 });
-if (!page.url().endsWith('#/meta')) {
-  throw new Error(`back from the counters vs view landed at ${page.url()}`);
-}
+await page.waitForFunction((h) => window.location.hash === h, { timeout: 15_000 }, facedHref);
+await page.waitForSelector(whoBeats, { timeout: 30_000 });
+await page.click('.page-head .hdr .back');
+await page.waitForFunction(() => window.location.hash === '#/meta/battles', { timeout: 15_000 });
 
 console.log('who beats an outsider (simulated on device)');
 // An outsider (outside PvPoke's meta group) carries the dagger mark once the meta group loads.
@@ -1566,11 +1816,14 @@ const outsiderHref = await page.$$eval('.faced-row', (rows) => {
 if (!outsiderHref) {
   throw new Error('the sample log has no most-faced outsider to simulate');
 }
-const outsiderVs = new URLSearchParams(outsiderHref.split('?')[1]).get('vs');
-const tSim = Date.now();
+const outsiderVs = decodeURIComponent(outsiderHref.slice('#/species/'.length));
 const outsiderRow = `.faced-row[href="${outsiderHref}"]`;
 await page.$eval(outsiderRow, (a) => a.scrollIntoView({ block: 'center' }));
 await page.click(outsiderRow);
+await page.waitForSelector(whoBeats, { timeout: 30_000 });
+const tSim = Date.now();
+await page.$eval(whoBeats, (a) => a.scrollIntoView({ block: 'center' }));
+await page.click(whoBeats);
 // The page names no simulation (its line is the same for every opponent); the result says it: an
 // opponent outside the meta group has no matrix column, so ranked species were simulated instead.
 await page.waitForFunction(
@@ -1591,7 +1844,58 @@ if (simResult.vs.inMeta || typeof simResult.vs.simulated !== 'number') {
 await page.evaluate(() => window.scrollTo(0, 0));
 await shot('24-counters-vs-outsider', false);
 
-console.log('your meta, 15 or more battles');
+console.log('species page, not collected');
+// The fixture's species, which the sample collection has none of: the measured facts, Add one,
+// the moves players ran against PvPoke's set, tournament sets and what it is seen next to.
+await page.goto(`${base}/#/species/${speciesFixture.speciesId}`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(
+  () =>
+    document.querySelector('.scroll .kv') &&
+    document.querySelector('.scroll .move-row') &&
+    !document.querySelector('.scroll .ui-loading'),
+  { timeout: 60_000 },
+);
+const unowned = await page.evaluate(() => ({
+  line: [...document.querySelectorAll('.scroll .meta')].map((e) => e.textContent).join(' | '),
+  add: [...document.querySelectorAll('.scroll a.ui-btn')].some(
+    (a) => a.textContent?.trim() === 'Add one',
+  ),
+}));
+if (!unowned.line.includes('Not in your collection') || !unowned.add) {
+  throw new Error(`species page, not collected: ${JSON.stringify(unowned)}`);
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('species-unowned');
+
+console.log('species page, collected');
+// From the meta's highest-ranked Pokémon you own, its "See X in the meta" row: your copies,
+// best first.
+await openSpecimen(topOwnedHref);
+const seeInMeta = '.scroll a.action-row[href^="#/species/"]';
+await page.$eval(seeInMeta, (a) => a.scrollIntoView({ block: 'center' }));
+await page.click(seeInMeta);
+await page.waitForFunction(
+  () =>
+    window.location.hash.startsWith('#/species/') &&
+    document.querySelector('.scroll .kv') &&
+    document.querySelector('.scroll .spec-row.sub .verdict-tag') &&
+    !document.querySelector('.scroll .ui-loading'),
+  { timeout: 60_000 },
+);
+const owned = await page.evaluate(
+  () =>
+    [...document.querySelectorAll('.scroll .meta')].find((e) =>
+      /^You have \d+$/.test(e.textContent ?? ''),
+    )?.textContent ?? null,
+);
+if (!owned) {
+  throw new Error('species page, collected: no "You have N" line');
+}
+console.log(`  ${page.url().split('#')[1]}: ${owned}`);
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('species-owned');
+
+console.log('your battles and the landing, 15 or more battles');
 // Six more battles on the running team, sent to the community meta, so the season passes 15 and
 // the contribution count shows. The set as it was is kept and put back after the shots.
 const setBefore = await page.evaluate(
@@ -1639,25 +1943,30 @@ const setBefore = await page.evaluate(
     }),
 );
 if (!setBefore) {
-  throw new Error('your meta, 15 or more: no running set to add battles to');
+  throw new Error('your battles, 15 or more: no running set to add battles to');
 }
-await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
+await page.goto(`${base}/#/meta/battles`, { waitUntil: 'networkidle0' });
 await page.reload({ waitUntil: 'networkidle0' });
-await page.waitForSelector('.set-card', { timeout: 60_000 });
+await page.waitForSelector('.faced-row', { timeout: 60_000 });
 await page.waitForSelector('.page-head [role="progressbar"][aria-valuenow="100"]', {
   timeout: 60_000,
 });
-await page.waitForSelector('.page-head .ui-measured-line', { timeout: 30_000 });
 await page.waitForSelector('.faced-row .faced-out', { timeout: 60_000 });
-await shot('your-meta-active');
+await shot('your-battles-active');
+// A goto, not Back: after the reload, Back follows the browser history from before it.
+await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
+await metaHomeSettled();
+// The pink count of battles sent, and the running team's record.
+await page.waitForSelector('.mh-accent .ui-measured-line', { timeout: 30_000 });
+await shot('meta-home-active');
 
-console.log('log a battle, edit from a result chip');
-await page.$$eval('.result-chip', (els) =>
-  els.find((el) => el.getAttribute('aria-label')?.startsWith('Loss against'))?.click(),
+console.log('log a battle, edit one battle');
+// The result strip that opened a battle for editing is not on the new pages; its route still
+// works, so the edit view is opened by its link: the seeded Loss above.
+await page.goto(
+  `${base}/#/meta/log/${encodeURIComponent(setBefore.id)}/${encodeURIComponent('screens-1')}`,
+  { waitUntil: 'networkidle0' },
 );
-await page.waitForFunction(() => document.location.hash.startsWith('#/meta/log/'), {
-  timeout: 15_000,
-});
 await page.waitForFunction(
   () =>
     document.querySelector('.hdr .hdr-title')?.textContent?.includes('Edit battle') &&

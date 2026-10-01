@@ -230,3 +230,85 @@ Made while building:
 - [x] Travis, 2026-09-27 (used the live page: "Design looks good"; ruled on the open items: the Built
   tag gets a real pill, groups show the copy that earned their place (option 2); both shipped in
   `f9313d4` and `515829e`).
+
+## Meta in pick3 (2026-10-01): the whole league, the blended rank
+
+Not part of the signed round above; this section is its own record and awaits its own sign-off.
+Spec: `docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md`, "Collection". Plan:
+`docs/superpowers/plans/2026-09-30-meta-in-pick3.md`, Task 12 (the list) and Task 15 (this
+audit). Mockup: `mock/meta-in-pick3`, views `collection`, `collectionmeta`, `collectionnew`.
+
+Collection now lists the league, not just the collection: your rows as before, then every ranked
+species you have none of (the blended order plus PvPoke's overall top 200; a search reaches the
+whole league), each with a neutral "Not collected" tag in the verdict slot. Every row's tag line
+carries the blended "#N meta" with its trend tag ("up 2" in the win tone, "down 1" in the loss
+tone) and PvPoke's role tag, replacing "#N overall". "Hide not collected" joins the Filters
+sheet; Meta rank sorts by the blend and is the default with nothing collected. Collection's
+community read follows the sharing switch.
+
+### Screenshots
+
+Dark and light at 390px, one pair per state, from the 2026-10-01 `npm run web:audit` run on the
+code committed as `eb56ca0` (with this wave's `screens.mjs`), converted to WebP (600px wide,
+quality 72). The blend reads `fixtures/community-meta-sample.json`; the trend's baseline (the
+same window ending a week earlier) is the same sample with Medicham rarer and Azumarill commoner,
+answered by the capture script, so the trend tags have something to show.
+
+| State | Dark | Light |
+| --- | --- | --- |
+| `collection-league`: under Sort: Verdict, scrolled to where your own rows end: the last Needs rescan rows (Rhydon, Tyranitar), then Medicham, Lanturn, Azumarill, Mimikyu, Shadow Ninetales, Cramorant, Tinkaton, Florges, each "Not collected" with its "#N meta" and role tag | ![](img/collection-league-dark.webp) | ![](img/collection-league-light.webp) |
+| `collection-league-meta`: Sort: Meta rank (on one line), "111 Pokémon · 65 kinds · 171 not collected" wrapping under it; both kinds of row interleaved: Medicham "#1 meta" with "up 2", Lanturn "#2 meta" with "down 1" and "#32 closer", Azumarill "#3 meta", "down 1", Mimikyu "#4 meta" and "#1 lead", Meltan (yours, "#5 meta", Worth building, "5 more, next Top 5%"), Mega Altaria (yours), Shadow Ninetales | ![](img/collection-league-meta-dark.webp) | ![](img/collection-league-meta-light.webp) |
+| `collection-empty-league`: before the import (after Welcome's "Start without a collection"). The header adds Import beside Add and Settings; no verdict chips; "200 Pokémon in Great League" and "Sort: Meta rank"; the rows in blended order with their rank, trend and role tags and no "Not collected" tag (every row would carry it) | ![](img/collection-empty-league-dark.webp) | ![](img/collection-empty-league-light.webp) |
+
+The script checks as it shoots: with nothing collected the count reads "N Pokémon in <League>",
+no chip row and no "Not collected" tag; `collection-league` must find a Not collected row after
+your own; `collection-league-meta` logs the trend tags on screen ("up 2 places, down 1 place,
+down 1 place"). The flat-list check now accepts "111 shown · 171 not collected".
+
+**The signed captures changed with the page.** `04-collection` (full page) now runs through every
+not-collected row, about 35,000px tall at 2x, so it is past what a 600px WebP can hold and its
+signed image is not re-converted; `collection-flat`'s count gains "· 171 not collected". Both are
+still enforced and clean.
+
+Not captured, covered by `apps/web/test/collection.test.tsx`: Hide not collected on (and its
+count in the filter badge), a search reaching the whole league, Top 50 meta on both kinds of
+row, sharing off (PvPoke's order, no read, no trend), a Shadow copy leaving the plain form Not
+collected, and the scroll restored only once the blend is in.
+
+### Automated checks
+
+- [x] `npm run web:audit` clean for the new screens (`collection-league`,
+      `collection-league-meta`, `collection-empty-league`, in `AUDIT_ENFORCED`) and for the seven
+      signed ones: the 2026-10-01 run on `eb56ca0` exited 0 with zero findings on every enforced
+      name in both themes. 117 findings remain on screens not yet redesigned, none failing; no
+      NEVER line.
+- [x] no console errors: the run printed no "Browser errors" section.
+- [x] `npm run lint`, `npm run typecheck`, `npx vitest run --project web`, `npm run check-colors`:
+      lint exit 0, typecheck exit 0, web 59 files and 748 tests passed, check-colors exit 0.
+
+### Aesthetics
+
+Awaiting Travis's review.
+
+### Functionality
+
+Awaiting Travis's review.
+
+### Findings and fixes
+
+| Finding | Fix | Commit |
+| --- | --- | --- |
+| Seen in the captures (not an audit finding): under Meta rank the sort control wrapped to "Sort: Meta / rank" beside the long count line. | `.sort-row .ui-inline-select` does not shrink or wrap; the count line wraps instead. | `eb56ca0` |
+
+### Notes for the review
+
+- **The count line takes two lines** ("111 Pokémon · 65 kinds · 171 not / collected") whenever
+  not-collected rows show; the spec's sample was "212 Pokémon · 96 kinds · 142 not collected".
+- **`04-collection` is now very tall** (see above). Say if it should become a viewport capture,
+  or turn Hide not collected on, so it keeps showing what it was signed for.
+- **"200 Pokémon in Great League"** with nothing collected is the ranked part of the league
+  (`NOT_COLLECTED_TOP`, Task 12's ruling), not every legal species.
+
+### Sign-off
+
+- [ ] Travis, awaiting review

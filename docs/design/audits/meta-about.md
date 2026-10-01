@@ -161,3 +161,12 @@ From the 2026-09-28 whole-branch review fix wave (final fix pass, `.superpowers/
 
 - [x] Travis, 2026-09-28 (used the live site after `39b344c` shipped: "things are looking good",
   "sign everything as good for now"; the open items and copy calls stand as recorded).
+
+## Moved into pick3 (2026-10-01)
+
+meta.pick3.gg is being retired and its pages moved into the pick3 app's Meta tab (spec
+`docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md`). Per the spec, About's copy on how
+the blend works becomes a Settings page in pick3, "How the meta is ranked", in the retirement
+phase; `/about` on the old host redirects to `#/meta`. The Meta landing's record is
+`docs/design/audits/meta-home.md`. This record and its sign-off stand for the page as it shipped
+on meta.pick3.gg.
