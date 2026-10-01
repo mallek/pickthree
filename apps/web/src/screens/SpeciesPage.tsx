@@ -19,7 +19,7 @@ import type {
   SpeciesRanking,
   WindowKey,
 } from '@pickthree/engine/meta';
-import { Button, Empty, ErrorState, Header, IconButton, Loading, Tag } from '@pickthree/ui';
+import { Button, Empty, ErrorState, Header, IconButton, Loading, Switch, Tag } from '@pickthree/ui';
 import { useEffect, useMemo, useState } from 'react';
 import {
   CogGlyph,
@@ -34,7 +34,7 @@ import {
   useName,
   useSpecies,
 } from '../components.tsx';
-import { num, ownSpeciesId, rankLabel, SEP } from '../format.ts';
+import { coversLine, num, ownSpeciesId, rankLabel, SEP } from '../format.ts';
 import { loadPvpokeSide, type PvpokeSide } from '../metaData.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { useMetaRanking, useSpeciesDetail } from '../state/useMeta.ts';
@@ -234,7 +234,8 @@ function TournamentMoves({
 
 export function SpeciesPage({ id }: { id: string }) {
   const s = useAppState();
-  const { back, loadVerdicts, movePool, navigate, openSheet, setLeague } = useActions();
+  const { back, loadVerdicts, movePool, navigate, openSheet, setLeague, toggleExcludedSpecies } =
+    useActions();
   const name = useName();
   const species = useSpecies();
   const route = s.route.screen === 'species' ? s.route : null;
@@ -442,6 +443,21 @@ export function SpeciesPage({ id }: { id: string }) {
 
   const mates = (d?.alongside ?? []).slice(0, 3);
 
+  // The specimen page's switch, by the id a copy battles as: this page's own species. Every copy
+  // with a build of it is covered, owned or not; with none, the switch has no line.
+  const excluded = (s.settings.excludedSpecies ?? []).includes(id);
+  const coveredBy = s.verdictsLoading
+    ? []
+    : [
+        ...(s.collection?.specimens ?? [])
+          .filter((c) => s.verdicts[c.id]?.buildSpecies.includes(id))
+          .reduce((m, c) => {
+            const n = name(c.speciesId);
+            return m.set(n, (m.get(n) ?? 0) + 1);
+          }, new Map<string, number>()),
+      ].map(([n, count]) => ({ name: n, count }));
+  const covers = coveredBy.length > 0 ? coversLine(coveredBy) : undefined;
+
   return (
     <div className="screen">
       <div className="page-head">{header}</div>
@@ -551,6 +567,16 @@ export function SpeciesPage({ id }: { id: string }) {
             </div>
           </div>
         ) : null}
+
+        <div className="card">
+          <Switch
+            label={`Use ${name(id)} in team recommendations`}
+            {...(covers ? { line: covers } : {})}
+            checked={!excluded}
+            disabled={!s.settingsLoaded}
+            onChange={() => toggleExcludedSpecies(id)}
+          />
+        </div>
 
         <div className="stack" style={{ gap: 8 }}>
           <Button variant="primary" href={hashFor({ screen: 'build', lead: id })}>

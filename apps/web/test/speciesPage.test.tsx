@@ -565,6 +565,43 @@ describe('Species page', () => {
     expect(screen.queryByText(/No moves reported/)).toBeNull();
   });
 
+  it('the exclusion switch for a species you own leaves it out of teams and lets it back in', async () => {
+    await seed();
+    stubNet(freshNet());
+    renderPage(host({ verdicts: vi.fn(async () => VERDICTS) }));
+
+    const sw = await screen.findByRole('switch', {
+      name: 'Use Azumarill in team recommendations',
+    });
+    await waitFor(() => expect(sw).toBeEnabled());
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    // The copies it covers, as the specimen page says it: everything with a build of it.
+    await waitFor(() =>
+      expect(sw).toHaveAccessibleDescription('Covers your 3 Azumarill and 1 Marill.'),
+    );
+
+    fireEvent.click(sw);
+    await waitFor(() => expect(latest?.settings.excludedSpecies).toEqual(['azumarill']));
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(sw);
+    await waitFor(() => expect(latest?.settings.excludedSpecies).toEqual([]));
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('the exclusion switch shows for a species you do not own, by its own id', async () => {
+    window.location.hash = '#/species/clodsire';
+    stubNet(freshNet());
+    renderPage();
+
+    const sw = await screen.findByRole('switch', {
+      name: 'Use Clodsire in team recommendations',
+    });
+    await waitFor(() => expect(sw).toBeEnabled());
+    expect(sw).not.toHaveAccessibleDescription();
+    fireEvent.click(sw);
+    await waitFor(() => expect(latest?.settings.excludedSpecies).toEqual(['clodsire']));
+  });
+
   it('a failed read says so under the hero; Yours and the actions stay; Try again reads again', async () => {
     await seed();
     const net = freshNet({ apiStatus: 503 });
