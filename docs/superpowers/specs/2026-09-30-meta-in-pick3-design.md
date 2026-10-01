@@ -19,9 +19,9 @@ opens pick3), so the move costs no inbound links; the old host redirects anyway.
 2. **The landing has two states**, both mocked: a first visit (community first, then "Help build
    the meta") and with a battle log (community, then your contribution and current team, then your
    own meta). Layout is Travis's concept, adjusted to the design rules.
-3. **Pokemon go into Collection.** Collection gets Collected | Not collected. Not collected is
-   every species legal in the league that you do not own, ranked by the blended meta. It replaces
-   meta.pick3.gg's Pokemon page.
+3. **Pokemon go into Collection.** Collection lists every Pokemon eligible in the league: yours,
+   and the ones you do not have, marked with a small "Not collected" tag. A filter switch, "Hide
+   not collected", off by default, takes them out. It replaces meta.pick3.gg's Pokemon page.
 4. **One species page**, `#/species/<id>`: your copies first (or "Add one"), then the meta
    (share, record against it, tournament picks, moves players ran, seen next to), then Build around
    it and Who beats it. It replaces meta.pick3.gg's Species page.
@@ -32,7 +32,7 @@ opens pick3), so the move costs no inbound links; the old host redirects anyway.
    other tab, so cups, rotation cups and Mega leagues work everywhere at once. The data build
    produces everything a league needs, for every league it ships.
 7. **Start without a collection.** Welcome gets a third way in that opens Meta, no import. Such a
-   player lands on Meta from then on, and Collection opens on Not collected.
+   player lands on Meta from then on, and Collection is the league's whole ranked list.
 8. **meta.pick3.gg retires.** The worker keeps the API and redirects every page to its pick3
    route. `apps/meta` is deleted; the post tooling moves out first.
 9. **Sharing stays opt-out** (on by default, as today). The landing shows the same switch Settings
@@ -49,8 +49,7 @@ Hash routes, like the rest of pick3:
 | `#/meta/battles` | Your battles (today's Your Meta lists, in full) |
 | `#/meta/new` | Pick your team (today's NewSet), unchanged; takes `?team=a+b+c` to prefill |
 | `#/meta/log`, `#/meta/log/<set>/<battle>` | Log or edit a battle, unchanged |
-| `#/collection` | Collection, Collected view (unchanged route) |
-| `#/collection?view=not` | Collection, Not collected view |
+| `#/collection` | Collection (unchanged route) |
 | `#/species/<id>` | Species page |
 
 Window and source ride along where a screen has them: `?w=<window>&src=<source>` (the same keys and
@@ -75,7 +74,7 @@ cups and rotation cups). Then, in the scroll:
    current epoch) and source All; the full lists carry the controls.
 2. **Most seen Pokemon** card, "Share of reported battles": the top five by blended share, each
    row a token, the name over a violet weight bar, the share in pink with its bar mark, a chevron.
-   A row opens `#/species/<id>`. "Explore Pokemon" opens `#/collection?view=not`.
+   A row opens `#/species/<id>`. "Explore Pokemon" opens `#/collection`.
 3. State-dependent middle (below).
 4. Footer "Community data reflects shared logs."
 
@@ -123,20 +122,29 @@ the stale-season card. Sub header back to Meta.
 
 ## Collection
 
-- A `Seg` Collected | Not collected sits in the sort row beside Sort (mock round 2). It follows
-  `?view=` and is sticky like the other Collection switches.
-- **Collected** is unchanged.
-- **Not collected**: every species legal in the current league (`legalSet`) with no specimen in
-  the collection, Shadow forms as their own rows as the rankings list them. Row: token, name (Shadow
-  flag as now), "#N PvPoke · X of Y battles", type chips; the share on the right as a
-  `MeasuredValue` in the slot the verdict tag occupies on Collected rows, so rows keep one height.
-  No measured share: the slot is empty and the line reads "#N PvPoke · not faced in this window".
-  No "Add one" in the list.
-- Sort on Not collected: Meta (blended weight, default) or Name. Window and Source live in the
-  Collection filter sheet, shared with the Teams Source picker's stored choice.
-- Search searches every species while Not collected is showing.
-- A player with no collection opens Collection on Not collected; Collected shows the existing
-  empty state with Import and Add.
+No selector at the top: one list, filtered from the filter sheet as now (decided after mock round
+2, which showed a Collected | Not collected switch; that switch is dropped).
+
+- **Every Pokemon eligible in the current league is listed**: your specimens as today, plus every
+  species legal in the league (`legalSet`) with no specimen in the collection, Shadow forms as
+  their own rows as the rankings list them.
+- **A not-collected row** has the same shape and height as yours: token, name with a small neutral
+  "Not collected" `Tag` beside it (where Shadow and Banned flags sit), the meta line "#N PvPoke ·
+  X of Y battles" (or "· not faced in this window"), the meta tags as on your rows, and the share as
+  a `MeasuredValue` in the slot your rows use for the verdict tag. No "Add one" in the list. The row
+  opens the species page.
+- **Filter sheet** gains "Hide not collected", off by default, sticky like the other switches, and
+  counted in the filter button's badge only when on. The existing "Top 50 meta" switch applies to
+  both kinds of row.
+- **Sort** gains Meta (blended weight). Under the existing sorts, not-collected rows follow your
+  own, in Meta order. Window and Source for the shares live in the filter sheet, sharing the Teams
+  Source picker's stored choice.
+- The count line reads "212 Pokémon · 96 kinds · 142 not collected" (the last part only while they
+  show). The quick pills (Built, Worth it, Wait for IVs, Rescan) are verdicts, so turning one on
+  shows your own Pokemon only.
+- Search placeholder becomes "Search Pokémon" and searches both kinds of row.
+- A player with no collection sees the whole league ranked, sorted by Meta, with Import and Add by
+  hand in the header as now.
 
 ## Species page (`#/species/<id>`)
 
@@ -197,7 +205,7 @@ source for the session; no new storage.
 
 - `workers/counter`: drop `[assets]`; a GET for any non-API path on the meta host answers 301 to
   its pick3 route: `/` and `/<league>` to `#/meta/teams?l=<league>`, `/<league>/pokemon` to
-  `#/collection?view=not&l=<league>`, `/<league>/p/<id>` to `#/species/<id>?l=<league>`, `/about`
+  `#/collection?l=<league>`, `/<league>/p/<id>` to `#/species/<id>?l=<league>`, `/about`
   to `#/meta`, carrying `window` and `source` as `w` and `src`. API routes and CORS unchanged.
 - The post tooling (`apps/meta/scripts/post`, `npm run post`) moves to `packages/data/scripts/post`
   first, with `priorWeights` and its tests; `npm run post` keeps its name.
@@ -214,16 +222,17 @@ source for the session; no new storage.
 Violet for interaction (weight bars, chevrons, links), pink only for measured numbers with their
 mark, outcome ink for records, plain hyphens in records, no new color literals. Every new or
 changed page passes the audit and gets Travis's signed record: Meta landing (both states), Top
-teams (ported), Your battles, Collection Not collected, Species. The meta.pick3.gg records
+teams (ported), Your battles, Collection with not-collected rows, Species. The meta.pick3.gg records
 (`meta-teams.md`, `meta-pokemon.md`, `meta-about.md`) get a note that the pages moved.
 
 ## Testing
 
-- Engine: the moved meta modules keep their tests; new tests for Not collected membership (legal,
-  unowned, Shadow forms) and for the baseline build per league kind.
+- Engine: the moved meta modules keep their tests; new tests for not-collected membership (legal,
+  unowned, Shadow forms) and ordering under each sort and for the baseline build per league kind.
 - Web: route parse and print for every new route, `?l=` with hyphenated ids, the boot rule for
   `startedWithout`, the landing's two states and its offline state, Run this team prefill, the
-  species page owned and unowned, Collection's view switch.
+  species page owned and unowned, Collection's Hide not collected
+  switch and its count line.
 - Worker: the redirect table, API unaffected.
 - Screens: `web:screens` captures each new screen in both themes; `web:audit` enforces them.
 - Synthetic data only for logic tests; invariants only against live data.
@@ -236,13 +245,7 @@ Each phase merges on its own and leaves both hosts working.
    pure logic into `@pickthree/engine/meta`; epochs file moved. Nothing visible changes.
 2. **Meta tab.** Landing (both states), Top teams, Your battles, Run this team (board, Teams, Team
    Analysis), tab renamed. meta.pick3.gg still up.
-3. **Collection.** Not collected, the species page, Add one prefill, the specimen page link.
+3. **Collection.** Not-collected rows and their filter, the species page, Add one prefill, the specimen page link.
 4. **No-collection start.** Welcome button, boot rule, Teams empty-state row, MetaPreview in-app.
 5. **Retire meta.pick3.gg.** Post tooling moved, worker redirects, `apps/meta` deleted, CI and
    CLAUDE.md updated.
-
-## Open for review
-
-- **Explore Pokemon** opens Not collected, which leaves out species you own. The alternative is a
-  third view, All, ranked the same way. The spec takes Not collected; owned species are one tap away
-  on Collected, and every species reaches its page from the landing.
