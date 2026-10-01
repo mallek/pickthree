@@ -98,6 +98,7 @@ export interface NoticeAction {
 
 export type Route =
   | { screen: 'welcome' }
+  | { screen: 'mock-mega' }
   | { screen: 'import' }
   | { screen: 'report' }
   | { screen: 'teams' }
@@ -603,6 +604,9 @@ export function parseHash(hash: string): Route {
           members: decodeURIComponent(members),
         }
       : { screen: 'build' };
+  }
+  if (a === 'mock') {
+    return { screen: 'mock-mega' };
   }
   if (a === 'meta') {
     if (b === 'new') {

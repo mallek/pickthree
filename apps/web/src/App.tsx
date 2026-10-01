@@ -1,3 +1,4 @@
+import { MockMega } from './screens/MockMega.tsx';
 import { useLayoutEffect } from 'react';
 import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
@@ -112,6 +113,8 @@ function renderScreen(r: Route) {
   switch (r.screen) {
     case 'welcome':
       return <Welcome />;
+    case 'mock-mega':
+      return <MockMega />;
     case 'import':
       return <Import />;
     case 'report':
