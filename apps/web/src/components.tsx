@@ -281,6 +281,62 @@ export function MetaTags({ speciesId, overall = true }: { speciesId: string; ove
   );
 }
 
+/** The trend's arrow: an up or down triangle in the tag's own color. Decorative; the tag carries
+ * the words. */
+function TrendArrow({ up }: { up: boolean }) {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+      <path d={up ? 'M5 1 L9 7 L1 7 Z' : 'M5 9 L9 3 L1 3 Z'} fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Places moved in the blended order: a win tag with an up arrow, or a loss tag with a down
+ * arrow, the number alone as text and "up 3 places" as its name. Nothing for no move. */
+export function TrendTag({ delta }: { delta: number | null | undefined }) {
+  if (!delta) {
+    return null;
+  }
+  const n = Math.abs(delta);
+  const label = `${delta > 0 ? 'up' : 'down'} ${n} ${n === 1 ? 'place' : 'places'}`;
+  return (
+    <Tag tone={delta > 0 ? 'win' : 'loss'}>
+      <span className="trend" role="img" aria-label={label}>
+        <TrendArrow up={delta > 0} />
+        {n}
+      </span>
+    </Tag>
+  );
+}
+
+/**
+ * A row's tag line: "#N meta" (the blended rank), its trend, then PvPoke's role tag ("#2 lead")
+ * inside the same cutoff as `metaTags`. A species outside the blended order has no rank tag.
+ * Renders bare pills, for the row's own `.mtags` span.
+ */
+export function MetaRankTags({
+  rank,
+  delta,
+  role,
+}: {
+  rank: number | null;
+  delta: number | null | undefined;
+  role: MetaRank | undefined;
+}) {
+  const roleTags = metaTags(role).filter((t) => !t.endsWith(' overall'));
+  return (
+    <>
+      {rank !== null ? <span className="mtag">#{rank} meta</span> : null}
+      {rank !== null ? <TrendTag delta={delta} /> : null}
+      {roleTags.map((t) => (
+        <span className="mtag" key={t}>
+          {t}
+        </span>
+      ))}
+    </>
+  );
+}
+
 /** "Same wins as best IVs" when the rank-1 IV twin would win no more meta matchups. */
 export function HundoTag({ delta }: { delta: number | null }) {
   if (delta === null || delta > 0) {

@@ -1444,7 +1444,17 @@ textarea.paste {
   color: var(--warn);
 }
 
-/* meta rank pills: "#18 overall", "#5 closer" */
+/* the trend beside "#6 meta": an arrow and the places moved, inside a win or loss Tag */
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.trend svg {
+  flex: none;
+}
+
+/* meta rank pills: "#6 meta", "#5 closer" */
 .mtags {
   display: inline-flex;
   gap: 4px;

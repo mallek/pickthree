@@ -1,7 +1,7 @@
 import { Sheet, Switch } from '@pickthree/ui';
 import { useSticky } from '../components.tsx';
 
-/** The list's five switches and their defaults (Group same Pokémon on, the four filters off);
+/** The list's six switches and their defaults (Group same Pokémon on, the five filters off);
  * Collection reads the same keys with the same defaults. */
 const COLLECTION_FILTERS: readonly {
   key: string;
@@ -14,6 +14,12 @@ const COLLECTION_FILTERS: readonly {
     label: 'Group same Pokémon',
     line: 'One row per species, best first',
     initial: true,
+  },
+  {
+    key: 'collection.hideNotCollected',
+    label: 'Hide not collected',
+    line: 'Only the Pokémon you have',
+    initial: false,
   },
   {
     key: 'collection.showIneligible',
@@ -63,7 +69,7 @@ function FiltersBody() {
   );
 }
 
-/** Collection's Filters sheet: the five list switches, read and written through the same sticky
+/** Collection's Filters sheet: the six list switches, read and written through the same sticky
  * keys as the list itself, so the rows and the filter count behind the sheet change as you flip. */
 export function CollectionFilters({ onClose }: { onClose: () => void }) {
   return (

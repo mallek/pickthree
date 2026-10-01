@@ -48,6 +48,9 @@ export interface Loaded<T> {
 }
 
 export interface MetaRanking {
+  /** The league this was ranked for. For one render after a league switch the hook still holds
+   * the previous league's result; a caller that mixes it with other league data checks this. */
+  league: string;
   ranking: SpeciesRanking;
   /** Species ids in blended order, heaviest first (the order of `ranking.rows`). */
   order: string[];
@@ -243,6 +246,7 @@ export function useMetaRanking(
         const reads = measured ? await measured : null;
         if (reads === null || reads === 'offline') {
           return {
+            league,
             ranking: prior,
             order: priorOrder,
             trend: new Map(),
@@ -257,6 +261,7 @@ export function useMetaRanking(
         const order = blendedOrder(ranking.weights);
         const baselineOrder = before ? blendedOrder(blend(before).weights) : priorOrder;
         return {
+          league,
           ranking,
           order,
           trend: rankTrend(order, baselineOrder),

@@ -7,31 +7,30 @@ import {
   Header,
   IconButton,
   InlineSelect,
-  SiteLink,
   Tag,
   type ChoiceOption,
 } from '@pickthree/ui';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Chip,
   CogGlyph,
   HundoTag,
-  MetaTags,
+  MetaRankTags,
   PokemonToken,
   Progress,
   VerdictTag,
-  useMetaRank,
   useName,
   useScrollMemory,
   useSpecies,
   useSticky,
-  NoCollection,
 } from '../components.tsx';
-import { judgeFailedLine, metaTags, num, SEP } from '../format.ts';
-import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { judgeFailedLine, META_CUTOFF, num, SEP } from '../format.ts';
+import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
+import { shareEnabled } from '../metaShare.ts';
 import { matchesQuery, parseQuery } from '../search.ts';
-import { specimenRecord } from '../searchRecords.ts';
+import { specimenRecord, speciesRecord } from '../searchRecords.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { useMetaRanking } from '../state/useMeta.ts';
 import { CollectionFilters } from './CollectionFilters.tsx';
 
 type Sort = 'verdict' | 'rank' | 'meta' | 'name';
@@ -61,8 +60,30 @@ function PlusGlyph() {
   );
 }
 
-/** The tab's own header: its title, Add a Pokémon, the meta.pick3.gg link and Settings. */
-function CollectionHeader({ openSheet }: { openSheet: () => void }) {
+/** An arrow down into a tray, the Import a collection glyph: 20px, drawn like PlusGlyph. */
+function ImportGlyph() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 4v11" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M5 19h14" />
+    </svg>
+  );
+}
+
+/** The tab's own header: its title, Add a Pokémon, Import while nothing is collected, and
+ * Settings. */
+function CollectionHeader({ openSheet, empty }: { openSheet: () => void; empty: boolean }) {
   return (
     <Header
       variant="top"
@@ -72,7 +93,11 @@ function CollectionHeader({ openSheet }: { openSheet: () => void }) {
           <IconButton label="Add a Pokémon" href={hashFor({ screen: 'add' })}>
             <PlusGlyph />
           </IconButton>
-          <SiteLink site="meta" />
+          {empty ? (
+            <IconButton label="Import a collection" href={hashFor({ screen: 'import' })}>
+              <ImportGlyph />
+            </IconButton>
+          ) : null}
           <IconButton label="Settings" onClick={openSheet}>
             <CogGlyph />
           </IconButton>
@@ -120,12 +145,39 @@ export function rankLabel(
   return `Top ${Math.max(1, Math.round((r.rank / r.total) * 100))}%`;
 }
 
+/** Sorts after every species in the blended order: those go by PvPoke's overall rank. */
+const UNRANKED = 100_000;
+
+const NO_PILLS: VerdictLabel[] = [];
+
+/** One line of the list: a group of your own Pokémon, or a species you have none of. */
+type Item =
+  | { kind: 'mine'; key: string; best: Specimen; others: Specimen[] }
+  | { kind: 'missing'; key: string; id: string };
+
 export function Collection() {
   const s = useAppState();
-  const { navigate, loadVerdicts, openSheet } = useActions();
+  const { loadVerdicts, openSheet } = useActions();
   const name = useName();
   const species = useSpecies();
-  const metaRank = useMetaRank();
+  const league = useLeague();
+  const info = s.leagueInfo;
+  // Collection opens all the time, so its community read is automatic and follows the sharing
+  // switch: off ranks by PvPoke alone, with no read and no trend.
+  const ranked = useMetaRanking(league.id, {
+    window: 'meta',
+    source: 'all',
+    community: shareEnabled(s.settings),
+  });
+  // For one render after a league switch the hook still holds the last league's order; never
+  // mix it with this league's rows.
+  const meta = ranked.data && info && ranked.data.league === info.id ? ranked.data : null;
+  const blended = useMemo(
+    () => new Map((meta?.order ?? []).map((id, i) => [id, i + 1] as const)),
+    [meta],
+  );
+  const metaRanks = info?.metaRanks;
+  const empty = (s.collection?.specimens.length ?? 0) === 0;
   const [query, setQuery] = useSticky('collection.query', '');
   // Verdict pills are a multi-select; nothing picked means everything.
   const [verdicts, setVerdicts] = useSticky<VerdictLabel[]>('collection.verdicts', []);
@@ -134,7 +186,10 @@ export function Collection() {
   const [shadowsOnly] = useSticky('collection.shadows', false);
   const [recentOnly] = useSticky('collection.recent', false);
   const [metaOnly] = useSticky('collection.meta', false);
-  const [sort, setSort] = useSticky<Sort>('collection.sort', 'verdict');
+  const [hideNotCollected] = useSticky('collection.hideNotCollected', false);
+  // Null until the player picks one: Meta rank with nothing collected, Verdict otherwise.
+  const [sortPick, setSort] = useSticky<Sort | null>('collection.sort', null);
+  const sort: Sort = sortPick ?? (empty ? 'meta' : 'verdict');
   const [grouped] = useSticky('collection.grouped', true);
   const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -168,6 +223,34 @@ export function Collection() {
     loadVerdicts,
   ]);
 
+  /** The blended rank (1-based), or null outside the blended order. */
+  const rankOf = useCallback((id: string): number | null => blended.get(id) ?? null, [blended]);
+  /** Sort key: the blended rank, then everything outside it by PvPoke's overall rank. */
+  const metaKey = useCallback(
+    (id: string): number =>
+      blended.get(id) ?? UNRANKED + (metaRanks?.[id]?.overall ?? UNRANKED - 1),
+    [blended, metaRanks],
+  );
+  /** Top 50 meta: the blended rank or PvPoke's role rank inside the cutoff. */
+  const inTop = useCallback(
+    (id: string): boolean => {
+      const rank = blended.get(id);
+      const role = metaRanks?.[id];
+      return (
+        (rank !== undefined && rank <= META_CUTOFF) ||
+        (role?.roleRank !== null && role?.roleRank !== undefined && role.roleRank <= META_CUTOFF)
+      );
+    },
+    [blended, metaRanks],
+  );
+  // Meta rank follows the stage the verdict is about, so a Swinub row ranks as Mamoswine.
+  const metaSpecies = useCallback(
+    (sp: Specimen): string => s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId,
+    [s.verdicts],
+  );
+  // The pills are verdicts, so they never apply with nothing to judge.
+  const pills = empty ? NO_PILLS : verdicts;
+
   const rows = useMemo(() => {
     if (!s.collection) {
       return [];
@@ -176,10 +259,7 @@ export function Collection() {
     const moves = s.data?.moves;
     const newest = s.collection.report.newestScan ?? '';
     const cutoff = newest ? new Date(newest.replace(' ', 'T')).getTime() - 14 * 86_400_000 : 0;
-    // Meta rank follows the stage the verdict is about, so a Swinub row ranks as Mamoswine.
-    const metaSpecies = (sp: Specimen): string =>
-      s.verdicts[sp.id]?.build?.speciesId ?? sp.speciesId;
-    const metaOf = (sp: Specimen): number => metaRank(metaSpecies(sp))?.overall ?? 9999;
+    const metaOf = (sp: Specimen): number => metaKey(metaSpecies(sp));
     let list = s.collection.specimens.filter((sp) => {
       const v = s.verdicts[sp.id];
       if (
@@ -188,7 +268,7 @@ export function Collection() {
       ) {
         return false;
       }
-      if (verdicts.length > 0 && (!v || !verdicts.includes(v.label))) {
+      if (pills.length > 0 && (!v || !pills.includes(v.label))) {
         return false;
       }
       if (!showIneligible && v?.label === 'Not eligible') {
@@ -200,12 +280,12 @@ export function Collection() {
       if (recentOnly && new Date(sp.scannedAt.replace(' ', 'T')).getTime() < cutoff) {
         return false;
       }
-      if (metaOnly && metaTags(metaRank(metaSpecies(sp))).length === 0) {
+      if (metaOnly && !inTop(metaSpecies(sp))) {
         return false;
       }
       return true;
     });
-    const rankOf = (sp: Specimen): number => {
+    const ivRankOf = (sp: Specimen): number => {
       const v = s.verdicts[sp.id];
       return v?.build ? v.build.ivRank.rank : 99_999;
     };
@@ -213,19 +293,19 @@ export function Collection() {
     const shownName = (sp: Specimen): string => name(sp.speciesId).replace(/^Shadow /, '');
     list = [...list].sort((a, b) => {
       if (sort === 'name') {
-        return shownName(a).localeCompare(shownName(b)) || rankOf(a) - rankOf(b);
+        return shownName(a).localeCompare(shownName(b)) || ivRankOf(a) - ivRankOf(b);
       }
       if (sort === 'rank') {
-        return rankOf(a) - rankOf(b);
+        return ivRankOf(a) - ivRankOf(b);
       }
       if (sort === 'meta') {
-        return metaOf(a) - metaOf(b) || rankOf(a) - rankOf(b);
+        return metaOf(a) - metaOf(b) || ivRankOf(a) - ivRankOf(b);
       }
       const va = s.verdicts[a.id]?.label;
       const vb = s.verdicts[b.id]?.label;
       const oa = va ? ORDER[va] : 9;
       const ob = vb ? ORDER[vb] : 9;
-      return oa - ob || rankOf(a) - rankOf(b);
+      return oa - ob || ivRankOf(a) - ivRankOf(b);
     });
     return list;
   }, [
@@ -233,7 +313,7 @@ export function Collection() {
     s.verdicts,
     s.data,
     query,
-    verdicts,
+    pills,
     showIneligible,
     shadowsOnly,
     recentOnly,
@@ -241,7 +321,57 @@ export function Collection() {
     sort,
     name,
     species,
-    metaRank,
+    metaKey,
+    metaSpecies,
+    inTop,
+  ]);
+
+  /**
+   * Every species the league admits that the collection has none of, in meta order. A specimen
+   * covers its own species (Shadow forms are their own ids) and the one its verdict battles as,
+   * so an owned Swinub building as Mamoswine collects Mamoswine. A verdict pill shows your own
+   * Pokémon only, and nothing here was ever scanned.
+   */
+  const missing = useMemo(() => {
+    if (!info || hideNotCollected || pills.length > 0 || recentOnly) {
+      return [];
+    }
+    const have = new Set<string>();
+    for (const sp of s.collection?.specimens ?? []) {
+      have.add(sp.speciesId);
+      if (sp.shadow && !sp.speciesId.endsWith('_shadow')) {
+        have.add(`${sp.speciesId}_shadow`);
+      }
+      const battles = s.verdicts[sp.id]?.build?.speciesId;
+      if (battles) {
+        have.add(battles);
+      }
+    }
+    const parsed = parseQuery(query);
+    const shownName = (id: string): string => name(id).replace(/^Shadow /, '');
+    return info.legal
+      .filter(
+        (id) =>
+          !have.has(id) &&
+          (parsed.length === 0 || matchesQuery(parsed, speciesRecord(id, name(id), species(id)))) &&
+          (!shadowsOnly || id.endsWith('_shadow')) &&
+          (!metaOnly || inTop(id)),
+      )
+      .sort((a, b) => metaKey(a) - metaKey(b) || shownName(a).localeCompare(shownName(b)));
+  }, [
+    info,
+    hideNotCollected,
+    pills,
+    recentOnly,
+    s.collection,
+    s.verdicts,
+    query,
+    shadowsOnly,
+    metaOnly,
+    name,
+    species,
+    inTop,
+    metaKey,
   ]);
 
   /**
@@ -264,31 +394,61 @@ export function Collection() {
     return [...byKey.values()];
   }, [rows, grouped]);
 
-  // Every hook runs before the empty-state return, so the hook order never changes between
-  // renders of one mounted screen.
-  useScrollMemory('collection.scroll', groups.length > 0 && !s.verdictsLoading);
-  if (!s.collection) {
-    return (
-      <div className="screen">
-        <div className="page-head">
-          <CollectionHeader openSheet={openSheet} />
-        </div>
-        <NoCollection navigate={navigate} />
-      </div>
-    );
-  }
+  /** Your groups and the species you have none of: interleaved by meta rank under Meta rank,
+   * otherwise yours first in the active sort and the rest after, in meta order. */
+  const items = useMemo((): Item[] => {
+    const mine: Item[] = groups.map((g) => ({ kind: 'mine', ...g }));
+    const rest: Item[] = missing.map((id) => ({ kind: 'missing', key: `missing|${id}`, id }));
+    if (sort !== 'meta') {
+      return [...mine, ...rest];
+    }
+    const keyOf = (it: Item): number =>
+      it.kind === 'mine' ? metaKey(metaSpecies(it.best)) : metaKey(it.id);
+    const out: Item[] = [];
+    let i = 0;
+    let j = 0;
+    while (i < mine.length || j < rest.length) {
+      const a = mine[i];
+      const b = rest[j];
+      if (a && (!b || keyOf(a) <= keyOf(b))) {
+        out.push(a);
+        i += 1;
+      } else if (b) {
+        out.push(b);
+        j += 1;
+      }
+    }
+    return out;
+  }, [groups, missing, sort, metaKey, metaSpecies]);
+
+  /** The tag line's rank pills for a species: blended rank, trend, PvPoke's role tag. */
+  const rankTags = (id: string) => (
+    <MetaRankTags rank={rankOf(id)} delta={meta?.trend.get(id)} role={metaRanks?.[id]} />
+  );
+
+  useScrollMemory('collection.scroll', items.length > 0 && !s.verdictsLoading);
   // Ruling 4: every switch that differs from its default counts, Group same Pokémon (on by
   // default) included.
-  const filtersOn = [showIneligible, shadowsOnly, recentOnly, metaOnly, !grouped].filter(
-    Boolean,
-  ).length;
-  const count = grouped
-    ? `${num(rows.length)} Pokémon${SEP}${num(groups.length)} ${groups.length === 1 ? 'kind' : 'kinds'}`
-    : `${num(rows.length)} shown`;
+  const filtersOn = [
+    hideNotCollected,
+    showIneligible,
+    shadowsOnly,
+    recentOnly,
+    metaOnly,
+    !grouped,
+  ].filter(Boolean).length;
+  const notCollected = missing.length > 0 ? `${SEP}${num(missing.length)} not collected` : '';
+  const count = empty
+    ? `${num(missing.length)} Pokémon in ${league.title}`
+    : grouped
+      ? `${num(rows.length)} Pokémon${SEP}${num(groups.length)} ${groups.length === 1 ? 'kind' : 'kinds'}${notCollected}`
+      : `${num(rows.length)} shown${notCollected}`;
+  // Until the league's data is in, an empty list is not yet "nothing matches".
+  const nothing = items.length === 0 && !s.verdictsLoading && info !== null;
   return (
     <div className="screen">
       <div className="page-head flow">
-        <CollectionHeader openSheet={openSheet} />
+        <CollectionHeader openSheet={openSheet} empty={empty} />
         <LeagueSwitcher />
       </div>
       <div className="sticky-bar">
@@ -298,7 +458,7 @@ export function Collection() {
               className="search"
               type="search"
               enterKeyHint="search"
-              placeholder="Search your Pokémon"
+              placeholder="Search Pokémon"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               inputMode="search"
@@ -318,27 +478,29 @@ export function Collection() {
         </div>
       </div>
       <div className="page-head flow under">
-        <div className="chips tight">
-          {PILLS.map((pill) => (
-            <Chip
-              key={pill.label}
-              on={verdicts.includes(pill.label)}
-              onClick={() =>
-                setVerdicts((cur) =>
-                  cur.includes(pill.label)
-                    ? cur.filter((x) => x !== pill.label)
-                    : [...cur, pill.label],
-                )
-              }
-            >
-              {pill.short}
-            </Chip>
-          ))}
-        </div>
+        {empty ? null : (
+          <div className="chips tight">
+            {PILLS.map((pill) => (
+              <Chip
+                key={pill.label}
+                on={verdicts.includes(pill.label)}
+                onClick={() =>
+                  setVerdicts((cur) =>
+                    cur.includes(pill.label)
+                      ? cur.filter((x) => x !== pill.label)
+                      : [...cur, pill.label],
+                  )
+                }
+              >
+                {pill.short}
+              </Chip>
+            ))}
+          </div>
+        )}
         <div className="sort-row">
           {/* Nothing matching reads as the empty state below, not as "0 Pokémon"; while judging,
               the count stays. The span stays too, so Sort keeps its place on the right. */}
-          <span className="meta">{rows.length === 0 && !s.verdictsLoading ? null : count}</span>
+          <span className="meta">{nothing ? null : count}</span>
           <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
         </div>
       </div>
@@ -351,7 +513,27 @@ export function Collection() {
           />
         ) : null}
         {s.verdictsError ? <ErrorState line={judgeFailedLine(s.verdictsError)} /> : null}
-        {groups.map((g) => {
+        {items.map((g) => {
+          if (g.kind === 'missing') {
+            return (
+              <div className="spec-group" key={g.key}>
+                <a className="spec-row" href={hashFor({ screen: 'species', id: g.id })}>
+                  <PokemonToken speciesId={g.id} size={44} />
+                  <span style={{ minWidth: 0 }}>
+                    <span className="spec-name">
+                      {name(g.id).replace(/^Shadow /, '')}
+                      {g.id.endsWith('_shadow') ? (
+                        <span className="shadow-flag">Shadow</span>
+                      ) : null}
+                    </span>
+                    <span className="mtags">{rankTags(g.id)}</span>
+                  </span>
+                  {/* With nothing collected every row would say it, so none does. */}
+                  {empty ? <span /> : <Tag tone="neutral">Not collected</Tag>}
+                </a>
+              </div>
+            );
+          }
           const sp = g.best;
           const v = s.verdicts[sp.id];
           const isOpen = open.has(g.key);
@@ -379,7 +561,7 @@ export function Collection() {
                     CP {sp.cp} · {rankLabel(sp, v)}
                   </span>
                   <span className="mtags">
-                    <MetaTags speciesId={v?.build?.speciesId ?? sp.speciesId} />
+                    {rankTags(v?.build?.speciesId ?? sp.speciesId)}
                     <HundoTag delta={v?.perfectDelta ?? null} />
                     {isExcluded(sp.id) ? <Tag tone="neutral">Excluded</Tag> : null}
                   </span>
@@ -438,9 +620,7 @@ export function Collection() {
             </div>
           );
         })}
-        {rows.length === 0 && !s.verdictsLoading ? (
-          <Empty line="Nothing matches. Try another name or clear a filter." />
-        ) : null}
+        {nothing ? <Empty line="Nothing matches. Try another name or clear a filter." /> : null}
       </div>
       {filtersOpen ? <CollectionFilters onClose={() => setFiltersOpen(false)} /> : null}
     </div>
