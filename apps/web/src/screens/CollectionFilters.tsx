@@ -16,6 +16,12 @@ const COLLECTION_FILTERS: readonly {
     initial: true,
   },
   {
+    key: 'collection.hideNotCollected',
+    label: 'Hide not collected',
+    line: 'Only the Pokémon you have',
+    initial: false,
+  },
+  {
     key: 'collection.showIneligible',
     label: 'Show ineligible',
     line: 'Pokémon over the cap or banned here',

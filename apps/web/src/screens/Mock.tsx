@@ -12,11 +12,13 @@ import {
   MeasuredValue,
   Seg,
   Switch,
+  Tag,
   TypeChip,
   TypeChips,
 } from '@pickthree/ui';
 import { CogGlyph, PokemonToken, VerdictTag, useName, useSpecies } from '../components.tsx';
 import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { CollectionFilters } from './CollectionFilters.tsx';
 import '../mock.css';
 
 /** The measured mark inline, for a share inside a meta line. */
@@ -346,56 +348,143 @@ const HAVE: {
   },
 ];
 
-export function MockCollection() {
+type Row = {
+  id: string;
+  rank: number;
+  delta: number;
+  owned?: { cp: number; top: string; verdict: 'Built' | 'Worth building' | 'Wait for better IVs'; more?: string };
+};
+
+const ROWS: Row[] = [
+  { id: 'azumarill', rank: 6, delta: 2, owned: { cp: 1491, top: 'Top 1%', verdict: 'Built', more: '2 more, next Top 4%' } },
+  { id: 'feraligatr', rank: 14, delta: -3, owned: { cp: 1498, top: 'Top 2%', verdict: 'Built' } },
+  { id: 'stunfisk_galarian', rank: 9, delta: 0, owned: { cp: 1477, top: 'Top 3%', verdict: 'Built' } },
+  { id: 'dunsparce', rank: 10, delta: 4, owned: { cp: 1500, top: 'Top 4%', verdict: 'Worth building' } },
+  { id: 'medicham', rank: 22, delta: 0, owned: { cp: 1446, top: 'Top 9%', verdict: 'Worth building' } },
+  { id: 'registeel', rank: 25, delta: -1, owned: { cp: 1493, top: 'Top 5%', verdict: 'Worth building' } },
+  { id: 'lanturn', rank: 31, delta: 0, owned: { cp: 1103, top: 'Top 12%', verdict: 'Wait for better IVs' } },
+  { id: 'cramorant', rank: 1, delta: 3 },
+  { id: 'tinkaton', rank: 2, delta: 11 },
+  { id: 'melmetal', rank: 3, delta: -1 },
+  { id: 'mimikyu', rank: 4, delta: 6 },
+  { id: 'clodsire', rank: 5, delta: -3 },
+  { id: 'corsola_galarian', rank: 7, delta: 0 },
+  { id: 'quagsire_shadow', rank: 8, delta: -5 },
+  { id: 'skeledirge', rank: 11, delta: 9 },
+  { id: 'araquanid', rank: 12, delta: 0 },
+];
+
+function TrendArrow({ up }: { up: boolean }) {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style={{ marginRight: 3 }}>
+      <path d={up ? 'M5 1 L9 7 L1 7 Z' : 'M5 9 L9 3 L1 3 Z'} fill="currentColor" />
+    </svg>
+  );
+}
+
+function Trend({ delta }: { delta: number }) {
+  if (delta === 0) {
+    return null;
+  }
+  return (
+    <Tag tone={delta > 0 ? 'win' : 'loss'}>
+      <span aria-label={`${delta > 0 ? 'up' : 'down'} ${Math.abs(delta)} places`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <TrendArrow up={delta > 0} />
+        {Math.abs(delta)}
+      </span>
+    </Tag>
+  );
+}
+
+export function MockCollection({ fresh, filters, bymeta }: { fresh: boolean; filters: boolean; bymeta: boolean }) {
   const name = useName();
+  const rows = fresh
+    ? ROWS.filter((r) => !r.owned).sort((a, b) => a.rank - b.rank)
+    : bymeta
+      ? [...ROWS].sort((a, b) => a.rank - b.rank)
+      : ROWS;
   return (
     <div className="screen">
-      <CollectionHead view="have" />
+      <div className="page-head flow">
+        <Header
+          variant="top"
+          title="Collection"
+          actions={
+            <IconButton label="Settings" onClick={() => undefined}>
+              <CogGlyph />
+            </IconButton>
+          }
+        />
+        <LeagueSwitcher />
+      </div>
+      <div className="sticky-bar">
+        <div className="search-row">
+          <div className="search-wrap">
+            <input className="search" type="search" placeholder="Search Pokémon" />
+          </div>
+          <FilterButton iconOnly count={0} onClick={() => undefined} />
+        </div>
+      </div>
       <div className="page-head flow under">
+        {fresh ? null : (
+          <div className="chips tight">
+            {['Built', 'Worth it', 'Wait for IVs', 'Rescan'].map((c) => (
+              <Chip key={c} onClick={() => undefined}>
+                {c}
+              </Chip>
+            ))}
+          </div>
+        )}
         <div className="sort-row">
-          <CollectionSwitch view="have" />
+          <span className="meta">
+            {fresh ? '142 Pokémon in Great League' : '212 Pokémon · 96 kinds · 142 not collected'}
+          </span>
           <InlineSelect
             label="Sort"
-            value="verdict"
-            options={[{ value: 'verdict', label: 'Verdict' }]}
+            value="v"
+            options={[{ value: 'v', label: fresh || bymeta ? 'Meta' : 'Verdict' }]}
             onChange={() => undefined}
           />
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>
-        <p className="meta" style={{ margin: '4px 0 0' }}>
-          212 Pokémon · 96 kinds
-        </p>
-        {HAVE.map((h) => (
-          <div className="spec-group" key={h.id}>
-            <a className="spec-row" href={`#/mock/species/${h.id}`}>
-              <PokemonToken speciesId={h.id} size={44} />
+        {rows.map((r) => (
+          <div className="spec-group" key={r.id}>
+            <a className="spec-row" href={`#/mock/species/${r.id}`}>
+              <PokemonToken speciesId={r.id} size={44} />
               <span style={{ minWidth: 0 }}>
-                <span className="spec-name">{name(h.id)}</span>
-                <span className="meta" style={{ display: 'block' }}>
-                  CP {h.cp} · {h.rank}
+                <span className="spec-name">
+                  {name(r.id).replace(/^Shadow /, '')}
+                  {r.id.endsWith('_shadow') ? <span className="shadow-flag">Shadow</span> : null}
                 </span>
-                {h.tags.length > 0 ? (
-                  <span className="mtags">
-                    {h.tags.map((t) => (
-                      <span className="mtag" key={t}>
-                        {t}
-                      </span>
-                    ))}
+                {r.owned ? (
+                  <span className="meta" style={{ display: 'block' }}>
+                    CP {r.owned.cp} · {r.owned.top}
                   </span>
                 ) : null}
+                <span className="mtags">
+                  <span className="mtag">#{r.rank} meta</span>
+                  <Trend delta={r.delta} />
+                </span>
               </span>
-              <VerdictTag label={h.verdict} />
+              {r.owned ? (
+                <VerdictTag label={r.owned.verdict} />
+              ) : fresh ? (
+                <span />
+              ) : (
+                <Tag tone="neutral">Not collected</Tag>
+              )}
             </a>
-            {h.more ? (
+            {r.owned?.more ? (
               <button type="button" className="more-btn">
-                {h.more}
+                {r.owned.more}
                 <Chevron dir="down" />
               </button>
             ) : null}
           </div>
         ))}
       </div>
+      {filters ? <CollectionFilters onClose={() => (window.location.hash = '#/mock/collection')} /> : null}
     </div>
   );
 }

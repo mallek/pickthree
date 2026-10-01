@@ -9,7 +9,7 @@ p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
 for (let i = 0; i < 30; i++) {
   try { await p.goto('http://localhost:4173/#/mock/meta', { waitUntil: 'networkidle2' }); break; } catch { await new Promise((r) => setTimeout(r, 1000)); }
 }
-for (const v of ['meta', 'metalog']) {
+for (const v of ['collection', 'collectionmeta', 'collectionnew']) {
   await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
   await p.goto(`http://localhost:4173/#/mock/${v}`, { waitUntil: 'networkidle2' });
   await p.waitForFunction(() => !/stunfisk_galarian|cramorant|azumarill/.test(document.body.innerText), { timeout: 60000 }).catch(() => console.log('names timeout'));

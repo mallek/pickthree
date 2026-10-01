@@ -112,8 +112,14 @@ function renderScreen(r: Route) {
     case 'welcome':
       return <Welcome />;
     case 'mock':
-      if (r.view === 'collection') {
-        return <MockCollection />;
+      if (r.view.startsWith('collection')) {
+        return (
+          <MockCollection
+            fresh={r.view === 'collectionnew'}
+            filters={r.view === 'collectionfilters'}
+            bymeta={r.view === 'collectionmeta'}
+          />
+        );
       }
       if (r.view === 'notcollected') {
         return <MockNotCollected />;
