@@ -16,17 +16,17 @@ Sprites are on in this worktree's game data, so every Pokémon shows its real sp
 ## Screenshots
 
 Dark and light at 390px, one pair per state, full page, from the 2026-10-01 `npm run web:audit`
-run on the code committed as `eb56ca0` (with this record's `screens.mjs`), converted to WebP (600px
-wide, quality 72). The community numbers are the synthetic fixtures
+run on the code committed as `cabef9a` (the fix round: the result strip back, no share for an
+unsighted species), converted to WebP (600px wide, quality 72). The community numbers are the synthetic fixtures
 `fixtures/community-meta-sample.json` (1,240 battles from 18 devices, Medicham, Lanturn and
 Azumarill sighted) and `fixtures/community-teams-sample.json` (three cores, no complete team), so
 both Most logged teams rows are the baked generated teams, marked Projected.
 
 | State | Dark | Light |
 | --- | --- | --- |
-| `meta-home-first`: reached from Welcome's "Start without a collection", no collection and no battle log. Most seen Pokémon "Share of reported battles": Medicham 33%, Lanturn 27%, Azumarill 10%, Mimikyu 0%, Melmetal 0%, each share pink with its bar mark; "Explore Pokémon"; Most logged teams with two Projected rows and the caption "Projected from PvPoke's meta group until players log teams."; "Explore teams"; Help build the meta (accent outline) with the share switch on, "Log a battle" and "No collection import needed."; the empty Your meta card; the footer | ![](img/meta-home-first-dark.webp) | ![](img/meta-home-first-light.webp) |
-| `meta-home-log`: after the sample import (11 battles this season). Your contribution: "Your battles join the community meta as you log them" (nothing sent yet, plain text), the share switch, Current team "0-0" with Shadow Greninja, Melmetal and Galarian Corsola, "Log a battle", "Change team" and "Share team"; Your meta: "11 battles this season", the progress box "11 of 15 battles · 4 more until your meta weights Teams, Counters and Build" with its bar, Most faced / Worst record, Tinkaton and Shadow Dragonite (with the outsider dagger), "View your battle history"; Most logged teams without the caption | ![](img/meta-home-log-dark.webp) | ![](img/meta-home-log-light.webp) |
-| `meta-home-active`: six battles seeded into the running set, five sent (one tanked), 16 this season. The pink `MeasuredLine` "5 of your battles are in the community meta"; Current team "3-2"; the progress box "Your meta is weighting Teams, Counters and Build" with a full bar | ![](img/meta-home-active-dark.webp) | ![](img/meta-home-active-light.webp) |
+| `meta-home-first`: reached from Welcome's "Start without a collection", no collection and no battle log. Most seen Pokémon "Share of reported battles": Medicham 33%, Lanturn 27%, Azumarill 10%, each share pink with its bar mark, then Mimikyu and Melmetal (PvPoke's group, no shared battle saw them) with their bar and chevron and no share; "Explore Pokémon"; Most logged teams with two Projected rows and the caption "Projected from PvPoke's meta group until players log teams."; "Explore teams"; Help build the meta (accent outline) with the share switch on, "Log a battle" and "No collection import needed."; the empty Your meta card; the footer | ![](img/meta-home-first-dark.webp) | ![](img/meta-home-first-light.webp) |
+| `meta-home-log`: after the sample import (11 battles this season). Your contribution: "Your battles join the community meta as you log them" (nothing sent yet, plain text), the share switch, Current team "0-0" with Shadow Greninja, Melmetal and Galarian Corsola, "No battles logged yet." where the result strip goes (the running team has none), "Log a battle", "Change team" and "Share team"; Your meta: "11 battles this season", the progress box "11 of 15 battles · 4 more until your meta weights Teams, Counters and Build" with its bar, Most faced / Worst record, Tinkaton and Shadow Dragonite (with the outsider dagger), "View your battle history"; Most logged teams without the caption | ![](img/meta-home-log-dark.webp) | ![](img/meta-home-log-light.webp) |
+| `meta-home-active`: six battles seeded into the running set, five sent (one tanked), 16 this season. The pink `MeasuredLine` "5 of your battles are in the community meta"; Current team "3-2" with its result strip (W, L, W, T in the Tanked amber, W, L) and "Tap a result to fix it"; the progress box "Your meta is weighting Teams, Counters and Build" with a full bar | ![](img/meta-home-active-dark.webp) | ![](img/meta-home-active-light.webp) |
 | `meta-home-error`: every community read answers 503 (`localStorage` `pick3.failMeta`, automation only). Most seen and Most logged each show the shared `ErrorState` "Could not load the community meta." with "Try again"; Your contribution and Your meta still draw from this phone | ![](img/meta-home-error-dark.webp) | ![](img/meta-home-error-light.webp) |
 
 The script checks as it shoots: the first visit has Help build the meta and no Your contribution,
@@ -51,6 +51,10 @@ covered by `apps/web/test/metaHome.test.tsx` (the confirm, the no-battles league
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npx vitest run --project web`, `npm run check-colors`:
       lint exit 0, typecheck exit 0, web 59 files and 748 tests passed, check-colors exit 0.
+- [x] fix round (2026-10-01, on `cabef9a` with the fix round's `screens.mjs`): `npm run web:audit` exit 0,
+      zero findings on every enforced screen in both themes, no "Browser errors" section, 117
+      findings on screens not yet redesigned, no NEVER line; web 59 files and 750 tests passed;
+      lint, typecheck and check-colors exit 0.
 
 ## Aesthetics
 
@@ -86,21 +90,20 @@ Awaiting Travis's review.
 | --- | --- | --- |
 | Audit: "Explore Pokémon", "Explore teams" and "View your battle history" were 32px tall tap targets (10 findings per theme on the log states). | `.mh-more` is `min-height: var(--tap)` with no padding, so the card's gap spaces it. | `eb56ca0` |
 | Audit: the Your meta card's Most faced / Worst record switch was 33px tall. | The Your battles page's 44px `Seg` sizing rule now covers `.mh-card .seg` too. | `eb56ca0` |
+| Task 15 review, controller ruling: the result strip ("Tap a result to fix it") was rendered nowhere, so a logged battle could be fixed only by its URL; the signed Your Meta keeps it. | Your contribution's Current team shows `ResultStrip` under the three tokens; a chip opens `#/meta/log/<set>/<battle>`. `metaHome.test.tsx` taps a Loss chip and lands on the edit route (RED before). `log-battle-edit` is captured by tapping a Loss chip on the landing again. | `cabef9a` |
+| Task 15 review, controller ruling: a species no shared battle saw read a pink "0%" in Most seen. | A row with no sightings shows no share, only its bar and chevron; `metaHome.test.tsx` asserts it (RED before). | `cabef9a` |
 
 ## Notes for the review (seen in the captures, not changed)
 
-- **A sighted-never species reads a pink "0%"** (Mimikyu and Melmetal in Most seen): the blend
-  puts PvPoke's group into the top five, and the measured share of a species nobody reported is a
-  real 0. Say if those rows should drop the share instead.
-- **The weight bar's track is wider when the share is shorter** ("0%" against "33%"), since the
-  bar fills the name column; the bars still compare by fill, not by track length.
+- **Resolved (controller ruling, `cabef9a`): an unsighted species shows no share.** Mimikyu and
+  Melmetal in Most seen keep their bar and chevron and print nothing where the pink 0% was.
+- **The weight bar's track is wider when the share is shorter or absent**, since the bar fills
+  the name column; the bars still compare by fill, not by track length.
 - **The outsider dagger shows on the landing's faced rows with no legend line**; the legend
   ("Outside PvPoke's 44: logged here, simulated on this phone.") is on Your battles only.
-- **The landing has no result strip.** The signed Your Meta's "Tap a result to fix it" chips
-  (`ResultStrip`, `CurrentTeam` in `components/meta/LogPieces.tsx`) are not rendered anywhere on
-  the new pages, so a logged battle can only be edited by its `#/meta/log/<set>/<battle>` link.
-  The spec's landing does not list the strip; the signed Your Meta record lists it as a must
-  keep. `log-battle-edit` is now captured through the route directly.
+- **Resolved (controller ruling, `cabef9a`): the result strip is back** on the landing's Current
+  team (see Findings). `CurrentTeam` in `components/meta/LogPieces.tsx` is still unused; only
+  `ResultStrip` came back.
 - **Most logged teams shows tokens with no names** on a Projected row, so the row says only
   "Projected"; its accessible name carries the three names.
 

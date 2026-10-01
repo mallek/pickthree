@@ -265,10 +265,12 @@ no chip row and no "Not collected" tag; `collection-league` must find a Not coll
 your own; `collection-league-meta` logs the trend tags on screen ("up 2 places, down 1 place,
 down 1 place"). The flat-list check now accepts "111 shown · 171 not collected".
 
-**The signed captures changed with the page.** `04-collection` (full page) now runs through every
-not-collected row, about 35,000px tall at 2x, so it is past what a 600px WebP can hold and its
-signed image is not re-converted; `collection-flat`'s count gains "· 171 not collected". Both are
-still enforced and clean.
+**The signed captures changed with the page.** `04-collection` was the whole page; with the list
+now running through every not-collected row (about 35,000px tall at 2x) it is a viewport capture
+(controller ruling), the top of the list as it opens: header, switcher, search, chips, "111
+Pokémon · 65 kinds · 171 not collected" and "Sort: Verdict", then the first Worth building rows.
+Its WebP pair is regenerated from the fix-round run on `cabef9a`. `collection-flat`'s count gains
+"· 171 not collected". Both are still enforced and clean.
 
 Not captured, covered by `apps/web/test/collection.test.tsx`: Hide not collected on (and its
 count in the filter badge), a search reaching the whole league, Top 50 meta on both kinds of
@@ -285,6 +287,10 @@ collected, and the scroll restored only once the blend is in.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npx vitest run --project web`, `npm run check-colors`:
       lint exit 0, typecheck exit 0, web 59 files and 748 tests passed, check-colors exit 0.
+- [x] fix round (2026-10-01, on `cabef9a` with the fix round's `screens.mjs`): `npm run web:audit` exit 0,
+      zero findings on every enforced screen in both themes, no "Browser errors" section, 117
+      findings on screens not yet redesigned, no NEVER line; web 59 files and 750 tests passed;
+      lint, typecheck and check-colors exit 0.
 
 ### Aesthetics
 
@@ -304,8 +310,8 @@ Awaiting Travis's review.
 
 - **The count line takes two lines** ("111 Pokémon · 65 kinds · 171 not / collected") whenever
   not-collected rows show; the spec's sample was "212 Pokémon · 96 kinds · 142 not collected".
-- **`04-collection` is now very tall** (see above). Say if it should become a viewport capture,
-  or turn Hide not collected on, so it keeps showing what it was signed for.
+- **Resolved (controller ruling): `04-collection` is a viewport capture** (see above); the
+  bottom-of-list check ("the last row clear of the tab bar") it used to show is no longer in it.
 - **"200 Pokémon in Great League"** with nothing collected is the ranked part of the league
   (`NOT_COLLECTED_TOP`, Task 12's ruling), not every legal species.
 

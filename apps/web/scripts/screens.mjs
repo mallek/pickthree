@@ -572,10 +572,29 @@ const metaHomeSettled = () =>
   );
 
 console.log('meta, first visit');
-// Welcome's third button: no collection, no battle log. It saves startedWithout, which only
-// changes where a bare boot lands; every step below navigates by hash.
+// Welcome's third button: no collection, no battle log. It saves startedWithout, which changes
+// where a bare boot lands; the saved settings are put back as they were after these captures, so
+// every later step sees the settings it always did.
 await page.goto(`${base}/#/`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('h1');
+/** The saved settings record as it stands, or null when the app has saved none yet. */
+const readSavedSettings = () =>
+  page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('pickthree');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('settings', 'readonly');
+          const get = tx.objectStore('settings').get('current');
+          tx.oncomplete = () => db.close();
+          tx.onerror = () => reject(tx.error);
+          get.onsuccess = () => resolve(get.result ?? null);
+        };
+      }),
+  );
+const settingsBeforeStart = await readSavedSettings();
 await page.$$eval('button', (bs) =>
   bs.find((b) => b.textContent?.trim().startsWith('Start without a collection'))?.click(),
 );
@@ -609,6 +628,19 @@ if (!/ Pokémon in /.test(emptyLeague.count) || emptyLeague.chips > 0 || emptyLe
   throw new Error(`collection, nothing collected: ${JSON.stringify(emptyLeague)}`);
 }
 await shot('collection-empty-league', false);
+// Put startedWithout back: the settings as they were before the button, or, when none had been
+// saved, the saved record without the field (its default is false).
+if (settingsBeforeStart) {
+  await restoreSettings(settingsBeforeStart);
+} else {
+  const now = { ...(await readSavedSettings()) };
+  delete now.startedWithout;
+  await restoreSettings(now);
+}
+const startedAfter = (await readSavedSettings())?.startedWithout;
+if (startedAfter !== settingsBeforeStart?.startedWithout) {
+  throw new Error(`start without a collection: startedWithout stayed ${startedAfter}`);
+}
 
 console.log('import sample');
 await page.goto(`${base}/?sample=1#/import`, { waitUntil: 'networkidle0' });
@@ -1071,7 +1103,8 @@ console.log(`  sort target ${sortGap?.height}px tall, ${sortGap?.gap}px under th
 if (!sortGap || sortGap.gap < 0) {
   throw new Error(`collection: the Sort target overlaps the chips (${JSON.stringify(sortGap)})`);
 }
-await shot('04-collection');
+// The screen, not the whole page: the list runs on through the league's not-collected rows.
+await shot('04-collection', false);
 await page.click('.more-btn');
 await page.waitForSelector('.more-btn[aria-expanded="true"]');
 // The open group at the top of the list, just under the pinned search bar.
@@ -1956,17 +1989,19 @@ await shot('your-battles-active');
 // A goto, not Back: after the reload, Back follows the browser history from before it.
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
 await metaHomeSettled();
-// The pink count of battles sent, and the running team's record.
+// The pink count of battles sent, the running team's record and its result strip.
 await page.waitForSelector('.mh-accent .ui-measured-line', { timeout: 30_000 });
+await page.waitForSelector('.mh-accent .result-strip .result-chip');
 await shot('meta-home-active');
 
-console.log('log a battle, edit one battle');
-// The result strip that opened a battle for editing is not on the new pages; its route still
-// works, so the edit view is opened by its link: the seeded Loss above.
-await page.goto(
-  `${base}/#/meta/log/${encodeURIComponent(setBefore.id)}/${encodeURIComponent('screens-1')}`,
-  { waitUntil: 'networkidle0' },
+console.log('log a battle, edit from a result chip');
+// A Loss chip on the landing's current team opens that battle for editing.
+await page.$$eval('.mh-accent .result-chip', (els) =>
+  els.find((el) => el.getAttribute('aria-label')?.startsWith('Loss against'))?.click(),
 );
+await page.waitForFunction(() => document.location.hash.startsWith('#/meta/log/'), {
+  timeout: 15_000,
+});
 await page.waitForFunction(
   () =>
     document.querySelector('.hdr .hdr-title')?.textContent?.includes('Edit battle') &&

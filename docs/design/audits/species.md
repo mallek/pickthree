@@ -48,6 +48,10 @@ counting only for its Shadow form.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npx vitest run --project web`, `npm run check-colors`:
       lint exit 0, typecheck exit 0, web 59 files and 748 tests passed, check-colors exit 0.
+- [x] fix round (2026-10-01, on `cabef9a` with the fix round's `screens.mjs`): `npm run web:audit` exit 0,
+      zero findings on every enforced screen in both themes, no "Browser errors" section, 117
+      findings on screens not yet redesigned, no NEVER line; web 59 files and 750 tests passed;
+      lint, typecheck and check-colors exit 0.
 
 ## Aesthetics
 

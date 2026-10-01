@@ -48,6 +48,10 @@ explainer dismissed, the Source state line with no bar.
 - [x] no console errors: the run printed no "Browser errors" section.
 - [x] `npm run lint`, `npm run typecheck`, `npx vitest run --project web`, `npm run check-colors`:
       lint exit 0, typecheck exit 0, web 59 files and 748 tests passed, check-colors exit 0.
+- [x] fix round (2026-10-01, on `cabef9a` with the fix round's `screens.mjs`): `npm run web:audit` exit 0,
+      zero findings on every enforced screen in both themes, no "Browser errors" section, 117
+      findings on screens not yet redesigned, no NEVER line; web 59 files and 750 tests passed;
+      lint, typecheck and check-colors exit 0.
 
 ## Aesthetics
 
@@ -85,12 +89,10 @@ Awaiting Travis's review.
 
 ## Notes for the review (seen in the captures, not changed)
 
-- **No page has the result strip any more.** The signed Your Meta's "Tap a result to fix it"
-  chips opened a battle for editing; neither this page nor the landing renders them
-  (`ResultStrip` and `CurrentTeam` in `components/meta/LogPieces.tsx` are unused). The edit view
-  still works by its route, which is how `log-battle-edit` is captured now. The spec moved the
-  current team card to the landing without naming the strip, so this is a call for Travis: put
-  the strip back on the landing's Current team, or drop the edit path.
+- **The result strip lives on the Meta landing** (controller ruling, `cabef9a`): the signed
+  Your Meta's "Tap a result to fix it" chips are on the landing's Current team now, not here,
+  with the rest of that card. `log-battle-edit` is captured by tapping a Loss chip there (see
+  `meta-home.md`).
 - **The page has no primary button.** "Log a battle" moved to the landing; that is the spec's
   split, noted because the signed record counted one primary.
 
