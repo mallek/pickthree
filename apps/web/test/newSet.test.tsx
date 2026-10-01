@@ -401,4 +401,62 @@ describe('New Set in a cup', () => {
     expect(await screen.findByText('Not allowed in Retro Cup: Azumarill')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Azumarill' })).not.toBeInTheDocument();
   });
+  it('opened with a team in its address, fills the slots and enables Start set', async () => {
+    window.history.replaceState(null, '', '#/meta/new?team=tinkaton+azumarill+clodsire');
+    await renderReady(hostWith([]));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Clear Tinkaton' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Clear Azumarill' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear Clodsire' })).toBeInTheDocument();
+    const start = screen.getByRole('button', { name: 'Start set' });
+    expect(start).toBeEnabled();
+    await act(async () => {
+      fireEvent.click(start);
+    });
+    await waitFor(async () => {
+      const sets = await storage.loadSets('great');
+      expect(sets).toHaveLength(1);
+      expect(sets[0]!.team.species).toEqual(['tinkaton', 'azumarill', 'clodsire']);
+    });
+  });
+
+  it('drops a species the data does not know, leaving its slot empty', async () => {
+    window.history.replaceState(null, '', '#/meta/new?team=tinkaton+notamon+clodsire');
+    await renderReady(hostWith([]));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Clear Tinkaton' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Clear Clodsire' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Slot 3' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start set' })).toBeDisabled();
+  });
+
+  it('drops a species that is not legal in the league in play', async () => {
+    window.history.replaceState(null, '', '#/meta/new?team=tinkaton+azumarill+clodsire');
+    const base = fakeHost();
+    const host = fakeHost({
+      leagueInfo: vi.fn(async (id: string) => ({
+        ...(await base.leagueInfo(id)),
+        legal: ['tinkaton', 'clodsire', 'medicham'],
+      })),
+    });
+    await renderReady(host);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Clear Tinkaton' })).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('button', { name: 'Clear Azumarill' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start set' })).toBeDisabled();
+  });
+
+  it('seeds once: a slot cleared afterwards stays empty', async () => {
+    window.history.replaceState(null, '', '#/meta/new?team=tinkaton+azumarill+clodsire');
+    await renderReady(hostWith([]));
+    fireEvent.click(await screen.findByRole('button', { name: 'Clear Azumarill' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Slot 2' })).toBeInTheDocument());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.getByRole('button', { name: 'Slot 2' })).toBeInTheDocument();
+  });
 });

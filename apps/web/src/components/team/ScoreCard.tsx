@@ -28,12 +28,15 @@ export function ScoreCard({
   team,
   custom,
   onTakeToBattle,
+  onRun,
   onEdit,
   onShowMember,
 }: {
   team: TeamRecommendation;
   custom: CustomNotes | null;
   onTakeToBattle: () => void;
+  /** Opens Pick Your Team with this team's three filled in; omitted where it makes no sense. */
+  onRun?: () => void;
   onEdit: () => void;
   onShowMember: (i: number) => void;
 }) {
@@ -128,6 +131,11 @@ export function ScoreCard({
       <Button variant="primary" onClick={onTakeToBattle}>
         Take to battle
       </Button>
+      {onRun ? (
+        <Button variant="text" onClick={onRun}>
+          Run this team
+        </Button>
+      ) : null}
       {custom ? (
         <div className="score-notes custom-note">
           {custom.shared ? (

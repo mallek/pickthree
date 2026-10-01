@@ -215,6 +215,17 @@ export function Teams() {
                 <Button variant="text" onClick={() => editInBuild(t)}>
                   Edit team
                 </Button>
+                <Button
+                  variant="text"
+                  onClick={() =>
+                    navigate({
+                      screen: 'meta-new',
+                      team: t.slots.map((x) => x.candidate.build.speciesId),
+                    })
+                  }
+                >
+                  Run this team
+                </Button>
               </div>
             </ExpandRow>
             {i === 0 && logCount < 15 ? (

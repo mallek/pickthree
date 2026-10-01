@@ -1,6 +1,6 @@
 import { teamKey, type TeamMoves, type TeamRecommendation, type TeamRef } from '@pickthree/engine';
 import { Button, Header } from '@pickthree/ui';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   PokemonToken,
   useName,
@@ -65,6 +65,22 @@ export function NewSet() {
   const [chosen, setChosen] = useState<TeamRef | null>(null);
   const [query, setQuery] = useState('');
   const hits = useSpeciesSearch(query, 30, { legalOnly: true });
+
+  // Run this team (from the Top teams board, Teams or Team analysis) arrives with its species in
+  // the address. The slots are seeded from it once, as soon as the league and game data are known,
+  // keeping only species legal in the league in play and known to the data; later edits stay.
+  const seeded = useRef(false);
+  const routeTeam = s.route.screen === 'meta-new' ? s.route.team : undefined;
+  useEffect(() => {
+    if (seeded.current || !routeTeam || !s.data || !s.leagueInfo) {
+      return;
+    }
+    seeded.current = true;
+    const legal = new Set(s.leagueInfo.legal);
+    const known = s.data.species;
+    const kept = routeTeam.filter((id) => legal.has(id) && known[id] !== undefined).slice(0, 3);
+    setSlots([kept[0] ?? null, kept[1] ?? null, kept[2] ?? null]);
+  }, [routeTeam, s.data, s.leagueInfo]);
 
   const recent = useMemo(() => {
     const seen = new Set<string>();

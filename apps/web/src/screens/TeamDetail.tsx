@@ -247,6 +247,13 @@ export function TeamDetail({ id }: { id: string }) {
   };
 
   /** Make this the team Your meta logs against, then go straight to Log a battle. */
+  const runThisTeam = (): void => {
+    navigate({
+      screen: 'meta-new',
+      team: team.slots.map((x) => x.candidate.build.speciesId),
+    });
+  };
+
   const takeToBattle = async (): Promise<void> => {
     const species = team.slots.map((x) => x.candidate.build.speciesId);
     const running = s.sets.find((x) => !x.closed);
@@ -283,6 +290,7 @@ export function TeamDetail({ id }: { id: string }) {
           team={team}
           custom={notes}
           onTakeToBattle={() => void takeToBattle()}
+          onRun={runThisTeam}
           onEdit={editInBuild}
           onShowMember={showMember}
         />

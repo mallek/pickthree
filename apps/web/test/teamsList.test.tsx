@@ -206,6 +206,15 @@ describe('Teams list', () => {
     await waitFor(() => expect(latest?.state.route.screen).toBe('build'));
   });
 
+  it('Run this team opens Pick Your Team with the row team filled in', async () => {
+    await mount(hostWith([makeTeam({ id: 'a', species: ['medicham', 'azumarill', 'galvantula'] })]));
+    fireEvent.click(await screen.findByRole('button', { name: 'Run this team' }));
+    await waitFor(() => expect(latest?.state.route.screen).toBe('meta-new'));
+    expect(window.location.hash).toBe(
+      hashFor({ screen: 'meta-new', team: ['medicham', 'azumarill', 'galvantula'] }),
+    );
+  });
+
   it('shows the progress card under 15 logged battles', async () => {
     await mount(hostWith([makeTeam({ id: 'a' })]));
     expect(await screen.findByRole('progressbar', { name: 'Make these teams personal' })).toBeInTheDocument();
