@@ -61,7 +61,7 @@ function Arrow() {
 }
 
 /** A whole percent, but a share that is not zero never reads "0%". */
-function sharePct(share: number): string {
+export function sharePct(share: number): string {
   if (share <= 0) {
     return '0%';
   }
@@ -70,7 +70,7 @@ function sharePct(share: number): string {
 }
 
 /** A measured share inline in a row: pink text led by the bar mark, never a pill. */
-function Share({ value }: { value: string }) {
+export function Share({ value }: { value: string }) {
   return (
     <span className="ui-measured-num mh-share">
       <svg className="ui-measured-bars" width={9} height={9} viewBox="0 0 11 11" aria-hidden="true">

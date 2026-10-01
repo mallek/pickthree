@@ -11,6 +11,7 @@ import { NewSet } from './screens/NewSet.tsx';
 import { Report } from './screens/Report.tsx';
 import { Settings } from './screens/settings/Settings.tsx';
 import { SpecimenScreen } from './screens/Specimen.tsx';
+import { SpeciesPage } from './screens/SpeciesPage.tsx';
 import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
 import { TopTeams } from './screens/TopTeams.tsx';
@@ -138,8 +139,7 @@ function renderScreen(r: Route) {
     case 'meta-teams':
       return <TopTeams />;
     case 'species':
-      // Placeholder until the species page replaces it.
-      return <Collection />;
+      return <SpeciesPage key={r.id} id={r.id} />;
     case 'meta-new':
       return <NewSet />;
     case 'meta-log':

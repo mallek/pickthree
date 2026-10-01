@@ -4086,3 +4086,30 @@ input[type='range'] {
   color: var(--muted);
   margin-right: auto;
 }
+
+/* Species page: a teammate in Seen next to (token and name, plain ink, not a call to action),
+   and one tournament set (the moves, PvPoke's tag beside them, the entries on the right). */
+.sp-mate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+.sp-set {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+.sp-set-moves {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sp-set > .small {
+  white-space: nowrap;
+}
