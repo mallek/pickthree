@@ -1,17 +1,72 @@
 // THROWAWAY: species page as collection manager mockups. Never merged.
 // Built only from markup the signed pages already use (species page, Pokemon page, Edit values).
 import type { MoveChoice } from '@pickthree/engine';
-import { Button, Header, IconButton, Seg, Select, Switch, Tag } from '@pickthree/ui';
+import {
+  Button,
+  ConfirmSheet,
+  Header,
+  IconButton,
+  Select,
+  Sheet,
+  Switch,
+  Tag,
+  Term,
+} from '@pickthree/ui';
 import type { ReactNode } from 'react';
 import {
   CogGlyph,
+  countsText,
   MoveRows,
+  PencilGlyph,
+  TmBadge,
+  TypeChip,
   PokemonToken,
   TypeChips,
   VerdictTag,
   useName,
   useSpecies,
 } from '../components.tsx';
+
+const STROKE = {
+  width: 20,
+  height: 20,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  'aria-hidden': true,
+} as const;
+
+/** A map pin: filled when this copy is the pin. Drawn like ShareGlyph. */
+function PinGlyph({ on }: { on: boolean }) {
+  return (
+    <svg {...STROKE} fill={on ? 'currentColor' : 'none'}>
+      <path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z" />
+      <path d="M12 14v7" />
+    </svg>
+  );
+}
+
+function TrashGlyph() {
+  return (
+    <svg {...STROKE}>
+      <path d="M4 7h16" />
+      <path d="M9 7V4h6v3" />
+      <path d="M6 7l1 13h10l1-13" />
+      <path d="M10 11v5M14 11v5" />
+    </svg>
+  );
+}
+
+function PlusGlyph() {
+  return (
+    <svg {...STROKE}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
 
 type Verdict = 'Built' | 'Worth building' | 'Wait for better IVs';
 
@@ -111,6 +166,9 @@ const EEVEES: Copy[] = [
   },
 ];
 
+/** Best IV rank for the league first, whatever the stage. */
+const BY_RANK: Copy[] = [UMBREONS[0]!, EEVEES[0]!, UMBREONS[1]!, EEVEES[1]!, EEVEES[2]!];
+
 const SNARL = mv('SNARL', 'Snarl', 'dark', 'have', null);
 const FOUL_PLAY = mv('FOUL_PLAY', 'Foul Play', 'dark', 'have', [4, 3, 4]);
 const PSYCHIC = mv('PSYCHIC', 'Psychic', 'psychic', 'have', [5, 4, 4]);
@@ -175,7 +233,6 @@ function Loaded({
   movesTitle,
   movesNote,
   cost,
-  evolveTo,
 }: {
   title: string;
   copy: Copy;
@@ -185,7 +242,6 @@ function Loaded({
   movesTitle: string;
   movesNote: string;
   cost: ReactNode;
-  evolveTo?: string;
 }) {
   const name = useName();
   return (
@@ -193,12 +249,28 @@ function Loaded({
       <div className="stack" style={{ gap: 6 }}>
         <h3>{title}</h3>
         <div className="card" style={{ gap: 8 }}>
-          <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="meta" style={{ flex: 1 }}>
-              {copyLine(copy, name)}
-            </span>
-            {pinned ? <Tag tone="neutral">Pinned</Tag> : null}
-            <VerdictTag label={copy.verdict} />
+          <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span className="meta" style={{ display: 'block' }}>
+                {copyLine(copy, name)}
+              </span>
+              <span className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                {pinned ? <Tag tone="neutral">Pinned</Tag> : null}
+                <VerdictTag label={copy.verdict} />
+              </span>
+            </div>
+            <IconButton
+              label={pinned ? 'Pinned for Great League' : 'Pin for Great League'}
+              onClick={() => undefined}
+            >
+              <PinGlyph on={pinned} />
+            </IconButton>
+            <IconButton label="Edit" onClick={() => undefined}>
+              <PencilGlyph />
+            </IconButton>
+            <IconButton label="Remove from collection" onClick={() => undefined}>
+              <TrashGlyph />
+            </IconButton>
           </div>
           <div className="kv" style={{ alignItems: 'baseline' }}>
             <span className="muted">IVs · Attack / Defense / HP</span>
@@ -227,12 +299,6 @@ function Loaded({
 
       {cost}
 
-      <div className="card">
-        {pinned ? null : <Button>Pin for Great League</Button>}
-        {evolveTo ? <Button>Evolve to {name(evolveTo)}</Button> : null}
-        <Button>Edit</Button>
-        <Button variant="danger">Remove from collection</Button>
-      </div>
     </>
   );
 }
@@ -271,9 +337,14 @@ function Yours({
   const name = useName();
   return (
     <div className="stack" style={{ gap: 6 }}>
-      <h3>Yours</h3>
+      <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3>Yours</h3>
+        <IconButton label="Add one" onClick={() => undefined}>
+          <PlusGlyph />
+        </IconButton>
+      </div>
       <div className="card sp-yours" style={{ padding: '0 14px', gap: 0 }}>
-        {copies.map((c) => (
+        {copies.slice(0, 3).map((c) => (
           <a
             className="spec-row sub"
             key={c.key}
@@ -291,14 +362,18 @@ function Yours({
           </a>
         ))}
       </div>
+      {copies.length > 3 ? (
+        <div style={{ display: 'flex', marginLeft: -8 }}>
+          <Button variant="text" ariaExpanded={false}>
+            Show all {copies.length}
+          </Button>
+        </div>
+      ) : null}
       {foot ? (
         <p className="small muted" style={{ margin: 0 }}>
           {foot}
         </p>
       ) : null}
-      <div style={{ display: 'flex', marginLeft: -8 }}>
-        <Button variant="text">Add one</Button>
-      </div>
     </div>
   );
 }
@@ -367,10 +442,10 @@ function UmbreonPinned() {
         cost={<Cost line="Already at level 27.5." tiles={[]} />}
       />
       <Yours
-        copies={[...UMBREONS, ...EEVEES]}
+        copies={BY_RANK}
         pinned="u1"
         shown="u1"
-        foot="Tap one to show it. Teams use the pinned one."
+        foot="Best IV rank for Great League first. Tap one to show it."
       />
       <MetaFacts share="Not faced in this window" />
       <Recommended fast={SNARL} charged={[FOUL_PLAY, LAST_RESORT]} />
@@ -410,10 +485,10 @@ function UmbreonOther() {
         }
       />
       <Yours
-        copies={[...UMBREONS, ...EEVEES]}
+        copies={BY_RANK}
         pinned="u1"
         shown="u2"
-        foot="Tap one to show it. Teams use the pinned one."
+        foot="Best IV rank for Great League first. Tap one to show it."
       />
       <MetaFacts share="Not faced in this window" />
       <Foot id="umbreon" covers="Covers your 2 Umbreon and 3 Eevee." />
@@ -451,13 +526,12 @@ function UmbreonFromEevee() {
             after="Plus 1 Elite TM."
           />
         }
-        evolveTo="umbreon"
       />
       <Yours
         copies={EEVEES}
         pinned="e1"
         shown="e1"
-        foot="Tap one to show it. Teams use the pinned one."
+        foot="Best IV rank for Great League first. Tap one to show it."
       />
       <MetaFacts share="Not faced in this window" />
       <Foot id="umbreon" covers="Covers your 3 Eevee." />
@@ -549,11 +623,108 @@ function NotCollected() {
   );
 }
 
+/** Umbreon with the second copy shown and the pin being changed. */
+function PinConfirm() {
+  return (
+    <>
+      <UmbreonOther />
+      <ConfirmSheet
+        title="Pin this Umbreon for Great League?"
+        line="pick3 pins your best Umbreon for each league. This overrides that pick for Great League and unpins the CP 1492 one, so teams use this one instead."
+        confirmLabel="Pin this one"
+        cancelLabel="Keep the current pin"
+        onConfirm={() => undefined}
+        onCancel={() => undefined}
+      />
+    </>
+  );
+}
+
+const MUD_SHOT = mv('MUD_SHOT', 'Mud Shot', 'ground', 'have', null);
+const WATER_GUN = mv('WATER_GUN', 'Water Gun', 'water', 'tm', null);
+const HYDRO_CANNON = mv('HYDRO_CANNON', 'Hydro Cannon', 'water', 'elite', [5, 4, 5]);
+const EARTHQUAKE = mv('EARTHQUAKE', 'Earthquake', 'ground', 'tm', [8, 7, 7]);
+const MUDDY_WATER = mv('MUDDY_WATER', 'Muddy Water', 'water', 'tm', [4, 4, 4]);
+const SLUDGE_WAVE = mv('SLUDGE_WAVE', 'Sludge Wave', 'poison', 'have', [8, 7, 7]);
+const SURF = mv('SURF', 'Surf', 'water', 'tm', [5, 4, 5]);
+const RECOMMENDED = new Set(['MUD_SHOT', 'HYDRO_CANNON', 'EARTHQUAKE']);
+const KNOWN = new Set(['MUD_SHOT', 'HYDRO_CANNON', 'SLUDGE_WAVE']);
+
+/** The team move picker's own option row, with a Recommended tag on PvPoke's set. */
+function Option({
+  move,
+  role,
+  disabled,
+  fastName,
+}: {
+  move: MoveChoice;
+  role: 'radio' | 'checkbox';
+  disabled: boolean;
+  fastName: string | null;
+}) {
+  const checked = KNOWN.has(move.moveId);
+  const count = fastName ? countsText(fastName, move.counts) : null;
+  return (
+    <button
+      type="button"
+      role={role}
+      aria-checked={checked}
+      disabled={disabled}
+      className={`move-opt${checked ? ' on' : ''}`}
+    >
+      <span className="move-opt-mark" aria-hidden="true" />
+      <span className="move-main">
+        <span className="move-line">
+          <span className="move-name">{move.name}</span>
+          <span className="move-tags">
+            <TypeChip type={move.type} small />
+            {RECOMMENDED.has(move.moveId) ? <Tag tone="accent">Recommended</Tag> : null}
+          </span>
+          {move.tm === 'elite' ? <TmBadge tm="elite" /> : null}
+        </span>
+        {count ? <span className="move-sub">{count}</span> : null}
+      </span>
+    </button>
+  );
+}
+
+function KnownMovesPicker() {
+  return (
+    <div className="move-picker">
+      <p className="meta move-picker-rec">Tick the moves this Swampert knows now.</p>
+      <span className="move-picker-kind">Fast move</span>
+      <div className="move-opts">
+        {[MUD_SHOT, WATER_GUN].map((m) => (
+          <Option key={m.moveId} move={m} role="radio" disabled={false} fastName={null} />
+        ))}
+      </div>
+      <span className="move-picker-kind">Charged moves: one, or two if unlocked</span>
+      <Term term="How move counts work">
+        The numbers after a charged move, like 4-4-3, are how many fast moves it takes to reach that
+        charged move the first, second and third time.
+      </Term>
+      <p className="meta">Untick one to pick another</p>
+      <div className="move-opts">
+        {[HYDRO_CANNON, EARTHQUAKE, MUDDY_WATER, SLUDGE_WAVE, SURF].map((m) => (
+          <Option
+            key={m.moveId}
+            move={m}
+            role="checkbox"
+            disabled={!KNOWN.has(m.moveId)}
+            fastName="Mud Shot"
+          />
+        ))}
+      </div>
+      <Button variant="text">Not entered</Button>
+    </div>
+  );
+}
+
 /** Edit: everything about one Pokemon, on the Edit values form's own parts. */
-function Edit() {
+function Edit({ id, sheet }: { id: 'swampert' | 'eevee'; sheet?: boolean }) {
   const name = useName();
   const species = useSpecies();
-  const id = 'swampert';
+  const eevee = id === 'eevee';
   const field = (label: string, value: string) => (
     <label className="field">
       <span>{label}</span>
@@ -601,23 +772,31 @@ function Edit() {
               </span>
             </span>
           </div>
-          <Seg
-            value="normal"
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'shadow', label: 'Shadow' },
-              { value: 'purified', label: 'Purified' },
-            ]}
-            onChange={() => undefined}
-          />
+          {eevee ? (
+            <>
+              {pick('Evolved it? Pick what it is now', 'Umbreon', [
+                'Still an Eevee',
+                'Vaporeon',
+                'Jolteon',
+                'Flareon',
+                'Espeon',
+                'Umbreon',
+                'Leafeon',
+                'Glaceon',
+                'Sylveon',
+              ])}
+              <span className="small muted">
+                It keeps its level and IVs. As an Umbreon its CP becomes 831 and its moves go back
+                to not entered.
+              </span>
+            </>
+          ) : null}
         </div>
 
         <div className="stack" style={{ gap: 8 }}>
           <b>CP</b>
-          <span className="small muted">
-            The number on the Pokémon right now. pick3 works out the level from CP and IVs.
-          </span>
-          {field('CP', '1487')}
+          <span className="small muted">The number on the Pokémon right now.</span>
+          {field('CP', eevee ? '831' : '1487')}
         </div>
 
         <div className="stack" style={{ gap: 8 }}>
@@ -626,62 +805,73 @@ function Edit() {
             From the appraisal screen: each bar is 0 to 15. Three full bars is 15 15 15.
           </span>
           <div className="iv-grid">
-            {field('Attack', '2')}
-            {field('Defense', '14')}
+            {field('Attack', eevee ? '1' : '2')}
+            {field('Defense', eevee ? '15' : '14')}
             {field('HP', '13')}
+          </div>
+          <div className="card" style={{ gap: 8 }}>
+            <div className="kv" style={{ alignItems: 'baseline' }}>
+              <span className="muted">Level, from CP and IVs</span>
+              <span style={{ fontSize: 15, fontWeight: 500 }}>{eevee ? '14' : '19.5'}</span>
+            </div>
           </div>
         </div>
 
         <div className="stack" style={{ gap: 8 }}>
           <b>Moves</b>
-          <span className="small muted">
-            The moves it knows now. Leave them as Not entered and teams use the recommended set.
-          </span>
-          {pick('Fast move', 'Mud Shot', ['Not entered', 'Mud Shot', 'Water Gun'])}
-          {pick('Charged move', 'Hydro Cannon (Elite TM)', [
-            'Not entered',
-            'Hydro Cannon (Elite TM)',
-            'Earthquake',
-            'Muddy Water',
-            'Sludge Wave',
-            'Surf',
-          ])}
-          {check('Second charged move unlocked', true)}
-          {pick('Second charged move', 'Earthquake', [
-            'Not entered',
-            'Hydro Cannon (Elite TM)',
-            'Earthquake',
-            'Muddy Water',
-            'Sludge Wave',
-            'Surf',
-          ])}
+          {eevee ? (
+            <>
+              <span className="small muted">Not entered, so teams use the recommended moves.</span>
+              <div style={{ display: 'flex', marginLeft: -8 }}>
+                <Button variant="text">Enter moves</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="small muted">The moves it knows now. Teams use exactly these.</span>
+              <div className="card" style={{ padding: '0 14px' }}>
+                <MoveRows fast={MUD_SHOT} charged={[HYDRO_CANNON, SLUDGE_WAVE]} eliteOnly />
+              </div>
+              <div style={{ display: 'flex', marginLeft: -8 }}>
+                <Button variant="text">Change moves</Button>
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="stack" style={{ gap: 8 }}>
-          <b>Mega</b>
-          {check('Mega-evolved before', true)}
-          {pick('Mega level', 'High (level 2)', [
-            'Base (level 1)',
-            'High (level 2)',
-            'Max (level 3)',
-          ])}
-        </div>
+        {eevee ? null : (
+          <div className="stack" style={{ gap: 8 }}>
+            <b>Mega</b>
+            {check('Mega-evolved before', true)}
+            {pick('Mega level', 'High (level 2)', [
+              'Base (level 1)',
+              'High (level 2)',
+              'Max (level 3)',
+            ])}
+          </div>
+        )}
 
         <div className="stack" style={{ gap: 8 }}>
           <b>Other</b>
           {check('Lucky (half price to power up)', false)}
+          {check('Purified', false)}
           {check('Best Buddy (one level higher in battle)', false)}
-          {check('Shiny (looks only)', false)}
         </div>
 
         <button type="button" className="btn">
           Save changes
         </button>
         <p className="meta faint" style={{ margin: 0 }}>
-          pick3 works out the level from CP and IVs, then judges this Pokémon again. A new Poke
-          Genie import keeps what you enter here.
+          pick3 judges this Pokémon again when you save. A new Poke Genie import keeps what you
+          enter here.
         </p>
       </div>
+      {sheet ? (
+        <Sheet
+          root={{ id: 'moves', title: 'Swampert', render: () => <KnownMovesPicker /> }}
+          onClose={() => undefined}
+        />
+      ) : null}
     </div>
   );
 }
@@ -690,6 +880,8 @@ export function MockSpecies({ variant }: { variant: string }) {
   switch (variant) {
     case 'other':
       return <UmbreonOther />;
+    case 'pin-confirm':
+      return <PinConfirm />;
     case 'from-eevee':
       return <UmbreonFromEevee />;
     case 'eevee':
@@ -697,7 +889,11 @@ export function MockSpecies({ variant }: { variant: string }) {
     case 'not-collected':
       return <NotCollected />;
     case 'edit':
-      return <Edit />;
+      return <Edit id="swampert" />;
+    case 'edit-moves':
+      return <Edit id="swampert" sheet />;
+    case 'edit-eevee':
+      return <Edit id="eevee" />;
     default:
       return <UmbreonPinned />;
   }
