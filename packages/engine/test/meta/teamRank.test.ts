@@ -443,7 +443,7 @@ describe('buildBoard, cores', () => {
   // people actually run come from, so a generated trio matching an observed one is likely rather
   // than exotic. Two rows for one team would say opposite things about it ("not yet seen in
   // shared battles" beside a record) and collide on the `species.join('+')` key Teams.tsx gives
-  // every row, which React logs and meta:screens fails the build on.
+  // every row, which React logs and web:screens fails the build on.
   it('drops a generated team that has already been observed, leaving one row for it', () => {
     const t = teamRow({ species: ['a', 'b', 'c'], runBattles: 20, runWins: 12, runLosses: 8 });
     const b = buildBoard({

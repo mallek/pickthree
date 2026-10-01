@@ -130,6 +130,9 @@ filter sheet as now. Mock: `mock/meta-in-pick3`, views `collection`, `collection
 - **Every Pokemon eligible in the current league is listed**: your specimens as today, plus every
   species legal in the league (`legalSet`) with no specimen in the collection, Shadow forms as
   their own rows as the rankings list them.
+  Ruling (implementation): by default the not-collected rows are the blended order's species plus
+  PvPoke's top 200 (`NOT_COLLECTED_TOP` in `Collection.tsx`), not all of the roughly 1,500 legal
+  species; a search reaches the whole legal list.
 - **Every row carries the blended meta rank**: a tag "#N meta" in the row's tag line, replacing
   PvPoke's "#N overall". The rank is the league's blended weight order (`communityWeights`, window
   "This meta", source All), the same order the Meta landing's Most seen card and the species page

@@ -25,7 +25,7 @@ Dependency direction: `apps/web -> engine -> BattleSimulator interface <- sim-pv
 ## Stack
 
 - Node 24 (`.node-version`), npm workspaces, TypeScript 5.9 strict with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` (`tsconfig.base.json`).
-- Vite 8 + React 19, no router library (hash routes in `apps/web/src/state/store.tsx`), no CSS framework (`app.css` + `design/tokens.css`).
+- Vite 8 + React 19, no router library (hash routes in `apps/web/src/state/store.tsx`), no CSS framework (`app.css` + `packages/ui/tokens.css`).
 - `idb` for IndexedDB. vite-plugin-pwa in injectManifest mode with a hand-written `src/sw.ts` (Workbox).
 - Engine depends only on `papaparse`. Data build depends on `sharp` for sprites.
 - Tests: vitest 4, projects for every workspace (`vitest.config.ts` at root). Web tests use jsdom + Testing Library.

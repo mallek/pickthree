@@ -3567,7 +3567,7 @@ input[type='range'] {
 }
 /* Teams' open row: each member spans the strip's three rows (token, name, role) as a subgrid,
    so a one-line name beside a wrapped one keeps every role on the same line. Scoped here so
-   packages/ui's .slots3 (and meta.pick3.gg) and WhyThisTeam's own .slot tiles do not move. The
+   packages/ui's .slots3 and WhyThisTeam's own .slot tiles do not move. The
    same fix as the Team Analysis strip (.analysis-strip). */
 .team-body .slots3 {
   grid-template-rows: auto auto auto;
