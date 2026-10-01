@@ -87,7 +87,7 @@ throwaway, never merge. Rendered mock PNGs were approved by Travis; the screens 
   `export function leagueParam(raw: string | null): string | null` in `apps/web/src/leagueId.ts`.
   Later tasks use `leagueParam` for every `?l=` they parse.
 
-- [ ] **Step 1: Write the failing test** in `store.test.tsx` inside `describe('routes')`:
+- [x] **Step 1: Write the failing test** in `store.test.tsx` inside `describe('routes')`:
 
 ```ts
 it('keeps a hyphenated league on counters and build links', () => {
@@ -105,8 +105,8 @@ it('keeps a hyphenated league on counters and build links', () => {
 });
 ```
 
-- [ ] **Step 2:** Run `npx vitest run --project web test/store.test.tsx`; expect FAIL (league dropped).
-- [ ] **Step 3: Implement** `apps/web/src/leagueId.ts`:
+- [x] **Step 2:** Run `npx vitest run --project web test/store.test.tsx`; expect FAIL (league dropped).
+- [x] **Step 3: Implement** `apps/web/src/leagueId.ts`:
 
 ```ts
 /** League ids as the data build writes them: lowercase, digits, underscores and hyphens
@@ -120,8 +120,8 @@ export function leagueParam(raw: string | null): string | null {
 
 Replace the two `l` checks in `parseHash` (counters and build) with `leagueParam(params.get('l'))`.
 Leave the `lead` species check as is (species ids have no hyphen).
-- [ ] **Step 4:** Run the test again; PASS. Run `npm run lint && npm run typecheck`.
-- [ ] **Step 5: Commit** `apps/web/src/leagueId.ts apps/web/src/state/store.tsx apps/web/test/store.test.tsx`
+- [x] **Step 4:** Run the test again; PASS. Run `npm run lint && npm run typecheck`.
+- [x] **Step 5: Commit** `apps/web/src/leagueId.ts apps/web/src/state/store.tsx apps/web/test/store.test.tsx`
   ("Web: league links accept hyphenated ids (mega-great)").
 
 ### Task 2: Meta's pure logic moves into `@pickthree/engine/meta`
@@ -170,7 +170,7 @@ Leave the `lead` species check as is (species ids have no hyphen).
     (for each id in `current` that is also in `baseline`: `baselineIndex - currentIndex`; positive
     means it climbed; ids missing from the baseline get no entry).
 
-- [ ] **Step 1: Write the failing tests** `packages/engine/test/meta/trend.test.ts`:
+- [x] **Step 1: Write the failing tests** `packages/engine/test/meta/trend.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -201,13 +201,13 @@ describe('rankTrend', () => {
 
 and `baseline.test.ts` (synthetic group of three, rankings with scores 90/70/null, assert order
 `[a(90), b(70), c(null)]`, usages cut to 4, `byId.get('b')?.fastMove`).
-- [ ] **Step 2:** `npx vitest run --project engine test/meta`; FAIL (modules missing).
-- [ ] **Step 3: Implement** by moving code (copy file, adjust imports to engine-relative `.js`
+- [x] **Step 2:** `npx vitest run --project engine test/meta`; FAIL (modules missing).
+- [x] **Step 3: Implement** by moving code (copy file, adjust imports to engine-relative `.js`
   paths, delete nothing in apps/meta yet; turn apps/meta's modules into thin re-exports so their
   own screens and tests compile). Move the four apps/meta tests and the fixture into
   `packages/engine/test/meta/` with engine-relative imports; delete the originals in apps/meta/test.
-- [ ] **Step 4:** `npx vitest run --project engine --project meta`; PASS. `npm run lint && npm run typecheck`.
-- [ ] **Step 5: Commit** (engine meta files and tests, apps/meta re-exports, moved tests)
+- [x] **Step 4:** `npx vitest run --project engine --project meta`; PASS. `npm run lint && npm run typecheck`.
+- [x] **Step 5: Commit** (engine meta files and tests, apps/meta re-exports, moved tests)
   ("Engine: meta ranking, team board, trend and baseline shapes move into @pickthree/engine/meta").
 
 ### Task 3: The data build writes generated baseline teams for every league
@@ -239,7 +239,7 @@ and `baseline.test.ts` (synthetic group of three, rankings with scores 90/70/nul
   otherwise, the `PICKTHREE_SKIP_MATRIX` case). Rankings read from `rankings/<id>/*.json` in
   `outDir` (cups derived from Great have their own filtered files there).
 
-- [ ] **Step 1: Write the failing test** (real data, skips without it):
+- [x] **Step 1: Write the failing test** (real data, skips without it):
 
 ```ts
 import fs from 'node:fs';
@@ -261,14 +261,14 @@ describe.skipIf(!have)('writeBaselineTeams', () => {
   Write the test fully: copy `leagues.json` filtered to `great`, `matrix/great.json`,
   `rankings/great/*` into the tmp dir, call `writeBaselineTeams(tmp, [great], data, gm, manifest)`,
   read back the file and assert the invariants above. No pinned species.
-- [ ] **Step 2:** `PICKTHREE_DATA_OUT=D:/Skunkworks/pickthree/apps/web/public/data npx vitest run --project data test/build-baseline.test.ts`; FAIL.
-- [ ] **Step 3: Implement** `build-baseline.ts`, wire it in `build.ts`, move epochs, update paths and
+- [x] **Step 2:** `PICKTHREE_DATA_OUT=D:/Skunkworks/pickthree/apps/web/public/data npx vitest run --project data test/build-baseline.test.ts`; FAIL.
+- [x] **Step 3: Implement** `build-baseline.ts`, wire it in `build.ts`, move epochs, update paths and
   the five cache keys, point bake.ts at the new epochs path and the moved `generateFor`.
-- [ ] **Step 4:** Test PASS; `npx vitest run --project data --project meta`; lint, typecheck.
+- [x] **Step 4:** Test PASS; `npx vitest run --project data --project meta`; lint, typecheck.
   Then run the real build once: `npm run data:build` (writes `apps/web/public/data/baseline/*`),
   confirm a file per non-special league in `leagues.json` (expect great, ultra, master,
   championshipseries and every rotation league).
-- [ ] **Step 5: Commit** (build-baseline, build.ts, paths.ts, the `git mv` of epochs, bake.ts,
+- [x] **Step 5: Commit** (build-baseline, build.ts, paths.ts, the `git mv` of epochs, bake.ts,
   workflows, test) ("Data: generated baseline teams for every league; epochs move to packages/data").
 
 ## Phase 2: Meta tab
@@ -300,12 +300,12 @@ describe.skipIf(!have)('writeBaselineTeams', () => {
   Meta"); Meta tab current for `meta`, `meta-teams`, `meta-battles`, `meta-new`, `meta-log`;
   Collection current for `collection`, `specimen`, `add`, `species`. `showTabs` unchanged list.
 
-- [ ] **Step 1: Write failing tests** for every new hash, both directions, including invalid
+- [x] **Step 1: Write failing tests** for every new hash, both directions, including invalid
   `w`/`src`/species/team values being dropped and `#/meta/teams?l=mega-great`.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4:** PASS; `npx vitest run --project web`; lint; typecheck.
-- [ ] **Step 5: Commit** ("Web: Meta tab routes, species and prefill routes; the tab reads Meta").
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3: Implement.**
+- [x] **Step 4:** PASS; `npx vitest run --project web`; lint; typecheck.
+- [x] **Step 5: Commit** ("Web: Meta tab routes, species and prefill routes; the tab reads Meta").
 
 ### Task 5: Meta data loaders (`apps/web/src/metaData.ts`)
 
@@ -337,12 +337,12 @@ describe.skipIf(!have)('writeBaselineTeams', () => {
   - `weekEarlier(w: ApiWindow): ApiWindow | null`: the same window with `until` moved back seven
     days; null when that leaves `until <= since` (less than a week of history).
 
-- [ ] **Step 1: Write failing tests** with a stub fetcher (a `Map<string, unknown>` of URL prefix
+- [x] **Step 1: Write failing tests** with a stub fetcher (a `Map<string, unknown>` of URL prefix
   to JSON or status): hyphenated league in every URL; legal 404 means empty banned; generated 404
   means null; summary non-ok rejects; memo returns the same promise twice and retries after a
   failure; `weekEarlier` null for a 3-day window and a correct ISO `until` for a 20-day one.
-- [ ] **Step 2:** FAIL. **Step 3:** implement. **Step 4:** PASS, lint, typecheck.
-- [ ] **Step 5: Commit** ("Web: meta data loaders over /data and the counter API").
+- [x] **Step 2:** FAIL. **Step 3:** implement. **Step 4:** PASS, lint, typecheck.
+- [x] **Step 5: Commit** ("Web: meta data loaders over /data and the counter API").
 
 ### Task 6: Meta hooks: ranking, trend, board, species detail (`apps/web/src/state/useMeta.ts`)
 
@@ -369,13 +369,13 @@ describe.skipIf(!have)('writeBaselineTeams', () => {
   - `useSpeciesDetail(league, id, window: WindowKey, source: SourceKey): Loaded<SpeciesDetailV1>`.
   - `EMPTY_SUMMARY: MetaSummaryV1` (zero battles, empty arrays, `previous: null`, `tournament: null`).
 
-- [ ] **Step 1: Write failing tests** rendering a tiny probe component inside `<AppProvider host={fakeHost()}>`
+- [x] **Step 1: Write failing tests** rendering a tiny probe component inside `<AppProvider host={fakeHost()}>`
   with a stubbed global fetch (vi.stubGlobal): community off makes zero `/api/v1` requests;
   community on with a 3-day window makes exactly one summary request and trends against PvPoke;
   a 20-day window makes two and trends against the earlier blend; worker 503 gives
   `state: 'ready'`, `offline: true`, empty trend.
-- [ ] **Step 2:** FAIL. **Step 3:** implement. **Step 4:** PASS, lint, typecheck.
-- [ ] **Step 5: Commit** ("Web: meta ranking, trend, board and species hooks").
+- [x] **Step 2:** FAIL. **Step 3:** implement. **Step 4:** PASS, lint, typecheck.
+- [x] **Step 5: Commit** ("Web: meta ranking, trend, board and species hooks").
 
 ### Task 7: Your battles page and the shared logging pieces
 
@@ -394,7 +394,7 @@ CurrentTeam/NoTeam card and no Contribution line (they move to the landing). Kee
 progress line, stale card, faced list with legend, Your teams, Earlier seasons, footer.
 Faced rows open the species page (`hashFor({ screen: 'species', id })`), not Counters.
 
-- [ ] Steps: failing test updates (page title "Your battles", no meta.pick3.gg link, faced row href
+- [x] Steps: failing test updates (page title "Your battles", no meta.pick3.gg link, faced row href
   `#/species/tinkaton`), FAIL, implement, PASS, lint, typecheck, commit ("Web: Your battles page;
   logging pieces shared").
 
@@ -432,7 +432,7 @@ these production details:
 - Failure: community cards render `ErrorState` "Could not load the community meta." with a Try
   again `Button` calling `retry`; personal cards render regardless.
 
-- [ ] Steps: failing tests (first visit and with-log states from seeded IndexedDB sets; worker 503
+- [x] Steps: failing tests (first visit and with-log states from seeded IndexedDB sets; worker 503
   shows ErrorState and still shows Log a battle; a hyphenated league in the API URL; no
   `meta.pick3.gg` anywhere), FAIL, implement, PASS, lint, typecheck, check-colors, commit
   ("Web: Meta landing").
@@ -462,7 +462,7 @@ moves exactly as `SharedTeam.tsx:38-46` does, then `analyze()`; or navigate to t
 team" (`navigate({ screen: 'meta-new', team: species })`). Cores never link. The `Contribute`
 card links to `#/meta/new`.
 
-- [ ] Steps: failing tests (ported board tests pass against the engine; Run this team navigates to
+- [x] Steps: failing tests (ported board tests pass against the engine; Run this team navigates to
   `#/meta/new?team=a+b+c`; Open in Build lands on the analysis; prior source shows Projected rows
   only), FAIL, implement, PASS, lint, typecheck, check-colors, commit ("Web: Top teams board with
   Run this team").
@@ -477,7 +477,7 @@ card links to `#/meta/new`.
   (`.teams-actions` gains "Run this team")
 - Test: `apps/web/test/newSet.test.tsx`, `apps/web/test/teamDetail.test.tsx`, `apps/web/test/teamsList.test.tsx`
 
-- [ ] Steps: failing tests (`#/meta/new?team=tinkaton+azumarill+clodsire` shows three filled slots
+- [x] Steps: failing tests (`#/meta/new?team=tinkaton+azumarill+clodsire` shows three filled slots
   and Start set enabled; an unknown species is dropped; TeamDetail and Teams buttons navigate there),
   FAIL, implement, PASS, lint, typecheck, commit ("Web: Run this team from the board, Teams and
   Team Analysis").
@@ -492,7 +492,7 @@ card links to `#/meta/new`.
   `.action-row` "See <name> in the meta" with `.chev`, href `#/species/<build species id>`)
 - Test: `apps/web/test/addPokemon.test.tsx` (or the existing add test file), `apps/web/test/specimen.test.tsx`
 
-- [ ] Steps: failing tests, FAIL, implement, PASS, lint, typecheck, commit ("Web: Add one prefill;
+- [x] Steps: failing tests, FAIL, implement, PASS, lint, typecheck, commit ("Web: Add one prefill;
   specimen links to its species page").
 
 ### Task 12: Collection lists the whole league with blended rank and trend
@@ -530,7 +530,7 @@ Behavior (spec "Collection", mock views `collection`, `collectionmeta`, `collect
   second in `COLLECTION_FILTERS`; Collection's `filtersOn` counts it when on.
 - Header loses `SiteLink`.
 
-- [ ] Steps: failing tests (with a 3-specimen collection and a fake league of 6 legal species:
+- [x] Steps: failing tests (with a 3-specimen collection and a fake league of 6 legal species:
   not-collected rows appear with the tag in the right slot; Hide not collected removes them and
   bumps the filter count; Meta rank sort interleaves; empty collection shows the list without the
   tag or pills; sharing off makes zero `/api/v1` fetches and shows no trend tags; a trend of +3
@@ -566,7 +566,7 @@ Build the approved round-2 species mock (`MockSpecies`), production details:
 - Detail fetch failure: `ErrorState` with Try again under the hero; Yours and actions still render.
 - Unknown id: `Empty` "No Pokémon called that in this league." with a link to Collection.
 
-- [ ] Steps: failing tests (owned and unowned, 503, unknown id, `?l=mega-great` switches league),
+- [x] Steps: failing tests (owned and unowned, 503, unknown id, `?l=mega-great` switches league),
   FAIL, implement, PASS, lint, typecheck, check-colors, commit ("Web: species page").
 
 ## Phase 4: No-collection start
@@ -587,7 +587,7 @@ Build the approved round-2 species mock (`MockSpecies`), production details:
 - Test: `apps/web/test/welcome.test.tsx` (or existing), `apps/web/test/store.test.tsx`,
   `apps/web/test/metaPreview.test.tsx`, update tests that asserted the meta.pick3.gg href
 
-- [ ] Steps: failing tests (button saves the flag and lands on `#/meta`; boot with the flag and no
+- [x] Steps: failing tests (button saves the flag and lands on `#/meta`; boot with the flag and no
   collection lands on `#/meta`; with a collection still lands on `#/teams`; no `meta.pick3.gg` href
   in apps/web), FAIL, implement, PASS, lint, typecheck, commit ("Web: start without a collection").
 
@@ -606,7 +606,7 @@ Build the approved round-2 species mock (`MockSpecies`), production details:
 - Images: `docs/design/audits/img/<name>-{dark,light}.webp` (600px, quality 72, as the existing
   records)
 
-- [ ] Steps: `npm run web:audit`; fix every finding on enforced screens in the owning screen's code;
+- [x] Steps: `npm run web:audit`; fix every finding on enforced screens in the owning screen's code;
   rerun until exit 0 with no console errors; convert images; fill the records' Screenshots and
   Automated checks sections; leave the Aesthetics, Functionality and Sign-off sections for Travis
   ("Awaiting Travis's review"). Commit ("Audit: Meta tab, Collection and species captures").
@@ -628,7 +628,7 @@ Build the approved round-2 species mock (`MockSpecies`), production details:
   from the Community settings page as a row "How the meta is ranked"
 - Test: moved post tests; `apps/web/test/settings.test.tsx` (the new page opens)
 
-- [ ] Steps: move, failing settings test, implement, `npx vitest run --project data --project web`,
+- [x] Steps: move, failing settings test, implement, `npx vitest run --project data --project web`,
   `npm run post -- great --help` or a dry invocation that exercises imports without rendering (if
   post.ts has no dry mode, run `npx tsc --noEmit -p packages/data` to prove the imports), lint,
   typecheck, commit ("Post tooling moves to packages/data; How the meta is ranked moves to Settings").
@@ -664,17 +664,17 @@ Build the approved round-2 species mock (`MockSpecies`), production details:
   `w`) becomes `w`, `source` becomes `src`, both only when valid; league and species ids validated
   (`/^[a-z0-9_-]+$/`, `/^[a-z0-9_]+$/`), invalid ones dropped. `Cache-Control: public, max-age=3600`.
 
-- [ ] Steps: failing redirect tests for each mapping and an invalid id, FAIL, implement, delete
+- [x] Steps: failing redirect tests for each mapping and an invalid id, FAIL, implement, delete
   apps/meta and the references, `npm install` (workspace removed; commit the lockfile change),
   `npm test`, lint, typecheck, check-colors, check-tokens, commit ("Retire meta.pick3.gg: the worker
   redirects into pick3; apps/meta deleted").
 
 ### Task 18: Final verification
 
-- [ ] `npm run lint && npm run typecheck && npm test` (with `PICKTHREE_DATA_OUT` pointing at the
+- [x] `npm run lint && npm run typecheck && npm test` (with `PICKTHREE_DATA_OUT` pointing at the
   fresh data) all green.
-- [ ] `npm run check-colors && npm run check-tokens && npm run ui:audit`.
-- [ ] `npm run web:screens` and `npm run web:audit` exit 0, no console errors.
-- [ ] `grep -rn "meta.pick3.gg" apps packages workers --include=*.ts --include=*.tsx` returns only
+- [x] `npm run check-colors && npm run check-tokens && npm run ui:audit`.
+- [x] `npm run web:screens` and `npm run web:audit` exit 0, no console errors.
+- [x] `grep -rn "meta.pick3.gg" apps packages workers --include=*.ts --include=*.tsx` returns only
   the worker redirect comment and tests.
-- [ ] Update the plan checkboxes; commit any record or doc touch-ups.
+- [x] Update the plan checkboxes; commit any record or doc touch-ups.
