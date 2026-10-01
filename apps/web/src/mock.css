@@ -1,0 +1,18 @@
+/* THROWAWAY: round 3 mock, Travis's concept, tokens only. */
+.m3-title { margin: 0; font-size: 22px; font-weight: 600; }
+.m3-sub { margin: 2px 0 8px; }
+.m3-card { background: var(--surface); border-radius: var(--r-xl); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.m3-card.m3-accent { border: 1px solid var(--accent); }
+.m3-card-head b { display: block; font-size: 17px; }
+.m3-card-head .meta { display: block; }
+.m3-seen { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 4px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--divider); color: var(--text); text-decoration: none; }
+.m3-seen:last-of-type { border-bottom: 0; }
+.m3-seen-name { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.m3-bar { height: 4px; border-radius: 2px; background: var(--divider); overflow: hidden; }
+.m3-bar > span { display: block; height: 100%; background: var(--accent); }
+.m3-go { align-self: center; color: var(--accent-text); display: inline-flex; }
+.m3-more { align-self: center; display: inline-flex; gap: 4px; align-items: center; color: var(--accent-text); font-weight: 500; text-decoration: none; padding: 8px 0 2px; }
+.m3-team3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.m3-team3 > span { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.m3-empty { text-align: center; padding: 18px 0; }
+.m3-progress { border: 1px solid var(--divider); border-radius: var(--r-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }

@@ -1,3 +1,4 @@
+import { MockCollection, MockMeta, MockNotCollected, MockSpecies } from './screens/Mock.tsx';
 import { useLayoutEffect } from 'react';
 import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
@@ -56,10 +57,18 @@ function TabBar() {
     route.screen === 'team' ||
     route.screen === 'build' ||
     route.screen === 'custom';
+  const mockView = route.screen === 'mock' ? route.view : '';
   const onCollection =
-    route.screen === 'collection' || route.screen === 'specimen' || route.screen === 'add';
+    route.screen === 'collection' ||
+    route.screen === 'specimen' ||
+    route.screen === 'add' ||
+    (mockView !== '' && mockView !== 'meta' && mockView !== 'metalog');
   const onMeta =
-    route.screen === 'meta' || route.screen === 'meta-new' || route.screen === 'meta-log';
+    route.screen === 'meta' ||
+    route.screen === 'meta-new' ||
+    route.screen === 'meta-log' ||
+    mockView === 'meta' ||
+    mockView === 'metalog';
   return (
     <nav className="tabs" aria-label="Sections">
       <button
@@ -92,7 +101,7 @@ function TabBar() {
         onClick={() => navigate({ screen: 'meta' })}
       >
         {ICONS.meta}
-        Your Meta
+        Meta
       </button>
     </nav>
   );
@@ -102,6 +111,17 @@ function renderScreen(r: Route) {
   switch (r.screen) {
     case 'welcome':
       return <Welcome />;
+    case 'mock':
+      if (r.view === 'collection') {
+        return <MockCollection />;
+      }
+      if (r.view === 'notcollected') {
+        return <MockNotCollected />;
+      }
+      if (r.view === 'species') {
+        return <MockSpecies id={r.id ?? 'azumarill'} />;
+      }
+      return <MockMeta log={r.view === 'metalog'} />;
     case 'import':
       return <Import />;
     case 'report':

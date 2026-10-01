@@ -97,6 +97,7 @@ export interface NoticeAction {
 
 export type Route =
   | { screen: 'welcome' }
+  | { screen: 'mock'; view: string; id?: string }
   | { screen: 'import' }
   | { screen: 'report' }
   | { screen: 'teams' }
@@ -554,6 +555,9 @@ export function parseHash(hash: string): Route {
         }
       : { screen: 'build' };
   }
+  if (a === 'mock') {
+    return { screen: 'mock', view: b ?? 'meta', ...(parts[2] ? { id: parts[2] } : {}) };
+  }
   if (a === 'meta') {
     if (b === 'new') {
       return { screen: 'meta-new' };
@@ -616,6 +620,8 @@ export function hashFor(r: Route): string {
       return '#/build/team';
     case 'add':
       return '#/add';
+    case 'mock':
+      return `#/mock/${r.view}${r.id ? `/${r.id}` : ''}`;
     case 'meta':
       return '#/meta';
     case 'meta-new':
