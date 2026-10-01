@@ -8,8 +8,8 @@ export type WindowKey = 'meta' | '30' | '7';
 
 /**
  * Meta epochs: when the game changed enough that what came before stops describing what players
- * face now. Hand-kept in apps/meta/epochs.json, the same pattern packages/data/seasons.json
- * already follows, and validated by the bake.
+ * face now. Hand-kept in packages/data/epochs.json, beside packages/data/seasons.json, and
+ * validated by the data build and the bake.
  *
  * Resetting the meta is one line and a deploy, and it DELETES NOTHING. A reset moves the default
  * window; it does not purge the Durable Object. The 30 and 7 day views keep working and a reset

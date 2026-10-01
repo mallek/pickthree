@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { writeBundle } from '@pickthree/sim-pvpoke';
 import { readEpochs } from '@pickthree/engine/meta';
+import { writeBaselineTeams } from './build-baseline.js';
 import { writeGameData } from './build-gamedata.js';
 import { writeLegal } from './build-legal.js';
 import { writeManifest } from './build-manifest.js';
@@ -13,6 +14,7 @@ import { DERIVES_FROM, readLeagues } from './leagues.js';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { readRawGameMaster } from './build-gamedata.js';
 import { ensurePvPokeCheckout } from './fetch-pvpoke.js';
+import { readLock } from './lock.js';
 import { EPOCHS_PATH, GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
 import { readSchedule, SCHEDULE_PATH } from './schedule-feed.js';
 import { readSeasons, SEASONS_PATH } from './seasons.js';
@@ -60,6 +62,14 @@ async function main(): Promise<void> {
     league.metaSize = meta.length;
     console.log(`${league.id}: meta ${meta.length} (from ${from}, ${legal.size} legal)`);
   }
+  // After every league's rankings and matrix are written: a derived league drafts from its own
+  // filtered files. Stamped from the lock, which is what writeManifest stamps the manifest from.
+  const lock = readLock();
+  const baseline = writeBaselineTeams(OUTPUT_DIR, leagues, data, readRawGameMaster(), {
+    pvpokeCommit: lock.commit,
+    pvpokeDate: lock.date,
+  });
+  console.log(`baseline teams: ${baseline.map((b) => `${b.league} ${b.teams}`).join(', ')}`);
   const legal = writeLegal(
     OUTPUT_DIR,
     leagues.map((l) => l.id),

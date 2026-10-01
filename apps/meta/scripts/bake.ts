@@ -10,7 +10,6 @@ import {
   baselineFor,
   legalFor,
   MATRIX_TOP,
-  MatrixView,
   OPEN_EQUIVALENT_CUP,
   priorWeights,
   ranksOf,
@@ -25,23 +24,22 @@ import {
   GameDataIndex,
   PROJECTION_ANCHOR,
   PROJECTION_SLOPE,
-  buildOptionsFor,
-  candidatePool,
-  coldStartBuilds,
-  coldStartSpecimens,
-  generateColdStartTeams,
-  spreadsFromGameMaster,
-  type GeneratedTeam,
   type League as EngineLeague,
   type Move,
   type RankingEntry,
   type Rankings,
   type Species,
 } from '@pickthree/engine';
+import { COLD_POOL, COLD_TEAMS, generateFor } from '../../../packages/data/src/build-baseline.js';
 
 // priorWeights, sliceMatrix and the baseline's per-league shape moved into @pickthree/engine/meta,
 // where pick3's data build can reach them; re-exported so this script's callers keep their imports.
+// generateFor moved into the data build (packages/data/src/build-baseline.ts), which writes the
+// same baseline/<id>-teams.json for every league pick3 ships; re-exported for the same reason.
 export {
+  COLD_POOL,
+  COLD_TEAMS,
+  generateFor,
   legalFor,
   MATRIX_TOP,
   OPEN_EQUIVALENT_CUP,
@@ -138,53 +136,11 @@ export function bake(input: {
   return { species, moves, baselines };
 }
 
-/** Species the cold-start generator drafts from. 60 scores in about 300 ms a league. */
-export const COLD_POOL = 60;
-/** Generated teams emitted per league. */
-export const COLD_TEAMS = 24;
-
-/** The cold-start board for one league, weighted by PvPoke's own prior (facingWeight of overall
- *  rank): at bake time there is no measured play, and the site reweighs its own copy once there
- *  is. See priorWeights for why the weights are not optional. */
-export function generateFor(input: {
-  league: EngineLeague;
-  index: GameDataIndex;
-  matrix: MatchupMatrix;
-  rankings: Rankings;
-  gameMaster: unknown;
-}): GeneratedTeam[] {
-  const view = new MatrixView(input.matrix);
-  const opts = buildOptionsFor(input.league);
-  const builds = coldStartBuilds(
-    coldStartSpecimens(
-      input.matrix.candidates,
-      spreadsFromGameMaster(input.gameMaster, input.league.cp),
-      input.index,
-    ),
-    input.index,
-    opts,
-  );
-  const { pool } = candidatePool(builds, input.rankings, view, input.index, {
-    ...opts,
-    poolSize: COLD_POOL,
-    excludedSpecimenIds: [],
-    excludedSpecies: [],
-  });
-  const weights = priorWeights(input.rankings.overall, input.matrix.opponents);
-  return generateColdStartTeams(
-    pool,
-    view,
-    {
-      types: (id: string) => input.index.mustSpecies(id).types,
-      teamSpeciesOf: (id: string) => input.index.teamSpeciesOf(id),
-    },
-    { results: COLD_TEAMS, weights },
-  );
-}
-
 const here = dirname(fileURLToPath(import.meta.url));
 const DATA = join(here, '..', '..', 'web', 'public', 'data');
 const OUT = join(here, '..', 'public');
+/** The hand-kept meta reset list, which lives beside the data build's seasons.json. */
+const EPOCHS = join(here, '..', '..', '..', 'packages', 'data', 'epochs.json');
 
 async function readJson<T>(...parts: string[]): Promise<T> {
   return JSON.parse(await readFile(join(...parts), 'utf8')) as T;
@@ -303,7 +259,7 @@ async function main(): Promise<void> {
 
   await writeFile(
     join(OUT, 'epochs.json'),
-    JSON.stringify(readEpochs(JSON.parse(await readFile(join(here, '..', 'epochs.json'), 'utf8')))),
+    JSON.stringify(readEpochs(JSON.parse(await readFile(EPOCHS, 'utf8')))),
   );
   process.stdout.write(`baked ${sizes.join(', ')}\n`);
 }
