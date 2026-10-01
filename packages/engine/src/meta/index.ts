@@ -1,10 +1,9 @@
 /**
- * The seam meta.pick3.gg imports. One formula in the repo, two callers: the site must run the
- * same blend pick3 runs on device, and the same simStrength the bake scores generated teams with.
- * Deliberately narrow, so pulling this in does not pull in the CSV parser, the cost tables, the
- * simulator interface or anything else the site has no business shipping. It also carries the
- * meta pages' pure logic (wire types, species ranking, team board, stats, baseline, slice, trend),
- * so pick3 renders them from the same code the site does.
+ * The meta seam. One formula in the repo: pick3's Meta tab, its Teams Source picker and the data
+ * build's baseline teams run the same blend and the same simStrength. Deliberately narrow, so
+ * pulling this in does not pull in the CSV parser, the cost tables or the simulator interface.
+ * It also carries the meta pages' pure logic (wire types, species ranking, team board, stats,
+ * baseline, slice, trend).
  */
 export {
   DEFAULT_BLEND_OPTIONS,

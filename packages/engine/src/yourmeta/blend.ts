@@ -6,7 +6,7 @@ export interface BlendOptions {
   /** Battles at which the log and PvPoke's prior have an equal say. */
   halfLife: number;
   /**
-   * Replaces the battle-count curve when the caller works the share out itself. meta.pick3.gg
+   * Replaces the battle-count curve when the caller works the share out itself. The meta blend
    * caps the battle curve on contributing devices as well, which a battle count alone cannot
    * express; rather than keep a second copy of this formula there, it hands the answer in.
    * Clamped to 0..1.

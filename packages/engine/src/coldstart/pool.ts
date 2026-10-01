@@ -1,7 +1,7 @@
 /**
  * The full legal pool with no collection behind it: one synthetic Specimen per species, at
  * PvPoke's own default IV spread for the cap, so the rest of the engine can draft teams the way
- * it drafts them from a real bag. meta.pick3.gg's cold start is built on this, and nothing here
+ * it drafts them from a real bag. The Meta tab's cold start is built on this, and nothing here
  * simulates.
  *
  * The spread is PvPoke's, not ours. Pokemon.initialize reads defaultIVs["cp<cap>"] out of the

@@ -17,6 +17,5 @@ export const GROUPS_DIR = path.join(PVPOKE_DIR, 'src', 'data', 'groups');
 export const OVERRIDES_DIR = path.join(PVPOKE_DIR, 'src', 'data', 'overrides');
 export const PVPOKE_JS_DIR = path.join(PVPOKE_DIR, 'src', 'js');
 
-/** The hand-kept meta reset list, beside seasons.json; the data build ships a validated copy and
- *  meta.pick3.gg's bake reads the same file. */
+/** The hand-kept meta reset list, beside seasons.json; the data build ships a validated copy. */
 export const EPOCHS_PATH = path.join(DATA_PACKAGE_DIR, 'epochs.json');

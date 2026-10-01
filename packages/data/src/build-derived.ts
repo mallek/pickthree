@@ -46,8 +46,8 @@ export function filterMeta(entries: readonly MetaEntry[], legal: ReadonlySet<str
     .map((m) => ({ ...m, chargedMoves: [...m.chargedMoves] }));
 }
 
-/** The same matrix with banned rows and columns removed. Modelled on bake.ts's `sliceMatrix`:
- *  a `MatrixView` over the original resolves each surviving cell by its old coordinates. */
+/** The same matrix with banned rows and columns removed: a `MatrixView` over the original
+ *  resolves each surviving cell by its old coordinates. */
 export function filterMatrix(
   m: MatchupMatrix,
   legal: ReadonlySet<string>,

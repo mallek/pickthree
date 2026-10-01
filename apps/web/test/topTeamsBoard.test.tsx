@@ -1,8 +1,7 @@
-// Copied from apps/meta/test/teams.test.tsx (Task 9 of the meta-in-pick3 plan) and adapted to the
+// Copied from meta.pick3.gg's teams test (Task 9 of the meta-in-pick3 plan) and adapted to the
 // board inside pick3: names come from the app's game data (a fake host's), the Window, Source and
 // league controls live on the screen around the board (topTeams.test.tsx), and "Open in pick3" is
-// now "Open in Build" plus "Run this team", both in-app navigation. The original stays until
-// apps/meta is deleted.
+// now "Open in Build" plus "Run this team", both in-app navigation.
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';

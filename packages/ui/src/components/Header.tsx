@@ -9,16 +9,16 @@ export interface HeaderBack {
 }
 
 /**
- * The two headers both sites use. `top`: a tab's own page, a page title and icon buttons, no back.
+ * The two headers. `top`: a tab's own page, a page title and icon buttons, no back.
  * `sub`: a page reached from another, back on the left, the title centered, icon buttons on the
- * right. `mark` is meta.pick3.gg's small site mark beside a top title; pick3 leaves it out.
+ * right. `mark` is a small mark beside a top title (meta.pick3.gg's site mark used it); pick3
+ * leaves it out.
  * Back should return to where the reader came from (the app decides how); a jump somewhere else
  * is a labeled action, not the back control.
  *
  * The top variant has no padding of its own: it sits inside the page's padded head container
  * (web's `.page-head`, the gallery's `.g-page`), which owns the gutter and the safe-area inset.
- * meta.pick3.gg's head must pad the same way when it adopts `variant="top"`. The sub variant is
- * standalone and pads itself.
+ * The sub variant is standalone and pads itself.
  *
  * `title` is optional only on `sub`, so a sub header can carry just a back control (and
  * `actions`) with no title in the middle; `top` requires one, since a tab's own page needs a name.

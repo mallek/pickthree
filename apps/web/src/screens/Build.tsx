@@ -105,7 +105,7 @@ export function Build() {
     loadVerdicts,
   ]);
 
-  // A lead link from meta.pick3.gg ("Build a team around it"): switch to its league once, the way
+  // A lead link that names its league (a post, an old meta.pick3.gg link): switch to its league once, the way
   // Counters.tsx applies its own linked league, then set pick 0 once the league's data is in and
   // its own picker actually offers that species. Either way the lead leaves the route (replace),
   // so a later league switch or Back cannot replay it. An unknown league id is ignored; the lead

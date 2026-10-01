@@ -1,9 +1,9 @@
 /**
  * The wire shapes of the counter worker's v1 read endpoints (/api/v1/meta, /api/v1/teams,
- * /api/v1/species/:id), the contract both meta.pick3.gg and pick3 read. They are written down
- * again rather than imported from workers/counter: no client depends on that workspace, and a
- * format written on both sides is the contract. They must match workers/counter/src/meta.ts
- * exactly. Types only; the fetchers live with the apps that make the requests.
+ * /api/v1/species/:id), the contract pick3 reads. They are written down again rather than
+ * imported from workers/counter: no client depends on that workspace, and a format written on
+ * both sides is the contract. They must match workers/counter/src/meta.ts exactly. Types only;
+ * the fetchers live with the app that makes the requests.
  */
 
 /** Which populations a ranking blends: everything, PvPoke's list alone, the ladder, or

@@ -1,15 +1,14 @@
 /**
- * The windows meta.pick3.gg and pick3 both read the community meta over. "This meta" starts at
- * the newest epoch for the league (a hand-kept reset list) or else the season start, and every
- * window ends on the next ten minute boundary so all readers in a slice share one cached URL.
- * Moved from apps/meta so the two sites resolve the same moment the same way.
+ * The windows pick3 reads the community meta over. "This meta" starts at the newest epoch for
+ * the league (a hand-kept reset list) or else the season start, and every window ends on the
+ * next ten minute boundary so all readers in a slice share one cached URL.
  */
 export type WindowKey = 'meta' | '30' | '7';
 
 /**
  * Meta epochs: when the game changed enough that what came before stops describing what players
  * face now. Hand-kept in packages/data/epochs.json, beside packages/data/seasons.json, and
- * validated by the data build and the bake.
+ * validated by the data build.
  *
  * Resetting the meta is one line and a deploy, and it DELETES NOTHING. A reset moves the default
  * window; it does not purge the Durable Object. The 30 and 7 day views keep working and a reset

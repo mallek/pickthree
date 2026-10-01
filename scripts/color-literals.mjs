@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const FILES = ['apps/web/src/app.css', 'apps/meta/src/app.css', 'packages/ui/base.css'];
+const FILES = ['apps/web/src/app.css', 'packages/ui/base.css'];
 const BASELINE = path.join(root, 'scripts', 'color-literal-baseline.json');
 const LITERAL = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?)\([^)]*\)/g;
 

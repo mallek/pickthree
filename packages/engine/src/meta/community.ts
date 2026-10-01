@@ -1,5 +1,6 @@
 /**
- * The blend meta.pick3.gg ranks with and pick3 weights opponents with: one formula, two callers.
+ * The blend pick3's Meta tab ranks with and its Teams Source picker weights opponents with: one
+ * formula, two callers.
  *
  *   aT     = tournamentSay(tournament battles, events)
  *   p1     = (1 - aT) * pvpokePrior + aT * tournamentPickShare   (a banned species keeps the prior)
@@ -8,7 +9,7 @@
  *
  * Each source switches terms off rather than using a different formula: `prior` is both off,
  * `ladder` is the second alone, `tournament` the first alone, `all` the sequence. The half-say
- * constants are the curves' midpoints, never gates. Moved from apps/meta/src/rank.ts, unchanged.
+ * constants are the curves' midpoints, never gates.
  */
 import { facingWeight } from '../gamedata/metaRank.js';
 import { blendWeights } from '../yourmeta/blend.js';
@@ -97,8 +98,8 @@ export function ranksOf(overall: readonly { speciesId: string }[]): string[] {
  * `strengthContext`'s "top ten of the meta" is an alphabetical accident: every opponent counts
  * the same and the generator ends up scoring every team against whichever ten names happen to
  * sort first. Weighting by `facingWeight` of the PvPoke overall rank makes "the top of the meta"
- * mean what the spec says it means, both in the bake and in a client's own reweigh once there is
- * measured play. Moved from apps/meta/scripts/bake.ts, unchanged.
+ * mean what the spec says it means, both in the baseline build and in a client's own reweigh once
+ * there is measured play.
  */
 export function priorWeights(
   overall: readonly { speciesId: string }[],

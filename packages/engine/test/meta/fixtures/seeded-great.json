@@ -1,5 +1,5 @@
 {
-  "note": "Seeded synthetic data, generated once with mulberry32 seed 1 and frozen. Species ids were copied from the baked Great League rank order so the fixture reads naturally; nothing here is read from apps/meta/public at test time, so a PvPoke bump cannot move the expected list. Regenerating this file is a deliberate act: the expected ranking in board.snapshot.test.ts has to be retyped with it.",
+  "note": "Seeded synthetic data, generated once with mulberry32 seed 1 and frozen. Species ids were copied from the baked Great League rank order so the fixture reads naturally; nothing here is read from baked data at test time, so a PvPoke bump cannot move the expected list. Regenerating this file is a deliberate act: the expected ranking in board.snapshot.test.ts has to be retyped with it.",
   "league": "great",
   "pvpokeCommit": "seed0001",
   "pvpokeDate": "2026-09-10",

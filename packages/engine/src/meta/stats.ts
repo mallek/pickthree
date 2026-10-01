@@ -3,13 +3,13 @@
  * is shown with its smallness attached rather than dressed up as a fact.
  */
 
-/** Picks the singular or plural wording for a count (a copy of apps/meta format.ts's `plural`;
- *  the engine does not import an app's copy helpers). */
+/** Picks the singular or plural wording for a count (the engine does not import an app's copy
+ *  helpers). */
 function plural(n: number, one: string, many: string): string {
   return n === 1 ? one : many;
 }
 
-/** "1 battle", "1,234 battles" (a copy of apps/meta format.ts's `battles`). */
+/** "1 battle", "1,234 battles". */
 function battles(n: number): string {
   return `${n.toLocaleString('en-US')} ${plural(n, 'battle', 'battles')}`;
 }
@@ -110,7 +110,7 @@ export function trendPoints(
   return (p1 - p2) * 100;
 }
 
-/** A4: whole points, rounded, no decimal ("+15", never "+15.0"), matching apps/meta format.ts's `pct`.
+/** A4: whole points, rounded, no decimal ("+15", never "+15.0").
  * Below half a point the rounded number is 0, which would print as "+0" or "-0": a move that
  * small reads as noise regardless of which side of the statistical gate it landed on (see
  * `trendPoints`), so it is named "even" instead, the same word this used at its old, finer

@@ -9,8 +9,8 @@ function overall(outDir: string, league: string): { speciesId: string }[] {
 }
 
 /**
- * The Play! ban list per league, the same file meta.pick3.gg's bake writes, so pick3's community
- * weights hold a banned species at the plain prior exactly as the site does. Runs after every
+ * The Play! ban list per league, so pick3's community weights hold a banned species at the plain
+ * prior and a meta page can print "banned" instead of a zero. Runs after every
  * league's rankings are written: a league's open-equivalent cup is itself a derived league.
  */
 export function writeLegal(

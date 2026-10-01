@@ -18,7 +18,6 @@ import {
   ProgressCard,
   Select,
   Sheet,
-  SiteLink,
   Switch,
   Tag,
   Term,
@@ -202,16 +201,9 @@ export function Gallery() {
           <IconButton label="Filters on" onClick={() => undefined} active>
             {COG}
           </IconButton>
-          <IconButton label="Open meta.pick3.gg" href="#meta">
+          <IconButton label="Open the Meta tab" href="#meta">
             {COG}
           </IconButton>
-        </div>
-      </Section>
-
-      <Section name="SiteLink">
-        <div className="g-row">
-          <SiteLink site="meta" />
-          <SiteLink site="pick3" />
         </div>
       </Section>
 

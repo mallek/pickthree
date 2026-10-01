@@ -29,7 +29,7 @@ export const DEFAULT_COMMUNITY_PROFILE_OPTIONS: CommunityProfileOptions = {
 };
 
 /**
- * Opponent weights from the community meta: meta.pick3.gg's own number per species, laid over
+ * Opponent weights from the community meta: the Meta tab's own number per species, laid over
  * the matrix columns. Engaged whatever the volume, because the player chose the source; thin data
  * simply leaves the weights near PvPoke's prior, which is what the blend's curves are for.
  */

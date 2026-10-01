@@ -6,7 +6,6 @@ const SECTIONS = [
   'Tokens',
   'Button',
   'IconButton',
-  'SiteLink',
   'Chip',
   'Tag',
   'TypeChip',

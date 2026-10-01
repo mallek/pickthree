@@ -1,5 +1,4 @@
-// Copied from apps/meta/test/boardView.test.ts (Task 9 of the meta-in-pick3 plan); the original
-// stays until apps/meta is deleted.
+// Copied from meta.pick3.gg's boardView test (Task 9 of the meta-in-pick3 plan).
 import { describe, expect, it } from 'vitest';
 import type { BoardRow } from '@pickthree/engine/meta';
 import { multiTeamOnly, sortRows, subLine, teamsSeen } from '../src/components/meta/boardView.ts';

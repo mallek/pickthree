@@ -108,7 +108,7 @@ export type Route =
   /** A species page: its id and, from a link, the league it belongs to. */
   | { screen: 'species'; id: string; league?: string }
   | { screen: 'counters'; vs?: string; league?: string; from?: true }
-  /** A Build lead link from meta.pick3.gg: the species for pick 0, and the league it belongs to. */
+  /** A Build lead link: the species for pick 0, and the league an inbound link names. */
   | { screen: 'build'; lead?: string; league?: string }
   | { screen: 'custom' }
   | { screen: 'add'; species?: string }
@@ -561,10 +561,10 @@ export function parseHash(hash: string): Route {
   if (a === 'counters') {
     const params = new URLSearchParams(query ?? '');
     const vs = params.get('vs');
-    // A link from meta.pick3.gg names the league; the app's own links never do.
+    // An inbound link may name the league (`?l=`); the app's own links never do.
     const league = leagueParam(params.get('l'));
     // The back mark: set by a jump into the page and kept by the Against picker's
-    // replace-navigation. A meta.pick3.gg link never carries it.
+    // replace-navigation. An inbound link never carries it.
     const from = params.get('from') === '1' ? ({ from: true } as const) : {};
     if (vs && league) {
       return { screen: 'counters', vs, league, ...from };
@@ -584,7 +584,7 @@ export function parseHash(hash: string): Route {
     if (!lead) {
       return { screen: 'build' };
     }
-    // A league from a meta.pick3.gg link; kept only alongside a lead, same as counters' `l`.
+    // A league from an inbound link; kept only alongside a lead, same as counters' `l`.
     const league = leagueParam(params.get('l'));
     return league ? { screen: 'build', lead, league } : { screen: 'build', lead };
   }
@@ -660,7 +660,7 @@ export function hashFor(r: Route): string {
       if (r.vs) {
         params.set('vs', r.vs);
       }
-      // The league from a meta.pick3.gg link is never written back; only the back mark is.
+      // The league from an inbound link is never written back; only the back mark is.
       if (r.from) {
         params.set('from', '1');
       }

@@ -4,8 +4,8 @@
  * endpoints. The pages read because the player opened them, so these never gate on the sharing
  * switch; a read carries league and window only, never anything from the collection.
  *
- * The URL shapes match what meta.pick3.gg's `apps/meta/src/api.ts` builds, on COUNTER_ORIGIN
- * instead of the same origin, so both clients share the edge's cache entries.
+ * The URLs are on COUNTER_ORIGIN, each window rounded to its ten minute bucket, so every reader
+ * in a slice shares the edge's cache entry.
  *
  * Every `/data` loader memoizes per league in a module Map and forgets a failure, so a load that
  * failed offline is retried on the next render.

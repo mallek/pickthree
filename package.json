@@ -31,10 +31,8 @@
     "fixtures:tournament": "tsx fixtures/make-tournament.ts",
     "post": "tsx packages/data/scripts/post/post.ts",
     "web:screens": "node scripts/with-preview.mjs web 4173 -- node apps/web/scripts/screens.mjs",
-    "meta:screens": "node scripts/with-preview.mjs meta 4174 -- node apps/meta/scripts/screens.mjs",
     "ui:audit": "node scripts/ui-audit.mjs",
     "web:audit": "node scripts/with-preview.mjs web 4173 -- node apps/web/scripts/screens.mjs --audit",
-    "meta:audit": "node scripts/with-preview.mjs meta 4174 -- node apps/meta/scripts/screens.mjs --audit",
     "counter:deploy": "npm -w @pickthree/counter run deploy",
     "brand:lockup": "node apps/web/scripts/lockup.mjs"
   },

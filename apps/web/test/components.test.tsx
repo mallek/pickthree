@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MoveChoice, VerdictLabel } from '@pickthree/engine';
-import { MetaGlyph } from '@pickthree/ui';
 import { MoveRows, Progress, NoCollection, CogGlyph, VerdictTag } from '../src/components.tsx';
 
 describe('Progress', () => {
@@ -109,13 +108,8 @@ describe('MoveRows', () => {
 
 describe('glyphs', () => {
   it('render as hidden decorative SVGs', () => {
-    const { container } = render(
-      <>
-        <MetaGlyph />
-        <CogGlyph />
-      </>,
-    );
+    const { container } = render(<CogGlyph />);
     const svgs = container.querySelectorAll('svg[aria-hidden="true"]');
-    expect(svgs.length).toBe(2);
+    expect(svgs.length).toBe(1);
   });
 });

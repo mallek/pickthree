@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Guards the token contract: every var(--x) in base.css and the two app.css files must resolve
- * to a custom property packages/ui/tokens.css defines, one the same file defines itself, or one of
- * the handful a component sets inline via style (never in tokens.css). An undefined custom
+ * Guards the token contract: every var(--x) in base.css and app.css must resolve to a custom
+ * property packages/ui/tokens.css defines, one the same file defines itself, or one of the
+ * handful a component sets inline via style (never in tokens.css). An undefined custom
  * property fails silently at runtime, so this is the one thing typecheck and vitest cannot catch.
  *
  * A file's own definitions count because not every custom property is a token. The landing page
  * scopes its scenery to `.landing` (sky, treeline, the pokeball's colours, the tally pink): those
  * vary by theme but they are one page's decoration, not semantic tokens, and putting them in
- * tokens.css would hand them to apps/meta as well. What this gives up is scope: a property defined
+ * tokens.css would hand them to every page. What this gives up is scope: a property defined
  * on one selector and used under another still passes here. Typos, which are what actually fail
  * silently, still do not.
  */
@@ -19,14 +19,13 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Set inline via style={{ '--x': ... }} in a component (TypeChip, OpponentCard, Build's evo
- * card, meta's Sprite wrapper), never in tokens.css. */
-const INLINE_ONLY = new Set(['c', 't', 'c1', 'sprite-size']);
+ * card), never in tokens.css. */
+const INLINE_ONLY = new Set(['c', 't', 'c1']);
 
 const TOKENS_FILE = path.join(root, 'packages/ui/tokens.css');
 const SCAN_FILES = [
   path.join(root, 'packages/ui/base.css'),
   path.join(root, 'apps/web/src/app.css'),
-  path.join(root, 'apps/meta/src/app.css'),
 ];
 
 function names(text, pattern) {

@@ -62,7 +62,7 @@ export function Counters() {
   const vs = route?.vs ?? null;
   /** The back mark: opened by a jump from another screen. */
   const from = route?.from === true;
-  /** League named on a link from meta.pick3.gg; the app's own links never carry one. */
+  /** League named on an inbound link (`?l=`); the app's own links never carry one. */
   const routeLeague = route?.league ?? null;
   const knownRouteLeague =
     routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);

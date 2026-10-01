@@ -1,7 +1,7 @@
 /**
- * The teams meta.pick3.gg shows a league that has no shared battles yet. Generated from the full
- * legal pool at PvPoke default IVs (coldstart/pool.ts), drafted with the engine's own trio
- * evaluation, and scored by the same simStrength the site runs in the browser.
+ * The teams pick3's Top teams shows a league that has no shared battles yet. Generated from the
+ * full legal pool at PvPoke default IVs (coldstart/pool.ts), drafted with the engine's own trio
+ * evaluation, and scored by the same simStrength the app runs on device.
  *
  * Scored by simStrength and NOT by scoreTeam, deliberately. scoreTeam's battle field comes from
  * simulated slot results, where the switch carries four turns of starting energy; the matrix has

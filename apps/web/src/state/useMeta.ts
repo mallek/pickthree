@@ -288,7 +288,7 @@ export interface TopTeamsBoard extends Board {
 }
 
 /**
- * The team board, built as meta.pick3.gg builds it: the ranking from the summary, the observed
+ * The team board, built as meta.pick3.gg built it: the ranking from the summary, the observed
  * teams and cores from the team board (emptied under PvPoke, which costs no request since `prior`
  * reads the `all` board), the baked generated teams, and the matchup slice. A failed slice or a
  * missing generated file degrades the board; a failed summary or team board is an error.

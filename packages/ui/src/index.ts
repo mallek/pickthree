@@ -16,7 +16,6 @@ export { typeColor, typeInk } from './type.ts';
 export { applyTheme, nextTheme, storedTheme, THEME_KEY, type ThemeChoice } from './theme.ts';
 export { Button, type ButtonVariant } from './components/Button.tsx';
 export { IconButton } from './components/IconButton.tsx';
-export { MetaGlyph, SiteLink } from './components/SiteLink.tsx';
 export { MeasuredLine, MeasuredValue } from './components/Measured.tsx';
 export { ProgressCard, progressPercent } from './components/ProgressCard.tsx';
 export { Sheet, type SheetNav, type SheetPage } from './components/Sheet.tsx';

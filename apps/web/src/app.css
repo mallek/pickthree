@@ -3874,7 +3874,7 @@ input[type='range'] {
 }
 
 /* Top teams (#/meta/teams): meta.pick3.gg's signed team board (docs/design/audits/meta-teams.md),
-   ported from apps/meta/src/app.css. Classes that already meant something in pick3 carry a `tb-`
+   ported into pick3. Classes that already meant something in pick3 carry a `tb-`
    prefix (`team-row` is Your battles' and the Meta landing's own row); the rest keep their signed
    names. Tokens only. */
 .tb-filters {

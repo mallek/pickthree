@@ -1,7 +1,6 @@
 /**
  * The generated team board per league: `baseline/<id>-teams.json`, the cold-start teams a team
- * board shows before anyone has shared a battle. meta.pick3.gg's bake used to be the only writer;
- * the data build now writes it for every league pick3 ships, so pick3's own board has one too.
+ * board shows before anyone has shared a battle, for every league pick3 ships.
  */
 import fs from 'node:fs';
 import path from 'node:path';

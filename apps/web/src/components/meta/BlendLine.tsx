@@ -1,7 +1,6 @@
 /**
- * The one line every ranked list opens with, and the warning card that sits beside it. Ported from
- * apps/meta (Task 9 of the meta-in-pick3 plan): `blendParts` and `sourceHeaderLine` from
- * `headerCopy.ts`, `BlendLine` and `Note` from `components.tsx`.
+ * The one line every ranked list opens with, and the warning card that sits beside it. Ported
+ * from meta.pick3.gg (Task 9 of the meta-in-pick3 plan), which retired into the Meta tab.
  *
  * The sentence is generated from the same two numbers the blend actually uses (`say` and
  * `tournamentSay`), so the stated weight can never drift from the weight applied. CLAUDE.md: the
@@ -34,10 +33,9 @@ function ladderLine(r: SpeciesRanking): string {
   return `${Math.round(r.say * 100)}% measured, from ${sharedBattlesText(r.battles)} by ${devicesText(r.devices)}`;
 }
 
-/** The literal `source === 'ladder'` sentence: unchanged from today's wording, "battles shared
- *  by", the exact text Pokemon.tsx, Teams.tsx and Species.tsx currently build inline (not yet
- *  replaced by this file in apps/meta). Kept deliberately distinct from `ladderLine`
- *  above, whose "shared battles" wording belongs only to the `all` fallback. */
+/** The literal `source === 'ladder'` sentence, "battles shared by", the wording meta.pick3.gg's
+ *  pages built inline. Kept deliberately distinct from `ladderLine` above, whose "shared
+ *  battles" wording belongs only to the `all` fallback. */
 function literalLadderLine(r: SpeciesRanking): string {
   return `${Math.round(r.say * 100)}% measured, from ${battlesText(r.battles)} shared by ${devicesText(r.devices)}`;
 }

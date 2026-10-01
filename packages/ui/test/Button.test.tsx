@@ -37,10 +37,10 @@ describe('Button', () => {
   });
 
   it('renders a link when given an href', () => {
-    render(<Button href="https://meta.pick3.gg">Open meta</Button>);
-    expect(screen.getByRole('link', { name: 'Open meta' })).toHaveAttribute(
+    render(<Button href="#/meta/teams">Open Top teams</Button>);
+    expect(screen.getByRole('link', { name: 'Open Top teams' })).toHaveAttribute(
       'href',
-      'https://meta.pick3.gg',
+      '#/meta/teams',
     );
   });
 

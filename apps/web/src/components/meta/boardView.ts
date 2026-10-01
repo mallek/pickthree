@@ -1,6 +1,6 @@
 /**
- * Ported from apps/meta/src/boardView.ts (Task 9 of the meta-in-pick3 plan), with the few count
- * helpers it and the blend line need from apps/meta/src/format.ts.
+ * Ported from meta.pick3.gg's board (Task 9 of the meta-in-pick3 plan), with the few count
+ * helpers it and the blend line need.
  *
  * How a reader re-orders and thins the team board, and the one-line summary a collapsed row
  * carries. Pure functions over `BoardRow`, kept out of TopTeams.tsx so the ordering rules can be

@@ -1,7 +1,7 @@
 /**
  * The community meta, read for the Source picker (GBL, Tournaments, All).
  *
- * The request is league, since and until: what any meta.pick3.gg visitor sends. Picking a
+ * The request is league, since and until: what any Meta tab reader sends. Picking a
  * community source is the player's consent to it, so the sharing switch does not gate this read
  * (it gates what the phone SENDS, and the automatic Suggest teammates read). No collection data,
  * no pinned Pokemon, no device id. One `all` response serves all three sources.
@@ -26,7 +26,7 @@ export interface CommunityPayload {
 }
 
 export interface CommunityRequest {
-  /** The meta.pick3.gg league the data lives under. */
+  /** The league the data lives under. */
   league: string;
   since: string;
   until: string;

@@ -42,7 +42,7 @@ const SORTS: ChoiceOption<Sort>[] = [
   { value: 'name', label: 'Name' },
 ];
 
-/** A plus, the Add a Pokémon glyph for an IconButton: 20px, drawn like MetaGlyph. */
+/** A plus, the Add a Pokémon glyph for an IconButton: 20px, drawn like ShareGlyph. */
 function PlusGlyph() {
   return (
     <svg
