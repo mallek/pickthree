@@ -255,6 +255,8 @@ export interface MovePool {
   /** Counts figured against the fast move the caller is running. */
   charged: MoveChoice[];
   recommended: MoveIds;
+  /** PvPoke's ranking (the species' own entry or its base form's), or pick3's stat fallback. */
+  source: 'rankings' | 'fallback';
 }
 
 /** Every move the species can run, for a picker, plus what PickThree would recommend. */
@@ -281,6 +283,7 @@ export function movePool(
     fast,
     charged,
     recommended: { fast: rec.fast.moveId, charged: rec.charged.map((c) => c.moveId) },
+    source: rec.source === 'fallback' ? 'fallback' : 'rankings',
   };
 }
 

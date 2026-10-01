@@ -533,6 +533,19 @@ function teamParam(query: string): string[] {
     .slice(0, 3);
 }
 
+/** Two copies with the same species, form, IVs, level and CP: the values a specimen id is made of. */
+function sameValues(a: Specimen, b: Specimen): boolean {
+  return (
+    a.speciesId === b.speciesId &&
+    a.shadow === b.shadow &&
+    a.cp === b.cp &&
+    a.level.max === b.level.max &&
+    a.ivs?.atk === b.ivs?.atk &&
+    a.ivs?.def === b.ivs?.def &&
+    a.ivs?.sta === b.ivs?.sta
+  );
+}
+
 export function parseHash(hash: string): Route {
   const [path, query] = hash.replace(/^#\/?/, '').split('?');
   const parts = path!.split('/').filter(Boolean);
@@ -1297,17 +1310,35 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       return;
     }
     verdictsInFlight.current = true;
-    const specimens = s.collection.specimens;
+    let specimens = s.collection.specimens;
     const league = s.settings.league ?? 'great';
     dispatch({ type: 'verdicts-start' });
     try {
-      const verdicts = await h.verdicts(
-        specimens,
-        optionsFrom(s.settings),
-        (p) => dispatch({ type: 'rec-progress', progress: p }),
-        h.league,
-        (slice) => dispatch({ type: 'verdicts-partial', verdicts: slice }),
-      );
+      // The collection can change while the worker judges it (Enter values, a removal). A run
+      // over the old one is dropped, partials included, and the current one judged instead, so a
+      // corrected Pokémon never shows the verdict its old values earned.
+      const stale = (judged: Specimen[]): boolean =>
+        stateRef.current.collection !== null &&
+        stateRef.current.collection.specimens !== judged;
+      let verdicts: Record<string, Verdict>;
+      for (;;) {
+        const judging = specimens;
+        verdicts = await h.verdicts(
+          judging,
+          optionsFrom(stateRef.current.settings),
+          (p) => dispatch({ type: 'rec-progress', progress: p }),
+          h.league,
+          (slice) => {
+            if (!stale(judging)) {
+              dispatch({ type: 'verdicts-partial', verdicts: slice });
+            }
+          },
+        );
+        if (!stale(judging)) {
+          break;
+        }
+        specimens = stateRef.current.collection!.specimens;
+      }
       // Rows the engine could not judge are a bug report waiting to happen.
       const bad = Object.values(verdicts).filter((v) => v.line.startsWith('pick3 could not judge'));
       if (bad.length > 0) {
@@ -1712,9 +1743,17 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           }
         : made;
       const existing = stateRef.current.collection?.specimens ?? [];
-      const without = existing.filter((x) => x.id !== r.specimen.id);
-      await saveSpecimens([...without, r.specimen], 'typed in by hand');
-      return r;
+      // The id comes from the values, so typing in a Pokémon you already have replaces it. A copy
+      // corrected with Enter values keeps its old id over new values, though: one typed in with
+      // its old values must not take its place, so it gets an id of its own.
+      const holder = existing.find((x) => x.id === r.specimen.id);
+      const added =
+        holder && !sameValues(holder, r.specimen)
+          ? { ...r, specimen: { ...r.specimen, id: `${r.specimen.id}-${newId().slice(0, 8)}` } }
+          : r;
+      const without = existing.filter((x) => x.id !== added.specimen.id);
+      await saveSpecimens([...without, added.specimen], 'typed in by hand');
+      return added;
     },
     [saveSpecimens],
   );
@@ -1734,6 +1773,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       const specimen: Specimen = {
         ...made.specimen,
         id: old.id,
+        // Typing values in is not a scan: the copy keeps when it was scanned.
+        scannedAt: old.scannedAt,
         purified: old.purified && !made.specimen.shadow,
         currentMoves: sameSpecies ? old.currentMoves : { fast: null, charged: [] },
         megaForm: marks?.megaForm ?? null,

@@ -28,6 +28,7 @@ const pool: MovePool = {
     move('PLAY_ROUGH', 'Play Rough', { tm: 'elite', counts: [8, 7, 8] }),
   ],
   recommended: { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
+  source: 'rankings',
 };
 
 const f1 = 'BUBBLE';

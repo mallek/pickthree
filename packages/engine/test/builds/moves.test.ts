@@ -66,6 +66,14 @@ describe.skipIf(!haveStaticData())('hand-picked movesets', () => {
     );
   });
 
+  it("says whether the recommendation is PvPoke's or pick3's stat fallback", () => {
+    expect(movePool('azumarill', null, rankings, none, { allowEliteTm: true }, index).source).toBe(
+      'rankings',
+    );
+    const unranked = movePool('azumarill', null, new Map(), none, { allowEliteTm: true }, index);
+    expect(unranked.source).toBe('fallback');
+  });
+
   it('lists the legal pool with the recommendation marked', () => {
     const pool = movePool('azumarill', 'BUBBLE', rankings, none, { allowEliteTm: true }, index);
     expect(pool.fast.map((m) => m.moveId).sort()).toEqual(['BUBBLE', 'ROCK_SMASH']);

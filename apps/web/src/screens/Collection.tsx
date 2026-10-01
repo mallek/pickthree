@@ -30,7 +30,7 @@ import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
 import { shareEnabled } from '../metaShare.ts';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { specimenRecord, speciesRecord } from '../searchRecords.ts';
-import { hashFor, useActions, useAppState } from '../state/store.tsx';
+import { hashFor, useActions, useAppState, type Route } from '../state/store.tsx';
 import { useMetaRanking } from '../state/useMeta.ts';
 import { CollectionFilters } from './CollectionFilters.tsx';
 
@@ -432,6 +432,17 @@ export function Collection() {
     return out;
   }, [groups, missing, sort, metaKey, metaSpecies]);
 
+  /**
+   * Where a row goes: a copy that needs a rescan opens its species page, where Yours offers Enter
+   * values, as long as the league in play allows the species (the page is otherwise only "not
+   * allowed"); every other copy opens its own page.
+   */
+  const legal = useMemo(() => new Set(info?.legal ?? []), [info]);
+  const rowRoute = (sp: Specimen, label: VerdictLabel | undefined): Route =>
+    label === 'Needs rescan' && legal.has(ownSpeciesId(sp))
+      ? { screen: 'species', id: ownSpeciesId(sp) }
+      : { screen: 'specimen', id: sp.id };
+
   /** The tag line's rank pills for a species: blended rank, trend, PvPoke's role tag. */
   const rankTags = (id: string) => (
     <MetaRankTags rank={rankOf(id)} delta={meta?.trend.get(id)} role={metaRanks?.[id]} />
@@ -554,7 +565,8 @@ export function Collection() {
           const v = s.verdicts[sp.id];
           // A copy whose IVs never came through has nothing of its own to show: it reads like a
           // not-collected row (the meta tag line, no CP or IVs) with its verdict on the right, and
-          // opens the species page, where Yours lists it for a rescan or Enter values.
+          // opens the species page, where Yours lists it for a rescan or Enter values (when the
+          // league allows the species; otherwise its own page, not a dead end).
           const rescan = v?.label === 'Needs rescan';
           const isOpen = open.has(g.key);
           const nextBest = g.others[0];
@@ -564,11 +576,7 @@ export function Collection() {
             <div className="spec-group" key={g.key}>
               <a
                 className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}${rescan ? ' rescan' : ''}`}
-                href={hashFor(
-                  rescan
-                    ? { screen: 'species', id: ownSpeciesId(sp) }
-                    : { screen: 'specimen', id: sp.id },
-                )}
+                href={hashFor(rowRoute(sp, v?.label))}
               >
                 <PokemonToken
                   speciesId={sp.speciesId}
@@ -624,11 +632,7 @@ export function Collection() {
                       <a
                         className="spec-row sub"
                         key={o.id}
-                        href={hashFor(
-                          ov?.label === 'Needs rescan'
-                            ? { screen: 'species', id: ownSpeciesId(o) }
-                            : { screen: 'specimen', id: o.id },
-                        )}
+                        href={hashFor(rowRoute(o, ov?.label))}
                       >
                         <span />
                         <span style={{ minWidth: 0 }}>

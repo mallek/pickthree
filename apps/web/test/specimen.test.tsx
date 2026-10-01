@@ -957,8 +957,13 @@ describe('Enter values', () => {
 
     expect(screen.getByText('Edit values')).toBeInTheDocument();
     expect(screen.queryByText('Add a Pokémon')).toBeNull();
-    await waitFor(() => expect(screen.getByText('Change')).toBeInTheDocument());
-    expect(document.querySelector('.pick-slot')).toHaveTextContent('Azumarill');
+    await waitFor(() =>
+      expect(document.querySelector('.pick-slot')).toHaveTextContent('Azumarill'),
+    );
+    // The form edits values, not which Pokémon it is: no search box, no Change.
+    expect(screen.queryByPlaceholderText('Search any Pokemon, e.g. shadow swampert')).toBeNull();
+    expect(screen.queryByText('Change')).toBeNull();
+    expect(document.querySelector('.pick-slot')?.tagName).toBe('DIV');
     expect(field('Attack').value).toBe('0');
     expect(field('Defense').value).toBe('15');
     expect(field('HP').value).toBe('15');
@@ -977,7 +982,7 @@ describe('Enter values', () => {
       cp: 1450,
       lucky: false,
     });
-    // Back on the same Pokémon's page, in the form's place in history.
+    // Back on the Pokémon's page that opened the form, by going back to it.
     await waitFor(() => expect(latest?.state.route).toEqual({ screen: 'specimen', id: 'b' }));
     expect(window.location.hash).toBe('#/collection/b');
     // Same id, same place, new values; nothing added.
@@ -986,16 +991,109 @@ describe('Enter values', () => {
     const b = saved.find((x) => x.id === 'b')!;
     expect(b.cp).toBe(1450);
     expect(b.level).toEqual({ min: 21, max: 21 });
+    // Typing values in is not a scan: the scan date stays.
+    expect(b.scannedAt).toBe('2026-09-20 12:00:00');
     // A scanned copy stays a scan, so no Remove button appears for it.
     expect(b.source).toBeUndefined();
     // Judged again with the new values.
     await waitFor(() => expect(verdicts).toHaveBeenCalledTimes(2));
     expect(screen.getByText(/CP 1450/)).toBeInTheDocument();
+    // The page is in history once: Back goes to the screen before it, not to it again.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    });
+    await waitFor(() => expect(latest?.state.route.screen).toBe('teams'));
+  });
+
+  it('opened from a species page, goes back there after saving', async () => {
+    const noIvs = { ...specimen('r', 'azumarill'), ivs: null } as unknown as Specimen;
+    await boot(undefined, { manual: manual() as never }, [...SPECIMENS, noIvs]);
+    await go({ screen: 'species', id: 'azumarill' });
+    await go({ screen: 'add', edit: 'r' });
+    await waitFor(() => expect(field('CP').value).toBe('1400'));
+    for (const label of ['Attack', 'Defense', 'HP']) {
+      await act(async () => {
+        fireEvent.change(field(label), { target: { value: '10' } });
+      });
+    }
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    });
+    await waitFor(() =>
+      expect(latest?.state.route).toEqual({ screen: 'species', id: 'azumarill' }),
+    );
+    expect(window.location.hash).toBe('#/species/azumarill');
+  });
+
+  it('drops a verdict run that started before an edit and judges the edited copy', async () => {
+    const noIvs = { ...specimen('r', 'azumarill'), ivs: null } as unknown as Specimen;
+    const rescan = { ...VERDICTS.b!, specimenId: 'r', label: 'Needs rescan', build: null };
+    const worth = { ...VERDICTS.b!, specimenId: 'r', label: 'Worth building' };
+    let first: (v: Record<string, Verdict>) => void = () => undefined;
+    const verdicts = vi
+      .fn()
+      .mockImplementationOnce(
+        () => new Promise<Record<string, Verdict>>((resolve) => (first = resolve)),
+      )
+      .mockImplementation(async () => ({ ...VERDICTS, r: worth as Verdict }));
+    await boot(verdicts, { manual: manual() as never }, [...SPECIMENS, noIvs]);
+    await go({ screen: 'specimen', id: 'r' });
+    await waitFor(() => expect(verdicts).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await latest!.actions.updateManual('r', {
+        speciesId: 'azumarill',
+        ivs: { atk: 10, def: 10, sta: 10 },
+        cp: 1400,
+      });
+    });
+    // The run over the old values lands now: it must not show "Needs rescan".
+    await act(async () => {
+      first({ ...VERDICTS, r: rescan as unknown as Verdict });
+    });
+    await waitFor(() => expect(verdicts).toHaveBeenCalledTimes(2));
+    const judged2 = verdicts.mock.calls[1]![0] as Specimen[];
+    expect(judged2.find((x) => x.id === 'r')?.ivs).toEqual({ atk: 10, def: 10, sta: 10 });
+    await waitFor(() => expect(latest?.state.verdicts.r?.label).toBe('Worth building'));
+    expect(latest?.state.verdictsLoading).toBe(false);
+  });
+
+  it("gives a Pokémon typed in with an edited copy's old values an id of its own", async () => {
+    // The worker's id comes from the values: Azumarill 0/15/15 at CP 1400 is "b".
+    const m = vi.fn(async (input: { speciesId: string; ivs: unknown; cp: number }) => ({
+      specimen: {
+        ...specimen('b', input.speciesId, { manual: true, level: input.cp === 1400 ? 20 : 21 }),
+        ivs: input.ivs,
+        cp: input.cp,
+      } as Specimen,
+      level: 20,
+      exactCp: true,
+      matchedCp: input.cp,
+    }));
+    await boot(undefined, { manual: m as never });
+    const ivs = { atk: 0, def: 15, sta: 15 };
+    await act(async () => {
+      await latest!.actions.updateManual('b', { speciesId: 'azumarill', ivs, cp: 1450 });
+    });
+    await act(async () => {
+      await latest!.actions.addManual({ speciesId: 'azumarill', ivs, cp: 1400 });
+    });
+    let saved = (await storage.loadCollection())!.specimens;
+    expect(saved).toHaveLength(SPECIMENS.length + 1);
+    expect(saved.find((x) => x.id === 'b')?.cp).toBe(1450);
+    const added = saved.find((x) => x.id.startsWith('b-'));
+    expect(added?.cp).toBe(1400);
+    // Typed in again with the values it has now, the copy is replaced, not doubled.
+    await act(async () => {
+      await latest!.actions.addManual({ speciesId: 'azumarill', ivs, cp: 1450 });
+    });
+    saved = (await storage.loadCollection())!.specimens;
+    expect(saved).toHaveLength(SPECIMENS.length + 1);
   });
 
   it('keeps the Mega mark it was saved with unless the form changes it', async () => {
     const m = manual();
     await boot(undefined, { manual: m as never });
+    await go({ screen: 'specimen', id: 'k' });
     await go({ screen: 'add', edit: 'k' });
     const box = await screen.findByRole('checkbox', { name: 'Mega-evolved before' });
     await waitFor(() => expect(box).toBeChecked());
@@ -1011,6 +1109,7 @@ describe('Enter values', () => {
     const noIvs = { ...specimen('r', 'azumarill'), ivs: null } as unknown as Specimen;
     const m = manual();
     await boot(undefined, { manual: m as never }, [...SPECIMENS, noIvs]);
+    await go({ screen: 'specimen', id: 'r' });
     await go({ screen: 'add', edit: 'r' });
     await waitFor(() => expect(field('CP').value).toBe('1400'));
     expect(field('Attack').value).toBe('');

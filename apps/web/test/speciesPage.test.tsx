@@ -229,11 +229,20 @@ const POOLS: Record<string, MovePool> = {
       choice('HYDRO_PUMP', 'tm', [9, 9, 8]),
     ],
     recommended: { fast: 'BUBBLE', charged: ['ICE_BEAM', 'PLAY_ROUGH'] },
+    source: 'rankings',
   },
   tinkaton: {
     fast: [choice('POISON_STING')],
     charged: [choice('EARTHQUAKE', 'tm', [6, 6, 6])],
     recommended: { fast: 'POISON_STING', charged: ['EARTHQUAKE'] },
+    source: 'rankings',
+  },
+  // The same set as PvPoke's meta group lists for it.
+  clodsire: {
+    fast: [choice('POISON_STING')],
+    charged: [choice('EARTHQUAKE'), choice('SLUDGE_BOMB'), choice('MEGAHORN')],
+    recommended: { fast: 'POISON_STING', charged: ['EARTHQUAKE', 'SLUDGE_BOMB'] },
+    source: 'rankings',
   },
 };
 
@@ -458,6 +467,7 @@ describe('Species page', () => {
     expect(within(rec).queryByText('TM')).toBeNull();
     expect(within(rec).getByText('5-4-5 Bubble')).toBeInTheDocument();
     expect(within(rec).queryByText('Hydro Pump')).toBeNull();
+    expect(screen.queryByText(/PvPoke has no set/)).toBeNull();
 
     // Moves players ran: the most run fast move and two charged moves, against PvPoke's set.
     const moves = section('Moves players ran');
@@ -563,6 +573,46 @@ describe('Species page', () => {
     await waitFor(() => expect(screen.getByText('Share of battles')).toBeInTheDocument());
     expect(screen.queryByRole('heading', { name: 'Moves players ran' })).toBeNull();
     expect(screen.queryByText(/No moves reported/)).toBeNull();
+  });
+
+  it('compares the moves players ran against the set Recommended moves shows', async () => {
+    // PvPoke's ranking runs Megahorn where its meta group lists Sludge Bomb; the page states the
+    // ranking's set in both places.
+    window.location.hash = '#/species/clodsire';
+    stubNet(freshNet());
+    const pool: MovePool = {
+      ...POOLS.clodsire!,
+      recommended: { fast: 'POISON_STING', charged: ['EARTHQUAKE', 'MEGAHORN'] },
+    };
+    renderPage(host({ movePool: vi.fn(async () => pool) }));
+
+    const rec = await waitFor(() => section('Recommended moves'));
+    expect([...rec.querySelectorAll('.move-name')].map((e) => e.textContent)).toEqual([
+      'Poison Sting',
+      'Earthquake',
+      'Megahorn',
+    ]);
+    await waitFor(() =>
+      expect(
+        within(section('Moves players ran')).getByText(
+          'Seen in 5 of 5 battles with known moves. Same as PvPoke recommends.',
+        ),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('says when PvPoke has no set and pick3 picked the moves by their stats', async () => {
+    window.location.hash = '#/species/tinkaton';
+    stubNet(freshNet());
+    const pool: MovePool = { ...POOLS.tinkaton!, source: 'fallback' };
+    renderPage(host({ movePool: vi.fn(async () => pool) }));
+
+    const rec = await waitFor(() => section('Recommended moves'));
+    expect(
+      within(rec).getByText(
+        'PvPoke has no set for Tinkaton in Great League; picked by move stats.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('the exclusion switch for a species you own leaves it out of teams and lets it back in', async () => {

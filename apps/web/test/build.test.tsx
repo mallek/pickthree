@@ -122,6 +122,7 @@ describe('Build a team', () => {
     fast: [move('FAIRY_WIND', 'Fairy Wind')],
     charged: [move('PLAY_ROUGH', 'Play Rough'), move('HEAVY_SLAM', 'Heavy Slam')],
     recommended: { fast: 'FAIRY_WIND', charged: ['PLAY_ROUGH', 'HEAVY_SLAM'] },
+    source: 'rankings',
   };
 
   /** Open the first empty slot, search for `query` and tap the result named `label`. */

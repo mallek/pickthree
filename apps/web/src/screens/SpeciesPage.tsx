@@ -10,9 +10,8 @@
  * Opening the page is the player's own choice, so it reads whatever the sharing switch says;
  * the read names this page's species and nothing from the collection.
  */
-import type { MoveChoice, MovePool, Specimen } from '@pickthree/engine';
+import type { MoveChoice, MoveIds, MovePool, Specimen } from '@pickthree/engine';
 import type {
-  BaselineSpecies,
   MovesetStats,
   SourceKey,
   SpeciesDetailV1,
@@ -103,12 +102,8 @@ function sourceLine(r: SpeciesRanking): string {
 type MoveNames = Record<string, { name: string; type: string }>;
 
 /** How the set players ran compares to PvPoke's: the same, or which moves PvPoke runs instead. */
-function compareLine(
-  shown: readonly string[],
-  entry: BaselineSpecies,
-  moveName: (id: string) => string,
-) {
-  const pv = [entry.fastMove, ...entry.chargedMoves];
+function compareLine(shown: readonly string[], pvSet: MoveIds, moveName: (id: string) => string) {
+  const pv = [pvSet.fast, ...pvSet.charged];
   const pvOnly = pv.filter((m) => !shown.includes(m)).map(moveName);
   const ranOnly = shown.filter((m) => !pv.includes(m)).map(moveName);
   if (pvOnly.length === 0 && ranOnly.length === 0) {
@@ -144,11 +139,12 @@ function MoveRow({ kind, moveId, moves }: { kind: string; moveId: string; moves:
  */
 function MovesRan({
   detail,
-  entry,
+  pvSet,
   moves,
 }: {
   detail: SpeciesDetailV1;
-  entry: BaselineSpecies | null;
+  /** The set Recommended moves shows, so the page states one PvPoke set; null until it loads. */
+  pvSet: MoveIds | null;
   moves: MoveNames;
 }) {
   const moveName = (id: string): string => moves[id]?.name ?? id;
@@ -164,7 +160,7 @@ function MovesRan({
   const seen = detail.movesets
     .filter((set) => set.fast === fast.moveId && charged.every((c) => set.charged.includes(c)))
     .reduce((sum, set) => sum + set.battles, 0);
-  const compare = entry ? ` ${compareLine([fast.moveId, ...charged], entry, moveName)}` : '';
+  const compare = pvSet ? ` ${compareLine([fast.moveId, ...charged], pvSet, moveName)}` : '';
   return (
     <div className="stack" style={{ gap: 6 }}>
       <h3>Moves players ran</h3>
@@ -195,16 +191,16 @@ function recommendedMoves(pool: MovePool): { fast: MoveChoice; charged: MoveChoi
 /** Sets from tournament rosters: what players brought, over the known sets only. */
 function TournamentMoves({
   block,
-  entry,
+  pvSet,
   moves,
 }: {
   block: NonNullable<SpeciesDetailV1['tournament']>;
-  entry: BaselineSpecies | null;
+  pvSet: MoveIds | null;
   moves: MoveNames;
 }) {
   const setKey = (fast: string, charged: readonly string[]) =>
     `${fast}|${[...charged].sort().join('+')}`;
-  const recommended = entry ? setKey(entry.fastMove, entry.chargedMoves) : null;
+  const recommended = pvSet ? setKey(pvSet.fast, pvSet.charged) : null;
   return (
     <div className="stack" style={{ gap: 6 }}>
       <h3>Moves at tournaments</h3>
@@ -267,7 +263,7 @@ export function SpeciesPage({ id }: { id: string }) {
   // For one render after a league switch the hook still holds the last league's ranking.
   const meta = ranked.data && ranked.data.league === league ? ranked.data : null;
 
-  // PvPoke's set for the comparison and the ban list; memoised per league in metaData.ts.
+  // The Play! ban list, for when the ranking read has no row; memoised per league in metaData.ts.
   const [side, setSide] = useState<{ league: string; side: PvpokeSide } | null>(null);
   useEffect(() => {
     let live = true;
@@ -307,7 +303,11 @@ export function SpeciesPage({ id }: { id: string }) {
       live = false;
     };
   }, [poolKey, s.boot, movePool, id]);
-  const recommended = pool && pool.key === poolKey ? recommendedMoves(pool.pool) : null;
+  const shownPool = pool && pool.key === poolKey ? pool.pool : null;
+  const recommended = shownPool ? recommendedMoves(shownPool) : null;
+  // The one PvPoke set the page states: Recommended moves, the comparison under the moves players
+  // ran, and the tournament card's "PvPoke's set" mark all read it.
+  const pvSet = recommended ? shownPool!.recommended : null;
 
   useEffect(() => {
     if (
@@ -387,7 +387,6 @@ export function SpeciesPage({ id }: { id: string }) {
   const role = info?.metaRanks[id];
   const pvpokeRank = role?.overall ?? row?.pvpokeRank ?? null;
   const banned = row?.banned ?? pvpoke?.banned.has(id) ?? false;
-  const entry = pvpoke?.baseline.byId.get(id) ?? null;
   const types = species(id)?.types ?? [];
   // The ranking stands in with PvPoke's order when the read fails; this page has nothing
   // measured to show then, so it says the read failed.
@@ -552,17 +551,24 @@ export function SpeciesPage({ id }: { id: string }) {
             <div className="card" style={{ padding: '0 14px' }}>
               <MoveRows fast={recommended.fast} charged={recommended.charged} eliteOnly />
             </div>
+            {shownPool?.source === 'fallback' ? (
+              <p className="small muted" style={{ margin: 0 }}>
+                PvPoke has no set for {name(id)} in{' '}
+                {s.data.leagues.find((l) => l.id === league)?.title ?? 'this league'}; picked by
+                move stats.
+              </p>
+            ) : null}
           </div>
         ) : null}
 
-        {settled && d ? <MovesRan detail={d} entry={entry} moves={moves} /> : null}
+        {settled && d ? <MovesRan detail={d} pvSet={pvSet} moves={moves} /> : null}
 
         {settled &&
         d?.tournament &&
         !banned &&
         includesTournaments(SOURCE) &&
         d.tournament.movesets.length > 0 ? (
-          <TournamentMoves block={d.tournament} entry={entry} moves={moves} />
+          <TournamentMoves block={d.tournament} pvSet={pvSet} moves={moves} />
         ) : null}
 
         {settled && mates.length > 0 ? (

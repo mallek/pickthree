@@ -512,6 +512,31 @@ describe('Collection', () => {
     );
   });
 
+  it('keeps a Needs rescan copy on its own page when the league does not allow its species', async () => {
+    const rescan = { ...verdict('d', 'Needs rescan', 0), build: null } as unknown as Verdict;
+    const base = fakeHost();
+    const info = base.leagueInfo as unknown as () => Promise<{ legal: string[] }>;
+    await open(
+      async () => ({ ...VERDICTS, d: rescan }),
+      SPECIMENS,
+      (o) =>
+        fakeHost({
+          ...o,
+          leagueInfo: vi.fn(async () => {
+            const i = await info();
+            return { ...i, legal: i.legal.filter((x) => x !== 'clodsire') };
+          }),
+        }),
+    );
+    await judged();
+    const row = [...document.querySelectorAll<HTMLElement>('.spec-row:not(.sub)')].find(
+      (r) => r.querySelector('.spec-name')?.firstChild?.textContent === 'Clodsire',
+    )!;
+    // The species page would only say it is not allowed: the row opens the copy's own page.
+    expect(row).toHaveAttribute('href', hashFor({ screen: 'specimen', id: 'd' }));
+    expect(row.lastElementChild).toHaveAttribute('data-verdict', 'Needs rescan');
+  });
+
   it('sorts from a visible dropdown; Name orders the rows by name', async () => {
     await open();
     await judged();

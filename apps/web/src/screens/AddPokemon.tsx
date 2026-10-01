@@ -13,6 +13,7 @@ import {
   useSpeciesSearch,
 } from '../components.tsx';
 import { ownSpeciesId } from '../format.ts';
+import { canGoBack } from '../state/history.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 type MegaForm = 'mega' | 'mega_x' | 'mega_y';
@@ -137,16 +138,26 @@ export function AddPokemon() {
       const r: ManualResult = editId
         ? await updateManual(editId, input, marks)
         : await addManual(input, marks);
+      // A new Pokémon's page takes the Add form's place. An edit goes back to whatever opened it
+      // (the Pokémon's page, or a species page), so no page is left twice in history; opened
+      // straight from a link, with nothing behind, it lands on the Pokémon's page.
+      const finish = (): void => {
+        if (editId && canGoBack()) {
+          window.history.back();
+        } else {
+          navigate({ screen: 'specimen', id: r.specimen.id }, { replace: true });
+        }
+      };
       if (!r.exactCp) {
         setNote(
           `No level gives exactly CP ${cp} with those IVs. Saved at level ${r.level}, CP ${r.matchedCp}. Check the IVs if that looks wrong.`,
         );
         leave.current = window.setTimeout(() => {
           leave.current = null;
-          navigate({ screen: 'specimen', id: r.specimen.id }, { replace: true });
+          finish();
         }, 2500);
       } else {
-        navigate({ screen: 'specimen', id: r.specimen.id }, { replace: true });
+        finish();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -215,44 +226,63 @@ export function AddPokemon() {
       <div className="scroll" style={{ gap: 16 }}>
         <div className="stack" style={{ gap: 8 }}>
           <b>Which Pokémon</b>
-          <input
-            className="search"
-            placeholder="Search any Pokemon, e.g. shadow swampert"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            inputMode="search"
-            autoFocus={speciesId === null && !editId}
-          />
-          {searching ? (
+          {/* Edit values corrects the numbers, not which Pokémon it is: no search, no Change. */}
+          {editId ? null : (
             <>
-              <span className="meta">Matches</span>
-              <div className="recent-row matches">
-                {matches.map((id) => (
-                  <button
-                    type="button"
-                    className="recent-token"
-                    key={id}
-                    onClick={() => {
-                      setSpeciesId(id);
-                      setMegaForm(null);
-                      setLevel4(false);
-                      setQuery('');
-                    }}
-                    aria-label={name(id)}
-                  >
-                    <PokemonToken speciesId={id} size={36} />
-                    <span>{short(id)}</span>
-                  </button>
-                ))}
-              </div>
-              {matches.length === 0 ? (
-                <p className="muted small" style={{ margin: 0 }}>
-                  Nothing matches. Try "shadow" plus the name, or a type like "water".
-                </p>
+              <input
+                className="search"
+                placeholder="Search any Pokemon, e.g. shadow swampert"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                inputMode="search"
+                autoFocus={speciesId === null}
+              />
+              {searching ? (
+                <>
+                  <span className="meta">Matches</span>
+                  <div className="recent-row matches">
+                    {matches.map((id) => (
+                      <button
+                        type="button"
+                        className="recent-token"
+                        key={id}
+                        onClick={() => {
+                          setSpeciesId(id);
+                          setMegaForm(null);
+                          setLevel4(false);
+                          setQuery('');
+                        }}
+                        aria-label={name(id)}
+                      >
+                        <PokemonToken speciesId={id} size={36} />
+                        <span>{short(id)}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {matches.length === 0 ? (
+                    <p className="muted small" style={{ margin: 0 }}>
+                      Nothing matches. Try "shadow" plus the name, or a type like "water".
+                    </p>
+                  ) : null}
+                </>
               ) : null}
             </>
+          )}
+          {speciesId && editId ? (
+            <div className="pick-slot open" data-locked="">
+              <span className="pick-body">
+                <PokemonToken speciesId={speciesId} size={40} />
+                <span style={{ minWidth: 0 }}>
+                  <span className="spec-name">
+                    {name(speciesId)}
+                    <TypeChips types={species(speciesId)?.types ?? []} small />
+                  </span>
+                  <MetaTags speciesId={speciesId} />
+                </span>
+              </span>
+            </div>
           ) : null}
-          {speciesId ? (
+          {speciesId && !editId ? (
             <button
               type="button"
               className="pick-slot open"
