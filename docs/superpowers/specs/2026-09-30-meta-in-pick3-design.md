@@ -130,10 +130,11 @@ filter sheet as now. Mock: `mock/meta-in-pick3`, views `collection`, `collection
 - **Every Pokemon eligible in the current league is listed**: your specimens as today, plus every
   species legal in the league (`legalSet`) with no specimen in the collection, Shadow forms as
   their own rows as the rankings list them.
-- **Every row carries one rank, the blended meta rank**: a tag "#N meta" in the row's tag line,
-  replacing PvPoke's "#N overall" and role tags ("#2 lead", "#8 switch"), which move to the species
-  page. The rank is the league's blended weight order (`communityWeights`, window "This meta",
-  source All), the same order the Meta landing's Most seen card and the species page use.
+- **Every row carries the blended meta rank**: a tag "#N meta" in the row's tag line, replacing
+  PvPoke's "#N overall". The rank is the league's blended weight order (`communityWeights`, window
+  "This meta", source All), the same order the Meta landing's Most seen card and the species page
+  use. PvPoke's role tag ("#2 lead", "#8 switch", "#5 closer") stays after it, as today
+  (`metaTags`' role half, same cutoff).
 - **Trend**: beside the rank tag, a `Tag` in the win tone with an up arrow and the places gained,
   or the loss tone with a down arrow and the places lost. No movement, no trend tag. The arrow is
   an icon; the text is the number alone, its accessible name "up 3 places" or "down 3 places".
@@ -143,16 +144,17 @@ filter sheet as now. Mock: `mock/meta-in-pick3`, views `collection`, `collection
   - Live, no battle threshold. If it proves too jumpy, a minimum is added later; the threshold is
     one constant beside the blend's half-say points.
 - **Your rows** keep their line "CP 1491 · Top 1%", the verdict tag on the right, and "N more"
-  grouping. Only the tag line changes (blended rank and trend).
-- **A not-collected row**: token, name (Shadow flag as now), the tag line (rank and trend), and a
+  grouping. Only the tag line changes: blended rank, trend, role tag.
+- **A not-collected row**: token, name (Shadow flag as now), the tag line (rank, trend, role), and a
   neutral "Not collected" `Tag` on the right, in the slot your rows use for the verdict. No share,
   no battle counts, no "Add one". When the collection is empty, the "Not collected" tag is left
   off: every row would carry it.
 - **Filter sheet** gains "Hide not collected" ("Only the Pokémon you have"), second after "Group
   same Pokémon", off by default, sticky like the other switches, counted in the filter button's
   badge only when on. "Top 50 meta" now reads the blended rank and applies to both kinds of row.
-- **Sort** gains Meta (blended rank, the default when the collection is empty). Under the other
-  sorts, not-collected rows follow your own, in Meta order.
+- **Sort**: "Meta rank" switches from PvPoke overall to the blended rank, and is the default when
+  the collection is empty. Under the other sorts, not-collected rows follow your own, in meta
+  order.
 - The count line reads "212 Pokémon · 96 kinds · 142 not collected" (the last part only while they
   show). The quick pills (Built, Worth it, Wait for IVs, Rescan) are verdicts, so turning one on
   shows your own Pokémon only; they are hidden when the collection is empty.
@@ -165,8 +167,7 @@ filter sheet as now. Mock: `mock/meta-in-pick3`, views `collection`, `collection
 Built on the signed specimen page's parts (mock round 2):
 
 - Sub header, back. Hero: 64px token, name, type chips, "#N meta" with its trend tag and
-  "#M PvPoke", PvPoke's role tags ("#2 lead", "#8 switch"), then "You have N" or "Not in your
-  collection".
+  "#M PvPoke", then "You have N" or "Not in your collection".
 - Facts card (`kv` rows): Share of battles (pink, with mark), Players went against it, At
   tournaments (pick share; "Banned at tournaments" from the ban list), then one source line ("This
   meta · N GBL battles from M players and K tournament battles"). Nothing measured: the share row
