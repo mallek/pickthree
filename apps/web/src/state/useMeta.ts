@@ -276,6 +276,12 @@ export function useMetaRanking(
   ]);
 }
 
+/** The team board, with the window's counted battles by source (`TeamsV1.sources`), which Top
+ * teams' "How it is ranked" uses to say how much of the All board came from each population. */
+export interface TopTeamsBoard extends Board {
+  sources: Record<string, number>;
+}
+
 /**
  * The team board, built as meta.pick3.gg builds it: the ranking from the summary, the observed
  * teams and cores from the team board (emptied under PvPoke, which costs no request since `prior`
@@ -285,10 +291,10 @@ export function useMetaRanking(
 export function useTopTeams(
   league: string,
   opts: { window: WindowKey; source: SourceKey },
-): Loaded<Board> {
+): Loaded<TopTeamsBoard> {
   const where = useWhere(league, opts.window);
   const run = where
-    ? async (): Promise<Board> => {
+    ? async (): Promise<TopTeamsBoard> => {
         const { apiLeague, window: w } = where;
         const community: Promise<[MetaSummaryV1, TeamsV1]> =
           apiLeague !== null
@@ -305,12 +311,13 @@ export function useTopTeams(
           banned: side.banned,
         });
         const observed = opts.source === 'prior' ? { ...teams, teams: [], cores: [] } : teams;
-        return buildBoard({
+        const board = buildBoard({
           teams: observed,
           ranking,
           generated: generated?.teams ?? [],
           view,
         });
+        return { ...board, sources: teams.sources };
       }
     : null;
   return useLoad(run, [

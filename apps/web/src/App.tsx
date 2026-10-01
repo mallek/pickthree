@@ -13,6 +13,7 @@ import { Settings } from './screens/settings/Settings.tsx';
 import { SpecimenScreen } from './screens/Specimen.tsx';
 import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
+import { TopTeams } from './screens/TopTeams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
 import { Import } from './screens/Import.tsx';
 import { YourBattles } from './screens/YourBattles.tsx';
@@ -135,8 +136,7 @@ function renderScreen(r: Route) {
     case 'meta-battles':
       return <YourBattles />;
     case 'meta-teams':
-      // Placeholder until the Top teams screen replaces it.
-      return <YourBattles />;
+      return <TopTeams />;
     case 'species':
       // Placeholder until the species page replaces it.
       return <Collection />;
