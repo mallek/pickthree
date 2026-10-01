@@ -7,6 +7,7 @@ import {
   Header,
   IconButton,
   InlineSelect,
+  Loading,
   Tag,
   type ChoiceOption,
 } from '@pickthree/ui';
@@ -148,6 +149,13 @@ export function rankLabel(
 /** Sorts after every species in the blended order: those go by PvPoke's overall rank. */
 const UNRANKED = 100_000;
 
+/**
+ * Not-collected rows list the species the blended order ranks (PvPoke's meta group plus anything
+ * sighted or picked) and PvPoke's overall top 200, not every species the league admits (about
+ * 1,500 in Great League, Caterpie included). A search reaches the whole league.
+ */
+const NOT_COLLECTED_TOP = 200;
+
 const NO_PILLS: VerdictLabel[] = [];
 
 /** One line of the list: a group of your own Pokémon, or a species you have none of. */
@@ -172,6 +180,10 @@ export function Collection() {
   // For one render after a league switch the hook still holds the last league's order; never
   // mix it with this league's rows.
   const meta = ranked.data && info && ranked.data.league === info.id ? ranked.data : null;
+  // Settled once the read is done for this league: a result for another league is still loading.
+  const rankSettled =
+    ranked.state === 'error' ||
+    (ranked.state === 'ready' && (ranked.data === null || meta !== null));
   const blended = useMemo(
     () => new Map((meta?.order ?? []).map((id, i) => [id, i + 1] as const)),
     [meta],
@@ -349,11 +361,16 @@ export function Collection() {
     }
     const parsed = parseQuery(query);
     const shownName = (id: string): string => name(id).replace(/^Shadow /, '');
+    // Without a search, only the ranked part of the league; a search reaches all of it.
+    const listed = (id: string): boolean =>
+      blended.has(id) || (metaRanks?.[id]?.overall ?? Infinity) <= NOT_COLLECTED_TOP;
     return info.legal
       .filter(
         (id) =>
           !have.has(id) &&
-          (parsed.length === 0 || matchesQuery(parsed, speciesRecord(id, name(id), species(id)))) &&
+          (parsed.length === 0
+            ? listed(id)
+            : matchesQuery(parsed, speciesRecord(id, name(id), species(id)))) &&
           (!shadowsOnly || id.endsWith('_shadow')) &&
           (!metaOnly || inTop(id)),
       )
@@ -372,6 +389,8 @@ export function Collection() {
     species,
     inTop,
     metaKey,
+    blended,
+    metaRanks,
   ]);
 
   /**
@@ -426,7 +445,9 @@ export function Collection() {
     <MetaRankTags rank={rankOf(id)} delta={meta?.trend.get(id)} role={metaRanks?.[id]} />
   );
 
-  useScrollMemory('collection.scroll', items.length > 0 && !s.verdictsLoading);
+  // Restore the scroll only against the final order: the blended ranking reorders the rows when
+  // it lands, so an offset restored before then would point at different Pokémon.
+  useScrollMemory('collection.scroll', items.length > 0 && !s.verdictsLoading && rankSettled);
   // Ruling 4: every switch that differs from its default counts, Group same Pokémon (on by
   // default) included.
   const filtersOn = [
@@ -443,8 +464,10 @@ export function Collection() {
     : grouped
       ? `${num(rows.length)} Pokémon${SEP}${num(groups.length)} ${groups.length === 1 ? 'kind' : 'kinds'}${notCollected}`
       : `${num(rows.length)} shown${notCollected}`;
-  // Until the league's data is in, an empty list is not yet "nothing matches".
-  const nothing = items.length === 0 && !s.verdictsLoading && info !== null;
+  // With nothing collected the list is the league's, so it waits for the league's data; your own
+  // Pokémon filtered to nothing is "nothing matches" whatever the league data is doing.
+  const leagueWait = empty && info === null;
+  const nothing = items.length === 0 && !s.verdictsLoading && !leagueWait;
   return (
     <div className="screen">
       <div className="page-head flow">
@@ -500,7 +523,7 @@ export function Collection() {
         <div className="sort-row">
           {/* Nothing matching reads as the empty state below, not as "0 Pokémon"; while judging,
               the count stays. The span stays too, so Sort keeps its place on the right. */}
-          <span className="meta">{nothing ? null : count}</span>
+          <span className="meta">{nothing || leagueWait ? null : count}</span>
           <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
         </div>
       </div>
@@ -513,6 +536,7 @@ export function Collection() {
           />
         ) : null}
         {s.verdictsError ? <ErrorState line={judgeFailedLine(s.verdictsError)} /> : null}
+        {leagueWait ? <Loading label={`Loading ${league.title}`} /> : null}
         {items.map((g) => {
           if (g.kind === 'missing') {
             return (

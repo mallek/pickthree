@@ -43,6 +43,8 @@ interface Net {
   /** The current window's summary; the window ending a week sooner gets `earlier`. */
   current: unknown;
   earlier: unknown;
+  /** While set, PvPoke's meta group waits on it, which holds the ranking in loading. */
+  hold?: Promise<void>;
 }
 
 function stubNet(net: Net): void {
@@ -61,6 +63,9 @@ function stubNet(net: Net): void {
         return new Response('{}', { status: 404 });
       }
       if (raw === '/data/meta/great.json') {
+        if (net.hold) {
+          await net.hold;
+        }
         return json(GROUP);
       }
       if (raw === '/data/rankings/great/overall.json') {
@@ -94,9 +99,14 @@ function heavy(speciesId: string) {
 
 let net: Net = quietNet();
 
-/** fakeHost's league grown to six legal species, two of them not in fakeHost's collection. */
-function leagueHost(overrides: Partial<Record<string, unknown>> = {}) {
+/**
+ * fakeHost's league grown to six legal species, two of them not in fakeHost's collection. `wide`
+ * adds two more: Lanturn, PvPoke's 150th and outside the meta group, and Caterpie, which PvPoke
+ * does not rank at all.
+ */
+function leagueHost(overrides: Partial<Record<string, unknown>> = {}, wide = false) {
   const base = fakeHost();
+  const more = wide ? ['lanturn', 'caterpie'] : [];
   return fakeHost({
     ready: vi.fn(async () => {
       const r = (await base.ready()) as unknown as {
@@ -119,8 +129,19 @@ function leagueHost(overrides: Partial<Record<string, unknown>> = {}) {
             familyId: 'wooper',
             dex: 195,
           },
+          ...(wide
+            ? {
+                lanturn: {
+                  name: 'Lanturn',
+                  types: ['water', 'electric'],
+                  familyId: 'chinchou',
+                  dex: 171,
+                },
+                caterpie: { name: 'Caterpie', types: ['bug'], familyId: 'caterpie', dex: 10 },
+              }
+            : {}),
         },
-        allSpecies: [...r.allSpecies, 'cramorant', 'quagsire_shadow'],
+        allSpecies: [...r.allSpecies, 'cramorant', 'quagsire_shadow', ...more],
       };
     }),
     leagueInfo: vi.fn(async () => ({
@@ -134,9 +155,18 @@ function leagueHost(overrides: Partial<Record<string, unknown>> = {}) {
         azumarill: { overall: 4, score: 96, role: null, roleRank: null },
         quagsire_shadow: { overall: 5, score: 95, role: null, roleRank: null },
         medicham: { overall: 60, score: 80, role: 'switch', roleRank: 70 },
+        ...(wide ? { lanturn: { overall: 150, score: 60, role: null, roleRank: null } } : {}),
       },
       analyzable: [],
-      legal: ['tinkaton', 'azumarill', 'clodsire', 'medicham', 'cramorant', 'quagsire_shadow'],
+      legal: [
+        'tinkaton',
+        'azumarill',
+        'clodsire',
+        'medicham',
+        'cramorant',
+        'quagsire_shadow',
+        ...more,
+      ],
     })),
     ...overrides,
   });
@@ -791,5 +821,113 @@ describe('Collection, the whole league', () => {
     expect(document.querySelector('.trend')).toBeNull();
     expect(screen.queryAllByRole('img', { name: /places?$/ })).toHaveLength(0);
     expect(net.api).toHaveLength(0);
+  });
+
+  it('lists the ranked part of the league by default and searches all of it', async () => {
+    await open(
+      async () => THREE_VERDICTS,
+      THREE,
+      (o) => leagueHost(o, true),
+    );
+    await waitFor(() => expect(document.querySelectorAll('.spec-row .verdict-tag').length).toBe(3));
+    await waitFor(() => expect(rowOf('Cramorant').querySelector('.mtag')).not.toBeNull());
+    // Lanturn is PvPoke's 150th, inside the top 200; Caterpie is not ranked at all.
+    expect(names()).toEqual([
+      'Tinkaton',
+      'Medicham',
+      'Azumarill',
+      'Cramorant',
+      'Clodsire',
+      'Quagsire',
+      'Lanturn',
+    ]);
+    expect(rowOf('Lanturn').querySelector('.mtag')).toBeNull();
+    expect(screen.getByText('3 Pokémon · 3 kinds · 4 not collected')).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('Search Pokémon'), {
+        target: { value: 'caterpie' },
+      });
+    });
+    expect(names()).toEqual(['Caterpie']);
+    expect(rowOf('Caterpie')).toHaveAttribute(
+      'href',
+      hashFor({ screen: 'species', id: 'caterpie' }),
+    );
+  });
+
+  it('counts the listed rows with nothing collected', async () => {
+    render(
+      <AppProvider host={leagueHost({}, true)}>
+        <Probe />
+        <Collection />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(names()).toHaveLength(7));
+    expect(names()).not.toContain('Caterpie');
+    expect(screen.getByText('7 Pokémon in Great League')).toBeInTheDocument();
+  });
+
+  it('restores the scroll only once the blended order is in', async () => {
+    await openLeague();
+    await waitFor(() => expect(rowOf('Cramorant').querySelector('.mtag')).not.toBeNull());
+    Object.defineProperty(window, 'scrollY', { value: 240, configurable: true });
+    await act(async () => {
+      fireEvent.scroll(window);
+      await new Promise((r) => window.requestAnimationFrame(() => r(null)));
+    });
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    // The ranking loads afresh on the way back and is held there.
+    resetMetaDataForTests();
+    resetMetaHooksForTests();
+    let release: () => void = () => undefined;
+    net.hold = new Promise<void>((r) => (release = r));
+    await go({ screen: 'species', id: 'cramorant' });
+    expect(document.querySelector('.spec-row')).toBeNull();
+    await go({ screen: 'collection' });
+    await waitFor(() => expect(names()).toHaveLength(6));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(scrollTo).not.toHaveBeenCalled();
+    await act(async () => {
+      release();
+    });
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(0, 240));
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+  });
+
+  it('shows Nothing matches, not a zero count, for your own filtered to nothing before the league is in', async () => {
+    await open(
+      async () => THREE_VERDICTS,
+      THREE,
+      (o) => leagueHost({ ...o, leagueInfo: vi.fn(() => new Promise(() => undefined)) }),
+    );
+    await waitFor(() => expect(names()).toHaveLength(3));
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('Search Pokémon'), {
+        target: { value: 'zzzz' },
+      });
+    });
+    expect(document.querySelector('.ui-empty')).toHaveTextContent(
+      'Nothing matches. Try another name or clear a filter.',
+    );
+    expect(screen.queryByText(/^0 Pokémon/)).toBeNull();
+  });
+
+  it('shows Loading, not a blank list, with nothing collected before the league is in', async () => {
+    render(
+      <AppProvider host={leagueHost({ leagueInfo: vi.fn(() => new Promise(() => undefined)) })}>
+        <Probe />
+        <Collection />
+      </AppProvider>,
+    );
+    await waitFor(() => {
+      expect(latest?.state.boot).toBe('ready');
+      expect(latest?.state.settingsLoaded).toBe(true);
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('Loading Great League');
+    expect(document.querySelector('.ui-empty')).toBeNull();
+    expect(screen.queryByText(/Pokémon in Great League/)).toBeNull();
   });
 });
