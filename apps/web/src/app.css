@@ -2283,6 +2283,11 @@ textarea.paste {
   min-height: 32px;
   margin: -6px 0;
 }
+/* The Sort control keeps its one line ("Sort: Meta rank"); a long count line wraps instead. */
+.sort-row .ui-inline-select {
+  flex: none;
+  white-space: nowrap;
+}
 /* Collection's Filters sheet: five switch rows with a hairline between them */
 .collection-filters {
   display: flex;
@@ -2857,7 +2862,8 @@ input[type='range'] {
   flex-wrap: wrap;
   gap: 8px;
 }
-.ym-list-head .seg > * {
+.ym-list-head .seg > *,
+.mh-card .seg > * {
   min-height: var(--tap);
   padding: 0 10px;
 }
@@ -3830,7 +3836,8 @@ input[type='range'] {
   align-self: center;
   align-items: center;
   gap: 4px;
-  padding: 8px 0 2px;
+  min-height: var(--tap);
+  padding: 0;
   color: var(--accent-text);
   font-weight: 500;
   text-decoration: none;
@@ -4093,8 +4100,16 @@ input[type='range'] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: var(--tap);
   color: var(--text);
   text-decoration: none;
+}
+/* The species page's own copies: hairlines between rows only, none at the card's edges. */
+.sp-yours > .spec-row.sub {
+  border-bottom: 0;
+}
+.sp-yours > .spec-row.sub:first-child {
+  border-top: 0;
 }
 .sp-set {
   display: flex;

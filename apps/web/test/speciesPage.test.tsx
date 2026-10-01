@@ -468,6 +468,11 @@ describe('Species page', () => {
       'href',
       '#/add?species=clodsire',
     );
+    // One filled button on the page: Build around it. Add one is the secondary style.
+    expect(within(yours).getByRole('link', { name: 'Add one' })).not.toHaveClass('ui-btn-primary');
+    expect(
+      [...document.querySelectorAll('.ui-btn-primary')].map((e) => e.textContent?.trim()),
+    ).toEqual(['Build around it']);
 
     const moves = section('Moves players ran');
     const names = [...moves.querySelectorAll('.move-name')].map((e) => e.textContent);

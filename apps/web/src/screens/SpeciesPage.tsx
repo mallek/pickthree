@@ -458,7 +458,7 @@ export function SpeciesPage({ id }: { id: string }) {
         <div className="stack" style={{ gap: 6 }}>
           <h3>Yours</h3>
           {mine.length > 0 ? (
-            <div className="card" style={{ padding: '0 14px', gap: 0 }}>
+            <div className="card sp-yours" style={{ padding: '0 14px', gap: 0 }}>
               {mine.map((sp) => {
                 const v = s.verdicts[sp.id];
                 return (
@@ -481,9 +481,8 @@ export function SpeciesPage({ id }: { id: string }) {
           ) : (
             <div className="card" style={{ gap: 10 }}>
               <span className="small muted">Scan one in Poke Genie, or add it by hand.</span>
-              <Button variant="primary" href={hashFor({ screen: 'add', species: id })}>
-                Add one
-              </Button>
+              {/* Build around it is the page's one filled button; this one is secondary. */}
+              <Button href={hashFor({ screen: 'add', species: id })}>Add one</Button>
             </div>
           )}
         </div>
