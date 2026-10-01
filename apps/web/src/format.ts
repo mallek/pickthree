@@ -1,5 +1,5 @@
 import type { Layout, League, LeagueStatus, MetaRank } from '@pickthree/engine';
-import type { Cost, IvRankResult, Species } from '@pickthree/engine';
+import type { Cost, IvRankResult, Species, Specimen, VerdictLabel } from '@pickthree/engine';
 
 // Re-exported, not duplicated: SpeciesToken (packages/ui) needs its own copy internally, and
 // format.test.ts tests this one directly, so this stays the one place web code and web tests
@@ -296,4 +296,37 @@ export function leagueDetail(
     out.push(`PvPoke last updated ${MONTHS[Number(m) - 1]} ${y}`);
   }
   return out;
+}
+
+/** A copy's IV standing for a row: "Top N%", or why there is none. */
+export function rankLabel(
+  s: Specimen,
+  verdict:
+    | {
+        build: { ivRank: { rank: number; total: number } } | null;
+        label: VerdictLabel;
+        ineligible?: 'banned' | 'over-cap' | null;
+      }
+    | undefined,
+): string {
+  if (!s.ivs) {
+    return 'IVs unknown';
+  }
+  if (!verdict) {
+    return 'Ranking...';
+  }
+  if (verdict.label === 'Not eligible' || !verdict.build) {
+    return verdict.ineligible === 'banned' ? 'Banned in this league' : 'Over the CP cap';
+  }
+  const r = verdict.build.ivRank;
+  return `Top ${Math.max(1, Math.round((r.rank / r.total) * 100))}%`;
+}
+
+/**
+ * The species id a copy is listed under. The importer maps a Shadow to its own `_shadow` id; a
+ * copy saved with the Shadow flag on a plain id is its Shadow form too. A Shadow copy owns only
+ * the Shadow id, never the plain one.
+ */
+export function ownSpeciesId(sp: Pick<Specimen, 'speciesId' | 'shadow'>): string {
+  return sp.shadow && !sp.speciesId.endsWith('_shadow') ? `${sp.speciesId}_shadow` : sp.speciesId;
 }

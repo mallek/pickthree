@@ -24,18 +24,18 @@ import {
   CogGlyph,
   MetaRankTags,
   PokemonToken,
+  Share,
+  sharePct,
   TypeChip,
   TypeChips,
   VerdictTag,
   useName,
   useSpecies,
 } from '../components.tsx';
-import { num, SEP } from '../format.ts';
+import { num, ownSpeciesId, rankLabel, SEP } from '../format.ts';
 import { loadPvpokeSide, type PvpokeSide } from '../metaData.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { useMetaRanking, useSpeciesDetail } from '../state/useMeta.ts';
-import { rankLabel } from './Collection.tsx';
-import { Share, sharePct } from './MetaHome.tsx';
 
 /** The page reads the default window and every source, as the Meta landing does. */
 const WINDOW: WindowKey = 'meta';
@@ -96,11 +96,6 @@ function sourceLine(r: SpeciesRanking): string {
     parts.push(plural(r.tournamentBattles, 'tournament battle', 'tournament battles'));
   }
   return `This meta${SEP}${parts.length > 0 ? parts.join(' and ') : 'no battles shared yet'}`;
-}
-
-/** The id a copy is listed under: a Shadow scanned under its plain id is its Shadow form. */
-function ownId(sp: Specimen): string {
-  return sp.shadow && !sp.speciesId.endsWith('_shadow') ? `${sp.speciesId}_shadow` : sp.speciesId;
 }
 
 type MoveNames = Record<string, { name: string; type: string }>;
@@ -310,7 +305,7 @@ export function SpeciesPage({ id }: { id: string }) {
   const mine = useMemo(() => {
     const rankOf = (sp: Specimen): number => s.verdicts[sp.id]?.build?.ivRank.rank ?? UNJUDGED;
     return (s.collection?.specimens ?? [])
-      .filter((sp) => ownId(sp) === id || s.verdicts[sp.id]?.build?.speciesId === id)
+      .filter((sp) => ownSpeciesId(sp) === id || s.verdicts[sp.id]?.build?.speciesId === id)
       .sort((a, b) => rankOf(a) - rankOf(b) || b.cp - a.cp);
   }, [s.collection, s.verdicts, id]);
 
@@ -342,7 +337,11 @@ export function SpeciesPage({ id }: { id: string }) {
         <div className="page-head">{header}</div>
         <div className="scroll">
           <Empty
-            line="No Pokémon called that in this league."
+            line={
+              s.data.species[id]
+                ? `${name(id)} is not allowed in ${s.data.leagues.find((l) => l.id === league)?.title ?? 'this league'}.`
+                : 'No Pokémon called that in this league.'
+            }
             action={
               <Button variant="text" href={hashFor({ screen: 'collection' })}>
                 Open Collection
@@ -470,7 +469,7 @@ export function SpeciesPage({ id }: { id: string }) {
                     style={{ gridTemplateColumns: '1fr auto' }}
                   >
                     <span className="meta" style={{ display: 'block' }}>
-                      {ownId(sp) !== id ? `${name(sp.speciesId)} · ` : ''}CP {sp.cp} ·{' '}
+                      {ownSpeciesId(sp) !== id ? `${name(sp.speciesId)} · ` : ''}CP {sp.cp} ·{' '}
                       {rankLabel(sp, v)} · Level {sp.level.max}
                       {sp.lucky ? ' · Lucky' : ''}
                     </span>
@@ -521,7 +520,8 @@ export function SpeciesPage({ id }: { id: string }) {
           <Button variant="primary" href={hashFor({ screen: 'build', lead: id })}>
             Build around it
           </Button>
-          <Button href={hashFor({ screen: 'counters', vs: id })}>Who beats it</Button>
+          {/* The back mark: Counters shows Back to this page. */}
+          <Button href={hashFor({ screen: 'counters', vs: id, from: true })}>Who beats it</Button>
         </div>
       </div>
     </div>

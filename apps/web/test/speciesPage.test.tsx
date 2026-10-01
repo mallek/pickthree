@@ -209,6 +209,12 @@ function host(overrides: Partial<Record<string, unknown>> = {}) {
         species: {
           ...(r.species as object),
           marill: { name: 'Marill', types: ['water', 'fairy'], familyId: 'azumarill', dex: 183 },
+          azumarill_shadow: {
+            name: 'Azumarill (Shadow)',
+            types: ['water', 'fairy'],
+            familyId: 'azumarill',
+            dex: 184,
+          },
         },
         moves: { ...(r.moves as object), ...MOVES },
       };
@@ -217,7 +223,13 @@ function host(overrides: Partial<Record<string, unknown>> = {}) {
   });
 }
 
-function specimen(id: string, speciesId: string, cp: number, level: number): Specimen {
+function specimen(
+  id: string,
+  speciesId: string,
+  cp: number,
+  level: number,
+  shadow = false,
+): Specimen {
   return {
     id,
     speciesId,
@@ -226,7 +238,7 @@ function specimen(id: string, speciesId: string, cp: number, level: number): Spe
     level: { min: level, max: level },
     cp,
     hp: 150,
-    shadow: false,
+    shadow,
     purified: false,
     lucky: false,
     currentMoves: { fast: null, charged: [] },
@@ -422,7 +434,7 @@ describe('Species page', () => {
     );
     expect(screen.getByRole('link', { name: 'Who beats it' })).toHaveAttribute(
       'href',
-      '#/counters?vs=azumarill',
+      '#/counters?vs=azumarill&from=1',
     );
 
     // The reads carry the league and the window; the only Pokemon named is the page's own.
@@ -499,6 +511,75 @@ describe('Species page', () => {
       '#/collection',
     );
     expect(net.api.some((u) => u.pathname.startsWith('/api/v1/species/'))).toBe(false);
+  });
+
+  it('a Pokemon the league does not allow says so by name, with a way to Collection', async () => {
+    window.location.hash = '#/species/medicham';
+    const net = freshNet();
+    stubNet(net);
+    const base = host();
+    const info = base.leagueInfo as unknown as () => Promise<{ legal: string[] }>;
+    renderPage(
+      host({
+        leagueInfo: vi.fn(async () => {
+          const i = await info();
+          return { ...i, legal: i.legal.filter((x) => x !== 'medicham') };
+        }),
+      }),
+    );
+    expect(await screen.findByText('Medicham is not allowed in Great League.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Collection' })).toHaveAttribute(
+      'href',
+      '#/collection',
+    );
+    expect(net.api.some((u) => u.pathname.startsWith('/api/v1/species/'))).toBe(false);
+  });
+
+  it('a Shadow copy is listed under the Shadow form only', async () => {
+    // One mapped by the importer to its Shadow id, one saved with the flag on the plain id.
+    await seed([
+      specimen('a1', 'azumarill', 1491, 40),
+      specimen('s1', 'azumarill_shadow', 1480, 38, true),
+      specimen('s2', 'azumarill', 1470, 36, true),
+    ]);
+    const verdicts = {
+      a1: verdict('a1', 'azumarill', 'Built', 10),
+      s1: verdict('s1', 'azumarill_shadow', 'Worth building', 40),
+      s2: verdict('s2', 'azumarill_shadow', 'Worth building', 80),
+    };
+    const base = host();
+    const info = base.leagueInfo as unknown as () => Promise<{ legal: string[] }>;
+    const h = host({
+      verdicts: vi.fn(async () => verdicts),
+      leagueInfo: vi.fn(async () => {
+        const i = await info();
+        return { ...i, legal: [...i.legal, 'azumarill_shadow'] };
+      }),
+    });
+    stubNet(freshNet());
+
+    window.location.hash = '#/species/azumarill_shadow';
+    renderPage(h);
+    await waitFor(() => expect(screen.getByText('You have 2')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        within(section('Yours'))
+          .getAllByRole('link')
+          .map((r) => r.getAttribute('href')),
+      ).toEqual(['#/collection/s1', '#/collection/s2']),
+    );
+    cleanup();
+
+    window.location.hash = '#/species/azumarill';
+    renderPage(h);
+    await waitFor(() => expect(screen.getByText('You have 1')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        within(section('Yours'))
+          .getAllByRole('link')
+          .map((r) => r.getAttribute('href')),
+      ).toEqual(['#/collection/a1']),
+    );
   });
 
   it('switches to the league a link names, once, then lets go of it', async () => {

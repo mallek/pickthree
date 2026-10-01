@@ -782,6 +782,28 @@ describe('Collection, the whole league', () => {
     expect(names()).not.toContain('Cramorant');
   });
 
+  it('a Shadow copy collects only the Shadow form: the plain one stays Not collected', async () => {
+    // Saved with the Shadow flag on the plain id, judged as the Shadow form.
+    const shadowClodsire = { ...specimen('q', 'clodsire'), shadow: true } as unknown as Specimen;
+    await open(
+      async () => ({
+        ...THREE_VERDICTS,
+        q: asItself(verdict('q', 'Worth building', 60), 'clodsire_shadow'),
+      }),
+      [...THREE, shadowClodsire],
+      leagueHost,
+    );
+    await waitFor(() => expect(document.querySelectorAll('.spec-row .verdict-tag').length).toBe(4));
+    const plain = await waitFor(() => {
+      const row = document.querySelector<HTMLElement>(
+        `a.spec-row[href="${hashFor({ screen: 'species', id: 'clodsire' })}"]`,
+      );
+      expect(row).not.toBeNull();
+      return row!;
+    });
+    expect(plain.lastElementChild).toHaveTextContent('Not collected');
+  });
+
   it('shows the trend beside the rank: up 3 places for a climber, nothing for no move', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-11T20:00:00Z'));

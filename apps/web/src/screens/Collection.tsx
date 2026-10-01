@@ -25,7 +25,7 @@ import {
   useSpecies,
   useSticky,
 } from '../components.tsx';
-import { judgeFailedLine, META_CUTOFF, num, SEP } from '../format.ts';
+import { judgeFailedLine, META_CUTOFF, num, ownSpeciesId, rankLabel, SEP } from '../format.ts';
 import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
 import { shareEnabled } from '../metaShare.ts';
 import { matchesQuery, parseQuery } from '../search.ts';
@@ -122,29 +122,6 @@ const ORDER: Record<VerdictLabel, number> = {
   'Not eligible': 3,
   'Needs rescan': 4,
 };
-
-export function rankLabel(
-  s: Specimen,
-  verdict:
-    | {
-        build: { ivRank: { rank: number; total: number } } | null;
-        label: VerdictLabel;
-        ineligible?: 'banned' | 'over-cap' | null;
-      }
-    | undefined,
-): string {
-  if (!s.ivs) {
-    return 'IVs unknown';
-  }
-  if (!verdict) {
-    return 'Ranking...';
-  }
-  if (verdict.label === 'Not eligible' || !verdict.build) {
-    return verdict.ineligible === 'banned' ? 'Banned in this league' : 'Over the CP cap';
-  }
-  const r = verdict.build.ivRank;
-  return `Top ${Math.max(1, Math.round((r.rank / r.total) * 100))}%`;
-}
 
 /** Sorts after every species in the blended order: those go by PvPoke's overall rank. */
 const UNRANKED = 100_000;
@@ -350,10 +327,8 @@ export function Collection() {
     }
     const have = new Set<string>();
     for (const sp of s.collection?.specimens ?? []) {
-      have.add(sp.speciesId);
-      if (sp.shadow && !sp.speciesId.endsWith('_shadow')) {
-        have.add(`${sp.speciesId}_shadow`);
-      }
+      // A Shadow copy owns its Shadow id only, so plain Azumarill stays listed as not collected.
+      have.add(ownSpeciesId(sp));
       const battles = s.verdicts[sp.id]?.build?.speciesId;
       if (battles) {
         have.add(battles);

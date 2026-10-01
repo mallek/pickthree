@@ -337,6 +337,29 @@ export function MetaRankTags({
   );
 }
 
+/** A whole percent, but a share that is not zero never reads "0%". */
+export function sharePct(share: number): string {
+  if (share <= 0) {
+    return '0%';
+  }
+  const whole = Math.round(share * 100);
+  return whole === 0 ? '<1%' : `${whole}%`;
+}
+
+/** A measured share inline in a row: pink text led by the bar mark, never a pill. */
+export function Share({ value }: { value: string }) {
+  return (
+    <span className="ui-measured-num mh-share">
+      <svg className="ui-measured-bars" width={9} height={9} viewBox="0 0 11 11" aria-hidden="true">
+        <rect x="0" y="6" width="3" height="5" rx="1" />
+        <rect x="4" y="0" width="3" height="11" rx="1" />
+        <rect x="8" y="3" width="3" height="8" rx="1" />
+      </svg>
+      {value}
+    </span>
+  );
+}
+
 /** "Same wins as best IVs" when the rank-1 IV twin would win no more meta matchups. */
 export function HundoTag({ delta }: { delta: number | null }) {
   if (delta === null || delta > 0) {
