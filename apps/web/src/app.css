@@ -3748,3 +3748,110 @@ input[type='range'] {
 .settings-block .seg > * {
   min-height: var(--tap);
 }
+
+/* Meta landing (#/meta): the round-3 mock's cards, tokens only. */
+.mh-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+.mh-sub {
+  margin: 2px 0 0;
+}
+.mh-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+}
+.mh-card.mh-accent {
+  border: 1px solid var(--accent);
+}
+.mh-card-head b {
+  display: block;
+  font-size: 17px;
+}
+.mh-card-head .meta {
+  display: block;
+}
+.mh-seen {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--divider);
+  color: var(--text);
+  text-decoration: none;
+}
+.mh-seen:last-of-type {
+  border-bottom: 0;
+}
+.mh-seen-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.mh-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--divider);
+  overflow: hidden;
+}
+.mh-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.mh-share {
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.mh-go {
+  display: inline-flex;
+  align-self: center;
+  color: var(--accent-text);
+}
+.mh-more {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 2px;
+  color: var(--accent-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+.mh-team3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+.mh-team3 > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.mh-empty {
+  padding: 18px 0;
+  text-align: center;
+}
+.mh-center {
+  text-align: center;
+}
+.mh-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+}
+.mh-progress .ym-line {
+  margin: 0;
+}

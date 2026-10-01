@@ -3,7 +3,8 @@ import { Button, ConfirmSheet, ExpandRow, Switch } from '@pickthree/ui';
 import { shareEnabled } from '../../metaShare.ts';
 import { useActions, useAppState } from '../../state/store.tsx';
 
-const STOP_LINE =
+/** What stopping sharing does, said wherever the share switch is turned off. */
+export const STOP_LINE =
   'Battles this phone sent are deleted from the community meta. Your log on this phone stays.';
 
 /**

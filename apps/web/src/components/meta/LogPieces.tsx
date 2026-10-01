@@ -170,10 +170,11 @@ export function ResultStrip({ set }: { set: BattleSet }) {
   );
 }
 
-export function CurrentTeam({ set }: { set: BattleSet }) {
-  const { navigate, notify } = useActions();
+/** Share a set's team as a pick3 link: the share sheet, or the clipboard with a toast. */
+export function useShareTeam(): (set: BattleSet) => Promise<void> {
+  const { notify } = useActions();
   const name = useName();
-  const share = async (): Promise<void> => {
+  return async (set: BattleSet): Promise<void> => {
     const url = teamLink(
       set.league,
       set.team.species.map((speciesId) => ({ speciesId })),
@@ -185,17 +186,30 @@ export function CurrentTeam({ set }: { set: BattleSet }) {
       notify(`Could not copy the link. It is ${url}`);
     }
   };
-  // The record is wins and losses: a tanked battle stays in the strip and counts for nothing.
+}
+
+/** A set's record, wins and losses: a tanked battle counts for nothing. */
+export function setRecord(set: BattleSet): { wins: number; losses: number; decided: number } {
   const counted = set.battles.filter((b) => !b.tanked);
   const wins = counted.filter((b) => b.result === 'win').length;
+  return { wins, losses: counted.length - wins, decided: counted.length };
+}
+
+export function CurrentTeam({ set }: { set: BattleSet }) {
+  const { navigate } = useActions();
+  const name = useName();
+  const shareTeam = useShareTeam();
+  const share = (): Promise<void> => shareTeam(set);
+  // A tanked battle stays in the strip and counts for nothing.
+  const rec = setRecord(set);
   return (
     <div className="card set-card">
       <div className="between">
         <b>Current team</b>
         <span className="meta">
-          {counted.length === 0
+          {rec.decided === 0
             ? `since ${dateLabel(set.startedAt)}`
-            : `${record(wins, counted.length - wins)} since ${dateLabel(set.startedAt)}`}
+            : `${record(rec.wins, rec.losses)} since ${dateLabel(set.startedAt)}`}
         </span>
       </div>
       <div className="row" style={{ gap: 10 }}>

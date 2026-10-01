@@ -5,6 +5,7 @@ import { Collection } from './screens/Collection.tsx';
 import { Counters } from './screens/Counters.tsx';
 import { Filters } from './screens/Filters.tsx';
 import { LogBattle } from './screens/LogBattle.tsx';
+import { MetaHome } from './screens/MetaHome.tsx';
 import { SharedTeam } from './screens/SharedTeam.tsx';
 import { NewSet } from './screens/NewSet.tsx';
 import { Report } from './screens/Report.tsx';
@@ -130,8 +131,7 @@ function renderScreen(r: Route) {
     case 'add':
       return <AddPokemon />;
     case 'meta':
-      // Placeholder until the Meta landing screen replaces it.
-      return <YourBattles />;
+      return <MetaHome />;
     case 'meta-battles':
       return <YourBattles />;
     case 'meta-teams':
