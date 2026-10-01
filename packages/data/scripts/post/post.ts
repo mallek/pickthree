@@ -12,18 +12,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { GameDataIndex, coreBoards, type CoreRowOut } from '@pickthree/engine';
-import { readEpochs, resolveWindow } from '@pickthree/engine/meta';
+import { priorWeights, readEpochs, resolveWindow } from '@pickthree/engine/meta';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
-import { priorWeights } from '../bake.js';
 import { MASCOT, coreBoardView, postCoreBoard, type CoreBoardId } from './coreViews.js';
 import { loadCupData } from './data.js';
 import { assertAscii, fillCoreBoard } from './fillCores.js';
-import {
-  assertPostText,
-  postMarkdownCores,
-  teamsJsonCores,
-  type PostCoreRun,
-} from './markdown.js';
+import { assertPostText, postMarkdownCores, teamsJsonCores, type PostCoreRun } from './markdown.js';
 import { blendedWeights, fetchSummary, mixLine, runLabel, type WeightMix } from './weights.js';
 
 const here = dirname(fileURLToPath(import.meta.url));

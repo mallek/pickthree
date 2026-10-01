@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Button, ConfirmSheet, ExpandRow, Switch } from '@pickthree/ui';
+import { Button, ConfirmSheet, ExpandRow, Switch, type SheetNav } from '@pickthree/ui';
 import { shareEnabled } from '../../metaShare.ts';
 import { useActions, useAppState } from '../../state/store.tsx';
+import { RankGlyph } from './glyphs.tsx';
+import { MetaRanked } from './MetaRanked.tsx';
+import { SettingsRow } from './SettingsRow.tsx';
 
 /** What stopping sharing does, said wherever the share switch is turned off. */
 export const STOP_LINE =
@@ -9,9 +12,10 @@ export const STOP_LINE =
 
 /**
  * Community: the share switch (turning it off goes through a danger confirm; turning it back on
- * needs none), what a battle record does and does not carry, and the way to the live meta.
+ * needs none), what a battle record does and does not carry, and the way to the live meta and
+ * to how it is ranked.
  */
-export function Community() {
+export function Community({ nav }: { nav: SheetNav }) {
   const s = useAppState();
   const { setShareEnabled, navigate } = useActions();
   const [confirmStop, setConfirmStop] = useState(false);
@@ -49,6 +53,20 @@ export function Community() {
         <Button variant="secondary" onClick={() => navigate({ screen: 'meta' })}>
           See the live meta
         </Button>
+        <div className="settings-rows">
+          <SettingsRow
+            icon={<RankGlyph />}
+            title="How the meta is ranked"
+            summary="Three sources, one number"
+            onClick={() =>
+              nav.push({
+                id: 'meta-ranked',
+                title: 'How the meta is ranked',
+                render: () => <MetaRanked />,
+              })
+            }
+          />
+        </div>
       </section>
       {confirmStop ? (
         <ConfirmSheet

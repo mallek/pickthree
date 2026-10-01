@@ -67,3 +67,14 @@ export function AboutGlyph() {
     </Glyph>
   );
 }
+
+/** Three bars of different heights: a ranking. */
+export function RankGlyph() {
+  return (
+    <Glyph>
+      <path d="M5 20v-6" />
+      <path d="M12 20V5" />
+      <path d="M19 20v-10" />
+    </Glyph>
+  );
+}

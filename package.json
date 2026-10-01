@@ -29,7 +29,7 @@
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
     "fixtures:derive": "tsx fixtures/derive-fixtures.ts",
     "fixtures:tournament": "tsx fixtures/make-tournament.ts",
-    "post": "npm -w @pickthree/meta run post --",
+    "post": "tsx packages/data/scripts/post/post.ts",
     "web:screens": "node scripts/with-preview.mjs web 4173 -- node apps/web/scripts/screens.mjs",
     "meta:screens": "node scripts/with-preview.mjs meta 4174 -- node apps/meta/scripts/screens.mjs",
     "ui:audit": "node scripts/ui-audit.mjs",

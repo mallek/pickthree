@@ -77,7 +77,11 @@ function Hub({ nav }: { nav: SheetNav }) {
           title="Community"
           summary={shareEnabled(s.settings) ? 'Sharing on' : 'Sharing off'}
           onClick={() =>
-            nav.push({ id: 'community', title: 'Community', render: () => <Community /> })
+            nav.push({
+              id: 'community',
+              title: 'Community',
+              render: (n) => <Community nav={n} />,
+            })
           }
         />
         <SettingsRow

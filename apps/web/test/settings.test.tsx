@@ -3,6 +3,15 @@ import type { BattleSet, LoggedBattle, Specimen } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  HALF_SAY_BATTLES,
+  HALF_SAY_DEVICES,
+  HALF_SAY_EVENTS,
+  HALF_SAY_TOURNAMENT_BATTLES,
+  MANY,
+  SOME,
+  TREND_MIN,
+} from '@pickthree/engine/meta';
 import { Settings } from '../src/screens/settings/Settings.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
 import { logBattles } from '../src/state/facing.ts';
@@ -553,6 +562,54 @@ describe('Settings, Community', () => {
     });
     await waitFor(() => expect(latest?.state.route).toEqual({ screen: 'meta' }));
     expect(latest?.state.sheetOpen).toBe(false);
+  });
+
+  it('opens How the meta is ranked from a row on the Community page', async () => {
+    await open();
+    await push('Community');
+    await push('How the meta is ranked');
+    expect(screen.getByRole('heading', { name: 'Three sources, one number' })).toBeInTheDocument();
+  });
+});
+
+describe('Settings, How the meta is ranked', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  it('states the half-say points and confidence cut-offs the blend really uses', async () => {
+    await open();
+    await push('Community');
+    await push('How the meta is ranked');
+    const page = screen.getByRole('dialog', { name: 'How the meta is ranked' });
+    const text = page.textContent ?? '';
+    for (const n of [
+      HALF_SAY_BATTLES,
+      HALF_SAY_DEVICES,
+      HALF_SAY_TOURNAMENT_BATTLES,
+      HALF_SAY_EVENTS,
+      SOME,
+      MANY,
+      TREND_MIN,
+    ]) {
+      expect(text).toContain(n.toLocaleString('en-US'));
+    }
+    // A projection is never a percentage, and the page says where measured numbers come from.
+    expect(text).toMatch(/matchup score out of 100/);
+    expect(text).toMatch(/never a percentage/);
+  });
+
+  it('has no theme control, no PvPoke list and no em dash', async () => {
+    await open();
+    await push('Community');
+    await push('How the meta is ranked');
+    const page = screen.getByRole('dialog', { name: 'How the meta is ranked' });
+    expect(within(page).queryByRole('button', { name: 'Dark' })).toBeNull();
+    expect(page.textContent).not.toContain(String.fromCharCode(0x2014));
+    expect(page.querySelector('.settings-page')).not.toBeNull();
   });
 });
 

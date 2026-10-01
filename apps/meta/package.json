@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "bake": "tsx scripts/bake.ts",
-    "post": "tsx scripts/post/post.ts",
     "dev": "npm run bake && vite",
     "build": "npm run bake && vite build",
     "preview": "vite preview",

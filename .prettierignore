@@ -2,4 +2,4 @@ packages/sim-pvpoke/vendor/
 packages/data/.pvpoke/
 apps/web/public/data/
 package-lock.json
-apps/meta/scripts/post/template-cores.html
+packages/data/scripts/post/template-cores.html

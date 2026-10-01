@@ -3,7 +3,14 @@
   "compilerOptions": {
     "rootDir": "..",
     "noEmit": true,
+    "lib": ["ES2022", "DOM"],
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "../engine/src/**/*.ts", "../sim-pvpoke/src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts",
+    "../engine/src/**/*.ts",
+    "../sim-pvpoke/src/**/*.ts"
+  ]
 }

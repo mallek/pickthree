@@ -1,6 +1,6 @@
 /**
- * What the strength number is measured against: meta.pick3.gg's blend of PvPoke's prior,
- * tournament picks and shared ladder battles, computed the way apps/meta/src/rank.ts does.
+ * What the strength number is measured against: pick3's community meta blend of PvPoke's prior,
+ * tournament picks and shared ladder battles, computed the way the pick3 Meta pages do (engine meta/community.ts).
  */
 import { runsOf, type ScheduleEntry } from '@pickthree/engine';
 import {
@@ -11,7 +11,8 @@ import {
 } from '@pickthree/engine/meta';
 import { getJson, type CupData, type Fetcher } from './data.js';
 
-export const API_BASE = 'https://meta.pick3.gg';
+// The counter worker origin (apps/web/src/counter.ts COUNTER_ORIGIN); meta.pick3.gg only redirects.
+export const API_BASE = 'https://pickthree-counter.travis-c82.workers.dev';
 
 export interface MetaSummary extends CommunitySummary {
   battles: number;
