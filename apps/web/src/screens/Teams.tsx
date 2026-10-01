@@ -134,6 +134,10 @@ export function Teams() {
     );
   }
 
+  // Distinct kinds, a Shadow counting as its base form: a team never runs two of one Pokemon.
+  const ownedKinds = new Set(
+    s.collection.specimens.map((sp) => sp.speciesId.replace(/_shadow$/, '')),
+  ).size;
   const choice = facingSettings(s.settings);
   const hasCommunity = hasCommunityData(s.settings, s.data?.leagues);
   const fellBack =
@@ -193,10 +197,28 @@ export function Teams() {
           />
         ) : null}
         {!s.recommending && s.recommendation && teams.length === 0 ? (
-          <Empty
-            line="No team fits these filters. Loosen one to see recommendations again."
-            action={<FilterButton count={filters} onClick={openFilters} />}
-          />
+          // A team is three different Pokemon from the collection: with fewer than three kinds
+          // there is nothing to draft, whatever the filters say.
+          ownedKinds < 3 ? (
+            <Empty
+              line={`A team needs three Pokémon, and your collection has ${ownedKinds === 1 ? 'one' : ownedKinds === 0 ? 'none' : 'two'}. Add more, or start from a team players run.`}
+              action={
+                <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <Button variant="secondary" href={hashFor({ screen: 'add' })}>
+                    Add a Pokémon
+                  </Button>
+                  <Button variant="secondary" href={hashFor({ screen: 'meta-teams' })}>
+                    See top teams
+                  </Button>
+                </div>
+              }
+            />
+          ) : (
+            <Empty
+              line="No team fits these filters. Loosen one to see recommendations again."
+              action={<FilterButton count={filters} onClick={openFilters} />}
+            />
+          )
         ) : null}
         {teams.map((t, i) => (
           <div className="teams-item" key={t.id}>

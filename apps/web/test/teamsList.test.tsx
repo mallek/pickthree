@@ -1,3 +1,4 @@
+import type { Specimen } from '@pickthree/engine';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -18,9 +19,28 @@ function Probe() {
   return null;
 }
 
-async function saveEmptyCollection(): Promise<void> {
+/** A scanned Pokemon with IVs, enough for the collection-size rule; the fake host ignores it. */
+function owned(id: string, speciesId: string): Specimen {
+  return {
+    id,
+    speciesId,
+    familyId: speciesId,
+    ivs: { atk: 0, def: 15, sta: 15 },
+    level: { min: 20, max: 20 },
+    cp: 1400,
+    hp: 150,
+    shadow: false,
+    purified: false,
+    lucky: false,
+    currentMoves: { fast: null, charged: [] },
+    scannedAt: '2026-09-20 12:00:00',
+    raw: {},
+  } as unknown as Specimen;
+}
+
+async function saveEmptyCollection(specimens: Specimen[] = []): Promise<void> {
   await storage.saveCollection({
-    specimens: [],
+    specimens,
     report: {
       scansRead: 0,
       recognized: 0,
@@ -247,10 +267,31 @@ describe('Teams list', () => {
   });
 
   it('shows the empty state with a Filters action when no team fits', async () => {
+    await saveEmptyCollection([
+      owned('a', 'medicham'),
+      owned('b', 'azumarill'),
+      owned('c', 'clodsire'),
+    ]);
     await mount(hostWith([]));
     expect(await screen.findByText(/No team fits these filters/)).toBeInTheDocument();
     const empty = screen.getByText(/No team fits these filters/).closest('.ui-empty') as HTMLElement;
     expect(within(empty).getByRole('button', { name: /^Filters/ })).toBeInTheDocument();
+  });
+
+  it('with fewer than three Pokemon, says a team needs three and offers ways forward', async () => {
+    await saveEmptyCollection([owned('a', 'medicham')]);
+    await mount(hostWith([]));
+    const line = await screen.findByText(/A team needs three Pokémon/);
+    expect(screen.queryByText(/No team fits these filters/)).toBeNull();
+    const empty = line.closest('.ui-empty') as HTMLElement;
+    expect(within(empty).getByRole('link', { name: 'Add a Pokémon' })).toHaveAttribute(
+      'href',
+      '#/add',
+    );
+    expect(within(empty).getByRole('link', { name: 'See top teams' })).toHaveAttribute(
+      'href',
+      '#/meta/teams',
+    );
   });
 
   it('shows the error card with its message and a Try again that runs again', async () => {
