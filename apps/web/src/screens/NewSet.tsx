@@ -171,7 +171,12 @@ export function NewSet() {
   };
   const ready = slots.every((x) => x !== null);
   /** Whole-team shortcuts only make sense before a search or a pick has started. */
-  const quickPicks = query.trim() === '' && slots.every((x) => x === null);
+  // The shortcuts show over empty slots, and over the running team as it was seeded (Change team),
+  // so a whole new team is still one tap away; editing a slot hides them as before.
+  const [seededFrom, setSeededFrom] = useState<string | null>(null);
+  const quickPicks =
+    query.trim() === '' &&
+    (slots.every((x) => x === null) || (seededFrom !== null && slots.join('|') === seededFrom));
 
   const go = async (team: TeamRef): Promise<void> => {
     if (await startSet(team)) {
@@ -192,6 +197,20 @@ export function NewSet() {
     setChosen(team);
     setQuery('');
   };
+
+  // Change team (the Meta tab's pencil) arrives with no team in the address: the slots start from
+  // the team running in this league, so changing one Pokemon is one tap, not three. Seeded once;
+  // a team in the address wins.
+  const running = s.setsLoaded ? s.sets.find((x) => !x.closed) : undefined;
+  useEffect(() => {
+    if (seeded.current || routeTeam || !running) {
+      return;
+    }
+    seeded.current = true;
+    fillTeam(running.team);
+    setSeededFrom(running.team.species.map((_, i) => slotValue(running.team, i)).join('|'));
+    // fillTeam is recreated each render; seeding reads it once.
+  }, [routeTeam, running]);
 
   const clearSlot = (i: number): void => {
     setNotAllowed([]);

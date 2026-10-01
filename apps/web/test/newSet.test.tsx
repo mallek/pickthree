@@ -257,6 +257,25 @@ describe('New Set on the foundation', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/meta'));
   });
 
+  it('opens with the running team in the slots, so changing it starts from it', async () => {
+    await storage.saveSet({
+      id: 'run',
+      league: 'great',
+      startedAt: '2026-09-15T10:00:00Z',
+      team: { species: ['tinkaton', 'azumarill', 'clodsire'] },
+      battles: [],
+      closed: false,
+    });
+    await renderReady(hostWith([]));
+    for (const fullName of ['Tinkaton', 'Azumarill', 'Clodsire']) {
+      expect(
+        await screen.findByRole('button', { name: `Clear ${fullName}` }),
+      ).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Clodsire' }));
+    expect(screen.queryByRole('button', { name: 'Clear Clodsire' })).toBeNull();
+  });
+
   it('hides both From pick3 and Recent teams while searching', async () => {
     await storage.saveSet({
       id: 's1',
