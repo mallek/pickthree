@@ -245,6 +245,18 @@ describe('Top teams', () => {
     }
   });
 
+  it('shows no trend, so makes no week-earlier summary read', async () => {
+    const net = freshNet();
+    stubNet(net);
+    renderTop();
+    await waitFor(() => expect(titles()).toHaveLength(2));
+    const metaReads = net.api.filter((u) => u.pathname === '/api/v1/meta');
+    expect(metaReads.length).toBeGreaterThan(0);
+    for (const url of metaReads) {
+      expect(Date.parse(url.searchParams.get('until') ?? '')).toBe(Date.now());
+    }
+  });
+
   it('writes the Window choice into the route without a new history entry', async () => {
     const net = freshNet();
     stubNet(net);

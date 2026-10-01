@@ -86,6 +86,26 @@ describe('Welcome: start without a collection', () => {
     const btn = await screen.findByRole('button', { name: /Start without a collection/ });
     expect((btn as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it('is disabled until the stored settings are in, so it never saves defaults over them', async () => {
+    // Settings that never arrive: the game data is ready, the saved settings (a share-off, say)
+    // are not yet read, so a tap now would write defaults over them.
+    const load = vi.spyOn(storage, 'loadSettings').mockReturnValue(new Promise(() => undefined));
+    try {
+      render(
+        <AppProvider host={fakeHost()}>
+          <Probe />
+          <Welcome />
+        </AppProvider>,
+      );
+      await waitFor(() => expect(latest?.boot).toBe('ready'));
+      expect(latest?.settingsLoaded).toBe(false);
+      const btn = screen.getByRole('button', { name: /Start without a collection/ });
+      expect((btn as HTMLButtonElement).disabled).toBe(true);
+    } finally {
+      load.mockRestore();
+    }
+  });
 });
 
 describe('boot routing', () => {

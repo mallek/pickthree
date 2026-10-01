@@ -217,41 +217,47 @@ function priorRanking(side: PvpokeSide): SpeciesRanking {
 // ---- the hooks ----
 
 /**
- * The blended species ranking and its trend. With `community` off, or a league the worker has no
- * data for, it ranks by PvPoke alone with no read and no trend. With it on, the trend baseline is
- * the same window ending a week sooner, or PvPoke's order while the window is under a week old.
- * A failed read (either one) is not an error: PvPoke's order stands in, marked `offline`.
+ * The blended species ranking and its trend. With `community` off, the `prior` source (PvPoke's
+ * list alone), or a league the worker has no data for, it ranks by PvPoke alone with no read and
+ * no trend. With it on, the trend baseline is the same window ending a week sooner, or PvPoke's
+ * order while the window is under a week old; `trend: false` (default true) skips the trend and
+ * its week-earlier read. A failed current read is not an error: PvPoke's order stands in, marked
+ * `offline`. A failed week-earlier read keeps the current blend, with no trend.
  */
 export function useMetaRanking(
   league: string,
-  opts: { window: WindowKey; source: SourceKey; community: boolean },
+  opts: { window: WindowKey; source: SourceKey; community: boolean; trend?: boolean },
 ): Loaded<MetaRanking> {
   const where = useWhere(league, opts.window);
+  const wantTrend = opts.trend ?? true;
   const run = where
     ? async (): Promise<MetaRanking> => {
         const { apiLeague, window: w } = where;
         const measured =
-          opts.community && apiLeague !== null
+          opts.community && opts.source !== 'prior' && apiLeague !== null
             ? (() => {
-                const earlier = weekEarlier(w);
+                const earlier = wantTrend ? weekEarlier(w) : null;
                 return Promise.all([
-                  summaryRead(apiLeague, w),
-                  earlier ? summaryRead(apiLeague, earlier) : Promise.resolve(null),
-                ]).catch(() => 'offline' as const);
+                  summaryRead(apiLeague, w).catch(() => 'offline' as const),
+                  // The baseline is a nicety: losing it costs the trend, never the blend.
+                  earlier
+                    ? summaryRead(apiLeague, earlier).catch(() => 'failed' as const)
+                    : Promise.resolve(null),
+                ]);
               })()
             : null;
         const side = await loadPvpokeSide(league);
         const prior = priorRanking(side);
         const priorOrder = blendedOrder(prior.weights);
         const reads = measured ? await measured : null;
-        if (reads === null || reads === 'offline') {
+        if (reads === null || reads[0] === 'offline') {
           return {
             league,
             ranking: prior,
             order: priorOrder,
             trend: new Map(),
             window: w,
-            offline: reads === 'offline',
+            offline: reads !== null,
           };
         }
         const [current, before] = reads;
@@ -259,12 +265,17 @@ export function useMetaRanking(
           rankSpecies(s, side.baseline, side.ranks, { source: opts.source, banned: side.banned });
         const ranking = blend(current);
         const order = blendedOrder(ranking.weights);
-        const baselineOrder = before ? blendedOrder(blend(before).weights) : priorOrder;
+        const baselineOrder =
+          before === 'failed' || !wantTrend
+            ? null
+            : before
+              ? blendedOrder(blend(before).weights)
+              : priorOrder;
         return {
           league,
           ranking,
           order,
-          trend: rankTrend(order, baselineOrder),
+          trend: baselineOrder ? rankTrend(order, baselineOrder) : new Map(),
           window: w,
           offline: false,
         };
@@ -278,6 +289,7 @@ export function useMetaRanking(
     opts.window,
     opts.source,
     opts.community,
+    wantTrend,
   ]);
 }
 

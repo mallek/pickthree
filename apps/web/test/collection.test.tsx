@@ -17,7 +17,7 @@ import {
   type AppState,
 } from '../src/state/store.tsx';
 import { resetDbForTests, storage } from '../src/storage/db.ts';
-import { fakeHost } from './fakeHost.ts';
+import { fakeHost, GREAT } from './fakeHost.ts';
 
 /**
  * A synthetic league for the meta rank: PvPoke's meta group is five species in score order
@@ -391,6 +391,44 @@ describe('Collection', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     });
     expect(latest?.state.sheetOpen).toBe(true);
+  });
+
+  it('switches to the league a ?l= link names, once, then lets go of it', async () => {
+    const megaGreat = {
+      ...GREAT,
+      id: 'mega-great',
+      title: 'Great League: Mega Edition',
+      short: 'Mega Great',
+    };
+    const megaHost = (overrides: Partial<Record<string, unknown>>) => {
+      const base = fakeHost();
+      const ready = base.ready as unknown as () => Promise<Record<string, unknown>>;
+      const info = base.leagueInfo as unknown as (l: string) => Promise<Record<string, unknown>>;
+      return fakeHost({
+        ready: vi.fn(async () => ({ ...(await ready()), leagues: [GREAT, megaGreat] })),
+        leagueInfo: vi.fn(async (league: string) => ({ ...(await info(league)), id: league })),
+        ...overrides,
+      });
+    };
+    await open(undefined, undefined, megaHost);
+    expect(latest?.state.settings.league ?? 'great').toBe('great');
+    await go({ screen: 'collection', league: 'mega-great' });
+    await waitFor(() => expect(latest?.state.settings.league).toBe('mega-great'));
+    await waitFor(() => expect(latest?.state.leagueInfo?.id).toBe('mega-great'));
+    await waitFor(() => expect(latest?.state.route).toEqual({ screen: 'collection' }));
+    // Let go of: the switcher works again and nothing switches back.
+    await act(async () => {
+      latest!.actions.setLeague('great');
+    });
+    await waitFor(() => expect(latest?.state.leagueInfo?.id).toBe('great'));
+    expect(latest?.state.settings.league).toBe('great');
+  });
+
+  it('ignores a ?l= league the app does not know', async () => {
+    await open();
+    await go({ screen: 'collection', league: 'nowhere' });
+    await judged();
+    expect(latest?.state.settings.league ?? 'great').toBe('great');
   });
 
   it('counts filters that differ from their defaults, Group same Pokémon included', async () => {

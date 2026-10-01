@@ -981,6 +981,41 @@ describe('Top teams board, the board controls', () => {
     expect(screen.getByText('1 core')).toBeInTheDocument();
   });
 
+  it('stops thinning rows once the filter is hidden, as after a league switch', async () => {
+    const ranking = makeRanking(480, 9);
+    const boardOf = (teams: TeamRowV1[], cores: TeamRowV1[]) =>
+      buildBoard({ teams: makeTeams(480, 9, teams, cores), ranking, generated: [], view: view() });
+    const props = {
+      league: 'great',
+      boardError: false,
+      ranking,
+      epoch: null,
+      bakedCommit: BAKED_COMMIT,
+      sources: {},
+      onRetry: () => {},
+    };
+    const h = host();
+    const view_ = render(
+      <AppProvider host={h}>
+        <Probe />
+        <TeamBoard {...props} board={boardOf([FULL, FULL_TWO], [CORE, LONELY_CORE])} />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(latest?.boot).toBe('ready'));
+    fireEvent.click(screen.getByRole('button', { name: 'Multi-team only' }));
+    expect(titles()).toEqual(['Azumarill, Clodsire']);
+    // The next league's board has no core in two teams, so the chip is gone; its state must not
+    // keep filtering rows the reader can no longer un-filter.
+    view_.rerender(
+      <AppProvider host={h}>
+        <Probe />
+        <TeamBoard {...props} board={boardOf([FULL], [CORE, LONELY_CORE])} />
+      </AppProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Multi-team only' })).toBeNull();
+    expect(titles()).toContain('Lonely A, Lonely B');
+  });
+
   it("starts on the board's own ranked order, which has no number attached to it", async () => {
     await renderTeams({ battles: 480, devices: 9, cores: [CORE], teams: [FULL], generated: [] });
     expect(screen.getByLabelText('Sort')).toHaveValue('ranked');

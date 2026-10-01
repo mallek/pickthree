@@ -8,7 +8,6 @@ import {
 import { Button, Chevron, MeasuredLine, progressPercent } from '@pickthree/ui';
 import { useEffect, useState } from 'react';
 import { PokemonToken, useLogCount, useName } from '../../components.tsx';
-import { dateLabel } from '../../format.ts';
 import { shareEnabled } from '../../metaShare.ts';
 import { shareLink } from '../../share.ts';
 import { teamLink } from '../../teamLink.ts';
@@ -193,47 +192,6 @@ export function setRecord(set: BattleSet): { wins: number; losses: number; decid
   const counted = set.battles.filter((b) => !b.tanked);
   const wins = counted.filter((b) => b.result === 'win').length;
   return { wins, losses: counted.length - wins, decided: counted.length };
-}
-
-export function CurrentTeam({ set }: { set: BattleSet }) {
-  const { navigate } = useActions();
-  const name = useName();
-  const shareTeam = useShareTeam();
-  const share = (): Promise<void> => shareTeam(set);
-  // A tanked battle stays in the strip and counts for nothing.
-  const rec = setRecord(set);
-  return (
-    <div className="card set-card">
-      <div className="between">
-        <b>Current team</b>
-        <span className="meta">
-          {rec.decided === 0
-            ? `since ${dateLabel(set.startedAt)}`
-            : `${record(rec.wins, rec.losses)} since ${dateLabel(set.startedAt)}`}
-        </span>
-      </div>
-      <div className="row" style={{ gap: 10 }}>
-        {set.team.species.map((id) => (
-          <span className="row" key={id} style={{ gap: 6 }}>
-            <PokemonToken speciesId={id} size={28} showInitial={false} />
-            <span className="small">{name(id)}</span>
-          </span>
-        ))}
-      </div>
-      <ResultStrip set={set} />
-      <Button variant="primary" onClick={() => navigate({ screen: 'meta-log' })}>
-        Log a battle
-      </Button>
-      <div className="ym-team-actions">
-        <Button variant="text" onClick={() => navigate({ screen: 'meta-new' })}>
-          Change team
-        </Button>
-        <Button variant="text" onClick={() => void share()}>
-          Share this team
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 export function NoTeam() {

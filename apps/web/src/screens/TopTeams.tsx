@@ -54,7 +54,7 @@ import {
   SORTS,
   type SortKey,
 } from '../components/meta/boardView.ts';
-import { useActions, useAppState } from '../state/store.tsx';
+import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { useMetaRanking, useTopTeams } from '../state/useMeta.ts';
 import { teamPath, type SharedPick } from '../teamLink.ts';
 
@@ -422,7 +422,7 @@ function Contribute({ devices }: { devices: number }) {
         {count(devices)} {plural(devices, 'device is', 'devices are')} contributing to this view so
         far.
       </p>
-      <Button variant="secondary" href="#/meta/new">
+      <Button variant="secondary" href={hashFor({ screen: 'meta-new' })}>
         Log a battle
       </Button>
     </div>
@@ -474,7 +474,8 @@ export function TeamBoard(p: {
   const empty = board.rows.length === 0;
   // The filter is only offered when it has something to act on.
   const showFilter = board.rows.some((row) => row.kind === 'core' && teamsSeen(row) >= 2);
-  const shown = sortRows(multiOnly ? multiTeamOnly(board.rows) : board.rows, sort);
+  // A hidden chip (a league switch keeps this state) never thins the rows.
+  const shown = sortRows(multiOnly && showFilter ? multiTeamOnly(board.rows) : board.rows, sort);
   const sourcesText = sourcesLine(sources);
   const showMatchupExplainer = !empty && !board.projectionless;
   const showCoverage = showMatchupExplainer && board.weightCovered < 0.95;
@@ -555,7 +556,8 @@ function LoadedBoard({
 }) {
   const s = useAppState();
   const board = useTopTeams(league, { window: w, source });
-  const ranked = useMetaRanking(league, { window: w, source, community: true });
+  // The board shows no trend, so it makes no week-earlier read.
+  const ranked = useMetaRanking(league, { window: w, source, community: true, trend: false });
   // A failed summary read leaves the ranking standing in as PvPoke's order, marked offline; the
   // board shares that read, so either failing is the board failing.
   const failed =

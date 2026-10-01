@@ -6,9 +6,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { resetStickyForTests } from '../src/components.tsx';
 import {
   Contribution,
-  CurrentTeam,
   NoTeam,
   ProgressLine,
+  ResultStrip,
 } from '../src/components/meta/LogPieces.tsx';
 import { AppProvider, useAppState } from '../src/state/store.tsx';
 import { DEFAULT_SETTINGS, resetDbForTests, storage, type Settings } from '../src/storage/db.ts';
@@ -45,7 +45,7 @@ const MIXED: LoggedBattle[] = [
   battle('b4', 20, { opponents: ['azumarill', 'medicham'] }),
 ];
 
-/** The open set the way the Meta landing hands it to CurrentTeam, or NoTeam when none is open. */
+/** The open set's result strip, as the Meta landing shows it, or NoTeam when none is open. */
 function Landing() {
   const s = useAppState();
   const open = s.sets.find((x) => !x.closed && x.league === (s.settings.league ?? 'great'));
@@ -55,7 +55,7 @@ function Landing() {
         <ProgressLine />
         <Contribution />
       </div>
-      {open ? <CurrentTeam set={open} /> : <NoTeam />}
+      {open ? <ResultStrip set={open} /> : <NoTeam />}
     </>
   );
 }
@@ -124,14 +124,6 @@ describe('shared logging pieces', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the record as wins and losses, tanked left out', async () => {
-    await storage.saveSet(openSet(MIXED));
-    renderPieces();
-    expect(await screen.findByText(/^2-1 since/)).toBeInTheDocument();
-    expect(screen.queryByText(/2-1-1/)).toBeNull();
-    expect(screen.getByText('Current team')).toBeInTheDocument();
-  });
-
   it('makes each result a button that opens that battle for editing', async () => {
     await storage.saveSet(openSet(MIXED));
     renderPieces();
@@ -144,17 +136,6 @@ describe('shared logging pieces', () => {
     expect(screen.getByText('Tap a result to fix it')).toBeInTheDocument();
     fireEvent.click(win);
     await waitFor(() => expect(window.location.hash).toBe('#/meta/log/s1/b1'));
-  });
-
-  it('has one primary action, Log a battle, with Change team and Share as text buttons', async () => {
-    await storage.saveSet(openSet(MIXED));
-    const { container } = renderPieces();
-    const log = await screen.findByRole('button', { name: 'Log a battle' });
-    const primaries = container.querySelectorAll('.ui-btn-primary');
-    expect(primaries).toHaveLength(1);
-    expect(primaries[0]).toBe(log);
-    expect(screen.getByRole('button', { name: 'Change team' })).toHaveClass('ui-btn-text');
-    expect(screen.getByRole('button', { name: 'Share this team' })).toHaveClass('ui-btn-text');
   });
 
   it('with no team running, Pick your team is the primary', async () => {

@@ -142,11 +142,28 @@ type Item =
 
 export function Collection() {
   const s = useAppState();
-  const { loadVerdicts, openSheet } = useActions();
+  const { loadVerdicts, navigate, openSheet, setLeague } = useActions();
   const name = useName();
   const species = useSpecies();
   const league = useLeague();
   const info = s.leagueInfo;
+  /** League named on an inbound link (old meta.pick3.gg pokemon links land here). */
+  const routeLeague = s.route.screen === 'collection' ? (s.route.league ?? null) : null;
+  const knownRouteLeague =
+    routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
+
+  // Switch to the league the link named, once. When it is in play the route lets go of it, so
+  // the league switcher works again. An unknown league id is ignored.
+  useEffect(() => {
+    if (!knownRouteLeague || !routeLeague) {
+      return;
+    }
+    if (s.leagueInfo?.id === routeLeague) {
+      navigate({ screen: 'collection' }, { replace: true });
+    } else if ((s.settings.league ?? 'great') !== routeLeague) {
+      setLeague(routeLeague);
+    }
+  }, [knownRouteLeague, routeLeague, s.leagueInfo, s.settings.league, setLeague, navigate]);
   // Collection opens all the time, so its community read is automatic and follows the sharing
   // switch: off ranks by PvPoke alone, with no read and no trend.
   const ranked = useMetaRanking(league.id, {

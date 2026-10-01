@@ -8,9 +8,6 @@ import {
   HALF_SAY_DEVICES,
   HALF_SAY_EVENTS,
   HALF_SAY_TOURNAMENT_BATTLES,
-  MANY,
-  SOME,
-  TREND_MIN,
 } from '@pickthree/engine/meta';
 import { Settings } from '../src/screens/settings/Settings.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
@@ -580,7 +577,7 @@ describe('Settings, How the meta is ranked', () => {
     latest = null;
   });
 
-  it('states the half-say points and confidence cut-offs the blend really uses', async () => {
+  it('states the half-say points the blend really uses', async () => {
     await open();
     await push('Community');
     await push('How the meta is ranked');
@@ -591,15 +588,38 @@ describe('Settings, How the meta is ranked', () => {
       HALF_SAY_DEVICES,
       HALF_SAY_TOURNAMENT_BATTLES,
       HALF_SAY_EVENTS,
-      SOME,
-      MANY,
-      TREND_MIN,
+      // The one-person example is three times the battles half-say point, not a fixed number.
+      HALF_SAY_BATTLES * 3,
     ]) {
       expect(text).toContain(n.toLocaleString('en-US'));
     }
+    // Top teams can show one source on its own, so not every number is a blend.
+    expect(text).toMatch(/unless you pick one source on Top teams/);
     // A projection is never a percentage, and the page says where measured numbers come from.
     expect(text).toMatch(/matchup score out of 100/);
     expect(text).toMatch(/never a percentage/);
+  });
+
+  it('reads the numbers pick3 shows: the #N meta rank and its trend, no confidence tags', async () => {
+    await open();
+    await push('Community');
+    await push('How the meta is ranked');
+    const page = screen.getByRole('dialog', { name: 'How the meta is ranked' });
+    const text = page.textContent ?? '';
+    expect(text).toContain('"#N meta"');
+    // The trend baseline: PvPoke's order for the first week, then the league a week earlier,
+    // with no battle threshold.
+    expect(text).toMatch(/PvPoke's order/);
+    expect(text).toMatch(/a week earlier/);
+    expect(text).toMatch(/no minimum number of battles/i);
+    expect(text).not.toMatch(/confidence/i);
+    expect(text).not.toMatch(/window before this one/);
+    // Every paragraph is a settings line, the lead one included.
+    const paragraphs = [...page.querySelectorAll('.settings-page p')];
+    expect(paragraphs.length).toBeGreaterThan(0);
+    for (const p of paragraphs) {
+      expect(p).toHaveClass('settings-line');
+    }
   });
 
   it('has no theme control, no PvPoke list and no em dash', async () => {

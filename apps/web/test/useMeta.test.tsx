@@ -122,6 +122,8 @@ interface Net {
   earlier: unknown;
   /** A status the worker answers every /api/v1 read with instead. */
   apiStatus: number | null;
+  /** A status the worker answers only the week-earlier summary read with. */
+  earlierStatus?: number;
 }
 
 function stubNet(net: Net) {
@@ -137,7 +139,13 @@ function stubNet(net: Net) {
       if (url.pathname === '/api/v1/meta') {
         // The earlier window ends a week sooner; the current one ends at "now".
         const until = Date.parse(url.searchParams.get('until') ?? '');
-        return json(until > Date.now() - 86_400_000 ? net.current : net.earlier);
+        if (until > Date.now() - 86_400_000) {
+          return json(net.current);
+        }
+        if (net.earlierStatus !== undefined) {
+          return new Response('{}', { status: net.earlierStatus });
+        }
+        return json(net.earlier);
       }
       if (url.pathname === '/api/v1/teams') {
         return json(TEAMS);
@@ -185,7 +193,12 @@ function forget() {
   detail = null;
 }
 
-function RankingProbe(props: { window: WindowKey; source: SourceKey; community: boolean }) {
+function RankingProbe(props: {
+  window: WindowKey;
+  source: SourceKey;
+  community: boolean;
+  trend?: boolean;
+}) {
   ranking = useMetaRanking('great', props);
   return null;
 }
@@ -282,6 +295,46 @@ describe('useMetaRanking', () => {
     expect(ranking?.data?.offline).toBe(true);
     expect(ranking?.data?.trend.size).toBe(0);
     expect(ranking?.data?.order).toEqual(['tinkaton', 'azumarill', 'clodsire']);
+  });
+
+  it('keeps the current blend, with no trend and not offline, when only the week-earlier read fails', async () => {
+    at('2026-09-28T20:00:00Z');
+    const net = freshNet();
+    net.earlierStatus = 503;
+    stubNet(net);
+    mount(<RankingProbe window="meta" source="all" community={true} />);
+    await waitFor(() => expect(ranking?.state).toBe('ready'));
+    expect(net.api.map((u) => u.pathname)).toEqual(['/api/v1/meta', '/api/v1/meta']);
+    expect(ranking?.data?.order).toEqual(['clodsire', 'tinkaton', 'azumarill']);
+    expect(ranking?.data?.ranking.battles).toBe(3000);
+    expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.offline).toBe(false);
+  });
+
+  it('makes no week-earlier read when the caller shows no trend', async () => {
+    at('2026-09-28T20:00:00Z');
+    const net = freshNet();
+    stubNet(net);
+    mount(<RankingProbe window="meta" source="all" community={true} trend={false} />);
+    await waitFor(() => expect(ranking?.state).toBe('ready'));
+    expect(net.api.map((u) => u.pathname)).toEqual(['/api/v1/meta']);
+    expect(Date.parse(net.api[0]?.searchParams.get('until') ?? '')).toBe(Date.now());
+    expect(ranking?.data?.order).toEqual(['clodsire', 'tinkaton', 'azumarill']);
+    expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.offline).toBe(false);
+  });
+
+  it('makes no community read at all under the PvPoke source, and has no trend', async () => {
+    at('2026-09-28T20:00:00Z');
+    const net = freshNet();
+    stubNet(net);
+    mount(<RankingProbe window="meta" source="prior" community={true} />);
+    await waitFor(() => expect(ranking?.state).toBe('ready'));
+    expect(net.api).toHaveLength(0);
+    expect(ranking?.data?.ranking.source).toBe('prior');
+    expect(ranking?.data?.order).toEqual(['tinkaton', 'azumarill', 'clodsire']);
+    expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.offline).toBe(false);
   });
 
   it('keeps the reads for the session: a remount does not refetch', async () => {

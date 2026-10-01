@@ -3,9 +3,6 @@ import {
   HALF_SAY_DEVICES,
   HALF_SAY_EVENTS,
   HALF_SAY_TOURNAMENT_BATTLES,
-  MANY,
-  SOME,
-  TREND_MIN,
 } from '@pickthree/engine/meta';
 import { battleWord, count, plural } from '../../components/meta/boardView.ts';
 
@@ -19,12 +16,12 @@ export function MetaRanked() {
     <div className="settings-page">
       <section className="settings-block">
         <h4 className="settings-head">Three sources, one number</h4>
-        <p>
+        <p className="settings-line">
           Every number in the Meta tab comes from one of three places. PvPoke keeps a curated list
           of what a league&apos;s meta looks like, made by people who play it. Official tournament
           broadcasts show what competitive players actually pick. And pick3 players share their GO
           Battle League battles. None of the three is the answer on its own, so every number is a
-          blend of all three.
+          blend of all three, unless you pick one source on Top teams.
         </p>
         <p className="settings-line">
           A percentage always means real battles. A projection is shown as a matchup score out of
@@ -38,9 +35,9 @@ export function MetaRanked() {
           shared, and how many different devices shared them. At {count(HALF_SAY_BATTLES)} counted{' '}
           {battleWord(HALF_SAY_BATTLES)} the measured side has half the say. At{' '}
           {count(HALF_SAY_DEVICES)} {plural(HALF_SAY_DEVICES, 'device', 'devices')} it also has half
-          the say, and the smaller of the two wins. One person sharing 900 battles is one
-          person&apos;s matchmaking queue, so they are held to a small share of the say until other
-          people show up.
+          the say, and the smaller of the two wins. One person sharing {count(HALF_SAY_BATTLES * 3)}{' '}
+          {battleWord(HALF_SAY_BATTLES * 3)} is one person&apos;s matchmaking queue, so they are
+          held to a small share of the say until other people show up.
         </p>
         <p className="settings-line">
           Tournament pick share works the same way, on its own curve: at{' '}
@@ -61,12 +58,15 @@ export function MetaRanked() {
       <section className="settings-block">
         <h4 className="settings-head">Reading the numbers</h4>
         <p className="settings-line">
-          A record is a raw win-loss count with a confidence tag beside it: few under {count(SOME)}{' '}
-          decided {battleWord(SOME)}, some from there up to {count(MANY)}, many at {count(MANY)} or
-          more. A trend is the change in a Pokémon&apos;s share since the window before this one. It
-          is only shown when both windows hold at least {count(TREND_MIN)} {battleWord(TREND_MIN)}{' '}
-          and the change is bigger than the noise in the numbers. Tanked battles are counted
-          separately and never touch a record.
+          A Pokémon&apos;s &quot;#N meta&quot; tag is its place in the blended order, and the arrow
+          beside it is how many places it has moved. While the season, or a cup&apos;s run, is under
+          a week old, that move is counted against PvPoke&apos;s order; after that, against the
+          league&apos;s own order a week earlier. There is no minimum number of battles: a quiet
+          league simply moves less.
+        </p>
+        <p className="settings-line">
+          A record is a raw win-loss count. Tanked battles are counted separately and never touch a
+          record.
         </p>
       </section>
       <section className="settings-block">

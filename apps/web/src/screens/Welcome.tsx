@@ -23,7 +23,7 @@ import { useActions, useAppState } from '../state/store.tsx';
  * rather than an answer.
  */
 export function Welcome() {
-  const { boot, bootError } = useAppState();
+  const { boot, bootError, settingsLoaded } = useAppState();
   const { navigate, updateSettings } = useActions();
   const count = useTrainerCount();
   const [infoOpen, setInfoOpen] = useState(false);
@@ -105,7 +105,8 @@ export function Welcome() {
           <button
             type="button"
             className="btn btn-secondary btn-cta"
-            disabled={boot !== 'ready'}
+            // Saving before the stored settings are read would write defaults over them.
+            disabled={boot !== 'ready' || !settingsLoaded}
             onClick={() => {
               updateSettings({ startedWithout: true });
               navigate({ screen: 'meta' });
