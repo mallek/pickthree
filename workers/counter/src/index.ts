@@ -22,7 +22,8 @@
  *
  * Nothing stored identifies a player: no IPs, no collection data, no names. The counter and
  * the error log live in one Durable Object; the battle records in another with SQLite. Anything
- * that is not one of these routes falls through to the ASSETS binding: the meta.pick3.gg site.
+ * that is not one of these routes is an old meta.pick3.gg page: the site retired into pick3's
+ * Meta tab, so it answers a 301 to the pick3 route that replaced it (`redirect.ts`).
  * The keyed routes take a bearer token (Authorization: Bearer <INGEST_TOKEN>) instead of an
  * Origin check: a script calls them, not a browser.
  */
@@ -49,6 +50,7 @@ import {
   type SpeciesDetailV1,
 } from './meta.js';
 import { parseReport, type ErrorReport } from './report.js';
+import { redirectToPick3 } from './redirect.js';
 import { teamBoard, type TeamsV1 } from './teams.js';
 import {
   eventDetail,
@@ -89,7 +91,6 @@ import {
 export interface Env {
   COUNTER: DurableObjectNamespace<Counter>;
   META: DurableObjectNamespace<MetaStore>;
-  ASSETS: Fetcher;
   ALLOWED_ORIGINS: string;
   ERRORS_READ_TOKEN?: string;
   /** Bearer token for the tournament ingest routes, a worker secret like ERRORS_READ_TOKEN.
@@ -626,7 +627,7 @@ export default {
     if (isWorkerPath(url.pathname)) {
       return Response.json({ error: 'not found' }, { status: 404, headers });
     }
-    // Anything that is not an endpoint is the meta.pick3.gg site.
-    return env.ASSETS.fetch(request);
+    // Anything that is not an endpoint is an old meta.pick3.gg page, now a pick3 route.
+    return redirectToPick3(url);
   },
 } satisfies ExportedHandler<Env>;

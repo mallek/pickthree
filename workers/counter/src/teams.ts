@@ -1,5 +1,5 @@
 /**
- * The team board behind meta.pick3.gg: every 3-Pokemon team and every 2-Pokemon core the shared
+ * The team board behind pick3's Top teams: every 3-Pokemon team and every 2-Pokemon core the shared
  * records have seen, from both sides of the battle. Pure functions over BattleRow[], so they are
  * tested without a Durable Object.
  *

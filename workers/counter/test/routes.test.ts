@@ -34,7 +34,6 @@ function testEnv(over: { INGEST_TOKEN?: string } = {}): { env: Env; close: () =>
   const env = {
     COUNTER: { getByName: () => ({}) } as unknown as Env['COUNTER'],
     META: { getByName: () => metaStore } as unknown as Env['META'],
-    ASSETS: { fetch: () => Promise.resolve(new Response('site')) } as unknown as Env['ASSETS'],
     ALLOWED_ORIGINS: 'http://localhost:5173',
     ...over,
   } as Env;
@@ -123,7 +122,7 @@ describe('isWorkerPath', () => {
     expect(isWorkerPath('/api/v2/anything')).toBe(true);
   });
 
-  it('is false for site paths', () => {
+  it('is false for the old meta.pick3.gg paths, which redirect into pick3', () => {
     for (const p of [
       '/',
       '/great',
@@ -134,6 +133,28 @@ describe('isWorkerPath', () => {
     ]) {
       expect(isWorkerPath(p)).toBe(false);
     }
+  });
+});
+
+describe('the retired meta.pick3.gg pages', () => {
+  it('answer a 301 into pick3 instead of serving a site', async () => {
+    const res = await get('/great/p/azumarill?window=7');
+    expect(res.status).toBe(301);
+    expect(res.headers.get('Location')).toBe('https://pick3.gg/#/species/azumarill?l=great&w=7');
+  });
+
+  it('leave the API alone', async () => {
+    const res = await get(
+      '/api/v1/meta?league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z',
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Location')).toBeNull();
+  });
+
+  it('leave a worker path with the wrong method a JSON 404, not a redirect', async () => {
+    const res = await get('/hit');
+    expect(res.status).toBe(404);
+    expect(((await res.json()) as { error: string }).error).toBe('not found');
   });
 });
 

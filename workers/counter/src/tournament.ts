@@ -20,8 +20,8 @@ export const MAX_TOURNAMENT_BATCH = 200;
 
 /**
  * The tournament cup each site league's Play! events are played under. Only events on this cup
- * enter that league's blend. The same map exists in apps/meta/scripts/bake.ts, for the same reason
- * api.ts writes the wire shapes down twice: neither workspace depends on the other, and a rule
+ * enter that league's blend. The same map exists in packages/engine/src/meta/legal.ts, which
+ * the data build uses to write the ban list: neither workspace depends on the other, and a rule
  * written on both sides is the contract. Both copies are asserted by their own test.
  */
 export const OPEN_EQUIVALENT_CUP: Record<string, string> = { great: 'championshipseries' };

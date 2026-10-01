@@ -1,5 +1,5 @@
 /**
- * Fills a LOCAL counter worker with synthetic shared battles so the meta site can be judged at a
+ * Fills a LOCAL counter worker with synthetic shared battles so the Meta tab can be judged at a
  * realistic volume before it is live. Synthetic only, the same rule as the CSV fixtures: this
  * never reads a real export and never points at production.
  *

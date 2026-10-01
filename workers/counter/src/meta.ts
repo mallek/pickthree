@@ -1,5 +1,5 @@
 /**
- * The v1 read model behind meta.pick3.gg: per-league and per-species rollups over the stored
+ * The v1 read model behind pick3's Meta tab: per-league and per-species rollups over the stored
  * battle records. Pure functions over BattleRow[], so they are tested without a Durable Object.
  * The older `aggregate` in battles.ts still backs GET /meta and is deliberately left alone.
  */
@@ -47,15 +47,15 @@ export function readParams(url: URL): ReadParams | { error: string } {
 
 /**
  * Paths this worker owns. A request to one of these with a method it does not serve gets a JSON
- * 404, not the meta.pick3.gg page: an API path answering with HTML is worse than an honest error.
- * Keep in step with run_worker_first in wrangler.toml. The six tournament event routes
+ * 404, not a redirect into pick3: an API path answering with a page is worse than an honest
+ * error. Every other path is an old meta.pick3.gg page and redirects. The six tournament event routes
  * (PUT/GET/DELETE /api/v1/events/<id>, POST /api/v1/events/<id>/battles and /roster,
  * GET /api/v1/events) are already covered by the `/api/` prefix check below, so the set itself
  * does not change for them.
  */
 const WORKER_PATHS = new Set(['/hit', '/count', '/error', '/errors', '/battles', '/meta']);
 
-/** True when this worker owns the path, so an unmatched method gets a JSON 404 and not the site. */
+/** True when this worker owns the path, so an unmatched method gets a JSON 404 and not a redirect. */
 export function isWorkerPath(pathname: string): boolean {
   return WORKER_PATHS.has(pathname) || pathname.startsWith('/api/');
 }
