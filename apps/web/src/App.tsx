@@ -1,3 +1,4 @@
+import { MockSpecies } from './screens/MockSpecies.tsx';
 import { useLayoutEffect } from 'react';
 import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
@@ -63,7 +64,8 @@ function TabBar() {
     route.screen === 'collection' ||
     route.screen === 'specimen' ||
     route.screen === 'add' ||
-    route.screen === 'species';
+    route.screen === 'species' ||
+    route.screen === 'mock';
   const onMeta =
     route.screen === 'meta' ||
     route.screen === 'meta-teams' ||
@@ -112,6 +114,8 @@ function renderScreen(r: Route) {
   switch (r.screen) {
     case 'welcome':
       return <Welcome />;
+    case 'mock':
+      return <MockSpecies variant={r.variant} />;
     case 'import':
       return <Import />;
     case 'report':

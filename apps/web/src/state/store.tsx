@@ -98,6 +98,7 @@ export interface NoticeAction {
 
 export type Route =
   | { screen: 'welcome' }
+  | { screen: 'mock'; variant: string }
   | { screen: 'import' }
   | { screen: 'report' }
   | { screen: 'teams' }
@@ -550,6 +551,9 @@ export function parseHash(hash: string): Route {
   const [path, query] = hash.replace(/^#\/?/, '').split('?');
   const parts = path!.split('/').filter(Boolean);
   const [a, b] = parts;
+  if (a === 'mock') {
+    return { screen: 'mock', variant: b ?? 'umbreon' };
+  }
   if (a === 'import') {
     return { screen: 'import' };
   }
