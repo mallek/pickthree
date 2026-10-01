@@ -85,10 +85,12 @@ const AUDIT_ENFORCED = new Set([
   'collection-judging',
   'collection-empty',
   'collection-excluded',
+  'collection-rescan',
   'collection-league',
   'collection-league-meta',
   'collection-empty-league',
   'species-owned',
+  'species-moves',
   'species-unowned',
   '05-specimen',
   'specimen-built',
@@ -96,6 +98,7 @@ const AUDIT_ENFORCED = new Set([
   'specimen-excluded',
   'specimen-manual',
   'specimen-remove-confirm',
+  'specimen-edit',
   'specimen-not-found',
   '08-counters',
   'counters-filters',
@@ -1119,6 +1122,31 @@ await page.click('.more-btn[aria-expanded="true"]');
 await page.waitForFunction(() => !document.querySelector('.more-btn[aria-expanded="true"]'));
 await page.evaluate(() => window.scrollTo(0, 0));
 
+console.log('collection, needs rescan');
+// The Rescan pill: copies whose IVs never came through read like not-collected rows (the meta
+// tags, no CP or IVs), keep their Needs rescan tag and open the species page.
+const rescanPill = async () =>
+  page.$$eval('.chips.tight .chip', (els) =>
+    els.find((e) => e.textContent?.trim() === 'Rescan')?.click(),
+  );
+await rescanPill();
+const rescanRow = '.scroll .spec-row[href^="#/species/"] .verdict-tag[data-verdict="Needs rescan"]';
+await page.waitForSelector(rescanRow, { timeout: 10_000 });
+const rescanLines = await page.$$eval(
+  '.scroll .spec-row:not(.sub)',
+  (rows) => rows.filter((r) => /CP \d/.test(r.textContent ?? '')).length,
+);
+if (rescanLines > 0) {
+  throw new Error(`collection, needs rescan: ${rescanLines} rows still show a CP line`);
+}
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('collection-rescan', false, { mustShow: rescanRow });
+await rescanPill();
+await page.waitForFunction(() =>
+  document.querySelector('.scroll .spec-row[href^="#/collection/"]'),
+);
+await page.evaluate(() => window.scrollTo(0, 0));
+
 console.log('collection, filters');
 /** Flips one switch in the Filters sheet by its label and waits for it to land. */
 const flipCollectionFilter = async (label) => {
@@ -1928,6 +1956,24 @@ console.log(`  ${page.url().split('#')[1]}: ${owned}`);
 await page.evaluate(() => window.scrollTo(0, 0));
 await shot('species-owned');
 
+console.log('species page, recommended moves');
+// PvPoke's set for the species from the worker's move pool, laid out as the specimen page's.
+const recommendedHead = await page.waitForFunction(
+  () =>
+    [...document.querySelectorAll('.scroll h3')].find(
+      (h) =>
+        h.textContent === 'Recommended moves' &&
+        h.parentElement?.querySelector('.move-row .move-name'),
+    ),
+  { timeout: 30_000 },
+);
+await recommendedHead.evaluate((h) => {
+  h.parentElement.setAttribute('data-shot-moves', '');
+  const top = document.querySelector('.page-head')?.getBoundingClientRect().height ?? 0;
+  window.scrollTo(0, window.scrollY + h.getBoundingClientRect().top - top - 16);
+});
+await shot('species-moves', false, { mustShow: '[data-shot-moves] .move-row' });
+
 console.log('your battles and the landing, 15 or more battles');
 // Six more battles on the running team, sent to the community meta, so the season passes 15 and
 // the contribution count shows. The set as it was is kept and put back after the shots.
@@ -2532,6 +2578,30 @@ if (!(await page.$('.scroll .ui-btn-danger'))) {
   throw new Error('specimen, remove confirm: Keep it left the page');
 }
 
+console.log('specimen, enter values');
+// Enter values on the same Pokémon: the Add form as Edit values, filled in from it. Not saved,
+// so the collection is as it was for the steps after this one.
+const enterValues = await page.$$eval('.scroll a.ui-btn', (els) => {
+  const a = els.find((e) => e.textContent?.trim() === 'Enter values');
+  a?.scrollIntoView({ block: 'center' });
+  return a ? a.getAttribute('href') : null;
+});
+if (!enterValues || !enterValues.startsWith('#/add?edit=')) {
+  throw new Error(`specimen, enter values: no Enter values link (${enterValues})`);
+}
+await page.$$eval('.scroll a.ui-btn', (els) =>
+  els.find((e) => e.textContent?.trim() === 'Enter values')?.click(),
+);
+await page.waitForFunction(
+  () =>
+    document.querySelector('.hdr-title')?.textContent?.includes('Edit values') &&
+    document.querySelector('.scroll .pick-slot') &&
+    [...document.querySelectorAll('.scroll .field input')].some((i) => i.value !== ''),
+  { timeout: 10_000 },
+);
+await page.evaluate(() => window.scrollTo(0, 0));
+await shot('specimen-edit', false, { mustShow: '.scroll .pick-slot' });
+
 console.log('settings');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });
 // Teams carries two IconButtons (the meta link, then Settings); the aria-label picks the
@@ -2855,8 +2925,16 @@ if (megaPin) {
       twoMegaPicks.indexOf(q) + 1,
     );
   }
+  // Each card's moves arrive from the worker after the pick, behind whatever it is still judging;
+  // a card that fills in late grows and pushes Analyze down under the tab bar between the scroll
+  // and a coordinate click, which then opens Collection. Wait for every card's moves, then click
+  // through the DOM.
+  await page.waitForFunction(
+    () => document.querySelectorAll('.pick-card.filled .pick-moves').length === 3,
+    { timeout: 120_000 },
+  );
   await page.$eval('.scroll > .ui-btn-primary', (el) => el.scrollIntoView({ block: 'center' }));
-  await page.click('.scroll > .ui-btn-primary');
+  await page.$eval('.scroll > .ui-btn-primary', (el) => el.click());
   await page.waitForSelector('.custom-note, .ui-error', { timeout: 120_000 });
   const megaAnalyzeError = await page.$eval('.ui-error', (e) => e.textContent).catch(() => null);
   if (megaAnalyzeError) {

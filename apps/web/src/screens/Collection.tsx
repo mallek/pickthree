@@ -563,7 +563,7 @@ export function Collection() {
           return (
             <div className="spec-group" key={g.key}>
               <a
-                className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}`}
+                className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}${rescan ? ' rescan' : ''}`}
                 href={hashFor(
                   rescan
                     ? { screen: 'species', id: ownSpeciesId(sp) }

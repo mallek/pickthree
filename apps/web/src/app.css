@@ -1457,6 +1457,11 @@ textarea.paste {
 .mtags .mtags {
   margin-top: 0;
 }
+/* A Needs rescan row has no CP line; outside the meta it has no tags either, so the name alone
+   sits centred beside the token, as on a row with one line. */
+.spec-row.rescan .mtags:empty {
+  display: none;
+}
 .mtag.good {
   color: #7ac74c;
   background: rgba(122, 199, 76, 0.14);
@@ -4103,6 +4108,10 @@ input[type='range'] {
 }
 .sp-yours > .spec-row.sub:first-child {
   border-top: 0;
+}
+/* A checkbox and its words: the whole line is the tap target, at least 44px tall. */
+.check-row {
+  min-height: var(--tap);
 }
 /* Enter values under a copy that needs a rescan: the text action lines up with the row's text. */
 .sp-yours > .sp-yours-action {

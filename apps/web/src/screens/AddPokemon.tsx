@@ -1,7 +1,8 @@
 import type { ManualResult } from '@pickthree/engine';
-import { Empty, Loading } from '@pickthree/ui';
+import { Empty, Header as SubHeader, IconButton, Loading } from '@pickthree/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CogGlyph,
   Header,
   MetaTags,
   PokemonToken,
@@ -23,7 +24,7 @@ type MegaForm = 'mega' | 'mega_x' | 'mega_y';
  */
 export function AddPokemon() {
   const s = useAppState();
-  const { navigate, back, addManual, updateManual } = useActions();
+  const { navigate, back, openSheet, addManual, updateManual } = useActions();
   const name = useName();
   const short = useShortName();
   const species = useSpecies();
@@ -168,14 +169,26 @@ export function AddPokemon() {
     </label>
   );
 
+  // Edit values is reached from a Pokémon's page, so it carries the signed sub header: Back on the
+  // left, the title, Settings on the right.
+  const editHeader = (to: Parameters<typeof back>[0], sub?: string) => (
+    <SubHeader
+      variant="sub"
+      title="Edit values"
+      sub={sub}
+      back={{ label: 'Back', onClick: () => back(to) }}
+      actions={
+        <IconButton label="Settings" onClick={openSheet}>
+          <CogGlyph />
+        </IconButton>
+      }
+    />
+  );
+
   if (editId && !editing) {
     return (
       <div className="screen">
-        <Header
-          title="Edit values"
-          onBack={() => back({ screen: 'collection' })}
-          backLabel="Back"
-        />
+        {editHeader({ screen: 'collection' })}
         <div className="scroll">
           {s.settingsLoaded ? (
             <Empty line="That Pokémon is not in the current collection." />
@@ -190,12 +203,7 @@ export function AddPokemon() {
   return (
     <div className="screen">
       {editId ? (
-        <Header
-          title="Edit values"
-          sub="Type in what the game shows you now."
-          onBack={() => back({ screen: 'specimen', id: editId })}
-          backLabel="Back"
-        />
+        editHeader({ screen: 'specimen', id: editId }, 'Type in what the game shows you now.')
       ) : (
         <Header
           title="Add a Pokémon"
@@ -281,7 +289,7 @@ export function AddPokemon() {
             {ivField('HP', sta, setSta)}
           </div>
           {megas.length === 1 ? (
-            <label className="row small" style={{ gap: 8, alignItems: 'center' }}>
+            <label className="row small check-row" style={{ gap: 8, alignItems: 'center' }}>
               <input
                 type="checkbox"
                 checked={megaForm !== null}
@@ -313,7 +321,7 @@ export function AddPokemon() {
             </label>
           ) : null}
           {chosenMega?.superMega ? (
-            <label className="row small" style={{ gap: 8, alignItems: 'center' }}>
+            <label className="row small check-row" style={{ gap: 8, alignItems: 'center' }}>
               <input
                 type="checkbox"
                 checked={level4}
@@ -341,7 +349,7 @@ export function AddPokemon() {
               onChange={(e) => setCp(e.target.value)}
             />
           </label>
-          <label className="row small" style={{ gap: 8, alignItems: 'center' }}>
+          <label className="row small check-row" style={{ gap: 8, alignItems: 'center' }}>
             <input type="checkbox" checked={lucky} onChange={(e) => setLucky(e.target.checked)} />
             Lucky (half price to power up)
           </label>
