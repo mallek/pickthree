@@ -13,7 +13,7 @@ import type { Specimen } from './collection/specimen.js';
 import { explainTeam, type Explanation } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
 import type { DataManifest, MatchupMatrix, MetaEntry, Move, Species } from './gamedata/types.js';
-import { candidatePool, type Candidate, type Rankings, type Role } from './search/candidates.js';
+import { candidatePool, poolKinds, type Candidate, type Rankings, type Role } from './search/candidates.js';
 import { simulateFinalists, type SlotSim, type TeamSim } from './search/finalists.js';
 import { MatrixView } from './search/matrixView.js';
 import {
@@ -117,6 +117,8 @@ export interface Recommendation {
     specimens: number;
     eligibleBuilds: number;
     poolSize: number;
+    /** Distinct team species in the pool; under three, nothing can be drafted. */
+    poolKinds: number;
     triosScored: number;
     finalists: number;
     ms: number;
@@ -282,6 +284,7 @@ export function recommend(
       specimens: specimens.length,
       eligibleBuilds: builds.length,
       poolSize: pool.length,
+      poolKinds: poolKinds(pool, (id) => index.teamSpeciesOf(id)),
       triosScored: scored,
       finalists: sims.length,
       ms: Date.now() - started,

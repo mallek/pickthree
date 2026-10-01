@@ -133,6 +133,7 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
         specimens: 0,
         eligibleBuilds: 0,
         poolSize: 0,
+        poolKinds: 3,
         triosScored: 0,
         finalists: 0,
         ms: 0,

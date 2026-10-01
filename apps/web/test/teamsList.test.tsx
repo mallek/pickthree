@@ -1,4 +1,3 @@
-import type { Specimen } from '@pickthree/engine';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -19,28 +18,9 @@ function Probe() {
   return null;
 }
 
-/** A scanned Pokemon with IVs, enough for the collection-size rule; the fake host ignores it. */
-function owned(id: string, speciesId: string): Specimen {
-  return {
-    id,
-    speciesId,
-    familyId: speciesId,
-    ivs: { atk: 0, def: 15, sta: 15 },
-    level: { min: 20, max: 20 },
-    cp: 1400,
-    hp: 150,
-    shadow: false,
-    purified: false,
-    lucky: false,
-    currentMoves: { fast: null, charged: [] },
-    scannedAt: '2026-09-20 12:00:00',
-    raw: {},
-  } as unknown as Specimen;
-}
-
-async function saveEmptyCollection(specimens: Specimen[] = []): Promise<void> {
+async function saveEmptyCollection(): Promise<void> {
   await storage.saveCollection({
-    specimens,
+    specimens: [],
     report: {
       scansRead: 0,
       recognized: 0,
@@ -56,10 +36,13 @@ async function saveEmptyCollection(specimens: Specimen[] = []): Promise<void> {
   });
 }
 
-function hostWith(teams: TeamRecommendation[]) {
+function hostWith(teams: TeamRecommendation[], poolKinds = 3) {
   const host = fakeHost();
   const base = host.recommend as unknown as () => Promise<Recommendation>;
-  host.recommend = vi.fn(async () => ({ ...(await base()), teams })) as typeof host.recommend;
+  host.recommend = vi.fn(async () => {
+    const rec = await base();
+    return { ...rec, teams, stats: { ...rec.stats, poolKinds } };
+  }) as typeof host.recommend;
   return host;
 }
 
@@ -267,21 +250,17 @@ describe('Teams list', () => {
   });
 
   it('shows the empty state with a Filters action when no team fits', async () => {
-    await saveEmptyCollection([
-      owned('a', 'medicham'),
-      owned('b', 'azumarill'),
-      owned('c', 'clodsire'),
-    ]);
     await mount(hostWith([]));
     expect(await screen.findByText(/No team fits these filters/)).toBeInTheDocument();
     const empty = screen.getByText(/No team fits these filters/).closest('.ui-empty') as HTMLElement;
     expect(within(empty).getByRole('button', { name: /^Filters/ })).toBeInTheDocument();
   });
 
-  it('with fewer than three Pokemon, says a team needs three and offers ways forward', async () => {
-    await saveEmptyCollection([owned('a', 'medicham')]);
-    await mount(hostWith([]));
-    const line = await screen.findByText(/A team needs three Pokémon/);
+  it('with fewer than three eligible Pokemon, says a team needs three and offers ways forward', async () => {
+    await mount(hostWith([], 2));
+    const line = await screen.findByText(
+      'A team needs three Pokémon that fit Great League, and two of yours do.',
+    );
     expect(screen.queryByText(/No team fits these filters/)).toBeNull();
     const empty = line.closest('.ui-empty') as HTMLElement;
     expect(within(empty).getByRole('link', { name: 'Add a Pokémon' })).toHaveAttribute(
@@ -292,6 +271,20 @@ describe('Teams list', () => {
       'href',
       '#/meta/teams',
     );
+    expect(within(empty).queryByRole('button', { name: /^Filters/ })).toBeNull();
+  });
+
+  it('with fewer than three eligible and a filter on, says the filters leave some out', async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      filters: { ...DEFAULT_SETTINGS.filters, noShadow: true },
+    });
+    await mount(hostWith([], 1));
+    const line = await screen.findByText(
+      'A team needs three Pokémon that fit Great League, and one of yours does. Your filters leave some out.',
+    );
+    const empty = line.closest('.ui-empty') as HTMLElement;
+    expect(within(empty).getByRole('button', { name: /^Filters/ })).toBeInTheDocument();
   });
 
   it('shows the error card with its message and a Try again that runs again', async () => {

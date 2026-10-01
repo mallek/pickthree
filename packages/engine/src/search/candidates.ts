@@ -170,3 +170,15 @@ export function candidatePool(
     .slice(0, opts.poolSize);
   return { pool, dropped };
 }
+
+/**
+ * How many different team members the pool can field: candidates of one team species (copies,
+ * builds, a Mega and its base form) count once. Under three, no team can be drafted at all, which
+ * the app reports as a short collection rather than as filters left too tight.
+ */
+export function poolKinds(
+  pool: readonly { build: { speciesId: string } }[],
+  teamSpeciesOf: (id: string) => string,
+): number {
+  return new Set(pool.map((c) => teamSpeciesOf(c.build.speciesId))).size;
+}

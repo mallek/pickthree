@@ -21,7 +21,7 @@ import {
 } from '../components.tsx';
 import { TeamCardBody } from '../components/team/TeamCardBody.tsx';
 import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
-import { LeagueSwitcher } from '../components/LeagueSwitcher.tsx';
+import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
 import { shareEnabled } from '../metaShare.ts';
 import { facingSettings, hasCommunityData, isCommunity } from '../state/facing.ts';
 import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
@@ -73,6 +73,7 @@ function TeamsHeader({ openSheet }: { openSheet: () => void }) {
 
 export function Teams() {
   const s = useAppState();
+  const league = useLeague();
   const { navigate, runRecommend, updateSettings, openFilters, openSheet, setPick } = useActions();
   /** Tapping a team loads it into Build as your specimens at the recommended stage. */
   const editInBuild = (t: TeamRecommendation): void => {
@@ -134,10 +135,10 @@ export function Teams() {
     );
   }
 
-  // Distinct kinds, a Shadow counting as its base form: a team never runs two of one Pokemon.
-  const ownedKinds = new Set(
-    s.collection.specimens.map((sp) => sp.speciesId.replace(/_shadow$/, '')),
-  ).size;
+  // How many different Pokemon the engine could field after the league's rules and the filters.
+  // Under three, nothing can be drafted, so the empty state says so instead of blaming filters.
+  const kinds = s.recommendation?.stats.poolKinds ?? 3;
+  const kindsWord = kinds === 0 ? 'none' : kinds === 1 ? 'one' : 'two';
   const choice = facingSettings(s.settings);
   const hasCommunity = hasCommunityData(s.settings, s.data?.leagues);
   const fellBack =
@@ -199,11 +200,12 @@ export function Teams() {
         {!s.recommending && s.recommendation && teams.length === 0 ? (
           // A team is three different Pokemon from the collection: with fewer than three kinds
           // there is nothing to draft, whatever the filters say.
-          ownedKinds < 3 ? (
+          kinds < 3 ? (
             <Empty
-              line={`A team needs three Pokémon, and your collection has ${ownedKinds === 1 ? 'one' : ownedKinds === 0 ? 'none' : 'two'}. Add more, or start from a team players run.`}
+              line={`A team needs three Pokémon that fit ${league.title}, and ${kindsWord} of yours ${kinds === 1 ? 'does' : 'do'}.${filters > 0 ? ' Your filters leave some out.' : ''}`}
               action={
                 <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {filters > 0 ? <FilterButton count={filters} onClick={openFilters} /> : null}
                   <Button variant="secondary" href={hashFor({ screen: 'add' })}>
                     Add a Pokémon
                   </Button>
