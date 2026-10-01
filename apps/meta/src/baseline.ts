@@ -3,23 +3,8 @@
  * league has enough measured battles of its own, and it is labelled as PvPoke's list wherever it
  * appears. It is never described with a measured word.
  */
-export interface BaselineSpecies {
-  speciesId: string;
-  score: number | null;
-  rating: number | null;
-  fastMove: string;
-  chargedMoves: string[];
-  fastUsage: { moveId: string; uses: number }[];
-  chargedUsage: { moveId: string; uses: number }[];
-}
-
-export interface Baseline {
-  league: string;
-  pvpokeCommit: string;
-  pvpokeDate: string;
-  species: BaselineSpecies[];
-  byId: Map<string, BaselineSpecies>;
-}
+import type { Baseline, BaselineSpecies } from '@pickthree/engine/meta';
+export type { Baseline, BaselineSpecies } from '@pickthree/engine/meta';
 
 interface BaselineFile {
   league: string;

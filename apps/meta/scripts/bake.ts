@@ -7,15 +7,19 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  facingWeight,
+  baselineFor,
   legalFor,
+  MATRIX_TOP,
   MatrixView,
-  matrixIndex,
   OPEN_EQUIVALENT_CUP,
+  priorWeights,
   ranksOf,
   readEpochs,
+  sliceMatrix,
+  type BaselineSpecies,
   type LegalFile,
   type MatchupMatrix,
+  type RankingIn,
 } from '@pickthree/engine/meta';
 import {
   GameDataIndex,
@@ -35,20 +39,22 @@ import {
   type Species,
 } from '@pickthree/engine';
 
-export { legalFor, OPEN_EQUIVALENT_CUP, ranksOf, readEpochs, type LegalFile };
+// priorWeights, sliceMatrix and the baseline's per-league shape moved into @pickthree/engine/meta,
+// where pick3's data build can reach them; re-exported so this script's callers keep their imports.
+export {
+  legalFor,
+  MATRIX_TOP,
+  OPEN_EQUIVALENT_CUP,
+  priorWeights,
+  ranksOf,
+  readEpochs,
+  sliceMatrix,
+  type BaselineSpecies,
+  type LegalFile,
+};
 
 export type SpeciesFile = Record<string, [string, number, string]>;
 export type MovesFile = Record<string, [string, string]>;
-
-export interface BaselineSpecies {
-  speciesId: string;
-  score: number | null;
-  rating: number | null;
-  fastMove: string;
-  chargedMoves: string[];
-  fastUsage: { moveId: string; uses: number }[];
-  chargedUsage: { moveId: string; uses: number }[];
-}
 
 export interface BaselineFile {
   league: string;
@@ -63,9 +69,6 @@ export interface Baked {
   moves: MovesFile;
   baselines: Record<string, BaselineFile>;
 }
-
-/** The most moves of one kind a baseline entry carries. */
-const MOVE_LIMIT = 4;
 
 /**
  * The leagues this SITE has. The data build also ships the app's tournament cup leagues
@@ -94,13 +97,6 @@ interface MetaIn {
   fastMove: string;
   chargedMoves: string[];
 }
-interface RankIn {
-  speciesId: string;
-  score?: number;
-  rating?: number;
-  fastMoves?: { moveId: string; uses: number }[];
-  chargedMoves?: { moveId: string; uses: number }[];
-}
 
 export function bake(input: {
   pokemon: unknown[];
@@ -123,98 +119,29 @@ export function bake(input: {
 
   const baselines: Record<string, BaselineFile> = {};
   for (const league of siteLeagues(input.leagues)) {
-    const group = input.metaGroups[league.id] ?? [];
-    const ranked = new Map(
-      ((input.rankings[league.id] ?? []) as RankIn[]).map((r) => [r.speciesId, r]),
+    const b = baselineFor(
+      league.id,
+      input.metaGroups[league.id] ?? [],
+      (input.rankings[league.id] ?? []) as RankingIn[],
+      input.manifest,
     );
-    const entries: BaselineSpecies[] = group.map((m) => {
-      const r = ranked.get(m.speciesId);
-      return {
-        speciesId: m.speciesId,
-        score: typeof r?.score === 'number' ? r.score : null,
-        rating: typeof r?.rating === 'number' ? r.rating : null,
-        fastMove: m.fastMove,
-        chargedMoves: [...m.chargedMoves],
-        fastUsage: (r?.fastMoves ?? []).slice(0, MOVE_LIMIT),
-        chargedUsage: (r?.chargedMoves ?? []).slice(0, MOVE_LIMIT),
-      };
-    });
-    entries.sort(
-      (a, b) => (b.score ?? -1) - (a.score ?? -1) || a.speciesId.localeCompare(b.speciesId),
-    );
+    // The file is the baseline without its `byId` index, which the loader rebuilds on read.
     baselines[league.id] = {
-      league: league.id,
+      league: b.league,
       source: 'pvpoke',
-      pvpokeCommit: input.manifest.pvpokeCommit,
-      pvpokeDate: input.manifest.pvpokeDate,
-      species: entries,
+      pvpokeCommit: b.pvpokeCommit,
+      pvpokeDate: b.pvpokeDate,
+      species: b.species,
     };
   }
 
   return { species, moves, baselines };
 }
 
-/** How many species the shipped slice carries, by PvPoke overall rank. Measured at 61 KB gzipped
- *  for Great League; the bake prints the raw size so a bump that doubles it is visible. */
-export const MATRIX_TOP = 250;
 /** Species the cold-start generator drafts from. 60 scores in about 300 ms a league. */
 export const COLD_POOL = 60;
 /** Generated teams emitted per league. */
 export const COLD_TEAMS = 24;
-
-/**
- * PvPoke's own prior for how often each meta opponent is actually faced, normalised to sum to 1.
- * The matrix stores its opponent columns alphabetically, not by rank, so without this
- * `strengthContext`'s "top ten of the meta" is an alphabetical accident: every opponent counts
- * the same and the generator ends up scoring every team against whichever ten names happen to
- * sort first. Weighting by `facingWeight` of the PvPoke overall rank makes "the top of the meta"
- * mean what the spec says it means, both here and in the site's own reweigh once there is
- * measured play.
- */
-export function priorWeights(
-  overall: readonly { speciesId: string }[],
-  opponents: readonly string[],
-): Map<string, number> {
-  const rankOf = new Map(ranksOf(overall).map((id, i) => [id, i + 1]));
-  const raw = opponents.map((id) => facingWeight(rankOf.get(id) ?? null));
-  const total = raw.reduce((a, b) => a + b, 0);
-  return new Map(opponents.map((id, i) => [id, total === 0 ? 0 : (raw[i] as number) / total]));
-}
-
-/** The shipped matrix cut to its first `top` rows. Rows are already in PvPoke overall order,
- *  because build-matrix.ts fills them straight from rankings/<league>/overall.json. */
-export function sliceMatrix(matrix: MatchupMatrix, top: number): MatchupMatrix {
-  if (matrix.candidates.length <= top) {
-    return matrix;
-  }
-  const candidates = matrix.candidates.slice(0, top);
-  const out: MatchupMatrix = {
-    league: matrix.league,
-    cp: matrix.cp,
-    scenarios: matrix.scenarios,
-    candidates,
-    opponents: matrix.opponents,
-    candidateMovesets: Object.fromEntries(
-      candidates.map((id) => [id, [...(matrix.candidateMovesets[id] ?? [])]]),
-    ),
-    opponentMovesets: matrix.opponentMovesets,
-    ratings: [],
-  };
-  const view = new MatrixView(matrix);
-  const ratings = new Array<number>(
-    candidates.length * matrix.opponents.length * matrix.scenarios.length,
-  ).fill(0);
-  candidates.forEach((id, ci) => {
-    const from = view.rowOf(id) as number;
-    matrix.opponents.forEach((_, oi) => {
-      matrix.scenarios.forEach((_, si) => {
-        ratings[matrixIndex(out, ci, oi, si)] = view.rating(from, oi, si);
-      });
-    });
-  });
-  out.ratings = ratings;
-  return out;
-}
 
 /** The cold-start board for one league, weighted by PvPoke's own prior (facingWeight of overall
  *  rank): at bake time there is no measured play, and the site reweighs its own copy once there

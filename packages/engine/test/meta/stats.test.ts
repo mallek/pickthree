@@ -7,7 +7,7 @@ import {
   trendLabel,
   trendPoints,
   winRate,
-} from '../src/stats.js';
+} from '../../src/meta/index.js';
 
 describe('confidence', () => {
   it('splits at 30 and 300', () => {

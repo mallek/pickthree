@@ -2,7 +2,9 @@
  * The seam meta.pick3.gg imports. One formula in the repo, two callers: the site must run the
  * same blend pick3 runs on device, and the same simStrength the bake scores generated teams with.
  * Deliberately narrow, so pulling this in does not pull in the CSV parser, the cost tables, the
- * simulator interface or anything else the site has no business shipping.
+ * simulator interface or anything else the site has no business shipping. It also carries the
+ * meta pages' pure logic (wire types, species ranking, team board, stats, baseline, slice, trend),
+ * so pick3 renders them from the same code the site does.
  */
 export {
   DEFAULT_BLEND_OPTIONS,
@@ -26,3 +28,10 @@ export {
 export * from './community.js';
 export * from './legal.js';
 export * from './window.js';
+export * from './api.js';
+export * from './baseline.js';
+export * from './rank.js';
+export * from './slice.js';
+export * from './stats.js';
+export * from './teamRank.js';
+export * from './trend.js';

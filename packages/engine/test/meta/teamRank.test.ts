@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { MatrixView, expectedWinRate, type MatchupMatrix } from '@pickthree/engine/meta';
-import { TEAM_HALF_SAY, TEAM_MIN, UNKNOWN_PRIOR, buildBoard } from '../src/teamRank.js';
-import type { SpeciesRanking } from '../src/rank.js';
-import type { TeamRowV1, TeamsV1 } from '../src/api.js';
-import type { GeneratedTeamLite } from '../src/slice.js';
+import {
+  MatrixView,
+  TEAM_HALF_SAY,
+  TEAM_MIN,
+  UNKNOWN_PRIOR,
+  buildBoard,
+  expectedWinRate,
+  type GeneratedTeamLite,
+  type MatchupMatrix,
+  type SpeciesRanking,
+  type TeamRowV1,
+  type TeamsV1,
+} from '../../src/meta/index.js';
 
 /**
  * Nine candidates, three opponents. a and b win everything, the rest lose everything.

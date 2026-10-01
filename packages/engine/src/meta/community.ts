@@ -10,6 +10,7 @@
  * `ladder` is the second alone, `tournament` the first alone, `all` the sequence. The half-say
  * constants are the curves' midpoints, never gates. Moved from apps/meta/src/rank.ts, unchanged.
  */
+import { facingWeight } from '../gamedata/metaRank.js';
 import { blendWeights } from '../yourmeta/blend.js';
 
 /** Counted battles at which measured play earns half the say. */
@@ -88,6 +89,25 @@ export function ranksOf(overall: readonly { speciesId: string }[]): string[] {
     }
   }
   return out;
+}
+
+/**
+ * PvPoke's own prior for how often each meta opponent is actually faced, normalised to sum to 1.
+ * The matrix stores its opponent columns alphabetically, not by rank, so without this
+ * `strengthContext`'s "top ten of the meta" is an alphabetical accident: every opponent counts
+ * the same and the generator ends up scoring every team against whichever ten names happen to
+ * sort first. Weighting by `facingWeight` of the PvPoke overall rank makes "the top of the meta"
+ * mean what the spec says it means, both in the bake and in a client's own reweigh once there is
+ * measured play. Moved from apps/meta/scripts/bake.ts, unchanged.
+ */
+export function priorWeights(
+  overall: readonly { speciesId: string }[],
+  opponents: readonly string[],
+): Map<string, number> {
+  const rankOf = new Map(ranksOf(overall).map((id, i) => [id, i + 1]));
+  const raw = opponents.map((id) => facingWeight(rankOf.get(id) ?? null));
+  const total = raw.reduce((a, b) => a + b, 0);
+  return new Map(opponents.map((id, i) => [id, total === 0 ? 0 : (raw[i] as number) / total]));
 }
 
 export function communityWeights(

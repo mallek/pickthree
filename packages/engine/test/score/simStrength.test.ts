@@ -148,8 +148,11 @@ describe('the meta subpath', () => {
     expect(typeof mod['blendWeights']).toBe('function');
     expect(typeof mod['bestStrength']).toBe('function');
     expect(typeof mod['expectedWinRate']).toBe('function');
-    // A short list on purpose: this is the contract, and growing it should be deliberate.
+    // A short list on purpose: this is the contract, and growing it should be deliberate. It grew
+    // when meta.pick3.gg's ranking, team board, stats, baseline, slice and trend moved in, so pick3
+    // can render the meta pages from the same code.
     expect(Object.keys(mod).sort()).toEqual([
+      'BOARD_LIMIT',
       'BUCKET_MS',
       'DEFAULT_BLEND_OPTIONS',
       'HALF_SAY_BATTLES',
@@ -157,26 +160,48 @@ describe('the meta subpath', () => {
       'HALF_SAY_EVENTS',
       'HALF_SAY_TOURNAMENT_BATTLES',
       'LISTED_MIN',
+      'MANY',
+      'MATRIX_TOP',
       'MAX_SPAN_DAYS',
       'MatrixView',
       'OPEN_EQUIVALENT_CUP',
       'PROJECTION_SLOPE',
+      'SHARE_MIN',
+      'SOME',
+      'TEAM_HALF_SAY',
+      'TEAM_MIN',
+      'THIRD_SAMPLE',
+      'TREND_MIN',
+      'UNKNOWN_PRIOR',
+      'baselineFor',
       'bestStrength',
       'blendShare',
       'blendWeights',
+      'blendedOrder',
+      'buildBoard',
       'communityWeights',
+      'confidence',
       'epochFor',
       'expectedWinRate',
       'facingWeight',
       'legalFor',
+      'margin',
+      'marginSentence',
       'matrixIndex',
       'measuredSay',
+      'priorWeights',
+      'rankSpecies',
+      'rankTrend',
       'ranksOf',
       'readEpochs',
       'resolveWindow',
+      'sliceMatrix',
       'strengthContext',
       'strengthOf',
       'tournamentSay',
+      'trendLabel',
+      'trendPoints',
+      'winRate',
     ]);
   });
 });

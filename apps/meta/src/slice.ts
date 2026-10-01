@@ -8,35 +8,9 @@
  * weaker projection, it is a wrong one. `teamRank.ts` enforces that; this module only says who
  * has a row, through `MatrixView.rowOf` returning null.
  */
-import { MatrixView, type MatchupMatrix } from '@pickthree/engine/meta';
+import { MatrixView, type GeneratedFile, type MatchupMatrix } from '@pickthree/engine/meta';
 
-/** One baked generated team. The strength was scored against PvPoke's prior at bake time; the
- *  site recomputes it against the blended weights whenever the slice is in hand. */
-export interface GeneratedTeamLite {
-  species: [string, string, string];
-  strength: number;
-  coverage: number;
-  consistency: number;
-  safety: number;
-  structure: 'ABB' | 'ABC';
-  exposure: string[];
-}
-
-export interface GeneratedFile {
-  league: string;
-  source: 'generated';
-  pvpokeCommit: string;
-  pvpokeDate: string;
-  projectionSlope: number;
-  /**
-   * Fix round 1, item 5: the file used to stamp the slope alone, recording half a calibration.
-   * Nothing reads this field today either (`expectedWinRate`'s anchor is only ever the engine's
-   * own default), but it is free to keep the snapshot honest for whoever next bisects a live
-   * ranking against a past bake.
-   */
-  projectionAnchor: number;
-  teams: GeneratedTeamLite[];
-}
+export type { GeneratedFile, GeneratedTeamLite } from '@pickthree/engine/meta';
 
 export interface Slice {
   league: string;

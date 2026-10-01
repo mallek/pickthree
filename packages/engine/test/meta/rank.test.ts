@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { facingWeight } from '@pickthree/engine/meta';
-import type { MetaSummaryV1, SpeciesStats } from '../src/api.js';
-import type { Baseline } from '../src/baseline.js';
 import {
+  facingWeight,
+  type Baseline,
+  type MetaSummaryV1,
+  type SpeciesStats,
   HALF_SAY_BATTLES,
   HALF_SAY_DEVICES,
   HALF_SAY_EVENTS,
@@ -10,7 +11,7 @@ import {
   measuredSay,
   rankSpecies,
   tournamentSay,
-} from '../src/rank.js';
+} from '../../src/meta/index.js';
 
 /** PvPoke's overall order for the fixture: azumarill 1, medicham 2, registeel 3, lanturn 4. */
 const RANKS = ['azumarill', 'medicham', 'registeel', 'lanturn'];
@@ -86,7 +87,7 @@ describe('measuredSay', () => {
 
 describe('rankSpecies with no measured play at all', () => {
   it("is PvPoke's list, in PvPoke's order, with nothing fabricated", () => {
-    const r = rankSpecies(summary(), baseline(RANKS), RANKS, { source: 'all', legal: null });
+    const r = rankSpecies(summary(), baseline(RANKS), RANKS, { source: 'all', banned: new Set() });
     expect(r.say).toBe(0);
     expect(r.rows.map((x) => x.speciesId)).toEqual(RANKS);
     expect(r.rows[0]?.sightings).toBe(0);
@@ -104,7 +105,7 @@ describe('rankSpecies as measured play arrives', () => {
       summary({ battles: 60, devices: 3, species: measured }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const thick = rankSpecies(
       summary({
@@ -114,7 +115,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const at = (r: typeof thin, id: string): number => r.rows.findIndex((x) => x.speciesId === id);
     const weightOf = (r: typeof thin, id: string): number =>
@@ -141,7 +142,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const row = r.rows.find((x) => x.speciesId === 'surprise');
     expect(row).toBeDefined();
@@ -167,7 +168,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const surprise = r.rows.find((x) => x.speciesId === 'surprise');
     const lanturn = r.rows.find((x) => x.speciesId === 'lanturn');
@@ -187,7 +188,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(['azumarill', 'medicham', 'registeel']),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const row = r.rows.find((x) => x.speciesId === 'lanturn');
     expect(row?.pvpokeRank).toBe(4);
@@ -204,7 +205,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const total = r.rows.reduce((a, x) => a + x.weight, 0);
     expect(total).toBeCloseTo(1, 8);
@@ -213,7 +214,7 @@ describe('rankSpecies as measured play arrives', () => {
   it('reports the say so a header can say how measured the ranking is', () => {
     const r = rankSpecies(summary({ battles: 480, devices: 9 }), baseline(RANKS), RANKS, {
       source: 'all',
-      legal: null,
+      banned: new Set(),
     });
     expect(Math.round(r.say * 100)).toBe(Math.round(measuredSay(480, 9) * 100));
   });
@@ -227,7 +228,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     for (const row of r.rows) {
       expect(r.weights.get(row.speciesId)).toBe(row.weight);
@@ -243,7 +244,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     expect(r.rows[0]?.barPct).toBe(100);
     expect(r.rows.every((x) => x.barPct >= 0 && x.barPct <= 100)).toBe(true);
@@ -260,7 +261,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     expect(r.rows.map((x) => x.speciesId)).toEqual(RANKS);
   });
@@ -278,7 +279,7 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     const of = (id: string): string | undefined =>
       r.rows.find((x) => x.speciesId === id)?.confidence;
@@ -298,20 +299,20 @@ describe('rankSpecies as measured play arrives', () => {
       }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     expect(withPrev.rows.find((x) => x.speciesId === 'azumarill')?.trend).toBeCloseTo(5, 5);
     const noPrev = rankSpecies(
       summary({ battles: 1000, devices: 20, species }),
       baseline(RANKS),
       RANKS,
-      { source: 'all', legal: null },
+      { source: 'all', banned: new Set() },
     );
     expect(noPrev.rows.every((x) => x.trend === null)).toBe(true);
   });
 
   it('stamps the ranking with the PvPoke build the prior came from', () => {
-    const r = rankSpecies(summary(), baseline(RANKS), RANKS, { source: 'all', legal: null });
+    const r = rankSpecies(summary(), baseline(RANKS), RANKS, { source: 'all', banned: new Set() });
     expect(r.pvpokeCommit).toBe('abc123');
     expect(r.pvpokeDate).toBe('2026-09-10');
   });
@@ -370,8 +371,8 @@ describe('the sequential blend', () => {
       devices: 10,
       species: [stats({ speciesId: 'medicham', sightings: 200 })],
     });
-    const withNull = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
-    const asLadder = rankSpecies(meta, BASE, RANKS_4, { source: 'ladder', legal: null });
+    const withNull = rankSpecies(meta, BASE, RANKS_4, { source: 'all', banned: new Set() });
+    const asLadder = rankSpecies(meta, BASE, RANKS_4, { source: 'ladder', banned: new Set() });
     expect([...withNull.weights.entries()]).toEqual([...asLadder.weights.entries()]);
     expect(withNull.tournamentSay).toBe(0);
   });
@@ -385,7 +386,7 @@ describe('the sequential blend', () => {
         { speciesId: 'azumarill', picks: 40 },
       ],
     });
-    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', banned: new Set() });
     expect(r.tournamentSay).toBeCloseTo(1 / 3, 6);
     expect(r.say).toBe(0);
     expect(r.tournamentBattles).toBe(105);
@@ -412,7 +413,7 @@ describe('the sequential blend', () => {
       devices: 10,
       species: [stats({ speciesId: 'azumarill', sightings: 100 })],
     };
-    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', banned: new Set() });
     expect(r.say).toBeCloseTo(0.5, 6);
     expect(r.tournamentSay).toBeCloseTo(1 / 3, 6);
     const azumarill = r.rows.find((x) => x.speciesId === 'azumarill')!;
@@ -427,10 +428,9 @@ describe('the sequential blend', () => {
       events: 1,
       species: [{ speciesId: 'medicham', picks: 100 }],
     });
-    const legal = { league: 'great', cup: 'championshipseries', banned: new Set(['azumarill']) };
     const r = rankSpecies(meta, baseline(['azumarill', 'medicham']), RANKS_4, {
       source: 'all',
-      legal,
+      banned: new Set(['azumarill']),
     });
     const azumarill = r.rows.find((x) => x.speciesId === 'azumarill')!;
     const priorA = PRIOR_RANK1;
@@ -445,7 +445,7 @@ describe('the sequential blend', () => {
       events: 1,
       species: [{ speciesId: 'gligar', picks: 40 }],
     });
-    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', legal: null });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'all', banned: new Set() });
     const gligar = r.rows.find((x) => x.speciesId === 'gligar')!;
     expect(gligar.pvpokeRank).toBeNull();
     expect(gligar.tournamentPicks).toBe(40);
@@ -464,7 +464,7 @@ describe('the sequential blend', () => {
       species: [stats({ speciesId: 'azumarill', sightings: 100 })],
     };
     const view = (source: 'all' | 'prior' | 'ladder' | 'tournament') =>
-      rankSpecies(meta, BASE, RANKS_4, { source, legal: null });
+      rankSpecies(meta, BASE, RANKS_4, { source, banned: new Set() });
     expect(view('prior').say).toBe(0);
     expect(view('prior').tournamentSay).toBe(0);
     expect(view('ladder').tournamentSay).toBe(0);
@@ -483,7 +483,7 @@ describe('the sequential blend', () => {
       species: [{ speciesId: 'medicham', picks: 6, wins: 4, losses: 2 }],
       eventsOther: 2,
     });
-    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'tournament', legal: null });
+    const r = rankSpecies(meta, BASE, RANKS_4, { source: 'tournament', banned: new Set() });
     const medicham = r.rows.find((x) => x.speciesId === 'medicham')!;
     expect(medicham.tournamentPicks).toBe(6);
     expect(medicham.tournamentGame1Picks).toBe(6);

@@ -7,17 +7,24 @@
  * noticing is not.
  *
  * The fixture is frozen. It carries its own ranks, curated group, matchup slice, measured species
- * and observed teams, so nothing here reads `apps/meta/public`: a PvPoke bump cannot move these
+ * and observed teams, so nothing here reads a baked site file: a PvPoke bump cannot move these
  * lists, and only a formula change can.
  */
 import { describe, expect, it } from 'vitest';
-import { MatrixView, type MatchupMatrix } from '@pickthree/engine/meta';
-import type { MetaSummaryV1, TeamsV1 } from '../src/api.js';
-import type { Baseline, BaselineSpecies } from '../src/baseline.js';
-import { rankSpecies } from '../src/rank.js';
-import type { GeneratedTeamLite } from '../src/slice.js';
-import { TEAM_MIN, UNKNOWN_PRIOR, buildBoard } from '../src/teamRank.js';
-import seeded from './fixtures/seeded-great.json';
+import {
+  MatrixView,
+  TEAM_MIN,
+  UNKNOWN_PRIOR,
+  buildBoard,
+  rankSpecies,
+  type Baseline,
+  type BaselineSpecies,
+  type GeneratedTeamLite,
+  type MatchupMatrix,
+  type MetaSummaryV1,
+  type TeamsV1,
+} from '../../src/meta/index.js';
+import seeded from './fixtures/seeded-great.json' with { type: 'json' };
 
 interface Fixture {
   note: string;
@@ -46,7 +53,7 @@ const baseline: Baseline = {
 };
 
 function ranking(): ReturnType<typeof rankSpecies> {
-  return rankSpecies(fixture.meta, baseline, fixture.ranks, { source: 'all', legal: null });
+  return rankSpecies(fixture.meta, baseline, fixture.ranks, { source: 'all', banned: new Set() });
 }
 
 function board(): ReturnType<typeof buildBoard> {
