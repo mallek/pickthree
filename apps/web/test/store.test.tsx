@@ -41,6 +41,19 @@ async function mount(host = fakeHost()) {
 }
 
 describe('routes', () => {
+  it('keeps a hyphenated league on counters and build links', () => {
+    expect(parseHash('#/counters?vs=tinkaton&l=mega-great')).toEqual({
+      screen: 'counters',
+      vs: 'tinkaton',
+      league: 'mega-great',
+    });
+    expect(parseHash('#/build?lead=tinkaton&l=mega-great')).toEqual({
+      screen: 'build',
+      lead: 'tinkaton',
+      league: 'mega-great',
+    });
+    expect(parseHash('#/counters?l=Mega Great')).toEqual({ screen: 'counters' });
+  });
   it('parses and prints the Your meta routes', () => {
     expect(parseHash('#/meta')).toEqual({ screen: 'meta' });
     expect(parseHash('#/meta/new')).toEqual({ screen: 'meta-new' });

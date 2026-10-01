@@ -1,3 +1,4 @@
+import { leagueParam } from '../leagueId.ts';
 import { carryMegaLevel4 } from '../megaMarks.ts';
 import {
   type BattleSet,
@@ -513,8 +514,7 @@ export function parseHash(hash: string): Route {
     const params = new URLSearchParams(query ?? '');
     const vs = params.get('vs');
     // A link from meta.pick3.gg names the league; the app's own links never do.
-    const l = params.get('l');
-    const league = l !== null && /^[a-z0-9_]+$/.test(l) ? l : null;
+    const league = leagueParam(params.get('l'));
     // The back mark: set by Your Meta's "Who beats it" jump and kept by the Against picker's
     // replace-navigation. A meta.pick3.gg link never carries it.
     const from = params.get('from') === '1' ? ({ from: true } as const) : {};
@@ -537,8 +537,7 @@ export function parseHash(hash: string): Route {
       return { screen: 'build' };
     }
     // A league from a meta.pick3.gg link; kept only alongside a lead, same as counters' `l`.
-    const l = params.get('l');
-    const league = l !== null && /^[a-z0-9_]+$/.test(l) ? l : null;
+    const league = leagueParam(params.get('l'));
     return league ? { screen: 'build', lead, league } : { screen: 'build', lead };
   }
   if (a === 'add') {
