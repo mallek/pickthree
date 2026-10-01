@@ -380,6 +380,17 @@ describe('Pokémon detail', () => {
     expect(tag!.closest('button')).toBeNull();
   });
 
+  it('links to the species page of the build, after the meta rank card', async () => {
+    await fromCounters('a');
+    await judged();
+    const link = screen.getByRole('link', { name: /See Tinkaton in the meta/ });
+    expect(link).toHaveAttribute('href', hashFor({ screen: 'species', id: 'tinkaton' }));
+    expect(link).toHaveClass('action-row');
+    expect(link.querySelector('.chev')).not.toBeNull();
+    const rank = screen.getByText('Meta rank');
+    expect(rank.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('says "Already at level L." with no cost tiles when nothing needs powering up', async () => {
     await fromCounters('a');
     await judged();
@@ -785,6 +796,16 @@ describe('Add Pokemon Mega marks', () => {
   }
 
   const saved = async () => (await storage.loadCollection())!.specimens.find((x) => x.id === 'n')!;
+
+  it('opened with ?species= prefills that species, and an unknown one is ignored', async () => {
+    await boot(undefined, { manual: manual() as never, ...addMegaSpecies() });
+    await go({ screen: 'add', species: 'bulbasaur' });
+    expect(await screen.findByText('Bulbasaur')).toBeInTheDocument();
+    expect(screen.getByText('Change')).toBeInTheDocument();
+    await go({ screen: 'teams' });
+    await go({ screen: 'add', species: 'notamon' });
+    expect(screen.queryByText('Change')).toBeNull();
+  });
 
   it('offers a checkbox for a species with one Mega, and saves megaForm mega', async () => {
     await openAdd(manual(), 'Tinkaton', 'tinkaton');

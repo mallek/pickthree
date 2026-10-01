@@ -1,6 +1,7 @@
 import type { MetaRank } from '@pickthree/engine';
 import {
   Button,
+  Chevron,
   ConfirmSheet,
   Empty,
   ErrorState,
@@ -32,7 +33,7 @@ import {
   powerUpLine,
   scanAge,
 } from '../format.ts';
-import { useActions, useAppState } from '../state/store.tsx';
+import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { useLeague } from '../components/LeagueSwitcher.tsx';
 
 function metaLine(rank: MetaRank | undefined): string {
@@ -251,6 +252,18 @@ export function SpecimenScreen({ id }: { id: string }) {
           {v ? <p style={{ marginTop: 4 }}>{v.line}</p> : null}
           {v?.perfectLine ? <p className="small muted">{v.perfectLine}</p> : null}
         </div>
+
+        <a
+          className="action-row"
+          href={hashFor({ screen: 'species', id: build?.speciesId ?? sp.speciesId })}
+        >
+          <span>
+            <b>See {name(build?.speciesId ?? sp.speciesId)} in the meta</b>
+          </span>
+          <span className="chev">
+            <Chevron />
+          </span>
+        </a>
 
         {build && build.stageOffset > 0 ? (
           <div className="evo">
