@@ -662,7 +662,7 @@ const summaryBorder = await page.evaluate(() => {
 if (summaryBorder !== '0px') {
   throw new Error(`teams: the row summary has a border (${summaryBorder}); it should have no box`);
 }
-// The open row's three text actions (View analysis, Edit team, Run this team) share one line at
+// The open row's two text actions (View analysis, Edit team) share one line at
 // 390px: none runs past the row, none wraps onto a second line or inside itself.
 const actionsFit = await page.evaluate(() => {
   const row = document.querySelector('.teams-actions');
@@ -682,7 +682,7 @@ const actionsFit = await page.evaluate(() => {
 console.log(`  teams actions: ${JSON.stringify(actionsFit)}`);
 if (
   !actionsFit ||
-  actionsFit.labels.length !== 3 ||
+  actionsFit.labels.length !== 2 ||
   actionsFit.overflow > 1 ||
   actionsFit.pastRight > 1 ||
   actionsFit.lines !== 1 ||
