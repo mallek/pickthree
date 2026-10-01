@@ -26,7 +26,7 @@ import {
   type TeamRef,
   type Verdict,
 } from '@pickthree/engine';
-import type { Epoch } from '@pickthree/engine/meta';
+import type { Epoch, SourceKey, WindowKey } from '@pickthree/engine/meta';
 import {
   createContext,
   useCallback,
@@ -102,15 +102,22 @@ export type Route =
   | { screen: 'report' }
   | { screen: 'teams' }
   | { screen: 'team'; id: string }
-  | { screen: 'collection' }
+  /** `league` is a link's league, read and never written back (same rule as counters). */
+  | { screen: 'collection'; league?: string }
   | { screen: 'specimen'; id: string }
+  /** A species page: its id and, from a link, the league it belongs to. */
+  | { screen: 'species'; id: string; league?: string }
   | { screen: 'counters'; vs?: string; league?: string; from?: true }
   /** A Build lead link from meta.pick3.gg: the species for pick 0, and the league it belongs to. */
   | { screen: 'build'; lead?: string; league?: string }
   | { screen: 'custom' }
-  | { screen: 'add' }
+  | { screen: 'add'; species?: string }
   | { screen: 'meta' }
-  | { screen: 'meta-new' }
+  /** Top teams: window and source picks are written to the hash, the league never is. */
+  | { screen: 'meta-teams'; w?: WindowKey; src?: SourceKey; league?: string }
+  | { screen: 'meta-battles' }
+  /** Pick Your Team, optionally prefilled with one to three species ids. */
+  | { screen: 'meta-new'; team?: string[] }
   | { screen: 'meta-log'; edit?: { set: string; battle: string } }
   /** A team link: league id and the raw member list, parsed by the landing screen. */
   | { screen: 'shared'; league: string; members: string };
@@ -494,6 +501,35 @@ function reducer(s: AppState, a: Action): AppState {
   }
 }
 
+const SPECIES_ID = /^[a-z0-9_]+$/;
+const WINDOW_KEYS: readonly string[] = ['meta', '30', '7'];
+const SOURCE_KEYS: readonly string[] = ['all', 'prior', 'ladder', 'tournament'];
+
+/**
+ * The `team` query value: species ids joined with '+'. The raw query is split on '+', on a space
+ * (what URLSearchParams makes of an unescaped '+') and on an encoded plus, so any spelling of the
+ * link works. Ids that fail the id shape are dropped and at most three are kept.
+ */
+function teamParam(query: string): string[] {
+  const raw = query
+    .split('&')
+    .map((pair) => pair.split('='))
+    .find(([k]) => k === 'team');
+  if (!raw || raw[1] === undefined) {
+    return [];
+  }
+  let value: string;
+  try {
+    value = decodeURIComponent(raw[1]);
+  } catch {
+    return [];
+  }
+  return value
+    .split(/[+\s]+/)
+    .filter((id) => SPECIES_ID.test(id))
+    .slice(0, 3);
+}
+
 export function parseHash(hash: string): Route {
   const [path, query] = hash.replace(/^#\/?/, '').split('?');
   const parts = path!.split('/').filter(Boolean);
@@ -508,7 +544,19 @@ export function parseHash(hash: string): Route {
     return b ? { screen: 'team', id: decodeURIComponent(b) } : { screen: 'teams' };
   }
   if (a === 'collection') {
-    return b ? { screen: 'specimen', id: decodeURIComponent(b) } : { screen: 'collection' };
+    if (b) {
+      return { screen: 'specimen', id: decodeURIComponent(b) };
+    }
+    const league = leagueParam(new URLSearchParams(query ?? '').get('l'));
+    return league ? { screen: 'collection', league } : { screen: 'collection' };
+  }
+  if (a === 'species') {
+    const id = b ? decodeURIComponent(b) : '';
+    if (!SPECIES_ID.test(id)) {
+      return { screen: 'meta' };
+    }
+    const league = leagueParam(new URLSearchParams(query ?? '').get('l'));
+    return league ? { screen: 'species', id, league } : { screen: 'species', id };
   }
   if (a === 'counters') {
     const params = new URLSearchParams(query ?? '');
@@ -541,7 +589,10 @@ export function parseHash(hash: string): Route {
     return league ? { screen: 'build', lead, league } : { screen: 'build', lead };
   }
   if (a === 'add') {
-    return { screen: 'add' };
+    const species = new URLSearchParams(query ?? '').get('species');
+    return species !== null && SPECIES_ID.test(species)
+      ? { screen: 'add', species }
+      : { screen: 'add' };
   }
   if (a === 't') {
     const [, league, members] = parts;
@@ -555,7 +606,23 @@ export function parseHash(hash: string): Route {
   }
   if (a === 'meta') {
     if (b === 'new') {
-      return { screen: 'meta-new' };
+      const team = teamParam(query ?? '');
+      return team.length > 0 ? { screen: 'meta-new', team } : { screen: 'meta-new' };
+    }
+    if (b === 'battles') {
+      return { screen: 'meta-battles' };
+    }
+    if (b === 'teams') {
+      const params = new URLSearchParams(query ?? '');
+      const w = params.get('w');
+      const src = params.get('src');
+      const league = leagueParam(params.get('l'));
+      return {
+        screen: 'meta-teams',
+        ...(w !== null && WINDOW_KEYS.includes(w) ? { w: w as WindowKey } : {}),
+        ...(src !== null && SOURCE_KEYS.includes(src) ? { src: src as SourceKey } : {}),
+        ...(league ? { league } : {}),
+      };
     }
     if (b === 'log') {
       const [, , setId, battleId] = parts;
@@ -614,11 +681,28 @@ export function hashFor(r: Route): string {
     case 'custom':
       return '#/build/team';
     case 'add':
-      return '#/add';
+      return r.species ? `#/add?species=${encodeURIComponent(r.species)}` : '#/add';
+    case 'species':
+      // The league from a link is never written back.
+      return `#/species/${encodeURIComponent(r.id)}`;
     case 'meta':
       return '#/meta';
+    case 'meta-teams': {
+      const params = new URLSearchParams();
+      if (r.w) {
+        params.set('w', r.w);
+      }
+      if (r.src) {
+        params.set('src', r.src);
+      }
+      const qs = params.toString();
+      return qs ? `#/meta/teams?${qs}` : '#/meta/teams';
+    }
+    case 'meta-battles':
+      return '#/meta/battles';
     case 'meta-new':
-      return '#/meta/new';
+      // Species ids are [a-z0-9_]+, so the '+' separator needs no escaping.
+      return r.team && r.team.length > 0 ? `#/meta/new?team=${r.team.join('+')}` : '#/meta/new';
     case 'meta-log':
       return r.edit
         ? `#/meta/log/${encodeURIComponent(r.edit.set)}/${encodeURIComponent(r.edit.battle)}`

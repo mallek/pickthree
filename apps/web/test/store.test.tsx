@@ -62,6 +62,108 @@ describe('routes', () => {
     expect(hashFor({ screen: 'meta-new' })).toBe('#/meta/new');
     expect(hashFor({ screen: 'meta-log' })).toBe('#/meta/log');
   });
+  it('parses and prints the Meta tab routes', () => {
+    expect(parseHash('#/meta/teams')).toEqual({ screen: 'meta-teams' });
+    expect(parseHash('#/meta/teams?w=30&src=ladder')).toEqual({
+      screen: 'meta-teams',
+      w: '30',
+      src: 'ladder',
+    });
+    expect(parseHash('#/meta/teams?w=meta&src=tournament&l=mega-great')).toEqual({
+      screen: 'meta-teams',
+      w: 'meta',
+      src: 'tournament',
+      league: 'mega-great',
+    });
+    expect(parseHash('#/meta/teams?l=mega-great')).toEqual({
+      screen: 'meta-teams',
+      league: 'mega-great',
+    });
+    // Invalid window, source and league values are dropped, not carried.
+    expect(parseHash('#/meta/teams?w=90&src=bogus&l=Mega Great')).toEqual({
+      screen: 'meta-teams',
+    });
+    expect(parseHash('#/meta/battles')).toEqual({ screen: 'meta-battles' });
+    expect(parseHash('#/meta/whatever')).toEqual({ screen: 'meta' });
+    expect(hashFor({ screen: 'meta-teams' })).toBe('#/meta/teams');
+    expect(hashFor({ screen: 'meta-teams', w: '7', src: 'all' })).toBe('#/meta/teams?w=7&src=all');
+    // The league from an inbound link is never written back.
+    expect(hashFor({ screen: 'meta-teams', w: '30', league: 'mega-great' })).toBe(
+      '#/meta/teams?w=30',
+    );
+    expect(hashFor({ screen: 'meta-teams', league: 'mega-great' })).toBe('#/meta/teams');
+    expect(hashFor({ screen: 'meta-battles' })).toBe('#/meta/battles');
+  });
+  it('parses and prints the New set prefill route', () => {
+    expect(parseHash('#/meta/new?team=azumarill+tinkaton+clodsire')).toEqual({
+      screen: 'meta-new',
+      team: ['azumarill', 'tinkaton', 'clodsire'],
+    });
+    // A plain space (what a decoder makes of '+') and an encoded plus both split too.
+    expect(parseHash('#/meta/new?team=azumarill%20tinkaton')).toEqual({
+      screen: 'meta-new',
+      team: ['azumarill', 'tinkaton'],
+    });
+    expect(parseHash('#/meta/new?team=azumarill%2Btinkaton')).toEqual({
+      screen: 'meta-new',
+      team: ['azumarill', 'tinkaton'],
+    });
+    expect(parseHash('#/meta/new?team=azumarill')).toEqual({
+      screen: 'meta-new',
+      team: ['azumarill'],
+    });
+    // Bad ids are dropped, at most three are kept, and an empty list is no team at all.
+    expect(parseHash('#/meta/new?team=azumarill+Bad+tinkaton')).toEqual({
+      screen: 'meta-new',
+      team: ['azumarill', 'tinkaton'],
+    });
+    expect(parseHash('#/meta/new?team=a+b+c+d')).toEqual({
+      screen: 'meta-new',
+      team: ['a', 'b', 'c'],
+    });
+    expect(parseHash('#/meta/new?team=Bad!')).toEqual({ screen: 'meta-new' });
+    expect(parseHash('#/meta/new?team=')).toEqual({ screen: 'meta-new' });
+    expect(parseHash('#/meta/new')).toEqual({ screen: 'meta-new' });
+    expect(hashFor({ screen: 'meta-new', team: ['a', 'b', 'c'] })).toBe('#/meta/new?team=a+b+c');
+    expect(hashFor({ screen: 'meta-new', team: [] })).toBe('#/meta/new');
+    expect(hashFor({ screen: 'meta-new' })).toBe('#/meta/new');
+    const route = { screen: 'meta-new' as const, team: ['azumarill', 'tinkaton'] };
+    expect(parseHash(hashFor(route))).toEqual(route);
+  });
+  it('parses and prints the species page route', () => {
+    expect(parseHash('#/species/azumarill')).toEqual({ screen: 'species', id: 'azumarill' });
+    expect(parseHash('#/species/azumarill?l=ultra')).toEqual({
+      screen: 'species',
+      id: 'azumarill',
+      league: 'ultra',
+    });
+    expect(parseHash('#/species/azumarill?l=Bad League')).toEqual({
+      screen: 'species',
+      id: 'azumarill',
+    });
+    expect(parseHash('#/species/Bad%20Id')).toEqual({ screen: 'meta' });
+    expect(parseHash('#/species')).toEqual({ screen: 'meta' });
+    expect(hashFor({ screen: 'species', id: 'azumarill' })).toBe('#/species/azumarill');
+    expect(hashFor({ screen: 'species', id: 'azumarill', league: 'ultra' })).toBe(
+      '#/species/azumarill',
+    );
+  });
+  it('parses and prints the add and collection params', () => {
+    expect(parseHash('#/add')).toEqual({ screen: 'add' });
+    expect(parseHash('#/add?species=azumarill')).toEqual({ screen: 'add', species: 'azumarill' });
+    expect(parseHash('#/add?species=Bad Id')).toEqual({ screen: 'add' });
+    expect(hashFor({ screen: 'add' })).toBe('#/add');
+    expect(hashFor({ screen: 'add', species: 'azumarill' })).toBe('#/add?species=azumarill');
+    expect(parseHash('#/collection')).toEqual({ screen: 'collection' });
+    expect(parseHash('#/collection?l=mega-great')).toEqual({
+      screen: 'collection',
+      league: 'mega-great',
+    });
+    expect(parseHash('#/collection?l=Bad League')).toEqual({ screen: 'collection' });
+    expect(parseHash('#/collection/abc')).toEqual({ screen: 'specimen', id: 'abc' });
+    expect(hashFor({ screen: 'collection' })).toBe('#/collection');
+    expect(hashFor({ screen: 'collection', league: 'mega-great' })).toBe('#/collection');
+  });
   it('parses and prints the Log a battle edit route', () => {
     expect(parseHash('#/meta/log/s1/b1')).toEqual({
       screen: 'meta-log',

@@ -57,9 +57,16 @@ function TabBar() {
     route.screen === 'build' ||
     route.screen === 'custom';
   const onCollection =
-    route.screen === 'collection' || route.screen === 'specimen' || route.screen === 'add';
+    route.screen === 'collection' ||
+    route.screen === 'specimen' ||
+    route.screen === 'add' ||
+    route.screen === 'species';
   const onMeta =
-    route.screen === 'meta' || route.screen === 'meta-new' || route.screen === 'meta-log';
+    route.screen === 'meta' ||
+    route.screen === 'meta-teams' ||
+    route.screen === 'meta-battles' ||
+    route.screen === 'meta-new' ||
+    route.screen === 'meta-log';
   return (
     <nav className="tabs" aria-label="Sections">
       <button
@@ -92,7 +99,7 @@ function TabBar() {
         onClick={() => navigate({ screen: 'meta' })}
       >
         {ICONS.meta}
-        Your Meta
+        Meta
       </button>
     </nav>
   );
@@ -123,7 +130,16 @@ function renderScreen(r: Route) {
     case 'add':
       return <AddPokemon />;
     case 'meta':
+      // Placeholder until the Meta landing screen replaces it.
       return <YourMeta />;
+    case 'meta-battles':
+      return <YourMeta />;
+    case 'meta-teams':
+      // Placeholder until the Top teams screen replaces it.
+      return <YourMeta />;
+    case 'species':
+      // Placeholder until the species page replaces it.
+      return <Collection />;
     case 'meta-new':
       return <NewSet />;
     case 'meta-log':
