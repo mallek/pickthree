@@ -374,6 +374,37 @@ describe('Meta landing', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/meta/log'));
   });
 
+  it('a species nobody reported shows no share, only its bar and chevron', async () => {
+    stubNet(freshNet());
+    renderHome();
+    const seen = await waitFor(() => {
+      const c = card('Most seen Pokémon');
+      expect(c.querySelectorAll('a.mh-seen')).toHaveLength(3);
+      return c;
+    });
+    // Tinkaton is in PvPoke's group but no shared battle saw it: no pink 0%.
+    const tinkaton = seen.querySelector('a.mh-seen[href="#/species/tinkaton"]');
+    expect(tinkaton).not.toBeNull();
+    expect(tinkaton?.querySelector('.ui-measured-num')).toBeNull();
+    expect(tinkaton).not.toHaveTextContent('%');
+    expect(tinkaton?.querySelector('.mh-bar')).not.toBeNull();
+    expect(tinkaton?.querySelector('.mh-go')).not.toBeNull();
+    // The sighted rows keep theirs.
+    expect(seen.querySelectorAll('.ui-measured-num')).toHaveLength(2);
+  });
+
+  it('the current team shows its results; a result opens that battle to fix it', async () => {
+    stubNet(freshNet());
+    await storage.saveSet(openSet(MIXED));
+    renderHome();
+    const mine = await waitFor(() => card('Your contribution'));
+    const strip = await within(mine).findByRole('group', { name: 'Recent results' });
+    expect(within(strip).getAllByRole('button')).toHaveLength(4);
+    expect(within(mine).getByText('Tap a result to fix it')).toBeInTheDocument();
+    fireEvent.click(within(strip).getByRole('button', { name: 'Loss against Medicham' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/meta/log/s1/b2'));
+  });
+
   it('with sets only in another league: the contribution card offers Pick your team', async () => {
     stubNet(freshNet());
     await storage.saveSet(openSet(MIXED, { league: 'ultra' }));

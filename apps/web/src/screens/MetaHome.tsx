@@ -33,6 +33,7 @@ import {
   isRunLeague,
   ProgressLine,
   record,
+  ResultStrip,
   setRecord,
   SpeciesRows,
   useShareTeam,
@@ -112,7 +113,12 @@ function MostSeen({ league }: { league: string }) {
                 <span style={{ width: `${r.barPct}%` }} />
               </span>
             </span>
-            {measured && r.share !== null ? <Share value={sharePct(r.share)} /> : <span />}
+            {/* Nobody reported it: no share to show, so no pink 0%. */}
+            {measured && r.share !== null && r.sightings > 0 ? (
+              <Share value={sharePct(r.share)} />
+            ) : (
+              <span />
+            )}
             <span className="mh-go">
               <Chevron />
             </span>
@@ -319,6 +325,8 @@ function YourContribution({ open }: { open: BattleSet | undefined }) {
               </span>
             ))}
           </div>
+          {/* The last results with this team; a chip opens that battle to fix it. */}
+          <ResultStrip set={open} />
           <Button variant="primary" onClick={() => navigate({ screen: 'meta-log' })}>
             Log a battle
           </Button>
