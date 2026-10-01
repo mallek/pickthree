@@ -124,6 +124,38 @@ describe('fillCoreBoard', () => {
     expect(count(out, 'core-portrait-wrap')).toBe(1);
   });
 
+  it('marks Megas with the pick3 orb beside the word Mega, each orb with its own gradient', () => {
+    const out = fill([
+      row({
+        core: [member('Alpha'), member('Gyara', { isMega: true, tags: [mega] })],
+      }),
+      row({
+        flexKind: 'mega',
+        flex: [
+          flex('M1', 91, { isMega: true, tags: [mega] }),
+          flex('M2', 90, { isMega: true, tags: [mega] }),
+        ],
+      }),
+    ]);
+    const main = out.slice(out.indexOf('<main'), out.indexOf('</main>'));
+    const markers = [
+      ...main.matchAll(
+        /<span class="(?:mega-marker|tag mega mega-tag-marker)">(<svg[\s\S]*?<\/svg>)Mega<\/span>/g,
+      ),
+    ];
+    expect(markers).toHaveLength(3);
+    const ids = markers.map((m) => /<linearGradient id="([^"]+)"/.exec(m[1]!)?.[1]);
+    expect(new Set(ids).size).toBe(3);
+    for (const [i, m] of markers.entries()) {
+      expect(m[1]).toContain(`fill="url(#${ids[i]})"`);
+      expect(m[1]).toContain('<circle cx="10" cy="10" r="9"');
+    }
+    // Ids are unique across the whole page, the template's own markup included.
+    const all = [...out.matchAll(/<linearGradient id="([^"]+)"/g)].map((m) => m[1]);
+    expect(new Set(all).size).toBe(all.length);
+    expect(out).not.toContain('fill="currentColor" d="M8 1');
+  });
+
   it('a regular row without a Mega has no row-type class and no Mega markup', () => {
     const out = rows([row()]);
     expect(out).toMatch(/<article class="team winner" /);

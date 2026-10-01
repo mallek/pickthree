@@ -418,7 +418,7 @@ describe('Pokémon detail', () => {
     await judged();
     const block = screen.getByRole('group', { name: 'Mega build' });
     expect(within(block).getByText('Mega Sableye')).toBeInTheDocument();
-    expect(block.querySelector('.token-mega-pill')?.textContent).toBe('Mega');
+    expect(within(block).getByRole('img', { name: 'Mega' })).toBeInTheDocument();
     expect(within(block).getByText('Power up to CP 1300 (1498 as Mega)')).toBeInTheDocument();
     expect(screen.getAllByText('Power up to CP 1300 (1498 as Mega)')).toHaveLength(1);
   });

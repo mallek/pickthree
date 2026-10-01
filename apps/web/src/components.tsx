@@ -10,6 +10,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -387,7 +388,7 @@ export function PokemonToken({
   size?: number;
   showInitial?: boolean;
   title?: string;
-  /** The Pokémon is marked as a Mega in the player's collection: the pill shows on its base form. */
+  /** The Pokémon is marked as a Mega in the player's collection: the badge shows on its base form. */
   markedMega?: boolean;
 }) {
   const sp = useSpecies()(speciesId);
@@ -396,13 +397,10 @@ export function PokemonToken({
   const types = sp ? sp.types.filter((t) => t !== 'none') : ['normal'];
   const src = spritesOn ? `/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp` : undefined;
   const shadow = speciesId.endsWith('_shadow');
-  // The pill needs room; a tiny token's name sits in the text beside it.
-  const mega = (Boolean(sp?.megaOf) || markedMega) && size >= 32;
+  const mega = Boolean(sp?.megaOf) || markedMega;
   // axe cannot see past the wrapper's ::before glow, so a Shadow letter's contrast is checked by
   // test/shadowToken.test.tsx for every type instead of by the page audit.
-  // The Mega pill overlaps the sprite, which axe also cannot see past: its pair is checked by
-  // test/contrast.test.ts.
-  const audit = shadow || mega ? { 'data-audit-contrast': 'static' } : {};
+  const audit = shadow ? { 'data-audit-contrast': 'static' } : {};
   return (
     <span
       className={
@@ -419,11 +417,59 @@ export function PokemonToken({
         {...(src !== undefined ? { src } : {})}
       />
       {mega ? (
-        <span className="token-mega-pill" data-audit-overhang>
-          Mega
+        // The badge hangs a few pixels past the token's corner on purpose (data-audit-overhang).
+        <span className="token-mega-badge" role="img" aria-label="Mega" data-audit-overhang>
+          <MegaGlyph size={Math.max(12, Math.round(size * 0.42))} />
         </span>
       ) : null}
     </span>
+  );
+}
+
+/** The type tokens the Mega glyph's gradient walks through, corner to corner. */
+const MEGA_STOPS = [
+  '--type-fairy',
+  '--type-psychic',
+  '--type-water',
+  '--type-ice',
+  '--type-grass',
+  '--type-electric',
+];
+
+/**
+ * pick3's own Mega mark (not the game's symbol): an orb in the type-token rainbow with a
+ * four-point spark. Decorative on its own; the caller gives it a name (PokemonToken's badge is
+ * role="img" aria-label="Mega"). useId keeps each glyph's gradient id unique on the page.
+ */
+export function MegaGlyph({ size }: { size: number }) {
+  const id = useId();
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          {MEGA_STOPS.map((v, i) => (
+            <stop
+              key={v}
+              offset={`${(i * 100) / (MEGA_STOPS.length - 1)}%`}
+              style={{ stopColor: `var(${v})` }}
+            />
+          ))}
+        </linearGradient>
+      </defs>
+      <circle
+        cx="10"
+        cy="10"
+        r="9"
+        fill={`url(#${id})`}
+        stroke="var(--surface)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M10 4.5 L11.3 8.7 L15.5 10 L11.3 11.3 L10 15.5 L8.7 11.3 L4.5 10 L8.7 8.7 Z"
+        fill="var(--bg)"
+        opacity="0.85"
+      />
+    </svg>
   );
 }
 

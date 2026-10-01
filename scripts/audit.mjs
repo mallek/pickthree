@@ -80,7 +80,7 @@ export async function auditPage(page, report) {
         continue;
       }
       // A decoration that hangs over an edge on purpose (a count badge on a button's corner, the
-      // Mega pill wider than a small token) is marked data-audit-overhang. Its own box is its parent
+      // Mega badge on a token's corner) is marked data-audit-overhang. Its own box is its parent
       // (the button, the token). Overflow that the mark's hang past its own box explains is not
       // clipping; anything wider than that still is, including an own box that itself overflows.
       const marked = el.querySelectorAll('[data-audit-overhang]');
@@ -104,7 +104,7 @@ export async function auditPage(page, report) {
   findings.push(...clipped);
 
   // The overhang mark excuses the hang, never what it lands on: a marked decoration over text
-  // outside its own box (the Mega pill on a token's name) hides that text. Text under something
+  // outside its own box (the Mega badge on a token's name) hides that text. Text under something
   // else at that spot (a sticky header over both) is left out; off screen there is nothing to ask,
   // so it counts.
   const overhangs = await page.evaluate(() => {

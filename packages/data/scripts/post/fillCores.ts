@@ -59,8 +59,25 @@ const LONG_TITLE = 18;
 
 const SPRITES = 'https://pick3.gg/data/sprites/';
 
-const SPARK =
-  '<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M8 1 10 6 15 8 10 10 8 15 6 10 1 8 6 6Z"/></svg>';
+/** pick3's Mega glyph, the app's MegaGlyph (apps/web/src/components.tsx) as a standalone SVG.
+ *  The page is dark, so the colors are the dark theme's tokens from packages/ui/tokens.css:
+ *  --type-fairy, -psychic, -water, -ice, -grass, -electric, the ring --surface and the spark --bg. */
+const ORB_STOPS = ['#d685ad', '#f95587', '#6390f0', '#96d9d6', '#7ac74c', '#f7d02c'];
+const ORB_RING = '#232532';
+const ORB_SPARK = '#161826';
+
+/** Gradient ids must be unique in the page; fillCoreBoard resets the count, so a fill is
+ *  deterministic. */
+let orbCount = 0;
+
+function megaOrb(): string {
+  orbCount += 1;
+  const id = `mega-orb-${orbCount}`;
+  const stops = ORB_STOPS.map(
+    (c, i) => `<stop offset="${(i * 100) / (ORB_STOPS.length - 1)}%" stop-color="${c}"/>`,
+  ).join('');
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient></defs><circle cx="10" cy="10" r="9" fill="url(#${id})" stroke="${ORB_RING}" stroke-width="1.5"/><path d="M10 4.5 L11.3 8.7 L15.5 10 L11.3 11.3 L10 15.5 L8.7 11.3 L4.5 10 L8.7 8.7 Z" fill="${ORB_SPARK}" opacity="0.85"/></svg>`;
+}
 
 function tagClass(kind: CoreTagKind): string {
   return kind === 'form' ? 'region' : kind;
@@ -68,7 +85,7 @@ function tagClass(kind: CoreTagKind): string {
 
 function tagHtml(t: CoreTag, marker: boolean): string {
   if (t.kind === 'mega' && marker) {
-    return `<span class="tag mega mega-tag-marker">${SPARK}${escapeHtml(t.text)}</span>`;
+    return `<span class="tag mega mega-tag-marker">${megaOrb()}${escapeHtml(t.text)}</span>`;
   }
   return `<span class="tag ${tagClass(t.kind)}">${escapeHtml(t.text)}</span>`;
 }
@@ -82,7 +99,7 @@ function memberHtml(m: CoreMemberView): string {
   const name = escapeHtml(m.name);
   const portrait = `<div class="portrait ${escapeHtml(m.type)}"><img class="sprite" src="${SPRITES}${escapeHtml(m.sprite)}.webp" alt="${name}" width="97" height="97"></div>`;
   const head = m.isMega
-    ? `<div class="core-portrait-wrap">${portrait}<span class="mega-marker">${SPARK}Mega</span></div>`
+    ? `<div class="core-portrait-wrap">${portrait}<span class="mega-marker">${megaOrb()}Mega</span></div>`
     : portrait;
   const tags = m.tags.map((t) => tagHtml(t, false)).join('');
   const moves = m.moves
@@ -135,6 +152,7 @@ function between(html: string, re: RegExp, inner: string): string {
 }
 
 export function fillCoreBoard(template: string, b: CoreBoardView): string {
+  orbCount = 0;
   const long = b.title.length > LONG_TITLE;
   let out = template.replace(
     /<section class="board core-board mega-core-board"/,

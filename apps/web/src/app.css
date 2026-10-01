@@ -198,7 +198,7 @@ a {
    outline) lives in packages/ui/base.css. `display` stays here since it is not the same value as
    meta's (see the comment on .token in base.css). */
 /* isolation: the sprite's z-index lifts it over the disc inside the token and no further, so what
-   sits on a token (Log a Battle's remove button, the Mega pill) paints over the picture. */
+   sits on a token (Log a Battle's remove button, the Mega badge) paints over the picture. */
 .token {
   display: inline-grid;
   font-weight: 600;
@@ -248,41 +248,34 @@ a {
     radial-gradient(ellipse 45% 65% at 68% 100%, rgba(150, 60, 240, 0.9), transparent 70%),
     radial-gradient(ellipse 80% 60% at 50% 100%, rgba(120, 40, 220, 0.7), transparent 75%);
 }
-/* Mega builds: a small pill across the bottom of the token, same shape as the .mtag pills. It
-   stays inside the token's height, so it never lands on the name under the token; only its width
-   may hang past a small token's sides (data-audit-overhang). */
+/* Mega builds: pick3's Mega glyph (MegaGlyph in components.tsx) badged on the token's bottom-right
+   corner, hanging 3px past it like a count badge (data-audit-overhang). */
 .token-mega-wrap {
   position: relative;
 }
-.token-mega-pill {
+.token-mega-badge {
   position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  padding: 0 6px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 14px;
-  color: var(--accent-text);
-  background: var(--accent-tint);
-  border: 1px solid var(--surface);
-  white-space: nowrap;
+  right: -3px;
+  bottom: -3px;
+  line-height: 0;
   pointer-events: none;
+}
+.token-mega-badge svg {
+  display: block;
 }
 .token-stack {
   display: flex;
 }
-/* Overlapping token stacks (these and Teams' .team-summary-sprites): the Mega pill lifts over the
-   next token, which would cover its end, and no further, since the stack isolates it: never over
-   page-level bars (the tab bar, a sticky head). Outside a stack the pill needs no z-index: it
+/* Overlapping token stacks (these and Teams' .team-summary-sprites): the Mega badge lifts over the
+   next token, which would cover it, and no further, since the stack isolates it: never over
+   page-level bars (the tab bar, a sticky head). Outside a stack the badge needs no z-index: it
    follows its own (isolated) token, so it paints over it. */
 .token-stack,
 .team-summary-sprites {
   isolation: isolate;
 }
-.token-stack .token-mega-pill,
-.team-summary-sprites .token-mega-pill {
+.token-stack .token-mega-badge,
+.team-summary-sprites .token-mega-badge {
   z-index: 1;
 }
 .token-stack > * + * {

@@ -2815,13 +2815,13 @@ if (megaPin) {
     );
     await new Promise((r) => setTimeout(r, 750));
   }
-  if (!(await page.$('.teams-list .token-mega-pill'))) {
-    throw new Error('mega color cup: no team on Teams shows a Mega pill');
+  if (!(await page.$('.teams-list .token-mega-badge'))) {
+    throw new Error('mega color cup: no team on Teams shows a Mega badge');
   }
   // The recommendation is ranked, so the team with a Mega may not be the first card: bring the
   // first Mega token's card into view.
-  await page.$eval('.teams-list .token-mega-pill', (el) => el.scrollIntoView({ block: 'center' }));
-  await shot('teams-mega-cup', false, { mustShow: '.teams-list .token-mega-pill' });
+  await page.$eval('.teams-list .token-mega-badge', (el) => el.scrollIntoView({ block: 'center' }));
+  await shot('teams-mega-cup', false, { mustShow: '.teams-list .token-mega-badge' });
 
   console.log('two megas, team analysis');
   // Build offers your own Pokemon only once their verdicts say they fit the league, so the

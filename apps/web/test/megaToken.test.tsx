@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { PokemonToken, useName } from '../src/components.tsx';
@@ -62,17 +62,43 @@ beforeEach(() => {
 });
 
 describe('Mega token', () => {
-  it('shows the Mega sprite and a Mega pill', async () => {
+  it('shows the Mega sprite and a badge named Mega', async () => {
     const { container } = await mount(<PokemonToken speciesId="sableye_mega" />);
     expect(container.querySelector('img')?.getAttribute('src')).toBe(
       '/data/sprites/sableye_mega.webp',
     );
-    expect(container.querySelector('.token-mega-pill')?.textContent).toBe('Mega');
+    expect(within(container).getByRole('img', { name: 'Mega' })).toBeInTheDocument();
   });
 
-  it('has no Mega pill on the base form', async () => {
+  it('has no Mega badge on the base form', async () => {
     const { container } = await mount(<PokemonToken speciesId="sableye" />);
-    expect(container.querySelector('.token-mega-pill')).toBeNull();
+    expect(within(container).queryByRole('img', { name: 'Mega' })).toBeNull();
+  });
+
+  it('badges a base form the collection marks as a Mega', async () => {
+    const { container } = await mount(<PokemonToken speciesId="sableye" markedMega />);
+    expect(within(container).getByRole('img', { name: 'Mega' })).toBeInTheDocument();
+  });
+
+  it('badges a small token too, the glyph never under 12px', async () => {
+    const { container } = await mount(<PokemonToken speciesId="sableye_mega" size={20} />);
+    const svg = within(container).getByRole('img', { name: 'Mega' }).querySelector('svg');
+    expect(svg?.getAttribute('width')).toBe('12');
+  });
+
+  it('gives every glyph on the page its own gradient', async () => {
+    const { container } = await mount(
+      <>
+        <PokemonToken speciesId="sableye_mega" />
+        <PokemonToken speciesId="sableye_mega" />
+      </>,
+    );
+    const ids = [...container.querySelectorAll('linearGradient')].map((g) => g.id);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    for (const id of ids) {
+      expect(container.querySelector(`circle[fill="url(#${id})"]`)).not.toBeNull();
+    }
   });
 
   it('names the Mega with the word first', async () => {

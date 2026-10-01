@@ -148,15 +148,3 @@ describe('Seg pressed label contrast', () => {
     }
   }
 });
-
-// The Mega pill sits across the sprite, so axe cannot judge its backdrop; PokemonToken marks the
-// wrapper data-audit-contrast="static" and the pill's own pair is checked here instead.
-describe('Mega pill contrast', () => {
-  const pill = block(app, '.token-mega-pill {');
-  for (const [theme, body] of Object.entries(themes)) {
-    it(`the pill's ink clears 4.5:1 on its fill in ${theme}`, () => {
-      const { fill, ink } = paint(pill, body);
-      expect(ratio(ink, fill)).toBeGreaterThanOrEqual(4.5);
-    });
-  }
-});

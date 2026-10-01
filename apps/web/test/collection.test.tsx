@@ -361,17 +361,16 @@ describe('Collection', () => {
     vi.unstubAllGlobals();
   });
 
-  it('shows a Mega pill on a Mega-marked row and none on the others', async () => {
+  it('shows a Mega badge on a Mega-marked row and none on the others', async () => {
     const marked = { ...specimen('m', 'tinkaton'), megaForm: 'mega' } as Specimen;
     await open(
       async () => ({ m: verdict('m', 'Built', 30), a: verdict('a', 'Built', 10) }),
       [marked, specimen('a', 'azumarill')],
     );
     await waitFor(() => expect(document.querySelectorAll('.spec-row .verdict-tag').length).toBe(2));
-    const pills = [...document.querySelectorAll('.spec-row .token-mega-pill')];
-    expect(pills).toHaveLength(1);
-    expect(pills[0]!.textContent).toBe('Mega');
-    expect(pills[0]!.closest('.spec-row')).toHaveTextContent('Tinkaton');
+    const badges = screen.getAllByRole('img', { name: 'Mega' });
+    expect(badges).toHaveLength(1);
+    expect(badges[0]!.closest('.spec-row')).toHaveTextContent('Tinkaton');
   });
 
   it('has one Settings cog and a plus to Add Pokémon in its header, no outside meta link', async () => {
