@@ -49,6 +49,22 @@ function PinGlyph({ on }: { on: boolean }) {
   );
 }
 
+function StarGlyph() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      style={{ color: 'var(--accent-text)', flex: 'none' }}
+      role="img"
+      aria-label="Recommended"
+    >
+      <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5l-5.9 3.2 1.2-6.6-4.8-4.6 6.6-.9z" />
+    </svg>
+  );
+}
+
 function TrashGlyph() {
   return (
     <svg {...STROKE}>
@@ -473,7 +489,7 @@ function UmbreonOther() {
           ],
         }}
         movesTitle="Recommended moves"
-        movesNote="Moves not entered, so teams would use the Recommended ones. Edit to tick what it knows."
+        movesNote="Teams would assume the starred moves. Edit to tick what it knows."
         cost={
           <Cost
             line="Level 26 to 27.5 · includes second move unlock"
@@ -516,7 +532,7 @@ function UmbreonFromEevee() {
           ],
         }}
         movesTitle="Recommended moves"
-        movesNote="An Eevee's moves change when it evolves, so teams use the Recommended ones."
+        movesNote="An Eevee's moves change when it evolves, so teams assume the starred ones."
         cost={
           <Cost
             line="Level 14 to 27 · includes second move unlock · includes 25 candy to evolve"
@@ -573,7 +589,7 @@ function EeveePage() {
         pinned
         moves={{ fast: QUICK, charged: [SWIFT] }}
         movesTitle="Its moves"
-        movesNote="Teams use the ticked moves. The Recommended set costs a second move unlock and 2 Elite TM."
+        movesNote="Teams use the ticked moves. The starred set costs a second move unlock and 2 Elite TM."
         cost={
           <Cost
             line="Level 22 to 50"
@@ -755,7 +771,7 @@ function Option({
           <span className="move-name">{move.name}</span>
           <span className="move-tags">
             <TypeChip type={move.type} small />
-            {recommended ? <Tag tone="accent">Recommended</Tag> : null}
+            {recommended ? <StarGlyph /> : null}
           </span>
           {move.tm === 'elite' ? <TmBadge tm="elite" /> : null}
         </span>
@@ -784,7 +800,9 @@ function MovesCard({
   const fastName =
     pool.fast.find((m) => (known ? known.has(m.moveId) : pool.recommended.has(m.moveId)))?.name ??
     null;
-  const full = known !== null && pool.charged.filter((m) => known.has(m.moveId)).length >= 2;
+  const assumed = known === null;
+  const ticked = known ?? pool.recommended;
+  const full = pool.charged.filter((m) => ticked.has(m.moveId)).length >= 2;
   return (
     <div className="stack" style={{ gap: 6 }}>
       <h3>Moves</h3>
@@ -797,9 +815,9 @@ function MovesCard({
                 key={m.moveId}
                 move={m}
                 role="radio"
-                checked={known?.has(m.moveId) ?? false}
+                checked={ticked.has(m.moveId)}
                 recommended={pool.recommended.has(m.moveId)}
-                disabled={!edit && known !== null && !known.has(m.moveId)}
+                disabled={!edit && !ticked.has(m.moveId)}
                 fastName={null}
               />
             ))}
@@ -814,17 +832,24 @@ function MovesCard({
                 key={m.moveId}
                 move={m}
                 role="checkbox"
-                checked={known?.has(m.moveId) ?? false}
+                checked={ticked.has(m.moveId)}
                 recommended={pool.recommended.has(m.moveId)}
-                disabled={known !== null && !known.has(m.moveId) && (!edit || full)}
+                disabled={!ticked.has(m.moveId) && (!edit || full)}
                 fastName={fastName}
               />
             ))}
           </div>
         </div>
       </div>
+      <p
+        className="small muted"
+        style={{ margin: 0, display: 'flex', gap: 6, alignItems: 'center' }}
+      >
+        <StarGlyph />
+        Recommended by PvPoke for Great League
+      </p>
       <p className="small muted" style={{ margin: 0 }}>
-        {note}
+        {assumed ? `Moves not entered yet. ${note}` : note}
       </p>
     </div>
   );
@@ -932,7 +957,7 @@ function Edit({ id, sheet }: { id: 'swampert' | 'eevee'; sheet?: boolean }) {
           known={eevee ? null : KNOWN}
           note={
             eevee
-              ? 'Tick the moves it knows. With none ticked, teams use the Recommended ones.'
+              ? 'Teams assume the starred moves until you change a tick or save these as its moves.'
               : 'Tick the moves it knows now. Teams use exactly these.'
           }
           edit
