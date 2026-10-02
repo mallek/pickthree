@@ -154,8 +154,8 @@ Old saves are not converted. The first import after the update merges.
 - Known moves in the sims, including whether a Shadow with no moves saved should be run with
   Frustration (piece 3).
 - Best Buddy. The official page says a Best Buddy gets "a small CP boost when that Pokemon is
-  your buddy"; I did not find a first-party statement that it applies in GO Battle League, and
-  nothing in this piece reads it. The field waits for piece 2 and a proper source.
+  your buddy". The boost follows the buddy slot, which the player sets and unsets at will, so it
+  is not a property of the Pokemon. Decided 2026-10-02: pick3 does not track it.
 - Mega level beyond today's Level 4 mark.
 
 ## Privacy
