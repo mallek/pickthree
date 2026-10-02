@@ -1,4 +1,9 @@
-import type { CountersResult, ProgressEvent, Recommendation } from '@pickthree/engine';
+import type {
+  CountersResult,
+  MarksRequest,
+  ProgressEvent,
+  Recommendation,
+} from '@pickthree/engine';
 import { vi } from 'vitest';
 import type { WorkerHost } from '../src/host/WorkerHost.ts';
 
@@ -154,6 +159,20 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
       ms: 0,
     })),
     manual: vi.fn(),
+    // No game data here: a mark is keyed by the id, which is all a store test needs.
+    marks: vi.fn(async (req: MarksRequest) =>
+      req.op === 'remove'
+        ? {
+            specimens: req.specimens.filter((s) => !req.ids.includes(s.id)),
+            removed: [
+              ...req.removed,
+              ...req.specimens
+                .filter((s) => req.ids.includes(s.id))
+                .map((s) => ({ key: s.id, speciesId: s.speciesId, removedAt: req.now })),
+            ],
+          }
+        : { specimens: req.specimens, removed: req.removed },
+    ),
     faceoff: vi.fn(async (team: { species: string[] }, _s: unknown, opponent: string) => ({
       opponent,
       ranked: true,

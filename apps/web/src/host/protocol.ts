@@ -33,15 +33,18 @@ import type {
   BuildOptions,
   CountersOptions,
   CountersResult,
+  ImportPrior,
   ImportReport,
   League,
   ManualInput,
   ManualResult,
+  MarksRequest,
   MetaRank,
   MovePool,
   PokemonType,
   Recommendation,
   RecommendOptions,
+  RemovedMark,
   ScanList,
   ScanListOptions,
   ScheduleEntry,
@@ -58,7 +61,8 @@ import type { Epoch } from '@pickthree/engine/meta';
 export type WorkerRequest =
   | { id: number; kind: 'ready' }
   | { id: number; kind: 'league'; league: string }
-  | { id: number; kind: 'import'; text: string }
+  | { id: number; kind: 'import'; text: string; prior?: ImportPrior }
+  | { id: number; kind: 'marks'; req: MarksRequest }
   | { id: number; kind: 'manual'; input: ManualInput }
   | {
       id: number;
@@ -145,6 +149,7 @@ export type WorkerResult =
     }
   | { kind: 'league'; info: LeagueInfo }
   | { kind: 'import'; specimens: Specimen[]; report: ImportReport }
+  | { kind: 'marks'; specimens: Specimen[]; removed: RemovedMark[] }
   | { kind: 'recommend'; recommendation: Recommendation }
   | { kind: 'verdicts'; verdicts: Record<string, Verdict> }
   | { kind: 'counters'; counters: CountersResult }

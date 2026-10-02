@@ -1,5 +1,6 @@
 import type { BuildOptions } from '../builds/eligibility.js';
 import type { MovePool } from '../builds/moves.js';
+import type { RemovedMark } from '../collection/merge.js';
 import type { ImportReport, Specimen } from '../collection/specimen.js';
 import type { Recommendation, RecommendOptions } from '../recommend.js';
 import type { Verdict } from '../verdicts/worth.js';
@@ -22,8 +23,29 @@ export interface ProgressEvent {
  * in-process; a fetch-backed host could implement it against a server later without touching
  * the engine or the UI.
  */
+/** What an import merges into: the stored collection, its removed marks and the local time. */
+export interface ImportPrior {
+  specimens: Specimen[];
+  removed: RemovedMark[];
+  /** Phone-local 'YYYY-MM-DD HH:MM:SS' (localStamp). */
+  now: string;
+}
+
+/** remove: take Pokemon out, leaving marks. add: clear the mark of one added back by hand. */
+export type MarksRequest =
+  | { op: 'remove'; specimens: Specimen[]; removed: RemovedMark[]; ids: string[]; now: string }
+  | { op: 'add'; specimens: Specimen[]; removed: RemovedMark[]; specimen: Specimen };
+
 export interface ComputeHost {
-  importCsv(text: string): Promise<{ specimens: Specimen[]; report: ImportReport }>;
+  /**
+   * Parse a collection file. With `prior`, the scan is merged into it (the report carries the
+   * breakdown) and the specimens returned are the whole collection after the merge.
+   */
+  importCsv(
+    text: string,
+    prior?: ImportPrior,
+  ): Promise<{ specimens: Specimen[]; report: ImportReport }>;
+  marks(req: MarksRequest): Promise<{ specimens: Specimen[]; removed: RemovedMark[] }>;
   recommend(
     specimens: Specimen[],
     options: Partial<RecommendOptions>,

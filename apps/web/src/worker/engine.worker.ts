@@ -5,9 +5,11 @@ import {
   suggestTeammates,
   faceoff,
   buildOptionsFor,
+  clearMark,
   displayName,
   GameDataIndex,
   manualSpecimen,
+  mergeScan,
   metaCounters,
   counterGrids,
   metaRanks,
@@ -15,6 +17,7 @@ import {
   parseCollectionCsv,
   rankingsById,
   recommend,
+  removeSpecimens,
   scanList,
   toSpecimens,
   verdictsFor,
@@ -251,7 +254,31 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     if (msg.kind === 'import') {
       const parsed = parseCollectionCsv(msg.text, env.index);
       const { specimens, report } = toSpecimens(parsed, env.index);
-      post({ id: msg.id, kind: 'result', result: { kind: 'import', specimens, report } });
+      const prior = msg.prior;
+      // Nothing stored and nothing removed: a first import, with no breakdown to show.
+      if (!prior || (prior.specimens.length === 0 && prior.removed.length === 0)) {
+        post({ id: msg.id, kind: 'result', result: { kind: 'import', specimens, report } });
+        return;
+      }
+      const merged = mergeScan(prior.specimens, prior.removed, specimens, env.index, prior.now);
+      post({
+        id: msg.id,
+        kind: 'result',
+        result: {
+          kind: 'import',
+          specimens: merged.specimens,
+          report: { ...report, merge: merged.breakdown },
+        },
+      });
+      return;
+    }
+    if (msg.kind === 'marks') {
+      const q = msg.req;
+      const result =
+        q.op === 'remove'
+          ? removeSpecimens(q.specimens, q.removed, new Set(q.ids), env.index, q.now)
+          : { specimens: q.specimens, removed: clearMark(q.removed, q.specimen, env.index) };
+      post({ id: msg.id, kind: 'result', result: { kind: 'marks', ...result } });
       return;
     }
     if (msg.kind === 'manual') {

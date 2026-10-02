@@ -6,14 +6,17 @@ import type {
   ComputeHost,
   CountersOptions,
   CountersResult,
+  ImportPrior,
   ImportReport,
   Layout,
   ManualInput,
   ManualResult,
+  MarksRequest,
   MovePool,
   ProgressEvent,
   Recommendation,
   RecommendOptions,
+  RemovedMark,
   ScanList,
   ScanListOptions,
   Specimen,
@@ -126,12 +129,23 @@ export class WorkerHost implements ComputeHost {
     return r.info;
   }
 
-  async importCsv(text: string): Promise<{ specimens: Specimen[]; report: ImportReport }> {
-    const r = await this.send({ kind: 'import', text });
+  async importCsv(
+    text: string,
+    prior?: ImportPrior,
+  ): Promise<{ specimens: Specimen[]; report: ImportReport }> {
+    const r = await this.send({ kind: 'import', text, ...(prior ? { prior } : {}) });
     if (r.kind !== 'import') {
       throw new Error('unexpected reply');
     }
     return { specimens: r.specimens, report: r.report };
+  }
+
+  async marks(req: MarksRequest): Promise<{ specimens: Specimen[]; removed: RemovedMark[] }> {
+    const r = await this.send({ kind: 'marks', req });
+    if (r.kind !== 'marks') {
+      throw new Error('unexpected reply');
+    }
+    return { specimens: r.specimens, removed: r.removed };
   }
 
   async recommend(

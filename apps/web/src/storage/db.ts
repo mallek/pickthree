@@ -1,5 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { BattleSet, FacingSource, ImportReport, Specimen } from '@pickthree/engine';
+import type {
+  BattleSet,
+  FacingSource,
+  ImportReport,
+  PinMap,
+  RemovedMark,
+  Specimen,
+} from '@pickthree/engine';
 import type { WindowKey } from '@pickthree/engine/meta';
 import type { ThemeChoice } from '@pickthree/ui';
 
@@ -9,6 +16,16 @@ export interface StoredCollection {
   report: ImportReport;
   importedAt: string;
   fileName: string | null;
+  /**
+   * Added 2026-10-01. Pokémon the player removed; an import skips scan rows matching one. Absent
+   * in older saves means none.
+   */
+  removed?: RemovedMark[];
+  /**
+   * Added 2026-10-01. League id to that league's pins (battling species to a Pokémon id, or null
+   * for unpinned). Absent means every species uses the default pick.
+   */
+  pins?: Record<string, PinMap>;
 }
 
 export interface Settings {

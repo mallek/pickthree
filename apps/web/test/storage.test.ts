@@ -66,3 +66,39 @@ describe('battle log storage', () => {
     expect(await storage.loadAllSets()).toEqual([]);
   });
 });
+
+describe('collection storage', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+  });
+
+  it('a save from before pins and marks loads without them', async () => {
+    await storage.saveCollection({
+      specimens: [],
+      report: {} as never,
+      importedAt: '2026-09-01T00:00:00Z',
+      fileName: 'old.csv',
+    });
+    const c = await storage.loadCollection();
+    expect(c?.fileName).toBe('old.csv');
+    expect(c?.removed).toBeUndefined();
+    expect(c?.pins).toBeUndefined();
+  });
+
+  it('round-trips pins and removed marks', async () => {
+    const removed = [{ key: 'n|1/2/3', speciesId: 'eevee', removedAt: '2026-10-01 12:00:00' }];
+    const pins = { great: { umbreon: 'abc', medicham: null } };
+    await storage.saveCollection({
+      specimens: [],
+      report: {} as never,
+      importedAt: '2026-09-01T00:00:00Z',
+      fileName: null,
+      removed,
+      pins,
+    });
+    const c = await storage.loadCollection();
+    expect(c?.removed).toEqual(removed);
+    expect(c?.pins).toEqual(pins);
+  });
+});
