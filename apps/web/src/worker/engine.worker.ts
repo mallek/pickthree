@@ -19,6 +19,7 @@ import {
   recommend,
   removeSpecimens,
   scanList,
+  speciesViewFor,
   toSpecimens,
   verdictsFor,
   ImportError,
@@ -207,6 +208,16 @@ function leagueInfo(env: Env, data: StaticData): LeagueInfo {
   };
 }
 
+/** The stages a species can still evolve into, for Edit's "Evolved it?" select. */
+function laterStages(index: GameDataIndex, id: string): { evolvesTo?: string[] } {
+  const later = index
+    .stagesFrom(id)
+    .slice(1)
+    .filter((sp) => sp.released)
+    .map((sp) => sp.speciesId);
+  return later.length > 0 ? { evolvesTo: later } : {};
+}
+
 self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
   const msg = ev.data;
   try {
@@ -229,6 +240,8 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
                 types: sp.types,
                 familyId: sp.familyId,
                 dex: sp.dex,
+                baseStats: sp.baseStats,
+                ...laterStages(env.index, sp.speciesId),
                 ...(sp.megaOf ? { megaOf: sp.megaOf } : {}),
                 ...(sp.megaOf && sp.tags.includes('supermega') ? { superMega: true } : {}),
               },
@@ -307,6 +320,11 @@ self.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
         progress('verdicts', Math.min(total, i + CHUNK), total);
       }
       post({ id: msg.id, kind: 'result', result: { kind: 'verdicts', verdicts } });
+      return;
+    }
+    if (msg.kind === 'speciesView') {
+      const view = speciesViewFor(msg.speciesId, msg.specimens, msg.options, deps);
+      post({ id: msg.id, kind: 'result', result: { kind: 'speciesView', view } });
       return;
     }
     if (msg.kind === 'counters') {

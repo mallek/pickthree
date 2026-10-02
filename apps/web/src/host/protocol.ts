@@ -5,6 +5,10 @@ export interface SpeciesLite {
   familyId: string | null;
   /** Pokedex number. */
   dex: number;
+  /** For working out a level from CP and IVs, and the CP an evolution lands on. */
+  baseStats?: { atk: number; def: number; hp: number } | undefined;
+  /** Every later stage it can evolve into, nearest first. Absent when it does not evolve. */
+  evolvesTo?: string[] | undefined;
   /** The base species id, on a Mega form only. */
   megaOf?: string | undefined;
   /** A Mega that can be Level 4 (tagged supermega), on a Mega form only. */
@@ -49,6 +53,7 @@ import type {
   ScanListOptions,
   ScheduleEntry,
   Season,
+  SpeciesView,
   Specimen,
   SuggestOptions,
   SuggestResult,
@@ -92,6 +97,14 @@ export type WorkerRequest =
       league: string;
       specimens: Specimen[];
       options: Partial<CountersOptions>;
+    }
+  | {
+      id: number;
+      kind: 'speciesView';
+      league: string;
+      speciesId: string;
+      specimens: Specimen[];
+      options: Partial<BuildOptions>;
     }
   | { id: number; kind: 'scanlist'; league: string; options: Partial<ScanListOptions> }
   | {
@@ -158,4 +171,5 @@ export type WorkerResult =
   | { kind: 'analyze'; analysis: TeamAnalysis }
   | { kind: 'suggestTeammates'; suggestion: SuggestResult }
   | { kind: 'manual'; result: ManualResult }
+  | { kind: 'speciesView'; view: SpeciesView }
   | { kind: 'faceoff'; faceoff: Faceoff };

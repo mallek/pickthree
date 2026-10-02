@@ -3,6 +3,8 @@ import type {
   MarksRequest,
   ProgressEvent,
   Recommendation,
+  Specimen,
+  Verdict,
 } from '@pickthree/engine';
 import { vi } from 'vitest';
 import type { WorkerHost } from '../src/host/WorkerHost.ts';
@@ -29,6 +31,27 @@ export const EMPTY_COUNTERS: CountersResult = {
   blended: false,
   battles: 0,
 };
+
+/** A verdict that says nothing: a copy the fake host lists without judging it. */
+export function neutralVerdict(specimenId: string): Verdict {
+  return {
+    specimenId,
+    label: 'Wait for better IVs',
+    line: '',
+    build: null,
+    buildSpecies: [],
+    megaBuilds: [],
+    moveset: null,
+    cost: null,
+    perfectDelta: null,
+    perfectLine: null,
+    metaWins: null,
+    metaSize: 0,
+    metaRank: null,
+    formNote: null,
+    ineligible: null,
+  };
+}
 
 /** One counters call a test drives by hand: its partials, its progress and its reply. */
 export interface CountersRun {
@@ -159,6 +182,25 @@ export function fakeHost(overrides: Partial<Record<keyof WorkerHost, unknown>> =
       ms: 0,
     })),
     manual: vi.fn(),
+    // No game data here: a page holds the copies saved under its own id, the first one the pick.
+    speciesView: vi.fn(async (speciesId: string, specimens: Specimen[]) => {
+      const mine = specimens.filter(
+        (s) =>
+          (s.shadow && !s.speciesId.endsWith('_shadow') ? `${s.speciesId}_shadow` : s.speciesId) ===
+          speciesId,
+      );
+      return {
+        speciesId,
+        copies: mine.map((s) => ({
+          specimenId: s.id,
+          verdict: neutralVerdict(s.id),
+          alsoPickFor: [],
+        })),
+        pickId: mine[0]?.id ?? null,
+        defaultId: mine[0]?.id ?? null,
+        unpinned: false,
+      };
+    }),
     // No game data here: a mark is keyed by the id, which is all a store test needs.
     marks: vi.fn(async (req: MarksRequest) =>
       req.op === 'remove'

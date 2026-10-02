@@ -2,6 +2,7 @@ import type { BuildOptions } from '../builds/eligibility.js';
 import type { MovePool } from '../builds/moves.js';
 import type { RemovedMark } from '../collection/merge.js';
 import type { ImportReport, Specimen } from '../collection/specimen.js';
+import type { SpeciesView } from '../collection/speciesView.js';
 import type { Recommendation, RecommendOptions } from '../recommend.js';
 import type { Verdict } from '../verdicts/worth.js';
 import type { CountersOptions, CountersResult } from '../counters/counters.js';
@@ -88,6 +89,15 @@ export interface ComputeHost {
     options: Partial<SuggestOptions>,
   ): Promise<SuggestResult>;
   manual(input: ManualInput): Promise<ManualResult>;
+  /**
+   * One species page: the copies that are the species or can become it, each judged as it, and
+   * the copy fielded for it. `options.pins` carries the league's pins.
+   */
+  speciesView(
+    speciesId: string,
+    specimens: Specimen[],
+    options: Partial<BuildOptions>,
+  ): Promise<SpeciesView>;
   /** The in-battle card: one opponent against the set's team, simulated on the device. */
   faceoff(
     team: TeamRef,

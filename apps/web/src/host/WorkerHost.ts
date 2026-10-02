@@ -19,6 +19,7 @@ import type {
   RemovedMark,
   ScanList,
   ScanListOptions,
+  SpeciesView,
   Specimen,
   SuggestOptions,
   SuggestResult,
@@ -270,6 +271,19 @@ export class WorkerHost implements ComputeHost {
       throw new Error('unexpected reply');
     }
     return r.faceoff;
+  }
+
+  async speciesView(
+    speciesId: string,
+    specimens: Specimen[],
+    options: Partial<BuildOptions>,
+    league = this.league,
+  ): Promise<SpeciesView> {
+    const r = await this.send({ kind: 'speciesView', league, speciesId, specimens, options });
+    if (r.kind !== 'speciesView') {
+      throw new Error('unexpected reply');
+    }
+    return r.view;
   }
 
   async manual(input: ManualInput): Promise<ManualResult> {
