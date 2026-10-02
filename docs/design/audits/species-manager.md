@@ -69,32 +69,32 @@ built app (an Eevee added, evolved to Umbreon in Edit, saved, shown on Umbreon's
 
 ## Aesthetics
 
-Awaiting Travis's review.
+Reviewed by Travis on the live pages, 2026-10-02.
 
-- [ ] colors from tokens, in their roles (violet interaction, pink measured with its mark,
+- [x] colors from tokens, in their roles (violet interaction, pink measured with its mark,
       outcome colors, red only for destroying data)
-- [ ] at most four text levels, one page title
-- [ ] one filled primary button
-- [ ] chips tapped, tags read
-- [ ] the right header variant
-- [ ] rows align; gutters and the 8px base hold
-- [ ] sprites unchanged
-- [ ] at most one line of text before the first result
-- [ ] light as readable as dark
+- [x] at most four text levels, one page title
+- [x] one filled primary button
+- [x] chips tapped, tags read
+- [x] the right header variant
+- [x] rows align; gutters and the 8px base hold
+- [x] sprites unchanged
+- [x] at most one line of text before the first result
+- [x] light as readable as dark
 
 ## Functionality
 
-Awaiting Travis's review.
+Reviewed by Travis on the live pages, 2026-10-02.
 
-- [ ] every item of the spec, item by item
-- [ ] every control does what its label says
-- [ ] back returns to the origin with filters and scroll
-- [ ] input layout rule (Edit): the fields come first, nothing the player needs sits under the
+- [x] every item of the spec, item by item
+- [x] every control does what its label says
+- [x] back returns to the origin with filters and scroll
+- [x] input layout rule (Edit): the fields come first, nothing the player needs sits under the
       keyboard except the save bar, which is fixed
-- [ ] icon buttons named; focus visible
-- [ ] product rules: assumptions shown, collection stays on the device, `connect-src` unchanged,
+- [x] icon buttons named; focus visible
+- [x] product rules: assumptions shown, collection stays on the device, `connect-src` unchanged,
       sharing copy accurate
-- [ ] tests cover the new behavior
+- [x] tests cover the new behavior
 
 ## Findings and fixes
 
@@ -103,6 +103,7 @@ Awaiting Travis's review.
 | Driving the built app: the save bar floated 64px above the foot of Edit, with the form showing under it. Edit has no tab bar; the bar was placed for a screen that has one. | The bar sits at the foot by default; `aboveTabs` is for a screen with the tab bar. The capture script checks the bar is at the foot and clear of the last field. | `7d82788` |
 | Driving the built app: after evolving an Eevee in Edit, saving went back to Eevee's page, where the Pokémon no longer is. | An evolved Pokémon lands on its new species page with itself shown. | `eb339e4` |
 | Seen in a capture: a copy with a charged move known and no fast move showed no move counts. | The counts are shown against PvPoke's fast move, which is what they were figured for. | `eb339e4` |
+| Travis, on the installed iPhone app after release: the species page's header had a doubled status bar gap and two divider lines. The sub header pads itself and was nested in `.page-head`, which pads too (so were Top teams and Your battles; the nesting predates this piece). | The sub header stands alone, or sits over its controls in `.sub-head`. The capture script fails any screen that nests it again. Travis confirmed the fix on his phone. | `55fa841` |
 
 ## Notes for the review (choices made, not in the mocks)
 
@@ -122,4 +123,4 @@ Awaiting Travis's review.
 
 ## Sign-off
 
-- [ ] Travis, awaiting review
+- [x] Travis, 2026-10-02 (reviewed the live pages on his phone, the species page and Edit: "Species pages look good", then "Yes looks good." for the whole record).
