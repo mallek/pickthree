@@ -10,7 +10,7 @@ import type { RawScan } from '../../src/csv/parse.js';
 import { GREAT_LEAGUE_DEF } from '../../src/gamedata/league.js';
 import type { Species } from '../../src/gamedata/types.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
-import { verdictsFor } from '../../src/recommend.js';
+import { speciesViewFor, verdictsFor } from '../../src/recommend.js';
 import type { Specimen } from '../../src/collection/specimen.js';
 import { haveLeague, haveStaticData, loadStaticData } from '../fixtures.js';
 
@@ -210,3 +210,35 @@ describe.skipIf(!haveStaticData() || !haveLeague('mega-great'))(
     });
   },
 );
+
+/** A species page judges a copy as that page's species, whatever its best stage is. */
+describe.skipIf(!haveStaticData())('species view on live data', () => {
+  const data = loadStaticData();
+  const deps = { data, sim: null as unknown as never, simOptions: undefined };
+  const eevee = {
+    id: 'e1',
+    speciesId: 'eevee',
+    familyId: null,
+    ivs: { atk: 0, def: 15, sta: 15 },
+    level: { min: 18, max: 18 },
+    cp: 509,
+    hp: 91,
+    shadow: false,
+    purified: false,
+    lucky: false,
+    currentMoves: { fast: null, charged: [] },
+    scannedAt: '2026-09-01 00:00',
+    raw: {},
+  } as unknown as Specimen;
+
+  it('one Eevee is on Umbreon and Vaporeon pages, judged as each, and on no page above it', () => {
+    const umbreon = speciesViewFor('umbreon', [eevee], {}, deps as never);
+    const vaporeon = speciesViewFor('vaporeon', [eevee], {}, deps as never);
+    expect(umbreon.copies[0]?.verdict.build?.speciesId).toBe('umbreon');
+    expect(vaporeon.copies[0]?.verdict.build?.speciesId).toBe('vaporeon');
+    expect(umbreon.pickId).toBe('e1');
+    expect(umbreon.copies[0]?.verdict.moveset).not.toBeNull();
+    expect(umbreon.copies[0]?.verdict.cost?.evolutionCandy).toBeGreaterThan(0);
+    expect(speciesViewFor('azumarill', [eevee], {}, deps as never).copies).toEqual([]);
+  });
+});

@@ -1,6 +1,8 @@
 import type { IVs, RawScan } from '../csv/parse.js';
+import { LEGACY_SHADOW_MOVES } from '../builds/moves.js';
 import { emptyLayout } from '../csv/layout.js';
 import type { GameDataIndex } from '../gamedata/index.js';
+import type { Species } from '../gamedata/types.js';
 import { cpFor, statsFor } from '../math/cp.js';
 import { specimenId, type ImportReport, type Specimen } from './specimen.js';
 
@@ -11,6 +13,15 @@ export interface ManualInput {
   ivs: IVs;
   cp: number;
   lucky?: boolean;
+  /** Ignored for a Shadow: a Shadow is not Purified. */
+  purified?: boolean;
+  /** The moves it knows now. Absent or empty: not entered. Each must be in the species' pool. */
+  currentMoves?: { fast: string | null; charged: string[] };
+  /**
+   * The level to keep when it gives exactly this CP: an evolved Pokemon keeps its level, and at
+   * low levels two levels can share a CP.
+   */
+  level?: number;
 }
 
 export interface ManualResult {
@@ -48,6 +59,36 @@ function checkIv(n: number, what: string): void {
   }
 }
 
+/** The moves typed in, checked against what the species can learn. */
+function knownMoves(
+  moves: ManualInput['currentMoves'],
+  sp: Species,
+  index: GameDataIndex,
+): { fast: string | null; charged: string[] } {
+  if (!moves) {
+    return { fast: null, charged: [] };
+  }
+  const charged = [...new Set(moves.charged)];
+  if (charged.length > 2) {
+    throw new Error('A Pokémon knows at most two charged moves.');
+  }
+  const check = (id: string, pool: string[]): void => {
+    if (!pool.includes(id)) {
+      throw new Error(`${sp.speciesName} cannot learn ${index.move(id)?.name ?? id}.`);
+    }
+  };
+  if (moves.fast !== null) {
+    check(moves.fast, sp.fastMoves);
+  }
+  for (const id of charged) {
+    // Frustration and Return come with being Shadow or Purified, not from the species' pool.
+    if (!LEGACY_SHADOW_MOVES.has(id)) {
+      check(id, sp.chargedMoves);
+    }
+  }
+  return { fast: moves.fast, charged };
+}
+
 export function manualSpecimen(input: ManualInput, index: GameDataIndex): ManualResult {
   const sp = index.species(input.speciesId);
   if (!sp) {
@@ -59,7 +100,17 @@ export function manualSpecimen(input: ManualInput, index: GameDataIndex): Manual
   if (!Number.isInteger(input.cp) || input.cp < 10) {
     throw new Error('Enter the CP shown on the Pokémon.');
   }
-  const match = levelForCp(sp.baseStats, input.ivs, input.cp);
+  const hinted =
+    input.level !== undefined &&
+    input.level >= 1 &&
+    input.level <= MAX_LEVEL &&
+    Number.isInteger(input.level * 2) &&
+    cpFor(sp.baseStats, input.ivs, input.level) === input.cp;
+  const match = hinted
+    ? { level: input.level as number, cp: input.cp, exact: true }
+    : levelForCp(sp.baseStats, input.ivs, input.cp);
+  const moves = knownMoves(input.currentMoves, sp, index);
+  const purified = input.purified === true && !sp.shadow;
   const hp = statsFor(sp.baseStats, input.ivs, match.level).hp;
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const id = specimenId(sp.speciesId, sp.shadow, input.ivs, match.level, match.cp, hp);
@@ -73,7 +124,7 @@ export function manualSpecimen(input: ManualInput, index: GameDataIndex): Manual
     ivs: { ...input.ivs },
     levelMin: match.level,
     levelMax: match.level,
-    shadowCode: sp.shadow ? 1 : 0,
+    shadowCode: sp.shadow ? 1 : purified ? 2 : 0,
     lucky: input.lucky ?? false,
     fastMove: null,
     chargedMoves: [],
@@ -91,9 +142,9 @@ export function manualSpecimen(input: ManualInput, index: GameDataIndex): Manual
       cp: match.cp,
       hp,
       shadow: sp.shadow,
-      purified: false,
+      purified,
       lucky: input.lucky ?? false,
-      currentMoves: { fast: null, charged: [] },
+      currentMoves: moves,
       scannedAt: now,
       raw,
       source: 'manual',

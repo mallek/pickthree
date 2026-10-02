@@ -138,7 +138,32 @@ function simWins(
   return wins;
 }
 
-export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
+/** The verdict of a Pokemon the engine could not judge: one bad row never takes the rest down. */
+export function unjudgedVerdict(s: Specimen, error: unknown, metaSize: number): Verdict {
+  return {
+    specimenId: s.id,
+    label: 'Not eligible',
+    line: `pick3 could not judge this one: ${error instanceof Error ? error.message : String(error)}`,
+    build: null,
+    buildSpecies: [],
+    megaBuilds: [],
+    moveset: null,
+    cost: null,
+    perfectDelta: null,
+    perfectLine: null,
+    metaWins: null,
+    metaSize,
+    metaRank: null,
+    formNote: null,
+    ineligible: null,
+  };
+}
+
+/**
+ * Judge one Pokemon. With `target`, it is judged as that species only (an Eevee as Umbreon on
+ * Umbreon's page), whatever its best stage is; without, as its best build.
+ */
+export function specimenVerdict(s: Specimen, deps: VerdictDeps, target?: string): Verdict {
   const metaSize = deps.meta.length;
   const base = {
     specimenId: s.id,
@@ -164,7 +189,8 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
     };
   }
   const builds = buildsFor(s, deps.index, { ...deps.buildOptions, minCp: 0 });
-  const build = bestBuild(builds, deps.overall);
+  const judged = target === undefined ? builds : builds.filter((b) => b.speciesId === target);
+  const build = bestBuild(judged, deps.overall);
   const buildSpecies = [...new Set(builds.map((b) => b.speciesId))];
   base.megaBuilds = builds
     .filter((b) => b.mega)
@@ -177,16 +203,23 @@ export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {
       mega,
     }));
   if (!build) {
-    const sp = deps.index.species(s.speciesId);
+    const sp = deps.index.species(target ?? s.speciesId);
     const banned = Boolean(sp && !allowedInLeague(sp, deps.league));
     const over = banned
       ? `is not allowed in ${deps.league.title}`
       : `is over ${deps.league.cp} CP and cannot be powered down`;
+    // Judged as a later stage: the line is about that stage, not the Pokemon as it stands.
+    const later = target !== undefined && target !== s.speciesId;
+    const stage = later ? fullName(target, deps.index) : name;
     return {
       ...base,
       label: 'Not eligible',
       ineligible: banned ? 'banned' : 'over-cap',
-      line: `This ${name} ${over}.`,
+      line: !later
+        ? `This ${name} ${over}.`
+        : banned
+          ? `${stage} is not allowed in ${deps.league.title}.`
+          : `This ${name} would be over ${deps.league.cp} CP as ${stage}.`,
     };
   }
   const moveset = recommendMoveset(

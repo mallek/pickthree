@@ -22,6 +22,7 @@ export * from './collection/manual.js';
 export * from './collection/pins.js';
 export * from './collection/merge.js';
 export * from './collection/evolve.js';
+export * from './collection/speciesView.js';
 export * from './math/cp.js';
 export * from './math/ivrank.js';
 export * from './builds/eligibility.js';

@@ -13,7 +13,13 @@ import type { Specimen } from './collection/specimen.js';
 import { explainTeam, type Explanation } from './explain/explain.js';
 import { GameDataIndex } from './gamedata/index.js';
 import type { DataManifest, MatchupMatrix, MetaEntry, Move, Species } from './gamedata/types.js';
-import { candidatePool, poolKinds, type Candidate, type Rankings, type Role } from './search/candidates.js';
+import {
+  candidatePool,
+  poolKinds,
+  type Candidate,
+  type Rankings,
+  type Role,
+} from './search/candidates.js';
 import { simulateFinalists, type SlotSim, type TeamSim } from './search/finalists.js';
 import { MatrixView } from './search/matrixView.js';
 import {
@@ -25,7 +31,13 @@ import {
 } from './search/trios.js';
 import { scoreTeam, type TeamScore } from './score/score.js';
 import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
-import { specimenVerdict, type Verdict } from './verdicts/worth.js';
+import { speciesView, type SpeciesView } from './collection/speciesView.js';
+import {
+  specimenVerdict,
+  unjudgedVerdict,
+  type Verdict,
+  type VerdictDeps,
+} from './verdicts/worth.js';
 import {
   heaviestColumns,
   profileFor,
@@ -321,56 +333,50 @@ function diversify<T extends { t: TeamSim }>(sorted: T[], n: number): T[] {
   return picked;
 }
 
+function verdictDeps(options: Partial<BuildOptions>, deps: EngineDeps): VerdictDeps {
+  return {
+    index: new GameDataIndex(deps.data.species, deps.data.moves),
+    league: deps.data.league,
+    overall: rankingsById(deps.data.rankings.overall),
+    metaRanks: metaRanks(deps.data.rankings),
+    view: new MatrixView(deps.data.matrix),
+    meta: deps.data.meta,
+    sim: deps.sim,
+    simOptions: deps.simOptions ?? simOptionsFor(deps.data.league),
+    buildOptions: { ...buildOptionsFor(deps.data.league), ...options },
+  };
+}
+
 export function verdictsFor(
   specimens: Specimen[],
   options: Partial<BuildOptions>,
   deps: EngineDeps,
   onProgress?: ProgressFn,
 ): Record<string, Verdict> {
-  const opts: BuildOptions = { ...buildOptionsFor(deps.data.league), ...options };
-  const index = new GameDataIndex(deps.data.species, deps.data.moves);
-  const view = new MatrixView(deps.data.matrix);
-  const overall = rankingsById(deps.data.rankings.overall);
-  const ranks = metaRanks(deps.data.rankings);
+  const vdeps = verdictDeps(options, deps);
   const out: Record<string, Verdict> = {};
   specimens.forEach((s, i) => {
     try {
-      out[s.id] = specimenVerdict(s, {
-        index,
-        league: deps.data.league,
-        overall,
-        metaRanks: ranks,
-        view,
-        meta: deps.data.meta,
-        sim: deps.sim,
-        simOptions: deps.simOptions ?? simOptionsFor(deps.data.league),
-        buildOptions: opts,
-      });
+      out[s.id] = specimenVerdict(s, vdeps);
     } catch (e) {
       // One bad row must never take the whole collection down with it.
-      out[s.id] = {
-        specimenId: s.id,
-        label: 'Not eligible',
-        line: `pick3 could not judge this one: ${e instanceof Error ? e.message : String(e)}`,
-        build: null,
-        buildSpecies: [],
-        megaBuilds: [],
-        moveset: null,
-        cost: null,
-        perfectDelta: null,
-        perfectLine: null,
-        metaWins: null,
-        metaSize: deps.data.meta.length,
-        metaRank: null,
-        formNote: null,
-        ineligible: null,
-      };
+      out[s.id] = unjudgedVerdict(s, e, deps.data.meta.length);
     }
     if (onProgress && (i % 10 === 0 || i === specimens.length - 1)) {
       onProgress('verdicts', i + 1, specimens.length);
     }
   });
   return out;
+}
+
+/** One species page: the copies that are it or can become it, judged as it, and the pick. */
+export function speciesViewFor(
+  speciesId: string,
+  specimens: Specimen[],
+  options: Partial<BuildOptions>,
+  deps: EngineDeps,
+): SpeciesView {
+  return speciesView(speciesId, specimens, options.pins ?? {}, verdictDeps(options, deps));
 }
 
 export type { TeamSim };
