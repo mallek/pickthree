@@ -81,6 +81,7 @@ const AUDIT_ENFORCED = new Set([
   '04-collection',
   '11-collection-group',
   'collection-flat',
+  'collection-pin',
   'collection-filters-sheet',
   'collection-judging',
   'collection-empty',
@@ -1195,6 +1196,48 @@ if (!/^[\d,]+ shown(\xa0· [\d,]+ not collected)?$/.test(flatCount)) {
 }
 await page.evaluate(() => window.scrollTo(0, 0));
 await shot('collection-flat', false);
+// The pin: on the copy teams use, only where there is another copy it was chosen over. In the flat
+// list every copy has its own row, so a pinned row has an unpinned row of the same Pokémon by it.
+const pinRow = '.scroll .spec-row .spec-named .spec-pin';
+const pinState = await page.evaluate((sel) => {
+  const pin = document.querySelector(sel);
+  if (!pin) {
+    return null;
+  }
+  const row = pin.closest('.spec-row');
+  const bar = document.querySelector('.sticky-bar').getBoundingClientRect().bottom;
+  window.scrollTo(0, window.scrollY + row.getBoundingClientRect().top - bar - 70);
+  const label = (r) => r.querySelector('.spec-name')?.firstChild?.textContent;
+  const same = [...document.querySelectorAll('.scroll .spec-row')].filter(
+    (r) => label(r) === label(row),
+  );
+  return {
+    name: label(row),
+    copies: same.length,
+    pinned: same.filter((r) => r.querySelector('.spec-pin')).length,
+    // The pin sits on the name's own line, whatever else the line carries (a Shadow flag).
+    stray: [...document.querySelectorAll('.spec-named')].filter((n) => {
+      const a = n.firstChild && document.createRange();
+      a?.selectNodeContents(n.firstChild);
+      const text = a?.getBoundingClientRect();
+      const pin = n.querySelector('.spec-pin').getBoundingClientRect();
+      return !text || pin.top > text.bottom || pin.bottom < text.top;
+    }).length,
+  };
+}, pinRow);
+console.log(`  pin: ${JSON.stringify(pinState)}`);
+// One pin per Pokémon a copy battles as: a Meltan fielded as Melmetal and another fielded as Meltan
+// are both pinned, so the count is at least one and never every row.
+if (
+  !pinState ||
+  pinState.copies < 2 ||
+  pinState.pinned >= pinState.copies ||
+  pinState.stray > 0
+) {
+  throw new Error(`collection, pin: no pinned row with a rival copy (${JSON.stringify(pinState)})`);
+}
+await shot('collection-pin', false, { mustShow: pinRow });
+await page.evaluate(() => window.scrollTo(0, 0));
 // The detail pages are picked from this flat list (every Pokémon, not only each group's best) by
 // what they show: a building Pokémon (cost tiles, no evolution), an evolving one, and a built one.
 const listRows = await page.$$eval('.spec-row:not(.sub)', (rows) =>

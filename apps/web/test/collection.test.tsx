@@ -581,6 +581,39 @@ describe('Collection', () => {
     expect(lead('Tinkaton')).toBe('Wait for better IVs');
   });
 
+  it('marks the copy teams use with a pin, only where it was chosen over another', async () => {
+    // Tinkaton: two copies, b fielded. Medicham: the only copy, fielded, nothing to mark.
+    await open(async () => ({
+      ...VERDICTS,
+      b: { ...verdict('b', 'Worth building', 50), fieldedAmong: 2 },
+      e: { ...verdict('e', 'Worth building', 40), fieldedAmong: 1 },
+    }));
+    await judged();
+    const rowOf = (n: string) =>
+      [...document.querySelectorAll('.spec-row:not(.sub)')].find(
+        (r) => r.querySelector('.spec-name')?.firstChild?.textContent === n,
+      ) as HTMLElement;
+    // The Built Tinkaton leads its group; the pinned one is behind "1 more".
+    expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /1 more/ }));
+    });
+    const pins = screen.getAllByRole('img', { name: 'Pinned' });
+    expect(pins).toHaveLength(1);
+    expect(pins[0]!.closest('.spec-row')).toHaveClass('sub');
+    expect(within(rowOf('Medicham')).queryByRole('img', { name: 'Pinned' })).toBeNull();
+  });
+
+  it('puts the pin after the name when the fielded copy leads its group', async () => {
+    await open(async () => ({
+      ...VERDICTS,
+      a: { ...verdict('a', 'Built', 10), fieldedAmong: 2 },
+    }));
+    await judged();
+    const pin = screen.getByRole('img', { name: 'Pinned' });
+    expect(pin.closest('.spec-name')).toHaveTextContent('Tinkaton');
+  });
+
   it('marks a row whose Pokémon, as it battles, is excluded with a grey Excluded tag', async () => {
     await storage.saveSettings({
       ...(await storage.loadSettings()),

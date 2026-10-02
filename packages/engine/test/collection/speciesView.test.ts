@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_OPTIONS } from '../../src/builds/eligibility.js';
-import { speciesMembers, speciesView } from '../../src/collection/speciesView.js';
+import { markFielded, speciesMembers, speciesView } from '../../src/collection/speciesView.js';
 import { GREAT_LEAGUE_DEF } from '../../src/gamedata/league.js';
 import { MatrixView } from '../../src/search/matrixView.js';
-import type { VerdictDeps } from '../../src/verdicts/worth.js';
+import { specimenVerdict, type Verdict, type VerdictDeps } from '../../src/verdicts/worth.js';
 import { mon, syntheticIndex } from './synthetic.js';
 
 const index = syntheticIndex();
@@ -151,5 +151,45 @@ describe('speciesView', () => {
     const view = speciesView('stunfisk', copies, {}, deps);
     expect(view.copies).toEqual([]);
     expect(view.pickId).toBeNull();
+  });
+});
+
+describe('markFielded', () => {
+  // Stunfisk evolves into nothing, so each copy's verdict is about Stunfisk itself.
+  const good = mon('good', 'stunfisk', { ivs: { atk: 0, def: 15, sta: 15 } });
+  const bad = mon('bad', 'stunfisk', { ivs: { atk: 15, def: 0, sta: 0 } });
+  const judge = (list: (typeof good)[]): Record<string, Verdict> =>
+    Object.fromEntries(list.map((s) => [s.id, specimenVerdict(s, deps)]));
+  const marked = (list: (typeof good)[], pins = {}): Record<string, Verdict> =>
+    markFielded(list, judge(list), pins, deps);
+
+  it('marks the pick with how many copies it was chosen from, and no other copy', () => {
+    const view = speciesView('stunfisk', [bad, good], {}, deps);
+    const out = marked([bad, good]);
+    const other = view.pickId === 'good' ? 'bad' : 'good';
+    expect(out[view.pickId!]?.fieldedAmong).toBe(2);
+    expect(out[other]?.fieldedAmong).toBeUndefined();
+  });
+
+  it('follows a pin, and marks nothing for an unpinned species', () => {
+    const plain = speciesView('stunfisk', [bad, good], {}, deps);
+    const other = plain.pickId === 'good' ? 'bad' : 'good';
+    const pinned = marked([bad, good], { stunfisk: other });
+    expect(pinned[other]?.fieldedAmong).toBe(2);
+    expect(pinned[plain.pickId!]?.fieldedAmong).toBeUndefined();
+    const none = marked([bad, good], { stunfisk: null });
+    expect(none.good?.fieldedAmong).toBeUndefined();
+    expect(none.bad?.fieldedAmong).toBeUndefined();
+  });
+
+  it('an only copy is fielded among one', () => {
+    expect(marked([good]).good?.fieldedAmong).toBe(1);
+  });
+
+  it('leaves the verdicts it was given untouched', () => {
+    const before = judge([bad, good]);
+    markFielded([bad, good], before, {}, deps);
+    expect(before.good?.fieldedAmong).toBeUndefined();
+    expect(before.bad?.fieldedAmong).toBeUndefined();
   });
 });

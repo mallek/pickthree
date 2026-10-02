@@ -38,6 +38,12 @@ export interface Verdict {
    * specimen has none. The Pokemon page lists them beside the verdict's build.
    */
   megaBuilds: MegaBuildLine[];
+  /**
+   * Set on the copy teams use for the verdict's species (the pin, or the default pick): how many
+   * of the player's copies have a verdict about that species. Absent on every other copy. Above one,
+   * the copy was chosen over others, which is when a list marks it.
+   */
+  fieldedAmong?: number;
   moveset: Moveset | null;
   cost: Cost | null;
   /** Wins the rank-1 twin gets minus this specimen's wins across the meta, 1-1 shields. */

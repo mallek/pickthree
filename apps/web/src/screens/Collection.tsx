@@ -1,4 +1,4 @@
-import type { Specimen, VerdictLabel } from '@pickthree/engine';
+import type { Specimen, Verdict, VerdictLabel } from '@pickthree/engine';
 import {
   Chevron,
   Empty,
@@ -17,6 +17,7 @@ import {
   CogGlyph,
   HundoTag,
   MetaRankTags,
+  PinGlyph,
   PokemonToken,
   Progress,
   VerdictTag,
@@ -121,6 +122,20 @@ const NO_PILLS: VerdictLabel[] = [];
 type Item =
   | { kind: 'mine'; key: string; best: Specimen; others: Specimen[] }
   | { kind: 'missing'; key: string; id: string };
+
+/** The copy teams use, where it was chosen over others: with one copy there is nothing to mark. */
+function pinned(v: Verdict | undefined): boolean {
+  return (v?.fieldedAmong ?? 0) > 1;
+}
+
+/** The species page's pin, small, after a row's name: this is the copy teams use. */
+function PinnedMark() {
+  return (
+    <span className="muted spec-pin" role="img" aria-label="Pinned">
+      <PinGlyph on />
+    </span>
+  );
+}
 
 export function Collection() {
   const s = useAppState();
@@ -563,7 +578,14 @@ export function Collection() {
                 />
                 <span style={{ minWidth: 0 }}>
                   <span className="spec-name">
-                    {name(sp.speciesId).replace(/^Shadow /, '')}
+                    {pinned(v) ? (
+                      <span className="spec-named">
+                        {name(sp.speciesId).replace(/^Shadow /, '')}
+                        <PinnedMark />
+                      </span>
+                    ) : (
+                      name(sp.speciesId).replace(/^Shadow /, '')
+                    )}
                     {sp.shadow ? <span className="shadow-flag">Shadow</span> : null}
                     {v?.ineligible === 'banned' ? <span className="ban-flag">Banned</span> : null}
                   </span>
@@ -613,6 +635,7 @@ export function Collection() {
                           <span className="meta" style={{ display: 'block' }}>
                             CP {o.cp} · {rankLabel(o, ov)} · Level {o.level.max}
                             {o.lucky ? ' · Lucky' : ''}
+                            {pinned(ov) ? <PinnedMark /> : null}
                           </span>
                           {isExcluded(o.id) ? (
                             <span className="mtags">

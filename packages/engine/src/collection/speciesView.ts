@@ -142,3 +142,41 @@ export function speciesView(
     unpinned: pin === null,
   };
 }
+
+/**
+ * The verdicts with the copy fielded for each battling species marked (`fieldedAmong`), picked as
+ * a species page picks it: the pin or the default, with no CP floor. Only where the copy's own
+ * verdict is about that species, so a list row and its mark name the same Pokemon.
+ */
+export function markFielded(
+  specimens: readonly Specimen[],
+  verdicts: Record<string, Verdict>,
+  pins: PinMap,
+  deps: VerdictDeps,
+): Record<string, Verdict> {
+  const { index } = deps;
+  const opts = { ...deps.buildOptions, minCp: 0 };
+  const builds = specimens.flatMap((s) => {
+    try {
+      return buildsFor(asOwn(s, index), index, opts);
+    } catch {
+      return [];
+    }
+  });
+  // Rivals are the copies a list shows as the same thing: those whose verdict is about the species.
+  // A Meltan judged as Meltan is not a rival of the five judged as Melmetal.
+  const among = new Map<string, number>();
+  for (const v of Object.values(verdicts)) {
+    if (v.build) {
+      among.set(v.build.speciesId, (among.get(v.build.speciesId) ?? 0) + 1);
+    }
+  }
+  const out = { ...verdicts };
+  for (const f of fieldedBuilds(builds, pins)) {
+    const v = out[f.specimenId];
+    if (v?.build?.speciesId === f.speciesId) {
+      out[f.specimenId] = { ...v, fieldedAmong: among.get(f.speciesId) ?? 1 };
+    }
+  }
+  return out;
+}

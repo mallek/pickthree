@@ -31,7 +31,7 @@ import {
 } from './search/trios.js';
 import { scoreTeam, type TeamScore } from './score/score.js';
 import type { BattleSimulator, SimOptions } from './sim/BattleSimulator.js';
-import { speciesView, type SpeciesView } from './collection/speciesView.js';
+import { markFielded, speciesView, type SpeciesView } from './collection/speciesView.js';
 import {
   specimenVerdict,
   unjudgedVerdict,
@@ -366,7 +366,7 @@ export function verdictsFor(
       onProgress('verdicts', i + 1, specimens.length);
     }
   });
-  return out;
+  return markFielded(specimens, out, options.pins ?? {}, vdeps);
 }
 
 /** One species page: the copies that are it or can become it, judged as it, and the pick. */

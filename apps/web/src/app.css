@@ -1435,6 +1435,26 @@ textarea.paste {
   padding: 6px 0 6px 0;
   border-top: 1px dashed var(--divider);
 }
+/* Collection: the pin after a row's name, on the copy teams use when you hold more than one. */
+.spec-pin {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+/* The name and its pin stay together when the Shadow flag wraps the line. */
+.spec-named {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.spec-named > .spec-pin {
+  margin-left: 0;
+}
+.spec-pin svg {
+  width: 14px;
+  height: 14px;
+}
 .shadow-flag {
   font-size: 10px;
   letter-spacing: 0.06em;
