@@ -308,6 +308,11 @@ async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
   if (name !== 'cup-nudge' && (await page.$('.notice-toast .notice-quiet'))) {
     throw new Error(`${name}: the cup nudge is on the page, so this capture would show it`);
   }
+  // The sub header pads itself, safe-area inset included. Inside `.page-head`, which pads too, an
+  // installed phone app shows the status bar gap twice and two divider lines.
+  if (await page.$('.page-head .hdr')) {
+    throw new Error(`${name}: a sub header sits inside .page-head, so its top gap is doubled`);
+  }
   // A full-page shot resizes the viewport to the page instead of stitching past it, so the fixed
   // tab bar lands at the true bottom rather than across the middle of the page.
   const options = fullPage ? { fullPage, captureBeyondViewport: false } : { fullPage };
@@ -1739,7 +1744,7 @@ if (!runThis.includes('Run this team')) {
   throw new Error(`top teams: the open row has no Run this team: ${runThis.join(', ')}`);
 }
 await shot('meta-teams-open', false, { mustShow: '.tb-team-row.open .row-body' });
-await page.click('.page-head .hdr .back');
+await page.click('.hdr .back');
 await page.waitForFunction(() => window.location.hash === '#/meta', { timeout: 15_000 });
 await metaHomeSettled();
 
@@ -1889,7 +1894,7 @@ await shot('23-counters-vs', false);
 await page.click('.counters-head .hdr .back');
 await page.waitForFunction((h) => window.location.hash === h, { timeout: 15_000 }, facedHref);
 await page.waitForSelector(whoBeats, { timeout: 30_000 });
-await page.click('.page-head .hdr .back');
+await page.click('.hdr .back');
 await page.waitForFunction(() => window.location.hash === '#/meta/battles', { timeout: 15_000 });
 
 console.log('who beats an outsider (simulated on device)');

@@ -2450,18 +2450,23 @@ textarea.paste {
 
 /* Counters: the Against picker and the filter icon on one row, the line with Sort under it, then
    rows (not links) whose labeled links sit on their last line. */
-/* Jumped to (the sub header): the header and the controls stick together, as Log a Battle's. */
-.counters-head {
+/* Jumped to (the sub header): the header and the controls stick together, as Log a Battle's.
+   `.sub-head` is the same pairing for any page with a sub header over controls: the header pads
+   itself (safe-area inset included), so it never goes inside `.page-head`, which pads too. */
+.counters-head,
+.sub-head {
   position: sticky;
   top: 0;
   z-index: 3;
   background: var(--bg);
 }
-.counters-head .hdr {
+.counters-head .hdr,
+.sub-head .hdr {
   position: static;
   border-bottom: 0;
 }
-.counters-head .page-head {
+.counters-head .page-head,
+.sub-head .page-head {
   position: static;
   padding-top: 4px;
 }

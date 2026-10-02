@@ -491,7 +491,7 @@ export function SpeciesPage({ id }: { id: string }) {
   if (!s.data || known === null || (!known && viewPending)) {
     return (
       <div className="screen">
-        <div className="page-head">{header}</div>
+        {header}
         <div className="scroll">
           <Loading label="Loading" />
         </div>
@@ -501,7 +501,7 @@ export function SpeciesPage({ id }: { id: string }) {
   if (!known && !shown) {
     return (
       <div className="screen">
-        <div className="page-head">{header}</div>
+        {header}
         <div className="scroll">
           <Empty
             line={
@@ -876,7 +876,7 @@ export function SpeciesPage({ id }: { id: string }) {
   if (!known) {
     return (
       <div className="screen">
-        <div className="page-head">{header}</div>
+        {header}
         <div className="scroll" style={{ gap: 22 }}>
           {hero}
           <p style={{ margin: 0 }}>
@@ -891,7 +891,7 @@ export function SpeciesPage({ id }: { id: string }) {
 
   return (
     <div className="screen">
-      <div className="page-head">{header}</div>
+      {header}
       <div className="scroll" style={{ gap: 22 }}>
         {hero}
 

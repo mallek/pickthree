@@ -628,26 +628,28 @@ export function TopTeams() {
 
   return (
     <div className="screen">
-      <div className="page-head">
+      <div className="sub-head">
         <Header
           variant="sub"
           title="Top teams"
           back={{ label: 'Back', onClick: () => back({ screen: 'meta' }) }}
         />
-        <LeagueSwitcher />
-        <div className="tb-filters">
-          <Select
-            label="Window"
-            value={w}
-            onChange={(next) => choose({ w: next, src })}
-            options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
-          />
-          <Select
-            label="Source"
-            value={src}
-            onChange={(next) => choose({ w, src: next })}
-            options={SOURCES.map((k) => ({ value: k, label: SOURCE_LABELS[k] }))}
-          />
+        <div className="page-head">
+          <LeagueSwitcher />
+          <div className="tb-filters">
+            <Select
+              label="Window"
+              value={w}
+              onChange={(next) => choose({ w: next, src })}
+              options={WINDOWS.map((k) => ({ value: k, label: WINDOW_LABELS[k] }))}
+            />
+            <Select
+              label="Source"
+              value={src}
+              onChange={(next) => choose({ w, src: next })}
+              options={SOURCES.map((k) => ({ value: k, label: SOURCE_LABELS[k] }))}
+            />
+          </div>
         </div>
       </div>
       <div className="scroll tb-board">

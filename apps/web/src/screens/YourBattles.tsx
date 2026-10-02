@@ -71,7 +71,7 @@ export function YourBattles() {
 
   return (
     <div className="screen">
-      <div className="page-head">
+      <div className="sub-head">
         <Header
           variant="sub"
           title="Your battles"
@@ -82,8 +82,10 @@ export function YourBattles() {
             </IconButton>
           }
         />
-        <LeagueSwitcher />
-        <ProgressLine />
+        <div className="page-head">
+          <LeagueSwitcher />
+          <ProgressLine />
+        </div>
       </div>
       <div className="scroll" style={{ gap: 18 }}>
         {stale ? (
