@@ -652,6 +652,8 @@ describe('Edit', () => {
       level: 20,
     });
     await waitFor(async () => expect((await stored('y')).speciesId).toBe('azumarill'));
+    // It is an Azumarill now: the form hands off to that page, not back to Marill's.
+    expect(latest?.state.route).toEqual({ screen: 'species', id: 'azumarill', copy: 'y' });
     const y = await stored('y');
     expect(y.evolvedFrom).toBe('marill');
     expect(y.level).toEqual({ min: 20, max: 20 });

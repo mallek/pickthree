@@ -39,7 +39,9 @@ export function MovesCard({
   const edit = onChange !== undefined;
   const fast = known ? known.fast : pool.recommended.fast;
   const charged = known ? known.charged : pool.recommended.charged;
-  const fastName = pool.fast.find((m) => m.moveId === fast)?.name ?? null;
+  // With no fast move known, the counts are against PvPoke's, which the pool figured them for.
+  const fastName =
+    pool.fast.find((m) => m.moveId === (fast ?? pool.recommended.fast))?.name ?? null;
   const full = charged.length >= 2;
   const waiting = edit && full && pool.charged.length > 2;
   const toggle = (id: string): void => {

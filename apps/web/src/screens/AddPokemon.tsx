@@ -356,7 +356,8 @@ export function AddPokemon() {
       // opened it (a species page), so no page is left twice in history; opened straight from a
       // link, with nothing behind, it lands on the Pokémon's species page.
       const finish = (): void => {
-        if (editId && canGoBack()) {
+        // Evolved, it is no longer on the page that opened the form: its new species page it is.
+        if (editId && canGoBack() && !evolved) {
           window.history.back();
         } else {
           navigate(

@@ -92,14 +92,19 @@ const AUDIT_ENFORCED = new Set([
   'species-owned',
   'species-moves',
   'species-unowned',
-  '05-specimen',
-  'specimen-built',
-  'specimen-evolve',
-  'specimen-excluded',
-  'specimen-manual',
-  'specimen-remove-confirm',
-  'specimen-edit',
-  'specimen-not-found',
+  'species-copy',
+  'species-copy-built',
+  'species-copy-evolve',
+  'species-excluded',
+  'species-copy-manual',
+  'species-copy-shown',
+  'species-pin-confirm',
+  'species-unpin-confirm',
+  'species-unpinned',
+  'species-remove-confirm',
+  'edit',
+  'edit-dirty',
+  'pokemon-link-not-found',
   '08-counters',
   'counters-filters',
   '18b-counters-no-collection',
@@ -1143,7 +1148,7 @@ await page.evaluate(() => window.scrollTo(0, 0));
 await shot('collection-rescan', false, { mustShow: rescanRow });
 await rescanPill();
 await page.waitForFunction(() =>
-  document.querySelector('.scroll .spec-row[href^="#/collection/"]'),
+  document.querySelector('.scroll .spec-row[href*="?copy="]'),
 );
 await page.evaluate(() => window.scrollTo(0, 0));
 
@@ -1247,38 +1252,38 @@ const trendTags = await page.$$eval('.scroll .spec-row .mtags .trend[aria-label]
 console.log(`  trend tags on screen: ${trendTags.slice(0, 6).join(', ')}`);
 await shot('collection-league-meta', false);
 // The meta's highest-ranked Pokémon you own, for the species page's collected capture below.
-const topOwnedHref = await page.$eval('.scroll .spec-row[href^="#/collection/"]', (a) =>
+const topOwnedHref = await page.$eval('.scroll .spec-row[href*="?copy="]', (a) =>
   a.getAttribute('href'),
 );
 await page.select('.sort-row select', 'verdict');
 await page.evaluate(() => window.scrollTo(0, 0));
 
-console.log('specimen');
+console.log('species page, your copy');
 // Hash navigation keeps the verdicts in memory.
-/** Opens a detail page in place and waits for its verdict; returns what the page shows. */
+/**
+ * Opens a species page on one copy (a Collection row's link) and waits for that copy to be the
+ * one shown, judged; returns what the page shows of it.
+ */
 const openSpecimen = async (href) => {
-  // The page being left (the list, or another Pokémon) has a verdict tag too, and the hash matches
-  // at once, so mark its scroll area first and wait for a fresh one. Each detail page is keyed by
-  // its id, so a new Pokémon mounts a new `.scroll` without the mark.
+  const copy = decodeURIComponent(href.split('copy=')[1] ?? '');
   await page.evaluate((h) => {
-    if (window.location.hash !== h) {
-      for (const el of document.querySelectorAll('.scroll')) {
-        el.setAttribute('data-leaving', '');
-      }
-    }
     window.location.hash = h;
   }, href);
+  // The shown copy is the one whose Edit icon names it; its facts card carries the verdict.
   await page.waitForFunction(
-    (h) =>
+    (h, id) =>
       window.location.hash === h &&
-      document.querySelector('.scroll:not([data-leaving]) .verdict-tag'),
+      document.querySelector(`.scroll a[aria-label="Edit"][href="#/add?edit=${id}"]`) &&
+      document.querySelector('.scroll .card:not(.sp-yours) .verdict-tag') &&
+      !document.querySelector('.scroll .ui-loading'),
     { timeout: 30_000 },
     href,
+    encodeURIComponent(copy),
   );
   await new Promise((r) => setTimeout(r, 200));
   return page.evaluate(() => {
     const rankKv = [...document.querySelectorAll('.scroll .kv')].find((k) =>
-      k.firstElementChild?.textContent?.startsWith('IV rank'),
+      k.firstElementChild?.textContent?.endsWith('IV rank'),
     );
     const rank = /^(\d+) of (\d+)$/.exec(rankKv?.lastElementChild?.textContent ?? '');
     const levels = [...document.querySelectorAll('.scroll .small.muted')]
@@ -1286,6 +1291,10 @@ const openSpecimen = async (href) => {
       .find(Boolean);
     return {
       evolves: Boolean(document.querySelector('.evo')),
+      // The page of what this copy builds best as, when that is another species than this page.
+      bestAs:
+        document.querySelector('.scroll a.action-row[href^="#/species/"]')?.getAttribute('href') ??
+        null,
       tiles: document.querySelectorAll('.stat3 .stat').length,
       topShare: rank ? Number(rank[1]) / Number(rank[2]) : null,
       buildLevel: levels ? Number(levels[2]) : null,
@@ -1299,7 +1308,7 @@ const pickSpecimen = async (what, verdicts, test) => {
       return { href: row.href, ...shown };
     }
   }
-  throw new Error(`specimen: the sample collection has no ${what} Pokémon to capture`);
+  throw new Error(`species page: the sample collection has no ${what} Pokémon to capture`);
 };
 // Top quarter IVs as well, so the same Pokémon at its build level is Built (seeded below).
 const building = await pickSpecimen(
@@ -1310,20 +1319,21 @@ const building = await pickSpecimen(
 const evolving = await pickSpecimen(
   'evolving',
   ['Worth building', 'Wait for better IVs', 'Built'],
-  (p) => p.evolves,
+  (p) => p.bestAs !== null,
 );
 
 await openSpecimen(building.href);
 await page.evaluate(() => window.scrollTo(0, 0));
 // The building Pokémon: cost tiles and no evolution card, so the evolving page cannot pass.
-await shot('05-specimen', true, { mustShow: '.scroll:not(:has(.evo)) .stat3' });
+await shot('species-copy', true, { mustShow: '.scroll:not(:has(.evo)) .stat3' });
 
-console.log('specimen, excluded');
+console.log('species page, excluded');
 const specimenSwitch = '.scroll [role="switch"]';
 await page.click(specimenSwitch);
 await page.waitForSelector(`${specimenSwitch}[aria-checked="false"]`);
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('specimen-excluded');
+await page.$eval(specimenSwitch, (el) => el.scrollIntoView({ block: 'center' }));
+await shot('species-excluded', false, { mustShow: specimenSwitch });
 
 console.log('collection, excluded');
 // While that Pokémon is out, its row in Collection carries the grey Excluded tag.
@@ -1351,18 +1361,23 @@ await openSpecimen(building.href);
 await page.click(specimenSwitch);
 await page.waitForSelector(`${specimenSwitch}[aria-checked="true"]`);
 
-console.log('specimen, evolving');
-await openSpecimen(evolving.href);
+console.log('species page, a copy to evolve');
+// A copy's own page never evolves it: the page it is "Best as" does, with the lower form shown.
+const evolved = await openSpecimen(evolving.bestAs);
+if (!evolved.evolves) {
+  throw new Error(`species page, a copy to evolve: no evolve card on ${evolving.bestAs}`);
+}
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('specimen-evolve', true, { mustShow: '.evo' });
+await shot('species-copy-evolve', true, { mustShow: '.evo' });
 
-console.log('specimen, built');
+console.log('species page, a built copy');
 // The sample has no Pokémon already at its build level, so one is seeded: a copy of the building
 // Pokémon above, powered up to its build level (CP and HP worked out as the game does), written to
 // the saved collection. After the shot the saved collection goes back exactly as it was.
-const buildingId = decodeURIComponent(building.href.slice('#/collection/'.length));
+const buildingId = decodeURIComponent(building.href.split('copy=')[1]);
+const buildingPage = building.href.split('?')[0];
 const seeded = await page.evaluate(
-  async (id, level, cpm) => {
+  async (id, level, cpm, pageHref) => {
     const pokemon = await (await fetch('/data/pokemon.json')).json();
     return new Promise((resolve, reject) => {
       const open = indexedDB.open('pickthree');
@@ -1396,7 +1411,7 @@ const seeded = await page.evaluate(
             raw: { ...sp.raw, cp, hp, levelMin: level, levelMax: level },
           };
           store.put({ ...before, specimens: [...before.specimens, copy] });
-          resolve({ before, href: `#/collection/${encodeURIComponent(copy.id)}` });
+          resolve({ before, href: `${pageHref}?copy=${encodeURIComponent(copy.id)}` });
         };
       };
     });
@@ -1404,24 +1419,34 @@ const seeded = await page.evaluate(
   buildingId,
   building.buildLevel,
   cpmForLevel(building.buildLevel),
+  buildingPage,
 );
 if (seeded.error) {
-  throw new Error(`specimen, built: ${seeded.error}`);
+  throw new Error(`species page, built: ${seeded.error}`);
 }
 await page.goto(`${base}/${seeded.href}`, { waitUntil: 'domcontentloaded' });
 await page.reload({ waitUntil: 'networkidle0' });
-await page.waitForSelector('.scroll .verdict-tag[data-verdict="Built"]', { timeout: 120_000 });
+const builtTag = '.scroll .card:not(.sp-yours) .verdict-tag[data-verdict="Built"]';
+await page.waitForSelector(builtTag, { timeout: 120_000 });
 await page.waitForFunction(() => !document.querySelector('.ui-loading'), { timeout: 120_000 });
 await page.evaluate(() => window.scrollTo(0, 0));
-const builtLine = await page.evaluate(() =>
-  [...document.querySelectorAll('.scroll p')].some((p) =>
+// Nothing left to power up: either the section is gone (nothing to pay at all) or it says so and
+// names what is still owed (a second move unlock). Never a "Level A to B" line.
+const builtCost = await page.evaluate(() => ({
+  heading: [...document.querySelectorAll('.scroll h3')].some(
+    (h) => h.textContent === 'Cost to build',
+  ),
+  already: [...document.querySelectorAll('.scroll p')].some((p) =>
     p.textContent?.startsWith('Already at level'),
   ),
-);
-if (!builtLine) {
-  throw new Error('specimen, built: no "Already at level" line');
+  levels: [...document.querySelectorAll('.scroll .small.muted')].some((e) =>
+    /^Level [\d.]+ to /.test(e.textContent ?? ''),
+  ),
+}));
+if (builtCost.levels || builtCost.heading !== builtCost.already) {
+  throw new Error(`species page, built: ${JSON.stringify(builtCost)}`);
 }
-await shot('specimen-built');
+await shot('species-copy-built', true, { mustShow: builtTag });
 await page.evaluate(
   (before) =>
     new Promise((resolve, reject) => {
@@ -1442,12 +1467,12 @@ await page.evaluate(
 );
 await page.reload({ waitUntil: 'networkidle0' });
 
-console.log('specimen, not found');
+console.log('an old Pokemon link, not found');
 await page.evaluate(() => {
   window.location.hash = '#/collection/not-a-real-specimen';
 });
 await page.waitForSelector('.scroll .ui-empty');
-await shot('specimen-not-found', false, { mustShow: '.scroll .ui-empty' });
+await shot('pokemon-link-not-found', false, { mustShow: '.scroll .ui-empty' });
 
 console.log('counters');
 await page.goto(`${base}/#/counters`, { waitUntil: 'networkidle0' });
@@ -1929,12 +1954,14 @@ await page.evaluate(() => window.scrollTo(0, 0));
 await shot('species-unowned');
 
 console.log('species page, collected');
-// From the meta's highest-ranked Pokémon you own, its "See X in the meta" row: your copies,
-// best first.
+// The meta's highest-ranked Pokémon you own, on the page of what it builds best as (its "Best as"
+// row, when its own page is not that): your copies, best first.
 await openSpecimen(topOwnedHref);
-const seeInMeta = '.scroll a.action-row[href^="#/species/"]';
-await page.$eval(seeInMeta, (a) => a.scrollIntoView({ block: 'center' }));
-await page.click(seeInMeta);
+const bestAs = '.scroll a.action-row[href^="#/species/"]';
+if (await page.$(bestAs)) {
+  await page.$eval(bestAs, (a) => a.scrollIntoView({ block: 'center' }));
+  await page.click(bestAs);
+}
 await page.waitForFunction(
   () =>
     window.location.hash.startsWith('#/species/') &&
@@ -1946,7 +1973,7 @@ await page.waitForFunction(
 const owned = await page.evaluate(
   () =>
     [...document.querySelectorAll('.scroll .meta')].find((e) =>
-      /^You have \d+$/.test(e.textContent ?? ''),
+      /^You have \d+/.test(e.textContent ?? ''),
     )?.textContent ?? null,
 );
 if (!owned) {
@@ -1954,25 +1981,74 @@ if (!owned) {
 }
 console.log(`  ${page.url().split('#')[1]}: ${owned}`);
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('species-owned');
+await shot('species-owned', true);
 
-console.log('species page, recommended moves');
-// PvPoke's set for the species from the worker's move pool, laid out as the specimen page's.
-const recommendedHead = await page.waitForFunction(
+console.log('species page, moves');
+// Every move the species can know, PvPoke's set starred, the shown copy's moves ticked.
+const movesHead = await page.waitForFunction(
   () =>
     [...document.querySelectorAll('.scroll h3')].find(
-      (h) =>
-        h.textContent === 'Recommended moves' &&
-        h.parentElement?.querySelector('.move-row .move-name'),
+      (h) => h.textContent === 'Moves' && h.parentElement?.querySelector('.move-opt .star-glyph'),
     ),
   { timeout: 30_000 },
 );
-await recommendedHead.evaluate((h) => {
+await movesHead.evaluate((h) => {
   h.parentElement.setAttribute('data-shot-moves', '');
   const top = document.querySelector('.page-head')?.getBoundingClientRect().height ?? 0;
   window.scrollTo(0, window.scrollY + h.getBoundingClientRect().top - top - 16);
 });
-await shot('species-moves', false, { mustShow: '[data-shot-moves] .move-row' });
+await shot('species-moves', false, { mustShow: '[data-shot-moves] .move-opt' });
+
+console.log('species page, pins');
+/** Clicks the button of a confirm sheet by its words, and waits for the sheet to go. */
+const answerConfirm = async (label) => {
+  await page.$$eval(
+    '.ui-confirm button',
+    (els, l) => els.find((e) => e.textContent?.trim() === l)?.click(),
+    label,
+  );
+  await page.waitForSelector('.ui-confirm', { hidden: true });
+};
+const pinButton = '.scroll button[aria-label^="Pin"]';
+await page.evaluate(() => window.scrollTo(0, 0));
+const yoursRows = await page.$$eval('.scroll .sp-yours .spec-row', (rows) => rows.length);
+if (yoursRows >= 2) {
+  // Another copy, tapped: shown in place with an empty pin, the pinned row keeping its mark.
+  await page.$eval('.scroll .sp-yours .spec-row:nth-child(2)', (a) => {
+    a.scrollIntoView({ block: 'center' });
+    a.click();
+  });
+  await page.waitForSelector('.scroll button[aria-label^="Pin for"]');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await shot('species-copy-shown', true, { mustShow: '.scroll button[aria-label^="Pin for"]' });
+  await page.click('.scroll button[aria-label^="Pin for"]');
+  await page.waitForSelector('.ui-confirm');
+  await shot('species-pin-confirm', false, { mustShow: '.ui-confirm' });
+  await answerConfirm('Cancel');
+  await page.$eval('.scroll .sp-yours .spec-row:nth-child(1)', (a) => a.click());
+  await page.waitForSelector('.scroll button[aria-label^="Pinned for"]');
+} else {
+  console.log('  only one copy on this page: no second copy to show or pin');
+}
+// The filled pin: unpin, the page saying none is fielded, then the same copy pinned again, so
+// teams field what they did before.
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.click('.scroll button[aria-label^="Pinned for"]');
+await page.waitForSelector('.ui-confirm');
+await shot('species-unpin-confirm', false, { mustShow: '.ui-confirm' });
+await answerConfirm('Unpin');
+await page.waitForFunction(
+  () =>
+    [...document.querySelectorAll('.scroll .card p')].some((p) =>
+      p.textContent?.includes('is pinned for'),
+    ) && !document.querySelector('.scroll .sp-pinned'),
+  { timeout: 30_000 },
+);
+await shot('species-unpinned', true, { mustShow: pinButton });
+await page.click('.scroll button[aria-label^="Pin for"]');
+await page.waitForSelector('.ui-confirm');
+await answerConfirm('Pin this one');
+await page.waitForSelector('.scroll button[aria-label^="Pinned for"]', { timeout: 30_000 });
 
 console.log('your battles and the landing, 15 or more battles');
 // Six more battles on the running team, sent to the community meta, so the season passes 15 and
@@ -2560,47 +2636,76 @@ await page.click('.scroll > .btn');
 await page.waitForSelector('.stat3, .verdict-tag', { timeout: 60_000 });
 await new Promise((r) => setTimeout(r, 600));
 console.log(`  manual add landed at ${page.url()}`);
-// The hand-added Pokémon's own page: full page, so Remove from collection is in the shot.
-await page.waitForSelector('.scroll .ui-btn-danger');
+// The hand-added Pokémon on its species page: full page, with remove beside its heading.
+const removeIcon = '.scroll button[aria-label="Remove from collection"]';
+await page.waitForSelector(removeIcon);
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'), {
+  timeout: 60_000,
+});
+if (!page.url().includes('#/species/') || !page.url().includes('copy=')) {
+  throw new Error(`manual add: landed on ${page.url()}, not the species page with the copy`);
+}
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('specimen-manual', true, { mustShow: '.scroll .ui-btn-danger' });
+await shot('species-copy-manual', true, { mustShow: removeIcon });
 
-console.log('specimen, remove confirm');
+console.log('species page, remove confirm');
 // Opens the confirm and cancels it: the Pokémon stays for the steps after this one.
-await page.click('.scroll .ui-btn-danger');
+await page.click(removeIcon);
 await page.waitForSelector('.ui-confirm');
-await shot('specimen-remove-confirm', false, { mustShow: '.ui-confirm' });
+await shot('species-remove-confirm', false, { mustShow: '.ui-confirm' });
 await page.$$eval('.ui-confirm button', (els) =>
   els.find((e) => e.textContent?.trim() === 'Keep it')?.click(),
 );
 await page.waitForSelector('.ui-confirm', { hidden: true });
-if (!(await page.$('.scroll .ui-btn-danger'))) {
-  throw new Error('specimen, remove confirm: Keep it left the page');
+if (!(await page.$(removeIcon))) {
+  throw new Error('species page, remove confirm: Keep it left the page');
 }
 
-console.log('specimen, enter values');
-// Enter values on the same Pokémon: the Add form as Edit values, filled in from it. Not saved,
+console.log('edit');
+// The edit icon on the same Pokémon: the Add form as Edit, filled in from it. Nothing is saved,
 // so the collection is as it was for the steps after this one.
-const enterValues = await page.$$eval('.scroll a.ui-btn', (els) => {
-  const a = els.find((e) => e.textContent?.trim() === 'Enter values');
-  a?.scrollIntoView({ block: 'center' });
-  return a ? a.getAttribute('href') : null;
-});
-if (!enterValues || !enterValues.startsWith('#/add?edit=')) {
-  throw new Error(`specimen, enter values: no Enter values link (${enterValues})`);
+const editIcon = '.scroll a[aria-label="Edit"][href^="#/add?edit="]';
+if (!(await page.$(editIcon))) {
+  throw new Error('edit: no edit icon on the shown copy');
 }
-await page.$$eval('.scroll a.ui-btn', (els) =>
-  els.find((e) => e.textContent?.trim() === 'Enter values')?.click(),
-);
+await page.click(editIcon);
 await page.waitForFunction(
   () =>
-    document.querySelector('.hdr-title')?.textContent?.includes('Edit values') &&
+    /^Edit(?! values)/.test(document.querySelector('.hdr-title')?.textContent?.trim() ?? '') &&
     document.querySelector('.scroll .pick-slot') &&
+    document.querySelector('.scroll .move-opt') &&
     [...document.querySelectorAll('.scroll .field input')].some((i) => i.value !== ''),
-  { timeout: 10_000 },
+  { timeout: 20_000 },
 );
+if (await page.$('.ui-savebar')) {
+  throw new Error('edit: the save bar shows before anything changed');
+}
 await page.evaluate(() => window.scrollTo(0, 0));
-await shot('specimen-edit', false, { mustShow: '.scroll .pick-slot' });
+await shot('edit', true, { mustShow: '.scroll .pick-slot' });
+
+console.log('edit, unsaved changes');
+// A tick on Lucky is a change: the save bar comes up over the tab bar, clear of the last field.
+await page.$$eval('.scroll .check-row', (rows) => {
+  const lucky = rows.find((r) => r.textContent?.includes('Lucky'));
+  lucky?.scrollIntoView({ block: 'center' });
+  lucky?.querySelector('input')?.click();
+});
+await page.waitForSelector('.ui-savebar');
+await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+const barClear = await page.evaluate(() => {
+  const bar = document.querySelector('.ui-savebar').getBoundingClientRect();
+  const tabs = document.querySelector('.tabs').getBoundingClientRect();
+  const last = [...document.querySelectorAll('.scroll .check-row')].pop().getBoundingClientRect();
+  return { overTabs: bar.bottom <= tabs.top + 1, lastField: last.bottom <= bar.top };
+});
+if (!barClear.overTabs || !barClear.lastField) {
+  throw new Error(`edit, unsaved changes: the save bar covers something: ${JSON.stringify(barClear)}`);
+}
+await shot('edit-dirty', false, { mustShow: '.ui-savebar' });
+await page.$$eval('.ui-savebar button', (els) =>
+  els.find((e) => e.textContent?.trim() === 'Discard')?.click(),
+);
+await page.waitForSelector('.ui-savebar', { hidden: true });
 
 console.log('settings');
 await page.goto(`${base}/#/teams`, { waitUntil: 'networkidle0' });

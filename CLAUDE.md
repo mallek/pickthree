@@ -5,7 +5,8 @@ Live at https://pick3.gg. Free, no accounts, the collection never leaves the pho
 Design spec: `docs/superpowers/specs/2026-09-11-pickthree-mvp-design.md`. Read it before changing architecture.
 Later specs: `docs/superpowers/specs/2026-09-14-adaptive-import-design.md` (CSV column resolution by meaning),
 `docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md` (meta.pick3.gg folded into the Meta tab),
-`docs/superpowers/specs/2026-10-01-collection-model-design.md` (permanent ids, re-import merge, pins).
+`docs/superpowers/specs/2026-10-01-collection-model-design.md` (permanent ids, re-import merge, pins),
+`docs/superpowers/specs/2026-10-02-species-manager-design.md` (the species page manages your copies; Edit).
 
 ## Layout
 
@@ -68,7 +69,8 @@ Pure functions over static data + a `BattleSimulator`. Pipeline for a recommenda
 ```
 csv/        parse -> layout (columns resolved by meaning) -> concepts
 mapping/    Poke Genie names/forms -> PvPoke species ids
-collection/ Specimen (one Pokemon, permanent id), manual entry, merge (re-import), pins, evolve
+collection/ Specimen (one Pokemon, permanent id), manual entry, merge (re-import), pins, evolve,
+            speciesView (a species page's copies, each judged as that species, and the pick)
 math/       CP, IV rank
 builds/     eligibility (league, XL, shadow, elite TM, budget), moves, cost tables (tables/)
 search/     candidatePool from matrix -> generateTrios (ABB and ABC structures) -> simulateFinalists with real IVs
@@ -80,7 +82,7 @@ yourmeta/   battle log -> season window -> facing profile (blended weights + out
 
 `yourmeta/facing.ts`: one `FacingInput` (PvPoke, your log, or a community source) for every entry point; an engaged profile also weights drafting.
 
-`host/ComputeHost.ts` is the interface the UI talks to (importCsv, recommend, verdicts, counters, scanList, analyze, manual).
+`host/ComputeHost.ts` is the interface the UI talks to (importCsv, recommend, verdicts, counters, scanList, analyze, manual, speciesView).
 Tests implement it in-process; the web app implements it with a worker. Every result carries an `Assumptions` block.
 
 ### Web app (`apps/web`)
@@ -89,7 +91,7 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `host/WorkerHost.ts` implements `ComputeHost` over `worker/engine.worker.ts` using the request/response union in `host/protocol.ts` (progress, partial, result, error).
 - The worker boots once (game data + gamemaster + PvPoke bundle) and fetches a league bundle (rankings, meta, matrix) lazily per league.
 - `storage/db.ts`: IndexedDB `pickthree` v2 with `collection`, `settings` and `battles` (one record per set, indexed by league) stores. Settings fields added later are optional with a documented default for old saves. The collection record also carries `removed` (marks left by removed Pokemon, so an import skips them) and `pins` (per league, the copy that represents a battling species); an import merges into the stored collection (`collection/merge.ts`) instead of replacing it.
-- Screens in `screens/`: Welcome (import, add by hand, start without a collection, scan list), Report, Teams, TeamDetail, Collection, Specimen, SpeciesPage, Counters, Build, AddPokemon, MetaHome, TopTeams, YourBattles, NewSet, LogBattle, settings/ (Settings: a hub with Your data, Community (with How the meta is ranked), Appearance and About pages), Filters (the Teams filter sheet: team style, build filters, excluded Pokemon).
+- Screens in `screens/`: Welcome (import, add by hand, start without a collection, scan list), Report, Teams, TeamDetail, Collection, SpeciesPage, Counters, Build, AddPokemon (also Edit, `#/add?edit=<id>`), MetaHome, TopTeams, YourBattles, NewSet, LogBattle, settings/ (Settings: a hub with Your data, Community (with How the meta is ranked), Appearance and About pages), Filters (the Teams filter sheet: team style, build filters, excluded Pokemon).
 - `sw.ts`: app shell precached, `/data/*` stale-while-revalidate, `/data/sprites/*` cache-first, Web Share Target POST `/share` parks the CSV in a cache and the app imports it on `/?share=1`. Updates are prompt-mode via `update.ts` and `UpdateToast`.
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.
 - CSP is a meta tag in `index.html`. `connect-src` allows only self and the counter worker; fonts come from Google Fonts.
@@ -98,7 +100,7 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 ### Meta tab (`#/meta`, the community meta)
 
 - meta.pick3.gg retired into pick3: the Meta tab, Top teams, Your battles, the species page and Collection now do everything it did. The old host 301s every page to its pick3 route (`workers/counter/src/redirect.ts`); its API is unchanged.
-- `screens/MetaHome.tsx` is the tab's landing (`#/meta`): most seen Pokemon, most logged teams, and, first visit or with a battle log, either "Help build the meta" or your contribution (with the sharing switch), current team and your meta. `TopTeams.tsx` (`#/meta/teams`) is the signed team board, ported, with Window and Source selects, Open in Build and Run this team. `YourBattles.tsx` (`#/meta/battles`) is the full battle log lists. `SpeciesPage.tsx` (`#/species/<id>`) is one species: your copies first, then its meta numbers, moves players ran and teammates, then Build around it and Who beats it. Collection lists every Pokemon legal in the league (not-collected rows behind "Hide not collected") and ranks every row by the blended meta rank with its trend. Settings' Community page carries "How the meta is ranked" (`settings/MetaRanked.tsx`).
+- `screens/MetaHome.tsx` is the tab's landing (`#/meta`): most seen Pokemon, most logged teams, and, first visit or with a battle log, either "Help build the meta" or your contribution (with the sharing switch), current team and your meta. `TopTeams.tsx` (`#/meta/teams`) is the signed team board, ported, with Window and Source selects, Open in Build and Run this team. `YourBattles.tsx` (`#/meta/battles`) is the full battle log lists. `SpeciesPage.tsx` (`#/species/<id>`) is one species and where its copies are managed: the copy shown (`?copy=<id>`, else the pinned one) with pin, edit and remove, judged as that species, its moves against PvPoke's set, its cost and teams; then your other copies, lower forms that evolve into it included; then its meta numbers, moves players ran and teammates, Build around it and Who beats it. The old Pokémon page (`#/collection/<id>`) hands off to it (`SpecimenRedirect.tsx`). Collection lists every Pokemon legal in the league (not-collected rows behind "Hide not collected") and ranks every row by the blended meta rank with its trend. Settings' Community page carries "How the meta is ranked" (`settings/MetaRanked.tsx`).
 - No meta route carries a league: every screen shows `settings.league`, so cups, rotation cups and Mega leagues work everywhere. An inbound link may carry `?l=<league>` to switch once on arrival; `?w=` and `?src=` carry the window and source where a screen has them.
 - Two sources, one number, blended continuously rather than flipped: PvPoke's curated meta group (from the app's own `/data` files at the pinned commit) and measured play from shared battle logs. `@pickthree/engine/meta`'s `measuredSay` (`community.ts`) computes `a`, the smaller of a battles curve and a devices curve, and every weight is `(1 - a) * pvpokePrior + a * measuredShare`; nothing ever switches over. `HALF_SAY_BATTLES` (300) and `HALF_SAY_DEVICES` (5) are the blend's half-say points, not gates, so a league one battle short of either still counts for something. The Teams Source picker and the Meta tab run the same `communityWeights`, so they agree by construction.
 - Tournament results (official Play! Pokemon broadcasts, read off the stream and joined to the published rosters) enter the ranking as a third term, blended in sequence: `tournamentSay` (`community.ts`) blends tournament pick share into PvPoke's side of the number first, on its own curve (`HALF_SAY_TOURNAMENT_BATTLES` 100, `HALF_SAY_EVENTS` 2), before the ladder term (`measuredSay`) blends over the top, unchanged. `workers/counter` stores tournament records in their own `events`, `tournament_battles` and `roster_entries` tables, never the ladder `battles` table, written only through the keyed `/api/v1/events` routes. The read routes take a `source` parameter (`all`, `prior`, `ladder`, `tournament`), rendered by the Source select.
