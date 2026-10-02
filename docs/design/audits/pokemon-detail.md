@@ -1,5 +1,9 @@
 # Audit: Pokémon detail
 
+> **Retired 2026-10-02.** The Pokémon page is gone: its content lives on the species page, and
+> `#/collection/<id>` hands off there. The current record is `species-manager.md`. This one is
+> kept as the signed history of the page as it was.
+
 Piece: 4, round 2 (the Pokémon detail page, with Collection in `collection.md`). Inventory entry:
 `docs/design/inventory/2026-09-22-inventory.md`, page 8 (Collection and Pokémon detail). No
 intake entry; the approved renders are the ones from chat on 2026-09-26 (the detail page, the

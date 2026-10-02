@@ -1,5 +1,8 @@
 # Audit: Species page
 
+> **Superseded 2026-10-02** by `species-manager.md`: the species page now manages your copies.
+> This record is the page as it was when it only listed them.
+
 Piece: meta in pick3. The page is new in pick3 (`#/species/<id>`), built on the signed specimen
 page's parts (`pokemon-detail.md`) and replacing meta.pick3.gg's Species page (`meta-pokemon.md`).
 Spec: `docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md`, "Species page
