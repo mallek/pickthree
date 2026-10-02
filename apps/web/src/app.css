@@ -274,9 +274,14 @@ a {
 .team-summary-sprites {
   isolation: isolate;
 }
+/* In a stack the corner sits on the seam with the next token, so the badge reads as either
+   one's: there it moves to the bottom middle of its own token. */
 .token-stack .token-mega-badge,
 .team-summary-sprites .token-mega-badge {
   z-index: 1;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .token-stack > * + * {
   margin-left: -8px;

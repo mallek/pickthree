@@ -43,6 +43,15 @@ describe('Mega badge layout', () => {
     expect(px(badge, 'left')).toBeNull();
   });
 
+  it('in a stack of overlapping tokens, sits at the bottom middle of its own token', () => {
+    const stacked = block(app, '.token-stack .token-mega-badge,');
+    expect(stacked).toMatch(/right:\s*auto;/);
+    expect(stacked).toMatch(/left:\s*50%;/);
+    expect(stacked).toMatch(/transform:\s*translateX\(-50%\);/);
+    // Still no lower than anywhere else: the bottom offset is the badge's own.
+    expect(px(stacked, 'bottom')).toBeNull();
+  });
+
   it('has no margin that pushes it further out of the token', () => {
     expect(badge).not.toMatch(/margin[^:]*:\s*-/);
   });
