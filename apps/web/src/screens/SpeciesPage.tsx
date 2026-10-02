@@ -1,16 +1,20 @@
 /**
- * One species in the meta (`#/species/<id>`), built on the signed specimen page's parts: the hero
+ * One species (`#/species/<id>`), and the place its copies are managed. Top to bottom: the hero
  * (token, name, types, the blended "#N meta" with its trend and PvPoke's tags, "#M PvPoke", and
- * how many you have), the facts card, your own copies, PvPoke's recommended moves, the moves
- * players ran when any were reported, tournament sets, what it is seen next to, and Build around
- * it / Who beats it.
+ * how many you have); the copy shown, with pin, edit and remove beside its heading, judged as
+ * this species; its moves against PvPoke's set; what it costs to build; the teams it is in; your
+ * other copies, including lower forms that can evolve into it; then the meta: the facts card, the
+ * moves players ran, tournament sets, what it is seen next to, and Build around it / Who beats it.
  *
- * It replaces meta.pick3.gg's Species page. The measured parts read `/api/v1/meta` and
- * `/api/v1/species/:id` for the league and the default window ("This meta", every source).
- * Opening the page is the player's own choice, so it reads whatever the sharing switch says;
- * the read names this page's species and nothing from the collection.
+ * `?copy=<id>` names the copy to show; without it the page shows the pinned one. It took over the
+ * Pokémon page (`#/collection/<id>`), whose links hand off here.
+ *
+ * The measured parts read `/api/v1/meta` and `/api/v1/species/:id` for the league and the default
+ * window ("This meta", every source). Opening the page is the player's own choice, so it reads
+ * whatever the sharing switch says; the read names this page's species and nothing from the
+ * collection.
  */
-import type { MoveChoice, MoveIds, MovePool, Specimen } from '@pickthree/engine';
+import type { MoveChoice, MoveIds, MovePool, SpeciesView } from '@pickthree/engine';
 import type {
   MovesetStats,
   SourceKey,
@@ -18,8 +22,18 @@ import type {
   SpeciesRanking,
   WindowKey,
 } from '@pickthree/engine/meta';
-import { Button, Empty, ErrorState, Header, IconButton, Loading, Switch, Tag } from '@pickthree/ui';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  ConfirmSheet,
+  Empty,
+  ErrorState,
+  Header,
+  IconButton,
+  Loading,
+  Switch,
+  Tag,
+} from '@pickthree/ui';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CogGlyph,
   MetaRankTags,
@@ -29,11 +43,13 @@ import {
   sharePct,
   TypeChip,
   TypeChips,
-  VerdictTag,
   useName,
   useSpecies,
 } from '../components.tsx';
-import { coversLine, num, ownSpeciesId, rankLabel, SEP } from '../format.ts';
+import { MovesCard, movesEntered } from '../components/species/MovesCard.tsx';
+import { ShownCopy } from '../components/species/ShownCopy.tsx';
+import { Yours, type YoursRow } from '../components/species/Yours.tsx';
+import { coversLine, num, ownSpeciesId, powerUpLine, SEP } from '../format.ts';
 import { loadPvpokeSide, type PvpokeSide } from '../metaData.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { useMetaRanking, useSpeciesDetail } from '../state/useMeta.ts';
@@ -42,9 +58,6 @@ import { useMetaRanking, useSpeciesDetail } from '../state/useMeta.ts';
 const WINDOW: WindowKey = 'meta';
 const SOURCE: SourceKey = 'all';
 const FAILED = 'Could not load the community meta.';
-
-/** Sorts after every judged copy. */
-const UNJUDGED = 99_999;
 
 function plural(n: number, one: string, many: string): string {
   return `${num(n)} ${n === 1 ? one : many}`;
@@ -228,13 +241,55 @@ function TournamentMoves({
   );
 }
 
+/** "You have 2, and 3 Eevee that evolve into it": your copies of the species and of lower forms. */
+function haveLine(
+  rows: readonly YoursRow[],
+  id: string,
+  mega: boolean,
+  name: (id: string) => string,
+): string {
+  if (rows.length === 0) {
+    return 'Not in your collection';
+  }
+  const own = rows.filter((r) => ownSpeciesId(r.sp) === id).length;
+  const lower = new Map<string, number>();
+  for (const r of rows) {
+    if (ownSpeciesId(r.sp) !== id) {
+      const n = name(r.sp.speciesId);
+      lower.set(n, (lower.get(n) ?? 0) + 1);
+    }
+  }
+  if (lower.size === 0) {
+    return `You have ${num(own)}`;
+  }
+  const count = rows.length - own;
+  const list = joinAnd([...lower].map(([n, c]) => `${num(c)} ${n}`));
+  const verb = mega
+    ? 'that can Mega Evolve into it'
+    : `that ${count === 1 ? 'evolves' : 'evolve'} into it`;
+  return own > 0 ? `You have ${num(own)}, and ${list} ${verb}` : `You have ${list} ${verb}`;
+}
+
+type Ask = 'pin' | 'unpin' | 'remove';
+
 export function SpeciesPage({ id }: { id: string }) {
   const s = useAppState();
-  const { back, loadVerdicts, movePool, navigate, openSheet, setLeague, toggleExcludedSpecies } =
-    useActions();
+  const {
+    back,
+    loadVerdicts,
+    movePool,
+    navigate,
+    openSheet,
+    removeSpecimen,
+    setLeague,
+    setPin,
+    speciesView,
+    toggleExcludedSpecies,
+  } = useActions();
   const name = useName();
   const species = useSpecies();
   const route = s.route.screen === 'species' ? s.route : null;
+  const routeCopy = route?.copy;
   /** League named on an inbound link; the app's own links never carry one. */
   const routeLeague = route?.league ?? null;
   const knownRouteLeague =
@@ -247,16 +302,29 @@ export function SpeciesPage({ id }: { id: string }) {
       return;
     }
     if (s.leagueInfo?.id === routeLeague) {
-      navigate({ screen: 'species', id }, { replace: true });
+      navigate(
+        { screen: 'species', id, ...(routeCopy ? { copy: routeCopy } : {}) },
+        { replace: true },
+      );
     } else if ((s.settings.league ?? 'great') !== routeLeague) {
       setLeague(routeLeague);
     }
-  }, [knownRouteLeague, routeLeague, s.leagueInfo, s.settings.league, setLeague, navigate, id]);
+  }, [
+    knownRouteLeague,
+    routeLeague,
+    routeCopy,
+    s.leagueInfo,
+    s.settings.league,
+    setLeague,
+    navigate,
+    id,
+  ]);
 
   // While a named league is being switched to, read that league, not the one being left.
   const league = knownRouteLeague && routeLeague ? routeLeague : (s.settings.league ?? 'great');
   const info = s.leagueInfo?.id === league ? s.leagueInfo : null;
   const known = info ? info.legal.includes(id) : null;
+  const leagueTitle = s.data?.leagues.find((l) => l.id === league)?.title ?? 'this league';
 
   const ranked = useMetaRanking(league, { window: WINDOW, source: SOURCE, community: true });
   const detail = useSpeciesDetail(league, known ? id : '', WINDOW, SOURCE);
@@ -281,32 +349,108 @@ export function SpeciesPage({ id }: { id: string }) {
   }, [league]);
   const pvpoke = side && side.league === league ? side.side : null;
 
+  // Your copies of this species and of every lower form that can become it, each judged as this
+  // species, from the worker. Asked again whenever the collection, the pins or a filter changes;
+  // the last answer stays on screen meanwhile, so a pin does not blank the page.
+  const collection = s.collection;
+  const filters = s.settings.filters;
+  // Nothing of yours shares this species' family: no need to ask, the page is "not collected".
+  const kin = useMemo(() => {
+    const all = s.data?.species;
+    const family = all?.[all[id]?.megaOf ?? id]?.familyId ?? null;
+    return (collection?.specimens ?? []).some((sp) => {
+      const f = all?.[sp.speciesId]?.familyId ?? sp.familyId;
+      return ownSpeciesId(sp) === id || (family !== null && f === family);
+    });
+  }, [s.data, collection, id]);
+  const viewKey = `${league}|${id}`;
+  const [view, setView] = useState<{ key: string; view: SpeciesView } | null>(null);
+  const [viewFailed, setViewFailed] = useState(false);
+  useEffect(() => {
+    if (s.boot !== 'ready' || !info || !collection || !kin) {
+      return;
+    }
+    let live = true;
+    // Promise.resolve tolerates a test double that returns the view directly, or nothing.
+    Promise.resolve(speciesView(id, league)).then(
+      (v) => {
+        if (live && v) {
+          setView({ key: viewKey, view: v });
+          setViewFailed(false);
+        }
+      },
+      () => {
+        if (live) {
+          setViewFailed(true);
+        }
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [s.boot, info, collection, filters, kin, speciesView, id, league, viewKey]);
+  const current = kin && view && view.key === viewKey ? view.view : null;
+  const viewPending = kin && current === null && !viewFailed;
+
+  /** Your copies on this page, best IV rank for it first. */
+  const rows: YoursRow[] = useMemo(() => {
+    const byId = new Map((collection?.specimens ?? []).map((sp) => [sp.id, sp]));
+    return (current?.copies ?? []).flatMap((c) => {
+      const sp = byId.get(c.specimenId);
+      return sp ? [{ sp, verdict: c.verdict }] : [];
+    });
+  }, [current, collection]);
+  const pinnedId = current && rows.some((r) => r.sp.id === current.pickId) ? current.pickId : null;
+  // The copy shown: the one the address names, else the pinned one, else pick3's own pick.
+  const shown =
+    rows.find((r) => r.sp.id === routeCopy) ??
+    rows.find((r) => r.sp.id === pinnedId) ??
+    rows.find((r) => r.sp.id === current?.defaultId) ??
+    rows[0] ??
+    null;
+  const shownOwn = shown !== null && ownSpeciesId(shown.sp) === id;
+  // A lower form's moves change when it evolves, so only a copy of this species has known moves.
+  const ownMoves = shown && shownOwn ? shown.sp.currentMoves : null;
+  const knownMoves = ownMoves && movesEntered(ownMoves) ? ownMoves : null;
+  const movesKey = knownMoves ? `${knownMoves.fast ?? ''}|${knownMoves.charged.join('+')}` : '';
+
   // PvPoke's set for this species in the league in play, from the worker's move pool (the same
   // path Build's picks take), with PvPoke's elite moves left in whatever the Elite TM setting.
-  const poolKey = info && known ? `${league}|${id}` : null;
+  // The counts follow the fast move the shown copy knows.
+  const poolKey = info && known ? `${league}|${id}|${movesKey}` : null;
   const [pool, setPool] = useState<{ key: string; pool: MovePool } | null>(null);
   useEffect(() => {
     if (!poolKey || s.boot !== 'ready') {
       return;
     }
     let live = true;
-    // Promise.resolve tolerates a test double that returns the pool directly, or nothing.
-    Promise.resolve(movePool(id, null, { fast: null, charged: [] }, { allowEliteTm: true })).then(
-      (p) => {
-        if (live && p) {
-          setPool({ key: poolKey, pool: p });
-        }
-      },
-      () => undefined,
-    );
+    const [fast, chargedKey] = poolKey.split('|').slice(2) as [string | undefined, string?];
+    const moves = {
+      fast: fast ? fast : null,
+      charged: chargedKey ? chargedKey.split('+') : [],
+    };
+    const ask = (fastId: string | null) =>
+      // Promise.resolve tolerates a test double that returns the pool directly, or nothing.
+      Promise.resolve(movePool(id, fastId, moves, { allowEliteTm: true }));
+    ask(moves.fast)
+      // A scanned fast move the species no longer lists: the counts fall back to PvPoke's.
+      .catch(() => ask(null))
+      .then(
+        (p) => {
+          if (live && p) {
+            setPool({ key: poolKey, pool: p });
+          }
+        },
+        () => undefined,
+      );
     return () => {
       live = false;
     };
   }, [poolKey, s.boot, movePool, id]);
   const shownPool = pool && pool.key === poolKey ? pool.pool : null;
   const recommended = shownPool ? recommendedMoves(shownPool) : null;
-  // The one PvPoke set the page states: Recommended moves, the comparison under the moves players
-  // ran, and the tournament card's "PvPoke's set" mark all read it.
+  // The one PvPoke set the page states: the stars on the moves card, the comparison under the
+  // moves players ran, and the tournament card's "PvPoke's set" mark all read it.
   const pvSet = recommended ? shownPool!.recommended : null;
 
   useEffect(() => {
@@ -330,13 +474,7 @@ export function SpeciesPage({ id }: { id: string }) {
     loadVerdicts,
   ]);
 
-  /** Your copies of this species, and those that build as it, best IV rank first. */
-  const mine = useMemo(() => {
-    const rankOf = (sp: Specimen): number => s.verdicts[sp.id]?.build?.ivRank.rank ?? UNJUDGED;
-    return (s.collection?.specimens ?? [])
-      .filter((sp) => ownSpeciesId(sp) === id || s.verdicts[sp.id]?.build?.speciesId === id)
-      .sort((a, b) => rankOf(a) - rankOf(b) || b.cp - a.cp);
-  }, [s.collection, s.verdicts, id]);
+  const [ask, setAsk] = useState<Ask | null>(null);
 
   const header = (
     <Header
@@ -350,7 +488,7 @@ export function SpeciesPage({ id }: { id: string }) {
     />
   );
 
-  if (!s.data || known === null) {
+  if (!s.data || known === null || (!known && viewPending)) {
     return (
       <div className="screen">
         <div className="page-head">{header}</div>
@@ -360,7 +498,7 @@ export function SpeciesPage({ id }: { id: string }) {
       </div>
     );
   }
-  if (!known) {
+  if (!known && !shown) {
     return (
       <div className="screen">
         <div className="page-head">{header}</div>
@@ -368,7 +506,7 @@ export function SpeciesPage({ id }: { id: string }) {
           <Empty
             line={
               s.data.species[id]
-                ? `${name(id)} is not allowed in ${s.data.leagues.find((l) => l.id === league)?.title ?? 'this league'}.`
+                ? `${name(id)} is not allowed in ${leagueTitle}.`
                 : 'No Pokémon called that in this league.'
             }
             action={
@@ -442,8 +580,8 @@ export function SpeciesPage({ id }: { id: string }) {
 
   const mates = (d?.alongside ?? []).slice(0, 3);
 
-  // The specimen page's switch, by the id a copy battles as: this page's own species. Every copy
-  // with a build of it is covered, owned or not; with none, the switch has no line.
+  // The switch goes by the id a copy battles as: this page's own species. Every copy with a
+  // build of it is covered, owned or not; with none, the switch has no line.
   const excluded = (s.settings.excludedSpecies ?? []).includes(id);
   const coveredBy = s.verdictsLoading
     ? []
@@ -457,38 +595,307 @@ export function SpeciesPage({ id }: { id: string }) {
       ].map(([n, count]) => ({ name: n, count }));
   const covers = coveredBy.length > 0 ? coversLine(coveredBy) : undefined;
 
+  // The shown copy's own numbers: what the Pokémon page used to hold.
+  const v = shown?.verdict ?? null;
+  const build = v?.build ?? null;
+  const sp = shown?.sp ?? null;
+  // The copy's best build over every stage, from the collection's verdicts: named when it is
+  // another species than this page's.
+  const best = sp ? (s.verdicts[sp.id]?.build?.speciesId ?? null) : null;
+  const bestAs = best !== null && best !== id && info?.legal.includes(best) ? best : null;
+  // No power-up and no evolution to do reads "Already at level L." in place of "Level A to B",
+  // and drops the zero tiles; whatever still costs something (a second move unlock) keeps its
+  // tile. Half a level short is not already there, whatever the verdict's own margin says.
+  const alreadyThere =
+    sp !== null && build !== null && build.stageOffset === 0 && build.baseLevel <= sp.level.max;
+  const cost = v?.cost ?? null;
+  const tiles: [string, number][] = cost
+    ? (
+        [
+          ['Stardust', cost.stardust],
+          ['Candy', cost.candy],
+          ['XL Candy', cost.xlCandy],
+        ] as [string, number][]
+      ).filter(([, value]) => !alreadyThere || value > 0)
+    : [];
+  // Nothing to pay at all: the section goes, rather than say "Already at level L." on its own.
+  const nothingToPay =
+    cost !== null &&
+    alreadyThere &&
+    tiles.length === 0 &&
+    !cost.secondMoveUnlock &&
+    cost.eliteTm === 0 &&
+    cost.megaEnergy !== 'needed';
+  const teams = sp
+    ? (s.recommendation?.teams ?? []).filter((t) =>
+        t.slots.some((sl) => sl.candidate.build.specimenId === sp.id),
+      )
+    : [];
+  const pinnedRow = rows.find((r) => r.sp.id === pinnedId) ?? null;
+  const show = (copy: string): void => navigate({ screen: 'species', id, copy }, { replace: true });
+
+  const movesNote = !sp
+    ? null
+    : !shownOwn
+      ? `A ${name(sp.speciesId)}'s moves change when it evolves, so pick3 assumes the starred ones.`
+      : knownMoves
+        ? 'pick3 uses these to work out what the recommended moves would cost.'
+        : 'Moves not entered yet. pick3 assumes the starred moves. Edit to tick what it knows.';
+
+  const hero = (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '64px 1fr',
+        gap: 16,
+        alignItems: 'center',
+      }}
+    >
+      <PokemonToken speciesId={id} size={64} />
+      <div>
+        <h2>{name(id)}</h2>
+        <div
+          className="small muted"
+          style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}
+        >
+          <TypeChips types={types} small />
+          {known ? (
+            <span className="mtags" style={{ marginTop: 0 }}>
+              <MetaRankTags rank={row?.rank ?? null} delta={meta?.trend.get(id)} role={role} />
+              {pvpokeRank !== null ? <span className="mtag">#{pvpokeRank} PvPoke</span> : null}
+            </span>
+          ) : null}
+        </div>
+        {s.settingsLoaded && !viewPending ? (
+          <div className="meta">
+            {haveLine(rows, id, Boolean(s.data.species[id]?.megaOf), name)}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const yours =
+    shown && sp && v ? (
+      <>
+        <ShownCopy
+          speciesId={id}
+          leagueTitle={leagueTitle}
+          sp={sp}
+          verdict={v}
+          alsoPickFor={current?.copies.find((c) => c.specimenId === sp.id)?.alsoPickFor ?? []}
+          pinned={sp.id === pinnedId}
+          unpinned={current?.unpinned === true}
+          bestAs={bestAs}
+          onPin={() => setAsk(sp.id === pinnedId ? 'unpin' : 'pin')}
+          onRemove={() => setAsk('remove')}
+        />
+
+        {shownPool && known ? (
+          <div className="stack" style={{ gap: 6 }}>
+            <h3>Moves</h3>
+            <MovesCard
+              pool={shownPool}
+              known={knownMoves}
+              leagueTitle={leagueTitle}
+              note={movesNote}
+            />
+            {v.formNote ? <p className="small form-note">{v.formNote}</p> : null}
+          </div>
+        ) : null}
+
+        {build && build.stageOffset > 0 && build.mega === null ? (
+          <div className="evo">
+            <PokemonToken speciesId={build.speciesId} size={36} showInitial={false} />
+            <div>
+              <div className="role" style={{ display: 'block' }}>
+                Before powering up
+              </div>
+              <div style={{ fontSize: 15 }}>Evolve it to {name(build.speciesId)}</div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Every Mega build the league allows, beside the page's own build. */}
+        {v.megaBuilds
+          .filter((mb) => mb.speciesId !== id)
+          .map((mb) => (
+            <div className="evo" role="group" aria-label="Mega build" key={mb.speciesId}>
+              <PokemonToken speciesId={mb.speciesId} size={36} showInitial={false} />
+              <div>
+                <div className="role" style={{ display: 'block' }}>
+                  Mega build
+                </div>
+                <div style={{ fontSize: 15 }}>{name(mb.speciesId)}</div>
+                <div className="small muted">{powerUpLine(mb)}</div>
+              </div>
+            </div>
+          ))}
+
+        {cost && build && !nothingToPay ? (
+          <div className="stack" style={{ gap: 6 }}>
+            <h3>Cost to build</h3>
+            {alreadyThere ? (
+              <>
+                <p>Already at level {sp.level.max}.</p>
+                {cost.secondMoveUnlock ? (
+                  <div className="small muted">Includes second move unlock.</div>
+                ) : null}
+              </>
+            ) : (
+              <div className="small muted">
+                Level {sp.level.max} to {build.baseLevel}
+                {cost.secondMoveUnlock ? ' · includes second move unlock' : ''}
+                {cost.evolutionCandy > 0
+                  ? ` · includes ${cost.evolutionCandy} candy to evolve`
+                  : ''}
+              </div>
+            )}
+            {tiles.length > 0 ? (
+              <div className="stat3">
+                {tiles.map(([label, value]) => (
+                  <div className="stat" key={label}>
+                    <b>{num(value)}</b>
+                    <span className="meta">{label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {cost.megaEnergy ? (
+              <p className="small muted">
+                {cost.megaEnergy === 'ready' ? 'Mega Energy (mega-evolved before)' : 'Mega Energy'}
+              </p>
+            ) : null}
+            {cost.eliteTm > 0 ? <p className="small muted">Plus {cost.eliteTm} Elite TM.</p> : null}
+          </div>
+        ) : null}
+
+        {known ? (
+          <div className="stack" style={{ gap: 8 }}>
+            <h3>Teams with this Pokémon</h3>
+            {teams.length === 0 ? (
+              <p className="small muted">Not in any recommended team right now.</p>
+            ) : null}
+            {teams.map((t) => (
+              <a className="card sp-team" key={t.id} href={hashFor({ screen: 'team', id: t.id })}>
+                <div className="token-stack">
+                  {t.slots.map((sl) => (
+                    <PokemonToken
+                      key={sl.candidate.build.specimenId}
+                      speciesId={sl.candidate.build.speciesId}
+                      size={28}
+                      showInitial={false}
+                    />
+                  ))}
+                </div>
+                <span style={{ flex: 1, fontSize: 14 }}>
+                  {t.slots.map((sl) => name(sl.candidate.build.speciesId)).join(' · ')}
+                </span>
+                <span className="meta">{t.score.fit} &rsaquo;</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
+
+        <Yours
+          speciesId={id}
+          leagueTitle={leagueTitle}
+          rows={rows}
+          pinnedId={pinnedId}
+          shownId={sp.id}
+          onShow={show}
+        />
+      </>
+    ) : viewPending ? (
+      <Loading label="Loading your Pokémon" />
+    ) : (
+      <div className="stack" style={{ gap: 6 }}>
+        <h3>Yours</h3>
+        <div className="card" style={{ gap: 10 }}>
+          <span className="small muted">Scan one in Poke Genie, or add it by hand.</span>
+          {/* Build around it is the page's one filled button; this one is secondary. */}
+          <Button href={hashFor({ screen: 'add', species: id })}>Add one</Button>
+        </div>
+      </div>
+    );
+
+  const sheets =
+    ask && sp ? (
+      ask === 'remove' ? (
+        <ConfirmSheet
+          tone="danger"
+          title={`Remove this ${name(sp.speciesId)}?`}
+          line="It leaves your collection on this phone. A new import will not bring it back."
+          confirmLabel="Remove"
+          cancelLabel="Keep it"
+          onConfirm={() => {
+            setAsk(null);
+            const gone = sp.id;
+            void removeSpecimen(gone).then(() => {
+              // The address named the copy that is gone: the page shows its next pick.
+              if (routeCopy === gone) {
+                navigate({ screen: 'species', id }, { replace: true });
+              }
+            });
+          }}
+          onCancel={() => setAsk(null)}
+        />
+      ) : ask === 'pin' ? (
+        <ConfirmSheet
+          title={`Pin this ${name(sp.speciesId)} for ${leagueTitle}?`}
+          line={
+            pinnedRow
+              ? `pick3 picks your best ${name(id)} for each league. This overrides that for ${leagueTitle} and unpins the CP ${pinnedRow.sp.cp} one, so teams use this one instead.`
+              : `pick3 picks your best ${name(id)} for each league. This pins this one for ${leagueTitle}, so teams use it.`
+          }
+          confirmLabel="Pin this one"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            setAsk(null);
+            void setPin(id, sp.id);
+          }}
+          onCancel={() => setAsk(null)}
+        />
+      ) : (
+        <ConfirmSheet
+          title={`Unpin this ${name(sp.speciesId)} for ${leagueTitle}?`}
+          line={`With no ${name(id)} pinned, pick3 treats ${name(id)} as one you do not have in ${leagueTitle}: it leaves your recommended teams, and Build and Counters use a typical one.`}
+          confirmLabel="Unpin"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            setAsk(null);
+            void setPin(id, null);
+          }}
+          onCancel={() => setAsk(null)}
+        />
+      )
+    ) : null;
+
+  // A species the league does not allow, with a copy of yours: nothing of the meta, only the
+  // copy and its actions, so it can still be edited or removed.
+  if (!known) {
+    return (
+      <div className="screen">
+        <div className="page-head">{header}</div>
+        <div className="scroll" style={{ gap: 22 }}>
+          {hero}
+          <p style={{ margin: 0 }}>
+            {name(id)} is not allowed in {leagueTitle}.
+          </p>
+          {yours}
+        </div>
+        {sheets}
+      </div>
+    );
+  }
+
   return (
     <div className="screen">
       <div className="page-head">{header}</div>
       <div className="scroll" style={{ gap: 22 }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '64px 1fr',
-            gap: 16,
-            alignItems: 'center',
-          }}
-        >
-          <PokemonToken speciesId={id} size={64} />
-          <div>
-            <h2>{name(id)}</h2>
-            <div
-              className="small muted"
-              style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}
-            >
-              <TypeChips types={types} small />
-              <span className="mtags" style={{ marginTop: 0 }}>
-                <MetaRankTags rank={row?.rank ?? null} delta={meta?.trend.get(id)} role={role} />
-                {pvpokeRank !== null ? <span className="mtag">#{pvpokeRank} PvPoke</span> : null}
-              </span>
-            </div>
-            {s.settingsLoaded ? (
-              <div className="meta">
-                {mine.length > 0 ? `You have ${num(mine.length)}` : 'Not in your collection'}
-              </div>
-            ) : null}
-          </div>
-        </div>
+        {hero}
+
+        {yours}
 
         {failed ? (
           <ErrorState line={FAILED} action={<Button onClick={retry}>Try again</Button>} />
@@ -498,54 +905,7 @@ export function SpeciesPage({ id }: { id: string }) {
           <Loading label="Loading the community meta" />
         )}
 
-        <div className="stack" style={{ gap: 6 }}>
-          <h3>Yours</h3>
-          {mine.length > 0 ? (
-            <div className="card sp-yours" style={{ padding: '0 14px', gap: 0 }}>
-              {mine.map((sp) => {
-                const v = s.verdicts[sp.id];
-                const row = (
-                  <a
-                    className="spec-row sub"
-                    key={sp.id}
-                    href={hashFor({ screen: 'specimen', id: sp.id })}
-                    style={{ gridTemplateColumns: '1fr auto' }}
-                  >
-                    <span className="meta" style={{ display: 'block' }}>
-                      {ownSpeciesId(sp) !== id ? `${name(sp.speciesId)} · ` : ''}CP {sp.cp} ·{' '}
-                      {rankLabel(sp, v)} · Level {sp.level.max}
-                      {sp.lucky ? ' · Lucky' : ''}
-                    </span>
-                    {v ? <VerdictTag label={v.label} /> : <span className="meta">...</span>}
-                  </a>
-                );
-                if (v?.label !== 'Needs rescan') {
-                  return row;
-                }
-                // Its IVs never came through: Collection sends it here, and here it can be fixed
-                // by typing in what the appraisal screen shows.
-                return (
-                  <Fragment key={sp.id}>
-                    {row}
-                    <div className="sp-yours-action">
-                      <Button variant="text" href={hashFor({ screen: 'add', edit: sp.id })}>
-                        Enter values
-                      </Button>
-                    </div>
-                  </Fragment>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="card" style={{ gap: 10 }}>
-              <span className="small muted">Scan one in Poke Genie, or add it by hand.</span>
-              {/* Build around it is the page's one filled button; this one is secondary. */}
-              <Button href={hashFor({ screen: 'add', species: id })}>Add one</Button>
-            </div>
-          )}
-        </div>
-
-        {recommended ? (
+        {!shown && recommended ? (
           <div className="stack" style={{ gap: 6 }}>
             <h3>Recommended moves</h3>
             <div className="card" style={{ padding: '0 14px' }}>
@@ -553,11 +913,14 @@ export function SpeciesPage({ id }: { id: string }) {
             </div>
             {shownPool?.source === 'fallback' ? (
               <p className="small muted" style={{ margin: 0 }}>
-                PvPoke has no set for {name(id)} in{' '}
-                {s.data.leagues.find((l) => l.id === league)?.title ?? 'this league'}; picked by
-                move stats.
+                PvPoke has no set for {name(id)} in {leagueTitle}; picked by move stats.
               </p>
             ) : null}
+            {viewPending ? null : (
+              <p className="small muted" style={{ margin: 0 }}>
+                Teams and counters assume these moves until you add one.
+              </p>
+            )}
           </div>
         ) : null}
 
@@ -607,6 +970,7 @@ export function SpeciesPage({ id }: { id: string }) {
           <Button href={hashFor({ screen: 'counters', vs: id, from: true })}>Who beats it</Button>
         </div>
       </div>
+      {sheets}
     </div>
   );
 }

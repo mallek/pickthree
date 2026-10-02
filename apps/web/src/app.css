@@ -4130,6 +4130,19 @@ input[type='range'] {
 .sp-yours > .spec-row.sub:first-child {
   border-top: 0;
 }
+/* A recommended team the shown copy is in: a card that is one link. */
+.card.sp-team {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.sp-pinned {
+  display: inline-flex;
+}
 /* A checkbox and its words: the whole line is the tap target, at least 44px tall. */
 .check-row {
   min-height: var(--tap);
