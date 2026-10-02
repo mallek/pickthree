@@ -202,3 +202,52 @@ function foldedName(r: string[]): string {
   ];
   write('sheet-semicolon.csv', body);
 }
+
+// 6. The same collection scanned a week later: every tenth row from the fourth is gone, every
+// tenth from the sixth was powered up one level and scanned again, and three rows are new (a
+// copy of the first three with another Attack IV). For the re-import merge.
+{
+  const cIndex = col('Index');
+  const cAtk = col('Atk IV');
+  const cCp = col('CP');
+  const cMin = col('Level Min');
+  const cMax = col('Level Max');
+  const cScan = col('Scan Date');
+  const weekOn = (v: string): string => {
+    const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2})$/.exec(v);
+    if (!m) {
+      return v;
+    }
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + 7));
+    const p = (n: number): string => String(n).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${m[4]}`;
+  };
+  const body: string[][] = [];
+  rows.forEach((r, i) => {
+    const hasIvs = (r[cAtk] ?? '') !== '';
+    if (hasIvs && i % 10 === 3) {
+      return;
+    }
+    const row = [...r];
+    if (hasIvs && i % 10 === 5) {
+      row[cMin] = String(Number(row[cMin]) + 1);
+      row[cMax] = String(Number(row[cMax]) + 1);
+      row[cCp] = String(Number(row[cCp]) + 20);
+      row[cScan] = weekOn(row[cScan] ?? '');
+    }
+    body.push(row);
+  });
+  rows
+    .filter((r) => (r[cAtk] ?? '') !== '')
+    .slice(0, 3)
+    .forEach((r) => {
+      const row = [...r];
+      row[cAtk] = String((Number(row[cAtk]) + 1) % 16);
+      row[cScan] = weekOn(row[cScan] ?? '');
+      body.push(row);
+    });
+  body.forEach((r, n) => {
+    r[cIndex] = String(n + 1);
+  });
+  write('pokegenie-rescan.csv', [toLine(header), ...body.map((r) => toLine(r))]);
+}
