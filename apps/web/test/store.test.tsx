@@ -10,6 +10,7 @@ import {
   useActions,
   useAppState,
   filterKey,
+  pinsOf,
 } from '../src/state/store.tsx';
 import type { AppState } from '../src/state/store.tsx';
 import type { League, TeamAnalysis } from '@pickthree/engine';
@@ -1217,5 +1218,139 @@ describe('re-importing a CSV', () => {
     expect(latest!.state.collection?.specimens[0]?.megaLevel4).toBe(true);
     const saved = await storage.loadCollection();
     expect(saved?.specimens[0]?.megaLevel4).toBe(true);
+  });
+});
+
+describe('collection model', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    latest = null;
+  });
+
+  const specimen = {
+    id: 'k',
+    speciesId: 'eevee',
+    shadow: false,
+    ivs: { atk: 3, def: 15, sta: 15 },
+  };
+  const report = {
+    scansRead: 1,
+    recognized: 1,
+    duplicatesMerged: 0,
+    missingIvs: { count: 0, names: [] },
+    unrecognized: [],
+    rowProblems: [],
+    layout: emptyLayoutValue(),
+    newestScan: null,
+  };
+  const imported = async (over: object = {}) => {
+    const importCsv = vi.fn(async () => ({
+      specimens: [{ ...specimen }],
+      report: { ...report, ...over },
+    }));
+    await mount(fakeHost({ importCsv } as never));
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    return importCsv;
+  };
+
+  it('a first import has nothing to merge into; a second hands over the stored collection', async () => {
+    const importCsv = await imported();
+    expect((importCsv.mock.calls[0] as unknown[])[1]).toBeUndefined();
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    const prior = (importCsv.mock.calls[1] as unknown[])[1] as {
+      specimens: unknown[];
+      removed: unknown[];
+      now: string;
+    };
+    expect(prior.specimens).toHaveLength(1);
+    expect(prior.removed).toEqual([]);
+    expect(prior.now).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  });
+
+  it('pins survive a re-import and are saved', async () => {
+    await imported();
+    await act(async () => {
+      await latest!.actions.setPin('umbreon', 'k');
+    });
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    expect(latest!.state.collection?.pins).toEqual({ great: { umbreon: 'k' } });
+    expect((await storage.loadCollection())?.pins).toEqual({ great: { umbreon: 'k' } });
+  });
+
+  it('setPin stores null for unpinned and clears with undefined', async () => {
+    await imported();
+    await act(async () => {
+      await latest!.actions.setPin('umbreon', null);
+    });
+    expect(pinsOf(latest!.state.collection, 'great')).toEqual({ umbreon: null });
+    expect(pinsOf(latest!.state.collection, 'ultra')).toBeUndefined();
+    await act(async () => {
+      await latest!.actions.setPin('umbreon', undefined);
+    });
+    expect(pinsOf(latest!.state.collection, 'great')).toBeUndefined();
+    expect(latest!.state.collection?.pins).toBeUndefined();
+  });
+
+  it('removing a Pokemon leaves a mark, forgets its pins, and the next import is told', async () => {
+    const importCsv = await imported();
+    await act(async () => {
+      await latest!.actions.setPin('umbreon', 'k');
+    });
+    await act(async () => {
+      await latest!.actions.removeSpecimen('k');
+    });
+    expect(latest!.state.collection?.specimens).toEqual([]);
+    expect(latest!.state.collection?.removed).toHaveLength(1);
+    expect(latest!.state.collection?.pins).toBeUndefined();
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    const prior = (importCsv.mock.calls[1] as unknown[])[1] as { removed: unknown[] };
+    expect(prior.removed).toHaveLength(1);
+    expect(latest!.state.collection?.removed).toHaveLength(1);
+  });
+
+  it('removeMissing removes what the scan lacked and empties the list', async () => {
+    await imported({
+      merge: { added: 0, merged: 0, updated: 0, skipped: 0, notInScan: ['k'] },
+    });
+    await act(async () => {
+      await latest!.actions.removeMissing();
+    });
+    expect(latest!.state.collection?.specimens).toEqual([]);
+    expect(latest!.state.collection?.report.merge?.notInScan).toEqual([]);
+    expect(latest!.state.collection?.removed).toHaveLength(1);
+  });
+
+  it('the pins reach the engine with the teams request', async () => {
+    const importCsv = vi.fn(async () => ({ specimens: [{ ...specimen }], report }));
+    const host = fakeHost({ importCsv } as never);
+    await mount(host);
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    await act(async () => {
+      await latest!.actions.setPin('umbreon', null);
+    });
+    await act(async () => {
+      await latest!.actions.runRecommend();
+    });
+    const calls = (host.recommend as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const options = calls[calls.length - 1]?.[1] as { pins?: unknown };
+    expect(options.pins).toEqual({ umbreon: null });
+  });
+
+  it('the pins are part of the teams cache key', () => {
+    expect(filterKey(DEFAULT_SETTINGS, 0, null, { umbreon: 'a' })).not.toBe(
+      filterKey(DEFAULT_SETTINGS, 0, null, { umbreon: 'b' }),
+    );
+    expect(filterKey(DEFAULT_SETTINGS, 0, null, undefined)).toBe(filterKey(DEFAULT_SETTINGS));
   });
 });

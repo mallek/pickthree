@@ -1,6 +1,8 @@
 import { leagueParam } from '../leagueId.ts';
 import { carryMegaLevel4 } from '../megaMarks.ts';
 import {
+  dropPins,
+  localStamp,
   type BattleSet,
   type CountersResult,
   type FacingInput,
@@ -12,10 +14,12 @@ import {
   type ManualInput,
   type ManualResult,
   type MovePool,
+  type PinMap,
   type PokemonType,
   type ProgressEvent,
   type Recommendation,
   type RecommendOptions,
+  type RemovedMark,
   type ScanList,
   type ScheduleEntry,
   type Season,
@@ -533,6 +537,19 @@ function teamParam(query: string): string[] {
     .slice(0, 3);
 }
 
+/** What saveSpecimens may replace besides the Pokémon themselves. Absent keeps what is stored. */
+interface CollectionPatch {
+  removed?: RemovedMark[];
+  pins?: Record<string, PinMap>;
+  report?: ImportReport;
+}
+
+/** The league's pins as an engine option, or nothing when it has none. */
+function pinsOption(collection: StoredCollection | null, league: string): { pins?: PinMap } {
+  const pins = pinsOf(collection, league);
+  return pins ? { pins } : {};
+}
+
 /** Two copies with the same species, form, IVs, level and CP: the values a specimen id is made of. */
 function sameValues(a: Specimen, b: Specimen): boolean {
   return (
@@ -790,16 +807,24 @@ export function convertLegacyExcluded(
   return { ...settings, excludedSpecimenIds: kept, excludedSpecies: species };
 }
 
+/** One league's pins, or undefined when it has none (every species on its default pick). */
+export function pinsOf(collection: StoredCollection | null, league: string): PinMap | undefined {
+  const map = collection?.pins?.[league];
+  return map && Object.keys(map).length > 0 ? map : undefined;
+}
+
 export function filterKey(
   settings: Settings,
   logVersion = 0,
   community: AppState['community'] = null,
+  pins?: PinMap,
 ): string {
   const choice = facingSettings(settings);
   return JSON.stringify({
     league: settings.league ?? 'great',
     logVersion,
     ...optionsFrom(settings),
+    ...(pins ? { pins } : {}),
     source: choice.source,
     window: isCommunity(choice.source) ? choice.window : null,
     community: isCommunity(choice.source) ? (community?.key ?? null) : null,
@@ -928,7 +953,15 @@ interface Actions {
   updateManual(id: string, input: ManualInput, marks?: ManualMegaMarks): Promise<ManualResult>;
   /** The in-battle card for one opponent against the set's team. Null when it could not run. */
   faceoff(team: TeamRef, opponent: string): Promise<Faceoff | null>;
+  /** Take one Pokémon out. It leaves a mark, so a later import does not bring it back. */
   removeSpecimen(id: string): Promise<void>;
+  /** Remove every Pokémon the last import did not contain (the Report's "Not in this scan"). */
+  removeMissing(): Promise<void>;
+  /**
+   * Pin the copy that represents a battling species in the league in play. A Pokémon id is an
+   * override, null is unpinned (none of yours is fielded), undefined goes back to the default pick.
+   */
+  setPin(speciesId: string, pin: string | null | undefined): Promise<void>;
   /** Mark one Pokémon as a Level 4 Mega (or not); verdicts and teams are judged again. */
   setMegaLevel4(id: string, on: boolean): Promise<void>;
   updateSettings(patch: Partial<Settings> | ((s: Settings) => Settings)): void;
@@ -1160,14 +1193,23 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       const h = hostRef.current as WorkerHost;
       dispatch({ type: 'import-start' });
       try {
-        const { specimens, report } = await h.importCsv(text);
+        // With a collection (or removed marks) already stored, the worker merges the scan into
+        // it: ids, edits, pins and removals survive a re-import.
+        const cur = stateRef.current.collection;
+        const prior =
+          cur && (cur.specimens.length > 0 || (cur.removed?.length ?? 0) > 0)
+            ? { specimens: cur.specimens, removed: cur.removed ?? [], now: localStamp(appNow()) }
+            : undefined;
+        const { specimens, report } = await h.importCsv(text, prior);
         noteLayout(report.layout, 'ok');
         const collection: StoredCollection = {
           key: 'current',
-          specimens: carryMegaLevel4(stateRef.current.collection?.specimens ?? [], specimens),
+          specimens: carryMegaLevel4(cur?.specimens ?? [], specimens),
           report,
           importedAt: new Date().toISOString(),
           fileName,
+          ...(cur?.removed ? { removed: cur.removed } : {}),
+          ...(cur?.pins ? { pins: cur.pins } : {}),
         };
         await storage.saveCollection(collection);
         dispatch({ type: 'import-done', collection });
@@ -1257,17 +1299,21 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     // The provisional key: rec-start sets `recommending`, so the Teams effect does not fire again
     // while the community read is in flight. rec-done replaces it with the final key.
     const scope = scopeOf(stateRef);
-    dispatch({ type: 'rec-start', key: filterKey(s.settings, s.logVersion, s.community) });
+    const pins = pinsOf(s.collection, scope.league);
+    dispatch({
+      type: 'rec-start',
+      key: filterKey(s.settings, s.logVersion, s.community, pins),
+    });
     try {
       const { facing, community } = await facingNow();
       if (!scope.current()) {
         dispatch({ type: 'drop', what: 'rec' });
         return;
       }
-      const key = filterKey(s.settings, s.logVersion, community);
+      const key = filterKey(s.settings, s.logVersion, community, pins);
       const recommendation = await h.recommend(
         s.collection.specimens,
-        { ...optionsFrom(s.settings), facing },
+        { ...optionsFrom(s.settings), facing, ...(pins ? { pins } : {}) },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
         scope.league,
       );
@@ -1435,7 +1481,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         // No collection just means nothing gets an owned mark.
         const counters = await h.counters(
           s.collection?.specimens ?? [],
-          { facing, ...(vs ? { vs } : {}) },
+          { facing, ...(vs ? { vs } : {}), ...pinsOption(s.collection, scope.league) },
           (p) => {
             if (live()) {
               dispatch({ type: 'counters-progress', progress: p });
@@ -1511,6 +1557,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           facing,
           ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
+          ...pinsOption(s.collection, scope.league),
         },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
         scope.league,
@@ -1611,6 +1658,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           ...(budgetStardust !== undefined ? { budgetStardust } : {}),
           ...(excludedSpecimenIds !== undefined ? { excludedSpecimenIds } : {}),
           ...(excludedSpecies !== undefined ? { excludedSpecies } : {}),
+          ...pinsOption(s.collection, scope.league),
         },
         scope.league,
       );
@@ -1654,6 +1702,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           facing,
           ...(base.allowXl !== undefined ? { allowXl: base.allowXl } : {}),
           ...(base.allowEliteTm !== undefined ? { allowEliteTm: base.allowEliteTm } : {}),
+          ...pinsOption(s.collection, scope.league),
         },
         (p) => dispatch({ type: 'rec-progress', progress: p }),
         scope.league,
@@ -1716,18 +1765,28 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     layout: emptyLayoutValue(),
     newestScan: null,
   };
-  const saveSpecimens = useCallback(async (specimens: Specimen[], fileName: string | null) => {
-    const cur = stateRef.current.collection;
-    const collection: StoredCollection = {
-      key: 'current',
-      specimens,
-      report: { ...(cur?.report ?? EMPTY_REPORT), recognized: specimens.length },
-      importedAt: cur?.importedAt ?? new Date().toISOString(),
-      fileName: cur?.fileName ?? fileName,
-    };
-    await storage.saveCollection(collection);
-    dispatch({ type: 'import-done', collection });
-  }, []);
+  const saveSpecimens = useCallback(
+    async (specimens: Specimen[], fileName: string | null, patch: CollectionPatch = {}) => {
+      const cur = stateRef.current.collection;
+      const removed = patch.removed ?? cur?.removed;
+      const pins = patch.pins ?? cur?.pins;
+      const collection: StoredCollection = {
+        key: 'current',
+        specimens,
+        report: {
+          ...(patch.report ?? cur?.report ?? EMPTY_REPORT),
+          recognized: specimens.length,
+        },
+        importedAt: cur?.importedAt ?? new Date().toISOString(),
+        fileName: cur?.fileName ?? fileName,
+        ...(removed && removed.length > 0 ? { removed } : {}),
+        ...(pins && Object.keys(pins).length > 0 ? { pins } : {}),
+      };
+      await storage.saveCollection(collection);
+      dispatch({ type: 'import-done', collection });
+    },
+    [],
+  );
   const addManual = useCallback(
     async (input: ManualInput, marks?: ManualMegaMarks) => {
       const h = hostRef.current as WorkerHost;
@@ -1752,7 +1811,18 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
           ? { ...r, specimen: { ...r.specimen, id: `${r.specimen.id}-${newId().slice(0, 8)}` } }
           : r;
       const without = existing.filter((x) => x.id !== added.specimen.id);
-      await saveSpecimens([...without, added.specimen], 'typed in by hand');
+      // Added back on purpose: a mark left by removing it must not make the next import skip it.
+      const left = stateRef.current.collection?.removed ?? [];
+      const removed =
+        left.length > 0
+          ? (await h.marks({ op: 'add', specimens: [], removed: left, specimen: added.specimen }))
+              .removed
+          : undefined;
+      await saveSpecimens(
+        [...without, added.specimen],
+        'typed in by hand',
+        removed ? { removed } : {},
+      );
       return added;
     },
     [saveSpecimens],
@@ -1778,7 +1848,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         purified: old.purified && !made.specimen.shadow,
         currentMoves: sameSpecies ? old.currentMoves : { fast: null, charged: [] },
         megaForm: marks?.megaForm ?? null,
+        // A newer scan may replace these values; an older one may not.
+        editedAt: localStamp(appNow()),
       };
+      if (sameSpecies && old.evolvedFrom) {
+        specimen.evolvedFrom = old.evolvedFrom;
+      }
       // A scan stays a scan (so no Remove), one typed in stays typed in.
       delete specimen.source;
       delete specimen.megaLevel4;
@@ -1796,13 +1871,60 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     },
     [saveSpecimens],
   );
-  const removeSpecimen = useCallback(
-    async (id: string) => {
-      const existing = stateRef.current.collection?.specimens ?? [];
-      await saveSpecimens(
-        existing.filter((x) => x.id !== id),
-        null,
-      );
+  const removeIds = useCallback(
+    async (ids: string[]) => {
+      const h = hostRef.current as WorkerHost;
+      const cur = stateRef.current.collection;
+      if (!cur || ids.length === 0) {
+        return;
+      }
+      const r = await h.marks({
+        op: 'remove',
+        specimens: cur.specimens,
+        removed: cur.removed ?? [],
+        ids,
+        now: localStamp(appNow()),
+      });
+      const gone = new Set(ids);
+      const merge = cur.report.merge;
+      await saveSpecimens(r.specimens, null, {
+        removed: r.removed,
+        pins: dropPins(cur.pins ?? {}, gone),
+        ...(merge
+          ? {
+              report: {
+                ...cur.report,
+                merge: { ...merge, notInScan: merge.notInScan.filter((id) => !gone.has(id)) },
+              },
+            }
+          : {}),
+      });
+    },
+    [saveSpecimens],
+  );
+  const removeSpecimen = useCallback((id: string) => removeIds([id]), [removeIds]);
+  const removeMissing = useCallback(
+    () => removeIds(stateRef.current.collection?.report.merge?.notInScan ?? []),
+    [removeIds],
+  );
+  const setPin = useCallback(
+    async (speciesId: string, pin: string | null | undefined) => {
+      const cur = stateRef.current.collection;
+      if (!cur) {
+        return;
+      }
+      const league = stateRef.current.settings.league ?? 'great';
+      const map: PinMap = { ...(cur.pins?.[league] ?? {}) };
+      if (pin === undefined) {
+        delete map[speciesId];
+      } else {
+        map[speciesId] = pin;
+      }
+      const pins = { ...(cur.pins ?? {}), [league]: map };
+      if (Object.keys(map).length === 0) {
+        delete pins[league];
+      }
+      await saveSpecimens(cur.specimens, null, { pins });
     },
     [saveSpecimens],
   );
@@ -2137,6 +2259,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       addManual,
       updateManual,
       removeSpecimen,
+      removeMissing,
+      setPin,
       setMegaLevel4,
       updateSettings,
       setLeague,
@@ -2173,6 +2297,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       addManual,
       updateManual,
       removeSpecimen,
+      removeMissing,
+      setPin,
       setMegaLevel4,
       updateSettings,
       setLeague,

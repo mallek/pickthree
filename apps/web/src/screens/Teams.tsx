@@ -24,7 +24,7 @@ import { TeamRowSummary } from '../components/team/TeamRowSummary.tsx';
 import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
 import { shareEnabled } from '../metaShare.ts';
 import { facingSettings, hasCommunityData, isCommunity } from '../state/facing.ts';
-import { filterKey, hashFor, useActions, useAppState } from '../state/store.tsx';
+import { filterKey, hashFor, pinsOf, useActions, useAppState } from '../state/store.tsx';
 import type { Settings } from '../storage/db.ts';
 
 export const SOURCE_LABELS: Record<FacingSource, string> = {
@@ -84,7 +84,12 @@ export function Teams() {
     navigate({ screen: 'build' });
   };
   const logCount = useLogCount();
-  const key = filterKey(s.settings, s.logVersion, s.community);
+  const key = filterKey(
+    s.settings,
+    s.logVersion,
+    s.community,
+    pinsOf(s.collection, s.settings.league ?? 'great'),
+  );
   const stale = s.recommendedWith !== key;
   // Open rows last the session (leave Teams and come back, they are as you left them) and belong
   // to one recommendation: a new list, stored at rec-done, starts over with only its first row
