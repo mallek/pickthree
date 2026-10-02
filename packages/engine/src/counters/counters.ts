@@ -4,6 +4,7 @@ import {
   type Build,
   type BuildOptions,
 } from '../builds/eligibility.js';
+import { fieldedBuilds, type PinMap } from '../collection/pins.js';
 import type { Specimen } from '../collection/specimen.js';
 import { GameDataIndex } from '../gamedata/index.js';
 import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js';
@@ -56,6 +57,8 @@ export interface CountersOptions {
    * question is "who beats X", not "who beats what I face".
    */
   vs?: string;
+  /** This league's pins. Absent means every species uses the default pick. */
+  pins?: PinMap;
 }
 
 export interface CountersResult {
@@ -141,21 +144,10 @@ function ownedBuilds(
   specimens: Specimen[],
   index: GameDataIndex,
   opts: BuildOptions,
+  pins: PinMap | undefined,
 ): Map<string, Build> {
-  const best = new Map<string, Build>();
-  for (const s of specimens) {
-    for (const b of buildsFor(s, index, opts)) {
-      const cur = best.get(b.speciesId);
-      if (
-        !cur ||
-        b.stageOffset < cur.stageOffset ||
-        (b.stageOffset === cur.stageOffset && b.ivRank.rank < cur.ivRank.rank)
-      ) {
-        best.set(b.speciesId, b);
-      }
-    }
-  }
-  return best;
+  const all = specimens.flatMap((s) => buildsFor(s, index, opts));
+  return new Map(fieldedBuilds(all, pins).map((b) => [b.speciesId, b]));
 }
 
 export interface CountersData {
@@ -255,7 +247,7 @@ export function metaCounters(
     target = opponentGroups(targetView, ranks)[0];
     simulated = column.candidates.length;
   }
-  const owned = ownedBuilds(specimens, index, opts.buildOptions);
+  const owned = ownedBuilds(specimens, index, opts.buildOptions, opts.pins);
 
   // Against one opponent the score is the plain win share; the rest of the meta only feeds
   // the beats and losesTo lines. Species that never win are left out.

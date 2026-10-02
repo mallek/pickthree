@@ -7,6 +7,7 @@ import {
 } from './builds/eligibility.js';
 import { simOptionsFor } from './gamedata/league.js';
 import { movesetFrom, rankingsById, recommendMoveset, type MoveIds } from './builds/moves.js';
+import { fieldedBuilds } from './collection/pins.js';
 import type { Specimen } from './collection/specimen.js';
 import type { RawScan } from './csv/parse.js';
 import { fullName } from './explain/explain.js';
@@ -151,14 +152,10 @@ function resolvePick(
   void overall;
   if (pick.kind === 'species') {
     if (pick.preferOwned) {
-      let best: Build | undefined;
-      for (const sp of specimens) {
-        for (const b of buildsFor(sp, index, opts)) {
-          if (b.speciesId === pick.id && (!best || b.ivRank.rank < best.ivRank.rank)) {
-            best = b;
-          }
-        }
-      }
+      const mine = specimens
+        .flatMap((sp) => buildsFor(sp, index, opts))
+        .filter((b) => b.speciesId === pick.id);
+      const best = fieldedBuilds(mine, opts.pins)[0];
       if (best) {
         return { build: best, hypothetical: false };
       }

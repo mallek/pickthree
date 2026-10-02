@@ -7,6 +7,7 @@ import {
   type MoveIds,
   type Moveset,
 } from '../builds/moves.js';
+import { resolvePick } from '../collection/pins.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import type { RankingCategory, RankingEntry } from '../gamedata/types.js';
 import type { MatrixView } from './matrixView.js';
@@ -106,6 +107,12 @@ export function candidatePool(
   const excludedSpecies = new Set(opts.excludedSpecies);
   const dropped: { speciesId: string; reason: string }[] = [];
   const candidates: Candidate[] = [];
+  const everyBuild = new Map<string, Build[]>();
+  for (const build of builds) {
+    const list = everyBuild.get(build.speciesId) ?? [];
+    list.push(build);
+    everyBuild.set(build.speciesId, list);
+  }
 
   for (const build of builds) {
     if (excluded.has(build.specimenId) || excludedSpecies.has(build.speciesId)) {
@@ -153,21 +160,26 @@ export function candidatePool(
     });
   }
 
-  // Best specimen per species: highest stat product, then cheaper.
-  const bestBySpecies = new Map<string, Candidate>();
+  // One copy per species: the pinned one, or the default pick among the copies that passed.
+  const passing = new Map<string, Candidate[]>();
   for (const c of candidates) {
-    const prev = bestBySpecies.get(c.build.speciesId);
-    if (
-      !prev ||
-      c.build.ivRank.product > prev.build.ivRank.product ||
-      (c.build.ivRank.product === prev.build.ivRank.product && c.cost.weight < prev.cost.weight)
-    ) {
-      bestBySpecies.set(c.build.speciesId, c);
+    const list = passing.get(c.build.speciesId) ?? [];
+    list.push(c);
+    passing.set(c.build.speciesId, list);
+  }
+  const fielded: Candidate[] = [];
+  for (const [speciesId, list] of passing) {
+    const pick = resolvePick(
+      list.map((c) => c.build),
+      everyBuild.get(speciesId) ?? [],
+      opts.pins?.[speciesId],
+    );
+    const chosen = pick ? list.find((c) => c.build === pick) : undefined;
+    if (chosen) {
+      fielded.push(chosen);
     }
   }
-  const pool = [...bestBySpecies.values()]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, opts.poolSize);
+  const pool = fielded.sort((a, b) => b.score - a.score).slice(0, opts.poolSize);
   return { pool, dropped };
 }
 
