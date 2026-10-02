@@ -24,6 +24,7 @@ import {
   useScrollMemory,
   useSpecies,
   useSticky,
+  PlusGlyph,
 } from '../components.tsx';
 import { judgeFailedLine, META_CUTOFF, num, ownSpeciesId, rankLabel, SEP } from '../format.ts';
 import { LeagueSwitcher, useLeague } from '../components/LeagueSwitcher.tsx';
@@ -42,26 +43,7 @@ const SORTS: ChoiceOption<Sort>[] = [
   { value: 'name', label: 'Name' },
 ];
 
-/** A plus, the Add a Pokémon glyph for an IconButton: 20px, drawn like ShareGlyph. */
-function PlusGlyph() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
-/** An arrow down into a tray, the Import a collection glyph: 20px, drawn like PlusGlyph. */
+/** An arrow down into a tray, the Import a collection glyph: 20px, drawn like ShareGlyph. */
 function ImportGlyph() {
   return (
     <svg
@@ -432,16 +414,12 @@ export function Collection() {
     return out;
   }, [groups, missing, sort, metaKey, metaSpecies]);
 
-  /**
-   * Where a row goes: a copy that needs a rescan opens its species page, where Yours offers Enter
-   * values, as long as the league in play allows the species (the page is otherwise only "not
-   * allowed"); every other copy opens its own page.
-   */
-  const legal = useMemo(() => new Set(info?.legal ?? []), [info]);
-  const rowRoute = (sp: Specimen, label: VerdictLabel | undefined): Route =>
-    label === 'Needs rescan' && legal.has(ownSpeciesId(sp))
-      ? { screen: 'species', id: ownSpeciesId(sp) }
-      : { screen: 'specimen', id: sp.id };
+  /** Where a row goes: its own species page, with this copy the one shown. */
+  const rowRoute = (sp: Specimen): Route => ({
+    screen: 'species',
+    id: ownSpeciesId(sp),
+    copy: sp.id,
+  });
 
   /** The tag line's rank pills for a species: blended rank, trend, PvPoke's role tag. */
   const rankTags = (id: string) => (
@@ -576,7 +554,7 @@ export function Collection() {
             <div className="spec-group" key={g.key}>
               <a
                 className={`spec-row${v?.ineligible === 'banned' ? ' banned' : ''}${rescan ? ' rescan' : ''}`}
-                href={hashFor(rowRoute(sp, v?.label))}
+                href={hashFor(rowRoute(sp))}
               >
                 <PokemonToken
                   speciesId={sp.speciesId}
@@ -629,11 +607,7 @@ export function Collection() {
                 ? g.others.map((o) => {
                     const ov = s.verdicts[o.id];
                     return (
-                      <a
-                        className="spec-row sub"
-                        key={o.id}
-                        href={hashFor(rowRoute(o, ov?.label))}
-                      >
+                      <a className="spec-row sub" key={o.id} href={hashFor(rowRoute(o))}>
                         <span />
                         <span style={{ minWidth: 0 }}>
                           <span className="meta" style={{ display: 'block' }}>

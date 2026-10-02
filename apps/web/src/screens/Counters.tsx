@@ -276,7 +276,7 @@ export function Counters() {
           const view =
             mine && c.ownedSpecimenId
               ? {
-                  href: hashFor({ screen: 'specimen', id: c.ownedSpecimenId }),
+                  href: hashFor({ screen: 'species', id: c.speciesId, copy: c.ownedSpecimenId }),
                   label: c.owned === 'have' ? 'View yours' : `View your ${name(mine)}`,
                 }
               : null;

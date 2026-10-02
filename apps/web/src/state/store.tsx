@@ -23,6 +23,7 @@ import {
   type ScanList,
   type ScheduleEntry,
   type Season,
+  type SpeciesView,
   type Specimen,
   type SuggestResult,
   type TeamAnalysis,
@@ -108,9 +109,13 @@ export type Route =
   | { screen: 'team'; id: string }
   /** `league` is a link's league, read and never written back (same rule as counters). */
   | { screen: 'collection'; league?: string }
+  /** An old link to a Pokémon's own page: it now opens that copy on its species page. */
   | { screen: 'specimen'; id: string }
-  /** A species page: its id and, from a link, the league it belongs to. */
-  | { screen: 'species'; id: string; league?: string }
+  /**
+   * A species page: its id, from a link the league it belongs to, and the copy of yours to show
+   * (absent shows the pinned one).
+   */
+  | { screen: 'species'; id: string; league?: string; copy?: string }
   | { screen: 'counters'; vs?: string; league?: string; from?: true }
   /** A Build lead link: the species for pick 0, and the league an inbound link names. */
   | { screen: 'build'; lead?: string; league?: string }
@@ -588,8 +593,11 @@ export function parseHash(hash: string): Route {
     if (!SPECIES_ID.test(id)) {
       return { screen: 'meta' };
     }
-    const league = leagueParam(new URLSearchParams(query ?? '').get('l'));
-    return league ? { screen: 'species', id, league } : { screen: 'species', id };
+    const params = new URLSearchParams(query ?? '');
+    const league = leagueParam(params.get('l'));
+    const copyRaw = params.get('copy');
+    const copy = copyRaw !== null && SPECIMEN_ID.test(copyRaw) ? { copy: copyRaw } : {};
+    return league ? { screen: 'species', id, league, ...copy } : { screen: 'species', id, ...copy };
   }
   if (a === 'counters') {
     const params = new URLSearchParams(query ?? '');
@@ -725,7 +733,9 @@ export function hashFor(r: Route): string {
       return r.species ? `#/add?species=${encodeURIComponent(r.species)}` : '#/add';
     case 'species':
       // The league from a link is never written back.
-      return `#/species/${encodeURIComponent(r.id)}`;
+      return r.copy
+        ? `#/species/${encodeURIComponent(r.id)}?copy=${encodeURIComponent(r.copy)}`
+        : `#/species/${encodeURIComponent(r.id)}`;
     case 'meta':
       return '#/meta';
     case 'meta-teams': {
@@ -950,7 +960,18 @@ interface Actions {
    * Correct one Pokémon with values typed in (a bad scan, a power-up). It keeps its id and its
    * place in the collection; the level comes from the CP and IVs as for one added by hand.
    */
-  updateManual(id: string, input: ManualInput, marks?: ManualMegaMarks): Promise<ManualResult>;
+  updateManual(
+    id: string,
+    input: ManualInput,
+    marks?: ManualMegaMarks,
+    /** Set when Edit evolved it: the species it was before. */
+    extra?: { evolvedFrom?: string },
+  ): Promise<ManualResult>;
+  /**
+   * One species page in a league: your copies that are the species or can become it, each judged
+   * as it, and the one teams field. Computed on the device from the collection as it stands.
+   */
+  speciesView(speciesId: string, league: string): Promise<SpeciesView>;
   /** The in-battle card for one opponent against the set's team. Null when it could not run. */
   faceoff(team: TeamRef, opponent: string): Promise<Faceoff | null>;
   /** Take one Pokémon out. It leaves a mark, so a later import does not bring it back. */
@@ -1827,7 +1848,12 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     [saveSpecimens],
   );
   const updateManual = useCallback(
-    async (id: string, input: ManualInput, marks?: ManualMegaMarks) => {
+    async (
+      id: string,
+      input: ManualInput,
+      marks?: ManualMegaMarks,
+      extra?: { evolvedFrom?: string },
+    ) => {
       const h = hostRef.current as WorkerHost;
       const existing = stateRef.current.collection?.specimens ?? [];
       const old = existing.find((x) => x.id === id);
@@ -1835,23 +1861,32 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
         throw new Error('That Pokémon is not in the current collection.');
       }
       const made = await h.manual(input);
-      // The worker's specimen carries the new values; the copy keeps who it is. Its known moves
-      // stay while it is still the same species, and a purified copy stays purified (the form has
-      // no such field). The Mega mark is the form's.
+      // The worker's specimen carries the new values; the copy keeps who it is. Moves and
+      // Purified are what the form sent; a caller that sends neither keeps the copy's own (its
+      // moves only while it is still the same species). The Mega mark is the form's.
       const sameSpecies = ownSpeciesId(old) === made.specimen.speciesId;
+      const evolvedFrom = extra?.evolvedFrom ?? (sameSpecies ? old.evolvedFrom : undefined);
       const specimen: Specimen = {
         ...made.specimen,
         id: old.id,
         // Typing values in is not a scan: the copy keeps when it was scanned.
         scannedAt: old.scannedAt,
-        purified: old.purified && !made.specimen.shadow,
-        currentMoves: sameSpecies ? old.currentMoves : { fast: null, charged: [] },
+        purified:
+          input.purified === undefined
+            ? old.purified && !made.specimen.shadow
+            : made.specimen.purified,
+        currentMoves:
+          input.currentMoves !== undefined
+            ? made.specimen.currentMoves
+            : sameSpecies
+              ? old.currentMoves
+              : { fast: null, charged: [] },
         megaForm: marks?.megaForm ?? null,
         // A newer scan may replace these values; an older one may not.
         editedAt: localStamp(appNow()),
       };
-      if (sameSpecies && old.evolvedFrom) {
-        specimen.evolvedFrom = old.evolvedFrom;
+      if (evolvedFrom) {
+        specimen.evolvedFrom = evolvedFrom;
       }
       // A scan stays a scan (so no Remove), one typed in stays typed in.
       delete specimen.source;
@@ -1870,6 +1905,16 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     },
     [saveSpecimens],
   );
+  const speciesView = useCallback((speciesId: string, league: string) => {
+    const h = hostRef.current as WorkerHost;
+    const s = stateRef.current;
+    return h.speciesView(
+      speciesId,
+      s.collection?.specimens ?? [],
+      { ...optionsFrom(s.settings), ...pinsOption(s.collection, league) },
+      league,
+    );
+  }, []);
   const removeIds = useCallback(
     async (ids: string[]) => {
       const h = hostRef.current as WorkerHost;
@@ -2257,6 +2302,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       faceoff,
       addManual,
       updateManual,
+      speciesView,
       removeSpecimen,
       removeMissing,
       setPin,
@@ -2295,6 +2341,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       faceoff,
       addManual,
       updateManual,
+      speciesView,
       removeSpecimen,
       removeMissing,
       setPin,

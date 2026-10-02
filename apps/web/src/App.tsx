@@ -10,8 +10,8 @@ import { SharedTeam } from './screens/SharedTeam.tsx';
 import { NewSet } from './screens/NewSet.tsx';
 import { Report } from './screens/Report.tsx';
 import { Settings } from './screens/settings/Settings.tsx';
-import { SpecimenScreen } from './screens/Specimen.tsx';
 import { SpeciesPage } from './screens/SpeciesPage.tsx';
+import { SpecimenRedirect } from './screens/SpecimenRedirect.tsx';
 import { TeamDetail } from './screens/TeamDetail.tsx';
 import { Teams } from './screens/Teams.tsx';
 import { TopTeams } from './screens/TopTeams.tsx';
@@ -123,7 +123,7 @@ function renderScreen(r: Route) {
     case 'collection':
       return <Collection />;
     case 'specimen':
-      return <SpecimenScreen key={r.id} id={r.id} />;
+      return <SpecimenRedirect key={r.id} id={r.id} />;
     case 'counters':
       return <Counters />;
     case 'build':
