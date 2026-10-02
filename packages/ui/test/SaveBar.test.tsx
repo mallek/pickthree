@@ -53,3 +53,27 @@ describe('SaveBar', () => {
     expect(container.querySelector('.ui-savebar-space')).not.toBeNull();
   });
 });
+
+describe('SaveBar placement', () => {
+  it('sits at the foot unless the screen has the tab bar under it', () => {
+    const { container, rerender } = render(
+      <SaveBar
+        saveLabel="Save"
+        discardLabel="Discard"
+        onSave={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(container.querySelector('.ui-savebar')).not.toHaveClass('above-tabs');
+    rerender(
+      <SaveBar
+        saveLabel="Save"
+        discardLabel="Discard"
+        onSave={() => undefined}
+        onDiscard={() => undefined}
+        aboveTabs
+      />,
+    );
+    expect(container.querySelector('.ui-savebar')).toHaveClass('above-tabs');
+  });
+});

@@ -1,6 +1,6 @@
 /**
  * The bar a form shows while it holds changes that are not saved: Discard on the left, Save on
- * the right. It sits fixed above the tab bar, and leaves a spacer of its own height in the flow
+ * the right. It sits fixed at the foot of the screen, and leaves a spacer of its own height in the flow
  * so the last field can scroll clear of it. Render it only while there is something to save.
  */
 export function SaveBar({
@@ -10,6 +10,7 @@ export function SaveBar({
   onDiscard,
   busy,
   disabled,
+  aboveTabs = false,
 }: {
   saveLabel: string;
   discardLabel: string;
@@ -19,11 +20,17 @@ export function SaveBar({
   busy?: boolean | undefined;
   /** The form cannot be saved as it stands (a field is missing); Discard still works. */
   disabled?: boolean | undefined;
+  /** The screen shows the tab bar: the bar sits above it rather than at the very foot. */
+  aboveTabs?: boolean;
 }) {
   return (
     <>
       <div className="ui-savebar-space" aria-hidden="true" />
-      <div className="ui-savebar" role="group" aria-label="Unsaved changes">
+      <div
+        className={`ui-savebar${aboveTabs ? ' above-tabs' : ''}`}
+        role="group"
+        aria-label="Unsaved changes"
+      >
         <button
           type="button"
           className="ui-btn ui-btn-secondary"

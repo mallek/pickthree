@@ -2684,7 +2684,8 @@ await page.evaluate(() => window.scrollTo(0, 0));
 await shot('edit', true, { mustShow: '.scroll .pick-slot' });
 
 console.log('edit, unsaved changes');
-// A tick on Lucky is a change: the save bar comes up over the tab bar, clear of the last field.
+// A tick on Lucky is a change: the save bar comes up at the foot (Edit has no tab bar), clear of
+// the last field.
 await page.$$eval('.scroll .check-row', (rows) => {
   const lucky = rows.find((r) => r.textContent?.includes('Lucky'));
   lucky?.scrollIntoView({ block: 'center' });
@@ -2694,11 +2695,13 @@ await page.waitForSelector('.ui-savebar');
 await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 const barClear = await page.evaluate(() => {
   const bar = document.querySelector('.ui-savebar').getBoundingClientRect();
-  const tabs = document.querySelector('.tabs').getBoundingClientRect();
   const last = [...document.querySelectorAll('.scroll .check-row')].pop().getBoundingClientRect();
-  return { overTabs: bar.bottom <= tabs.top + 1, lastField: last.bottom <= bar.top };
+  return {
+    atFoot: Math.abs(bar.bottom - window.innerHeight) <= 1 && !document.querySelector('.tabs'),
+    lastField: last.bottom <= bar.top,
+  };
 });
-if (!barClear.overTabs || !barClear.lastField) {
+if (!barClear.atFoot || !barClear.lastField) {
   throw new Error(`edit, unsaved changes: the save bar covers something: ${JSON.stringify(barClear)}`);
 }
 await shot('edit-dirty', false, { mustShow: '.ui-savebar' });
