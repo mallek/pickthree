@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { hypotheticalSpecimen } from '../../src/analyze.js';
-import { DEFAULT_BUILD_OPTIONS, buildOptionsFor, buildsFor } from '../../src/builds/eligibility.js';
+import {
+  DEFAULT_BUILD_OPTIONS,
+  buildOptionsFor,
+  buildsFor,
+  isAlreadyBuilt,
+} from '../../src/builds/eligibility.js';
 import type { RawScan } from '../../src/csv/parse.js';
 import { GREAT_LEAGUE_DEF } from '../../src/gamedata/league.js';
 import type { Species } from '../../src/gamedata/types.js';
 import { GameDataIndex } from '../../src/gamedata/index.js';
 import { verdictsFor } from '../../src/recommend.js';
 import type { Specimen } from '../../src/collection/specimen.js';
-import { isAlreadyBuilt } from '../../src/verdicts/worth.js';
 import { haveLeague, haveStaticData, loadStaticData } from '../fixtures.js';
 
 /**

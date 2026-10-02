@@ -3,6 +3,7 @@ import type { IVs, ParsedCsv, RawScan, RowProblem } from '../csv/parse.js';
 import type { GameDataIndex } from '../gamedata/index.js';
 import { mapSpecies } from '../mapping/mapSpecies.js';
 import { MEGA_FORMS } from '../mapping/tables.js';
+import type { MergeBreakdown } from './merge.js';
 
 export interface Specimen {
   id: string;
@@ -24,6 +25,10 @@ export interface Specimen {
   megaForm?: 'mega' | 'mega_x' | 'mega_y' | null;
   /** The player has this Mega at Level 4 (set by the app). Absent means false. */
   megaLevel4?: boolean;
+  /** Last edit made in pick3, phone-local 'YYYY-MM-DD HH:MM:SS'. Absent means never edited. */
+  editedAt?: string;
+  /** The species this Pokemon was before it was evolved in pick3. Absent means not evolved here. */
+  evolvedFrom?: string;
 }
 
 /** The Mega mark of a specimen; an old save without the field is unmarked. */
@@ -40,6 +45,8 @@ export interface ImportReport {
   rowProblems: RowProblem[];
   layout: Layout;
   newestScan: string | null;
+  /** What a re-import did to the stored collection. Absent on a first import and older saves. */
+  merge?: MergeBreakdown;
 }
 
 /** FNV-1a 32-bit, hex. Stable across runs, no crypto dependency. */

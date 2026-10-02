@@ -1,5 +1,10 @@
 import { buildCost, type Cost } from '../builds/cost.js';
-import { buildsFor, type Build, type BuildOptions } from '../builds/eligibility.js';
+import {
+  buildsFor,
+  isAlreadyBuilt,
+  type Build,
+  type BuildOptions,
+} from '../builds/eligibility.js';
 import { recommendMoveset, type Moveset } from '../builds/moves.js';
 import type { Specimen } from '../collection/specimen.js';
 import { fullName } from '../explain/explain.js';
@@ -136,22 +141,6 @@ function simWins(
   }
   winsMemo.set(key, wins);
   return wins;
-}
-
-/**
- * Nothing left to power up, evolve or Mega Evolve. A Mega build compares against the level the
- * player powers up to (baseLevel), not the Mega's battle level, which a Level 4 Mega raises by
- * two, and is only built once the specimen carries that Mega's mark.
- */
-export function isAlreadyBuilt(
-  build: Pick<Build, 'stageOffset' | 'baseLevel' | 'mega'>,
-  specimen: Pick<Specimen, 'level'>,
-): boolean {
-  return (
-    build.baseLevel <= specimen.level.max + 0.5 &&
-    build.stageOffset === 0 &&
-    (build.mega === null || build.mega.ready)
-  );
 }
 
 export function specimenVerdict(s: Specimen, deps: VerdictDeps): Verdict {

@@ -1,3 +1,4 @@
+import type { PinMap } from '../collection/pins.js';
 import { megaFormOf, type Specimen } from '../collection/specimen.js';
 import type { IVs } from '../csv/parse.js';
 import type { GameDataIndex } from '../gamedata/index.js';
@@ -17,6 +18,8 @@ export interface BuildOptions {
   budgetStardust: number | null;
   /** The league's cup rules; absent means open Great League rules. */
   league?: League;
+  /** This league's pins by battling species. Absent means every species uses the default pick. */
+  pins?: PinMap;
 }
 
 export const DEFAULT_BUILD_OPTIONS: BuildOptions = {
@@ -64,6 +67,22 @@ export function buildOptionsFor(
   base: BuildOptions = DEFAULT_BUILD_OPTIONS,
 ): BuildOptions {
   return { ...base, cpCap: league.cp, minCp: league.minCp, league };
+}
+
+/**
+ * Nothing left to power up, evolve or Mega Evolve. A Mega build compares against the level the
+ * player powers up to (baseLevel), not the Mega's battle level, which a Level 4 Mega raises by
+ * two, and is only built once the specimen carries that Mega's mark.
+ */
+export function isAlreadyBuilt(
+  build: Pick<Build, 'stageOffset' | 'baseLevel' | 'mega'>,
+  specimen: Pick<Specimen, 'level'>,
+): boolean {
+  return (
+    build.baseLevel <= specimen.level.max + 0.5 &&
+    build.stageOffset === 0 &&
+    (build.mega === null || build.mega.ready)
+  );
 }
 
 type Common = Pick<Build, 'specimenId' | 'specimen' | 'shadow' | 'stageOffset' | 'ivs'>;
