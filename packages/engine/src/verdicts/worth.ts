@@ -1,10 +1,5 @@
 import { buildCost, type Cost } from '../builds/cost.js';
-import {
-  buildsFor,
-  isAlreadyBuilt,
-  type Build,
-  type BuildOptions,
-} from '../builds/eligibility.js';
+import { buildsFor, isAlreadyBuilt, type Build, type BuildOptions } from '../builds/eligibility.js';
 import { recommendMoveset, type Moveset } from '../builds/moves.js';
 import type { Specimen } from '../collection/specimen.js';
 import { fullName } from '../explain/explain.js';

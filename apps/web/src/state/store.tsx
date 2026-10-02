@@ -1364,8 +1364,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
       // over the old one is dropped, partials included, and the current one judged instead, so a
       // corrected Pokémon never shows the verdict its old values earned.
       const stale = (judged: Specimen[]): boolean =>
-        stateRef.current.collection !== null &&
-        stateRef.current.collection.specimens !== judged;
+        stateRef.current.collection !== null && stateRef.current.collection.specimens !== judged;
       let verdicts: Record<string, Verdict>;
       for (;;) {
         const judging = specimens;

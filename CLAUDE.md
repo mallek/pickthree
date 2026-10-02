@@ -4,7 +4,8 @@ Mobile-first web app: Poke Genie CSV in, Great League team recommendations out. 
 Live at https://pick3.gg. Free, no accounts, the collection never leaves the phone.
 Design spec: `docs/superpowers/specs/2026-09-11-pickthree-mvp-design.md`. Read it before changing architecture.
 Later specs: `docs/superpowers/specs/2026-09-14-adaptive-import-design.md` (CSV column resolution by meaning),
-`docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md` (meta.pick3.gg folded into the Meta tab).
+`docs/superpowers/specs/2026-09-30-meta-in-pick3-design.md` (meta.pick3.gg folded into the Meta tab),
+`docs/superpowers/specs/2026-10-01-collection-model-design.md` (permanent ids, re-import merge, pins).
 
 ## Layout
 
@@ -67,7 +68,7 @@ Pure functions over static data + a `BattleSimulator`. Pipeline for a recommenda
 ```
 csv/        parse -> layout (columns resolved by meaning) -> concepts
 mapping/    Poke Genie names/forms -> PvPoke species ids
-collection/ Specimen (one scanned Pokemon), manual entry
+collection/ Specimen (one Pokemon, permanent id), manual entry, merge (re-import), pins, evolve
 math/       CP, IV rank
 builds/     eligibility (league, XL, shadow, elite TM, budget), moves, cost tables (tables/)
 search/     candidatePool from matrix -> generateTrios (ABB and ABC structures) -> simulateFinalists with real IVs
@@ -87,7 +88,7 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `main.tsx` registers the PWA and mounts `App.tsx`. State is one reducer in `state/store.tsx`, exposed through `useAppState` and `useActions`.
 - `host/WorkerHost.ts` implements `ComputeHost` over `worker/engine.worker.ts` using the request/response union in `host/protocol.ts` (progress, partial, result, error).
 - The worker boots once (game data + gamemaster + PvPoke bundle) and fetches a league bundle (rankings, meta, matrix) lazily per league.
-- `storage/db.ts`: IndexedDB `pickthree` v2 with `collection`, `settings` and `battles` (one record per set, indexed by league) stores. Settings fields added later are optional with a documented default for old saves.
+- `storage/db.ts`: IndexedDB `pickthree` v2 with `collection`, `settings` and `battles` (one record per set, indexed by league) stores. Settings fields added later are optional with a documented default for old saves. The collection record also carries `removed` (marks left by removed Pokemon, so an import skips them) and `pins` (per league, the copy that represents a battling species); an import merges into the stored collection (`collection/merge.ts`) instead of replacing it.
 - Screens in `screens/`: Welcome (import, add by hand, start without a collection, scan list), Report, Teams, TeamDetail, Collection, Specimen, SpeciesPage, Counters, Build, AddPokemon, MetaHome, TopTeams, YourBattles, NewSet, LogBattle, settings/ (Settings: a hub with Your data, Community (with How the meta is ranked), Appearance and About pages), Filters (the Teams filter sheet: team style, build filters, excluded Pokemon).
 - `sw.ts`: app shell precached, `/data/*` stale-while-revalidate, `/data/sprites/*` cache-first, Web Share Target POST `/share` parks the CSV in a cache and the app imports it on `/?share=1`. Updates are prompt-mode via `update.ts` and `UpdateToast`.
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.

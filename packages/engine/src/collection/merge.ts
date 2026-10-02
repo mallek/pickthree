@@ -122,8 +122,7 @@ export function mergeScan(
   }
   // Every stored Pokemon a scan row could be, best pairing first: the same species before
   // another stage, then the closest level, then the closest CP, then ids so file order is moot.
-  const options: { old: Specimen; scan: Specimen; stage: number; level: number; cp: number }[] =
-    [];
+  const options: { old: Specimen; scan: Specimen; stage: number; level: number; cp: number }[] = [];
   for (const scan of scanned) {
     for (const old of buckets.get(matchKey(scan, index)) ?? []) {
       if (sameLine(old.speciesId, scan.speciesId, index)) {
