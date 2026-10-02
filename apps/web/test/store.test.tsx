@@ -166,6 +166,28 @@ describe('routes', () => {
     });
     expect(parseHash('#/collection?l=Bad League')).toEqual({ screen: 'collection' });
     expect(parseHash('#/collection/abc')).toEqual({ screen: 'specimen', id: 'abc' });
+    // A species page may name the copy of yours to show; a malformed one is dropped.
+    expect(parseHash('#/species/umbreon?copy=3fa2c01b')).toEqual({
+      screen: 'species',
+      id: 'umbreon',
+      copy: '3fa2c01b',
+    });
+    expect(parseHash('#/species/umbreon?l=great&copy=3fa2c01b-2')).toEqual({
+      screen: 'species',
+      id: 'umbreon',
+      league: 'great',
+      copy: '3fa2c01b-2',
+    });
+    expect(parseHash('#/species/umbreon?copy=bad%20id')).toEqual({
+      screen: 'species',
+      id: 'umbreon',
+    });
+    expect(hashFor({ screen: 'species', id: 'umbreon', copy: '3fa2c01b' })).toBe(
+      '#/species/umbreon?copy=3fa2c01b',
+    );
+    expect(hashFor({ screen: 'species', id: 'umbreon', league: 'great' })).toBe(
+      '#/species/umbreon',
+    );
     expect(hashFor({ screen: 'collection' })).toBe('#/collection');
     expect(hashFor({ screen: 'collection', league: 'mega-great' })).toBe('#/collection');
   });
@@ -1345,6 +1367,36 @@ describe('collection model', () => {
     const calls = (host.recommend as unknown as { mock: { calls: unknown[][] } }).mock.calls;
     const options = calls[calls.length - 1]?.[1] as { pins?: unknown };
     expect(options.pins).toEqual({ umbreon: null });
+  });
+
+  it('a species page is asked for with the collection, the filters and the league pins', async () => {
+    const importCsv = vi.fn(async () => ({ specimens: [{ ...specimen }], report }));
+    const host = fakeHost({ importCsv } as never);
+    await mount(host);
+    await act(async () => {
+      await latest!.actions.importCsv('a', 'a.csv');
+    });
+    await act(async () => {
+      await latest!.actions.setPin('umbreon', 'k');
+    });
+    const view = await latest!.actions.speciesView('umbreon', 'great');
+    expect(view.speciesId).toBe('umbreon');
+    const calls = (host.speciesView as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const [id, specimens, options, league] = calls[calls.length - 1] as [
+      string,
+      { id: string }[],
+      { pins?: unknown; allowXl?: boolean },
+      string,
+    ];
+    expect(id).toBe('umbreon');
+    expect(specimens.map((x) => x.id)).toEqual(['k']);
+    expect(options.pins).toEqual({ umbreon: 'k' });
+    expect(options.allowXl).toBe(true);
+    expect(league).toBe('great');
+    // Another league has its own pins: none here.
+    await latest!.actions.speciesView('umbreon', 'ultra');
+    const other = calls[calls.length - 1]?.[2] as { pins?: unknown };
+    expect(other.pins).toBeUndefined();
   });
 
   it('the pins are part of the teams cache key', () => {

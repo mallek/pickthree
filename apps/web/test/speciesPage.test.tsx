@@ -326,7 +326,7 @@ function verdict(specimenId: string, speciesId: string, label: VerdictLabel, ran
  */
 function viewFake(
   pages: Record<string, { ids: string[]; verdicts: Record<string, Verdict> }>,
-): ReturnType<typeof vi.fn> {
+) {
   return vi.fn(
     async (
       speciesId: string,

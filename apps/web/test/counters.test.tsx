@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CounterEntry, CountersResult, Specimen } from '@pickthree/engine';
 import { resetStickyForTests } from '../src/components.tsx';
 import { Counters } from '../src/screens/Counters.tsx';
-import { SpecimenScreen } from '../src/screens/Specimen.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
 import {
   AppProvider,
@@ -187,11 +186,16 @@ function Probe() {
   return null;
 }
 
-/** Counters on its route, a Pokémon's page on its own, nothing elsewhere: as App does. */
+/** Counters on its route, a stand-in page with a Back for a species page, nothing elsewhere. */
 function Gate() {
   const r = useAppState().route;
-  if (r.screen === 'specimen') {
-    return <SpecimenScreen id={r.id} />;
+  const { back } = useActions();
+  if (r.screen === 'species') {
+    return (
+      <button type="button" onClick={() => back({ screen: 'collection' })}>
+        Back
+      </button>
+    );
   }
   return r.screen === 'counters' ? <Counters /> : null;
 }
@@ -613,11 +617,11 @@ describe('Counters page', () => {
     const [tink, corv, medi] = await rowsIn();
     expect(within(tink!).getByRole('link', { name: 'View yours ›' })).toHaveAttribute(
       'href',
-      '#/collection/a',
+      '#/species/tinkaton?copy=a',
     );
     expect(within(corv!).getByRole('link', { name: 'View your Rookidee ›' })).toHaveAttribute(
       'href',
-      '#/collection/r',
+      '#/species/corviknight?copy=r',
     );
     expect(within(medi!).queryAllByRole('link')).toHaveLength(0);
     await act(async () => {
@@ -647,7 +651,8 @@ describe('Counters page', () => {
     const scrollTo = vi.fn();
     window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
     const view = screen.getByRole('link', { name: 'View yours ›' });
-    await go({ screen: 'specimen', id: view.getAttribute('href')!.split('/').pop()! });
+    expect(view).toHaveAttribute('href', '#/species/tinkaton?copy=a');
+    await go({ screen: 'species', id: 'tinkaton', copy: 'a' });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     });

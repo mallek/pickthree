@@ -488,7 +488,7 @@ describe('Collection', () => {
         (r) => r.querySelector('.spec-name')?.firstChild?.textContent === n,
       )!;
     const row = rowOf('Clodsire');
-    expect(row).toHaveAttribute('href', hashFor({ screen: 'species', id: 'clodsire' }));
+    expect(row).toHaveAttribute('href', hashFor({ screen: 'species', id: 'clodsire', copy: 'd' }));
     // No CP or IV line: the meta tag line a not-collected row has, the verdict on the right.
     expect(row).not.toHaveTextContent('CP 1400');
     expect(row).not.toHaveTextContent('IVs unknown');
@@ -498,8 +498,11 @@ describe('Collection', () => {
       ]),
     );
     expect(row.lastElementChild).toHaveAttribute('data-verdict', 'Needs rescan');
-    // Every other row still opens its own specimen page.
-    expect(rowOf('Azumarill')).toHaveAttribute('href', hashFor({ screen: 'specimen', id: 'c' }));
+    // Every row opens its own species page with that copy shown.
+    expect(rowOf('Azumarill')).toHaveAttribute(
+      'href',
+      hashFor({ screen: 'species', id: 'azumarill', copy: 'c' }),
+    );
 
     // The Rescan pill keeps finding it.
     await act(async () => {
@@ -508,11 +511,11 @@ describe('Collection', () => {
     expect(names()).toEqual(['Clodsire']);
     expect(rowOf('Clodsire')).toHaveAttribute(
       'href',
-      hashFor({ screen: 'species', id: 'clodsire' }),
+      hashFor({ screen: 'species', id: 'clodsire', copy: 'd' }),
     );
   });
 
-  it('keeps a Needs rescan copy on its own page when the league does not allow its species', async () => {
+  it('opens the species page for a copy the league does not allow too: it shows the copy', async () => {
     const rescan = { ...verdict('d', 'Needs rescan', 0), build: null } as unknown as Verdict;
     const base = fakeHost();
     const info = base.leagueInfo as unknown as () => Promise<{ legal: string[] }>;
@@ -532,8 +535,8 @@ describe('Collection', () => {
     const row = [...document.querySelectorAll<HTMLElement>('.spec-row:not(.sub)')].find(
       (r) => r.querySelector('.spec-name')?.firstChild?.textContent === 'Clodsire',
     )!;
-    // The species page would only say it is not allowed: the row opens the copy's own page.
-    expect(row).toHaveAttribute('href', hashFor({ screen: 'specimen', id: 'd' }));
+    // The species page says it is not allowed and still shows the copy, to edit or remove.
+    expect(row).toHaveAttribute('href', hashFor({ screen: 'species', id: 'clodsire', copy: 'd' }));
     expect(row.lastElementChild).toHaveAttribute('data-verdict', 'Needs rescan');
   });
 
@@ -632,7 +635,7 @@ describe('Collection', () => {
     await closeFilters();
     const before = names();
     expect(before).toEqual(['Medicham', 'Tinkaton']);
-    await go({ screen: 'specimen', id: 'e' });
+    await go({ screen: 'species', id: 'medicham', copy: 'e' });
     expect(document.querySelector('.spec-row')).toBeNull();
     await go({ screen: 'collection' });
     expect(screen.getByPlaceholderText('Search Pokémon')).toHaveValue('i');

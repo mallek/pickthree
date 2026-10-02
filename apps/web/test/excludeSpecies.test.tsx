@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { RecommendOptions, Specimen, Verdict } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SpecimenScreen } from '../src/screens/Specimen.tsx';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SpeciesPage } from '../src/screens/SpeciesPage.tsx';
 import { emptyLayoutValue } from '../src/format.ts';
 import {
   AppProvider,
@@ -23,10 +23,23 @@ function Probe() {
   return null;
 }
 
+/** The switch lives on a species page: the page of what a copy battles as. */
 function Gate() {
   const r = useAppState().route;
-  return r.screen === 'specimen' ? <SpecimenScreen id={r.id} /> : null;
+  return r.screen === 'species' ? <SpeciesPage key={r.id} id={r.id} /> : null;
 }
+
+/** The page's meta reads have nothing to say here; the switch does not depend on them. */
+function noNetwork(): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('{}', { status: 404 })),
+  );
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function specimen(id: string, speciesId: string, shadow = false): Specimen {
   return {
@@ -125,7 +138,18 @@ async function seed(): Promise<void> {
 
 /** fakeHost with Marill and the Shadow forms named, and the verdicts above. */
 function host(verdicts: () => Promise<Record<string, Verdict>> = async () => VERDICTS) {
-  const h = fakeHost({ verdicts: vi.fn(verdicts) });
+  const base = fakeHost();
+  const info = base.leagueInfo as unknown as () => Promise<{ legal: string[] }>;
+  const h = fakeHost({
+    verdicts: vi.fn(verdicts),
+    leagueInfo: vi.fn(async () => {
+      const i = await info();
+      return {
+        ...i,
+        legal: [...i.legal, 'marill', 'azumarill_shadow', 'eevee', 'sylveon', 'umbreon'],
+      };
+    }),
+  });
   const ready = h.ready;
   h.ready = (async () => {
     const r = await ready();
@@ -201,11 +225,12 @@ describe('Excluding the Pokémon as it battles', () => {
       .fn()
       .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
     latest = null;
+    noNetwork();
   });
 
   it('names what the Pokémon battles as, and every copy it covers, largest group first', async () => {
     await boot();
-    await go({ screen: 'specimen', id: 'm1' });
+    await go({ screen: 'species', id: 'azumarill' });
     await judgedAll();
     const sw = await screen.findByRole('switch', {
       name: 'Use Azumarill in team recommendations',
@@ -217,7 +242,7 @@ describe('Excluding the Pokémon as it battles', () => {
 
   it('reads one group alone, and keeps a Shadow form apart', async () => {
     await boot();
-    await go({ screen: 'specimen', id: 's1' });
+    await go({ screen: 'species', id: 'azumarill_shadow' });
     await judgedAll();
     const sw = await screen.findByRole('switch', {
       name: 'Use Shadow Azumarill in team recommendations',
@@ -227,44 +252,44 @@ describe('Excluding the Pokémon as it battles', () => {
 
   it('counts every copy the exclusion removes, not only those at their best as it', async () => {
     await boot();
-    await go({ screen: 'specimen', id: 'y1' });
+    await go({ screen: 'species', id: 'sylveon' });
     await judgedAll();
     const sw = await screen.findByRole('switch', {
       name: 'Use Sylveon in team recommendations',
     });
     expect(sw).toHaveAccessibleDescription('Covers your 1 Eevee and 1 Sylveon.');
-    await go({ screen: 'specimen', id: 'e1' });
+    await go({ screen: 'species', id: 'umbreon' });
     expect(
-      screen.getByRole('switch', { name: 'Use Umbreon in team recommendations' }),
+      await screen.findByRole('switch', { name: 'Use Umbreon in team recommendations' }),
     ).toHaveAccessibleDescription('Covers your 1 Eevee.');
   });
 
-  it('waits for the verdict before naming anything', async () => {
+  it('waits for the verdicts before saying which copies it covers', async () => {
     let release: (v: Record<string, Verdict>) => void = () => undefined;
     const pending = new Promise<Record<string, Verdict>>((r) => {
       release = r;
     });
     await boot(host(() => pending));
-    await go({ screen: 'specimen', id: 'm1' });
+    await go({ screen: 'species', id: 'azumarill' });
     await waitFor(() => expect(latest?.state.verdictsLoading).toBe(true));
-    expect(screen.queryByRole('switch', { name: /Use .+ in team/ })).toBeNull();
-    const waiting = screen.queryByRole('switch');
-    if (waiting) {
-      expect(waiting).toBeDisabled();
-    }
+    const sw = await screen.findByRole('switch', {
+      name: 'Use Azumarill in team recommendations',
+    });
+    expect(sw).not.toHaveAccessibleDescription();
     await act(async () => {
       release(VERDICTS);
     });
     await judgedAll();
-    expect(
-      screen.getByRole('switch', { name: 'Use Azumarill in team recommendations' }),
-    ).not.toBeDisabled();
+    await waitFor(() =>
+      expect(sw).toHaveAccessibleDescription('Covers your 3 Marill and 1 Azumarill.'),
+    );
+    expect(sw).not.toBeDisabled();
   });
 
   it('turning it off stores the battling species, and the next Teams run leaves it out', async () => {
     const h = host();
     await boot(h);
-    await go({ screen: 'specimen', id: 'z1' });
+    await go({ screen: 'species', id: 'azumarill' });
     await judgedAll();
     const before = filterKey(latest!.state.settings);
     await act(async () => {
@@ -279,14 +304,10 @@ describe('Excluding the Pokémon as it battles', () => {
       screen.getByRole('switch', { name: 'Use Azumarill in team recommendations' }),
     ).toHaveAttribute('aria-checked', 'false');
     // Another copy that battles as Azumarill reads off too: it is the same Pokémon on a team.
-    await go({ screen: 'specimen', id: 'm2' });
+    // Marill, whose own page is another Pokémon on a team, is still in.
+    await go({ screen: 'species', id: 'marill' });
     expect(
-      screen.getByRole('switch', { name: 'Use Azumarill in team recommendations' }),
-    ).toHaveAttribute('aria-checked', 'false');
-    // The Marill whose best build is itself is still in.
-    await go({ screen: 'specimen', id: 'm4' });
-    expect(
-      screen.getByRole('switch', { name: 'Use Marill in team recommendations' }),
+      await screen.findByRole('switch', { name: 'Use Marill in team recommendations' }),
     ).toHaveAttribute('aria-checked', 'true');
     const recommend = h.recommend as unknown as ReturnType<typeof vi.fn>;
     recommend.mockClear();
@@ -300,11 +321,12 @@ describe('Excluding the Pokémon as it battles', () => {
     expect(saved.excludedSpecies).toEqual(['azumarill']);
   });
 
-  it('shows no switch for a Pokémon that is not eligible in the league', async () => {
+  it('says nothing about copies when none of yours has a build of the species', async () => {
     await boot(host(async () => ({ ...VERDICTS, m4: verdict(SPECIMENS[4]!, null) })));
-    await go({ screen: 'specimen', id: 'm4' });
+    await go({ screen: 'species', id: 'marill' });
     await judgedAll();
-    expect(screen.queryByRole('switch')).toBeNull();
+    const sw = await screen.findByRole('switch', { name: 'Use Marill in team recommendations' });
+    expect(sw).not.toHaveAccessibleDescription();
   });
 });
 
@@ -315,6 +337,7 @@ describe('Legacy per-copy exclusions', () => {
     resetHistoryForTests();
     window.history.replaceState(null, '', window.location.pathname);
     latest = null;
+    noNetwork();
   });
 
   it('convert once to the battling species when verdicts arrive, dropping ids that are gone', async () => {
@@ -357,9 +380,9 @@ describe('Legacy per-copy exclusions', () => {
     expect(opts.excludedSpecimenIds).toEqual(['m4']);
     expect(opts.excludedSpecies).toEqual(['azumarill']);
     // Another copy's page still has a working switch.
-    await go({ screen: 'specimen', id: 'y1' });
+    await go({ screen: 'species', id: 'sylveon' });
     expect(
-      screen.getByRole('switch', { name: 'Use Sylveon in team recommendations' }),
+      await screen.findByRole('switch', { name: 'Use Sylveon in team recommendations' }),
     ).not.toBeDisabled();
   });
 
