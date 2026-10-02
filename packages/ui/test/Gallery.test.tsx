@@ -20,6 +20,7 @@ const SECTIONS = [
   'Term',
   'Header',
   'Sheet',
+  'SaveBar',
   'ConfirmSheet',
   'Toast',
   'States',

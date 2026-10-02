@@ -66,8 +66,15 @@ body {
 }
 .g-frame .ui-overlay,
 .g-frame .ui-sheet,
-.g-frame .ui-toast {
+.g-frame .ui-toast,
+.g-frame .ui-savebar {
   position: absolute;
+}
+.g-frame-savebar {
+  min-height: 150px;
+}
+.g-frame-savebar .ui-savebar {
+  bottom: 0;
 }
 /* In an app a toast sits between the viewport's gutters; the frame already sits inside the
    page's gutters, so here it runs edge to edge of the frame, the same width it gets in an app. The

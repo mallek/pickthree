@@ -1145,6 +1145,28 @@
   margin-top: 8px;
 }
 
+/* SaveBar: unsaved changes, fixed above the tab bar (same shape as .tabs, so it follows the same
+   iOS rule: a fixed bar inside a page that never scrolls sideways). */
+.ui-savebar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  margin: 0 auto;
+  max-width: 560px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px var(--gutter);
+  background: var(--surface);
+  border-top: 1px solid var(--divider);
+  z-index: 5;
+}
+.ui-savebar-space {
+  height: 68px;
+  flex: none;
+}
+
 /* Toast: one line, an optional action. */
 .ui-toast {
   position: fixed;

@@ -16,6 +16,7 @@ import {
   MeasuredLine,
   MeasuredValue,
   ProgressCard,
+  SaveBar,
   Select,
   Sheet,
   Switch,
@@ -443,6 +444,32 @@ export function Gallery() {
         <Frame render={(el) => <Sheet root={SETTINGS} onClose={() => undefined} container={el} />} />
         <p className="g-note">Pushed to depth 2: back is named for the page below.</p>
         <Frame render={(el) => <Sheet root={SETTINGS_AT_ABOUT} onClose={() => undefined} container={el} />} />
+      </Section>
+
+      <Section name="SaveBar">
+        <Frame
+          className="g-frame-savebar"
+          render={() => (
+            <SaveBar
+              saveLabel="Save changes"
+              discardLabel="Discard"
+              onSave={() => undefined}
+              onDiscard={() => undefined}
+            />
+          )}
+        />
+        <Frame
+          className="g-frame-savebar"
+          render={() => (
+            <SaveBar
+              saveLabel="Saving..."
+              discardLabel="Discard"
+              onSave={() => undefined}
+              onDiscard={() => undefined}
+              busy
+            />
+          )}
+        />
       </Section>
 
       <Section name="ConfirmSheet">

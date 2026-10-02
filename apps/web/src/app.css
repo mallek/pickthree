@@ -2832,6 +2832,27 @@ input[type='range'] {
 .move-picker-rec {
   margin: 0;
 }
+/* The species page's moves card is the picker read only: a known move reads at full strength,
+   the rest stay dimmed. */
+.move-picker.read-only .move-opt {
+  cursor: default;
+}
+.move-picker.read-only .move-opt.on:disabled {
+  color: inherit;
+}
+.move-picker.read-only .move-opt.on:disabled .move-opt-mark {
+  border-color: var(--accent);
+}
+.star-glyph {
+  color: var(--accent-text);
+  flex: none;
+}
+.move-legend {
+  margin: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
 .hdr .head-cog {
   justify-self: end;
 }

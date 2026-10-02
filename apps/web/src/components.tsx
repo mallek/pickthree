@@ -781,6 +781,68 @@ export function PencilGlyph() {
   );
 }
 
+const STROKE_GLYPH = {
+  width: 20,
+  height: 20,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  'aria-hidden': true,
+} as const;
+
+/** A map pin for an IconButton: filled on the copy that represents its species, empty otherwise. */
+export function PinGlyph({ on }: { on: boolean }) {
+  return (
+    <svg {...STROKE_GLYPH} fill={on ? 'currentColor' : 'none'}>
+      <path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z" />
+      <path d="M12 14v7" />
+    </svg>
+  );
+}
+
+/** A bin, the Remove glyph for an IconButton. */
+export function TrashGlyph() {
+  return (
+    <svg {...STROKE_GLYPH}>
+      <path d="M4 7h16" />
+      <path d="M9 7V4h6v3" />
+      <path d="M6 7l1 13h10l1-13" />
+      <path d="M10 11v5M14 11v5" />
+    </svg>
+  );
+}
+
+/** A plus, the Add glyph for an IconButton. */
+export function PlusGlyph() {
+  return (
+    <svg {...STROKE_GLYPH}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+/**
+ * The mark on a move PvPoke recommends. With `label` it is read out ("Recommended"); the legend
+ * under a moves card shows it bare beside its own words.
+ */
+export function StarGlyph({ label = true }: { label?: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="star-glyph"
+      {...(label ? { role: 'img', 'aria-label': 'Recommended' } : { 'aria-hidden': true })}
+    >
+      <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5l-5.9 3.2 1.2-6.6-4.8-4.6 6.6-.9z" />
+    </svg>
+  );
+}
+
 export function Header({
   title,
   sub,

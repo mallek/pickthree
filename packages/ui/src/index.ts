@@ -21,6 +21,7 @@ export { ProgressCard, progressPercent } from './components/ProgressCard.tsx';
 export { Sheet, type SheetNav, type SheetPage } from './components/Sheet.tsx';
 export { trapTab, useReturnFocus } from './components/focus.ts';
 export { ConfirmSheet } from './components/ConfirmSheet.tsx';
+export { SaveBar } from './components/SaveBar.tsx';
 export { Toast } from './components/Toast.tsx';
 export { Empty, ErrorState, Loading } from './components/States.tsx';
 export { Switch } from './components/Switch.tsx';

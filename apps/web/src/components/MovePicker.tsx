@@ -1,6 +1,6 @@
 import type { MoveChoice, MoveIds, MovePool } from '@pickthree/engine';
 import { Button, Tag, Term } from '@pickthree/ui';
-import { countsText, EffectIcons, TmBadge, TypeChip } from '../components.tsx';
+import { countsText, EffectIcons, StarGlyph, TmBadge, TypeChip } from '../components.tsx';
 
 /** The same moves: one fast move, and the same charged moves in any order. */
 export function sameIds(a: MoveIds, b: MoveIds): boolean {
@@ -11,11 +11,17 @@ export function sameIds(a: MoveIds, b: MoveIds): boolean {
   );
 }
 
-function Option({
+/**
+ * One move in a picker: a radio (fast) or a checkbox (charged) row. The team picker and the
+ * species page's moves card share it.
+ */
+export function MoveOption({
   move,
   role,
   checked,
-  changed,
+  changed = false,
+  recommended = false,
+  eliteOnly = false,
   disabled,
   fastName,
   onClick,
@@ -23,10 +29,15 @@ function Option({
   move: MoveChoice;
   role: 'radio' | 'checkbox';
   checked: boolean;
-  changed: boolean;
+  /** Differs from the recommended set: the team picker's "Changed" tag. */
+  changed?: boolean;
+  /** In PvPoke's set: a star after the type. */
+  recommended?: boolean;
+  /** Badge only an Elite TM move: "Has it" and a plain "TM" say nothing beside a tick. */
+  eliteOnly?: boolean;
   disabled: boolean;
   fastName: string | null;
-  onClick: () => void;
+  onClick?: (() => void) | undefined;
 }) {
   const count = fastName ? countsText(fastName, move.counts) : null;
   return (
@@ -47,8 +58,9 @@ function Option({
             {move.altType ? <TypeChip type={move.altType} small /> : null}
             <EffectIcons effects={move.effects} />
             {changed ? <Tag>Changed</Tag> : null}
+            {recommended ? <StarGlyph /> : null}
           </span>
-          <TmBadge tm={move.tm} />
+          {eliteOnly && move.tm !== 'elite' ? null : <TmBadge tm={eliteOnly ? 'elite' : move.tm} />}
         </span>
         {count ? <span className="move-sub">{count}</span> : null}
       </span>
@@ -92,7 +104,7 @@ export function MovePicker({
       <span className="move-picker-kind">Fast move</span>
       <div className="move-opts">
         {pool.fast.map((m) => (
-          <Option
+          <MoveOption
             key={m.moveId}
             move={m}
             role="radio"
@@ -115,7 +127,7 @@ export function MovePicker({
         {pool.charged.map((m) => {
           const checked = value.charged.includes(m.moveId);
           return (
-            <Option
+            <MoveOption
               key={m.moveId}
               move={m}
               role="checkbox"
