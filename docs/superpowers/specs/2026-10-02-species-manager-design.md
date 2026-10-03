@@ -5,7 +5,9 @@ Date: 2026-10-02. Status: layout approved by Travis over four mock rounds (branc
 
 This is piece 2 of three. Piece 1 (`2026-10-01-collection-model-design.md`, shipped) gave every
 Pokemon a permanent id, made imports merge, and added pins and evolve to the engine with no
-buttons. Piece 3 puts the moves a Pokemon knows into the sims.
+buttons. Piece 3 was to put the moves a Pokemon knows into the sims. Dropped 2026-10-03
+(Travis): players TM Frustration away at the next Rocket event and expect Shadows ranked as if
+they had, so sims keep assuming the recommended set and known moves keep changing the cost only.
 
 ## Why
 
