@@ -337,3 +337,99 @@ describe('the read routes see the ingested event', () => {
     }
   });
 });
+
+describe('stream battles ingest', () => {
+  const device = '3b241101-e2bb-4255-8caf-4136c566a962';
+  const battle = {
+    id: 'sv1',
+    league: 'great',
+    season: 28,
+    at: '2026-09-17T10:00:00Z',
+    team: ['tinkaton', 'azumarill', 'clodsire'],
+    moves: null,
+    opponents: ['medicham', 'lanturn'],
+    result: 'win',
+    tanked: false,
+    band: null,
+  };
+  const batch = { device, client: 'streamscanner 0.1.0', battles: [battle] };
+  const window = 'league=great&since=2026-09-01T00:00:00Z&until=2026-09-30T00:00:00Z';
+
+  it('refuses a write without the bearer token, or with none configured', async () => {
+    const { env, close } = testEnv({ INGEST_TOKEN: TOKEN });
+    const bare = testEnv();
+    try {
+      expect((await send(env, 'POST', '/api/v1/stream/battles', batch, null)).status).toBe(401);
+      expect((await send(env, 'POST', '/api/v1/stream/battles', batch, 'wrong')).status).toBe(401);
+      expect((await send(bare.env, 'POST', '/api/v1/stream/battles', batch)).status).toBe(401);
+    } finally {
+      close();
+      bare.close();
+    }
+  });
+
+  it('stamps source stream, ignores a client-sent source, and counts it beside the ladder', async () => {
+    const { env, close } = testEnv({ INGEST_TOKEN: TOKEN });
+    try {
+      const forged = { ...batch, battles: [{ ...battle, source: 'broadcast' }] };
+      const res = await send(env, 'POST', '/api/v1/stream/battles', forged);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ stored: 1, skipped: 0 });
+
+      // A phone's own battle goes through the origin-checked route and stays ladder.
+      const phone = await worker.fetch(
+        new Request('http://localhost/battles', {
+          method: 'POST',
+          headers: { Origin: 'http://localhost:5173', 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device: '4c352212-f3cc-4366-9dbf-5247d677b073',
+            client: 'pick3 test',
+            battles: [{ ...battle, id: 'ph1', band: 'ace' }],
+          }),
+        }),
+        env,
+      );
+      expect(phone.status).toBe(200);
+
+      const meta = await worker.fetch(new Request(`http://localhost/api/v1/meta?${window}`), env);
+      const body = (await meta.json()) as { battles: number; sources: Record<string, number> };
+      expect(body.battles).toBe(2);
+      expect(body.sources).toEqual({ stream: 1, ladder: 1 });
+
+      const legacy = await worker.fetch(
+        new Request('http://localhost/meta?league=great&days=365'),
+        env,
+      );
+      expect(((await legacy.json()) as { sources: Record<string, number> }).sources).toEqual({
+        stream: 1,
+        ladder: 1,
+      });
+    } finally {
+      close();
+    }
+  });
+
+  it('is idempotent by battle id, so a re-run upserts', async () => {
+    const { env, close } = testEnv({ INGEST_TOKEN: TOKEN });
+    try {
+      await send(env, 'POST', '/api/v1/stream/battles', batch);
+      await send(env, 'POST', '/api/v1/stream/battles', batch);
+      const meta = await worker.fetch(new Request(`http://localhost/api/v1/meta?${window}`), env);
+      expect(((await meta.json()) as { battles: number }).battles).toBe(1);
+    } finally {
+      close();
+    }
+  });
+
+  it('rejects a bad batch, an oversized batch and a wrong method', async () => {
+    const { env, close } = testEnv({ INGEST_TOKEN: TOKEN });
+    try {
+      expect((await send(env, 'POST', '/api/v1/stream/battles', { device })).status).toBe(400);
+      const over = { ...batch, battles: Array.from({ length: 201 }, (_, i) => ({ ...battle, id: `b${i}` })) };
+      expect((await send(env, 'POST', '/api/v1/stream/battles', over)).status).toBe(400);
+      expect((await send(env, 'GET', `/api/v1/stream/battles?${window}`)).status).toBe(404);
+    } finally {
+      close();
+    }
+  });
+});

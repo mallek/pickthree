@@ -5,6 +5,7 @@
  *   GET  /count     returns { count }
  *   POST /error     records { build, stage, message, ua } (rolling 200, no identifiers)
  *   GET  /errors    returns the log; needs Authorization: Bearer <ERRORS_READ_TOKEN>
+ *   POST /api/v1/stream/battles  the same body, keyed; stamps source 'stream'
  *   POST /battles   stores anonymous battle records { device, client, battles } (max 200);
  *                   the same device resending the same battle id updates its result, tanked
  *                   flag and opponents in place rather than adding a second row
@@ -162,7 +163,10 @@ export class MetaStore extends DurableObject<Env> {
     createTournamentTables(ctx.storage.sql);
   }
 
-  ingest(batch: SharedBatch): { stored: number; skipped: number } {
+  ingest(
+    batch: SharedBatch,
+    source: BattleSource = DEFAULT_SOURCE,
+  ): { stored: number; skipped: number } {
     const received = new Date().toISOString();
     let stored = 0;
     for (const b of batch.battles) {
@@ -187,7 +191,7 @@ export class MetaStore extends DurableObject<Env> {
         b.result,
         b.tanked ? 1 : 0,
         b.band,
-        DEFAULT_SOURCE,
+        source,
         batch.client,
         received,
       );
@@ -516,6 +520,25 @@ export default {
         return Response.json({ error: 'bad device' }, { status: 400, headers });
       }
       return Response.json({ deleted: await meta.forget(device) }, { headers });
+    }
+    // Stream battles: GBL battles read off streamers' VODs by StreamScanner. Same body and cap as
+    // /battles, but keyed like the tournament writes (a script calls it, the token is what makes
+    // the population unforgeable). The worker stamps source 'stream'; a source in the body is
+    // never read, because parseBatch only picks the fields it knows.
+    if (request.method === 'POST' && url.pathname === '/api/v1/stream/battles') {
+      const auth = request.headers.get('Authorization') ?? '';
+      if (!env.INGEST_TOKEN || auth !== `Bearer ${env.INGEST_TOKEN}`) {
+        return Response.json({ error: 'unauthorized' }, { status: 401, headers });
+      }
+      const read = await readJson(request, 256 * 1024);
+      if ('error' in read) {
+        return Response.json({ error: read.error }, { status: read.status, headers });
+      }
+      const batch = parseBatch(read.body);
+      if (!batch) {
+        return Response.json({ error: 'bad batch' }, { status: 400, headers });
+      }
+      return Response.json(await meta.ingest(batch, 'stream'), { headers });
     }
     // Tournament routes. The writes take a bearer token and no Origin check: a script calls
     // these, not a browser, and the token is what makes this population unforgeable. The

@@ -7,11 +7,13 @@ export const BANDS = ['below', 'ace', 'veteran', 'expert', 'legend'] as const;
 export type Band = (typeof BANDS)[number];
 
 /** Where a battle came from. `ladder` is everything the app sends; `broadcast` is a tournament
- * battle read off an official stream (docs/superpowers/specs/2026-09-21-tournament-data-design.md).
- * Stamped by the worker, never accepted from the client: a client that could name its own source
- * could forge the population the separate tables exist to keep apart. The two live in different
- * tables; this type is shared only so one read model can aggregate either. */
-export type BattleSource = 'ladder' | 'broadcast';
+ * battle read off an official stream (docs/superpowers/specs/2026-09-21-tournament-data-design.md);
+ * `stream` is a ladder (GBL) battle read off a streamer's VOD and uploaded through the keyed
+ * /api/v1/stream/battles route. Stamped by the worker, never accepted from the client: a client
+ * that could name its own source could forge the population it is counted as. `broadcast` lives in
+ * its own tables; `ladder` and `stream` share the `battles` table and the ladder reads, and this
+ * type is shared so one read model can aggregate any of them. */
+export type BattleSource = 'ladder' | 'broadcast' | 'stream';
 export const DEFAULT_SOURCE: BattleSource = 'ladder';
 
 export interface SharedMoves {
@@ -221,6 +223,8 @@ export interface MetaSummary {
   tanked: number;
   devices: number;
   bands: Record<string, number>;
+  /** Counted battles by source, so stream volume reads against ladder volume. */
+  sources: Record<string, number>;
   species: SpeciesSummary[];
   teams: TeamSummary[];
   /** Per species the reporters ran, the movesets they ran it with, most common first. */
@@ -234,6 +238,7 @@ export function aggregate(league: string, rows: BattleRow[], teamLimit = 50): Me
   const movesets = new Map<string, Map<string, MovesetSummary>>();
   const devices = new Set<string>();
   const bands: Record<string, number> = {};
+  const sources: Record<string, number> = {};
   let battles = 0;
   let tanked = 0;
   for (const r of rows) {
@@ -244,6 +249,7 @@ export function aggregate(league: string, rows: BattleRow[], teamLimit = 50): Me
     }
     battles += 1;
     bands[r.band ?? 'unknown'] = (bands[r.band ?? 'unknown'] ?? 0) + 1;
+    sources[r.source] = (sources[r.source] ?? 0) + 1;
     const win = r.result === 'win' ? 1 : 0;
     const loss = r.result === 'loss' ? 1 : 0;
     for (const id of new Set(r.opponents)) {
@@ -284,6 +290,7 @@ export function aggregate(league: string, rows: BattleRow[], teamLimit = 50): Me
     tanked,
     devices: devices.size,
     bands,
+    sources,
     species: [...species.values()].sort(
       (a, b) => b.sightings - a.sightings || a.speciesId.localeCompare(b.speciesId),
     ),
