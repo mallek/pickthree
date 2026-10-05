@@ -8,7 +8,7 @@ import type {
   RankingEntry,
 } from '@pickthree/engine';
 import { GREAT_LEAGUE_DEF } from '@pickthree/engine';
-import { GROUPS_DIR, OVERRIDES_DIR, RANKINGS_DIR } from './paths.js';
+import { GAMEMASTER_PATH, GROUPS_DIR, OVERRIDES_DIR, RANKINGS_DIR } from './paths.js';
 
 export const GREAT_CUP = 'all';
 export const GREAT_CP = 1500;
@@ -38,12 +38,44 @@ function readJson<T>(p: string): T {
   return JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, '')) as T;
 }
 
+let knownIds: ReadonlySet<string> | null = null;
+
+/** Every species id in PvPoke's game master at the pinned commit, read once. */
+function gameMasterIds(): ReadonlySet<string> {
+  if (!knownIds) {
+    const gm = readJson<{ pokemon: { speciesId: string }[] }>(GAMEMASTER_PATH);
+    knownIds = new Set(gm.pokemon.map((p) => p.speciesId));
+  }
+  return knownIds;
+}
+
+/**
+ * Drops entries whose species the game master no longer has. PvPoke renames ids (golisopodsh
+ * became golisopod_shadow) without always re-running a past cup's rankings, and a stale id would
+ * stop the whole build. Each dropped id is reported through onDrop.
+ */
+export function knownSpeciesOnly<T extends { speciesId: string }>(
+  entries: readonly T[],
+  known: ReadonlySet<string>,
+  onDrop: (speciesId: string) => void,
+): T[] {
+  return entries.filter((e) => {
+    if (known.has(e.speciesId)) {
+      return true;
+    }
+    onDrop(e.speciesId);
+    return false;
+  });
+}
+
 export function readRankings(cup: string, cp: number, category: RankingCategory): RankingEntry[] {
   const file = path.join(RANKINGS_DIR, cup, category, `rankings-${cp}.json`);
   if (!fs.existsSync(file)) {
     return [];
   }
-  const raw = readJson<RawRanking[]>(file);
+  const raw = knownSpeciesOnly(readJson<RawRanking[]>(file), gameMasterIds(), (id) => {
+    console.warn(`rankings ${cup}/${category}/${cp}: ${id} is not in the game master, skipped`);
+  });
   return raw.map((r) => ({
     speciesId: r.speciesId,
     score: r.score,

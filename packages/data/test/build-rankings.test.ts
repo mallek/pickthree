@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   effectiveMoveset,
+  knownSpeciesOnly,
   metaFromRankings,
   readGreatMeta,
   readGreatOverrides,
@@ -84,5 +85,27 @@ describe('metaFromRankings', () => {
     expect(
       metaFromRankings([r('a', ['F']), r('b', ['F', 'C1'])], 1).map((m) => m.speciesId),
     ).toEqual(['b']);
+  });
+});
+
+describe('knownSpeciesOnly', () => {
+  it('drops ids the game master lacks and reports each one, keeping order', () => {
+    const dropped: string[] = [];
+    const kept = knownSpeciesOnly(
+      [{ speciesId: 'a' }, { speciesId: 'old_id' }, { speciesId: 'b' }],
+      new Set(['a', 'b']),
+      (id) => dropped.push(id),
+    );
+    expect(kept.map((e) => e.speciesId)).toEqual(['a', 'b']);
+    expect(dropped).toEqual(['old_id']);
+  });
+
+  it('keeps everything and reports nothing when every id is known', () => {
+    const dropped: string[] = [];
+    const entries = [{ speciesId: 'a' }, { speciesId: 'b' }];
+    expect(knownSpeciesOnly(entries, new Set(['a', 'b']), (id) => dropped.push(id))).toEqual(
+      entries,
+    );
+    expect(dropped).toEqual([]);
   });
 });
