@@ -154,7 +154,7 @@ export async function drawDex(canvas: HTMLCanvasElement, input: DexInput): Promi
   canvas.height = L.height;
   const g = canvas.getContext('2d');
   if (!g) {
-    return;
+    throw new Error('No 2d canvas');
   }
   g.fillStyle = v('--bg');
   g.fillRect(0, 0, L.width, L.height);
@@ -215,8 +215,10 @@ export async function drawDex(canvas: HTMLCanvasElement, input: DexInput): Promi
   g.fillText('pick3.gg', L.left, L.height - 60);
 }
 
+export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled' | 'failed';
+
 /** Draws the dex off screen and hands it to the share sheet, or saves it as a download. */
-export async function shareDex(input: DexInput): Promise<'shared' | 'downloaded' | 'failed'> {
+export async function shareDex(input: DexInput): Promise<ShareOutcome> {
   try {
     const canvas = document.createElement('canvas');
     await drawDex(canvas, input);
@@ -231,8 +233,12 @@ export async function shareDex(input: DexInput): Promise<'shared' | 'downloaded'
       try {
         await nav.share({ files: [file], title: 'My Kanto dex' });
         return 'shared';
-      } catch {
-        // The share sheet was dismissed or refused; fall through to a download.
+      } catch (e) {
+        if ((e as { name?: string } | null)?.name === 'AbortError') {
+          // The player dismissed the share sheet: they chose not to share, so do nothing more.
+          return 'cancelled';
+        }
+        // The share sheet refused for another reason; fall through to a download.
       }
     }
     const url = URL.createObjectURL(file);
@@ -240,7 +246,7 @@ export async function shareDex(input: DexInput): Promise<'shared' | 'downloaded'
     a.href = url;
     a.download = name;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     return 'downloaded';
   } catch {
     return 'failed';

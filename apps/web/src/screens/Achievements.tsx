@@ -144,14 +144,24 @@ export function Achievements() {
     document.getElementById(`ach-${row}`)?.scrollIntoView({ block: 'center' });
   }, [row, hasRows]);
 
+  // Ignore taps while a picture is being made or the share sheet is open.
+  const sharing = useRef(false);
   const share = async (): Promise<void> => {
-    const result = await shareDex({
-      record: a.record,
-      types: (id) => (data?.species[id]?.types ?? ['normal']).filter((t) => t !== 'none'),
-      spritesOn: settings.sprites !== false,
-    });
-    if (result === 'failed') {
-      notify('Could not make the picture.', 'warn');
+    if (sharing.current) {
+      return;
+    }
+    sharing.current = true;
+    try {
+      const result = await shareDex({
+        record: a.record,
+        types: (id) => (data?.species[id]?.types ?? ['normal']).filter((t) => t !== 'none'),
+        spritesOn: settings.sprites !== false,
+      });
+      if (result === 'failed') {
+        notify('Could not make the picture.', 'warn');
+      }
+    } finally {
+      sharing.current = false;
     }
   };
 
