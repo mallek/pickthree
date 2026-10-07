@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
-import type { BattleSet } from '@pickthree/engine';
+import type { AchievementsRecord, BattleSet } from '@pickthree/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { mergeAchievementRecords, resetDbForTests, storage } from '../src/storage/db.ts';
 
@@ -161,5 +161,45 @@ describe('achievements storage', () => {
       ],
       marks: ['analyzed', 'other'],
     });
+  });
+
+  it('merge drops a repeated id and a repeated species inside the incoming block', () => {
+    const stored = { earned: [], marks: [] };
+    const incoming = {
+      earned: [
+        { id: 'trainer', earnedAt: 'a', species: 'pidgey', shiny: false },
+        { id: 'trainer', earnedAt: 'b', species: 'machop', shiny: true },
+        { id: 'full-set', earnedAt: 'c', species: 'pidgey', shiny: true },
+        { id: 'other', earnedAt: 'd', species: 'rattata', shiny: false },
+      ],
+      marks: [],
+    };
+    expect(mergeAchievementRecords(stored, incoming).earned).toEqual([
+      { id: 'trainer', earnedAt: 'a', species: 'pidgey', shiny: false },
+      { id: 'other', earnedAt: 'd', species: 'rattata', shiny: false },
+    ]);
+  });
+
+  it('updateAchievements keeps both of two concurrent changes', async () => {
+    const add = (id: string, species: string) => (cur: AchievementsRecord) => ({
+      earned: [...cur.earned, { id, earnedAt: 'a', species, shiny: false }],
+      marks: cur.marks,
+    });
+    const [a, b] = await Promise.all([
+      storage.updateAchievements(add('trainer', 'pidgey')),
+      storage.updateAchievements(add('full-set', 'machop')),
+    ]);
+    expect(a).not.toBeNull();
+    expect(b).not.toBeNull();
+    const ids = (await storage.loadAchievements()).earned.map((e) => e.id).sort();
+    expect(ids).toEqual(['full-set', 'trainer']);
+  });
+
+  it('updateAchievements resolves null and writes nothing when fn throws', async () => {
+    const out = await storage.updateAchievements(() => {
+      throw new Error('boom');
+    });
+    expect(out).toBeNull();
+    expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
   });
 });

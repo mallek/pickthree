@@ -175,7 +175,15 @@ export function mergeAchievementRecords(
 ): AchievementsRecord {
   const have = new Set(stored.earned.map((e) => e.id));
   const owned = new Set(stored.earned.map((e) => e.species));
-  const added = incoming.earned.filter((e) => !have.has(e.id) && !owned.has(e.species));
+  const added = incoming.earned.filter((e) => {
+    if (have.has(e.id) || owned.has(e.species)) {
+      return false;
+    }
+    // Incoming entries are checked against each other too, so a tampered file cannot repeat one.
+    have.add(e.id);
+    owned.add(e.species);
+    return true;
+  });
   return {
     earned: [...stored.earned, ...added],
     marks: [...new Set([...stored.marks, ...incoming.marks])],
@@ -256,9 +264,25 @@ export const storage = {
       return true;
     }, false);
   },
+  /**
+   * Read, change and write the record in one readwrite transaction, so two callers cannot lose
+   * each other's change. fn must be synchronous: an await on anything but IndexedDB closes the
+   * transaction. Resolves the saved record, or null when anything failed (nothing was written).
+   */
+  updateAchievements(
+    fn: (current: AchievementsRecord) => AchievementsRecord,
+  ): Promise<AchievementsRecord | null> {
+    return safe<AchievementsRecord | null>(async () => {
+      const tx = (await db()).transaction('achievements', 'readwrite');
+      const r = await tx.store.get('current');
+      const next = fn(r ? { earned: [...r.earned], marks: [...r.marks] } : emptyAchievements());
+      await tx.store.put({ key: 'current', earned: next.earned, marks: next.marks });
+      await tx.done;
+      return next;
+    }, null);
+  },
   async mergeAchievements(incoming: AchievementsRecord): Promise<void> {
-    const stored = await storage.loadAchievements();
-    await storage.saveAchievements(mergeAchievementRecords(stored, incoming));
+    await storage.updateAchievements((cur) => mergeAchievementRecords(cur, incoming));
   },
   async forget(): Promise<void> {
     await safe(async () => {
