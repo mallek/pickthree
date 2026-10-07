@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useAchievements } from '../../achievements/AchievementsProvider.tsx';
+import { useName } from '../../components.tsx';
 import { useActions, useAppState } from '../../state/store.tsx';
 import { footClearance } from '../NoticeToast.tsx';
 import { RewardToken } from './tokens.tsx';
@@ -15,6 +16,7 @@ export function AchievementToast() {
   const s = useAppState();
   const { navigate } = useActions();
   const a = useAchievements();
+  const speciesName = useName();
   const t = s.notice === null ? a.toast : null;
   const [bottom, setBottom] = useState(12);
   useLayoutEffect(() => {
@@ -45,7 +47,7 @@ export function AchievementToast() {
       </div>
     );
   }
-  const name = s.data?.species[t.earned.species]?.name ?? t.earned.species;
+  const name = speciesName(t.earned.species);
   return (
     <div
       className="update-toast notice-toast notice-info notice-foot"

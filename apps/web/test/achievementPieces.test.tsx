@@ -143,6 +143,31 @@ describe('AchievementToast', () => {
     timer.mockRestore();
   });
 
+  it('keeps its clock when the view recomputes while it is up', async () => {
+    const timer = vi.spyOn(window, 'setTimeout');
+    const clear = vi.spyOn(window, 'clearTimeout');
+    view.current = {
+      ...emptyView(),
+      toast: { kind: 'earned', name: 'First battle', earned: FIRST },
+    };
+    await mount(<AchievementToast />);
+    const armed = () => timer.mock.calls.filter((c) => c[1] === 8000);
+    expect(armed()).toHaveLength(1);
+    const cleared = clear.mock.calls.length;
+    // An evaluation landing: a new view object with the same toast and the same handlers.
+    view.current = { ...view.current };
+    act(() => {
+      latest?.actions.navigate({ screen: 'teams' });
+    });
+    expect(armed()).toHaveLength(1);
+    expect(clear.mock.calls.length).toBe(cleared);
+    const fire = armed()[0]?.[0] as () => void;
+    fire();
+    expect(view.current.dismissToast).toHaveBeenCalledTimes(1);
+    timer.mockRestore();
+    clear.mockRestore();
+  });
+
   it('waits while the app notice is up', async () => {
     view.current = {
       ...emptyView(),
@@ -183,6 +208,7 @@ describe('WelcomeReveal', () => {
       ...emptyView(),
       reveal: {
         title: 'You have earned 2 already',
+        firstRun: true,
         items: [
           { earned: FIRST, name: 'First battle' },
           { earned: LAPRAS, name: 'Back again' },
@@ -203,7 +229,11 @@ describe('WelcomeReveal', () => {
   it('drops the battle log line when it is not the first run', async () => {
     view.current = {
       ...emptyView(),
-      reveal: { title: '2 new achievements', items: [{ earned: FIRST, name: 'First battle' }] },
+      reveal: {
+        title: '2 new achievements',
+        firstRun: false,
+        items: [{ earned: FIRST, name: 'First battle' }],
+      },
     };
     await mount(<WelcomeReveal />);
     expect(screen.getByText('Each one gave you a Kanto Pokemon.')).toBeInTheDocument();
@@ -215,6 +245,7 @@ describe('WelcomeReveal', () => {
       ...emptyView(),
       reveal: {
         title: 'You have earned 1 already',
+        firstRun: true,
         items: [{ earned: FIRST, name: 'First battle' }],
       },
     };

@@ -1,6 +1,7 @@
 import { Button, Sheet } from '@pickthree/ui';
 import { useAchievements } from '../../achievements/AchievementsProvider.tsx';
-import { useActions, useAppState } from '../../state/store.tsx';
+import { useName } from '../../components.tsx';
+import { useActions } from '../../state/store.tsx';
 import { RewardToken } from './tokens.tsx';
 
 /**
@@ -8,13 +9,12 @@ import { RewardToken } from './tokens.tsx';
  * battle log, or a log import that earns more than one.
  */
 export function WelcomeReveal() {
-  const s = useAppState();
+  const name = useName();
   const { navigate } = useActions();
   const { reveal, closeReveal } = useAchievements();
   if (!reveal) {
     return null;
   }
-  const firstRun = !/ new achievements$/.test(reveal.title);
   return (
     <Sheet
       onClose={closeReveal}
@@ -26,20 +26,20 @@ export function WelcomeReveal() {
             <div className="stack" style={{ gap: 4 }}>
               <b style={{ fontSize: 17 }}>{reveal.title}</b>
               <span className="small muted">
-                {firstRun
+                {reveal.firstRun
                   ? 'Your battle log counts from the start. Each one gave you a Kanto Pokemon.'
                   : 'Each one gave you a Kanto Pokemon.'}
               </span>
             </div>
             <div className="mh-team3">
-              {reveal.items.map(({ earned, name }) => (
+              {reveal.items.map(({ earned, name: title }) => (
                 <span key={earned.id}>
                   <RewardToken species={earned.species} shiny={earned.shiny} size={52} />
                   <span className="small">
                     {earned.shiny ? 'Shiny ' : ''}
-                    {s.data?.species[earned.species]?.name ?? earned.species}
+                    {name(earned.species)}
                   </span>
-                  <span className="meta">{name}</span>
+                  <span className="meta">{title}</span>
                 </span>
               ))}
             </div>

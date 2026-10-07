@@ -12,9 +12,14 @@ import { fakeHost } from './fakeHost.ts';
 
 let actions: ReturnType<typeof useActions> | null = null;
 let ready = false;
+const handlers = new Set<unknown>();
+const views = new Set<unknown>();
 
 function Probe() {
   const a = useAchievements();
+  handlers.add(a.dismissToast);
+  handlers.add(a.closeReveal);
+  views.add(a);
   actions = useActions();
   const s = useAppState();
   ready = s.leagueInfo !== null && s.setsLoaded;
@@ -50,6 +55,8 @@ beforeEach(() => {
   resetMetaGroupsForTests();
   actions = null;
   ready = false;
+  handlers.clear();
+  views.clear();
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response('[]', { status: 404 })),
@@ -71,6 +78,19 @@ describe('AchievementsProvider', () => {
     await waitFor(() => expect(screen.getByTestId('toast').textContent).toBe('First battle'));
     const stored = await storage.loadAchievements();
     expect(stored.earned.map((e) => e.id)).toEqual(['first-battle']);
+  });
+
+  it('keeps dismissToast and closeReveal the same function as the view recomputes', async () => {
+    await storage.saveSet(oneBattle);
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('toast').textContent).toBe('First battle'));
+    // The view recomputed as the record, facts and queue landed; the handlers did not move.
+    expect(views.size).toBeGreaterThan(1);
+    expect(handlers.size).toBe(2);
   });
 
   it('never rolls the same achievement twice under repeated evaluations', async () => {

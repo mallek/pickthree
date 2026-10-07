@@ -32,6 +32,8 @@ export type Announcement =
 
 export interface Reveal {
   title: string;
+  /** The first evaluation over an existing log, not a later batch. */
+  firstRun: boolean;
   items: { earned: EarnedAchievement; name: string }[];
 }
 
@@ -161,6 +163,7 @@ export function AchievementsProvider({
             title: out.wasEmpty
               ? `You have earned ${named.length} already`
               : `${named.length} new achievements`,
+            firstRun: out.wasEmpty,
             items: named,
           });
         } else if (justClosed) {
@@ -187,6 +190,10 @@ export function AchievementsProvider({
     lastAnalysis.current = s.analysis;
   }, [s.analysis, evaluate]);
 
+  // Stable, so a screen's timer that depends on them is not restarted by a recompute of the view.
+  const dismissToast = useCallback(() => setQueue((q) => q.slice(1)), []);
+  const closeReveal = useCallback(() => setReveal(null), []);
+
   const view = useMemo<AchievementsView>(() => {
     const ids = new Set(record.earned.map((e) => e.id));
     const statuses = facts ? statusAll(facts, ids) : [];
@@ -201,10 +208,10 @@ export function AchievementsProvider({
       nudge: n ? nudgeLine(n) : null,
       toast: queue[0] ?? null,
       reveal,
-      dismissToast: () => setQueue((q) => q.slice(1)),
-      closeReveal: () => setReveal(null),
+      dismissToast,
+      closeReveal,
     };
-  }, [record, facts, queue, reveal]);
+  }, [record, facts, queue, reveal, dismissToast, closeReveal]);
 
   return <Ctx.Provider value={view}>{children}</Ctx.Provider>;
 }
