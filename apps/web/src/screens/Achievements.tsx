@@ -2,6 +2,7 @@ import { KANTO, type AchievementStatus, type AchievementTier } from '@pickthree/
 import { Header, IconButton, ProgressCard } from '@pickthree/ui';
 import { useEffect, useRef } from 'react';
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
+import { shareDex } from '../achievements/shareImage.ts';
 import { ShareGlyph, useName } from '../components.tsx';
 import { BlankToken, RewardToken, SilhouetteSlot } from '../components/achievements/tokens.tsx';
 import { achievementsLine, shortDate } from '../format.ts';
@@ -123,9 +124,9 @@ function TierGroup({ tier, rows }: { tier: AchievementTier; rows: AchievementSta
 
 /** `#/achievements`: progress, the Kanto dex and every achievement by tier. */
 export function Achievements() {
-  const { back } = useActions();
+  const { back, notify } = useActions();
   const a = useAchievements();
-  const route = useAppState().route;
+  const { route, data, settings } = useAppState();
   const row = route.screen === 'achievements' ? route.row : undefined;
   const line = [a.shinyCount > 0 ? `${a.shinyCount} shiny` : null, achievementsLine(a)]
     .filter(Boolean)
@@ -143,6 +144,17 @@ export function Achievements() {
     document.getElementById(`ach-${row}`)?.scrollIntoView({ block: 'center' });
   }, [row, hasRows]);
 
+  const share = async (): Promise<void> => {
+    const result = await shareDex({
+      record: a.record,
+      types: (id) => (data?.species[id]?.types ?? ['normal']).filter((t) => t !== 'none'),
+      spritesOn: settings.sprites !== false,
+    });
+    if (result === 'failed') {
+      notify('Could not make the picture.', 'warn');
+    }
+  };
+
   return (
     <div className="screen">
       <div className="sub-head">
@@ -151,7 +163,7 @@ export function Achievements() {
           title="Achievements"
           back={{ label: 'Back', onClick: () => back({ screen: 'meta' }) }}
           actions={
-            <IconButton label="Share" onClick={() => undefined}>
+            <IconButton label="Share" onClick={() => void share()}>
               <ShareGlyph />
             </IconButton>
           }
