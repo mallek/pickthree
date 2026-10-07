@@ -38,13 +38,27 @@ export function RewardToken({
   );
 }
 
-/** Not earned yet: a plain disc in the bar color, with the dex number or a question mark. */
-export function BlankToken({ size, label }: { size: number; label: string }) {
+/**
+ * Not earned yet: a plain disc in the bar color, with the dex number or a question mark.
+ * `decorative` hides it from screen readers where a parent's label already says what it means
+ * (the dex grid).
+ */
+export function BlankToken({
+  size,
+  label,
+  decorative = false,
+}: {
+  size: number;
+  label: string;
+  decorative?: boolean;
+}) {
+  const a11y = decorative
+    ? { 'aria-hidden': true as const }
+    : { role: 'img', 'aria-label': 'Not earned yet' };
   return (
     <span
       className="token ach-blank"
-      role="img"
-      aria-label="Not earned yet"
+      {...a11y}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.34) }}
     >
       {label}
@@ -52,13 +66,15 @@ export function BlankToken({ size, label }: { size: number; label: string }) {
   );
 }
 
-/** Not earned yet, in the dex: the Pokemon's own sprite as a shape in the silhouette tokens. */
+/**
+ * Not earned yet, in the dex: the Pokemon's own sprite as a shape in the silhouette tokens.
+ * Hidden from screen readers: the dex grid's label says how many are lit.
+ */
 export function SilhouetteSlot({ species, size }: { species: string; size: number }) {
   return (
     <span
       className="ach-sil"
-      role="img"
-      aria-label="Not earned yet"
+      aria-hidden="true"
       style={{
         width: size,
         height: size,

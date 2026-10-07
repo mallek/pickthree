@@ -291,9 +291,11 @@ describe('WelcomeReveal', () => {
 
 describe('unearned slots', () => {
   it('draws an unearned dex slot as a silhouette with sprites on', () => {
-    render(<SilhouetteSlot species="charmander" size={28} />);
-    const slot = screen.getByRole('img', { name: 'Not earned yet' });
-    expect(slot).toHaveClass('ach-sil');
+    const { container } = render(<SilhouetteSlot species="charmander" size={28} />);
+    // Hidden from screen readers: the dex grid's own label says how many are lit.
+    expect(screen.queryByRole('img')).toBeNull();
+    const slot = container.querySelector('.ach-sil') as HTMLElement;
+    expect(slot).toHaveAttribute('aria-hidden', 'true');
     expect(slot.style.getPropertyValue('--sprite')).toBe('url(/data/sprites/charmander.webp)');
   });
 
@@ -302,5 +304,11 @@ describe('unearned slots', () => {
     const blank = screen.getByRole('img', { name: 'Not earned yet' });
     expect(blank).toHaveTextContent('7');
     expect(blank).toHaveClass('ach-blank');
+  });
+
+  it('hides a decorative blank disc from screen readers', () => {
+    const { container } = render(<BlankToken size={28} label="7" decorative />);
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(container.querySelector('.ach-blank')).toHaveAttribute('aria-hidden', 'true');
   });
 });

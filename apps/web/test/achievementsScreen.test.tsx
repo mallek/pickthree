@@ -135,7 +135,10 @@ describe('Achievements page', () => {
     await mount();
     const dex = document.querySelector('.ach-dex') as HTMLElement;
     expect(dex.children).toHaveLength(151);
-    expect(within(dex).getAllByRole('img', { name: 'Not earned yet' })).toHaveLength(149);
+    // One label for the grid; the unearned slots are hidden, the earned ones keep their names.
+    expect(screen.getByRole('group', { name: 'Your Kanto dex, 2 of 151' })).toBe(dex);
+    expect(within(dex).queryAllByRole('img', { name: 'Not earned yet' })).toHaveLength(0);
+    expect(dex.querySelectorAll('[aria-hidden="true"].ach-sil')).toHaveLength(149);
     expect(within(dex).getAllByRole('img', { name: 'Shiny' })).toHaveLength(1);
     expect(screen.getByText('2 of 151')).toBeInTheDocument();
   });
@@ -147,6 +150,8 @@ describe('Achievements page', () => {
     });
     await waitFor(() => expect(screen.getByText('151')).toBeInTheDocument());
     expect(screen.getByText('150')).toBeInTheDocument();
+    const dex = document.querySelector('.ach-dex') as HTMLElement;
+    expect(dex.querySelectorAll('[aria-hidden="true"].ach-blank')).toHaveLength(149);
   });
 
   it('lists a locked row with its how-to and progress and an earned row with its date', async () => {

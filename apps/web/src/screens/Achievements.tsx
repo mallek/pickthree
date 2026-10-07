@@ -58,7 +58,7 @@ function DexCard() {
         <b>Your Kanto dex</b>
         <span className="meta">{litCount} of 151</span>
       </div>
-      <div className="ach-dex">
+      <div className="ach-dex" role="group" aria-label={`Your Kanto dex, ${litCount} of 151`}>
         {KANTO.map((k) => {
           const e = lit.get(k.id);
           if (e) {
@@ -67,7 +67,7 @@ function DexCard() {
           return spritesOn ? (
             <SilhouetteSlot key={k.dex} species={k.id} size={28} />
           ) : (
-            <BlankToken key={k.dex} size={28} label={String(k.dex)} />
+            <BlankToken key={k.dex} size={28} label={String(k.dex)} decorative />
           );
         })}
       </div>
