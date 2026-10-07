@@ -1,0 +1,1086 @@
+{
+  "league": "little",
+  "cup": "Little Cup",
+  "day": "2026-10-05T23:08:52.575Z",
+  "weights": "prior",
+  "battles": 0,
+  "events": 0,
+  "mix": "PvPoke meta only - Oct 5, 2026",
+  "pvpoke": {
+    "commit": "e87448291024aff808f21a2e5f74e69f68b521df",
+    "date": "2026-09-29"
+  },
+  "resimulated": {
+    "top": [
+      "bronzor",
+      "ducklett",
+      "gligar",
+      "zigzagoon_galarian",
+      "seel",
+      "lickitung",
+      "wynaut",
+      "vullaby",
+      "wooper_shadow",
+      "wooper",
+      "deino",
+      "barboach_shadow",
+      "ducklett_shadow",
+      "eevee",
+      "vulpix_alolan",
+      "wooper_paldean",
+      "stunky_shadow",
+      "pawniard",
+      "cubone_shadow",
+      "wailmer",
+      "ledyba_shadow",
+      "gligar_shadow",
+      "vulpix_alolan_shadow",
+      "igglybuff",
+      "purrloin_shadow",
+      "shelmet",
+      "mareep_shadow",
+      "rattata_shadow",
+      "amaura",
+      "chikorita",
+      "fletchling",
+      "mareep",
+      "lechonk",
+      "dratini_shadow",
+      "cubone",
+      "barboach",
+      "riolu",
+      "skorupi_shadow",
+      "vulpix_shadow",
+      "drifloon",
+      "drifloon_shadow",
+      "frigibax",
+      "vulpix",
+      "rattata",
+      "chikorita_shadow",
+      "purrloin",
+      "spheal",
+      "dratini",
+      "golett_shadow",
+      "onix",
+      "munchlax",
+      "swinub",
+      "wooloo",
+      "onix_shadow",
+      "tepig",
+      "snorunt_shadow",
+      "pidove",
+      "sandshrew_alolan_shadow"
+    ],
+    "budget": [
+      "bronzor",
+      "ducklett",
+      "gligar",
+      "zigzagoon_galarian",
+      "seel",
+      "lickitung",
+      "wynaut",
+      "vullaby",
+      "wooper_shadow",
+      "wooper",
+      "deino",
+      "barboach_shadow",
+      "ducklett_shadow",
+      "eevee",
+      "vulpix_alolan",
+      "wooper_paldean",
+      "stunky_shadow",
+      "pawniard",
+      "cubone_shadow",
+      "wailmer",
+      "ledyba_shadow",
+      "gligar_shadow",
+      "vulpix_alolan_shadow",
+      "igglybuff",
+      "purrloin_shadow",
+      "shelmet",
+      "mareep_shadow",
+      "rattata_shadow",
+      "amaura",
+      "chikorita",
+      "fletchling",
+      "mareep",
+      "lechonk",
+      "dratini_shadow",
+      "cubone",
+      "barboach",
+      "riolu",
+      "skorupi_shadow",
+      "vulpix_shadow",
+      "drifloon",
+      "drifloon_shadow",
+      "frigibax",
+      "vulpix",
+      "rattata",
+      "chikorita_shadow",
+      "purrloin",
+      "spheal",
+      "dratini",
+      "golett_shadow",
+      "onix",
+      "munchlax",
+      "swinub",
+      "wooloo",
+      "onix_shadow",
+      "tepig",
+      "snorunt_shadow",
+      "pidove",
+      "sandshrew_alolan_shadow"
+    ],
+    "mega": []
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Wynaut",
+          "Skorupi (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Drifloon",
+            "strength": 93.3,
+            "coverage": 98,
+            "consistency": 77.4,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "wynaut",
+              "skorupi_shadow",
+              "drifloon"
+            ],
+            "moves": [
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wynaut.COUNTER.MIRROR_COAT+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+drifloon.HEX.ICY_WIND.SHADOW_BALL"
+          },
+          {
+            "name": "Purrloin",
+            "strength": 93.3,
+            "coverage": 97.8,
+            "consistency": 77.6,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "wynaut",
+              "shelmet"
+            ],
+            "species": [
+              "wynaut",
+              "skorupi_shadow",
+              "purrloin"
+            ],
+            "moves": [
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wynaut.COUNTER.MIRROR_COAT+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH"
+          },
+          {
+            "name": "Ledyba (Shadow)",
+            "strength": 92.6,
+            "coverage": 98,
+            "consistency": 74.5,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "ledyba_shadow",
+              "skorupi_shadow",
+              "wynaut"
+            ],
+            "moves": [
+              [
+                "BUG_BITE",
+                "AERIAL_ACE",
+                "SILVER_WIND"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/ledyba_shadow.BUG_BITE.AERIAL_ACE.SILVER_WIND+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+wynaut.COUNTER.MIRROR_COAT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Drifloon",
+          "Wynaut"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Onix (Shadow)",
+            "strength": 92.2,
+            "coverage": 100,
+            "consistency": 88.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "wynaut",
+              "onix_shadow"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "ROCK_THROW",
+                "ROCK_SLIDE",
+                "BREAKING_SWIPE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.ICY_WIND.SHADOW_BALL+wynaut.COUNTER.MIRROR_COAT+onix_shadow.ROCK_THROW.ROCK_SLIDE.BREAKING_SWIPE"
+          },
+          {
+            "name": "Amaura",
+            "strength": 92,
+            "coverage": 100,
+            "consistency": 88.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "wynaut",
+              "amaura"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "ANCIENT_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.ICY_WIND.SHADOW_BALL+wynaut.COUNTER.MIRROR_COAT+amaura.POWDER_SNOW.WEATHER_BALL_ICE.ANCIENT_POWER"
+          },
+          {
+            "name": "Vulpix (Alolan)",
+            "strength": 91.4,
+            "coverage": 100,
+            "consistency": 85.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "wynaut",
+              "vulpix_alolan"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.ICY_WIND.SHADOW_BALL+wynaut.COUNTER.MIRROR_COAT+vulpix_alolan.POWDER_SNOW.WEATHER_BALL_ICE.DARK_PULSE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Skorupi (Shadow)",
+          "Bronzor"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Golett (Shadow)",
+            "strength": 91.7,
+            "coverage": 100,
+            "consistency": 66.7,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "golett_shadow",
+              "skorupi_shadow",
+              "bronzor"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "SHADOW_PUNCH",
+                "BRICK_BREAK"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/golett_shadow.MUD_SLAP.SHADOW_PUNCH.BRICK_BREAK+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+bronzor.TACKLE.HEAVY_SLAM.PAYBACK"
+          },
+          {
+            "name": "Purrloin (Shadow)",
+            "strength": 91.6,
+            "coverage": 97.1,
+            "consistency": 72.3,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "pawniard"
+            ],
+            "species": [
+              "bronzor",
+              "skorupi_shadow",
+              "purrloin_shadow"
+            ],
+            "moves": [
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/bronzor.TACKLE.HEAVY_SLAM.PAYBACK+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+purrloin_shadow.SUCKER_PUNCH.NIGHT_SLASH.DARK_PULSE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Cubone (Shadow)",
+          "Bronzor"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Vulpix (Alolan)",
+            "strength": 90.8,
+            "coverage": 100,
+            "consistency": 83.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "seel",
+              "lickitung"
+            ],
+            "species": [
+              "cubone_shadow",
+              "bronzor",
+              "vulpix_alolan"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+bronzor.TACKLE.HEAVY_SLAM.PAYBACK+vulpix_alolan.POWDER_SNOW.WEATHER_BALL_ICE.DARK_PULSE"
+          },
+          {
+            "name": "Ledyba (Shadow)",
+            "strength": 89.8,
+            "coverage": 98,
+            "consistency": 83.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "seel",
+              "vullaby",
+              "lickitung"
+            ],
+            "species": [
+              "cubone_shadow",
+              "bronzor",
+              "ledyba_shadow"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ],
+              [
+                "BUG_BITE",
+                "AERIAL_ACE",
+                "SILVER_WIND"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+bronzor.TACKLE.HEAVY_SLAM.PAYBACK+ledyba_shadow.BUG_BITE.AERIAL_ACE.SILVER_WIND"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Cubone (Shadow)",
+          "Shelmet"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Onix (Shadow)",
+            "strength": 90.7,
+            "coverage": 98.7,
+            "consistency": 85.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "shelmet"
+            ],
+            "species": [
+              "cubone_shadow",
+              "shelmet",
+              "onix_shadow"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "ROCK_THROW",
+                "ROCK_SLIDE",
+                "BREAKING_SWIPE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+onix_shadow.ROCK_THROW.ROCK_SLIDE.BREAKING_SWIPE"
+          },
+          {
+            "name": "Skorupi (Shadow)",
+            "strength": 90.5,
+            "coverage": 94.5,
+            "consistency": 72.9,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "shelmet"
+            ],
+            "species": [
+              "shelmet",
+              "skorupi_shadow",
+              "cubone_shadow"
+            ],
+            "moves": [
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+cubone_shadow.MUD_SLAP.BONE_CLUB.DIG"
+          },
+          {
+            "name": "Amaura",
+            "strength": 90.1,
+            "coverage": 97.8,
+            "consistency": 84.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "shelmet"
+            ],
+            "species": [
+              "cubone_shadow",
+              "shelmet",
+              "amaura"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "ANCIENT_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+amaura.POWDER_SNOW.WEATHER_BALL_ICE.ANCIENT_POWER"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Wynaut",
+          "Skorupi (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Drifloon",
+            "strength": 93.3,
+            "coverage": 98,
+            "consistency": 77.4,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "wynaut",
+              "skorupi_shadow",
+              "drifloon"
+            ],
+            "moves": [
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wynaut.COUNTER.MIRROR_COAT+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+drifloon.HEX.ICY_WIND.SHADOW_BALL"
+          },
+          {
+            "name": "Purrloin",
+            "strength": 93.3,
+            "coverage": 97.8,
+            "consistency": 77.6,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "wynaut",
+              "shelmet"
+            ],
+            "species": [
+              "wynaut",
+              "skorupi_shadow",
+              "purrloin"
+            ],
+            "moves": [
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wynaut.COUNTER.MIRROR_COAT+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH"
+          },
+          {
+            "name": "Ledyba (Shadow)",
+            "strength": 92.6,
+            "coverage": 98,
+            "consistency": 74.5,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "ledyba_shadow",
+              "skorupi_shadow",
+              "wynaut"
+            ],
+            "moves": [
+              [
+                "BUG_BITE",
+                "AERIAL_ACE",
+                "SILVER_WIND"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/ledyba_shadow.BUG_BITE.AERIAL_ACE.SILVER_WIND+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+wynaut.COUNTER.MIRROR_COAT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Drifloon",
+          "Wynaut"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Onix (Shadow)",
+            "strength": 92.2,
+            "coverage": 100,
+            "consistency": 88.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "wynaut",
+              "onix_shadow"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "ROCK_THROW",
+                "BREAKING_SWIPE",
+                "STONE_EDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.ICY_WIND.SHADOW_BALL+wynaut.COUNTER.MIRROR_COAT+onix_shadow.ROCK_THROW.BREAKING_SWIPE.STONE_EDGE"
+          },
+          {
+            "name": "Amaura",
+            "strength": 92,
+            "coverage": 100,
+            "consistency": 88.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "wynaut",
+              "amaura"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "ANCIENT_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.ICY_WIND.SHADOW_BALL+wynaut.COUNTER.MIRROR_COAT+amaura.POWDER_SNOW.WEATHER_BALL_ICE.ANCIENT_POWER"
+          },
+          {
+            "name": "Vulpix (Alolan)",
+            "strength": 91.4,
+            "coverage": 100,
+            "consistency": 85.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "wynaut",
+              "vulpix_alolan"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "ICY_WIND",
+                "SHADOW_BALL"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.ICY_WIND.SHADOW_BALL+wynaut.COUNTER.MIRROR_COAT+vulpix_alolan.POWDER_SNOW.WEATHER_BALL_ICE.DARK_PULSE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Skorupi (Shadow)",
+          "Bronzor"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Golett (Shadow)",
+            "strength": 91.7,
+            "coverage": 100,
+            "consistency": 66.7,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "golett_shadow",
+              "skorupi_shadow",
+              "bronzor"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "SHADOW_PUNCH",
+                "BRICK_BREAK"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/golett_shadow.MUD_SLAP.SHADOW_PUNCH.BRICK_BREAK+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+bronzor.TACKLE.HEAVY_SLAM.PAYBACK"
+          },
+          {
+            "name": "Purrloin (Shadow)",
+            "strength": 91.6,
+            "coverage": 97.1,
+            "consistency": 72.3,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "pawniard"
+            ],
+            "species": [
+              "bronzor",
+              "skorupi_shadow",
+              "purrloin_shadow"
+            ],
+            "moves": [
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/bronzor.TACKLE.HEAVY_SLAM.PAYBACK+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+purrloin_shadow.SUCKER_PUNCH.NIGHT_SLASH.DARK_PULSE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Cubone (Shadow)",
+          "Bronzor"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Vulpix (Alolan)",
+            "strength": 90.8,
+            "coverage": 100,
+            "consistency": 83.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "seel",
+              "lickitung"
+            ],
+            "species": [
+              "cubone_shadow",
+              "bronzor",
+              "vulpix_alolan"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "DARK_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+bronzor.TACKLE.HEAVY_SLAM.PAYBACK+vulpix_alolan.POWDER_SNOW.WEATHER_BALL_ICE.DARK_PULSE"
+          },
+          {
+            "name": "Ledyba (Shadow)",
+            "strength": 89.8,
+            "coverage": 98,
+            "consistency": 83.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "seel",
+              "vullaby",
+              "lickitung"
+            ],
+            "species": [
+              "cubone_shadow",
+              "bronzor",
+              "ledyba_shadow"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "TACKLE",
+                "HEAVY_SLAM",
+                "PAYBACK"
+              ],
+              [
+                "BUG_BITE",
+                "AERIAL_ACE",
+                "SILVER_WIND"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+bronzor.TACKLE.HEAVY_SLAM.PAYBACK+ledyba_shadow.BUG_BITE.AERIAL_ACE.SILVER_WIND"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Cubone (Shadow)",
+          "Shelmet"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Onix (Shadow)",
+            "strength": 90.6,
+            "coverage": 98.7,
+            "consistency": 85.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "cubone_shadow",
+              "shelmet",
+              "onix_shadow"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "ROCK_THROW",
+                "BREAKING_SWIPE",
+                "STONE_EDGE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+onix_shadow.ROCK_THROW.BREAKING_SWIPE.STONE_EDGE"
+          },
+          {
+            "name": "Skorupi (Shadow)",
+            "strength": 90.5,
+            "coverage": 94.5,
+            "consistency": 72.9,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "shelmet"
+            ],
+            "species": [
+              "shelmet",
+              "skorupi_shadow",
+              "cubone_shadow"
+            ],
+            "moves": [
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "POISON_STING",
+                "CROSS_POISON",
+                "AQUA_TAIL"
+              ],
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+skorupi_shadow.POISON_STING.CROSS_POISON.AQUA_TAIL+cubone_shadow.MUD_SLAP.BONE_CLUB.DIG"
+          },
+          {
+            "name": "Amaura",
+            "strength": 90.1,
+            "coverage": 97.8,
+            "consistency": 84.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "shelmet"
+            ],
+            "species": [
+              "cubone_shadow",
+              "shelmet",
+              "amaura"
+            ],
+            "moves": [
+              [
+                "MUD_SLAP",
+                "BONE_CLUB",
+                "DIG"
+              ],
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "POWDER_SNOW",
+                "WEATHER_BALL_ICE",
+                "ANCIENT_POWER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/cubone_shadow.MUD_SLAP.BONE_CLUB.DIG+shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+amaura.POWDER_SNOW.WEATHER_BALL_ICE.ANCIENT_POWER"
+          }
+        ]
+      }
+    ]
+  }
+}
