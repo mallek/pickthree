@@ -185,6 +185,35 @@ describe('AchievementToast', () => {
   });
 });
 
+describe('AchievementToast waiting', () => {
+  it('waits while the reveal is open', async () => {
+    view.current = {
+      ...emptyView(),
+      toast: { kind: 'earned', name: 'First battle', earned: FIRST },
+      reveal: { title: '2 new achievements', firstRun: false, items: [] },
+    };
+    await mount(<AchievementToast />);
+    expect(screen.queryByText(/First battle/)).not.toBeInTheDocument();
+  });
+
+  it('waits while an app sheet is open', async () => {
+    view.current = {
+      ...emptyView(),
+      toast: { kind: 'earned', name: 'First battle', earned: FIRST },
+    };
+    await mount(<AchievementToast />);
+    expect(screen.getByRole('status')).toHaveTextContent('First battle');
+    act(() => {
+      latest?.actions.openSheet();
+    });
+    expect(screen.queryByText(/First battle/)).not.toBeInTheDocument();
+    act(() => {
+      latest?.actions.closeSheet();
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('First battle');
+  });
+});
+
 describe('RewardToken', () => {
   it('marks a shiny with the Shiny badge and the shiny picture', async () => {
     const { container } = await mount(<RewardToken species="lapras" shiny size={36} />);

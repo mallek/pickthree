@@ -10,14 +10,16 @@ const NUDGE_MS = 3000;
 
 /**
  * An achievement just earned, or the nudge after a set closes. Uses NoticeToast's info markup and
- * waits while the app's own notice is up, so the two never stack.
+ * waits while the app's own notice, the achievements reveal or an app sheet is up, so nothing
+ * stacks and its timer does not run out behind them.
  */
 export function AchievementToast() {
   const s = useAppState();
   const { navigate } = useActions();
   const a = useAchievements();
   const speciesName = useName();
-  const t = s.notice === null ? a.toast : null;
+  const waiting = s.notice !== null || a.reveal !== null || s.sheetOpen;
+  const t = waiting ? null : a.toast;
   const [bottom, setBottom] = useState(12);
   useLayoutEffect(() => {
     if (t) {
