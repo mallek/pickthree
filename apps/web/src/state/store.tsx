@@ -72,6 +72,7 @@ import { seasonsFor } from './seasonsFor.ts';
 import { newId } from './yourMeta.ts';
 import { NUDGED_KEEP, rotationNotice } from '../rotation.ts';
 import { appNow } from '../clock.ts';
+import { AchievementsProvider } from '../achievements/AchievementsProvider.tsx';
 
 /**
  * A layout the resolver was unsure about, or one it had to work out from values while a header
@@ -2404,7 +2405,9 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
 
   return (
     <StateCtx.Provider value={state}>
-      <ActionsCtx.Provider value={actions}>{children}</ActionsCtx.Provider>
+      <ActionsCtx.Provider value={actions}>
+        <AchievementsProvider>{children}</AchievementsProvider>
+      </ActionsCtx.Provider>
     </StateCtx.Provider>
   );
 }
