@@ -4216,3 +4216,46 @@ input[type='range'] {
 .sp-set > .small {
   white-space: nowrap;
 }
+
+/* Achievements. Shiny: pick3's sparkle badged on a token's top-right corner, as the Mega badge
+   sits on the bottom-right. */
+.token-shiny-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.token-shiny-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  line-height: 0;
+  pointer-events: none;
+}
+.token-shiny-badge svg {
+  display: block;
+}
+/* Not earned yet: a disc in the bar color with the dex number or a question mark. */
+.ach-blank {
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bar);
+  color: var(--faint);
+  font-weight: 500;
+}
+.ach-dex {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+  gap: 5px 4px;
+  justify-items: center;
+}
+.ach-toast-token {
+  display: inline-flex;
+  padding-left: 10px;
+}
+/* Not earned yet, in the dex: the sprite as a shape in --silhouette at --silhouette-opacity. */
+.ach-sil {
+  display: inline-block;
+  background: var(--silhouette);
+  opacity: var(--silhouette-opacity);
+  -webkit-mask: var(--sprite) center / contain no-repeat;
+  mask: var(--sprite) center / contain no-repeat;
+}

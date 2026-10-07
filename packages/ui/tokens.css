@@ -39,6 +39,9 @@
   --danger: #f07178;
   --danger-tint: rgba(240, 113, 120, 0.08);
   --tchip-fill: 16%;
+  /* An unearned reward in the Kanto dex: the sprite drawn as a shape in this color. */
+  --silhouette: #5a5e73;
+  --silhouette-opacity: 0.45;
   --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(124, 94, 219, 0.22), transparent 70%);
 }
 
@@ -98,6 +101,8 @@
     --danger: #c8323b;
     --danger-tint: rgba(200, 50, 59, 0.04);
     --tchip-fill: 4%;
+    --silhouette: #292b31;
+    --silhouette-opacity: 0.16;
     --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(121, 108, 191, 0.16), transparent 70%);
   }
 }
@@ -157,6 +162,8 @@
   --danger: #c8323b;
   --danger-tint: rgba(200, 50, 59, 0.04);
   --tchip-fill: 4%;
+  --silhouette: #292b31;
+  --silhouette-opacity: 0.16;
   --canvas-atmos: radial-gradient(120% 60% at 50% 0%, rgba(121, 108, 191, 0.16), transparent 70%);
 }
 

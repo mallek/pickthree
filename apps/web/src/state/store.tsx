@@ -127,6 +127,8 @@ export type Route =
   /** Top teams: window and source picks are written to the hash, the league never is. */
   | { screen: 'meta-teams'; w?: WindowKey; src?: SourceKey; league?: string }
   | { screen: 'meta-battles' }
+  /** The achievements page; `row` is the earned achievement to scroll to. */
+  | { screen: 'achievements'; row?: string }
   /** Pick Your Team, optionally prefilled with one to three species ids. */
   | { screen: 'meta-new'; team?: string[] }
   | { screen: 'meta-log'; edit?: { set: string; battle: string } }
@@ -764,6 +766,8 @@ export function hashFor(r: Route): string {
       const qs = params.toString();
       return qs ? `#/meta/teams?${qs}` : '#/meta/teams';
     }
+    case 'achievements':
+      return '#/achievements';
     case 'meta-battles':
       return '#/meta/battles';
     case 'meta-new':

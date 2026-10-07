@@ -10,7 +10,7 @@ const FOOT_BARS = '.tabs, .result-bar, .new-set-foot';
 const FOOT_GAP = 12;
 
 /** Distance from the viewport's bottom to the top of the highest bar at the page's foot. */
-function footClearance(): number {
+export function footClearance(): number {
   let top = window.innerHeight;
   for (const el of document.querySelectorAll(FOOT_BARS)) {
     const r = el.getBoundingClientRect();

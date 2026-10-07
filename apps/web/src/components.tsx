@@ -383,6 +383,7 @@ export function PokemonToken({
   showInitial = true,
   title,
   markedMega = false,
+  shiny = false,
 }: {
   speciesId: string;
   size?: number;
@@ -390,12 +391,19 @@ export function PokemonToken({
   title?: string;
   /** The Pokémon is marked as a Mega in the player's collection: the badge shows on its base form. */
   markedMega?: boolean;
+  /** A shiny reward: the shiny picture. */
+  shiny?: boolean;
 }) {
   const sp = useSpecies()(speciesId);
   const name = useName()(speciesId);
   const spritesOn = useAppState().settings.sprites !== false;
   const types = sp ? sp.types.filter((t) => t !== 'none') : ['normal'];
-  const src = spritesOn ? `/data/sprites/${speciesId.replace(/_shadow$/, '')}.webp` : undefined;
+  const base = speciesId.replace(/_shadow$/, '');
+  const src = spritesOn
+    ? shiny
+      ? `/data/sprites/shiny/${base}.webp`
+      : `/data/sprites/${base}.webp`
+    : undefined;
   const shadow = speciesId.endsWith('_shadow');
   const mega = Boolean(sp?.megaOf) || markedMega;
   // axe cannot see past the wrapper's ::before glow, so a Shadow letter's contrast is checked by

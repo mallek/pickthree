@@ -19,6 +19,8 @@ import { Welcome } from './screens/Welcome.tsx';
 import { Import } from './screens/Import.tsx';
 import { YourBattles } from './screens/YourBattles.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
+import { AchievementToast } from './components/achievements/AchievementToast.tsx';
+import { WelcomeReveal } from './components/achievements/WelcomeReveal.tsx';
 import { NoticeToast } from './components/NoticeToast.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
 
@@ -135,6 +137,9 @@ function renderScreen(r: Route) {
       return <AddPokemon key={r.edit ?? 'add'} />;
     case 'meta':
       return <MetaHome />;
+    case 'achievements':
+      // Task 7 replaces this with the page.
+      return <MetaHome />;
     case 'meta-battles':
       return <YourBattles />;
     case 'meta-teams':
@@ -174,6 +179,8 @@ export function App() {
       {s.filtersOpen ? <Filters /> : null}
       <UpdateToast />
       <NoticeToast />
+      <AchievementToast />
+      <WelcomeReveal />
     </div>
   );
 }

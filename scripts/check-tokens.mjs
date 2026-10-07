@@ -19,8 +19,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Set inline via style={{ '--x': ... }} in a component (TypeChip, OpponentCard, Build's evo
- * card), never in tokens.css. */
-const INLINE_ONLY = new Set(['c', 't', 'c1']);
+ * card, SilhouetteSlot's --sprite), never in tokens.css. */
+const INLINE_ONLY = new Set(['c', 't', 'c1', 'sprite']);
 
 const TOKENS_FILE = path.join(root, 'packages/ui/tokens.css');
 const SCAN_FILES = [
