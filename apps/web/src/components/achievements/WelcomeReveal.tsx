@@ -27,8 +27,8 @@ export function WelcomeReveal() {
               <b style={{ fontSize: 17 }}>{reveal.title}</b>
               <span className="small muted">
                 {reveal.firstRun
-                  ? 'Your battle log counts from the start. Each one gave you a Kanto Pokemon.'
-                  : 'Each one gave you a Kanto Pokemon.'}
+                  ? 'Your battle log counts from the start. Each one gave you a Kanto Pokémon.'
+                  : 'Each one gave you a Kanto Pokémon.'}
               </span>
             </div>
             <div className="mh-team3">

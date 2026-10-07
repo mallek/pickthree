@@ -19,9 +19,9 @@ const TIER_LABEL: Record<AchievementTier, string> = {
 };
 
 const TIER_LINE: Record<AchievementTier, string> = {
-  easy: 'Rewards a first-stage Pokemon',
-  mid: 'Rewards an evolved Pokemon',
-  hard: 'Rewards a fully evolved Pokemon',
+  easy: 'Rewards a first-stage Pokémon',
+  mid: 'Rewards an evolved Pokémon',
+  hard: 'Rewards a fully evolved Pokémon',
   elite: 'Rewards a legendary bird',
   top: 'Rewards Mewtwo or Mew',
 };
@@ -187,7 +187,7 @@ export function Achievements() {
           return rows.length > 0 ? <TierGroup key={tier} tier={tier} rows={rows} /> : null;
         })}
         <p className="meta ym-foot">
-          Each one gives you a Kanto Pokemon, picked at random when you earn it. Everything here
+          Each one gives you a Kanto Pokémon, picked at random when you earn it. Everything here
           stays on this phone.
         </p>
       </div>

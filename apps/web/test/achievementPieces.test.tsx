@@ -235,7 +235,7 @@ describe('WelcomeReveal', () => {
       },
     };
     await mount(<WelcomeReveal />);
-    expect(screen.getByText('Each one gave you a Kanto Pokemon.')).toBeInTheDocument();
+    expect(screen.getByText('Each one gave you a Kanto Pokémon.')).toBeInTheDocument();
     expect(screen.queryByText(/counts from the start/)).not.toBeInTheDocument();
   });
 

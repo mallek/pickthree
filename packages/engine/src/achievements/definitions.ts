@@ -70,7 +70,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     {
       id: 'trainer',
       name: 'Trainer',
-      howTo: 'Import your collection or add a Pokemon by hand',
+      howTo: 'Import your collection or add a Pokémon by hand',
       tier: 'easy',
     },
     (f) => f.hasCollection,

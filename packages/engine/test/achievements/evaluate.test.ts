@@ -79,7 +79,7 @@ describe('progress and the nudge', () => {
   it('words a one-step nudge with its how-to line', () => {
     const n = nearest(facts(), new Set());
     expect(n?.def.id).toBe('trainer');
-    expect(nudgeLine(n!)).toBe('Next: Trainer. Import your collection or add a Pokemon by hand.');
+    expect(nudgeLine(n!)).toBe('Next: Trainer. Import your collection or add a Pokémon by hand.');
   });
 
   it('is null when everything is earned', () => {
