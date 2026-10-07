@@ -1662,6 +1662,23 @@ textarea.paste {
 .notice-foot .notice-msg {
   padding: 8px 0 8px 18px;
 }
+/* A list of choices (the live cups): the message, then the choices wrapping under it. A card
+   rather than a pill, since it can run to more than one row. */
+.notice-foot.notice-choices {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 4px 4px;
+  border-radius: 22px;
+}
+.notice-choices .notice-msg {
+  padding: 10px 14px 8px;
+}
+.notice-choices .notice-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 /* Not now: text only, so the action beside it is the one that reads as the choice. */
 .update-toast button.notice-quiet {
   background: transparent;

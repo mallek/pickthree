@@ -38,6 +38,37 @@ function renderActionNotice(run: () => void) {
   fireEvent.click(screen.getByRole('button', { name: 'raise with action' }));
 }
 
+function NotifyChoices({ run }: { run: (id: string) => void }) {
+  const { notify } = useActions();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        notify(
+          '3 cups are live this week.',
+          'info',
+          ['Mega Great', 'Mega Ultra', 'Mega Master'].map((label) => ({
+            label,
+            run: () => run(label),
+          })),
+        )
+      }
+    >
+      raise with choices
+    </button>
+  );
+}
+
+function renderChoicesNotice(run: (id: string) => void) {
+  render(
+    <AppProvider host={fakeHost()}>
+      <NotifyChoices run={run} />
+      <NoticeToast />
+    </AppProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'raise with choices' }));
+}
+
 function renderNotice(message: string, tone?: NoticeTone) {
   render(
     <AppProvider host={fakeHost()}>
@@ -181,6 +212,31 @@ describe('NoticeToast', () => {
     act(() => {
       vi.advanceTimersByTime(200);
     });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows each choice as its own button, runs the one tapped, and clears the notice', () => {
+    const run = vi.fn();
+    renderChoicesNotice(run);
+    expect(screen.getByRole('status')).toHaveTextContent('3 cups are live this week.');
+    for (const name of ['Mega Great', 'Mega Ultra', 'Mega Master', 'Not now']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Mega Ultra' }));
+    expect(run).toHaveBeenCalledExactlyOnceWith('Mega Ultra');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('keeps a list of choices up until one is tapped or Not now', () => {
+    vi.useFakeTimers();
+    const run = vi.fn();
+    renderChoicesNotice(run);
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(run).not.toHaveBeenCalled();
     expect(screen.queryByRole('status')).toBeNull();
   });
 });

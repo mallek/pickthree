@@ -25,7 +25,8 @@ function footClearance(): number {
  * Floating one-line notice. A warning (a battle that failed to save) is amber, at the top,
  * announced at once, with an OK. A confirmation (a battle logged, a link copied) is neutral and
  * polite: it sits at the foot, just above the page's own bottom bar, so it never covers the
- * header, clears itself after about three seconds and goes on a tap.
+ * header, clears itself after about three seconds and goes on a tap. A notice with a list of
+ * choices (the live cups) stays until one is tapped or Not now.
  */
 export function NoticeToast() {
   const s = useAppState();
@@ -33,14 +34,16 @@ export function NoticeToast() {
   const message = s.notice;
   const info = s.noticeTone === 'info';
   const action = s.noticeAction;
+  const choices = s.noticeChoices;
+  const asks = choices.length > 0;
   const [bottom, setBottom] = useState(FOOT_GAP);
   useEffect(() => {
-    if (!message) {
+    if (!message || asks) {
       return undefined;
     }
     const t = window.setTimeout(() => notify(null), info && !action ? INFO_MS : WARN_MS);
     return () => window.clearTimeout(t);
-  }, [message, info, action, notify]);
+  }, [message, info, action, asks, notify]);
   // Measured again when the page changes under a confirmation, since the new page's foot bar
   // (the tab bar, or Log a Battle's taller result bar) sets where it must sit.
   const route = s.route;
@@ -51,6 +54,34 @@ export function NoticeToast() {
   }, [message, info, route]);
   if (!message) {
     return null;
+  }
+  if (info && asks) {
+    return (
+      <div
+        className="update-toast notice-toast notice-info notice-foot notice-choices"
+        role="status"
+        style={{ bottom }}
+      >
+        <span className="notice-msg">{message}</span>
+        <div className="notice-choice-row">
+          {choices.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => {
+                c.run();
+                notify(null);
+              }}
+            >
+              {c.label}
+            </button>
+          ))}
+          <button type="button" className="notice-quiet" onClick={() => notify(null)}>
+            Not now
+          </button>
+        </div>
+      </div>
+    );
   }
   if (info && action) {
     return (

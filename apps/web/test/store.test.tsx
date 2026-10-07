@@ -1172,6 +1172,90 @@ describe('rotation on open', () => {
       vi.useRealTimers();
     }
   });
+
+  const MEGA_RUN = '2026-10-06T20:00:00.000Z';
+  const mega = (id: string, title: string, short: string): League => ({
+    ...RETRO_L,
+    id,
+    title,
+    short,
+    cup: id,
+  });
+  const megaHost = () =>
+    fakeHost({
+      ready: async () => ({
+        ...(await fakeHost().ready()),
+        leagues: [
+          GREAT,
+          mega('mega-master', 'Master League: Mega Edition', 'Mega Master'),
+          RETRO_L,
+          mega('mega-great', 'Great League: Mega Edition', 'Mega Great'),
+          mega('mega-ultra', 'Ultra League: Mega Edition', 'Mega Ultra'),
+        ],
+        schedule: [
+          ['retro', '2026-09-29T20:00:00.000Z', MEGA_RUN],
+          ['mega-great', MEGA_RUN, '2026-10-13T20:00:00.000Z'],
+          ['mega-master', MEGA_RUN, '2026-10-13T20:00:00.000Z'],
+          ['mega-ultra', MEGA_RUN, '2026-10-13T20:00:00.000Z'],
+        ].map(([league, start, end]) => ({
+          league: league!,
+          cup: league!,
+          cp: 1500,
+          title: league!,
+          start: start!,
+          end: end!,
+          season: 'Twilight Trails',
+        })),
+      }),
+    });
+
+  it('lists every cup in a new live set once, each a switch, and remembers the set', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-07T00:00:00Z'));
+    try {
+      await mount(megaHost());
+      await waitFor(() => expect(latest?.state.notice).toBe('3 cups are live this week.'));
+      expect(latest?.state.noticeAction).toBeNull();
+      expect(latest?.state.noticeChoices.map((c) => c.label)).toEqual([
+        'Mega Great',
+        'Mega Ultra',
+        'Mega Master',
+      ]);
+      await waitFor(() =>
+        expect(latest?.state.settings.nudged).toEqual([
+          `mega-great@${MEGA_RUN}`,
+          `mega-master@${MEGA_RUN}`,
+          `mega-ultra@${MEGA_RUN}`,
+        ]),
+      );
+      await act(async () => {
+        latest!.state.noticeChoices[1]!.run();
+      });
+      expect(latest?.state.settings.league).toBe('mega-ultra');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('offers the live cups to a player whose cup ended, on Great League meanwhile', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-07T00:00:00Z'));
+    try {
+      await storage.saveSettings({ ...DEFAULT_SETTINGS, league: 'retro' });
+      await mount(megaHost());
+      await waitFor(() => expect(latest?.state.settings.league).toBe('great'));
+      expect(latest?.state.notice).toBe('Retro Cup ended. Pick a league, or stay on Great League.');
+      expect(latest?.state.noticeChoices.map((c) => c.label)).toEqual([
+        'Great',
+        'Mega Great',
+        'Mega Ultra',
+        'Mega Master',
+      ]);
+      await waitFor(() => expect(latest?.state.settings.nudged).toHaveLength(3));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('updateSettings', () => {

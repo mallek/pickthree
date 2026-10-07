@@ -189,6 +189,8 @@ export interface AppState {
   noticeTone: NoticeTone;
   /** The button an info notice carries, if any. */
   noticeAction: NoticeAction | null;
+  /** A list of choices an info notice offers instead of one button (the live cups), else empty. */
+  noticeChoices: NoticeAction[];
   /** True while Build holds a team that arrived by link, until a pick is changed by hand. */
   sharedTeam: boolean;
   scanList: ScanList | null;
@@ -243,7 +245,12 @@ type Action =
   | { type: 'counters-partial'; counters: CountersResult }
   | { type: 'counters-done'; counters: CountersResult | null }
   | { type: 'counters-error'; message: string }
-  | { type: 'notice'; message: string | null; tone: NoticeTone; action?: NoticeAction }
+  | {
+      type: 'notice';
+      message: string | null;
+      tone: NoticeTone;
+      action?: NoticeAction | NoticeAction[];
+    }
   | { type: 'scanlist'; scanList: ScanList }
   | { type: 'pick'; slot: number; pick: TeamPick | null }
   | { type: 'picks'; picks: AppState['picks']; shared: boolean }
@@ -287,6 +294,7 @@ const initial: AppState = {
   notice: null,
   noticeTone: 'warn',
   noticeAction: null,
+  noticeChoices: [],
   sharedTeam: false,
   scanList: null,
   picks: [null, null, null],
@@ -441,7 +449,13 @@ function reducer(s: AppState, a: Action): AppState {
         countersError: a.message,
       };
     case 'notice':
-      return { ...s, notice: a.message, noticeTone: a.tone, noticeAction: a.action ?? null };
+      return {
+        ...s,
+        notice: a.message,
+        noticeTone: a.tone,
+        noticeAction: a.action && !Array.isArray(a.action) ? a.action : null,
+        noticeChoices: Array.isArray(a.action) ? a.action : [],
+      };
     case 'scanlist':
       return { ...s, scanList: a.scanList };
     case 'suggest-start':
@@ -1013,9 +1027,10 @@ interface Actions {
   endSet(): Promise<boolean>;
   /**
    * Show (or clear with null) the floating one-line notice. `warn` (the default) is for trouble,
-   * such as a refused save; `info` is a neutral confirmation, such as a logged battle.
+   * such as a refused save; `info` is a neutral confirmation, such as a logged battle. An info
+   * notice may carry one button, or a list of choices that stays up until one is tapped.
    */
-  notify(message: string | null, tone?: NoticeTone, action?: NoticeAction): void;
+  notify(message: string | null, tone?: NoticeTone, action?: NoticeAction | NoticeAction[]): void;
   /** Community meta sharing on or off. Off also asks the worker to drop what this phone sent. */
   setShareEnabled(on: boolean): Promise<void>;
   /** Battles before now move to earlier seasons for the league in play. Nothing is deleted. */
@@ -2021,7 +2036,7 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   }, [updateSettings]);
 
   const notify = useCallback(
-    (message: string | null, tone: NoticeTone = 'warn', action?: NoticeAction) => {
+    (message: string | null, tone: NoticeTone = 'warn', action?: NoticeAction | NoticeAction[]) => {
       dispatch(
         action ? { type: 'notice', message, tone, action } : { type: 'notice', message, tone },
       );
@@ -2030,7 +2045,8 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
   );
 
   // GO Battle League cups, once per app open once boot data and settings are in: an ended cup
-  // goes back to Great League; otherwise one nudge per live cup run.
+  // goes back to Great League (offering the live cups, if any); otherwise one nudge per new set
+  // of live cups on this device, listing every one the player is not on.
   const rotationChecked = useRef(false);
   useEffect(() => {
     if (rotationChecked.current || state.boot !== 'ready' || !state.settingsLoaded || !state.data) {
@@ -2047,16 +2063,30 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     if (!n) {
       return;
     }
-    if (n.kind === 'ended') {
-      updateSettings((cur) => ({ ...cur, league: 'great' }));
-      notify(n.message, 'info');
+    updateSettings((cur) => {
+      const had = cur.nudged ?? [];
+      const fresh = n.keys.filter((k) => !had.includes(k));
+      return {
+        ...cur,
+        ...(n.kind === 'ended' ? { league: 'great' } : {}),
+        ...(fresh.length > 0 ? { nudged: [...had, ...fresh].slice(-NUDGED_KEEP) } : {}),
+      };
+    });
+    if (n.kind === 'seen') {
       return;
     }
-    updateSettings((cur) => ({
-      ...cur,
-      nudged: [...(cur.nudged ?? []), n.key].slice(-NUDGED_KEEP),
-    }));
-    notify(n.message, 'info', { label: 'Switch', run: () => setLeague(n.league.id) });
+    if (n.options.length === 0) {
+      notify(n.message, 'info');
+    } else if (n.kind === 'nudge' && n.options.length === 1) {
+      const only = n.options[0]!;
+      notify(n.message, 'info', { label: 'Switch', run: () => setLeague(only.id) });
+    } else {
+      notify(
+        n.message,
+        'info',
+        n.options.map((l) => ({ label: l.short, run: () => setLeague(l.id) })),
+      );
+    }
   }, [
     state.boot,
     state.settingsLoaded,
