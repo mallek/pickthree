@@ -8,18 +8,21 @@ import { resetMetaGroupsForTests } from '../src/achievements/metaGroups.ts';
 import { useAchievements } from '../src/achievements/AchievementsProvider.tsx';
 import { AppProvider, useActions, useAppState } from '../src/state/store.tsx';
 import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { serializeLog } from '../src/storage/logFile.ts';
 import { fakeHost } from './fakeHost.ts';
 
 let actions: ReturnType<typeof useActions> | null = null;
 let ready = false;
 const handlers = new Set<unknown>();
 const views = new Set<unknown>();
+let revealItems: string[] = [];
 
 function Probe() {
   const a = useAchievements();
   handlers.add(a.dismissToast);
   handlers.add(a.closeReveal);
   views.add(a);
+  revealItems = a.reveal?.items.map((i) => i.earned.id) ?? [];
   actions = useActions();
   const s = useAppState();
   ready = s.leagueInfo !== null && s.setsLoaded;
@@ -65,6 +68,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('AchievementsProvider', () => {
@@ -262,6 +266,118 @@ describe('AchievementsProvider', () => {
     const stored = await storage.loadAchievements();
     expect(stored.earned.map((e) => e.id)).toEqual(['team-builder']);
     expect(stored.marks).toEqual(['analyzed']);
+  });
+
+  it('shows the stored count before boot is ready', async () => {
+    await storage.saveAchievements({
+      earned: [
+        { id: 'first-battle', earnedAt: '2026-09-01T00:00:00Z', species: 'pidgey', shiny: false },
+        { id: 'full-set', earnedAt: '2026-09-01T00:00:00Z', species: 'rattata', shiny: false },
+      ],
+      marks: [],
+    });
+    render(
+      <AppProvider host={fakeHost({ ready: vi.fn(() => new Promise(() => undefined)) })}>
+        <Probe />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('2'));
+  });
+
+  it('shows what IndexedDB holds when the save fails, and announces nothing', async () => {
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(ready).toBe(true));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.getByTestId('count').textContent).toBe('0');
+    // Another tab (or an import) stored a record; this phone's own save then fails.
+    await storage.saveAchievements({
+      earned: [{ id: 'cup-runner', earnedAt: '2026-09-01T00:00:00Z', species: 'mew', shiny: true }],
+      marks: [],
+    });
+    vi.spyOn(storage, 'updateAchievements').mockResolvedValue(null);
+    await storage.saveSet(oneBattle);
+    await act(async () => {
+      await actions!.importLog(serializeLog([]));
+    });
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+    expect(screen.getByTestId('toast').textContent).toBe('');
+  });
+
+  it('adds a second batch to the open reveal instead of replacing it', async () => {
+    const battles = (n: number, day: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        id: `d${day}-${i}`,
+        at: new Date(2026, 8, day, 12, i).toISOString(),
+        opponents: [],
+        result: 'win' as const,
+        tanked: false,
+      }));
+    await storage.saveSet({ ...oneBattle, battles: battles(5, 20), closed: true });
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+      </AppProvider>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('reveal').textContent).toBe('You have earned 2 already'),
+    );
+    // A log arrives with a cup set and battles on nine more days: two more at once.
+    const more: BattleSet[] = Array.from({ length: 9 }, (_, i) => ({
+      ...oneBattle,
+      id: `more-${i}`,
+      league: i === 0 ? 'ultra' : 'great',
+      battles: battles(1, i + 1),
+    }));
+    await act(async () => {
+      await actions!.importLog(serializeLog(more));
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('reveal').textContent).toBe('You have earned 4 already'),
+    );
+    expect(revealItems).toEqual(['first-battle', 'full-set', 'cup-runner', 'days-10']);
+  });
+
+  it('a forget during an evaluation leaves the store empty and announces nothing', async () => {
+    await storage.saveSet(oneBattle);
+    let release: (() => void) | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (input: RequestInfo | URL) =>
+          new Promise<Response>((resolve) => {
+            if (String(input) === '/data/meta/great.json') {
+              release = () => resolve(new Response('[]', { status: 404 }));
+            } else {
+              resolve(new Response('[]', { status: 404 }));
+            }
+          }),
+      ),
+    );
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+      </AppProvider>,
+    );
+    await waitFor(() => expect(release).not.toBeNull());
+    await act(async () => {
+      await actions!.forget();
+    });
+    await act(async () => {
+      release!();
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
+    expect(screen.getByTestId('toast').textContent).toBe('');
+    expect(screen.getByTestId('reveal').textContent).toBe('');
+    expect(screen.getByTestId('count').textContent).toBe('0');
   });
 
   it('outside the provider the view is empty and never throws', () => {

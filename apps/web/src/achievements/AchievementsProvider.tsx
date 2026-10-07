@@ -54,6 +54,11 @@ export interface AchievementsView {
 
 const NAMES = new Map(ACHIEVEMENTS.map((d) => [d.id, d.name]));
 
+/** The reveal's heading for `n` achievements, worded by whether it is the first run. */
+function revealTitle(n: number, firstRun: boolean): string {
+  return firstRun ? `You have earned ${n} already` : `${n} new achievements`;
+}
+
 /** A uniform number in [0, 1) from the platform's cryptographic source. */
 function cryptoRandom(): number {
   const a = new Uint32Array(1);
@@ -68,7 +73,8 @@ const Ctx = createContext<AchievementsView | null>(null);
  * through a promise chain, and the roll happens inside one IndexedDB transaction against the
  * stored record, so neither a second evaluation (StrictMode, a battle logged during boot) nor an
  * imported log merging at the same moment can roll an achievement twice or lose a write. New
- * Pokemon are saved before they are announced. `rng` is for tests.
+ * Pokemon are saved before they are announced. A forget while a job is in flight discards it:
+ * the job writes nothing back and announces nothing. `rng` is for tests.
  */
 export function AchievementsProvider({
   children,
@@ -91,6 +97,19 @@ export function AchievementsProvider({
     chain.current = chain.current.then(job).catch((e: unknown) => recordError('achievements', e));
   }, []);
 
+  // The stored record, read once on mount ahead of boot, so the counts show at once rather than
+  // "0 of 11" until the first evaluation. Queued first on the chain, so no evaluation's result
+  // is overwritten by it.
+  useEffect(() => {
+    run(async () => {
+      const gen = storage.generation();
+      const stored = await storage.loadAchievements();
+      if (storage.generation() === gen) {
+        setRecord(stored);
+      }
+    });
+  }, [run]);
+
   const evaluate = useCallback(
     (extraMark?: string) =>
       run(async () => {
@@ -98,6 +117,7 @@ export function AchievementsProvider({
         if (app.boot !== 'ready' || !app.settingsLoaded || !app.data) {
           return;
         }
+        const gen = storage.generation();
         const [sets, loaded] = await Promise.all([
           storage.loadAllSets(),
           storage.loadAchievements(),
@@ -119,12 +139,18 @@ export function AchievementsProvider({
         });
         // The roll runs inside the write's transaction against the record as stored right then,
         // so an import that merged while the reads above were in flight is kept, not overwritten.
-        const out: { added: EarnedAchievement[]; wasEmpty: boolean; facts: AchievementFacts } = {
-          added: [],
-          wasEmpty: false,
-          facts: f,
-        };
+        const out: {
+          added: EarnedAchievement[];
+          wasEmpty: boolean;
+          facts: AchievementFacts;
+          discarded: boolean;
+        } = { added: [], wasEmpty: false, facts: f, discarded: false };
         const saved = await storage.updateAchievements((cur) => {
+          if (storage.generation() !== gen) {
+            // Forgotten since this job read the log: what it worked out belongs to deleted data.
+            out.discarded = true;
+            return cur;
+          }
           const marks = withMark(cur.marks);
           const facts = { ...f, marks: new Set(marks) };
           const owned = new Set(cur.earned.map((e) => e.species));
@@ -140,8 +166,13 @@ export function AchievementsProvider({
           out.facts = facts;
           return { earned: [...cur.earned, ...added], marks };
         });
+        if (out.discarded || storage.generation() !== gen) {
+          return;
+        }
         if (saved === null) {
-          // Save before announce: a Pokemon the phone did not keep is never shown.
+          // Save before announce: a Pokemon the phone did not keep is never shown. The page
+          // still shows what IndexedDB held when this job read it.
+          setRecord(loaded);
           setFacts(f);
           return;
         }
@@ -159,12 +190,11 @@ export function AchievementsProvider({
         if (named.length === 1 && only) {
           setQueue((q) => [...q, { kind: 'earned', ...only }]);
         } else if (named.length > 1) {
-          setReveal({
-            title: out.wasEmpty
-              ? `You have earned ${named.length} already`
-              : `${named.length} new achievements`,
-            firstRun: out.wasEmpty,
-            items: named,
+          // A batch landing while the reveal is still open joins it rather than replacing it.
+          setReveal((prev) => {
+            const firstRun = prev ? prev.firstRun : out.wasEmpty;
+            const items = prev ? [...prev.items, ...named] : named;
+            return { title: revealTitle(items.length, firstRun), firstRun, items };
           });
         } else if (justClosed) {
           const n = nearest(out.facts, new Set(saved.earned.map((e) => e.id)));
@@ -175,6 +205,21 @@ export function AchievementsProvider({
       }),
     [run, rng],
   );
+
+  // A forget clears what was earned: drop whatever is queued, open or remembered with it. Every
+  // forget bumps logVersion, so this runs before the evaluation that follows it.
+  const seenGeneration = useRef(storage.generation());
+  useEffect(() => {
+    const gen = storage.generation();
+    if (gen === seenGeneration.current) {
+      return;
+    }
+    seenGeneration.current = gen;
+    setQueue([]);
+    setReveal(null);
+    setRecord(EMPTY_ACHIEVEMENTS);
+    closedSeen.current = null;
+  }, [s.logVersion]);
 
   // Boot, every log change (saved, edited, imported, forgotten) and the collection arriving.
   useEffect(() => {

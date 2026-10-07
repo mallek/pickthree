@@ -128,6 +128,8 @@ export const DB_VERSION = 3;
 let dbPromise: Promise<IDBPDatabase<PickThreeDb>> | null = null;
 
 let blockedNow = false;
+/** Bumped by every forget, before anything is cleared: work started before it is stale. */
+let generation = 0;
 const blockedListeners = new Set<() => void>();
 
 /**
@@ -335,7 +337,12 @@ export const storage = {
   async mergeAchievements(incoming: AchievementsRecord): Promise<void> {
     await storage.updateAchievements((cur) => mergeAchievementRecords(cur, incoming));
   },
+  /** Changes on every forget. A job that read it before must not write what it worked out. */
+  generation(): number {
+    return generation;
+  },
   async forget(): Promise<void> {
+    generation += 1;
     await safe(async () => {
       const d = await db();
       await d.clear('collection');

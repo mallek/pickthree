@@ -145,6 +145,14 @@ describe('achievements storage', () => {
     expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
   });
 
+  it('forget moves the generation before it clears anything', async () => {
+    const before = storage.generation();
+    const pending = storage.forget();
+    expect(storage.generation()).toBe(before + 1);
+    await pending;
+    expect(storage.generation()).toBe(before + 1);
+  });
+
   it('hands out a fresh empty record each time', async () => {
     const a = await storage.loadAchievements();
     a.marks.push('x');
