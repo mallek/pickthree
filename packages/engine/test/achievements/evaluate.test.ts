@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ACHIEVEMENTS } from '../../src/achievements/definitions.js';
+import { EMPTY_ACHIEVEMENTS } from '../../src/achievements/types.js';
 import { nearest, newlyEarned, nudgeLine, statusAll } from '../../src/achievements/evaluate.js';
 import { YOUR_META_BATTLES, type AchievementFacts } from '../../src/achievements/facts.js';
 
@@ -103,5 +104,15 @@ describe('progress and the nudge', () => {
 
   it('is null when everything is earned', () => {
     expect(nearest(facts(), new Set(ACHIEVEMENTS.map((d) => d.id)))).toBeNull();
+  });
+});
+
+describe('EMPTY_ACHIEVEMENTS', () => {
+  it('is frozen, arrays and all, so a caller cannot change the shared record', () => {
+    expect(Object.isFrozen(EMPTY_ACHIEVEMENTS)).toBe(true);
+    expect(Object.isFrozen(EMPTY_ACHIEVEMENTS.earned)).toBe(true);
+    expect(Object.isFrozen(EMPTY_ACHIEVEMENTS.marks)).toBe(true);
+    expect(() => EMPTY_ACHIEVEMENTS.marks.push('analyzed')).toThrow();
+    expect(EMPTY_ACHIEVEMENTS).toEqual({ earned: [], marks: [] });
   });
 });

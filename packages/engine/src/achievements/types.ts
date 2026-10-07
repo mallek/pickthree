@@ -20,4 +20,8 @@ export interface AchievementsRecord {
   marks: string[];
 }
 
-export const EMPTY_ACHIEVEMENTS: AchievementsRecord = { earned: [], marks: [] };
+/** Shared and frozen, so no caller can push into it; copy the arrays to build on it. */
+export const EMPTY_ACHIEVEMENTS: AchievementsRecord = Object.freeze({
+  earned: Object.freeze([]) as unknown as EarnedAchievement[],
+  marks: Object.freeze([]) as unknown as string[],
+});
