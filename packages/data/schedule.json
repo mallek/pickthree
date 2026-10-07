@@ -1,5 +1,15 @@
 [
   {
+    "league": "colormega",
+    "cup": "colormega",
+    "cp": 1500,
+    "title": "Mega Color Cup",
+    "mega": true,
+    "start": "1970-01-01T00:00:00.000Z",
+    "end": "1970-01-01T00:00:00.000Z",
+    "season": "Twilight Trails"
+  },
+  {
     "league": "mega-master",
     "cup": "mega",
     "cp": 10000,
