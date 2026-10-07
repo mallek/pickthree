@@ -93,8 +93,27 @@ export function AchievementsProvider({
   const stateRef = useRef(s);
   stateRef.current = s;
 
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // A failed job is logged and the chain carries on. Nothing is logged once the provider is gone
+  // (a test tearing down mid-job), and a logger that throws never leaves the chain rejected.
   const run = useCallback((job: () => Promise<void>) => {
-    chain.current = chain.current.then(job).catch((e: unknown) => recordError('achievements', e));
+    chain.current = chain.current.then(job).catch((e: unknown) => {
+      if (!mounted.current) {
+        return;
+      }
+      try {
+        recordError('achievements', e);
+      } catch {
+        // logging is best effort
+      }
+    });
   }, []);
 
   // The stored record, read once on mount ahead of boot, so the counts show at once rather than
