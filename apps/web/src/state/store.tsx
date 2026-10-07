@@ -65,7 +65,14 @@ import {
 } from '../metaShare.ts';
 import { describeLayoutLine, emptyLayoutValue, ownSpeciesId } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
-import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
+import {
+  DEFAULT_SETTINGS,
+  dbBlocked,
+  onDbBlocked,
+  storage,
+  type Settings,
+  type StoredCollection,
+} from '../storage/db.ts';
 import { parseLogAchievements, parseLogFile, serializeLog } from '../storage/logFile.ts';
 import { facingInput, facingSettings, isCommunity, logBattles } from './facing.ts';
 import { seasonsFor } from './seasonsFor.ts';
@@ -1080,6 +1087,22 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     const p = logChain.current.then(fn, fn);
     logChain.current = p.catch(() => undefined);
     return p;
+  }, []);
+
+  // A database upgrade waiting on another pick3 tab still open on the old version. Subscribed
+  // before the boot reads below, and checked once, so a block that already fired is not missed.
+  useEffect(() => {
+    const warn = () =>
+      dispatch({
+        type: 'notice',
+        message: 'Close other pick3 tabs to finish updating.',
+        tone: 'warn',
+      });
+    const off = onDbBlocked(warn);
+    if (dbBlocked()) {
+      warn();
+    }
+    return off;
   }, []);
 
   useEffect(() => {

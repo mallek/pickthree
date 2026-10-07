@@ -10,6 +10,7 @@ import type {
 } from '@pickthree/engine';
 import type { WindowKey } from '@pickthree/engine/meta';
 import type { ThemeChoice } from '@pickthree/ui';
+import { recordError } from '../diag.ts';
 
 export interface StoredCollection {
   key: 'current';
@@ -126,23 +127,72 @@ export const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase<PickThreeDb>> | null = null;
 
+let blockedNow = false;
+const blockedListeners = new Set<() => void>();
+
+/**
+ * Called when an upgrade waits on another pick3 tab still holding an older version open. The
+ * store shows "Close other pick3 tabs to finish updating." Returns the unsubscribe.
+ */
+export function onDbBlocked(listener: () => void): () => void {
+  blockedListeners.add(listener);
+  return () => {
+    blockedListeners.delete(listener);
+  };
+}
+
+/** True while an upgrade is waiting on another tab, cleared once it opens. */
+export function dbBlocked(): boolean {
+  return blockedNow;
+}
+
 function db(): Promise<IDBPDatabase<PickThreeDb>> {
   if (!dbPromise) {
-    dbPromise = openDB<PickThreeDb>('pickthree', DB_VERSION, {
-      upgrade(d, oldVersion) {
-        if (oldVersion < 1) {
-          d.createObjectStore('collection', { keyPath: 'key' });
-          d.createObjectStore('settings', { keyPath: 'key' });
-        }
-        if (oldVersion < 2) {
-          const battles = d.createObjectStore('battles', { keyPath: 'id' });
-          battles.createIndex('by-league', 'league');
-        }
-        if (oldVersion < 3) {
-          d.createObjectStore('achievements', { keyPath: 'key' });
-        }
+    const opening: Promise<IDBPDatabase<PickThreeDb>> = openDB<PickThreeDb>(
+      'pickthree',
+      DB_VERSION,
+      {
+        upgrade(d, oldVersion) {
+          if (oldVersion < 1) {
+            d.createObjectStore('collection', { keyPath: 'key' });
+            d.createObjectStore('settings', { keyPath: 'key' });
+          }
+          if (oldVersion < 2) {
+            const battles = d.createObjectStore('battles', { keyPath: 'id' });
+            battles.createIndex('by-league', 'league');
+          }
+          if (oldVersion < 3) {
+            d.createObjectStore('achievements', { keyPath: 'key' });
+          }
+        },
+        // Another tab holds an older version open: every read and write waits until it closes.
+        blocked(current, wanted) {
+          blockedNow = true;
+          for (const l of blockedListeners) {
+            l();
+          }
+          try {
+            recordError('db-blocked', new Error(`upgrade ${current} to ${wanted} waits on a tab`));
+          } catch {
+            // diagnostics are best effort
+          }
+        },
+        // Another tab wants a newer version: let go so it can upgrade, and reopen on next use.
+        blocking() {
+          if (dbPromise === opening) {
+            dbPromise = null;
+          }
+          void opening.then((d) => d.close()).catch(() => undefined);
+        },
       },
-    });
+    );
+    dbPromise = opening;
+    void opening.then(
+      () => {
+        blockedNow = false;
+      },
+      () => undefined,
+    );
   }
   return dbPromise;
 }
@@ -150,6 +200,7 @@ function db(): Promise<IDBPDatabase<PickThreeDb>> {
 /** Tests swap the IndexedDB factory between cases; drop the cached connection with it. */
 export function resetDbForTests(): void {
   dbPromise = null;
+  blockedNow = false;
 }
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {

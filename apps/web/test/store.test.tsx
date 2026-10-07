@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, render, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { openDB } from 'idb';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setErrorReportsEnabled } from '../src/diag.ts';
 import { resetDbForTests, storage } from '../src/storage/db.ts';
 import {
   AppProvider,
@@ -1498,5 +1500,40 @@ describe('collection model', () => {
       filterKey(DEFAULT_SETTINGS, 0, null, { umbreon: 'b' }),
     );
     expect(filterKey(DEFAULT_SETTINGS, 0, null, undefined)).toBe(filterKey(DEFAULT_SETTINGS));
+  });
+});
+
+describe('a database upgrade blocked by another tab', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    setErrorReportsEnabled(false);
+    window.location.hash = '';
+    latest = null;
+  });
+  afterEach(() => {
+    setErrorReportsEnabled(true);
+  });
+
+  it('asks the player to close other pick3 tabs, then loads once they close', async () => {
+    const v2 = await openDB('pickthree', 2, {
+      upgrade(d) {
+        d.createObjectStore('collection', { keyPath: 'key' });
+        d.createObjectStore('settings', { keyPath: 'key' });
+        d.createObjectStore('battles', { keyPath: 'id' }).createIndex('by-league', 'league');
+      },
+    });
+    render(
+      <AppProvider host={fakeHost()}>
+        <Probe />
+      </AppProvider>,
+    );
+    await waitFor(() =>
+      expect(latest?.state.notice).toBe('Close other pick3 tabs to finish updating.'),
+    );
+    expect(latest?.state.noticeTone).toBe('warn');
+    expect(latest?.state.settingsLoaded).toBe(false);
+    v2.close();
+    await waitFor(() => expect(latest?.state.settingsLoaded).toBe(true));
   });
 });

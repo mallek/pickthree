@@ -2,8 +2,17 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
 import type { AchievementsRecord, BattleSet } from '@pickthree/engine';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { mergeAchievementRecords, resetDbForTests, storage } from '../src/storage/db.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getDiagnostics, setErrorReportsEnabled } from '../src/diag.ts';
+import {
+  DB_VERSION,
+  DEFAULT_SETTINGS,
+  dbBlocked,
+  mergeAchievementRecords,
+  onDbBlocked,
+  resetDbForTests,
+  storage,
+} from '../src/storage/db.ts';
 
 function set(id: string, league = 'great', closed = false): BattleSet {
   return {
@@ -201,5 +210,45 @@ describe('achievements storage', () => {
     });
     expect(out).toBeNull();
     expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
+  });
+});
+
+describe('database version changes in another tab', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    setErrorReportsEnabled(false);
+  });
+  afterEach(() => {
+    setErrorReportsEnabled(true);
+  });
+
+  it('says so when an older connection blocks the upgrade, and finishes once it closes', async () => {
+    const v2 = await openDB('pickthree', 2, {
+      upgrade(d) {
+        d.createObjectStore('collection', { keyPath: 'key' });
+        d.createObjectStore('settings', { keyPath: 'key' });
+        d.createObjectStore('battles', { keyPath: 'id' }).createIndex('by-league', 'league');
+      },
+    });
+    const heard = vi.fn();
+    const off = onDbBlocked(heard);
+    const loading = storage.loadAchievements();
+    await vi.waitFor(() => expect(heard).toHaveBeenCalledTimes(1));
+    expect(dbBlocked()).toBe(true);
+    expect(getDiagnostics()[0]?.stage).toBe('db-blocked');
+    v2.close();
+    expect(await loading).toEqual({ earned: [], marks: [] });
+    expect(dbBlocked()).toBe(false);
+    off();
+  });
+
+  it('closes its own connection when another tab opens a newer version', async () => {
+    await storage.saveSettings(DEFAULT_SETTINGS);
+    const blocked = vi.fn();
+    const v4 = await openDB('pickthree', DB_VERSION + 1, { blocked });
+    expect(blocked).not.toHaveBeenCalled();
+    expect(v4.version).toBe(DB_VERSION + 1);
+    v4.close();
   });
 });
