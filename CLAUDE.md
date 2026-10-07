@@ -42,7 +42,7 @@ Dependency direction: `apps/web -> engine -> BattleSimulator interface <- sim-pv
 1. `packages/data/pvpoke.lock.json` pins a PvPoke commit. `data:fetch` clones it into `packages/data/.pvpoke` (gitignored).
 2. `build.ts` writes `apps/web/public/data/` (gitignored, rebuilt in CI, cached by lock hash):
    `pokemon.json`, `moves.json`, `gamemaster.json` (PvPoke's own, the vendored sim reads it), `leagues.json`,
-   per-league `rankings/`, `meta/`, `overrides/`, `matrix/`, `sprites/<id>.webp`, `vendor/pvpoke-sim.js`, `data-manifest.json`,
+   per-league `rankings/`, `meta/`, `overrides/`, `matrix/`, `sprites/<id>.webp` (plus `sprites/shiny/<id>.webp` for Kanto, the achievement rewards), `vendor/pvpoke-sim.js`, `data-manifest.json`,
    `legal/` (the Play! ban list per league), `baseline/<league>-teams.json` (generated cold-start teams for Top teams,
    every non-special league the build ships), `epochs.json`.
 3. The matchup matrix (ADR 002) is every ranked species vs PvPoke's meta group in 3 shield scenarios, integer ratings,
@@ -78,6 +78,7 @@ score/      team score; explain/ turns it into sentences
 verdicts/   per-specimen "worth building" verdicts; counters/ anti-meta scores; scan/ in-game search strings
 teammates/  pin one or two, fill the rest from the matrix; no team simulation, Analyze does that
 yourmeta/   battle log -> season window -> facing profile (blended weights + outsiders) -> recommend, analyze, counters
+achievements/ facts from the log (daily cap, seasons), definitions, evaluate, Kanto tier table, roll
 ```
 
 `yourmeta/facing.ts`: one `FacingInput` (PvPoke, your log, or a community source) for every entry point; an engaged profile also weights drafting.
@@ -90,8 +91,9 @@ Tests implement it in-process; the web app implements it with a worker. Every re
 - `main.tsx` registers the PWA and mounts `App.tsx`. State is one reducer in `state/store.tsx`, exposed through `useAppState` and `useActions`.
 - `host/WorkerHost.ts` implements `ComputeHost` over `worker/engine.worker.ts` using the request/response union in `host/protocol.ts` (progress, partial, result, error).
 - The worker boots once (game data + gamemaster + PvPoke bundle) and fetches a league bundle (rankings, meta, matrix) lazily per league.
-- `storage/db.ts`: IndexedDB `pickthree` v2 with `collection`, `settings` and `battles` (one record per set, indexed by league) stores. Settings fields added later are optional with a documented default for old saves. The collection record also carries `removed` (marks left by removed Pokemon, so an import skips them) and `pins` (per league, the copy that represents a battling species); an import merges into the stored collection (`collection/merge.ts`) instead of replacing it.
-- Screens in `screens/`: Welcome (import, add by hand, start without a collection, scan list), Report, Teams, TeamDetail, Collection, SpeciesPage, Counters, Build, AddPokemon (also Edit, `#/add?edit=<id>`), MetaHome, TopTeams, YourBattles, NewSet, LogBattle, settings/ (Settings: a hub with Your data, Community (with How the meta is ranked), Appearance and About pages), Filters (the Teams filter sheet: team style, build filters, excluded Pokemon).
+- `storage/db.ts`: IndexedDB `pickthree` v3 with `collection`, `settings`, `battles` (one record per set, indexed by league) and `achievements` (one record: earned rewards and event marks) stores. Settings fields added later are optional with a documented default for old saves. The collection record also carries `removed` (marks left by removed Pokemon, so an import skips them) and `pins` (per league, the copy that represents a battling species); an import merges into the stored collection (`collection/merge.ts`) instead of replacing it.
+- Screens in `screens/`: Welcome (import, add by hand, start without a collection, scan list), Report, Teams, TeamDetail, Collection, SpeciesPage, Counters, Build, AddPokemon (also Edit, `#/add?edit=<id>`), MetaHome, TopTeams, YourBattles, NewSet, LogBattle, Achievements (`#/achievements`, the Kanto dex and every achievement by tier), settings/ (Settings: a hub with Your data, Community (with How the meta is ranked), Appearance and About pages), Filters (the Teams filter sheet: team style, build filters, excluded Pokemon).
+- `achievements/AchievementsProvider.tsx` works out achievements on the phone: it evaluates on boot, after every log or collection change and after Analyze, rolls each new one's Kanto Pokemon, saves before announcing, and announces one with a toast or several with the welcome reveal sheet.
 - `sw.ts`: app shell precached, `/data/*` stale-while-revalidate, `/data/sprites/*` cache-first, Web Share Target POST `/share` parks the CSV in a cache and the app imports it on `/?share=1`. Updates are prompt-mode via `update.ts` and `UpdateToast`.
 - `counter.ts` posts one anonymous hit per device; `diag.ts` keeps a local error log and, if the setting is on, posts sanitized reports to the worker.
 - CSP is a meta tag in `index.html`. `connect-src` allows only self and the counter worker; fonts come from Google Fonts.

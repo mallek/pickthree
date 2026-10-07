@@ -118,6 +118,9 @@ const AUDIT_ENFORCED = new Set([
   'counters-against-scrolled',
   'counters-unranked',
   'counters-error',
+  '25-achievements',
+  '25b-achievements-toast',
+  '25c-achievements-reveal',
 ]);
 const auditFindings = [];
 /** Every shot name taken this run, so an audit run can tell an enforced name that never ran. */
@@ -294,6 +297,72 @@ await page.evaluateOnNewDocument(() => {
 });
 
 /**
+ * Achievements announce themselves over whatever screen is up: the welcome reveal (a sheet titled
+ * Achievements, when several land at once), the earn toast (its reward token in the notice), or
+ * the nudge after a set closes (a tap line reading "Next: ..."). The run meets them as it goes (the
+ * sample import, Take to battle, the 15 battle step, Analyze), so each is closed before it can sit
+ * over a capture of another screen. Resolves what it closed, for the run's log.
+ */
+const dismissAchievements = () =>
+  page.evaluate(() => {
+    const closed = [];
+    for (const sheet of document.querySelectorAll('.ui-sheet')) {
+      if (sheet.querySelector('.ui-sheet-title')?.textContent === 'Achievements') {
+        closed.push(`reveal "${sheet.querySelector('.ui-sheet-body b')?.textContent ?? ''}"`);
+        sheet.querySelector('.ui-sheet-done')?.click();
+      }
+    }
+    for (const toast of document.querySelectorAll('.notice-toast')) {
+      if (toast.querySelector('.ach-toast-token')) {
+        closed.push(`toast "${toast.querySelector('.notice-msg')?.textContent ?? ''}"`);
+        toast.querySelector('.notice-quiet')?.click();
+        continue;
+      }
+      const tap = toast.querySelector('.notice-tap');
+      if (tap?.textContent?.startsWith('Next: ')) {
+        closed.push(`nudge "${tap.textContent}"`);
+        tap.click();
+      }
+    }
+    return closed;
+  });
+/** Waits for closed announcements to leave the page (a sheet animates away). */
+const announcementsGone = () =>
+  page.waitForFunction(
+    () =>
+      ![...document.querySelectorAll('.ui-sheet .ui-sheet-title')].some(
+        (t) => t.textContent === 'Achievements',
+      ) &&
+      !document.querySelector('.notice-toast .ach-toast-token') &&
+      ![...document.querySelectorAll('.notice-toast .notice-tap')].some((b) =>
+        b.textContent?.startsWith('Next: '),
+      ),
+    { timeout: 10_000 },
+  );
+/**
+ * After a step that can earn: closes every achievement announcement until the page has been
+ * quiet (no announcement, no notice it could be waiting behind) for `quietMs`. An earn is worked
+ * out after the step's own writes land, so it can arrive a moment after the step looks done.
+ */
+async function settleAchievements(where, quietMs = 1500) {
+  const until = Date.now() + 30_000;
+  let quietSince = Date.now();
+  while (Date.now() - quietSince < quietMs) {
+    if (Date.now() > until) {
+      throw new Error(`${where}: achievements never went quiet (a notice stayed up)`);
+    }
+    for (const c of await dismissAchievements()) {
+      console.log(`  ${where}: closed the achievements ${c}`);
+      quietSince = Date.now();
+    }
+    if (await page.$('.notice-toast, .ui-sheet')) {
+      quietSince = Date.now();
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
+
+/**
  * `mustShow`: a selector that has to be on the page when each shot is taken, for states that do
  * not last (a loading card), so a shot that missed its state fails instead of passing quietly.
  * `before`: runs before each shot (each theme on an audit run), to bring back a state that clears
@@ -302,11 +371,22 @@ await page.evaluateOnNewDocument(() => {
  * About with a row open and scrolled). Text a capture could not measure because it was scrolled out
  * of view is checked against every capture of its group in the same theme (default: the capture's
  * own name).
+ * `announcements`: the capture is of an achievement announcement, so it is left on the page. Every
+ * other capture closes any that is up first, and takes the shot again if one arrived during it.
  */
-async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
+async function shot(name, fullPage = true, { mustShow, before, group, announcements } = {}) {
   captured.add(name);
   await new Promise((r) => setTimeout(r, 350));
-  if (name !== 'cup-nudge' && (await page.$('.notice-toast .notice-quiet'))) {
+  if (!announcements) {
+    for (const c of await dismissAchievements()) {
+      console.log(`  ${name}: closed the achievements ${c} before the shot`);
+    }
+    await announcementsGone();
+  }
+  if (
+    name !== 'cup-nudge' &&
+    (await page.$('.notice-toast:not(:has(.ach-toast-token)) .notice-quiet'))
+  ) {
     throw new Error(`${name}: the cup nudge is on the page, so this capture would show it`);
   }
   // The sub header pads itself, safe-area inset included. Inside `.page-head`, which pads too, an
@@ -322,6 +402,17 @@ async function shot(name, fullPage = true, { mustShow, before, group } = {}) {
       await before();
     }
     await page.screenshot({ path: file, ...options });
+    if (!announcements) {
+      const arrived = await dismissAchievements();
+      if (arrived.length > 0) {
+        console.log(`  ${name}: the achievements ${arrived.join(', ')} arrived during the shot`);
+        await announcementsGone();
+        if (before) {
+          await before();
+        }
+        await page.screenshot({ path: file, ...options });
+      }
+    }
     if (mustShow && !(await page.$(mustShow))) {
       throw new Error(`${name}: ${mustShow} was gone when the shot was taken`);
     }
@@ -660,6 +751,10 @@ console.log('import sample');
 await page.goto(`${base}/?sample=1#/import`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.kicker', { timeout: 90_000 });
 console.log(`  import done at ${Date.now() - t0} ms`);
+// The sample's battle log lands before its collection: the log earns several achievements at once
+// (the welcome reveal) and the collection then earns Trainer (a toast). Both are closed here, so
+// the report and every screen after it look as they did before achievements.
+await settleAchievements('import sample');
 await shot('01-report');
 
 console.log('teams');
@@ -1066,6 +1161,8 @@ if (!strip.trim()) {
   throw new Error('take to battle: empty team strip on Log a battle');
 }
 console.log(`  battling with ${strip.trim()}`);
+// Switching closes the running set, which brings the nudge.
+await settleAchievements('take to battle');
 
 console.log('team analysis, not found');
 await page.goto(`${base}/#/teams/does-not-exist`, { waitUntil: 'networkidle0' });
@@ -1153,9 +1250,7 @@ if (rescanLines > 0) {
 await page.evaluate(() => window.scrollTo(0, 0));
 await shot('collection-rescan', false, { mustShow: rescanRow });
 await rescanPill();
-await page.waitForFunction(() =>
-  document.querySelector('.scroll .spec-row[href*="?copy="]'),
-);
+await page.waitForFunction(() => document.querySelector('.scroll .spec-row[href*="?copy="]'));
 await page.evaluate(() => window.scrollTo(0, 0));
 
 console.log('collection, filters');
@@ -1228,12 +1323,7 @@ const pinState = await page.evaluate((sel) => {
 console.log(`  pin: ${JSON.stringify(pinState)}`);
 // One pin per Pokémon a copy battles as: a Meltan fielded as Melmetal and another fielded as Meltan
 // are both pinned, so the count is at least one and never every row.
-if (
-  !pinState ||
-  pinState.copies < 2 ||
-  pinState.pinned >= pinState.copies ||
-  pinState.stray > 0
-) {
+if (!pinState || pinState.copies < 2 || pinState.pinned >= pinState.copies || pinState.stray > 0) {
   throw new Error(`collection, pin: no pinned row with a rival copy (${JSON.stringify(pinState)})`);
 }
 await shot('collection-pin', false, { mustShow: pinRow });
@@ -2155,6 +2245,8 @@ await page.waitForSelector('.page-head [role="progressbar"][aria-valuenow="100"]
   timeout: 60_000,
 });
 await page.waitForSelector('.faced-row .faced-out', { timeout: 60_000 });
+// Fifteen battles this season unlock Your meta, which earns its achievement on this load.
+await settleAchievements('your battles, 15 or more');
 await shot('your-battles-active');
 // A goto, not Back: after the reload, Back follows the browser history from before it.
 await page.goto(`${base}/#/meta`, { waitUntil: 'networkidle0' });
@@ -2298,6 +2390,8 @@ if (!noticePlace || !noticePlace.clear || noticePlace.gap < 4 || noticePlace.gap
 await shot('log-battle-saved', false, { mustShow: '.notice-toast.notice-info', before: logWin });
 await page.evaluate(() => document.querySelector('.notice-toast .notice-tap')?.click());
 await page.waitForSelector('.notice-toast', { hidden: true });
+// A Win that closes the set brings the nudge (or a new earn) once the saved notice is gone.
+await settleAchievements('log a battle, saved');
 await restoreRunningSet();
 
 console.log('new set');
@@ -2559,6 +2653,8 @@ const customBars = await page.$$eval('.score-card [role="meter"]', (els) => els.
 if (customBars !== 3) {
   throw new Error(`custom team: expected 3 bars on the hero card, found ${customBars}`);
 }
+// The first Analyze earns Team builder: its toast is closed before the shot.
+await settleAchievements('analyze');
 await shot('14-custom-team');
 
 console.log('build with a species PvPoke does not rank');
@@ -2750,7 +2846,9 @@ const barClear = await page.evaluate(() => {
   };
 });
 if (!barClear.atFoot || !barClear.lastField) {
-  throw new Error(`edit, unsaved changes: the save bar covers something: ${JSON.stringify(barClear)}`);
+  throw new Error(
+    `edit, unsaved changes: the save bar covers something: ${JSON.stringify(barClear)}`,
+  );
 }
 await shot('edit-dirty', false, { mustShow: '.ui-savebar' });
 await page.$$eval('.ui-savebar button', (els) =>
@@ -3124,6 +3222,134 @@ if (megaPin) {
   );
 }
 
+// Achievements: by now the run has earned what the sample log, the collection, Analyze and the 15
+// battle step earn. The stored record is changed in place to bring each announcement back: with
+// nothing earned yet, the next load earns everything at once (the welcome reveal); with one record
+// taken out, the next load earns that one again (the toast). Each earn rolls a new Pokemon, so the
+// Pokemon differ from run to run; the achievements earned do not. Both announcements are shot over
+// Your battles, where a player logging battles meets them, and which shows no reward token: over
+// the Achievements page, a shiny badge on a dex slot under the sheet or the toast lands wherever
+// the roll put it, and the audit counts a badge under the reveal's text as lying over it.
+/** Drops these ids from the stored earned list (null drops them all); resolves the ids it held. */
+const rewriteAchievements = (dropIds) =>
+  page.evaluate(
+    (drop) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('pickthree');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('achievements', 'readwrite');
+          const store = tx.objectStore('achievements');
+          const get = store.get('current');
+          tx.oncomplete = () => db.close();
+          tx.onerror = () => reject(tx.error);
+          get.onsuccess = () => {
+            const cur = get.result;
+            if (!cur) {
+              reject(new Error('no saved achievements record; the run has earned nothing'));
+              return;
+            }
+            const ids = cur.earned.map((e) => e.id);
+            const earned = drop === null ? [] : cur.earned.filter((e) => !drop.includes(e.id));
+            store.put({ ...cur, earned });
+            resolve(ids);
+          };
+        };
+      }),
+    dropIds,
+  );
+/** Every sprite in `selector` has loaded (a reward token drawn before its picture would be blank). */
+const spritesIn = (selector) =>
+  page.waitForFunction(
+    (sel) =>
+      [...document.querySelectorAll(`${sel} img`)].every((i) => i.complete && i.naturalWidth > 0),
+    { timeout: 30_000 },
+    selector,
+  );
+/**
+ * Reloads, keeping the theme an audit run set on the page (a reload drops it), and waits for
+ * `selector`, an announcement the load earns.
+ */
+const reloadForAnnouncement = async (selector) => {
+  const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  await page.reload({ waitUntil: 'networkidle0' });
+  await page.waitForSelector(selector, { timeout: 30_000 });
+  await page.evaluate((t) => {
+    if (t !== null) {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+  }, theme);
+};
+const achievementRows = async () => {
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.ach-dex') &&
+      document.querySelectorAll('.scroll .faced-row[id^="ach-"]').length > 0,
+    { timeout: 30_000 },
+  );
+  await spritesIn('.scroll');
+};
+
+console.log('achievements, welcome reveal');
+await page.goto(`${base}/#/achievements`, { waitUntil: 'networkidle0' });
+await achievementRows();
+await settleAchievements('achievements');
+const earnedIds = await rewriteAchievements(null);
+console.log(`  earned in this run: ${earnedIds.join(', ')}`);
+for (const id of ['trainer', 'first-battle', 'team-builder', 'your-meta']) {
+  if (!earnedIds.includes(id)) {
+    throw new Error(`achievements: the run never earned ${id} (earned: ${earnedIds.join(', ')})`);
+  }
+}
+const revealSheet = '.ui-sheet[role="dialog"] .mh-team3';
+await page.goto(`${base}/#/meta/battles`, { waitUntil: 'networkidle0' });
+await reloadForAnnouncement(revealSheet);
+await page.waitForSelector('.faced-row', { timeout: 60_000 });
+await spritesIn(revealSheet);
+// Earned for good, so the stored record is what this load earned again: Your meta, earned at the
+// 15 battle step, does not come back once those battles were put back.
+const revealCount = await page.$$eval('.ui-sheet .mh-team3 > span', (els) => els.length);
+const revealTitle = await page.$eval('.ui-sheet .ui-sheet-body b', (e) => e.textContent ?? '');
+if (revealCount < 2 || revealTitle !== `You have earned ${revealCount} already`) {
+  throw new Error(`achievements reveal: "${revealTitle}" over ${revealCount} Pokemon`);
+}
+if (await page.$('.notice-toast .ach-toast-token')) {
+  throw new Error('achievements reveal: a toast came with the reveal');
+}
+await shot('25c-achievements-reveal', false, { mustShow: revealSheet, announcements: true });
+await page.click('.ui-sheet-done');
+await page.waitForSelector('.ui-sheet', { hidden: true });
+
+console.log('achievements, earn toast');
+// First battle taken out and earned again on each load: a fresh toast for every theme, since it
+// clears itself after eight seconds.
+const earnToast = '.notice-toast .ach-toast-token';
+const freshToast = async () => {
+  await rewriteAchievements(['first-battle']);
+  await reloadForAnnouncement(earnToast);
+  await page.waitForSelector('.faced-row', { timeout: 60_000 });
+  await spritesIn('.notice-toast');
+};
+await freshToast();
+const toastLine = await page.$eval('.notice-toast .notice-msg', (e) => e.textContent ?? '');
+if (!toastLine.startsWith('First battle. You got ')) {
+  throw new Error(`achievements toast: the wrong line: ${toastLine}`);
+}
+await shot('25b-achievements-toast', false, {
+  mustShow: earnToast,
+  before: freshToast,
+  announcements: true,
+});
+await page.click('.notice-toast .notice-quiet');
+await page.waitForSelector('.notice-toast', { hidden: true });
+
+console.log('achievements');
+await page.goto(`${base}/#/achievements`, { waitUntil: 'networkidle0' });
+await achievementRows();
+await settleAchievements('achievements');
+await shot('25-achievements', true, { mustShow: '.ach-dex' });
+
 console.log('light theme');
 await page.emulateMediaFeatures([
   { name: 'prefers-color-scheme', value: 'light' },
@@ -3132,6 +3358,9 @@ await page.emulateMediaFeatures([
 await page.goto(`${base}/?light=1#/teams`, { waitUntil: 'networkidle0' });
 await page.waitForSelector('.ui-expand-head', { timeout: 60_000 });
 await shot('07-teams-light', false);
+await page.goto(`${base}/?light=1#/achievements`, { waitUntil: 'networkidle0' });
+await achievementRows();
+await shot('25-achievements-light', true, { mustShow: '.ach-dex' });
 
 await browser.close();
 console.log(`done in ${Date.now() - t0} ms`);
