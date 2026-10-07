@@ -8,7 +8,7 @@ import { writeLegal } from './build-legal.js';
 import { writeManifest } from './build-manifest.js';
 import { writeMatrix } from './build-matrix.js';
 import { writeLeagueRankings } from './build-rankings.js';
-import { writeSprites } from './build-sprites.js';
+import { writeSprites, writeShinySprites } from './build-sprites.js';
 import { legalSet, writeDerivedLeague } from './build-derived.js';
 import { DERIVES_FROM, readLeagues } from './leagues.js';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
@@ -18,6 +18,7 @@ import { readLock } from './lock.js';
 import { EPOCHS_PATH, GAMEMASTER_PATH, OUTPUT_DIR } from './paths.js';
 import { readSchedule, SCHEDULE_PATH } from './schedule-feed.js';
 import { readSeasons, SEASONS_PATH } from './seasons.js';
+import { KANTO } from '@pickthree/engine';
 
 async function main(): Promise<void> {
   await ensurePvPokeCheckout();
@@ -30,6 +31,8 @@ async function main(): Promise<void> {
     console.log(
       `sprites: ${sprites.written} written, ${sprites.fellBack.length} on the base picture, ${sprites.missing.length} missing`,
     );
+    const shiny = await writeShinySprites(OUTPUT_DIR, KANTO);
+    console.log(`shiny sprites: ${shiny.written} written, ${shiny.missing.length} missing`);
   }
   const leagues = readLeagues();
   let matrixCounts = { candidates: 0, opponents: 0, scenarios: 0 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { megaBaseId } from '../src/build-gamedata.js';
-import { varietyNameFor } from '../src/build-sprites.js';
+import { varietyNameFor, shinyUrlFor } from '../src/build-sprites.js';
 
 describe('varietyNameFor Megas', () => {
   it.each([
@@ -19,5 +19,13 @@ describe('varietyNameFor Megas', () => {
       const base = megaBaseId(id) as string;
       expect(varietyNameFor(id).startsWith(`${varietyNameFor(base)}-mega`)).toBe(true);
     }
+  });
+});
+
+describe('shiny sprites', () => {
+  it('reads the HOME shiny render by dex number', () => {
+    expect(shinyUrlFor(131)).toBe(
+      'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/131.png',
+    );
   });
 });

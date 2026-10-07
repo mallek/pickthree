@@ -146,6 +146,43 @@ async function runPool<T>(items: T[], worker: (item: T) => Promise<void>): Promi
   await Promise.all(lanes);
 }
 
+/** The HOME shiny render for a dex number's default form. */
+export function shinyUrlFor(dex: number): string {
+  return `${SPRITES}/other/home/shiny/${dex}.png`;
+}
+
+/**
+ * Shiny pictures for the achievement rewards: the Kanto 151 only, written to sprites/shiny/ in the
+ * same 96px WebP as the rest. Kanto's default forms have PokeAPI pokemon ids equal to their dex.
+ */
+export async function writeShinySprites(
+  outDir: string,
+  kanto: readonly { id: string; dex: number }[],
+): Promise<{ written: number; missing: string[] }> {
+  const dir = path.join(outDir, 'sprites', 'shiny');
+  fs.mkdirSync(dir, { recursive: true });
+  const report = { written: 0, missing: [] as string[] };
+  await runPool([...kanto], async ({ id, dex }) => {
+    const png = await cachedFetch(
+      shinyUrlFor(dex),
+      path.join(CACHE_DIR, 'sprites', 'home-shiny', `${dex}.png`),
+    );
+    if (!png) {
+      report.missing.push(id);
+      return;
+    }
+    const out = await sharp(png)
+      .trim({ threshold: 1 })
+      .resize(SIZE, SIZE, { fit: 'inside', withoutEnlargement: false })
+      .webp({ quality: 82, alphaQuality: 90 })
+      .toBuffer();
+    fs.writeFileSync(path.join(dir, `${id}.webp`), out);
+    report.written += 1;
+  });
+  report.missing.sort();
+  return report;
+}
+
 export async function writeSprites(outDir: string, species: Species[]): Promise<SpriteReport> {
   const dir = path.join(outDir, 'sprites');
   fs.mkdirSync(dir, { recursive: true });
