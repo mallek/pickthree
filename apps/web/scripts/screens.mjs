@@ -342,7 +342,10 @@ const announcementsGone = () =>
 /**
  * After a step that can earn: closes every achievement announcement until the page has been
  * quiet (no announcement, no notice it could be waiting behind) for `quietMs`. An earn is worked
- * out after the step's own writes land, so it can arrive a moment after the step looks done.
+ * out after the step's own writes land, so it can arrive a moment after the step looks done. Only
+ * those reset the quiet timer: the earn toast (.ach-toast-token), the nudge (.notice-tap), the
+ * app's own notice (all three are a .notice-toast) and the welcome reveal (the sheet titled
+ * Achievements). Any other sheet a step leaves open does not hold the run here.
  */
 async function settleAchievements(where, quietMs = 1500) {
   const until = Date.now() + 30_000;
@@ -355,7 +358,14 @@ async function settleAchievements(where, quietMs = 1500) {
       console.log(`  ${where}: closed the achievements ${c}`);
       quietSince = Date.now();
     }
-    if (await page.$('.notice-toast, .ui-sheet')) {
+    const announcing = await page.evaluate(
+      () =>
+        document.querySelector('.notice-toast') !== null ||
+        [...document.querySelectorAll('.ui-sheet .ui-sheet-title')].some(
+          (t) => t.textContent === 'Achievements',
+        ),
+    );
+    if (announcing) {
       quietSince = Date.now();
     }
     await new Promise((r) => setTimeout(r, 100));
@@ -3242,18 +3252,25 @@ const rewriteAchievements = (dropIds) =>
           const tx = db.transaction('achievements', 'readwrite');
           const store = tx.objectStore('achievements');
           const get = store.get('current');
-          tx.oncomplete = () => db.close();
+          let ids = null;
+          // Resolved once the write has committed, so the reload that follows reads it.
+          tx.oncomplete = () => {
+            db.close();
+            if (ids === null) {
+              reject(new Error('no saved achievements record; the run has earned nothing'));
+            } else {
+              resolve(ids);
+            }
+          };
           tx.onerror = () => reject(tx.error);
           get.onsuccess = () => {
             const cur = get.result;
             if (!cur) {
-              reject(new Error('no saved achievements record; the run has earned nothing'));
               return;
             }
-            const ids = cur.earned.map((e) => e.id);
+            ids = cur.earned.map((e) => e.id);
             const earned = drop === null ? [] : cur.earned.filter((e) => !drop.includes(e.id));
             store.put({ ...cur, earned });
-            resolve(ids);
           };
         };
       }),
