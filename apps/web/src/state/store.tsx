@@ -2326,11 +2326,13 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     (text: string) =>
       serialized(async () => {
         const sets = parseLogFile(text);
-        const r = await storage.importSets(sets);
+        // Achievements first: an evaluation that sees the new sets then also sees the record
+        // they came with, and never rolls fresh Pokemon for achievements the file already holds.
         const achievements = parseLogAchievements(text);
         if (achievements) {
           await storage.mergeAchievements(achievements);
         }
+        const r = await storage.importSets(sets);
         const league = stateRef.current.settings.league ?? 'great';
         applySets(await storage.loadSets(league));
         return r;

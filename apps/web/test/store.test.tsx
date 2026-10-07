@@ -5,6 +5,7 @@ import { openDB } from 'idb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setErrorReportsEnabled } from '../src/diag.ts';
 import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { serializeLog } from '../src/storage/logFile.ts';
 import {
   AppProvider,
   hashFor,
@@ -1114,6 +1115,47 @@ describe('battle log actions', () => {
     });
     expect(r).toEqual({ added: 1, skipped: 0 });
     expect(latest!.state.sets).toHaveLength(2);
+  });
+});
+
+describe('importing a log with achievements', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    resetCommunityMetaCache();
+    window.location.hash = '';
+    latest = null;
+  });
+
+  it('merges the achievements before it adds the sets', async () => {
+    await mount();
+    const order: string[] = [];
+    const merge = storage.mergeAchievements.bind(storage);
+    const add = storage.importSets.bind(storage);
+    const mergeSpy = vi.spyOn(storage, 'mergeAchievements').mockImplementation(async (r) => {
+      order.push('achievements');
+      return merge(r);
+    });
+    const addSpy = vi.spyOn(storage, 'importSets').mockImplementation(async (sets) => {
+      order.push('sets');
+      return add(sets);
+    });
+    try {
+      const text = serializeLog([], {
+        earned: [
+          { id: 'cup-runner', earnedAt: '2026-09-01T00:00:00Z', species: 'mew', shiny: false },
+        ],
+        marks: [],
+      });
+      await act(async () => {
+        await latest!.actions.importLog(text);
+      });
+      expect(order).toEqual(['achievements', 'sets']);
+      expect((await storage.loadAchievements()).earned.map((e) => e.id)).toEqual(['cup-runner']);
+    } finally {
+      mergeSpy.mockRestore();
+      addSpy.mockRestore();
+    }
   });
 });
 
