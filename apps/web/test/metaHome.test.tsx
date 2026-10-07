@@ -372,8 +372,15 @@ describe('Meta landing', () => {
       'Most seen Pokémon',
       'Your contribution',
       'Your meta',
+      'Achievements',
       'Most logged teams',
     ]);
+    const ach = card('Achievements');
+    expect(within(ach).getByText(/^\d+ of 11/)).toBeInTheDocument();
+    expect(within(ach).getByRole('link', { name: /See your achievements/ })).toHaveAttribute(
+      'href',
+      '#/achievements',
+    );
 
     fireEvent.click(within(mine).getByRole('button', { name: 'Log a battle' }));
     await waitFor(() => expect(window.location.hash).toBe('#/meta/log'));

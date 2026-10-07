@@ -138,6 +138,15 @@ export function dateLabel(iso: string): string {
   return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/** "Sep 12": the month and day of an ISO time, for an achievement's earned line. */
+export function shortDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export function scanAge(scanDate: string, now = new Date()): string {
   const d = new Date(scanDate.replace(' ', 'T'));
   if (Number.isNaN(d.getTime())) {

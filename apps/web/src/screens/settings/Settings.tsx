@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, ConfirmSheet, Sheet, type SheetNav } from '@pickthree/ui';
+import { useAchievements } from '../../achievements/AchievementsProvider.tsx';
 import { recordError } from '../../diag.ts';
 import { num } from '../../format.ts';
 import { shareEnabled } from '../../metaShare.ts';
@@ -8,7 +9,13 @@ import { storage } from '../../storage/db.ts';
 import { About } from './About.tsx';
 import { Appearance, THEME_WORDS } from './Appearance.tsx';
 import { Community } from './Community.tsx';
-import { AboutGlyph, AppearanceGlyph, CommunityGlyph, DataGlyph } from './glyphs.tsx';
+import {
+  AboutGlyph,
+  AchievementsGlyph,
+  AppearanceGlyph,
+  CommunityGlyph,
+  DataGlyph,
+} from './glyphs.tsx';
 import { ImportCard } from './ImportCard.tsx';
 import { SettingsRow } from './SettingsRow.tsx';
 import { YourData } from './YourData.tsx';
@@ -47,13 +54,14 @@ function useAllBattles(): number | null {
 }
 
 /**
- * The hub: Import first, four rows with live summaries that push their pages, Forget (only with
+ * The hub: Import first, five rows with live summaries that push their pages, Forget (only with
  * a collection) behind a danger confirm, and the privacy line. Each pushed page is a component
  * that reads the store itself, never JSX holding values from the moment it was pushed.
  */
 function Hub({ nav }: { nav: SheetNav }) {
   const s = useAppState();
-  const { forget } = useActions();
+  const { forget, navigate } = useActions();
+  const achievements = useAchievements();
   const battles = useAllBattles();
   const [confirmForget, setConfirmForget] = useState(false);
   const c = s.collection;
@@ -83,6 +91,15 @@ function Hub({ nav }: { nav: SheetNav }) {
               render: (n) => <Community nav={n} />,
             })
           }
+        />
+        <SettingsRow
+          icon={<AchievementsGlyph />}
+          title="Achievements"
+          summary={`${achievements.earnedCount} of ${achievements.total}`}
+          onClick={() => {
+            nav.close();
+            navigate({ screen: 'achievements' });
+          }}
         />
         <SettingsRow
           icon={<AppearanceGlyph />}

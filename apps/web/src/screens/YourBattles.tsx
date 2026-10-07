@@ -16,6 +16,7 @@ import {
   SpeciesRows,
   TeamRows,
 } from '../components/meta/LogPieces.tsx';
+import { useAchievements } from '../achievements/AchievementsProvider.tsx';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -42,7 +43,8 @@ function sorted(stats: SeasonStats, sort: Sort): SpeciesRecord[] {
 export function YourBattles() {
   const s = useAppState();
   const run = isRunLeague(s);
-  const { startFresh, openSheet, back } = useActions();
+  const { startFresh, openSheet, back, navigate } = useActions();
+  const achievements = useAchievements();
   const leagueId = s.settings.league ?? 'great';
   const seasons = seasonsFor(s.data, leagueId);
   const freshFrom = s.settings.yourMeta?.freshFrom?.[leagueId] ?? null;
@@ -88,6 +90,21 @@ export function YourBattles() {
         </div>
       </div>
       <div className="scroll" style={{ gap: 18 }}>
+        <button
+          type="button"
+          className="action-row"
+          onClick={() => navigate({ screen: 'achievements' })}
+        >
+          <span>
+            <b>
+              Achievements · {achievements.earnedCount} of {achievements.total}
+            </b>
+            <span className="small muted">{achievements.nudge ?? 'All earned.'}</span>
+          </span>
+          <span className="chev">
+            <Chevron />
+          </span>
+        </button>
         {stale ? (
           <div className="card" style={{ borderColor: 'var(--warn-tint)', gap: 8 }}>
             <span className="small">The season list may be out of date.</span>

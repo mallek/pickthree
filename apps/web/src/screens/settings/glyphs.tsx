@@ -78,3 +78,13 @@ export function RankGlyph() {
     </Glyph>
   );
 }
+
+/** A star on a ribbon: the achievements earned on this phone. */
+export function AchievementsGlyph() {
+  return (
+    <Glyph>
+      <path d="M12 3.2l2.3 4.7 5.2.8-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.8-3.6 5.2-.8z" />
+      <path d="M8.5 16.5l-1.3 4.7 4.8-1.9 4.8 1.9-1.3-4.7" />
+    </Glyph>
+  );
+}

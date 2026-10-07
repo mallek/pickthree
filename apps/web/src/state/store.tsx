@@ -667,6 +667,12 @@ export function parseHash(hash: string): Route {
         }
       : { screen: 'build' };
   }
+  if (a === 'achievements') {
+    const row = new URLSearchParams(query ?? '').get('row');
+    return row !== null && /^[a-z0-9-]{1,40}$/.test(row)
+      ? { screen: 'achievements', row }
+      : { screen: 'achievements' };
+  }
   if (a === 'meta') {
     if (b === 'new') {
       const team = teamParam(query ?? '');
@@ -767,7 +773,7 @@ export function hashFor(r: Route): string {
       return qs ? `#/meta/teams?${qs}` : '#/meta/teams';
     }
     case 'achievements':
-      return '#/achievements';
+      return r.row ? `#/achievements?row=${encodeURIComponent(r.row)}` : '#/achievements';
     case 'meta-battles':
       return '#/meta/battles';
     case 'meta-new':

@@ -55,6 +55,16 @@ describe('routes', () => {
     });
     expect(parseHash('#/counters?l=Mega Great')).toEqual({ screen: 'counters' });
   });
+  it('round trips the achievements page and its row', () => {
+    expect(parseHash('#/achievements')).toEqual({ screen: 'achievements' });
+    expect(parseHash('#/achievements?row=days-10')).toEqual({
+      screen: 'achievements',
+      row: 'days-10',
+    });
+    expect(parseHash('#/achievements?row=<bad>')).toEqual({ screen: 'achievements' });
+    expect(hashFor({ screen: 'achievements', row: 'days-10' })).toBe('#/achievements?row=days-10');
+    expect(hashFor({ screen: 'achievements' })).toBe('#/achievements');
+  });
   it('parses and prints the Your meta routes', () => {
     expect(parseHash('#/meta')).toEqual({ screen: 'meta' });
     expect(parseHash('#/meta/new')).toEqual({ screen: 'meta-new' });

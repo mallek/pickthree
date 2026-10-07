@@ -40,12 +40,44 @@ import {
   SpeciesRows,
   useShareTeam,
 } from '../components/meta/LogPieces.tsx';
+import { useAchievements } from '../achievements/AchievementsProvider.tsx';
+import { RewardToken } from '../components/achievements/tokens.tsx';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
 import { useMetaRanking, useTopTeams } from '../state/useMeta.ts';
 import { storage } from '../storage/db.ts';
 import { STOP_LINE } from './settings/Community.tsx';
+
+/** The landing's achievements card: the count, the newest few earned and the next one to go for. */
+function AchievementsCard() {
+  const a = useAchievements();
+  const recent = [...a.record.earned]
+    .sort((x, y) => y.earnedAt.localeCompare(x.earnedAt))
+    .slice(0, 6);
+  return (
+    <div className="mh-card">
+      <div className="between mh-card-head">
+        <b>Achievements</b>
+        <span className="meta">
+          {a.earnedCount} of {a.total}
+          {a.shinyCount ? ` · ${a.shinyCount} shiny` : ''}
+        </span>
+      </div>
+      {recent.length > 0 ? (
+        <span className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+          {recent.map((e) => (
+            <RewardToken key={e.id} species={e.species} shiny={e.shiny} size={36} />
+          ))}
+        </span>
+      ) : null}
+      <span className="small muted">{a.nudge ?? 'All earned.'}</span>
+      <a className="mh-more" href={hashFor({ screen: 'achievements' })}>
+        See your achievements <Arrow />
+      </a>
+    </div>
+  );
+}
 
 /** The landing always reads the default window and every source; the full lists carry controls. */
 const READ = { window: 'meta', source: 'all' } as const;
@@ -473,6 +505,7 @@ export function MetaHome() {
           <>
             <YourContribution open={open} />
             <YourMeta />
+            <AchievementsCard />
             <MostLogged league={league} caption={false} />
           </>
         ) : (

@@ -134,7 +134,7 @@ describe('Settings hub', () => {
     latest = null;
   });
 
-  it('is named Settings, leads with Import, and holds four rows and nothing moved away', async () => {
+  it('is named Settings, leads with Import, and holds five rows and nothing moved away', async () => {
     await seed();
     const dialog = await open();
     const importButton = within(dialog).getByRole('button', { name: 'Import a new CSV' });
@@ -142,7 +142,7 @@ describe('Settings hub', () => {
     expect(
       within(dialog).getByText('Update or replace the collection on this phone.'),
     ).toBeVisible();
-    for (const title of ['Your data', 'Community', 'Appearance', 'About']) {
+    for (const title of ['Your data', 'Community', 'Achievements', 'Appearance', 'About']) {
       expect(within(dialog).getByRole('button', { name: title })).toBeInTheDocument();
     }
     expect(within(dialog).getByText('Your collection stays on this phone.')).toBeInTheDocument();
@@ -150,6 +150,18 @@ describe('Settings hub', () => {
     expect(screen.queryByRole('group', { name: /league/i })).toBeNull();
     expect(screen.queryByText(/rank band/i)).toBeNull();
     expect(screen.queryByRole('button', { name: /Top 10%|Legend|Veteran/ })).toBeNull();
+  });
+
+  it('opens the achievements page from its row, with the count as its summary', async () => {
+    await seed();
+    await open();
+    const row = screen.getByRole('button', { name: 'Achievements' });
+    expect(row).toHaveAccessibleDescription(/^\d+ of 11$/);
+    await act(async () => {
+      fireEvent.click(row);
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#/achievements'));
+    expect(latest?.state.sheetOpen).toBe(false);
   });
 
   it('closes the sheet and opens Import from the Import card', async () => {

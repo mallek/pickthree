@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react';
+import { Achievements } from './screens/Achievements.tsx';
 import { AddPokemon } from './screens/AddPokemon.tsx';
 import { Build } from './screens/Build.tsx';
 import { Collection } from './screens/Collection.tsx';
@@ -71,7 +72,8 @@ function TabBar() {
     route.screen === 'meta-teams' ||
     route.screen === 'meta-battles' ||
     route.screen === 'meta-new' ||
-    route.screen === 'meta-log';
+    route.screen === 'meta-log' ||
+    route.screen === 'achievements';
   return (
     <nav className="tabs" aria-label="Sections">
       <button
@@ -138,8 +140,7 @@ function renderScreen(r: Route) {
     case 'meta':
       return <MetaHome />;
     case 'achievements':
-      // Task 7 replaces this with the page.
-      return <MetaHome />;
+      return <Achievements />;
     case 'meta-battles':
       return <YourBattles />;
     case 'meta-teams':

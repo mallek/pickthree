@@ -100,8 +100,7 @@ describe('AchievementToast', () => {
     await mount(<AchievementToast />);
     expect(screen.getByRole('status')).toHaveTextContent('First battle. You got Bulbasaur.');
     fireEvent.click(screen.getByRole('button', { name: 'See it' }));
-    // Task 7 adds the row to the link (#/achievements?row=first-battle).
-    expect(window.location.hash.startsWith('#/achievements')).toBe(true);
+    expect(window.location.hash).toBe('#/achievements?row=first-battle');
     expect(view.current.dismissToast).toHaveBeenCalled();
   });
 
