@@ -21,6 +21,7 @@ function facts(over: Partial<AchievementFacts> = {}): AchievementFacts {
     cupRunner: false,
     seasonStreak: { best: 0, current: 0 },
     yourMetaStreak: { best: 0, current: 0 },
+    bestLeagueSeasonBattles: 0,
     ...over,
   };
 }

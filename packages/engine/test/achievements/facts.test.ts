@@ -101,10 +101,38 @@ describe('buildFacts', () => {
     const one = [battle('u', at(2026, 9, 10, 50))];
     const f14 = buildFacts(input({ sets: [set('g', fourteen), set('u', one, 'ultra')] }));
     expect(f14.yourMetaStreak.best).toBe(0);
+    expect(f14.bestLeagueSeasonBattles).toBe(14);
     const f15 = buildFacts(
       input({ sets: [set('g', [...fourteen, battle('g15', at(2026, 9, 11))])] }),
     );
     expect(f15.yourMetaStreak).toEqual({ best: 1, current: 1 });
+    expect(f15.bestLeagueSeasonBattles).toBe(15);
+  });
+
+  it('keeps the best league-season total apart from other seasons and leagues', () => {
+    const sep = Array.from({ length: 6 }, (_, i) => battle(`s${i}`, at(2026, 9, 10, i)));
+    const dec = Array.from({ length: 8 }, (_, i) => battle(`d${i}`, at(2026, 12, 10, i)));
+    const ultra = Array.from({ length: 3 }, (_, i) => battle(`u${i}`, at(2026, 9, 11, i)));
+    const f = buildFacts(input({ sets: [set('s', sep), set('d', dec), set('u', ultra, 'ultra')] }));
+    expect(f.bestLeagueSeasonBattles).toBe(8);
+  });
+
+  it('counts a plain Pokemon against a meta group that lists its Shadow, and the reverse', () => {
+    const one = [battle('1', at(2026, 9, 10))];
+    const plain = buildFacts(
+      input({
+        sets: [set('p', one, 'great', ['annihilape', 'b', 'c'])],
+        metaGroups: { great: ['annihilape_shadow', 'b', 'c'] },
+      }),
+    );
+    expect(plain.metaPlayer).toBe(true);
+    const shadow = buildFacts(
+      input({
+        sets: [set('s', one, 'great', ['annihilape_shadow', 'b', 'c'])],
+        metaGroups: { great: ['annihilape', 'b', 'c'] },
+      }),
+    );
+    expect(shadow.metaPlayer).toBe(true);
   });
 
   it('keeps the streak alive before the first battle of a new season', () => {

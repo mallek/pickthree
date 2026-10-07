@@ -1,4 +1,4 @@
-import type { AchievementFacts } from './facts.js';
+import { YOUR_META_BATTLES, type AchievementFacts } from './facts.js';
 import type { AchievementTier } from './types.js';
 
 export interface AchievementDef {
@@ -107,15 +107,18 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     howTo: 'Log battles on 10 different days',
     tier: 'mid',
   }),
-  step(
-    {
-      id: 'your-meta',
-      name: 'Your meta',
-      howTo: 'Log 15 battles in one league in a season',
-      tier: 'mid',
-    },
-    (f) => f.yourMetaStreak.best >= 1,
-  ),
+  {
+    id: 'your-meta',
+    name: 'Your meta',
+    howTo: `Log ${YOUR_META_BATTLES} battles in one league in a season`,
+    tier: 'mid',
+    unit: ['battle', 'battles'],
+    test: (f) => f.yourMetaStreak.best >= 1,
+    progress: (f) => ({
+      have: Math.min(f.bestLeagueSeasonBattles, YOUR_META_BATTLES),
+      need: YOUR_META_BATTLES,
+    }),
+  },
   seasonStreak(2, {
     id: 'seasons-2',
     name: 'Back again',

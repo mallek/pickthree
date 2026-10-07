@@ -1,9 +1,10 @@
+import { DEFAULT_BLEND_OPTIONS } from '../yourmeta/blend.js';
 import { SET_SIZE, type BattleSet, type LoggedBattle, type Season } from '../yourmeta/types.js';
 
 /** At most this many battles count per day: GO's five sets of five. */
 export const DAILY_CAP = 25;
 /** Battles in one league within one season that unlock Your meta (the blend's minBattles). */
-export const YOUR_META_BATTLES = 15;
+export const YOUR_META_BATTLES = DEFAULT_BLEND_OPTIONS.minBattles;
 
 export interface FactsInput {
   /** Every set in every league. */
@@ -40,6 +41,8 @@ export interface AchievementFacts {
   seasonStreak: Streak;
   /** Seasons where Your meta unlocked in some league. */
   yourMetaStreak: Streak;
+  /** The most counted battles in one league within one season, the Your meta count. */
+  bestLeagueSeasonBattles: number;
 }
 
 /** The device's local calendar date of an ISO time. */
@@ -121,6 +124,7 @@ export function buildFacts(input: FactsInput): AchievementFacts {
   const logged = new Set<number>();
   const perSeasonLeague = new Map<string, number>();
   const yourMeta = new Set<number>();
+  let bestLeagueSeason = 0;
   for (const c of counted) {
     const idx = seasonIndex(sorted, Date.parse(c.battle.at));
     if (idx === null) {
@@ -130,14 +134,21 @@ export function buildFacts(input: FactsInput): AchievementFacts {
     const key = `${idx}|${c.league}`;
     const n = (perSeasonLeague.get(key) ?? 0) + 1;
     perSeasonLeague.set(key, n);
+    bestLeagueSeason = Math.max(bestLeagueSeason, n);
     if (n >= YOUR_META_BATTLES) {
       yourMeta.add(idx);
     }
   }
   const played = input.sets.filter((s) => s.battles.some((b) => !b.tanked));
+  // A Shadow and its plain form count as the same Pokemon here, on both sides.
+  const plain = (id: string): string => id.replace(/_shadow$/, '');
   const inGroup = (s: BattleSet): boolean => {
     const group = input.metaGroups[s.league];
-    return group !== undefined && s.team.species.every((id) => group.includes(id));
+    if (group === undefined) {
+      return false;
+    }
+    const plainGroup = new Set(group.map(plain));
+    return s.team.species.every((id) => plainGroup.has(plain(id)));
   };
   const currentIdx = seasonIndex(sorted, input.now.getTime());
   return {
@@ -150,5 +161,6 @@ export function buildFacts(input: FactsInput): AchievementFacts {
     cupRunner: played.some((s) => s.league !== 'great'),
     seasonStreak: streakOf(logged, currentIdx),
     yourMetaStreak: streakOf(yourMeta, currentIdx),
+    bestLeagueSeasonBattles: bestLeagueSeason,
   };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ACHIEVEMENTS } from '../../src/achievements/definitions.js';
 import { nearest, newlyEarned, nudgeLine, statusAll } from '../../src/achievements/evaluate.js';
-import type { AchievementFacts } from '../../src/achievements/facts.js';
+import { YOUR_META_BATTLES, type AchievementFacts } from '../../src/achievements/facts.js';
 
 function facts(over: Partial<AchievementFacts> = {}): AchievementFacts {
   return {
@@ -14,6 +14,7 @@ function facts(over: Partial<AchievementFacts> = {}): AchievementFacts {
     cupRunner: false,
     seasonStreak: { best: 0, current: 0 },
     yourMetaStreak: { best: 0, current: 0 },
+    bestLeagueSeasonBattles: 0,
     ...over,
   };
 }
@@ -74,6 +75,24 @@ describe('progress and the nudge', () => {
     const n = nearest(f, earned);
     expect(n?.def.id).toBe('days-10');
     expect(nudgeLine(n!)).toBe('Next: Ten days. 3 more days.');
+  });
+
+  it('counts Your meta in battles toward the 15 in one league in a season', () => {
+    const at14 = facts({ bestLeagueSeasonBattles: 14 });
+    const s = statusAll(at14, new Set()).find((x) => x.def.id === 'your-meta');
+    expect(s).toMatchObject({ have: 14, need: YOUR_META_BATTLES, earned: false });
+    expect(YOUR_META_BATTLES).toBe(15);
+    const earned = new Set(['trainer', 'first-battle', 'full-set', 'meta-player', 'cup-runner']);
+    const n = nearest(facts({ bestLeagueSeasonBattles: 14, distinctDays: 3 }), earned);
+    expect(n?.def.id).toBe('your-meta');
+    expect(nudgeLine(n!)).toBe('Next: Your meta. 1 more battle.');
+  });
+
+  it('caps Your meta progress at the 15 and earns it there', () => {
+    const f = facts({ bestLeagueSeasonBattles: 40, yourMetaStreak: { best: 1, current: 1 } });
+    const s = statusAll(f, new Set()).find((x) => x.def.id === 'your-meta');
+    expect(s).toMatchObject({ have: 15, need: 15 });
+    expect(newlyEarned(f, new Set()).map((d) => d.id)).toContain('your-meta');
   });
 
   it('words a one-step nudge with its how-to line', () => {
