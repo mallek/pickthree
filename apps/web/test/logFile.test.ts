@@ -1,6 +1,11 @@
 import type { BattleSet } from '@pickthree/engine';
 import { describe, expect, it } from 'vitest';
-import { LOG_FILE_VERSION, parseLogFile, serializeLog } from '../src/storage/logFile.ts';
+import {
+  LOG_FILE_VERSION,
+  parseLogAchievements,
+  parseLogFile,
+  serializeLog,
+} from '../src/storage/logFile.ts';
 
 const sets: BattleSet[] = [
   {
@@ -51,5 +56,46 @@ describe('log file', () => {
       sets: [sets[0], { id: 'bad' }],
     });
     expect(parseLogFile(text)).toEqual(sets);
+  });
+});
+
+describe('log file achievements', () => {
+  const rec = {
+    earned: [
+      { id: 'first-battle', earnedAt: '2026-10-07T00:00:00Z', species: 'pidgey', shiny: true },
+    ],
+    marks: ['analyzed'],
+  };
+
+  it('round trips the block without changing the version', () => {
+    const text = serializeLog(sets, rec);
+    expect((JSON.parse(text) as { version: number }).version).toBe(LOG_FILE_VERSION);
+    expect(parseLogFile(text)).toEqual(sets);
+    expect(parseLogAchievements(text)).toEqual(rec);
+  });
+
+  it('reads a file with no block as null', () => {
+    expect(parseLogAchievements(serializeLog(sets))).toBeNull();
+  });
+
+  it('drops junk entries and keeps good ones', () => {
+    const text = JSON.stringify({
+      app: 'pick3',
+      kind: 'battle-log',
+      version: 1,
+      exportedAt: 'x',
+      sets: [],
+      achievements: {
+        earned: [
+          rec.earned[0],
+          { id: 'x', earnedAt: 'y', species: 'garchomp', shiny: false },
+          { id: 'y', species: 'pidgey' },
+          'nonsense',
+        ],
+        marks: ['analyzed', 7],
+      },
+    });
+    expect(parseLogAchievements(text)).toEqual(rec);
+    expect(parseLogFile(text)).toEqual([]);
   });
 });

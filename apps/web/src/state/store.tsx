@@ -66,7 +66,7 @@ import {
 import { describeLayoutLine, emptyLayoutValue, ownSpeciesId } from '../format.ts';
 import { ImportFailed, WorkerHost } from '../host/WorkerHost.ts';
 import { DEFAULT_SETTINGS, storage, type Settings, type StoredCollection } from '../storage/db.ts';
-import { parseLogFile, serializeLog } from '../storage/logFile.ts';
+import { parseLogAchievements, parseLogFile, serializeLog } from '../storage/logFile.ts';
 import { facingInput, facingSettings, isCommunity, logBattles } from './facing.ts';
 import { seasonsFor } from './seasonsFor.ts';
 import { newId } from './yourMeta.ts';
@@ -2283,13 +2283,20 @@ export function AppProvider({ children, host }: { children: ReactNode; host?: Wo
     });
   }, [serialized, updateSettings, applySets]);
 
-  const exportLog = useCallback(async () => serializeLog(await storage.loadAllSets()), []);
+  const exportLog = useCallback(
+    async () => serializeLog(await storage.loadAllSets(), await storage.loadAchievements()),
+    [],
+  );
 
   const importLog = useCallback(
     (text: string) =>
       serialized(async () => {
         const sets = parseLogFile(text);
         const r = await storage.importSets(sets);
+        const achievements = parseLogAchievements(text);
+        if (achievements) {
+          await storage.mergeAchievements(achievements);
+        }
         const league = stateRef.current.settings.league ?? 'great';
         applySets(await storage.loadSets(league));
         return r;

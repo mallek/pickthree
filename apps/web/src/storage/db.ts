@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { EMPTY_ACHIEVEMENTS, type AchievementsRecord } from '@pickthree/engine';
 import type {
   BattleSet,
   FacingSource,
@@ -118,9 +119,10 @@ interface PickThreeDb extends DBSchema {
   collection: { key: 'current'; value: StoredCollection };
   settings: { key: 'current'; value: Settings };
   battles: { key: string; value: BattleSet; indexes: { 'by-league': string } };
+  achievements: { key: 'current'; value: AchievementsRecord & { key: 'current' } };
 }
 
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase<PickThreeDb>> | null = null;
 
@@ -135,6 +137,9 @@ function db(): Promise<IDBPDatabase<PickThreeDb>> {
         if (oldVersion < 2) {
           const battles = d.createObjectStore('battles', { keyPath: 'id' });
           battles.createIndex('by-league', 'league');
+        }
+        if (oldVersion < 3) {
+          d.createObjectStore('achievements', { keyPath: 'key' });
         }
       },
     });
@@ -153,6 +158,28 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   } catch {
     return fallback;
   }
+}
+
+/** A fresh empty record: EMPTY_ACHIEVEMENTS is shared, so callers never get its arrays. */
+function emptyAchievements(): AchievementsRecord {
+  return { earned: [...EMPTY_ACHIEVEMENTS.earned], marks: [...EMPTY_ACHIEVEMENTS.marks] };
+}
+
+/**
+ * An imported record folded into the stored one: earned ids the phone lacks are added, a clash
+ * keeps the phone's own Pokemon, marks are the union.
+ */
+export function mergeAchievementRecords(
+  stored: AchievementsRecord,
+  incoming: AchievementsRecord,
+): AchievementsRecord {
+  const have = new Set(stored.earned.map((e) => e.id));
+  const owned = new Set(stored.earned.map((e) => e.species));
+  const added = incoming.earned.filter((e) => !have.has(e.id) && !owned.has(e.species));
+  return {
+    earned: [...stored.earned, ...added],
+    marks: [...new Set([...stored.marks, ...incoming.marks])],
+  };
 }
 
 export const storage = {
@@ -216,12 +243,30 @@ export const storage = {
       await (await db()).clear('battles');
     }, undefined);
   },
+  loadAchievements(): Promise<AchievementsRecord> {
+    return safe(async () => {
+      const r = await (await db()).get('achievements', 'current');
+      return r ? { earned: [...r.earned], marks: [...r.marks] } : emptyAchievements();
+    }, emptyAchievements());
+  },
+  /** False when the phone refused the write: the caller must not announce what was not kept. */
+  saveAchievements(r: AchievementsRecord): Promise<boolean> {
+    return safe(async () => {
+      await (await db()).put('achievements', { key: 'current', earned: r.earned, marks: r.marks });
+      return true;
+    }, false);
+  },
+  async mergeAchievements(incoming: AchievementsRecord): Promise<void> {
+    const stored = await storage.loadAchievements();
+    await storage.saveAchievements(mergeAchievementRecords(stored, incoming));
+  },
   async forget(): Promise<void> {
     await safe(async () => {
       const d = await db();
       await d.clear('collection');
       await d.clear('settings');
       await d.clear('battles');
+      await d.clear('achievements');
     }, undefined);
   },
 };

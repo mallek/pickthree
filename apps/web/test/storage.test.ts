@@ -3,7 +3,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
 import type { BattleSet } from '@pickthree/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { mergeAchievementRecords, resetDbForTests, storage } from '../src/storage/db.ts';
 
 function set(id: string, league = 'great', closed = false): BattleSet {
   return {
@@ -100,5 +100,66 @@ describe('collection storage', () => {
     const c = await storage.loadCollection();
     expect(c?.removed).toEqual(removed);
     expect(c?.pins).toEqual(pins);
+  });
+});
+
+describe('achievements storage', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+  });
+
+  it('upgrades a version 2 database and keeps the battles', async () => {
+    const v2 = await openDB('pickthree', 2, {
+      upgrade(d) {
+        d.createObjectStore('collection', { keyPath: 'key' });
+        d.createObjectStore('settings', { keyPath: 'key' });
+        d.createObjectStore('battles', { keyPath: 'id' }).createIndex('by-league', 'league');
+      },
+    });
+    await v2.put('battles', set('kept'));
+    v2.close();
+    expect((await storage.loadAllSets()).map((s) => s.id)).toEqual(['kept']);
+    expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
+  });
+
+  it('saves and loads the record, and forget clears it', async () => {
+    const rec = {
+      earned: [
+        { id: 'first-battle', earnedAt: '2026-10-07T00:00:00Z', species: 'pidgey', shiny: false },
+      ],
+      marks: ['analyzed'],
+    };
+    expect(await storage.saveAchievements(rec)).toBe(true);
+    expect(await storage.loadAchievements()).toEqual(rec);
+    await storage.forget();
+    expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
+  });
+
+  it('hands out a fresh empty record each time', async () => {
+    const a = await storage.loadAchievements();
+    a.marks.push('x');
+    expect(await storage.loadAchievements()).toEqual({ earned: [], marks: [] });
+  });
+
+  it('merges an imported record: stored wins a clash, marks union', () => {
+    const stored = {
+      earned: [{ id: 'trainer', earnedAt: 'a', species: 'pidgey', shiny: false }],
+      marks: ['analyzed'],
+    };
+    const incoming = {
+      earned: [
+        { id: 'trainer', earnedAt: 'b', species: 'rattata', shiny: true },
+        { id: 'full-set', earnedAt: 'b', species: 'machop', shiny: false },
+      ],
+      marks: ['analyzed', 'other'],
+    };
+    expect(mergeAchievementRecords(stored, incoming)).toEqual({
+      earned: [
+        { id: 'trainer', earnedAt: 'a', species: 'pidgey', shiny: false },
+        { id: 'full-set', earnedAt: 'b', species: 'machop', shiny: false },
+      ],
+      marks: ['analyzed', 'other'],
+    });
   });
 });
