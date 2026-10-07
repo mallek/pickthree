@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { ACHIEVEMENTS, statusAll, type AchievementFacts } from '@pickthree/engine';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { IDBFactory } from 'fake-indexeddb';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -232,5 +232,40 @@ describe('Achievements page', () => {
     expect(screen.getByText('1 of 151')).toBeInTheDocument();
     const dex = document.querySelector('.ach-dex') as HTMLElement;
     expect(within(dex).getAllByRole('img', { name: 'Shiny' })).toHaveLength(1);
+  });
+
+  it('makes the share picture ahead, so the Share tap opens the sheet at once', async () => {
+    const ctx = new Proxy(
+      {},
+      { get: () => () => undefined, set: () => true },
+    ) as unknown as CanvasRenderingContext2D;
+    const getContext = vi
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockImplementation((() => ctx) as never);
+    const toBlob = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation(((cb: BlobCallback) =>
+        cb(new Blob(['x'], { type: 'image/png' }))) as never);
+    const share = vi.fn<(d: ShareData) => Promise<void>>(() => new Promise(() => undefined));
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
+    try {
+      await mount();
+      // Pictures off: jsdom never loads an image, so a sprite would hold the drawing open.
+      await act(async () => {
+        latest!.actions.updateSettings({ sprites: false });
+      });
+      await waitFor(() => expect(toBlob).toHaveBeenCalled());
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const drawn = getContext.mock.calls.length;
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+      expect(share).toHaveBeenCalledTimes(1);
+      expect(getContext.mock.calls.length).toBe(drawn);
+    } finally {
+      Reflect.deleteProperty(navigator, 'share');
+      Reflect.deleteProperty(navigator, 'canShare');
+    }
   });
 });

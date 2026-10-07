@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dexLayout, shareDex, shareHeadline } from '../src/achievements/shareImage.ts';
+import {
+  dexKey,
+  dexLayout,
+  resolvedTheme,
+  shareDex,
+  shareHeadline,
+} from '../src/achievements/shareImage.ts';
 
 describe('share image', () => {
   it('is 1080 wide and fits all 151 slots inside it', () => {
@@ -71,7 +77,7 @@ describe('shareDex', () => {
     Reflect.deleteProperty(navigator, 'canShare');
   });
 
-  function stubShare(share: () => Promise<void>): void {
+  function stubShare(share: (d: ShareData) => Promise<void>): void {
     Object.defineProperty(navigator, 'share', { value: share, configurable: true });
     Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
   }
@@ -100,9 +106,84 @@ describe('shareDex', () => {
     expect(clicks).toBe(1);
   });
 
+  it('shares a picture made ahead of time at once, without drawing again', async () => {
+    const share = vi.fn<(d: ShareData) => Promise<void>>(() => Promise.resolve());
+    stubShare(share);
+    const made = new Blob(['made'], { type: 'image/png' });
+    const pending = shareDex(input, made);
+    // Called inside the tap itself: iOS refuses a share sheet once the tap's activation is spent.
+    expect(share).toHaveBeenCalledTimes(1);
+    expect(await pending).toBe('shared');
+    expect(HTMLCanvasElement.prototype.getContext).not.toHaveBeenCalled();
+    const file = share.mock.calls[0]?.[0].files?.[0];
+    expect(file?.name).toBe('pick3-kanto-dex.png');
+    expect(file?.size).toBe(made.size);
+  });
+
+  it('waits for the heading font before drawing', async () => {
+    const order: string[] = [];
+    const load = vi.fn(async () => {
+      order.push('font');
+      return [];
+    });
+    Object.defineProperty(document, 'fonts', { value: { load }, configurable: true });
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockImplementation((() => {
+      order.push('draw');
+      return context;
+    }) as never);
+    try {
+      expect(await shareDex(input)).toBe('downloaded');
+      expect(load).toHaveBeenCalledWith('700 64px Inter');
+      expect(order[0]).toBe('font');
+    } finally {
+      Reflect.deleteProperty(document, 'fonts');
+    }
+  });
+
   it('returns failed when there is no 2d context', async () => {
     context = null;
     expect(await shareDex(input)).toBe('failed');
     expect(clicks).toBe(0);
+  });
+});
+
+describe('the share picture cache key', () => {
+  const rec = (shiny: boolean) => ({
+    earned: [{ id: 'first-battle', earnedAt: 'x', species: 'pidgey', shiny }],
+    marks: [],
+  });
+
+  it('changes with the record, the theme and the pictures setting', () => {
+    const base = dexKey(rec(false), 'dark', true);
+    expect(dexKey(rec(false), 'dark', true)).toBe(base);
+    expect(dexKey(rec(true), 'dark', true)).not.toBe(base);
+    expect(dexKey({ earned: [], marks: [] }, 'dark', true)).not.toBe(base);
+    expect(dexKey(rec(false), 'light', true)).not.toBe(base);
+    expect(dexKey(rec(false), 'dark', false)).not.toBe(base);
+  });
+
+  it('ignores marks and earned times, which the picture does not show', () => {
+    const a = dexKey(rec(false), 'dark', true);
+    const b = dexKey(
+      {
+        earned: [{ id: 'first-battle', earnedAt: 'y', species: 'pidgey', shiny: false }],
+        marks: ['analyzed'],
+      },
+      'dark',
+      true,
+    );
+    expect(b).toBe(a);
+  });
+
+  it('reads a manual theme off the page, else the system', () => {
+    document.documentElement.setAttribute('data-theme', 'light');
+    expect(resolvedTheme()).toBe('light');
+    document.documentElement.setAttribute('data-theme', 'dark');
+    expect(resolvedTheme()).toBe('dark');
+    document.documentElement.removeAttribute('data-theme');
+    const mm = vi.fn((q: string) => ({ matches: q === '(prefers-color-scheme: dark)' }));
+    vi.stubGlobal('matchMedia', mm);
+    expect(resolvedTheme()).toBe('dark');
+    vi.unstubAllGlobals();
   });
 });

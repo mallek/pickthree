@@ -145,8 +145,19 @@ function drawLabel(g: Ctx, color: string, text: string, x: number, y: number, ce
   g.restore();
 }
 
+/** The heading face, loaded before drawing so the canvas does not fall back to a system font. */
+async function headingFont(): Promise<void> {
+  const fonts = (document as { fonts?: { load?: (font: string) => Promise<unknown> } }).fonts;
+  try {
+    await fonts?.load?.('700 64px Inter');
+  } catch {
+    // The fallback face is fine: the picture still reads.
+  }
+}
+
 /** Draws the Kanto dex onto `canvas`, in the page's own token colors read at draw time. */
 export async function drawDex(canvas: HTMLCanvasElement, input: DexInput): Promise<void> {
+  await headingFont();
   const L = dexLayout();
   const css = getComputedStyle(document.documentElement);
   const v = (n: string): string => css.getPropertyValue(n).trim();
@@ -217,15 +228,43 @@ export async function drawDex(canvas: HTMLCanvasElement, input: DexInput): Promi
 
 export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled' | 'failed';
 
-/** Draws the dex off screen and hands it to the share sheet, or saves it as a download. */
-export async function shareDex(input: DexInput): Promise<ShareOutcome> {
+export type ResolvedTheme = 'light' | 'dark';
+
+/** The theme the page is drawn in now: a manual choice on the root, else the system's. */
+export function resolvedTheme(): ResolvedTheme {
+  const set = document.documentElement.getAttribute('data-theme');
+  if (set === 'light' || set === 'dark') {
+    return set;
+  }
+  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches === true ? 'dark' : 'light';
+}
+
+/**
+ * What the picture depends on: each earned id with its Pokemon and shininess, the theme and the
+ * pictures setting. A picture made for one key is never shared under another.
+ */
+export function dexKey(
+  record: AchievementsRecord,
+  theme: ResolvedTheme,
+  spritesOn: boolean,
+): string {
+  const earned = record.earned.map((e) => `${e.id}:${e.species}:${e.shiny ? 1 : 0}`).join(',');
+  return `${earned}|${theme}|${spritesOn ? 1 : 0}`;
+}
+
+/** Draws the dex off screen into a PNG, or null when the canvas will not give one. */
+export async function renderDex(input: DexInput): Promise<Blob | null> {
+  const canvas = document.createElement('canvas');
+  await drawDex(canvas, input);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+}
+
+/**
+ * Hands a finished picture to the share sheet, or saves it as a download. The share call comes
+ * before any await, so a tap still carries the user activation iOS requires for it.
+ */
+async function shareBlob(blob: Blob): Promise<ShareOutcome> {
   try {
-    const canvas = document.createElement('canvas');
-    await drawDex(canvas, input);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) {
-      return 'failed';
-    }
     const name = 'pick3-kanto-dex.png';
     const file = new File([blob], name, { type: 'image/png' });
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
@@ -248,6 +287,22 @@ export async function shareDex(input: DexInput): Promise<ShareOutcome> {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     return 'downloaded';
+  } catch {
+    return 'failed';
+  }
+}
+
+/**
+ * Shares the dex. `ready` is a picture made ahead of time for this same key, shared at once;
+ * without one the dex is drawn first (and iOS may then refuse the sheet, so it downloads).
+ */
+export async function shareDex(input: DexInput, ready?: Blob | null): Promise<ShareOutcome> {
+  if (ready) {
+    return shareBlob(ready);
+  }
+  try {
+    const blob = await renderDex(input);
+    return blob ? await shareBlob(blob) : 'failed';
   } catch {
     return 'failed';
   }

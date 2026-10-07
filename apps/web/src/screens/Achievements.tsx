@@ -1,12 +1,26 @@
 import { KANTO, type AchievementStatus, type AchievementTier } from '@pickthree/engine';
 import { Header, IconButton, ProgressCard } from '@pickthree/ui';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
-import { shareDex } from '../achievements/shareImage.ts';
+import { dexKey, renderDex, resolvedTheme, shareDex } from '../achievements/shareImage.ts';
 import { ShareGlyph, useName } from '../components.tsx';
 import { BlankToken, RewardToken, SilhouetteSlot } from '../components/achievements/tokens.tsx';
 import { achievementsLine, shortDate } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
+
+/** Runs `fn` when the browser is idle (or shortly, where it cannot say). Returns the cancel. */
+function whenIdle(fn: () => void): () => void {
+  const w = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    cancelIdleCallback?: (id: number) => void;
+  };
+  if (w.requestIdleCallback && w.cancelIdleCallback) {
+    const id = w.requestIdleCallback(fn, { timeout: 2000 });
+    return () => w.cancelIdleCallback?.(id);
+  }
+  const id = window.setTimeout(fn, 300);
+  return () => window.clearTimeout(id);
+}
 
 const TIER_ORDER: readonly AchievementTier[] = ['easy', 'mid', 'hard', 'elite', 'top'];
 
@@ -144,6 +158,44 @@ export function Achievements() {
     document.getElementById(`ach-${row}`)?.scrollIntoView({ block: 'center' });
   }, [row, hasRows]);
 
+  const spritesOn = settings.sprites !== false;
+  const types = useCallback(
+    (id: string) => (data?.species[id]?.types ?? ['normal']).filter((t) => t !== 'none'),
+    [data],
+  );
+
+  // The share picture is made ahead, on idle, so the Share tap can open the share sheet at once:
+  // iOS only allows it while the tap's activation lasts, which drawing 151 sprites outlives. The
+  // key is read when the drawing starts, the moment its colors are read, so the theme the store
+  // applies after this render is the one recorded. A theme change re-runs it.
+  const prepared = useRef<{ key: string; blob: Blob } | null>(null);
+  const record = a.record;
+  const canPrepare = a.loaded && data !== null;
+  const theme = settings.theme;
+  useEffect(() => {
+    if (!canPrepare) {
+      return;
+    }
+    let cancelled = false;
+    const cancel = whenIdle(() => {
+      const key = dexKey(record, resolvedTheme(), spritesOn);
+      if (cancelled || prepared.current?.key === key) {
+        return;
+      }
+      void renderDex({ record, types, spritesOn })
+        .then((blob) => {
+          if (!cancelled && blob) {
+            prepared.current = { key, blob };
+          }
+        })
+        .catch(() => undefined);
+    });
+    return () => {
+      cancelled = true;
+      cancel();
+    };
+  }, [canPrepare, record, types, spritesOn, theme]);
+
   // Ignore taps while a picture is being made or the share sheet is open.
   const sharing = useRef(false);
   const share = async (): Promise<void> => {
@@ -152,11 +204,9 @@ export function Achievements() {
     }
     sharing.current = true;
     try {
-      const result = await shareDex({
-        record: a.record,
-        types: (id) => (data?.species[id]?.types ?? ['normal']).filter((t) => t !== 'none'),
-        spritesOn: settings.sprites !== false,
-      });
+      const now = dexKey(a.record, resolvedTheme(), spritesOn);
+      const ready = prepared.current?.key === now ? prepared.current.blob : null;
+      const result = await shareDex({ record: a.record, types, spritesOn }, ready);
       if (result === 'failed') {
         notify('Could not make the picture.', 'warn');
       }
