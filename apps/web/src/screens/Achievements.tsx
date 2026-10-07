@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
 import { ShareGlyph, useName } from '../components.tsx';
 import { BlankToken, RewardToken, SilhouetteSlot } from '../components/achievements/tokens.tsx';
-import { shortDate } from '../format.ts';
+import { achievementsLine, shortDate } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 
 const TIER_ORDER: readonly AchievementTier[] = ['easy', 'mid', 'hard', 'elite', 'top'];
@@ -29,7 +29,13 @@ function DexCard() {
   const a = useAchievements();
   const spritesOn = useAppState().settings.sprites !== false;
   // A record whose id is no longer in the list still lights its Pokemon here.
-  const lit = new Map(a.record.earned.map((e) => [e.species, e]));
+  // Two records may share a species; a shiny one is the one shown.
+  const lit = new Map<string, (typeof a.record.earned)[number]>();
+  for (const e of a.record.earned) {
+    if (!lit.get(e.species)?.shiny) {
+      lit.set(e.species, e);
+    }
+  }
   const litCount = KANTO.filter((k) => lit.has(k.id)).length;
   return (
     <div className="mh-card">
@@ -121,7 +127,7 @@ export function Achievements() {
   const a = useAchievements();
   const route = useAppState().route;
   const row = route.screen === 'achievements' ? route.row : undefined;
-  const line = [a.shinyCount > 0 ? `${a.shinyCount} shiny` : null, a.nudge ?? 'All earned.']
+  const line = [a.shinyCount > 0 ? `${a.shinyCount} shiny` : null, achievementsLine(a)]
     .filter(Boolean)
     .join(' · ');
 

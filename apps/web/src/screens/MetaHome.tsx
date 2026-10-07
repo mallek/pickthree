@@ -42,6 +42,7 @@ import {
 } from '../components/meta/LogPieces.tsx';
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
 import { RewardToken } from '../components/achievements/tokens.tsx';
+import { achievementsLine } from '../format.ts';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
@@ -52,6 +53,7 @@ import { STOP_LINE } from './settings/Community.tsx';
 /** The landing's achievements card: the count, the newest few earned and the next one to go for. */
 function AchievementsCard() {
   const a = useAchievements();
+  const line = achievementsLine(a);
   const recent = [...a.record.earned]
     .sort((x, y) => y.earnedAt.localeCompare(x.earnedAt))
     .slice(0, 6);
@@ -71,7 +73,7 @@ function AchievementsCard() {
           ))}
         </span>
       ) : null}
-      <span className="small muted">{a.nudge ?? 'All earned.'}</span>
+      {line ? <span className="small muted">{line}</span> : null}
       <a className="mh-more" href={hashFor({ screen: 'achievements' })}>
         See your achievements <Arrow />
       </a>

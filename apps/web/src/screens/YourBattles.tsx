@@ -17,6 +17,7 @@ import {
   TeamRows,
 } from '../components/meta/LogPieces.tsx';
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
+import { achievementsLine } from '../format.ts';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -45,6 +46,7 @@ export function YourBattles() {
   const run = isRunLeague(s);
   const { startFresh, openSheet, back, navigate } = useActions();
   const achievements = useAchievements();
+  const line = achievementsLine(achievements);
   const leagueId = s.settings.league ?? 'great';
   const seasons = seasonsFor(s.data, leagueId);
   const freshFrom = s.settings.yourMeta?.freshFrom?.[leagueId] ?? null;
@@ -99,7 +101,7 @@ export function YourBattles() {
             <b>
               Achievements · {achievements.earnedCount} of {achievements.total}
             </b>
-            <span className="small muted">{achievements.nudge ?? 'All earned.'}</span>
+            {line ? <span className="small muted">{line}</span> : null}
           </span>
           <span className="chev">
             <Chevron />

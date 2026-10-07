@@ -191,4 +191,45 @@ describe('Achievements page', () => {
     expect(screen.getByText('3 of 151')).toBeInTheDocument();
     expect(document.getElementById('ach-retired-one')).toBeNull();
   });
+
+  it('says nothing about being done before the log is read', async () => {
+    view.current = {
+      ...viewFor([]),
+      loaded: false,
+      statuses: [],
+      earnedCount: 0,
+      shinyCount: 0,
+      nudge: null,
+    };
+    await mount();
+    expect(screen.queryByText(/All earned/)).toBeNull();
+    expect(document.body.textContent).toMatch(/Earned0 \/ 11/);
+  });
+
+  it('says All earned only when every achievement is earned', async () => {
+    view.current = {
+      ...viewFor(
+        ACHIEVEMENTS.map((d) => ({
+          id: d.id,
+          species: 'bulbasaur',
+          shiny: false,
+          earnedAt: '2026-09-16T12:00:00Z',
+        })),
+      ),
+      nudge: null,
+    };
+    await mount();
+    expect(screen.getByText('All earned.')).toBeInTheDocument();
+  });
+
+  it('shows the shiny record when two earned records share a species', async () => {
+    view.current = viewFor([
+      { id: 'first-battle', species: 'lapras', shiny: true, earnedAt: '2026-09-16T12:00:00Z' },
+      { id: 'seasons-2', species: 'lapras', shiny: false, earnedAt: '2026-09-30T12:00:00Z' },
+    ]);
+    await mount();
+    expect(screen.getByText('1 of 151')).toBeInTheDocument();
+    const dex = document.querySelector('.ach-dex') as HTMLElement;
+    expect(within(dex).getAllByRole('img', { name: 'Shiny' })).toHaveLength(1);
+  });
 });

@@ -138,6 +138,21 @@ export function dateLabel(iso: string): string {
   return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/**
+ * The one line under an achievements count: "All earned." only when every one is, else the nudge
+ * when there is one, else nothing (before the log is read, the nudge is not known yet).
+ */
+export function achievementsLine(a: {
+  earnedCount: number;
+  total: number;
+  nudge: string | null;
+}): string | null {
+  if (a.total > 0 && a.earnedCount === a.total) {
+    return 'All earned.';
+  }
+  return a.nudge;
+}
+
 /** "Sep 12": the month and day of an ISO time, for an achievement's earned line. */
 export function shortDate(iso: string): string {
   const d = new Date(iso);
