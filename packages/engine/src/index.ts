@@ -50,4 +50,5 @@ export * from './teammates/suggest.js';
 export * from './teammates/lines.js';
 export * from './host/ComputeHost.js';
 export * from './yourmeta/index.js';
+export * from './achievements/index.js';
 export * from './share/teamLink.js';
