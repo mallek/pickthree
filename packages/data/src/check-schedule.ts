@@ -22,6 +22,8 @@ export function scheduleWarnings(input: {
     unmapped: string[];
     /** Missing in a report written before the field existed. */
     noSeason?: string[];
+    /** Missing in a report written before the field existed. */
+    undated?: string[];
     error: string | null;
   } | null;
   ranked: (cup: string, cp: number) => boolean;
@@ -41,6 +43,12 @@ export function scheduleWarnings(input: {
     out.push({
       title: `GBL feed week without a season: ${name}`,
       body: `The GBL feed lists '${name}' with no " | Season" part, so schedule:refresh skipped that week. It comes back on its own once the feed names the season; if the feed changed its naming, update parseFeed in packages/data/src/schedule-feed.ts.`,
+    });
+  }
+  for (const name of input.report?.undated ?? []) {
+    out.push({
+      title: `GBL feed week without dates: ${name}`,
+      body: `The GBL feed lists '${name}' with no real start or end, so schedule:refresh skipped that week. It comes back on its own once the feed dates it.`,
     });
   }
   if (input.report && !input.report.ok) {
@@ -99,6 +107,7 @@ if (process.argv[1] && process.argv[1].endsWith('check-schedule.ts')) {
         ok: boolean;
         unmapped: string[];
         noSeason?: string[];
+        undated?: string[];
         error: string | null;
       })
     : null;

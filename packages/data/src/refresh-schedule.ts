@@ -22,6 +22,7 @@ function report(r: {
   ok: boolean;
   unmapped: string[];
   noSeason: string[];
+  undated: string[];
   error: string | null;
 }): void {
   fs.mkdirSync(path.dirname(REPORT), { recursive: true });
@@ -43,7 +44,7 @@ async function main(): Promise<number> {
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error(`feed unusable: ${error}`);
-    report({ ok: false, unmapped: [], noSeason: [], error });
+    report({ ok: false, unmapped: [], noSeason: [], undated: [], error });
     return 4;
   }
   const gbl = events.filter((e) => e.eventType === 'go-battle-league');
@@ -53,6 +54,7 @@ async function main(): Promise<number> {
       ok: false,
       unmapped: [],
       noSeason: [],
+      undated: [],
       error: 'no go-battle-league events',
     });
     return 4;
@@ -70,10 +72,14 @@ async function main(): Promise<number> {
   for (const n of parsed.noSeason) {
     console.log(`NO SEASON: ${n} (week skipped)`);
   }
+  for (const n of parsed.undated) {
+    console.log(`NO DATES: ${n} (week skipped)`);
+  }
   report({
     ok: true,
     unmapped: parsed.unmapped,
     noSeason: parsed.noSeason,
+    undated: parsed.undated,
     error: null,
   });
   return parsed.unmapped.length > 0 ? 3 : 0;

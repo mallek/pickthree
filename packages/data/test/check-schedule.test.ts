@@ -62,6 +62,22 @@ describe('scheduleWarnings', () => {
     ]);
   });
 
+  it('warns once per feed week that has no real dates', () => {
+    const w = scheduleWarnings({
+      ...base,
+      report: {
+        ok: true,
+        unmapped: [],
+        undated: ['Mega Color Cup | Twilight Trails'],
+        error: null,
+      },
+      now: new Date('2026-10-01T00:00:00Z'),
+    });
+    expect(w.map((x) => x.title)).toEqual([
+      'GBL feed week without dates: Mega Color Cup | Twilight Trails',
+    ]);
+  });
+
   it('skips rankings and staleness warnings when the PvPoke checkout is missing', () => {
     const w = scheduleWarnings({
       ...base,

@@ -11,8 +11,9 @@ export const SCHEDULE_PATH = path.join(DATA_PACKAGE_DIR, 'schedule.json');
 export interface FeedEvent {
   name: string;
   eventType: string;
-  start: string;
-  end: string;
+  /** Null (or empty) while the feed has not dated a week. */
+  start: string | null;
+  end: string | null;
 }
 
 /**
@@ -35,6 +36,8 @@ export interface ParsedFeed {
   unmapped: string[];
   /** GBL events skipped because their name carries no " | Season" part, as the feed names them. */
   noSeason: string[];
+  /** GBL events skipped because their start or end is missing or not a date, as the feed names them. */
+  undated: string[];
   /** Season names in the feed with their earliest GBL week start, oldest first. */
   seasons: { name: string; start: string }[];
 }
@@ -58,8 +61,19 @@ function splitFormats(formats: string): string[] {
     .filter((f) => f.length > 0);
 }
 
-function iso(t: string): string {
-  return new Date(t).toISOString();
+/**
+ * The time as ISO, or null when the feed gave no real date. `new Date(null)` is 1970, which
+ * once wrote a 1970 Mega Color Cup week into the schedule, so null, empty and 0 are refused.
+ */
+function iso(t: string | null): string | null {
+  if (typeof t !== 'string' || t === '') {
+    return null;
+  }
+  const ms = Date.parse(t);
+  if (Number.isNaN(ms) || ms <= 0) {
+    return null;
+  }
+  return new Date(ms).toISOString();
 }
 
 export function parseFeed(
@@ -69,6 +83,7 @@ export function parseFeed(
   const entries: ScheduleEntry[] = [];
   const unmapped = new Set<string>();
   const noSeason: string[] = [];
+  const undated: string[] = [];
   const seasonStart = new Map<string, string>();
   for (const ev of events) {
     if (ev.eventType !== 'go-battle-league') {
@@ -82,6 +97,10 @@ export function parseFeed(
     }
     const start = iso(ev.start);
     const end = iso(ev.end);
+    if (start === null || end === null) {
+      undated.push(ev.name);
+      continue;
+    }
     const prev = seasonStart.get(season);
     if (!prev || Date.parse(start) < Date.parse(prev)) {
       seasonStart.set(season, start);
@@ -127,6 +146,7 @@ export function parseFeed(
     entries,
     unmapped: [...unmapped],
     noSeason,
+    undated,
     seasons: [...seasonStart]
       .map(([name, start]) => ({ name, start }))
       .sort((a, b) => Date.parse(a.start) - Date.parse(b.start)),

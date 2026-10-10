@@ -126,6 +126,37 @@ describe('parseFeed', () => {
     expect(noSeason.seasons.map((x) => x.name)).toEqual(['Twilight Trails']);
     expect(parsed.noSeason).toEqual([]);
   });
+
+  it('skips a GBL week with no real start or end and reports it, so no 1970 week is written', () => {
+    const name = 'Mega Color Cup | Twilight Trails';
+    const undated = parseFeed(
+      [
+        { name, eventType: 'go-battle-league', start: null, end: null },
+        {
+          name: 'Great League and Fantasy Cup: Great League Edition | Twilight Trails',
+          eventType: 'go-battle-league',
+          start: '',
+          end: '2026-12-08T21:00:00.000Z',
+        },
+        {
+          name: 'Great League and Retro Cup: Great League Edition | Twilight Trails',
+          eventType: 'go-battle-league',
+          start: '2026-12-08T21:00:00.000Z',
+          end: '2026-12-15T21:00:00.000Z',
+        },
+      ],
+      readAliases(),
+    );
+    expect(undated.undated).toEqual([
+      name,
+      'Great League and Fantasy Cup: Great League Edition | Twilight Trails',
+    ]);
+    expect(undated.entries.map((e) => e.league)).toEqual(['retro']);
+    expect(undated.seasons).toEqual([
+      { name: 'Twilight Trails', start: '2026-12-08T21:00:00.000Z' },
+    ]);
+    expect(parsed.undated).toEqual([]);
+  });
 });
 
 import { mergeSchedule } from '../src/schedule-feed.js';
