@@ -247,6 +247,7 @@ describe('useMetaRanking', () => {
     expect(ranking?.data?.order).toEqual(['tinkaton', 'azumarill', 'clodsire']);
     expect(ranking?.data?.ranking.say).toBe(0);
     expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.baselineWeights).toBeNull();
     expect(ranking?.data?.offline).toBe(false);
     expect(net.api).toHaveLength(0);
   });
@@ -265,6 +266,11 @@ describe('useMetaRanking', () => {
     expect(ranking?.data?.trend.get('clodsire')).toBe(2);
     expect(ranking?.data?.trend.get('tinkaton')).toBe(-1);
     expect(ranking?.data?.trend.get('azumarill')).toBe(-1);
+    // The baseline weights are PvPoke's prior: its order, tinkaton heaviest.
+    const before = ranking?.data?.baselineWeights;
+    expect(
+      before && [...before.keys()].sort((a, b) => (before.get(b) ?? 0) - (before.get(a) ?? 0)),
+    ).toEqual(['tinkaton', 'azumarill', 'clodsire']);
     expect(ranking?.data?.offline).toBe(false);
     expect(ranking?.data?.window.key).toBe('meta');
   });
@@ -283,6 +289,11 @@ describe('useMetaRanking', () => {
     expect(ranking?.data?.trend.get('clodsire')).toBe(2);
     expect(ranking?.data?.trend.get('tinkaton')).toBe(0);
     expect(ranking?.data?.trend.get('azumarill')).toBe(-2);
+    // The baseline weights are the earlier blend's, where azumarill was the heavy one.
+    const before = ranking?.data?.baselineWeights;
+    const now = ranking?.data?.ranking.weights;
+    expect((before?.get('azumarill') ?? 0) > (before?.get('clodsire') ?? 0)).toBe(true);
+    expect((now?.get('clodsire') ?? 0) > (before?.get('clodsire') ?? 0)).toBe(true);
   });
 
   it('falls back to PvPoke, ready and offline, when the worker answers 503', async () => {
@@ -294,6 +305,7 @@ describe('useMetaRanking', () => {
     await waitFor(() => expect(ranking?.state).toBe('ready'));
     expect(ranking?.data?.offline).toBe(true);
     expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.baselineWeights).toBeNull();
     expect(ranking?.data?.order).toEqual(['tinkaton', 'azumarill', 'clodsire']);
   });
 
@@ -308,6 +320,7 @@ describe('useMetaRanking', () => {
     expect(ranking?.data?.order).toEqual(['clodsire', 'tinkaton', 'azumarill']);
     expect(ranking?.data?.ranking.battles).toBe(3000);
     expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.baselineWeights).toBeNull();
     expect(ranking?.data?.offline).toBe(false);
   });
 
@@ -321,6 +334,7 @@ describe('useMetaRanking', () => {
     expect(Date.parse(net.api[0]?.searchParams.get('until') ?? '')).toBe(Date.now());
     expect(ranking?.data?.order).toEqual(['clodsire', 'tinkaton', 'azumarill']);
     expect(ranking?.data?.trend.size).toBe(0);
+    expect(ranking?.data?.baselineWeights).toBeNull();
     expect(ranking?.data?.offline).toBe(false);
   });
 

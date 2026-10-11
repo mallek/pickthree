@@ -36,13 +36,16 @@ import { hashFor, useActions, useAppState, type Route } from '../state/store.tsx
 import { useMetaRanking } from '../state/useMeta.ts';
 import { CollectionFilters } from './CollectionFilters.tsx';
 
-type Sort = 'verdict' | 'rank' | 'meta' | 'name';
+type Sort = 'verdict' | 'rank' | 'meta' | 'trending' | 'name';
 const SORTS: ChoiceOption<Sort>[] = [
   { value: 'verdict', label: 'Verdict' },
   { value: 'rank', label: 'IV rank' },
   { value: 'meta', label: 'Meta rank' },
+  { value: 'trending', label: 'Trending' },
   { value: 'name', label: 'Name' },
 ];
+/** The sorts without Trending, while nothing in the blended order has moved. */
+const SORTS_NO_TREND = SORTS.filter((o) => o.value !== 'trending');
 
 /** An arrow down into a tray, the Import a collection glyph: 20px, drawn like ShareGlyph. */
 function ImportGlyph() {
@@ -190,9 +193,11 @@ export function Collection() {
   const [recentOnly] = useSticky('collection.recent', false);
   const [metaOnly] = useSticky('collection.meta', false);
   const [hideNotCollected] = useSticky('collection.hideNotCollected', false);
-  // Null until the player picks one: Meta rank.
+  // Null until the player picks one: Meta rank. Trending needs movement to sort by (sharing off
+  // or nothing measured has none); a saved Trending pick shows Meta rank until there is some.
   const [sortPick, setSort] = useSticky<Sort | null>('collection.sort', null);
-  const sort: Sort = sortPick ?? 'meta';
+  const trending = useMemo(() => [...(meta?.trend.values() ?? [])].some((d) => d !== 0), [meta]);
+  const sort: Sort = sortPick === 'trending' && !trending ? 'meta' : (sortPick ?? 'meta');
   const [grouped] = useSticky('collection.grouped', true);
   const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -234,6 +239,15 @@ export function Collection() {
       blended.get(id) ?? UNRANKED + (metaRanks?.[id]?.overall ?? UNRANKED - 1),
     [blended, metaRanks],
   );
+  /** Species order under Meta rank, or under Trending places climbed first (no move and no trend
+   * count as 0, so fallers come last), ties by meta rank. Not-collected rows follow it under
+   * every sort. */
+  const speciesCmp = useCallback(
+    (a: string, b: string): number =>
+      (sort === 'trending' ? (meta?.trend.get(b) ?? 0) - (meta?.trend.get(a) ?? 0) : 0) ||
+      metaKey(a) - metaKey(b),
+    [sort, meta, metaKey],
+  );
   /** Top 50 meta: the blended rank or PvPoke's role rank inside the cutoff. */
   const inTop = useCallback(
     (id: string): boolean => {
@@ -262,7 +276,6 @@ export function Collection() {
     const moves = s.data?.moves;
     const newest = s.collection.report.newestScan ?? '';
     const cutoff = newest ? new Date(newest.replace(' ', 'T')).getTime() - 14 * 86_400_000 : 0;
-    const metaOf = (sp: Specimen): number => metaKey(metaSpecies(sp));
     let list = s.collection.specimens.filter((sp) => {
       const v = s.verdicts[sp.id];
       if (
@@ -301,8 +314,8 @@ export function Collection() {
       if (sort === 'rank') {
         return ivRankOf(a) - ivRankOf(b);
       }
-      if (sort === 'meta') {
-        return metaOf(a) - metaOf(b) || ivRankOf(a) - ivRankOf(b);
+      if (sort === 'meta' || sort === 'trending') {
+        return speciesCmp(metaSpecies(a), metaSpecies(b)) || ivRankOf(a) - ivRankOf(b);
       }
       const va = s.verdicts[a.id]?.label;
       const vb = s.verdicts[b.id]?.label;
@@ -324,7 +337,7 @@ export function Collection() {
     sort,
     name,
     species,
-    metaKey,
+    speciesCmp,
     metaSpecies,
     inTop,
   ]);
@@ -363,7 +376,7 @@ export function Collection() {
           (!shadowsOnly || id.endsWith('_shadow')) &&
           (!metaOnly || inTop(id)),
       )
-      .sort((a, b) => metaKey(a) - metaKey(b) || shownName(a).localeCompare(shownName(b)));
+      .sort((a, b) => speciesCmp(a, b) || shownName(a).localeCompare(shownName(b)));
   }, [
     info,
     hideNotCollected,
@@ -377,7 +390,7 @@ export function Collection() {
     name,
     species,
     inTop,
-    metaKey,
+    speciesCmp,
     blended,
     metaRanks,
   ]);
@@ -402,23 +415,22 @@ export function Collection() {
     return [...byKey.values()];
   }, [rows, grouped]);
 
-  /** Your groups and the species you have none of: interleaved by meta rank under Meta rank,
+  /** Your groups and the species you have none of: interleaved under Meta rank and Trending,
    * otherwise yours first in the active sort and the rest after, in meta order. */
   const items = useMemo((): Item[] => {
     const mine: Item[] = groups.map((g) => ({ kind: 'mine', ...g }));
     const rest: Item[] = missing.map((id) => ({ kind: 'missing', key: `missing|${id}`, id }));
-    if (sort !== 'meta') {
+    if (sort !== 'meta' && sort !== 'trending') {
       return [...mine, ...rest];
     }
-    const keyOf = (it: Item): number =>
-      it.kind === 'mine' ? metaKey(metaSpecies(it.best)) : metaKey(it.id);
+    const idOf = (it: Item): string => (it.kind === 'mine' ? metaSpecies(it.best) : it.id);
     const out: Item[] = [];
     let i = 0;
     let j = 0;
     while (i < mine.length || j < rest.length) {
       const a = mine[i];
       const b = rest[j];
-      if (a && (!b || keyOf(a) <= keyOf(b))) {
+      if (a && (!b || speciesCmp(idOf(a), idOf(b)) <= 0)) {
         out.push(a);
         i += 1;
       } else if (b) {
@@ -427,7 +439,7 @@ export function Collection() {
       }
     }
     return out;
-  }, [groups, missing, sort, metaKey, metaSpecies]);
+  }, [groups, missing, sort, speciesCmp, metaSpecies]);
 
   /** Where a row goes: its own species page, with this copy the one shown. */
   const rowRoute = (sp: Specimen): Route => ({
@@ -520,7 +532,12 @@ export function Collection() {
           {/* Nothing matching reads as the empty state below, not as "0 Pokémon"; while judging,
               the count stays. The span stays too, so Sort keeps its place on the right. */}
           <span className="meta">{nothing || leagueWait ? null : count}</span>
-          <InlineSelect<Sort> label="Sort" value={sort} options={SORTS} onChange={setSort} />
+          <InlineSelect<Sort>
+            label="Sort"
+            value={sort}
+            options={trending ? SORTS : SORTS_NO_TREND}
+            onChange={setSort}
+          />
         </div>
       </div>
       <div className="scroll" style={{ gap: 0, paddingTop: 4 }}>

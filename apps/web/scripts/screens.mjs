@@ -720,6 +720,16 @@ const firstVisit = await page.$$eval('.mh-card-head b', (els) => els.map((e) => 
 if (!firstVisit.includes('Help build the meta') || firstVisit.includes('Your contribution')) {
   throw new Error(`meta, first visit: the wrong cards: ${firstVisit.join(', ')}`);
 }
+// Spicy Picks: last week's sample had Medicham rarer, so something climbed and the card shows,
+// right under Most seen.
+await page.waitForFunction(
+  () =>
+    [...document.querySelectorAll('.mh-card-head b')]
+      .map((e) => e.textContent)
+      .join('|')
+      .includes('Most seen Pokémon|Spicy Picks'),
+  { timeout: 15_000 },
+);
 await shot('meta-home-first');
 
 console.log('collection, nothing collected');
@@ -1213,6 +1223,9 @@ await page.waitForFunction(
   { timeout: 120_000 },
 );
 console.log(`  verdicts rendered at ${Date.now() - t0} ms`);
+// Collection opens on Meta rank; the captures from here on are taken under Verdict, the order
+// they pick their rows by (Meta rank and Trending have their own steps below).
+await page.select('.sort-row select', 'verdict');
 await page.evaluate(() => window.scrollTo(0, 0));
 // The Sort dropdown's 44px target reaches past its line; it must stay clear of the chips above.
 const sortGap = await page.evaluate(() => {
@@ -1403,6 +1416,14 @@ await shot('collection-league-meta', false);
 const topOwnedHref = await page.$eval('.scroll .spec-row[href*="?copy="]', (a) =>
   a.getAttribute('href'),
 );
+// Trending: the biggest climber first.
+await page.select('.sort-row select', 'trending');
+const firstTrend = await page.$eval('.scroll .spec-row .mtags .trend[aria-label]', (e) =>
+  e.getAttribute('aria-label'),
+);
+if (!firstTrend?.startsWith('up ')) {
+  throw new Error(`collection, trending: the first row's trend is ${firstTrend}, not a climb`);
+}
 await page.select('.sort-row select', 'verdict');
 await page.evaluate(() => window.scrollTo(0, 0));
 

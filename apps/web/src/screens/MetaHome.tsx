@@ -4,7 +4,7 @@ import {
   type SeasonStats,
   type SpeciesRecord,
 } from '@pickthree/engine';
-import type { Board, BoardRow, SpeciesRow } from '@pickthree/engine/meta';
+import { trendingUp, type Board, type BoardRow, type SpeciesRow } from '@pickthree/engine/meta';
 import {
   Button,
   Chevron,
@@ -25,6 +25,7 @@ import {
   Share,
   sharePct,
   ShareGlyph,
+  TrendTag,
   useName,
   useSticky,
 } from '../components.tsx';
@@ -43,6 +44,7 @@ import {
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
 import { RewardToken } from '../components/achievements/tokens.tsx';
 import { achievementsLine } from '../format.ts';
+import { weekEarlier } from '../metaData.ts';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
@@ -172,6 +174,75 @@ function MostSeen({ league }: { league: string }) {
       {body}
       <a className="mh-more" href={hashFor({ screen: 'collection' })}>
         Explore Pokémon <Arrow />
+      </a>
+    </div>
+  );
+}
+
+/**
+ * Spicy Picks: the species gaining ground, by blended share gained since the trend's baseline
+ * (`trendingUp`). The same read as Most seen. Not drawn at all while loading, offline, without a
+ * trend or with nothing climbing: Most seen already reports a failed read.
+ */
+function SpicyPicks({ league }: { league: string }) {
+  const name = useName();
+  const ranked = useMetaRanking(league, { ...READ, community: true });
+  const [, setCollectionSort] = useSticky<string | null>('collection.sort', null);
+  const data = ranked.data;
+  if (!data || data.offline || data.league !== league || !data.baselineWeights) {
+    return null;
+  }
+  const picks = trendingUp(data.order, data.trend, data.ranking.weights, data.baselineWeights);
+  if (picks.length === 0) {
+    return null;
+  }
+  const measured = data.ranking.battles > 0;
+  const byId = new Map(data.ranking.rows.map((r) => [r.speciesId, r]));
+  // Under a week into the window the trend's baseline is PvPoke's own order, not last week.
+  const sub =
+    weekEarlier(data.window) === null
+      ? "Gained the most share against PvPoke's list"
+      : 'Gained the most share this week';
+  return (
+    <div className="mh-card">
+      <div className="mh-card-head">
+        <b>Spicy Picks</b>
+        <span className="meta">{sub}</span>
+      </div>
+      <div>
+        {picks.map((p) => {
+          const r = byId.get(p.speciesId);
+          return (
+            <a
+              className="mh-seen"
+              key={p.speciesId}
+              href={hashFor({ screen: 'species', id: p.speciesId })}
+            >
+              <PokemonToken speciesId={p.speciesId} size={36} showInitial={false} />
+              <span className="mh-seen-name">
+                <span>{name(p.speciesId)}</span>
+                <span className="mtags">
+                  <TrendTag delta={p.places} />
+                </span>
+              </span>
+              {measured && r && r.share !== null && r.sightings > 0 ? (
+                <Share value={sharePct(r.share)} />
+              ) : (
+                <span />
+              )}
+              <span className="mh-go">
+                <Chevron />
+              </span>
+            </a>
+          );
+        })}
+      </div>
+      <a
+        className="mh-more"
+        href={hashFor({ screen: 'collection' })}
+        onClick={() => setCollectionSort('trending')}
+      >
+        See all movers <Arrow />
       </a>
     </div>
   );
@@ -503,6 +574,7 @@ export function MetaHome() {
         </div>
         {/* The saved league, not the default, is the one to read: wait for settings. */}
         {s.settingsLoaded ? <MostSeen league={league} /> : null}
+        {s.settingsLoaded ? <SpicyPicks league={league} /> : null}
         {!known || !s.settingsLoaded ? null : hasLog ? (
           <>
             <YourContribution open={open} />

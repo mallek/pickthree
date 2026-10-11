@@ -56,6 +56,9 @@ export interface MetaRanking {
   order: string[];
   /** Places moved by species id, positive climbed. Empty when ranked by PvPoke alone. */
   trend: Map<string, number>;
+  /** The blended weights the trend was measured against: the week-earlier blend, or PvPoke's
+   * prior while the window is under a week old. Null whenever there is no trend. */
+  baselineWeights: Map<string, number> | null;
   window: ApiWindow;
   /** True when the community read failed and this is PvPoke's order standing in for it. */
   offline: boolean;
@@ -256,6 +259,7 @@ export function useMetaRanking(
             ranking: prior,
             order: priorOrder,
             trend: new Map(),
+            baselineWeights: null,
             window: w,
             offline: reads !== null,
           };
@@ -265,17 +269,14 @@ export function useMetaRanking(
           rankSpecies(s, side.baseline, side.ranks, { source: opts.source, banned: side.banned });
         const ranking = blend(current);
         const order = blendedOrder(ranking.weights);
-        const baselineOrder =
-          before === 'failed' || !wantTrend
-            ? null
-            : before
-              ? blendedOrder(blend(before).weights)
-              : priorOrder;
+        const baselineWeights =
+          before === 'failed' || !wantTrend ? null : before ? blend(before).weights : prior.weights;
         return {
           league,
           ranking,
           order,
-          trend: baselineOrder ? rankTrend(order, baselineOrder) : new Map(),
+          trend: baselineWeights ? rankTrend(order, blendedOrder(baselineWeights)) : new Map(),
+          baselineWeights,
           window: w,
           offline: false,
         };

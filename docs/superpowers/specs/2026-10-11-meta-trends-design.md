@@ -86,9 +86,10 @@ offline). No new network read.
   rank for copies of one species.
 - Like Meta rank, your groups and the species you have none of are interleaved in one order
   (trend is a species property), not yours first.
-- The option is offered only when `meta?.trend` has entries. When it has none, Trending is left
-  out of the options and the effective sort is Meta rank; the saved pick stays as it is, so it
-  comes back when trend data does.
+- The option is offered only when some species in `meta?.trend` moved (a trend of all zeros,
+  as when nothing has been measured, has nothing to sort by). Otherwise Trending is left out of
+  the options and the effective sort is Meta rank; the saved pick stays as it is, so it comes
+  back when movement does.
 
 ## Testing
 

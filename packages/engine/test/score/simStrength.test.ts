@@ -201,6 +201,7 @@ describe('the meta subpath', () => {
       'tournamentSay',
       'trendLabel',
       'trendPoints',
+      'trendingUp',
       'winRate',
     ]);
   });

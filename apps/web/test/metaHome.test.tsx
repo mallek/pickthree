@@ -3,7 +3,7 @@ import type { BattleSet, LoggedBattle } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetStickyForTests } from '../src/components.tsx';
+import { resetStickyForTests, useSticky } from '../src/components.tsx';
 import { COUNTER_ORIGIN } from '../src/counter.ts';
 import { resetMetaDataForTests } from '../src/metaData.ts';
 import { MetaHome } from '../src/screens/MetaHome.tsx';
@@ -102,9 +102,21 @@ const GENERATED = {
 interface Net {
   api: URL[];
   summary: unknown;
+  /** The week-earlier summary (the trend's baseline); the current one when unset. */
+  earlier?: unknown;
   teams: unknown;
   apiStatus: number | null;
 }
+
+/** The week before MEASURED: tinkaton in every battle, clodsire in a quarter, so the earlier
+ *  blend is tinkaton, clodsire, azumarill and now both of the last two have climbed. */
+const EARLIER = {
+  ...MEASURED,
+  species: [
+    { ...MEASURED.species[0], speciesId: 'tinkaton' },
+    { ...MEASURED.species[1], speciesId: 'clodsire' },
+  ],
+};
 
 function stubNet(net: Net) {
   const f = vi.fn(async (input: RequestInfo | URL) => {
@@ -120,7 +132,10 @@ function stubNet(net: Net) {
         return new Response('{}', { status: net.apiStatus });
       }
       if (url.pathname === '/api/v1/meta') {
-        return json(net.summary);
+        // The trend's baseline read ends a week before now; the current one ends now.
+        const until = Date.parse(url.searchParams.get('until') ?? '');
+        const earlier = until < Date.now() - 3 * 86_400_000;
+        return json(earlier && net.earlier !== undefined ? net.earlier : net.summary);
       }
       if (url.pathname === '/api/v1/teams') {
         return json(net.teams);
@@ -309,6 +324,68 @@ describe('Meta landing', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/meta/new'));
   });
 
+  it('Spicy Picks: the climbers by share gained, under Most seen, each to its species page', async () => {
+    const net = freshNet();
+    net.earlier = EARLIER;
+    stubNet(net);
+    const { container } = renderHome();
+    const spicy = await waitFor(() => card('Spicy Picks'));
+    expect(within(spicy).getByText('Gained the most share this week')).toBeInTheDocument();
+    const rows = [...spicy.querySelectorAll('a.mh-seen')];
+    // Tinkaton fell two places: not a pick. Clodsire gained the most share, then azumarill.
+    expect(rows.map((r) => r.getAttribute('href'))).toEqual([
+      '#/species/clodsire',
+      '#/species/azumarill',
+    ]);
+    expect(within(rows[0] as HTMLElement).getByRole('img', { name: 'up 1 place' })).toBeTruthy();
+    expect(rows[0]).toHaveTextContent('100%');
+    const cards = [...container.querySelectorAll('.mh-card')].map(
+      (c) => c.querySelector('b')?.textContent,
+    );
+    expect(cards.slice(0, 2)).toEqual(['Most seen Pokémon', 'Spicy Picks']);
+  });
+
+  it('Spicy Picks under a week into the window: measured against PvPoke', async () => {
+    vi.setSystemTime(new Date('2026-09-11T20:00:00Z'));
+    stubNet(freshNet());
+    renderHome();
+    const spicy = await waitFor(() => card('Spicy Picks'));
+    expect(
+      within(spicy).getByText("Gained the most share against PvPoke's list"),
+    ).toBeInTheDocument();
+    // PvPoke: tinkaton, azumarill, clodsire. Now: clodsire, azumarill, tinkaton.
+    const rows = [...spicy.querySelectorAll('a.mh-seen')];
+    expect(rows.map((r) => r.getAttribute('href'))).toEqual(['#/species/clodsire']);
+    expect(within(rows[0] as HTMLElement).getByRole('img', { name: 'up 2 places' })).toBeTruthy();
+  });
+
+  it('Spicy Picks is not drawn when nothing climbed', async () => {
+    stubNet(freshNet());
+    renderHome();
+    await waitFor(() =>
+      expect(card('Most seen Pokémon').querySelectorAll('a.mh-seen')).toHaveLength(3),
+    );
+    expect(screen.queryByText('Spicy Picks')).toBeNull();
+  });
+
+  it('See all movers opens Collection sorted by Trending', async () => {
+    const net = freshNet();
+    net.earlier = EARLIER;
+    stubNet(net);
+    renderHome();
+    const spicy = await waitFor(() => card('Spicy Picks'));
+    const link = within(spicy).getByRole('link', { name: /See all movers/ });
+    expect(link).toHaveAttribute('href', '#/collection');
+    fireEvent.click(link);
+    let sort: unknown = null;
+    function Probe() {
+      sort = useSticky<string | null>('collection.sort', null)[0];
+      return null;
+    }
+    render(<Probe />);
+    expect(sort).toBe('trending');
+  });
+
   it('reads the community for the league and the default window only', async () => {
     const net = freshNet();
     stubNet(net);
@@ -437,6 +514,8 @@ describe('Meta landing', () => {
       expect(screen.getAllByText('Could not load the community meta.')).toHaveLength(2),
     );
     expect(screen.getAllByRole('alert')).toHaveLength(2);
+    // Spicy Picks has nothing to say offline: no card, and no third error.
+    expect(screen.queryByText('Spicy Picks')).toBeNull();
     expect(screen.getByRole('button', { name: 'Log a battle' })).toBeInTheDocument();
     expect(screen.getByText('Your battle history will appear here.')).toBeInTheDocument();
 

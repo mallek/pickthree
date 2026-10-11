@@ -2,9 +2,10 @@ import 'fake-indexeddb/auto';
 import type { Specimen, Verdict, VerdictLabel } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EMPTY_SUMMARY, resetMetaHooksForTests } from '../src/state/useMeta.ts';
-import { resetStickyForTests } from '../src/components.tsx';
+import { resetStickyForTests, useSticky } from '../src/components.tsx';
 import { COUNTER_ORIGIN } from '../src/counter.ts';
 import { resetMetaDataForTests } from '../src/metaData.ts';
 import { Collection } from '../src/screens/Collection.tsx';
@@ -316,7 +317,9 @@ async function judged(): Promise<void> {
 /** The Sort dropdown set to Verdict: the list opens on Meta rank, and these tests read verdict order. */
 async function byVerdict() {
   await act(async () => {
-    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), { target: { value: 'verdict' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), {
+      target: { value: 'verdict' },
+    });
   });
 }
 
@@ -986,6 +989,72 @@ describe('Collection, the whole league', () => {
     expect(document.querySelector('.trend')).toBeNull();
     expect(screen.queryAllByRole('img', { name: /places?$/ })).toHaveLength(0);
     expect(net.api).toHaveLength(0);
+  });
+
+  it('sorts by Trending: climbers first, then no move, fallers last, ties by meta rank', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-11T20:00:00Z'));
+    net.current = heavy('azumarill');
+    await openLeague();
+    await waitFor(() =>
+      expect(
+        within(rowOf('Azumarill')).getByRole('img', { name: 'up 3 places' }),
+      ).toBeInTheDocument(),
+    );
+    const sort = screen.getByRole('combobox', { name: 'Sort' });
+    expect(
+      within(sort)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Verdict', 'IV rank', 'Meta rank', 'Trending', 'Name']);
+    await act(async () => {
+      fireEvent.change(sort, { target: { value: 'trending' } });
+    });
+    // Azumarill climbed three; Quagsire did not move and Medicham has no trend, by meta rank;
+    // the other three fell one place each, by meta rank. Collected or not, one order.
+    expect(names()).toEqual([
+      'Azumarill',
+      'Quagsire',
+      'Medicham',
+      'Cramorant',
+      'Tinkaton',
+      'Clodsire',
+    ]);
+  });
+
+  it('offers no Trending sort with sharing off, and a saved Trending pick shows Meta rank', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-11T20:00:00Z'));
+    net.current = heavy('azumarill');
+    await storage.saveSettings({
+      ...(await storage.loadSettings()),
+      share: { enabled: false },
+    });
+    function SavedTrending() {
+      const [, set] = useSticky<string | null>('collection.sort', null);
+      useEffect(() => set('trending'), [set]);
+      return null;
+    }
+    render(<SavedTrending />);
+    await openLeague();
+    await waitFor(() =>
+      expect(rowOf('Cramorant').querySelector('.mtag')).toHaveTextContent('#1 meta'),
+    );
+    const sort = screen.getByRole('combobox', { name: 'Sort' });
+    expect(sort).toHaveValue('meta');
+    expect(
+      within(sort)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Verdict', 'IV rank', 'Meta rank', 'Name']);
+    expect(names()).toEqual([
+      'Cramorant',
+      'Tinkaton',
+      'Clodsire',
+      'Azumarill',
+      'Quagsire',
+      'Medicham',
+    ]);
   });
 
   it('lists the ranked part of the league by default and searches all of it', async () => {
