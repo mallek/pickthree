@@ -190,9 +190,9 @@ export function Collection() {
   const [recentOnly] = useSticky('collection.recent', false);
   const [metaOnly] = useSticky('collection.meta', false);
   const [hideNotCollected] = useSticky('collection.hideNotCollected', false);
-  // Null until the player picks one: Meta rank with nothing collected, Verdict otherwise.
+  // Null until the player picks one: Meta rank.
   const [sortPick, setSort] = useSticky<Sort | null>('collection.sort', null);
-  const sort: Sort = sortPick ?? (empty ? 'meta' : 'verdict');
+  const sort: Sort = sortPick ?? 'meta';
   const [grouped] = useSticky('collection.grouped', true);
   const [open, setOpen] = useSticky<Set<string>>('collection.open', new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);

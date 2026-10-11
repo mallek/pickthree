@@ -313,6 +313,13 @@ async function judged(): Promise<void> {
 }
 
 /** The top rows' names, in order, without the Shadow flag. */
+/** The Sort dropdown set to Verdict: the list opens on Meta rank, and these tests read verdict order. */
+async function byVerdict() {
+  await act(async () => {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), { target: { value: 'verdict' } });
+  });
+}
+
 function names(): string[] {
   return [...document.querySelectorAll('.spec-row:not(.sub) .spec-name')].map(
     (e) => e.firstChild?.textContent ?? '',
@@ -543,9 +550,10 @@ describe('Collection', () => {
   it('sorts from a visible dropdown; Name orders the rows by name', async () => {
     await open();
     await judged();
-    expect(names()).toEqual(['Tinkaton', 'Dragonite', 'Medicham', 'Azumarill', 'Clodsire']);
     const sort = screen.getByRole('combobox', { name: 'Sort' });
-    expect(sort).toHaveValue('verdict');
+    expect(sort).toHaveValue('meta');
+    await byVerdict();
+    expect(names()).toEqual(['Tinkaton', 'Dragonite', 'Medicham', 'Azumarill', 'Clodsire']);
     expect(
       within(sort)
         .getAllByRole('option')
@@ -565,6 +573,7 @@ describe('Collection', () => {
       b: verdict('b', 'Worth building', 60),
     }));
     await judged();
+    await byVerdict();
     const lead = (n: string): string | null | undefined =>
       [...document.querySelectorAll('.spec-row:not(.sub)')]
         .find((r) => r.querySelector('.spec-name')?.firstChild?.textContent === n)
@@ -806,6 +815,7 @@ describe('Collection, the whole league', () => {
 
   it('lists the species you have none of after your own, each tagged Not collected', async () => {
     await openLeague();
+    await byVerdict();
     // Your rows by verdict, then the rest in meta order.
     expect(names()).toEqual([
       'Tinkaton',
@@ -845,6 +855,7 @@ describe('Collection, the whole league', () => {
 
   it('hides them with Hide not collected, which counts as a filter', async () => {
     await openLeague();
+    await byVerdict();
     const dialog = await openFilters();
     const switches = within(dialog).getAllByRole('switch');
     expect(switches[1]).toHaveAccessibleName('Hide not collected');
@@ -894,6 +905,7 @@ describe('Collection, the whole league', () => {
   it('keeps Top 50 meta to rows ranked in the top 50, blended or by role', async () => {
     await openLeague();
     await waitFor(() => expect(rowOf('Cramorant').querySelector('.mtag')).not.toBeNull());
+    await byVerdict();
     const dialog = await openFilters();
     await flip(dialog, 'Top 50 meta');
     await closeFilters();
@@ -984,6 +996,7 @@ describe('Collection, the whole league', () => {
     );
     await waitFor(() => expect(document.querySelectorAll('.spec-row .verdict-tag').length).toBe(3));
     await waitFor(() => expect(rowOf('Cramorant').querySelector('.mtag')).not.toBeNull());
+    await byVerdict();
     // Lanturn is PvPoke's 150th, inside the top 200; Caterpie is not ranked at all.
     expect(names()).toEqual([
       'Tinkaton',
