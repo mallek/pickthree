@@ -188,13 +188,37 @@ page.on('requestfailed', (r) => {
 // Two more answers, for the Meta captures: a summary read whose window ends a week or more before
 // now (the trend's baseline) gets last week's version of the sample, Medicham rarer and Azumarill
 // commoner, so the trend tags have places to show, up and down; and with localStorage
-// 'pick3.failMeta' set, every community read answers 503, for the landing's failed state.
+// 'pick3.failMeta' set, every community read answers 503, for the landing's failed state. The
+// sample's three species are widened with eight more meta regulars and two picks below them, as a
+// real league measures dozens: Spicy Picks skips the top 10, so it needs more than ten measured.
+// None of the ten is in the sample collection (as itself or a lower form) or has a Mega, so the
+// owned rows keep their order and the captures that pick from them pick the same Pokemon.
 const fixture = (name) =>
   fs.readFileSync(path.join(here, '..', '..', '..', 'fixtures', name), 'utf8');
 const speciesFixture = JSON.parse(fixture('community-species-sample.json'));
 await page.evaluateOnNewDocument(
-  (meta, teams, species) => {
+  (sample, teams, species) => {
     const worker = 'https://pickthree-counter.travis-c82.workers.dev';
+    const meta = (() => {
+      const m = JSON.parse(sample);
+      const more = {
+        tinkaton: 115,
+        cramorant: 110,
+        florges: 105,
+        mimikyu: 100,
+        jellicent: 95,
+        lapras: 90,
+        diggersby: 85,
+        walrein: 80,
+        skeledirge: 55,
+        charjabug: 45,
+      };
+      const blank = { wins: 0, losses: 0, runs: 0, runWins: 0, runLosses: 0 };
+      for (const [speciesId, sightings] of Object.entries(more)) {
+        m.species.push({ ...m.species[0], ...blank, speciesId, sightings });
+      }
+      return JSON.stringify(m);
+    })();
     const json = (body) =>
       Promise.resolve(
         new Response(typeof body === 'string' ? body : JSON.stringify(body), {
@@ -720,8 +744,8 @@ const firstVisit = await page.$$eval('.mh-card-head b', (els) => els.map((e) => 
 if (!firstVisit.includes('Help build the meta') || firstVisit.includes('Your contribution')) {
   throw new Error(`meta, first visit: the wrong cards: ${firstVisit.join(', ')}`);
 }
-// Spicy Picks: last week's sample had Medicham rarer, so something climbed and the card shows,
-// right under Most seen.
+// Spicy Picks: the sample has Pokemon outside the top 10 played more than PvPoke expects, so the
+// card shows, right under Most seen.
 await page.waitForFunction(
   () =>
     [...document.querySelectorAll('.mh-card-head b')]
@@ -2146,7 +2170,9 @@ const owned = await page.evaluate(
     )?.textContent ?? null,
 );
 if (!owned) {
-  throw new Error('species page, collected: no "You have N" line');
+  throw new Error(
+    `species page, collected: no "You have N" line on ${await page.evaluate(() => window.location.hash)} (from ${topOwnedHref})`,
+  );
 }
 console.log(`  ${page.url().split('#')[1]}: ${owned}`);
 await page.evaluate(() => window.scrollTo(0, 0));

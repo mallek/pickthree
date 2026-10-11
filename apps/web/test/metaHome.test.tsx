@@ -3,7 +3,7 @@ import type { BattleSet, LoggedBattle } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetStickyForTests, useSticky } from '../src/components.tsx';
+import { resetStickyForTests } from '../src/components.tsx';
 import { COUNTER_ORIGIN } from '../src/counter.ts';
 import { resetMetaDataForTests } from '../src/metaData.ts';
 import { MetaHome } from '../src/screens/MetaHome.tsx';
@@ -102,19 +102,54 @@ const GENERATED = {
 interface Net {
   api: URL[];
   summary: unknown;
-  /** The week-earlier summary (the trend's baseline); the current one when unset. */
-  earlier?: unknown;
+  /** PvPoke's meta group and overall rankings, when not GROUP and OVERALL. */
+  group?: unknown;
+  rankings?: unknown;
   teams: unknown;
   apiStatus: number | null;
 }
 
-/** The week before MEASURED: tinkaton in every battle, clodsire in a quarter, so the earlier
- *  blend is tinkaton, clodsire, azumarill and now both of the last two have climbed. */
-const EARLIER = {
+const sighted = (speciesId: string, sightings: number) => ({
+  speciesId,
+  sightings,
+  wins: 0,
+  losses: 0,
+  runs: 0,
+  runWins: 0,
+  runLosses: 0,
+});
+
+/** A twelve-species group, so two of them sit outside the top 10 Spicy Picks skips. */
+const WIDE_IDS = [
+  'tinkaton',
+  'azumarill',
+  'clodsire',
+  'medicham',
+  'lanturn',
+  'mimikyu',
+  'melmetal',
+  'altaria',
+  'cramorant',
+  'florges',
+  'corsola_galarian',
+  'sableye_shadow',
+];
+const WIDE_GROUP = WIDE_IDS.map((speciesId) => ({
+  speciesId,
+  fastMove: 'TACKLE',
+  chargedMoves: ['BODY_SLAM'],
+}));
+
+const WIDE_OVERALL = WIDE_IDS.map((speciesId, i) => ({ speciesId, score: 95 - i }));
+
+/** The group's first ten in every battle; Shadow Sableye, last in the group, in nearly every one;
+ *  Snorlax, which PvPoke does not list, in a fifth; Galarian Corsola in none. */
+const WIDE_MEASURED = {
   ...MEASURED,
   species: [
-    { ...MEASURED.species[0], speciesId: 'tinkaton' },
-    { ...MEASURED.species[1], speciesId: 'clodsire' },
+    ...WIDE_IDS.slice(0, 10).map((id) => sighted(id, 3000)),
+    sighted('sableye_shadow', 2900),
+    sighted('snorlax', 600),
   ],
 };
 
@@ -132,10 +167,7 @@ function stubNet(net: Net) {
         return new Response('{}', { status: net.apiStatus });
       }
       if (url.pathname === '/api/v1/meta') {
-        // The trend's baseline read ends a week before now; the current one ends now.
-        const until = Date.parse(url.searchParams.get('until') ?? '');
-        const earlier = until < Date.now() - 3 * 86_400_000;
-        return json(earlier && net.earlier !== undefined ? net.earlier : net.summary);
+        return json(net.summary);
       }
       if (url.pathname === '/api/v1/teams') {
         return json(net.teams);
@@ -143,10 +175,10 @@ function stubNet(net: Net) {
       return new Response('{}', { status: 404 });
     }
     if (raw.startsWith('/data/meta/')) {
-      return json(GROUP);
+      return json(net.group ?? GROUP);
     }
     if (raw.startsWith('/data/rankings/')) {
-      return json(OVERALL);
+      return json(net.rankings ?? OVERALL);
     }
     if (raw.startsWith('/data/legal/')) {
       return json({ banned: [] });
@@ -324,66 +356,43 @@ describe('Meta landing', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/meta/new'));
   });
 
-  it('Spicy Picks: the climbers by share gained, under Most seen, each to its species page', async () => {
+  it('Spicy Picks: played more than PvPoke expects, outside the top 10, under Most seen', async () => {
     const net = freshNet();
-    net.earlier = EARLIER;
+    net.group = WIDE_GROUP;
+    net.rankings = WIDE_OVERALL;
+    net.summary = WIDE_MEASURED;
     stubNet(net);
     const { container } = renderHome();
     const spicy = await waitFor(() => card('Spicy Picks'));
-    expect(within(spicy).getByText('Gained the most share this week')).toBeInTheDocument();
+    expect(within(spicy).getByText('Played more than PvPoke expects')).toBeInTheDocument();
     const rows = [...spicy.querySelectorAll('a.mh-seen')];
-    // Tinkaton fell two places: not a pick. Clodsire gained the most share, then azumarill.
+    // Galarian Corsola was not seen: below PvPoke, not a pick. The top 10 are the meta.
     expect(rows.map((r) => r.getAttribute('href'))).toEqual([
-      '#/species/clodsire',
-      '#/species/azumarill',
+      '#/species/sableye_shadow',
+      '#/species/snorlax',
     ]);
-    expect(within(rows[0] as HTMLElement).getByRole('img', { name: 'up 1 place' })).toBeTruthy();
-    expect(rows[0]).toHaveTextContent('100%');
+    // Snorlax is not in PvPoke's group: Off meta. Shadow Sableye is.
+    expect(within(rows[1] as HTMLElement).getByText('Off meta')).toBeInTheDocument();
+    expect(within(rows[0] as HTMLElement).queryByText('Off meta')).toBeNull();
+    expect(rows[1]?.querySelector('.ui-measured-num')).not.toBeNull();
+    expect(within(spicy).getByRole('link', { name: /Explore Pokémon/ })).toHaveAttribute(
+      'href',
+      '#/collection',
+    );
     const cards = [...container.querySelectorAll('.mh-card')].map(
       (c) => c.querySelector('b')?.textContent,
     );
     expect(cards.slice(0, 2)).toEqual(['Most seen Pokémon', 'Spicy Picks']);
   });
 
-  it('Spicy Picks under a week into the window: measured against PvPoke', async () => {
-    vi.setSystemTime(new Date('2026-09-11T20:00:00Z'));
-    stubNet(freshNet());
-    renderHome();
-    const spicy = await waitFor(() => card('Spicy Picks'));
-    expect(
-      within(spicy).getByText("Gained the most share against PvPoke's list"),
-    ).toBeInTheDocument();
-    // PvPoke: tinkaton, azumarill, clodsire. Now: clodsire, azumarill, tinkaton.
-    const rows = [...spicy.querySelectorAll('a.mh-seen')];
-    expect(rows.map((r) => r.getAttribute('href'))).toEqual(['#/species/clodsire']);
-    expect(within(rows[0] as HTMLElement).getByRole('img', { name: 'up 2 places' })).toBeTruthy();
-  });
-
-  it('Spicy Picks is not drawn when nothing climbed', async () => {
+  it('Spicy Picks is not drawn when nothing qualifies', async () => {
+    // Three species: all of them the top 10.
     stubNet(freshNet());
     renderHome();
     await waitFor(() =>
       expect(card('Most seen Pokémon').querySelectorAll('a.mh-seen')).toHaveLength(3),
     );
     expect(screen.queryByText('Spicy Picks')).toBeNull();
-  });
-
-  it('See all movers opens Collection sorted by Trending', async () => {
-    const net = freshNet();
-    net.earlier = EARLIER;
-    stubNet(net);
-    renderHome();
-    const spicy = await waitFor(() => card('Spicy Picks'));
-    const link = within(spicy).getByRole('link', { name: /See all movers/ });
-    expect(link).toHaveAttribute('href', '#/collection');
-    fireEvent.click(link);
-    let sort: unknown = null;
-    function Probe() {
-      sort = useSticky<string | null>('collection.sort', null)[0];
-      return null;
-    }
-    render(<Probe />);
-    expect(sort).toBe('trending');
   });
 
   it('reads the community for the league and the default window only', async () => {

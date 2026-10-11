@@ -33,4 +33,5 @@ export * from './rank.js';
 export * from './slice.js';
 export * from './stats.js';
 export * from './teamRank.js';
+export * from './spicy.js';
 export * from './trend.js';

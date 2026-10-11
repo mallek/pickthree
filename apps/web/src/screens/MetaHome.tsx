@@ -4,7 +4,7 @@ import {
   type SeasonStats,
   type SpeciesRecord,
 } from '@pickthree/engine';
-import { trendingUp, type Board, type BoardRow, type SpeciesRow } from '@pickthree/engine/meta';
+import { spicyPicks, type Board, type BoardRow, type SpeciesRow } from '@pickthree/engine/meta';
 import {
   Button,
   Chevron,
@@ -25,7 +25,6 @@ import {
   Share,
   sharePct,
   ShareGlyph,
-  TrendTag,
   useName,
   useSticky,
 } from '../components.tsx';
@@ -44,7 +43,6 @@ import {
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
 import { RewardToken } from '../components/achievements/tokens.tsx';
 import { achievementsLine } from '../format.ts';
-import { weekEarlier } from '../metaData.ts';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
@@ -180,34 +178,27 @@ function MostSeen({ league }: { league: string }) {
 }
 
 /**
- * Spicy Picks: the species gaining ground, by blended share gained since the trend's baseline
- * (`trendingUp`). The same read as Most seen. Not drawn at all while loading, offline, without a
- * trend or with nothing climbing: Most seen already reports a failed read.
+ * Spicy Picks: species players run more than PvPoke expects, outside the top 10 (`spicyPicks`).
+ * The same read as Most seen. Not drawn at all while loading, offline or with nothing above
+ * PvPoke: Most seen already reports a failed read.
  */
 function SpicyPicks({ league }: { league: string }) {
   const name = useName();
   const ranked = useMetaRanking(league, { ...READ, community: true });
-  const [, setCollectionSort] = useSticky<string | null>('collection.sort', null);
   const data = ranked.data;
-  if (!data || data.offline || data.league !== league || !data.baselineWeights) {
+  if (!data || data.offline || data.league !== league) {
     return null;
   }
-  const picks = trendingUp(data.order, data.trend, data.ranking.weights, data.baselineWeights);
+  const picks = spicyPicks(data.order, data.ranking.weights, data.priorWeights);
   if (picks.length === 0) {
     return null;
   }
-  const measured = data.ranking.battles > 0;
   const byId = new Map(data.ranking.rows.map((r) => [r.speciesId, r]));
-  // Under a week into the window the trend's baseline is PvPoke's own order, not last week.
-  const sub =
-    weekEarlier(data.window) === null
-      ? "Gained the most share against PvPoke's list"
-      : 'Gained the most share this week';
   return (
     <div className="mh-card">
       <div className="mh-card-head">
         <b>Spicy Picks</b>
-        <span className="meta">{sub}</span>
+        <span className="meta">Played more than PvPoke expects</span>
       </div>
       <div>
         {picks.map((p) => {
@@ -221,11 +212,14 @@ function SpicyPicks({ league }: { league: string }) {
               <PokemonToken speciesId={p.speciesId} size={36} showInitial={false} />
               <span className="mh-seen-name">
                 <span>{name(p.speciesId)}</span>
-                <span className="mtags">
-                  <TrendTag delta={p.places} />
-                </span>
+                {/* Off meta: PvPoke's meta group does not list it at all. */}
+                {p.offMeta ? (
+                  <span className="mtags">
+                    <Tag tone="neutral">Off meta</Tag>
+                  </span>
+                ) : null}
               </span>
-              {measured && r && r.share !== null && r.sightings > 0 ? (
+              {r && r.share !== null && r.sightings > 0 ? (
                 <Share value={sharePct(r.share)} />
               ) : (
                 <span />
@@ -237,12 +231,8 @@ function SpicyPicks({ league }: { league: string }) {
           );
         })}
       </div>
-      <a
-        className="mh-more"
-        href={hashFor({ screen: 'collection' })}
-        onClick={() => setCollectionSort('trending')}
-      >
-        See all movers <Arrow />
+      <a className="mh-more" href={hashFor({ screen: 'collection' })}>
+        Explore Pokémon <Arrow />
       </a>
     </div>
   );

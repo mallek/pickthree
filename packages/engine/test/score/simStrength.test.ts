@@ -196,12 +196,12 @@ describe('the meta subpath', () => {
       'readEpochs',
       'resolveWindow',
       'sliceMatrix',
+      'spicyPicks',
       'strengthContext',
       'strengthOf',
       'tournamentSay',
       'trendLabel',
       'trendPoints',
-      'trendingUp',
       'winRate',
     ]);
   });
