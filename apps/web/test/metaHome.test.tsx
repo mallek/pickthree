@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import type { BattleSet, LoggedBattle } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetStickyForTests } from '../src/components.tsx';
+import { resetStickyForTests, useSticky } from '../src/components.tsx';
 import { COUNTER_ORIGIN } from '../src/counter.ts';
 import { resetMetaDataForTests } from '../src/metaData.ts';
 import { MetaHome } from '../src/screens/MetaHome.tsx';
@@ -295,7 +295,7 @@ describe('Meta landing', () => {
     expect(rows[0]?.querySelector('.mh-bar > span')).toHaveStyle({ width: '100%' });
     expect(rows[1]).toHaveAttribute('href', '#/species/azumarill');
     expect(rows[1]).toHaveTextContent('25%');
-    expect(within(seen).getByRole('link', { name: /Explore Pokémon/ })).toHaveAttribute(
+    expect(within(seen).getByRole('link', { name: /See the full meta ranking/ })).toHaveAttribute(
       'href',
       '#/collection',
     );
@@ -375,14 +375,30 @@ describe('Meta landing', () => {
     expect(within(rows[1] as HTMLElement).getByText('Off meta')).toBeInTheDocument();
     expect(within(rows[0] as HTMLElement).queryByText('Off meta')).toBeNull();
     expect(rows[1]?.querySelector('.ui-measured-num')).not.toBeNull();
-    expect(within(spicy).getByRole('link', { name: /Explore Pokémon/ })).toHaveAttribute(
-      'href',
-      '#/collection',
-    );
+    // Five picks are the whole list: no footer link, only the rows.
+    expect(within(spicy).getAllByRole('link')).toHaveLength(2);
     const cards = [...container.querySelectorAll('.mh-card')].map(
       (c) => c.querySelector('b')?.textContent,
     );
     expect(cards.slice(0, 2)).toEqual(['Most seen Pokémon', 'Spicy Picks']);
+  });
+
+  it('See the full meta ranking opens Collection on Meta rank, whatever sort was last picked', async () => {
+    stubNet(freshNet());
+    let sort: unknown = null;
+    let setSort: (v: string | null) => void = () => {};
+    function SortProbe() {
+      const [v, set] = useSticky<string | null>('collection.sort', null);
+      sort = v;
+      setSort = set;
+      return null;
+    }
+    render(<SortProbe />);
+    act(() => setSort('name'));
+    renderHome();
+    const seen = await waitFor(() => card('Most seen Pokémon'));
+    fireEvent.click(within(seen).getByRole('link', { name: /See the full meta ranking/ }));
+    expect(sort).toBe('meta');
   });
 
   it('Spicy Picks is not drawn when nothing qualifies', async () => {

@@ -76,7 +76,9 @@ already computes for its fallback and its under-a-week trend baseline. No new ne
   has its bar (only when `offMeta`), the share under Most seen's rule (pink only when measured and
   sighted), chevron. A row opens the species page.
 - Head: **Spicy Picks**. Subtitle: "Played more than PvPoke expects".
-- Footer link: "Explore Pokémon" to Collection, as on Most seen.
+- No footer link: the five picks are the whole list. (A shared "Explore Pokémon" link to
+  Collection read to players as the picks vanishing; Most seen's link became "See the full meta
+  ranking", which always opens Collection on Meta rank.)
 - Not rendered while loading, on error, offline, or when `spicyPicks` returns nothing (no battles
   measured means the blend is the prior, so nothing is above it).
 - Copy is plain 7-bit ASCII apart from the existing "Pokémon".

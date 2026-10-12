@@ -111,11 +111,13 @@ function Failed({ retry }: { retry: () => void }) {
 
 /**
  * Most seen: the top five by blended weight. A league nobody has shared battles in is PvPoke's
- * group order alone, with no share and no pink, since nothing was measured.
+ * group order alone, with no share and no pink, since nothing was measured. Its link opens the
+ * rest of the same ranking: Collection on Meta rank, whatever sort the player last picked there.
  */
 function MostSeen({ league }: { league: string }) {
   const name = useName();
   const ranked = useMetaRanking(league, { ...READ, community: true });
+  const [, setCollectionSort] = useSticky<string | null>('collection.sort', null);
   const data = ranked.data;
   let body;
   // Nothing measured: the list is PvPoke's order, so the subtitle must not claim a share.
@@ -170,8 +172,12 @@ function MostSeen({ league }: { league: string }) {
         <span className="meta">{sub}</span>
       </div>
       {body}
-      <a className="mh-more" href={hashFor({ screen: 'collection' })}>
-        Explore Pokémon <Arrow />
+      <a
+        className="mh-more"
+        href={hashFor({ screen: 'collection' })}
+        onClick={() => setCollectionSort('meta')}
+      >
+        See the full meta ranking <Arrow />
       </a>
     </div>
   );
@@ -179,6 +185,7 @@ function MostSeen({ league }: { league: string }) {
 
 /**
  * Spicy Picks: species players run more than PvPoke expects, outside the top 10 (`spicyPicks`).
+ * Five picks are the whole list, so no footer link: a link to Collection read as losing them.
  * The same read as Most seen. Not drawn at all while loading, offline or with nothing above
  * PvPoke: Most seen already reports a failed read.
  */
@@ -231,9 +238,6 @@ function SpicyPicks({ league }: { league: string }) {
           );
         })}
       </div>
-      <a className="mh-more" href={hashFor({ screen: 'collection' })}>
-        Explore Pokémon <Arrow />
-      </a>
     </div>
   );
 }
