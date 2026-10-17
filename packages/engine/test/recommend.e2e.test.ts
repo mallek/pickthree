@@ -6,6 +6,7 @@ import { toSpecimens } from '../src/collection/specimen.js';
 import { parseCollectionCsv } from '../src/csv/parse.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
 import { allowedInLeague } from '../src/gamedata/league.js';
+import { analyzeTeam, type TeamPick } from '../src/analyze.js';
 import { compareTeamScores, recommend, verdictsFor } from '../src/recommend.js';
 import {
   REPO_ROOT,
@@ -85,6 +86,19 @@ describe.skipIf(!ready)('recommend end to end', () => {
     console.log(
       `top team: ${first.slots.map((s) => s.candidate.build.speciesId).join(' / ')} (${first.structure}, ${first.score.fit}, ${first.score.difficulty}) cost ${first.cost.stardust} dust ${first.cost.candy} candy ${first.cost.xlCandy} xl ${first.cost.eliteTm} etm\n  why: ${first.explanation.why}\n  wins: ${first.explanation.keyWins.map((w) => w.opponentName).join(', ')}\n  threats: ${first.explanation.keyThreats.map((w) => w.opponentName).join(', ')}`,
     );
+  });
+
+  it('lists each team in its strongest order, the one Analyze would pick', () => {
+    const rec = recommend(specimens, {}, deps);
+    for (const team of rec.teams.slice(0, 3)) {
+      const picks = team.slots.map((s) => ({
+        kind: 'specimen',
+        id: s.candidate.build.specimenId,
+        asSpeciesId: s.candidate.build.speciesId,
+      })) as [TeamPick, TeamPick, TeamPick];
+      const analysis = analyzeTeam(picks, specimens, { order: 'best' }, deps);
+      expect(Math.round(team.score.battle)).toBe(analysis.orders[0]?.battle);
+    }
   });
 
   it('respects exclusion filters', () => {

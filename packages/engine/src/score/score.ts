@@ -185,10 +185,8 @@ export function scoreTeam(
   const safety = Math.max(0, 100 - hardLosses * 20 - topUncovered * 10);
 
   // Cost normalized against the finalist set.
-  const weights = all.map((x) => x.slots.reduce((acc, s) => acc + s.candidate.cost.weight, 0));
-  const mine = t.slots.reduce((acc, s) => acc + s.candidate.cost.weight, 0);
-  const minW = Math.min(...weights);
-  const maxW = Math.max(...weights);
+  const mine = teamWeight(t);
+  const [minW, maxW] = costRange(all);
   const cost = maxW === minW ? 100 : (1 - (mine - minW) / (maxW - minW)) * 100;
 
   // Accessibility: how far each specimen is from done.
@@ -221,6 +219,31 @@ export function scoreTeam(
     coveredOpponents: opponentIds.filter((id) => covered.has(id)),
     uncoveredOpponents: opponentIds.filter((id) => !covered.has(id)),
   };
+}
+
+function teamWeight(t: TeamSim): number {
+  return t.slots.reduce((acc, s) => acc + s.candidate.cost.weight, 0);
+}
+
+/**
+ * Cheapest and dearest team weight in a finalist set, worked out once per set: every team in a
+ * search is scored against the same set, so a per-call scan would be quadratic in its size.
+ */
+const ranges = new WeakMap<TeamSim[], [number, number]>();
+function costRange(all: TeamSim[]): [number, number] {
+  let range = ranges.get(all);
+  if (!range) {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const x of all) {
+      const w = teamWeight(x);
+      min = Math.min(min, w);
+      max = Math.max(max, w);
+    }
+    range = [min, max];
+    ranges.set(all, range);
+  }
+  return range;
 }
 
 function round1(v: number): number {

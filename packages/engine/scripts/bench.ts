@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { toSpecimens } from '../src/collection/specimen.js';
-import { parsePokeGenieCsv } from '../src/csv/parse.js';
+import { parseCollectionCsv } from '../src/csv/parse.js';
 import { metaCounters } from '../src/counters/counters.js';
 import { GameDataIndex } from '../src/gamedata/index.js';
 import { recommend, verdictsFor } from '../src/recommend.js';
@@ -28,7 +28,7 @@ const gm = JSON.parse(
 const sim = new PvPokeSimulator(loadPvPokeInNode(gm));
 const deps = { data, sim };
 
-const { specimens, report } = toSpecimens(parsePokeGenieCsv(csv), index);
+const { specimens, report } = toSpecimens(parseCollectionCsv(csv, index), index);
 console.log(`${report.scansRead} scans, ${specimens.length} specimens`);
 
 const time = (label: string, fn: () => unknown): void => {

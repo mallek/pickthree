@@ -25,6 +25,7 @@ import { MatrixView } from './search/matrixView.js';
 import {
   DEFAULT_TRIO_OPTIONS,
   generateTrios,
+  ordersOf,
   weightedTrioOptions,
   type Structure,
   type TeamStyle,
@@ -78,7 +79,7 @@ export interface RecommendOptions extends BuildOptions {
 export const DEFAULT_RECOMMEND_OPTIONS: RecommendOptions = {
   ...DEFAULT_BUILD_OPTIONS,
   poolSize: 40,
-  finalists: 25,
+  finalists: 1000,
   style: 'any',
   excludedSpecimenIds: [],
   excludedSpecies: [],
@@ -270,8 +271,11 @@ export function recommend(
     progress('trios', d, t),
   );
 
+  // The draft picks each trio's order from the matrix; simulate every order the style allows and
+  // let the battle score choose, the same way Analyze does, so Build never finds a stronger order.
+  const orders = drafts.flatMap((d) => ordersOf(d, view, typesOf, trioOpts));
   const opponents = [...deps.data.meta, ...profile.outsiders];
-  const sims = simulateFinalists(drafts, deps.sim, opponents, index, simOptions, (d, t) =>
+  const sims = simulateFinalists(orders, deps.sim, opponents, index, simOptions, (d, t) =>
     progress('simulate', d, t),
   );
 
@@ -280,7 +284,9 @@ export function recommend(
   const facing = new Map([...profile.weights, ...profile.outsiderWeights]);
   const extra = profile.outsiders.map((o) => o.speciesId);
   const topTen = topTenFor(view, profile);
-  const scored2 = sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra, topTen) }));
+  const scored2 = bestOrders(
+    sims.map((t) => ({ t, score: scoreTeam(t, sims, view, facing, extra, topTen) })),
+  );
   scored2.sort((a, b) => compareTeamScores(a.score, b.score));
   const top = diversify(scored2, opts.results);
   const teams: TeamRecommendation[] = top.map(({ t, score }, i) => {
@@ -298,11 +304,27 @@ export function recommend(
       poolSize: pool.length,
       poolKinds: poolKinds(pool, (id) => index.teamSpeciesOf(id)),
       triosScored: scored,
-      finalists: sims.length,
+      finalists: drafts.length,
       ms: Date.now() - started,
       dropped,
     },
   };
+}
+
+/** One entry per trio: the order with the best score among those simulated. */
+function bestOrders<T extends { t: TeamSim; score: TeamScore }>(scored: T[]): T[] {
+  const best = new Map<string, T>();
+  for (const item of scored) {
+    const key = item.t.slots
+      .map((s) => s.candidate.build.specimenId)
+      .sort()
+      .join('|');
+    const seen = best.get(key);
+    if (!seen || compareTeamScores(item.score, seen.score) < 0) {
+      best.set(key, item);
+    }
+  }
+  return [...best.values()];
 }
 
 /**

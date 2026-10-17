@@ -5,6 +5,7 @@ import { MatrixView } from '../../src/search/matrixView.js';
 import {
   DEFAULT_TRIO_OPTIONS,
   generateTrios,
+  ordersOf,
   weightedTrioOptions,
 } from '../../src/search/trios.js';
 
@@ -293,5 +294,38 @@ describe('generateTrios team rules', () => {
     const { view, pool } = fakeWorld();
     const cands = [withMega(pool[0]!, 'sa', true), pool[1]!, pool[2]!];
     expect(generateTrios(cands, view, typesWithBase).scored).toBe(1);
+  });
+});
+
+describe('ordersOf', () => {
+  const speciesOf = (d: { slots: Candidate[] }): string =>
+    d.slots.map((s) => s.build.speciesId).join('');
+
+  it('expands a drafted trio into all six orders of the same three', () => {
+    const { view, pool } = fakeWorld();
+    const { drafts } = generateTrios(pool, view, types, { ...DEFAULT_TRIO_OPTIONS, finalists: 1 });
+    const draft = drafts[0]!;
+    const orders = ordersOf(draft, view, types, DEFAULT_TRIO_OPTIONS);
+    expect(orders).toHaveLength(6);
+    expect(new Set(orders.map(speciesOf)).size).toBe(6);
+    const members = speciesOf(draft).split('').sort().join('');
+    for (const o of orders) {
+      expect(speciesOf(o).split('').sort().join('')).toBe(members);
+      expect(o.roles).toEqual(['lead', 'switch', 'closer']);
+    }
+    expect(orders.map(speciesOf)).toContain(speciesOf(draft));
+  });
+
+  it('keeps only the orders the style allows', () => {
+    const { view, pool } = fakeWorld();
+    const { drafts } = generateTrios(pool, view, types, { ...DEFAULT_TRIO_OPTIONS, finalists: 10 });
+    const abc = drafts.find((d) => speciesOf(d).split('').sort().join('') === 'abc')!;
+    const abb = ordersOf(abc, view, types, { ...DEFAULT_TRIO_OPTIONS, style: 'abb' });
+    expect(abb.length).toBeGreaterThan(0);
+    expect(abb.length).toBeLessThan(6);
+    expect(abb.every((d) => d.structure === 'ABB')).toBe(true);
+    const bal = ordersOf(abc, view, types, { ...DEFAULT_TRIO_OPTIONS, style: 'balanced' });
+    expect(bal.every((d) => d.structure === 'ABC')).toBe(true);
+    expect(abb.length + bal.length).toBe(6);
   });
 });

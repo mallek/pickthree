@@ -231,6 +231,27 @@ export function evaluateTrio(
   return best as TrioDraft;
 }
 
+/**
+ * Every order of one drafted trio as lead, switch, closer that the style allows. The draft picks
+ * an order from the matrix alone; simulating each of these lets the battle score choose instead.
+ */
+export function ordersOf(
+  draft: TrioDraft,
+  view: MatrixView,
+  index: TrioIndex,
+  opts: TrioOptions,
+): TrioDraft[] {
+  const members = prepare(draft.slots, view, index) as [Prepared, Prepared, Prepared];
+  const orders = ALL_ORDERINGS.map((o) => evaluateTrio(members, view, opts, [o]));
+  if (opts.style === 'abb') {
+    return orders.filter((d) => d.structure === 'ABB');
+  }
+  if (opts.style === 'balanced') {
+    return orders.filter((d) => d.structure === 'ABC');
+  }
+  return orders;
+}
+
 export function generateTrios(
   pool: Candidate[],
   view: MatrixView,
