@@ -26,6 +26,14 @@ describe.skipIf(!havePvPoke)('PvPokeSimulator', () => {
     shields: 1,
   };
 
+  it('knows the species in its game master and no others', () => {
+    expect(sim.knows('azumarill')).toBe(true);
+    expect(sim.knows('not-a-species')).toBe(false);
+    expect(() =>
+      sim.simulate({ ...azu, speciesId: 'not-a-species' }, altaria, GREAT_LEAGUE),
+    ).toThrow('Unknown speciesId: not-a-species');
+  });
+
   it('is deterministic and symmetric', () => {
     const r1 = sim.simulate(azu, altaria, GREAT_LEAGUE);
     const r2 = sim.simulate(azu, altaria, GREAT_LEAGUE);

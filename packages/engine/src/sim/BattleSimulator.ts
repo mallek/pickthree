@@ -28,6 +28,17 @@ export interface SimResult {
 
 export interface BattleSimulator {
   simulate(a: SimPokemonSpec, b: SimPokemonSpec, opts: SimOptions): SimResult;
+  /**
+   * Whether the simulator's game data has this species. The league data and the simulator's game
+   * master are separate files, so a device can hold league data naming a species its game master
+   * predates. Absent means every species is known.
+   */
+  knows?(speciesId: string): boolean;
+}
+
+/** True when the simulator can battle this species (see BattleSimulator.knows). */
+export function simKnows(sim: BattleSimulator, speciesId: string): boolean {
+  return sim.knows ? sim.knows(speciesId) : true;
 }
 
 export const GREAT_LEAGUE: SimOptions = { cp: 1500, levelCap: 50 };

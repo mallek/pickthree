@@ -11,6 +11,7 @@ import { facingWeight, metaRanks, type MetaRank } from '../gamedata/metaRank.js'
 import type { MatchupMatrix, MetaEntry, RankingCategory, RankingEntry } from '../gamedata/types.js';
 import { simOptionsFor } from '../gamedata/league.js';
 import { MatrixView } from '../search/matrixView.js';
+import { simKnows } from '../sim/BattleSimulator.js';
 import { simulateMatrix, specFor, type MatrixSimDeps } from '../sim/matrixSim.js';
 import { profileFor, type FacingInput } from '../yourmeta/facing.js';
 import { facingLine } from '../yourmeta/profile.js';
@@ -202,8 +203,9 @@ function simulateColumn(data: CountersData, vs: string, live: CountersLive): Mat
     return null;
   }
   const src = data.matrix;
+  // A species the simulator's game data lacks gets no matchup, so it is left out of the column.
   const candidates = src.candidates
-    .filter((id) => id !== vs)
+    .filter((id) => id !== vs && simKnows(live.sim, id))
     .slice(0, SIMULATED_CANDIDATES)
     .map((id) => ({ speciesId: id, moveset: counterMoveset(data, id) }));
   return simulateMatrix(src, candidates, [{ speciesId: vs, moveset }], live);
@@ -233,6 +235,16 @@ export function metaCounters(
   let targetView = view;
   let simulated: number | undefined;
   if (opts.vs && !target) {
+    if (live && !simKnows(live.sim, opts.vs)) {
+      return {
+        entries: [],
+        facing:
+          "Not in this device's game data yet, so there are no matchups to score; reopen pick3 to update it",
+        blended: false,
+        battles: 0,
+        vs: { speciesId: opts.vs, inMeta: false },
+      };
+    }
     const column = live ? simulateColumn(data, opts.vs, live) : null;
     if (!column) {
       return {
@@ -372,17 +384,25 @@ export function counterGrids(
   };
   const out = entries.map((e) => ({ ...e }));
   const step = Math.max(1, Math.floor(batchSize));
+  const theirsKnown = simKnows(live.sim, vs);
   for (let i = 0; i < out.length; i++) {
     const e = out[i]!;
-    const yours = { speciesId: e.speciesId, moveset: counterMoveset(data, e.speciesId) };
-    const grid: number[] = [];
-    for (const mine of GRID_SHIELDS) {
-      for (const their of GRID_SHIELDS) {
-        const r = live.sim.simulate(specFor(yours, mine, 0), specFor(theirs, their, 0), simOptions);
-        grid.push(r.rating);
+    // A species the simulator's game data lacks keeps no grid, and sorts as no cells won.
+    if (theirsKnown && simKnows(live.sim, e.speciesId)) {
+      const yours = { speciesId: e.speciesId, moveset: counterMoveset(data, e.speciesId) };
+      const grid: number[] = [];
+      for (const mine of GRID_SHIELDS) {
+        for (const their of GRID_SHIELDS) {
+          const r = live.sim.simulate(
+            specFor(yours, mine, 0),
+            specFor(theirs, their, 0),
+            simOptions,
+          );
+          grid.push(r.rating);
+        }
       }
+      e.grid = grid;
     }
-    e.grid = grid;
     const done = i + 1;
     // The last batch is not reported: the sorted result follows it at once.
     if (onBatch && done % step === 0 && done < out.length) {

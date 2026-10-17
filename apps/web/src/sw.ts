@@ -13,7 +13,7 @@ import {
   precacheAndRoute,
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { SHARE_CACHE, SHARE_KEY, SHARE_LANDING, SHARE_PATH } from './share-protocol.ts';
 
 declare let self: ServiceWorkerGlobalScope;
@@ -79,12 +79,26 @@ registerRoute(
   }),
 );
 
+// The data manifest names the build the engine worker reads every other /data file at (?v=), so
+// it comes from the network when there is one; offline, the cached manifest still names files
+// that were cached at its build.
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname === '/data/data-manifest.json',
+  new NetworkFirst({
+    cacheName: 'pick3-manifest',
+    networkTimeoutSeconds: 4,
+    plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })] as unknown as WorkboxPlugin[],
+  }),
+);
+
 registerRoute(
   ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/data/'),
   new StaleWhileRevalidate({
     cacheName: 'pick3-data',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+      // The worker's reads are keyed by build (?v=) and the Meta tab's are not, so a league can
+      // hold two copies of a file; older builds age out.
+      new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
     ] as unknown as WorkboxPlugin[],
   }),

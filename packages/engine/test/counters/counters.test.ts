@@ -329,3 +329,57 @@ describe.skipIf(!haveStaticData())('the shield grid against an outsider', () => 
     });
   });
 });
+
+/** The game master less some species: a device whose cached copy predates its league data. */
+function gameMasterWithout(...drop: string[]): unknown {
+  const gm = readGameMaster() as { pokemon: { speciesId: string }[] };
+  return { ...gm, pokemon: gm.pokemon.filter((p) => !drop.includes(p.speciesId)) };
+}
+
+describe.skipIf(!haveStaticData())('counters when the simulator lacks a species', () => {
+  const data = loadStaticData();
+  const index = new GameDataIndex(data.species, data.moves);
+  const cols = new Set(data.matrix.opponents);
+  const outsider = data.rankings.overall.find(
+    (e) => !cols.has(e.speciesId) && e.moveset.length >= 3,
+  )!.speciesId;
+  const metaTarget = data.matrix.opponents[0]!;
+  const liveWithout = (...drop: string[]) => ({
+    sim: new PvPokeSimulator(loadPvPokeInNode(gameMasterWithout(...drop))),
+    league: data.league,
+  });
+
+  it('has no matchups against an outsider it cannot simulate, and does not throw', () => {
+    const r = metaCounters(data, [], index, { limit: 10, vs: outsider }, liveWithout(outsider));
+    expect(r.entries).toEqual([]);
+    expect(r.vs).toEqual({ speciesId: outsider, inMeta: false });
+    expect(r.facing).toMatch(/game data/);
+  });
+
+  it("leaves a counter it cannot simulate out of an outsider's column", () => {
+    const missing = data.matrix.candidates.find((id) => id !== outsider)!;
+    const live = liveWithout(missing);
+    const r = metaCounters(data, [], index, { limit: 40, vs: outsider }, live);
+    expect(r.entries.length).toBeGreaterThan(0);
+    expect(r.entries.map((e) => e.speciesId)).not.toContain(missing);
+    const { entries } = counterGrids(data, outsider, r.entries, live);
+    expect(entries.every((e) => e.grid !== null)).toBe(true);
+  });
+
+  it('gives no grid to a counter it cannot simulate against a meta-group opponent', () => {
+    const first = metaCounters(data, [], index, { limit: 10, vs: metaTarget });
+    const missing = first.entries[0]!.speciesId;
+    const { entries } = counterGrids(data, metaTarget, first.entries, liveWithout(missing));
+    expect(entries).toHaveLength(first.entries.length);
+    expect(entries.find((e) => e.speciesId === missing)!.grid).toBeNull();
+    expect(entries.filter((e) => e.speciesId !== missing).every((e) => e.grid !== null)).toBe(true);
+  });
+
+  it('gives no grids against a meta-group opponent it cannot simulate', () => {
+    const first = metaCounters(data, [], index, { limit: 10, vs: metaTarget });
+    const { entries } = counterGrids(data, metaTarget, first.entries, liveWithout(metaTarget));
+    const ids = (es: CounterEntry[]): string[] => es.map((e) => e.speciesId).sort();
+    expect(ids(entries)).toEqual(ids(first.entries));
+    expect(entries.every((e) => e.grid === null)).toBe(true);
+  });
+});

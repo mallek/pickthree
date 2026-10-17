@@ -12,6 +12,10 @@ export class PvPokeSimulator implements BattleSimulator {
     this.rt = runtime;
   }
 
+  knows(speciesId: string): boolean {
+    return Boolean(this.rt.gm.getPokemonById(speciesId));
+  }
+
   simulate(a: SimPokemonSpec, b: SimPokemonSpec, opts: SimOptions): SimResult {
     const battle = new this.rt.Battle();
     battle.setCP(opts.cp);
@@ -49,7 +53,7 @@ export class PvPokeSimulator implements BattleSimulator {
     battle: PvPokeBattle,
     opts: SimOptions,
   ): PvPokePokemon {
-    if (!this.rt.gm.getPokemonById(spec.speciesId)) {
+    if (!this.knows(spec.speciesId)) {
       throw new Error(`Unknown speciesId: ${spec.speciesId}`);
     }
     const p = new this.rt.Pokemon(spec.speciesId, index, battle);

@@ -32,7 +32,6 @@ import {
   type MatchupMatrix,
   type MetaEntry,
   type Move,
-  type RankingEntry,
   type ScheduleEntry,
   type Season,
   type Species,
@@ -40,6 +39,7 @@ import {
 import type { Epoch } from '@pickthree/engine/meta';
 import { PvPokeSimulator, type PvPokeRuntime } from '@pickthree/sim-pvpoke/browser';
 import type { LeagueInfo, WorkerRequest, WorkerResponse } from '../host/protocol.ts';
+import { loadBootFiles, loadLeagueFiles, type FetchFn } from './dataFiles.ts';
 
 declare const self: DedicatedWorkerGlobalScope & {
   __pvpoke?: {
@@ -54,6 +54,8 @@ declare const self: DedicatedWorkerGlobalScope & {
 const post = (m: WorkerResponse): void => self.postMessage(m);
 
 interface Env {
+  /** The data build every file was read at (see dataFiles.ts). */
+  build: string;
   species: Species[];
   moves: Move[];
   manifest: DataManifest;
@@ -80,34 +82,29 @@ interface LeagueBundle {
 let ready: Promise<Env> | null = null;
 const bundles = new Map<string, Promise<LeagueBundle>>();
 
-async function json<T>(path: string): Promise<T> {
-  const res = await fetch(path, { cache: 'force-cache' });
-  if (!res.ok) {
-    throw new Error(`Failed to load ${path}: ${res.status}`);
-  }
-  return (await res.json()) as T;
-}
+const fetchData: FetchFn = (url, init) => fetch(url, init);
 
 type BootStep = (step: string, done: number) => void;
 
 async function boot(step: BootStep): Promise<Env> {
   step('fetching game data', 0);
-  const [species, moves, manifest, leagues, gamemaster, seasons, epochs, schedule] =
-    await Promise.all([
-      json<Species[]>('/data/pokemon.json'),
-      json<Move[]>('/data/moves.json'),
-      json<DataManifest>('/data/data-manifest.json'),
-      json<League[]>('/data/leagues.json'),
-      json<unknown>('/data/gamemaster.json'),
-      json<Season[]>('/data/seasons.json').catch(() => [] as Season[]),
-      json<Epoch[]>('/data/epochs.json').catch(() => [] as Epoch[]),
-      json<ScheduleEntry[]>('/data/schedule.json').catch(() => [] as ScheduleEntry[]),
-    ]);
+  const {
+    build,
+    species,
+    moves,
+    manifest,
+    leagues,
+    gamemaster,
+    seasons,
+    epochs,
+    schedule,
+    simScript,
+  } = await loadBootFiles(fetchData);
   // The vendored PvPoke bundle reads the game master from this global when its shimmed ajax
   // callback is flushed (see packages/sim-pvpoke/src/globals-shim.js).
   step('loading simulator', 1);
   self.__PICKTHREE_GAMEMASTER__ = gamemaster;
-  self.importScripts('/data/vendor/pvpoke-sim.js');
+  self.importScripts(simScript);
   step('starting simulator', 2);
   const exported = self.__pvpoke;
   if (!exported) {
@@ -125,7 +122,19 @@ async function boot(step: BootStep): Promise<Env> {
   const sim = new PvPokeSimulator(runtime);
   const index = new GameDataIndex(species, moves);
   step('ready', 4);
-  return { species, moves, manifest, leagues, sim, index, seasons, schedule, epochs, gamemaster };
+  return {
+    build,
+    species,
+    moves,
+    manifest,
+    leagues,
+    sim,
+    index,
+    seasons,
+    schedule,
+    epochs,
+    gamemaster,
+  };
 }
 
 function ensureReady(step: BootStep): Promise<Env> {
@@ -143,27 +152,7 @@ function bundleFor(env: Env, id: string): Promise<LeagueBundle> {
     if (!league) {
       return Promise.reject(new Error(`Unknown league ${id}`));
     }
-    p = (async () => {
-      const [overall, leads, switches, closers, chargers, meta, matrix, legal] = await Promise.all([
-        json<RankingEntry[]>(`/data/rankings/${id}/overall.json`),
-        json<RankingEntry[]>(`/data/rankings/${id}/leads.json`),
-        json<RankingEntry[]>(`/data/rankings/${id}/switches.json`),
-        json<RankingEntry[]>(`/data/rankings/${id}/closers.json`),
-        json<RankingEntry[]>(`/data/rankings/${id}/chargers.json`),
-        json<MetaEntry[]>(`/data/meta/${id}.json`),
-        json<MatchupMatrix>(`/data/matrix/${id}.json`),
-        json<{ banned: string[] }>(`/data/legal/${id}.json`).catch(() => ({
-          banned: [] as string[],
-        })),
-      ]);
-      return {
-        league,
-        rankings: { overall, leads, switches, closers, chargers },
-        meta,
-        matrix,
-        banned: legal.banned,
-      };
-    })();
+    p = loadLeagueFiles(fetchData, env.build, id).then((files) => ({ league, ...files }));
     bundles.set(id, p);
     p.catch(() => bundles.delete(id));
   }
