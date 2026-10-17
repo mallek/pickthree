@@ -215,10 +215,15 @@ async function boot(more?: Parameters<typeof fakeHost>[0], specimens?: Specimen[
 }
 
 async function go(route: Route): Promise<void> {
+  await navigateTo(route);
+  await waitFor(() => expect(latest?.state.route.screen).toBe(route.screen));
+}
+
+/** Navigate without waiting to see the screen: an old link may hand off before a render shows it. */
+async function navigateTo(route: Route): Promise<void> {
   await act(async () => {
     latest!.actions.navigate(route);
   });
-  await waitFor(() => expect(latest?.state.route.screen).toBe(route.screen));
 }
 
 /** Edit, opened from the copy's species page as the app opens it. */
@@ -271,7 +276,7 @@ describe('an old Pokémon link', () => {
   it('hands off to the copy on its own species page, taking the link place in history', async () => {
     await boot();
     await go({ screen: 'collection' });
-    await go({ screen: 'specimen', id: 'b' });
+    await navigateTo({ screen: 'specimen', id: 'b' });
     await waitFor(() =>
       expect(latest?.state.route).toEqual({ screen: 'species', id: 'azumarill', copy: 'b' }),
     );
@@ -285,7 +290,7 @@ describe('an old Pokémon link', () => {
 
   it('a Shadow lands on its Shadow form page', async () => {
     await boot();
-    await go({ screen: 'specimen', id: 'h' });
+    await navigateTo({ screen: 'specimen', id: 'h' });
     await waitFor(() =>
       expect(latest?.state.route).toEqual({ screen: 'species', id: 'dragonite_shadow', copy: 'h' }),
     );
