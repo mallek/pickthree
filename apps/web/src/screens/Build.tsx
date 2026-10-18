@@ -112,6 +112,7 @@ export function Build() {
   // then applies in whatever league is already in play.
   const route = s.route.screen === 'build' ? s.route : null;
   const lead = route?.lead ?? null;
+  const leadCopy = route?.copy ?? null;
   const routeLeague = route?.league ?? null;
   const knownRouteLeague =
     routeLeague !== null && (s.data?.leagues.some((l) => l.id === routeLeague) ?? false);
@@ -128,15 +129,32 @@ export function Build() {
       setLeague(routeLeague!);
       return;
     }
-    if (s.boot !== 'ready' || !s.leagueInfo || switchingLeague) {
+    // A named copy waits for the stored collection too, so it is not taken for one that is gone.
+    if (
+      s.boot !== 'ready' ||
+      !s.leagueInfo ||
+      switchingLeague ||
+      (leadCopy !== null && !s.settingsLoaded)
+    ) {
       return;
     }
     if (s.leagueInfo.analyzable.includes(lead)) {
-      setPick(0, { kind: 'species', id: lead });
+      // The species page names a copy only when it builds as this species: run that one.
+      const mine =
+        leadCopy !== null && (s.collection?.specimens ?? []).some((sp) => sp.id === leadCopy);
+      setPick(
+        0,
+        mine
+          ? { kind: 'specimen', id: leadCopy, asSpeciesId: lead }
+          : { kind: 'species', id: lead },
+      );
     }
     navigate({ screen: 'build' }, { replace: true });
   }, [
     lead,
+    leadCopy,
+    s.settingsLoaded,
+    s.collection,
     knownRouteLeague,
     routeLeague,
     switchingLeague,

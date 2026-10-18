@@ -553,9 +553,10 @@ describe('Species page', () => {
       '#/species/medicham',
     ]);
 
+    // Build around it runs the copy shown, not a top-10% stand-in.
     expect(screen.getByRole('link', { name: 'Build around it' })).toHaveAttribute(
       'href',
-      '#/build?lead=azumarill',
+      '#/build?lead=azumarill&copy=a2',
     );
     expect(screen.getByRole('link', { name: 'Who beats it' })).toHaveAttribute(
       'href',
@@ -598,6 +599,11 @@ describe('Species page', () => {
     expect(
       [...document.querySelectorAll('.ui-btn-primary')].map((e) => e.textContent?.trim()),
     ).toEqual(['Build around it']);
+    // Nothing of yours to run: Build around it is the species alone.
+    expect(screen.getByRole('link', { name: 'Build around it' })).toHaveAttribute(
+      'href',
+      '#/build?lead=clodsire',
+    );
 
     const moves = section('Moves players ran');
     const names = [...moves.querySelectorAll('.move-name')].map((e) => e.textContent);
@@ -1074,6 +1080,30 @@ describe('Species page: your copies', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pin for Great League' }));
     expect(screen.getByRole('alertdialog')).toHaveTextContent(
       'pick3 picks your best Azumarill for each league. This pins this one for Great League, so teams use it.',
+    );
+  });
+
+  it('Build around it names the copy shown, and follows a tapped copy', async () => {
+    await seed();
+    renderManaged();
+    await screen.findByRole('heading', { name: 'Your Azumarill' });
+    const around = (): string | null =>
+      screen.getByRole('link', { name: 'Build around it' }).getAttribute('href');
+    expect(around()).toBe('#/build?lead=azumarill&copy=a2');
+    fireEvent.click(yoursRows()[1]!);
+    await waitFor(() => expect(around()).toBe('#/build?lead=azumarill&copy=a3'));
+  });
+
+  it('Build around it is the species alone when the copy shown cannot be built as it', async () => {
+    await seed();
+    const over = { ...MANAGED.a2!, label: 'Not eligible', build: null } as unknown as Verdict;
+    renderManaged({
+      speciesView: viewFake({ azumarill: { ids: ['a2'], verdicts: { a2: over } } }),
+    });
+    await screen.findByRole('heading', { name: 'Your Azumarill' });
+    expect(screen.getByRole('link', { name: 'Build around it' })).toHaveAttribute(
+      'href',
+      '#/build?lead=azumarill',
     );
   });
 

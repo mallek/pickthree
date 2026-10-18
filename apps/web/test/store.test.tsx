@@ -237,6 +237,20 @@ describe('routes', () => {
     expect(parseHash('#/build?l=ultra')).toEqual({ screen: 'build' });
     const route = { screen: 'build' as const, lead: 'azumarill', league: 'ultra' };
     expect(parseHash(hashFor(route))).toEqual(route);
+    // A species page's Build around it names the copy shown; the copy only tags along with a lead.
+    expect(parseHash('#/build?lead=azumarill&copy=a2')).toEqual({
+      screen: 'build',
+      lead: 'azumarill',
+      copy: 'a2',
+    });
+    expect(parseHash('#/build?copy=a2')).toEqual({ screen: 'build' });
+    expect(parseHash('#/build?lead=azumarill&copy=bad id')).toEqual({
+      screen: 'build',
+      lead: 'azumarill',
+    });
+    const withCopy = { screen: 'build' as const, lead: 'azumarill', copy: 'a2' };
+    expect(hashFor(withCopy)).toBe('#/build?lead=azumarill&copy=a2');
+    expect(parseHash(hashFor(withCopy))).toEqual(withCopy);
   });
   it('parses and prints the Counters route with a species to score against', () => {
     expect(parseHash('#/counters')).toEqual({ screen: 'counters' });

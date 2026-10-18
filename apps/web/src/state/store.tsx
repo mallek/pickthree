@@ -125,8 +125,11 @@ export type Route =
    */
   | { screen: 'species'; id: string; league?: string; copy?: string }
   | { screen: 'counters'; vs?: string; league?: string; from?: true }
-  /** A Build lead link: the species for pick 0, and the league an inbound link names. */
-  | { screen: 'build'; lead?: string; league?: string }
+  /**
+   * A Build lead link: the species for pick 0, the league an inbound link names, and the copy of
+   * yours a species page's Build around it runs as that species.
+   */
+  | { screen: 'build'; lead?: string; league?: string; copy?: string }
   | { screen: 'custom' }
   /** Add a Pokémon by hand, optionally prefilled with a species; `edit` names one to correct. */
   | { screen: 'add'; species?: string; edit?: string }
@@ -649,9 +652,16 @@ export function parseHash(hash: string): Route {
     if (!lead) {
       return { screen: 'build' };
     }
-    // A league from an inbound link; kept only alongside a lead, same as counters' `l`.
+    // A league from an inbound link and a copy from a species page, kept only alongside a lead,
+    // same as counters' `l`.
     const league = leagueParam(params.get('l'));
-    return league ? { screen: 'build', lead, league } : { screen: 'build', lead };
+    const copy = params.get('copy');
+    return {
+      screen: 'build',
+      lead,
+      ...(league ? { league } : {}),
+      ...(copy !== null && SPECIMEN_ID.test(copy) ? { copy } : {}),
+    };
   }
   if (a === 'add') {
     const params = new URLSearchParams(query ?? '');
@@ -751,6 +761,9 @@ export function hashFor(r: Route): string {
       params.set('lead', r.lead);
       if (r.league) {
         params.set('l', r.league);
+      }
+      if (r.copy) {
+        params.set('copy', r.copy);
       }
       return `#/build?${params.toString()}`;
     }

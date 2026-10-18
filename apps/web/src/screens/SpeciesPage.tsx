@@ -963,7 +963,11 @@ export function SpeciesPage({ id }: { id: string }) {
         </div>
 
         <div className="stack" style={{ gap: 8 }}>
-          <Button variant="primary" href={hashFor({ screen: 'build', lead: id })}>
+          {/* Your copy shown, when it builds as this species; the top-10% stand-in otherwise. */}
+          <Button
+            variant="primary"
+            href={hashFor({ screen: 'build', lead: id, ...(sp && build ? { copy: sp.id } : {}) })}
+          >
             Build around it
           </Button>
           {/* The back mark: Counters shows Back to this page. */}

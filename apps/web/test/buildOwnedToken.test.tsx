@@ -147,6 +147,35 @@ describe("Build's species token", () => {
   });
 });
 
+describe("Build's lead link from a species page", () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    resetDbForTests();
+    window.location.hash = '';
+    resetHistoryForTests();
+    latest = null;
+  });
+
+  it('runs the copy the link names as the lead, not the top-10% stand-in', async () => {
+    window.location.hash = '#/build?lead=tinkaton&copy=low';
+    await open([HIGH, LOW], async () => ({
+      high: verdict('high', false),
+      low: verdict('low', true),
+    }));
+    await waitFor(() =>
+      expect(latest?.picks[0]).toEqual({ kind: 'specimen', id: 'low', asSpeciesId: 'tinkaton' }),
+    );
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+  });
+
+  it('falls back to the species when the named copy is not in the collection', async () => {
+    window.location.hash = '#/build?lead=tinkaton&copy=gone';
+    await open([LOW], async () => ({ low: verdict('low', true) }));
+    await waitFor(() => expect(window.location.hash).toBe('#/build'));
+    expect(latest?.picks[0]).toEqual({ kind: 'species', id: 'tinkaton' });
+  });
+});
+
 describe("Build's tokens for your own Mega", () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
