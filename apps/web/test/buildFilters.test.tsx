@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import type { Specimen, Verdict } from '@pickthree/engine';
 import { IDBFactory } from 'fake-indexeddb';
 import { useEffect } from 'react';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetStickyForTests, useSticky } from '../src/components.tsx';
 import { Build } from '../src/screens/Build.tsx';
@@ -356,5 +356,80 @@ describe('Build with Yours only on', () => {
     await waitFor(() => expect(gridNames()).toEqual(['Tinkaton', 'Medicham']));
     fireEvent.click(screen.getByRole('radio', { name: 'Ultra League' }));
     await waitFor(() => expect(gridNames()).toEqual(['Tinkaton']));
+  });
+
+  it('shows no endless loader when verdicts failed', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
+    await openWith([copy('t1', 'tinkaton')], [], {
+      verdicts: async () => {
+        throw new Error('worker died');
+      },
+    });
+    await waitFor(() => expect(latest?.verdictsError).not.toBeNull());
+    await flipYoursOnly();
+    await screen.findByText('Your Pokémon could not be checked for this league.');
+    expect(screen.queryByText('Judging each Pokémon')).toBeNull();
+  });
+
+  it('puts species with no rank last, even past rank 1000', async () => {
+    const base = fakeHost();
+    const greatInfo = await base.leagueInfo('great');
+    await openWith(
+      [copy('m1', 'medicham'), copy('t1', 'tinkaton')],
+      [
+        verdictOf('m1', 'medicham', 'Worth building'),
+        verdictOf('t1', 'tinkaton', 'Worth building'),
+      ],
+      {
+        host: {
+          // Tinkaton is ranked 1200; Medicham has no rank at all.
+          leagueInfo: vi.fn(async () => ({
+            ...greatInfo,
+            metaRanks: { tinkaton: { overall: 1200, score: 10, role: null, roleRank: null } },
+          })),
+        },
+      },
+    );
+    await flipYoursOnly();
+    await waitFor(() => expect(gridNames()).toEqual(['Tinkaton', 'Medicham']));
+  });
+
+  it('says none can be built when the collection has no Pokémon', async () => {
+    await openWith([], []);
+    await flipYoursOnly();
+    await screen.findByText('None of your Pokémon can be built for this league.');
+    expect(screen.queryByText('Judging each Pokémon')).toBeNull();
+  });
+
+  it('keeps Yours only on after leaving Build and coming back', async () => {
+    const verdicts = { t1: verdictOf('t1', 'tinkaton', 'Worth building') };
+    await openWith([copy('t1', 'tinkaton')], Object.values(verdicts));
+    await flipYoursOnly();
+    await screen.findByRole('button', { name: 'Filters, 1 on' });
+    cleanup();
+    render(
+      <AppProvider host={fakeHost({ verdicts: vi.fn(async () => verdicts) })}>
+        <Probe />
+        <Build />
+      </AppProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Lead, empty' }));
+    await screen.findByPlaceholderText('Search your Pokémon for Lead');
+    await screen.findByRole('button', { name: 'Filters, 1 on' });
+  });
+
+  it('offers one token per species and fills the Built copy', async () => {
+    await openWith(
+      [copy('w1', 'tinkaton'), copy('b1', 'tinkaton')],
+      [
+        // The Worth building copy has the better IV rank, so only its label can lose the tie.
+        verdictOf('w1', 'tinkaton', 'Worth building', 5),
+        verdictOf('b1', 'tinkaton', 'Built', 90),
+      ],
+    );
+    await flipYoursOnly();
+    await waitFor(() => expect(gridNames()).toEqual(['Tinkaton']));
+    fireEvent.click(document.querySelector('.recent-row .recent-token') as HTMLElement);
+    await waitFor(() => expect(latest?.picks[0]).toMatchObject({ kind: 'specimen', id: 'b1' }));
   });
 });

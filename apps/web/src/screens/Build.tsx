@@ -341,12 +341,20 @@ export function Build() {
   );
   const suggested = useMemo((): GridItem[] => {
     if (yoursOnly) {
+      // A species with no rank goes last, however deep the league's rankings run. Compared rather
+      // than subtracted, so two unranked species tie instead of making NaN.
+      const rankOf = (id: string): number => ranks[id] ?? Number.POSITIVE_INFINITY;
+      const byMetaRank = (a: string, b: string): number => {
+        const ra = rankOf(a);
+        const rb = rankOf(b);
+        return ra === rb ? 0 : ra < rb ? -1 : 1;
+      };
       // Your best copy of each species you can run here, in the league's meta order.
       const seen = new Set<string>();
       return (s.collection?.specimens ?? [])
         .filter(usable)
         .flatMap(tokensOf)
-        .sort((a, b) => (ranks[a.stage] ?? 999) - (ranks[b.stage] ?? 999) || byWorth(a.sp, b.sp))
+        .sort((a, b) => byMetaRank(a.stage, b.stage) || byWorth(a.sp, b.sp))
         .filter(({ stage }) => {
           if (seen.has(stage)) {
             return false;
@@ -388,11 +396,15 @@ export function Build() {
    * verdicts, so neither "none match" nor "none can be built" is true yet: say nothing then. If the
    * verdicts failed, nothing was judged and neither is true either.
    */
+  const awaitingVerdicts =
+    !s.verdictsError &&
+    Object.keys(s.verdicts).length === 0 &&
+    (s.verdictsLoading || (s.collection?.specimens ?? []).some((sp) => Boolean(sp.ivs)));
   const yoursEmptyLine = ((): string | null => {
     if (s.verdictsError) {
       return 'Your Pokémon could not be checked for this league.';
     }
-    if (s.verdictsLoading || Object.keys(s.verdicts).length === 0) {
+    if (s.verdictsLoading || awaitingVerdicts) {
       return null;
     }
     return searching
@@ -737,7 +749,7 @@ export function Build() {
                 No collection imported. Import a CSV to include your own Pokémon here.
               </p>
             ) : null}
-            {s.collection && Object.keys(s.verdicts).length === 0 ? (
+            {s.collection && awaitingVerdicts ? (
               <Progress stage="verdicts" done={0} total={0} />
             ) : null}
           </div>

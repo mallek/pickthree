@@ -30,9 +30,9 @@ nothing new below the fold).
 | State | Dark | Light |
 | --- | --- | --- |
 | `build-empty`: three dashed empty slots, no lineup hint (there is no card to tap yet), Find best order and Analyze both disabled | ![](img/build-empty-dark.webp) | ![](img/build-empty-light.webp) |
-| `build-choosing` (re-captured 2026-10-18 for the filter button, see the addendum): the Lead slot's search open, "Choosing Lead" with the role's job above it, the filter button beside the search, the Suggested grid ("yours" tags on owned species) | ![](img/build-choosing-dark.webp) | ![](img/build-choosing-light.webp) |
-| `build-filters-sheet` (addendum, 2026-10-18): the Filters sheet over the open Lead search, Yours only switched on, the badge showing 1 on the filter button behind it | ![](img/build-filters-sheet-dark.webp) | ![](img/build-filters-sheet-light.webp) |
-| `build-yours-only` (addendum, 2026-10-18): Yours only on, the sheet closed, the Lead search still open ("Search your Pokémon for Lead"), Suggested showing only your copies in meta order, each still tagged "yours" | ![](img/build-yours-only-dark.webp) | ![](img/build-yours-only-light.webp) |
+| `build-choosing` (re-captured 2026-10-19 for the filter button, see the addendum): the Lead slot's search open, "Choosing Lead" with the role's job above it, the filter button beside the search, the Suggested grid ("yours" tags on owned species) | ![](img/build-choosing-dark.webp) | ![](img/build-choosing-light.webp) |
+| `build-filters-sheet` (addendum, 2026-10-19): the Filters sheet over the open Lead search, Yours only switched on, the badge showing 1 on the filter button behind it | ![](img/build-filters-sheet-dark.webp) | ![](img/build-filters-sheet-light.webp) |
+| `build-yours-only` (addendum, 2026-10-19): Yours only on, the sheet closed, the Lead search still open ("Search your Pokémon for Lead"), Suggested showing only your copies in meta order, each still tagged "yours" | ![](img/build-yours-only-dark.webp) | ![](img/build-yours-only-light.webp) |
 | `build-suggestions`: one pick made (Skarmory), "Best with your first pick" with two + Add rows, each a reason against the pin alone | ![](img/build-suggestions-dark.webp) | ![](img/build-suggestions-light.webp) |
 | `13-build`: all three slots filled with species picks (none owned), "None of these are yours yet, so there is nothing to price.", Analyze enabled (full page) | ![](img/13-build-dark.webp) | ![](img/13-build-light.webp) |
 | `13b-build-moves`: the move sheet open on Azumarill, two charged moves ticked, the third disabled with "Untick one to pick another" and a "Changed" tag on the swapped move | ![](img/13b-build-moves-dark.webp) | ![](img/13b-build-moves-light.webp) |
@@ -358,7 +358,7 @@ Open items for Travis (not fixed on this branch):
   design pass ("Find best order (shuffle icon) in the section header", design intake, Page 2,
   first pass). Not in this page's scope; a small follow-up.
 
-## Addendum: search filters (2026-10-18)
+## Addendum: search filters (2026-10-19)
 
 Spec: `docs/superpowers/specs/2026-10-18-build-search-filters-design.md`. Build's slot search gets
 Collection's filter pattern: an icon-only filter button beside the input (count badge when a
