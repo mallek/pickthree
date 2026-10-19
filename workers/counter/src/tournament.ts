@@ -173,7 +173,7 @@ export function parseEventBody(body: unknown, id: string): Parsed<EventInput> {
   if (league === null || cup === null) {
     return fail(-1, 'bad league or cup');
   }
-  const vods = parseVods(body['vods']);
+  const vods = parseVods(body['vods'], startDate, endDate);
   if (vods === null) {
     return fail(-1, 'bad vods');
   }
@@ -187,13 +187,17 @@ export function parseEventBody(body: unknown, id: string): Parsed<EventInput> {
   };
 }
 
-/** Day-keyed `[{day, id}]`, or a bare id list read as days 1..n so every new write is day-keyed. */
-function parseVods(raw: unknown): VodDay[] | null {
+/** Day-keyed `[{day, id}]`. A bare id list maps to days 1..n only when it has exactly one id per
+ *  event day, else nothing: a short list might skip a day, and a guess would link the wrong
+ *  broadcast. Every new write is day-keyed. */
+function parseVods(raw: unknown, startDate: string, endDate: string): VodDay[] | null {
   if (!Array.isArray(raw)) {
     return null;
   }
+  const days = Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86_400_000) + 1;
   const out: VodDay[] = [];
   const seen = new Set<number>();
+  let bare = false;
   for (let i = 0; i < raw.length; i++) {
     const v: unknown = raw[i];
     if (typeof v === 'string') {
@@ -202,6 +206,7 @@ function parseVods(raw: unknown): VodDay[] | null {
         return null;
       }
       out.push({ day: i + 1, id });
+      bare = true;
       continue;
     }
     if (!isRecord(v)) {
@@ -215,7 +220,7 @@ function parseVods(raw: unknown): VodDay[] | null {
     seen.add(day);
     out.push({ day, id });
   }
-  return out;
+  return bare && out.length !== days ? [] : out;
 }
 
 function parseSide(x: unknown): SideInput | string {

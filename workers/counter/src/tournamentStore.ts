@@ -176,7 +176,14 @@ function readVods(raw: string, startDate: string, endDate: string): VodDay[] {
     const days = Math.round((Date.parse(endDate) - Date.parse(startDate)) / DAY_MS) + 1;
     return parsed.length === days ? parsed.map((id, i) => ({ day: i + 1, id: String(id) })) : [];
   }
-  return parsed as VodDay[];
+  return parsed.filter(
+    (v): v is VodDay =>
+      typeof v === 'object' &&
+      v !== null &&
+      Number.isInteger((v as VodDay).day) &&
+      (v as VodDay).day >= 1 &&
+      typeof (v as VodDay).id === 'string',
+  );
 }
 
 function eventRow(r: Record<string, unknown>): EventRow {
