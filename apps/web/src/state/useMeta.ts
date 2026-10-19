@@ -13,12 +13,16 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import {
+  BUCKET_MS,
   blendedOrder,
   buildBoard,
   rankSpecies,
   rankTrend,
+  recentSince,
   type ApiWindow,
   type Board,
+  type EventDetailV1,
+  type EventsV1,
   type MetaSummaryV1,
   type SourceKey,
   type SpeciesDetailV1,
@@ -29,6 +33,8 @@ import {
 import { communityLeague } from '../communityMeta.ts';
 import {
   apiWindow,
+  fetchEventDetail,
+  fetchEvents,
   fetchSpeciesDetail,
   fetchSummary,
   fetchTeamsBoard,
@@ -377,4 +383,30 @@ export function useSpeciesDetail(
     window,
     source,
   ]) as Loaded<SpeciesDetailV1>;
+}
+
+/** Leagues whose tournament events are read: the worker files them all under Great League. */
+const EVENT_LEAGUES = new Set(['great', 'championshipseries']);
+
+/**
+ * Tournament events from the last RECENT_DAYS, newest as the worker orders them. Outside Great
+ * League and the Tournament league it settles ready with no events and makes no read. The window
+ * ends on the current ten minute bucket, so readers share a cache entry.
+ */
+export function useRecentEvents(league: string): Loaded<EventsV1> {
+  const wanted = EVENT_LEAGUES.has(league);
+  const now = new Date();
+  const since = recentSince(now);
+  const until = new Date(Math.ceil(now.getTime() / BUCKET_MS) * BUCKET_MS).toISOString();
+  const run = (): Promise<EventsV1> =>
+    wanted
+      ? remember(`events|${since}|${until}`, () => fetchEvents(since, until))
+      : Promise.resolve({ events: [] });
+  return useLoad(run, [wanted, since, until]);
+}
+
+/** One tournament event's detail, kept for the session. */
+export function useEventDetail(id: string): Loaded<EventDetailV1> {
+  const run = (): Promise<EventDetailV1> => remember(`event|${id}`, () => fetchEventDetail(id));
+  return useLoad(run, [id]);
 }

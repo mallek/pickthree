@@ -2,13 +2,15 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Board, SourceKey, SpeciesDetailV1, WindowKey } from '@pickthree/engine/meta';
+import type { Board, EventDetailV1, EventsV1, SourceKey, SpeciesDetailV1, WindowKey } from '@pickthree/engine/meta';
 import { COUNTER_ORIGIN } from '../src/counter.ts';
 import { resetMetaDataForTests } from '../src/metaData.ts';
 import {
   EMPTY_SUMMARY,
   resetMetaHooksForTests,
+  useEventDetail,
   useMetaRanking,
+  useRecentEvents,
   useSpeciesDetail,
   useTopTeams,
   type Loaded,
@@ -149,6 +151,12 @@ function stubNet(net: Net) {
       }
       if (url.pathname === '/api/v1/teams') {
         return json(TEAMS);
+      }
+      if (url.pathname === '/api/v1/events') {
+        return json({ events: [] });
+      }
+      if (url.pathname.startsWith('/api/v1/events/')) {
+        return json({ id: url.pathname.slice('/api/v1/events/'.length) });
       }
       if (url.pathname.startsWith('/api/v1/species/')) {
         return json(DETAIL);
@@ -454,5 +462,51 @@ describe('useSpeciesDetail', () => {
     await waitFor(() => expect(detail?.state).toBe('ready'));
     expect(detail?.data).toBeNull();
     expect(net.api).toHaveLength(0);
+  });
+});
+
+describe('tournament event hooks', () => {
+  let events: Loaded<EventsV1> | null = null;
+  let eventDetail: Loaded<EventDetailV1> | null = null;
+  function EventsProbe(props: { league: string }) {
+    events = useRecentEvents(props.league);
+    return null;
+  }
+  function EventProbe(props: { id: string }) {
+    eventDetail = useEventDetail(props.id);
+    return null;
+  }
+
+  it('makes no read outside Great League and the Tournament league', async () => {
+    const net = freshNet();
+    stubNet(net);
+    mount(<EventsProbe league="ultra" />);
+    await waitFor(() => expect(events?.state).toBe('ready'));
+    expect(events?.data).toEqual({ events: [] });
+    expect(net.api).toHaveLength(0);
+  });
+
+  it('asks for league=great from the Tournament league, over the recent window', async () => {
+    at('2026-10-19T12:03:00Z');
+    const net = freshNet();
+    stubNet(net);
+    mount(<EventsProbe league="championshipseries" />);
+    await waitFor(() => expect(events?.state).toBe('ready'));
+    expect(net.api).toHaveLength(1);
+    expect(net.api[0]?.pathname).toBe('/api/v1/events');
+    expect(net.api[0]?.searchParams.get('league')).toBe('great');
+    expect(net.api[0]?.searchParams.get('since')).toBe('2026-08-25T00:00:00.000Z');
+    expect(net.api[0]?.searchParams.get('until')).toBe('2026-10-19T12:10:00.000Z');
+  });
+
+  it('reads an event once per session', async () => {
+    const net = freshNet();
+    stubNet(net);
+    const first = mount(<EventProbe id="nice-2026" />);
+    await waitFor(() => expect(eventDetail?.state).toBe('ready'));
+    first.unmount();
+    mount(<EventProbe id="nice-2026" />);
+    await waitFor(() => expect(eventDetail?.state).toBe('ready'));
+    expect(net.api.filter((u) => u.pathname === '/api/v1/events/nice-2026')).toHaveLength(1);
   });
 });

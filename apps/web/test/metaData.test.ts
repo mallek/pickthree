@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApiWindow } from '@pickthree/engine/meta';
 import {
   apiWindow,
+  fetchEventDetail,
+  fetchEvents,
   fetchSpeciesDetail,
   fetchSummary,
   fetchTeamsBoard,
@@ -229,5 +231,27 @@ describe('weekEarlier', () => {
     expect(
       weekEarlier({ ...W, since: '2026-09-23T00:00:00.000Z', until: '2026-09-30T00:00:00.000Z' }),
     ).toBeNull();
+  });
+});
+
+describe('tournament event reads', () => {
+  it('asks for the great league events in a window', async () => {
+    const { fetcher, calls } = stub({ [COUNTER_ORIGIN]: { events: [] } });
+    const got = await fetchEvents('2026-08-25T00:00:00.000Z', '2026-10-19T12:10:00.000Z', fetcher);
+    expect(got).toEqual({ events: [] });
+    expect(calls[0]?.url).toBe(
+      `${COUNTER_ORIGIN}/api/v1/events?league=great&since=2026-08-25T00%3A00%3A00.000Z&until=2026-10-19T12%3A10%3A00.000Z`,
+    );
+  });
+
+  it('reads one event by id, encoded into the path', async () => {
+    const { fetcher, calls } = stub({ [COUNTER_ORIGIN]: { id: 'x' } });
+    await fetchEventDetail('nice/2026', fetcher);
+    expect(calls[0]?.url).toBe(`${COUNTER_ORIGIN}/api/v1/events/nice%2F2026`);
+  });
+
+  it('throws on a failed read', async () => {
+    await expect(fetchEvents('a', 'b', stub({}).fetcher)).rejects.toThrow();
+    await expect(fetchEventDetail('x', stub({}).fetcher)).rejects.toThrow();
   });
 });
