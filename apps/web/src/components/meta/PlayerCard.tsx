@@ -195,8 +195,9 @@ function GameByGame({ player, event }: { player: EventPlayer; event: EventDetail
                 return (
                   <div className="build-line" key={g.game.game}>
                     <span className="build-sprites" aria-label={g.mine.map(name).join(', ')}>
-                      {g.mine.map((id) => (
-                        <PokemonToken key={id} speciesId={id} size={24} showInitial={false} />
+                      {/* A scanned three may repeat a species; position is identity. */}
+                      {g.mine.map((id, i) => (
+                        <PokemonToken key={i} speciesId={id} size={24} showInitial={false} />
                       ))}
                     </span>
                     {word ? (
@@ -214,8 +215,8 @@ function GameByGame({ player, event }: { player: EventPlayer; event: EventDetail
                       className="build-sprites"
                       aria-label={`against ${g.theirs.map(name).join(', ')}`}
                     >
-                      {g.theirs.map((id) => (
-                        <PokemonToken key={id} speciesId={id} size={20} showInitial={false} />
+                      {g.theirs.map((id, i) => (
+                        <PokemonToken key={i} speciesId={id} size={20} showInitial={false} />
                       ))}
                     </span>
                     {watch ? (

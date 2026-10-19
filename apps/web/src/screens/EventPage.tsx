@@ -5,7 +5,13 @@
  * from Build lands on the same open card with the scroll where it was.
  */
 import { useMemo } from 'react';
-import { eventPlayers, shortEventName, vodUrl, type EventDetailV1 } from '@pickthree/engine/meta';
+import {
+  eventPlayers,
+  recentSince,
+  shortEventName,
+  vodUrl,
+  type EventDetailV1,
+} from '@pickthree/engine/meta';
 import { Button, Chevron, ErrorState, Header, IconButton, Loading } from '@pickthree/ui';
 import { CogGlyph, useScrollMemory } from '../components.tsx';
 import { battlesText, count } from '../components/meta/boardView.ts';
@@ -14,16 +20,40 @@ import { eventDates } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
 import { useEventDetail } from '../state/useMeta.ts';
 
-function Event({ detail, id, p }: { detail: EventDetailV1; id: string; p: string | undefined }) {
+/** Whether an event's broadcasts are still up: its end date is inside the recent window. ISO
+ *  dates compare as text. */
+function watchable(endDate: string): boolean {
+  return endDate.slice(0, 10) >= recentSince(new Date()).slice(0, 10);
+}
+
+function EventBody({
+  detail,
+  id,
+  p,
+}: {
+  detail: EventDetailV1;
+  id: string;
+  p: string | undefined;
+}) {
   const s = useAppState();
   const { navigate } = useActions();
   const players = useMemo(() => eventPlayers(detail), [detail]);
-  const { event } = detail;
+  // Twitch keeps a broadcast about 60 days, so an event older than the recent window (a bookmark,
+  // an old link) gets no Watch links at all: with no VODs, vodUrl answers null everywhere.
+  const event = useMemo(
+    () => (watchable(detail.event.endDate) ? detail.event : { ...detail.event, vods: [] }),
+    [detail],
+  );
   const battles = detail.matches.reduce((n, m) => n + m.games.length, 0);
   const league =
     s.data?.leagues.find((l) => l.id === event.league)?.title ??
     (event.league === 'great' ? 'Great League' : event.league);
-  const days = [...event.vods].sort((a, b) => a.day - b.day);
+  const days = [...event.vods]
+    .sort((a, b) => a.day - b.day)
+    .flatMap((v) => {
+      const url = vodUrl(event, v.day);
+      return url === null ? [] : [{ day: v.day, url }];
+    });
   const wanted = p?.toLowerCase();
   const openName = players.find((pl) => pl.name.toLowerCase() === wanted)?.name ?? null;
   const toggle = (name: string): void => {
@@ -41,13 +71,7 @@ function Event({ detail, id, p }: { detail: EventDetailV1; id: string; p: string
       {days.length > 0 ? (
         <div className="stack">
           {days.map((v) => (
-            <a
-              key={v.day}
-              className="action-row"
-              href={vodUrl(event, v.day) ?? undefined}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a key={v.day} className="action-row" href={v.url} target="_blank" rel="noreferrer">
               <span>
                 <b>Watch day {v.day}</b>
                 <span className="small muted">The Twitch broadcast</span>
@@ -90,7 +114,7 @@ export function EventPage({ id, p }: { id: string; p?: string }) {
   } else if (!detail.data) {
     body = <Loading label="Loading the tournament" />;
   } else {
-    body = <Event detail={detail.data} id={id} p={p} />;
+    body = <EventBody detail={detail.data} id={id} p={p} />;
   }
   return (
     <div className="screen" data-event={id}>

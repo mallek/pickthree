@@ -162,12 +162,21 @@ function renderScreen(r: Route) {
   }
 }
 
+/** What counts as a new screen for the scroll to top. An event page's open player (`p`) is not:
+ *  opening or closing a card rewrites the route in place and must leave the scroll alone. */
+export function scrollKey(r: Route): string {
+  if (r.screen === 'meta-event') {
+    return JSON.stringify({ screen: r.screen, id: r.id });
+  }
+  return JSON.stringify(r);
+}
+
 export function App() {
   const s = useAppState();
   const r = s.route;
   // Each screen opens at the top. A screen that remembers its place (the Collection) scrolls
   // back after this runs.
-  const routeKey = JSON.stringify(r);
+  const routeKey = scrollKey(r);
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [routeKey]);

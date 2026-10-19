@@ -3,6 +3,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EventDetailV1, EventGameV1, EventMatchV1 } from '@pickthree/engine/meta';
+import { App } from '../src/App.tsx';
 import { resetMetaDataForTests } from '../src/metaData.ts';
 import { EventPage } from '../src/screens/EventPage.tsx';
 import { resetMetaHooksForTests } from '../src/state/useMeta.ts';
@@ -185,6 +186,9 @@ beforeEach(() => {
   resetMetaHooksForTests();
   stub.detail = detail();
   picks = [null, null, null];
+  // The fixture's event ended the day before: inside the recent window, so its VODs still play.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2027-10-19T12:00:00Z'));
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response('{}', { status: 404 })),
@@ -193,6 +197,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -335,6 +340,42 @@ describe('EventPage', () => {
     const gary = cardOf('Gary');
     expect(gary.querySelectorAll('button.team-row')).toHaveLength(1);
     expect(within(gary).queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
+  });
+
+  it('an event older than the recent window shows no Watch links; the rest renders', async () => {
+    // 2027-10-18 is 56 days before this: past the 55 day window, so Twitch may have deleted them.
+    vi.setSystemTime(new Date('2027-12-13T12:00:00Z'));
+    renderAt('#/meta/events/nice?p=Ash');
+    await screen.findByText('Players');
+    expect(screen.queryAllByRole('link', { name: /Watch/ })).toHaveLength(0);
+    expect(cardTitles()).toEqual(['Ash', 'Gary', 'Misty', 'Brock']);
+    expect(cardOf('Ash')).toHaveTextContent('vs Brock · Swiss Round 1');
+    expect(cardOf('Ash').querySelectorAll('.result-chip.win')).toHaveLength(4);
+  });
+
+  it('the last day of the window still links', async () => {
+    vi.setSystemTime(new Date('2027-12-12T12:00:00Z'));
+    renderAt('#/meta/events/nice');
+    await screen.findByText('Players');
+    expect(screen.getAllByRole('link', { name: /Watch day/ })).toHaveLength(2);
+  });
+
+  it('opening and closing a card in the app leaves the scroll where it was', async () => {
+    const scrollTo = vi.fn();
+    vi.stubGlobal('scrollTo', scrollTo);
+    window.location.hash = '#/meta/events/nice';
+    render(
+      <AppProvider host={fakeHost()}>
+        <App />
+      </AppProvider>,
+    );
+    await screen.findByText('Players');
+    scrollTo.mockClear();
+    fireEvent.click(within(cardOf('Gary')).getAllByRole('button')[0] as HTMLElement);
+    expect(cardOf('Gary')).toHaveClass('open');
+    fireEvent.click(within(cardOf('Gary')).getAllByRole('button')[0] as HTMLElement);
+    expect(cardOf('Gary')).not.toHaveClass('open');
+    expect(scrollTo).not.toHaveBeenCalledWith(0, 0);
   });
 
   it('loading state before the detail lands', async () => {
