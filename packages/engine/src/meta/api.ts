@@ -128,3 +128,81 @@ export interface SpeciesDetailV1 {
   tournament: SpeciesTournamentBlock | null;
   generatedAt: string;
 }
+
+/*
+ * The tournament event reads (/api/v1/events, /api/v1/events/:id). They must match
+ * workers/counter/src/tournamentRead.ts (EventListRow, EventGameV1, EventMatchV1, EventSpeciesV1,
+ * EventDetailV1) and the event row in workers/counter/src/tournamentStore.ts.
+ */
+
+/** One Twitch VOD and the event day it covers. A day with no VOD has no entry. */
+export interface VodDayV1 {
+  day: number;
+  id: string;
+}
+export interface EventListRowV1 {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  cup: string;
+  battles: number;
+  /** Battles with a winner. */
+  decided: number;
+  players: number;
+  /** Whether this event's cup feeds the league's blend. */
+  blended: boolean;
+}
+export interface EventsV1 {
+  events: EventListRowV1[];
+}
+export interface EventGameV1 {
+  game: number;
+  /** startDate + (day - 1) days + seconds into that day's VOD. */
+  at: string;
+  leftTeam: string[];
+  rightTeam: string[];
+  leftForms: string[];
+  rightForms: string[];
+  winnerSide: string | null;
+  resultSource: string | null;
+  scoreAtStart: [number, number];
+  notes: string | null;
+}
+export interface EventMatchV1 {
+  match: string;
+  day: number;
+  stage: string;
+  group: string | null;
+  roundLabel: string | null;
+  bracket: string;
+  bracketDepth: number;
+  matchFormat: string;
+  left: string;
+  right: string;
+  games: EventGameV1[];
+}
+export interface EventRosterV1 {
+  player: string;
+  species: { species: string; moves: { fast: string; charged: string[] } | null }[];
+}
+export interface EventSpeciesV1 extends TournamentSpeciesStat {
+  byDepth: number[];
+  broughtBy: number;
+}
+export interface EventDetailV1 {
+  event: {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    league: string;
+    cup: string;
+    vods: VodDayV1[];
+    notes: string | null;
+    received: string;
+  };
+  matches: EventMatchV1[];
+  roster: EventRosterV1[];
+  species: EventSpeciesV1[];
+}

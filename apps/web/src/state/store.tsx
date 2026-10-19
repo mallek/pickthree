@@ -137,6 +137,8 @@ export type Route =
   /** Top teams: window and source picks are written to the hash, the league never is. */
   | { screen: 'meta-teams'; w?: WindowKey; src?: SourceKey; league?: string }
   | { screen: 'meta-battles' }
+  | { screen: 'meta-events' }
+  | { screen: 'meta-event'; id: string; p?: string }
   /** The achievements page; `row` is the earned achievement to scroll to. */
   | { screen: 'achievements'; row?: string }
   /** Pick Your Team, optionally prefilled with one to three species ids. */
@@ -698,6 +700,14 @@ export function parseHash(hash: string): Route {
     if (b === 'battles') {
       return { screen: 'meta-battles' };
     }
+    if (b === 'events') {
+      const id = parts[2] ? decodeURIComponent(parts[2]) : '';
+      if (!id) {
+        return { screen: 'meta-events' };
+      }
+      const p = new URLSearchParams(query ?? '').get('p');
+      return p ? { screen: 'meta-event', id, p } : { screen: 'meta-event', id };
+    }
     if (b === 'teams') {
       const params = new URLSearchParams(query ?? '');
       const w = params.get('w');
@@ -796,6 +806,12 @@ export function hashFor(r: Route): string {
       return r.row ? `#/achievements?row=${encodeURIComponent(r.row)}` : '#/achievements';
     case 'meta-battles':
       return '#/meta/battles';
+    case 'meta-events':
+      return '#/meta/events';
+    case 'meta-event':
+      return r.p
+        ? `#/meta/events/${encodeURIComponent(r.id)}?p=${encodeURIComponent(r.p)}`
+        : `#/meta/events/${encodeURIComponent(r.id)}`;
     case 'meta-new':
       // Species ids are [a-z0-9_]+, so the '+' separator needs no escaping.
       return r.team && r.team.length > 0 ? `#/meta/new?team=${r.team.join('+')}` : '#/meta/new';

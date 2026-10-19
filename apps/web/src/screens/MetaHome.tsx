@@ -4,7 +4,13 @@ import {
   type SeasonStats,
   type SpeciesRecord,
 } from '@pickthree/engine';
-import { spicyPicks, type Board, type BoardRow, type SpeciesRow } from '@pickthree/engine/meta';
+import {
+  shortEventName,
+  spicyPicks,
+  type Board,
+  type BoardRow,
+  type SpeciesRow,
+} from '@pickthree/engine/meta';
 import {
   Button,
   Chevron,
@@ -42,11 +48,11 @@ import {
 } from '../components/meta/LogPieces.tsx';
 import { useAchievements } from '../achievements/AchievementsProvider.tsx';
 import { RewardToken } from '../components/achievements/tokens.tsx';
-import { achievementsLine } from '../format.ts';
+import { achievementsLine, eventDates } from '../format.ts';
 import { shareEnabled } from '../metaShare.ts';
 import { seasonsFor } from '../state/seasonsFor.ts';
 import { hashFor, useActions, useAppState } from '../state/store.tsx';
-import { useMetaRanking, useTopTeams } from '../state/useMeta.ts';
+import { useMetaRanking, useRecentEvents, useTopTeams } from '../state/useMeta.ts';
 import { storage } from '../storage/db.ts';
 import { STOP_LINE } from './settings/Community.tsx';
 
@@ -521,6 +527,39 @@ function EmptyYourMeta() {
 }
 
 /**
+ * Tournaments: the recent official events, one row into the list. Not drawn while loading, on a
+ * failed read, in a league without events or with none recent: the rest of the tab stands alone.
+ */
+function TournamentsRow({ league }: { league: string }) {
+  const { navigate } = useActions();
+  const read = useRecentEvents(league);
+  const events = read.data?.events ?? [];
+  const newest = [...events].sort((a, b) => b.startDate.localeCompare(a.startDate))[0];
+  if (!newest) {
+    return null;
+  }
+  return (
+    <button
+      type="button"
+      className="action-row"
+      onClick={() => navigate({ screen: 'meta-events' })}
+    >
+      <span>
+        <b>
+          Tournaments · {events.length} {events.length === 1 ? 'event' : 'events'}
+        </b>
+        <span className="small muted">
+          {shortEventName(newest.name)} · {eventDates(newest.startDate, newest.endDate)}
+        </span>
+      </span>
+      <span className="chev">
+        <Chevron />
+      </span>
+    </button>
+  );
+}
+
+/**
  * Meta, the tab root: what trainers are facing (community, read because the player opened it),
  * then either a first visit's invitation to log or the player's own contribution and meta. The
  * community cards fail on their own; the personal cards come from this phone and never wait.
@@ -569,6 +608,7 @@ export function MetaHome() {
         {/* The saved league, not the default, is the one to read: wait for settings. */}
         {s.settingsLoaded ? <MostSeen league={league} /> : null}
         {s.settingsLoaded ? <SpicyPicks league={league} /> : null}
+        {s.settingsLoaded ? <TournamentsRow league={league} /> : null}
         {!known || !s.settingsLoaded ? null : hasLog ? (
           <>
             <YourContribution open={open} />

@@ -45,6 +45,20 @@ async function mount(host = fakeHost()) {
 }
 
 describe('routes', () => {
+  it('round-trips the tournament routes', () => {
+    expect(parseHash('#/meta/events')).toEqual({ screen: 'meta-events' });
+    expect(hashFor({ screen: 'meta-events' })).toBe('#/meta/events');
+    const r = parseHash('#/meta/events/2027-nice-regional?p=P4T0M4N');
+    expect(r).toEqual({ screen: 'meta-event', id: '2027-nice-regional', p: 'P4T0M4N' });
+    expect(hashFor(r)).toBe('#/meta/events/2027-nice-regional?p=P4T0M4N');
+    expect(parseHash('#/meta/events/2027-nice-regional')).toEqual({
+      screen: 'meta-event',
+      id: '2027-nice-regional',
+    });
+    const odd = { screen: 'meta-event' as const, id: 'a b', p: 'Ash & Co/#1' };
+    expect(parseHash(hashFor(odd))).toEqual(odd);
+  });
+
   it('keeps a hyphenated league on counters and build links', () => {
     expect(parseHash('#/counters?vs=tinkaton&l=mega-great')).toEqual({
       screen: 'counters',

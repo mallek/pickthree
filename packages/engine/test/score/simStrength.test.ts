@@ -150,7 +150,7 @@ describe('the meta subpath', () => {
     expect(typeof mod['expectedWinRate']).toBe('function');
     // A short list on purpose: this is the contract, and growing it should be deliberate. It grew
     // when meta.pick3.gg's ranking, team board, stats, baseline, slice and trend moved in, so pick3
-    // can render the meta pages from the same code.
+    // can render the meta pages from the same code, and again for the tournament event pages.
     expect(Object.keys(mod).sort()).toEqual([
       'BOARD_LIMIT',
       'BUCKET_MS',
@@ -166,6 +166,7 @@ describe('the meta subpath', () => {
       'MatrixView',
       'OPEN_EQUIVALENT_CUP',
       'PROJECTION_SLOPE',
+      'RECENT_DAYS',
       'SHARE_MIN',
       'SOME',
       'TEAM_HALF_SAY',
@@ -179,9 +180,11 @@ describe('the meta subpath', () => {
       'blendWeights',
       'blendedOrder',
       'buildBoard',
+      'champion',
       'communityWeights',
       'confidence',
       'epochFor',
+      'eventPlayers',
       'expectedWinRate',
       'facingWeight',
       'legalFor',
@@ -194,7 +197,9 @@ describe('the meta subpath', () => {
       'rankTrend',
       'ranksOf',
       'readEpochs',
+      'recentSince',
       'resolveWindow',
+      'shortEventName',
       'sliceMatrix',
       'spicyPicks',
       'strengthContext',
@@ -202,6 +207,8 @@ describe('the meta subpath', () => {
       'tournamentSay',
       'trendLabel',
       'trendPoints',
+      'vodOffset',
+      'vodUrl',
       'winRate',
     ]);
   });

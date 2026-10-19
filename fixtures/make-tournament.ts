@@ -98,7 +98,11 @@ const EVENT = {
   endDate: '2026-09-20',
   league: 'great',
   cup: 'championshipseries',
-  vods: ['vod-day-one', 'vod-day-two'],
+  // Day 3 has no VOD on purpose: the page must not link another day's broadcast for it.
+  vods: [
+    { day: 1, id: 'vod-day-one' },
+    { day: 2, id: 'vod-day-two' },
+  ],
   notes: 'Synthetic fixture. Invented screen names, real species ids.',
 };
 
@@ -123,7 +127,10 @@ function sideFor(player: string): Side {
 }
 
 const battles: unknown[] = [];
-let clock = Date.parse('2026-09-18T15:00:00Z');
+/** Seconds into the current day's VOD; every battle's `at` is startDate + (day - 1) days + this. */
+let seconds = 600;
+let currentDay = 0;
+const START_MS = Date.parse(`${EVENT.startDate}T00:00:00Z`);
 let n = 0;
 
 /** Twelve matches: eight group best-of-three on day one, four top-cut best-of-five on day two. */
@@ -157,14 +164,19 @@ MATCHES.forEach((m, mi) => {
   let score: [number, number] = [0, 0];
   for (let g = 1; g <= m.games; g++) {
     n += 1;
-    clock += 11 * 60_000;
+    if (m.day !== currentDay) {
+      currentDay = m.day;
+      seconds = 600;
+    } else {
+      seconds += 11 * 60;
+    }
     // One battle in seven has no winner: the broadcast cut away before the banner. 15 of
     // Baltimore's 105 are like this and the read model has to count the sighting anyway.
     const undecided = n % 7 === 0;
     const winnerSide = undecided ? null : rand() < 0.5 ? 'left' : 'right';
     battles.push({
       id: `${EVENT_ID}-${String(n).padStart(3, '0')}`,
-      at: new Date(clock).toISOString(),
+      at: new Date(START_MS + (m.day - 1) * 86_400_000 + seconds * 1000).toISOString(),
       day: m.day,
       stage: m.stage,
       group: m.group,
@@ -190,9 +202,13 @@ MATCHES.forEach((m, mi) => {
   }
 });
 
-/** Every player's six. One roster entry in four carries no moveset, so "movesets known out of
+/** The last player has no RK9 team list on file: the event page must still show them (their
+ *  threes come from the broadcast) and say the six is not known. */
+const NO_ROSTER = PLAYERS[PLAYERS.length - 1] as string;
+
+/** Every other player's six. One roster entry in four carries no moveset, so "movesets known out of
  *  brought by" is a real fraction rather than always 100 percent. */
-const entries = PLAYERS.flatMap((player) =>
+const entries = PLAYERS.filter((player) => player !== NO_ROSTER).flatMap((player) =>
   (ROSTERS.get(player) as string[]).map((species, slot) => ({
     player,
     slot: slot + 1,

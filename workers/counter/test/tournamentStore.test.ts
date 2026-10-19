@@ -25,7 +25,10 @@ const EVENT: EventInput = {
   endDate: '2026-09-20',
   league: 'great',
   cup: 'championshipseries',
-  vods: ['v1', 'v2'],
+  vods: [
+    { day: 1, id: 'v1' },
+    { day: 2, id: 'v2' },
+  ],
   notes: null,
 };
 
@@ -78,9 +81,38 @@ describe('events', () => {
     const row = getEvent(sql, EVENT.id);
     expect(row).not.toBeNull();
     expect(row!.name).toBe('2027 Baltimore Regional');
-    expect(row!.vods).toEqual(['v1', 'v2']);
+    expect(row!.vods).toEqual([
+      { day: 1, id: 'v1' },
+      { day: 2, id: 'v2' },
+    ]);
     expect(row!.received).toBe(RECEIVED);
     expect(getEvent(sql, 'nope')).toBeNull();
+  });
+
+  it('maps a stored legacy list by count', () => {
+    sql.exec(
+      `INSERT INTO events (id, name, start_date, end_date, league, cup, vods, notes, received)
+       VALUES (?, 'n', ?, ?, 'great', 'championshipseries', ?, NULL, ?)`,
+      'legacy-2',
+      '2026-09-18',
+      '2026-09-19',
+      JSON.stringify(['a', 'b']),
+      RECEIVED,
+    );
+    sql.exec(
+      `INSERT INTO events (id, name, start_date, end_date, league, cup, vods, notes, received)
+       VALUES (?, 'n', ?, ?, 'great', 'championshipseries', ?, NULL, ?)`,
+      'legacy-3',
+      '2026-09-18',
+      '2026-09-20',
+      JSON.stringify(['a', 'b']),
+      RECEIVED,
+    );
+    expect(getEvent(sql, 'legacy-2')!.vods).toEqual([
+      { day: 1, id: 'a' },
+      { day: 2, id: 'b' },
+    ]);
+    expect(getEvent(sql, 'legacy-3')!.vods).toEqual([]);
   });
 
   it('upserts by id rather than adding a second row', () => {

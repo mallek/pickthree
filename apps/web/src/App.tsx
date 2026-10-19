@@ -18,7 +18,10 @@ import { Teams } from './screens/Teams.tsx';
 import { TopTeams } from './screens/TopTeams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
 import { Import } from './screens/Import.tsx';
+import { EventPage } from './screens/EventPage.tsx';
+import { Tournaments } from './screens/Tournaments.tsx';
 import { YourBattles } from './screens/YourBattles.tsx';
+import { TeamsGlyph } from './components.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { AchievementToast } from './components/achievements/AchievementToast.tsx';
 import { WelcomeReveal } from './components/achievements/WelcomeReveal.tsx';
@@ -26,13 +29,7 @@ import { NoticeToast } from './components/NoticeToast.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
 
 const ICONS = {
-  teams: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle className="f" cx="8" cy="9" r="3.2" />
-      <circle className="f" cx="16" cy="9" r="3.2" />
-      <circle className="f" cx="12" cy="15.5" r="3.2" />
-    </svg>
-  ),
+  teams: <TeamsGlyph />,
   counters: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path className="f" d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
@@ -71,6 +68,8 @@ function TabBar() {
     route.screen === 'meta' ||
     route.screen === 'meta-teams' ||
     route.screen === 'meta-battles' ||
+    route.screen === 'meta-events' ||
+    route.screen === 'meta-event' ||
     route.screen === 'meta-new' ||
     route.screen === 'meta-log' ||
     route.screen === 'achievements';
@@ -145,6 +144,10 @@ function renderScreen(r: Route) {
       return <YourBattles />;
     case 'meta-teams':
       return <TopTeams />;
+    case 'meta-events':
+      return <Tournaments />;
+    case 'meta-event':
+      return <EventPage key={r.id} id={r.id} {...(r.p ? { p: r.p } : {})} />;
     case 'species':
       return <SpeciesPage key={r.id} id={r.id} />;
     case 'meta-new':
@@ -159,12 +162,21 @@ function renderScreen(r: Route) {
   }
 }
 
+/** What counts as a new screen for the scroll to top. An event page's open player (`p`) is not:
+ *  opening or closing a card rewrites the route in place and must leave the scroll alone. */
+export function scrollKey(r: Route): string {
+  if (r.screen === 'meta-event') {
+    return JSON.stringify({ screen: r.screen, id: r.id });
+  }
+  return JSON.stringify(r);
+}
+
 export function App() {
   const s = useAppState();
   const r = s.route;
   // Each screen opens at the top. A screen that remembers its place (the Collection) scrolls
   // back after this runs.
-  const routeKey = JSON.stringify(r);
+  const routeKey = scrollKey(r);
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [routeKey]);

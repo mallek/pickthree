@@ -13,7 +13,10 @@ const event = {
   endDate: '2026-09-20',
   league: 'great',
   cup: 'championshipseries',
-  vods: ['v2878411375', 'v2879365540'],
+  vods: [
+    { day: 1, id: 'v2878411375' },
+    { day: 2, id: 'v2879365540' },
+  ],
   notes: null,
 };
 
@@ -47,11 +50,60 @@ describe('OPEN_EQUIVALENT_CUP', () => {
 });
 
 describe('parseEventBody', () => {
+  it('accepts day-keyed vods', () => {
+    const vods = [
+      { day: 1, id: 'v1' },
+      { day: 3, id: 'v3' },
+    ];
+    const r = parseEventBody({ ...event, vods }, 'e-1');
+    expect(r.ok && r.value.vods).toEqual(vods);
+  });
+
+  it('reads a bare list as days 1..n when its length matches the day count', () => {
+    const r = parseEventBody({ ...event, endDate: '2026-09-19', vods: ['v1', 'v2'] }, 'e-1');
+    expect(r.ok && r.value.vods).toEqual([
+      { day: 1, id: 'v1' },
+      { day: 2, id: 'v2' },
+    ]);
+  });
+
+  it('reads a bare list of the wrong length as no day links', () => {
+    const r = parseEventBody({ ...event, vods: ['v1', 'v2'] }, 'e-1');
+    expect(r.ok && r.value.vods).toEqual([]);
+  });
+
+  it('rejects a bad day', () => {
+    for (const vods of [
+      [{ day: 0, id: 'v1' }],
+      [{ day: 1.5, id: 'v1' }],
+      [
+        { day: 1, id: 'v1' },
+        { day: 1, id: 'v2' },
+      ],
+    ]) {
+      const r = parseEventBody({ ...event, vods }, 'e-1');
+      expect(r.ok).toBe(false);
+      expect(!r.ok && r.reason).toBe('bad vods');
+    }
+  });
+
+  it('rejects a day-keyed vod past the last event day', () => {
+    // The event runs 2026-09-18 to 2026-09-20: three days.
+    const ok = parseEventBody({ ...event, vods: [{ day: 3, id: 'v1' }] }, 'e-1');
+    expect(ok.ok).toBe(true);
+    const r = parseEventBody({ ...event, vods: [{ day: 4, id: 'v1' }] }, 'e-1');
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.reason).toBe('bad vods');
+  });
+
   it('accepts the shape the pipeline sends and stamps the id from the path', () => {
     const r = parseEventBody(event, '2027-baltimore-regional');
     expect(r.ok).toBe(true);
     expect(r.ok && r.value.id).toBe('2027-baltimore-regional');
-    expect(r.ok && r.value.vods).toEqual(['v2878411375', 'v2879365540']);
+    expect(r.ok && r.value.vods).toEqual([
+      { day: 1, id: 'v2878411375' },
+      { day: 2, id: 'v2879365540' },
+    ]);
     expect(r.ok && r.value.notes).toBeNull();
   });
 

@@ -35,3 +35,4 @@ export * from './stats.js';
 export * from './teamRank.js';
 export * from './spicy.js';
 export * from './trend.js';
+export * from './events.js';

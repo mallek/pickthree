@@ -354,3 +354,23 @@ export function rankLabel(
 export function ownSpeciesId(sp: Pick<Specimen, 'speciesId' | 'shadow'>): string {
   return sp.shadow && !sp.speciesId.endsWith('_shadow') ? `${sp.speciesId}_shadow` : sp.speciesId;
 }
+
+/** "Oct 17-18" (or "Oct 31 - Nov 1"): an event's calendar dates, parsed in local time. */
+export function eventDates(start: string, end: string): string {
+  const parse = (iso: string): Date | null => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  };
+  const a = parse(start);
+  const b = parse(end);
+  if (!a || !b) {
+    return '';
+  }
+  const md = (d: Date): string => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (a.getTime() === b.getTime()) {
+    return md(a);
+  }
+  return a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()
+    ? `${md(a)}-${b.getDate()}`
+    : `${md(a)} - ${md(b)}`;
+}

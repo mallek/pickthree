@@ -21,6 +21,8 @@ import {
   type ApiWindow,
   type Baseline,
   type Epoch,
+  type EventDetailV1,
+  type EventsV1,
   type GeneratedFile,
   type MatchupMatrix,
   type MetaEntryIn,
@@ -194,6 +196,24 @@ export function fetchSpeciesDetail(
     `${COUNTER_ORIGIN}/api/v1/species/${encodeURIComponent(id)}?${search(apiLeague, w, source)}`,
     fetcher,
   );
+}
+
+/** Tournament events in a window, Great League's (the Tournament league reads the same). */
+export function fetchEvents(
+  since: string,
+  until: string,
+  fetcher: typeof fetch = fetch,
+): Promise<EventsV1> {
+  const p = new URLSearchParams({ league: 'great', since, until });
+  return get<EventsV1>(`${COUNTER_ORIGIN}/api/v1/events?${p.toString()}`, fetcher);
+}
+
+/** One event's matches, roster and species. */
+export function fetchEventDetail(
+  id: string,
+  fetcher: typeof fetch = fetch,
+): Promise<EventDetailV1> {
+  return get<EventDetailV1>(`${COUNTER_ORIGIN}/api/v1/events/${encodeURIComponent(id)}`, fetcher);
 }
 
 /** Tests only: forget the memoised loads so the next call uses a fresh stub. */

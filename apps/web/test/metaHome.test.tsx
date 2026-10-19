@@ -6,11 +6,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetStickyForTests, useSticky } from '../src/components.tsx';
 import { COUNTER_ORIGIN } from '../src/counter.ts';
 import { resetMetaDataForTests } from '../src/metaData.ts';
+import { shortEventName } from '@pickthree/engine/meta';
 import { MetaHome } from '../src/screens/MetaHome.tsx';
 import { EMPTY_SUMMARY, resetMetaHooksForTests } from '../src/state/useMeta.ts';
 import { AppProvider } from '../src/state/store.tsx';
 import { DEFAULT_SETTINGS, resetDbForTests, storage, type Settings } from '../src/storage/db.ts';
 import { fakeHost, GREAT } from './fakeHost.ts';
+
+// The events read is stubbed: its own tests live with the hook.
+const eventsStub = vi.hoisted(() => ({ rows: [] as unknown[] }));
+vi.mock('../src/state/useMeta.ts', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../src/state/useMeta.ts')>();
+  return {
+    ...real,
+    useRecentEvents: (league: string) => ({
+      state: 'ready' as const,
+      data: {
+        events: league === 'great' || league === 'championshipseries' ? eventsStub.rows : [],
+      },
+      retry: () => undefined,
+    }),
+  };
+});
 
 // Synthetic league data: PvPoke's group is tinkaton, azumarill, clodsire in that order.
 const GROUP = [
@@ -255,6 +272,7 @@ beforeEach(() => {
   resetMetaDataForTests();
   resetMetaHooksForTests();
   resetStickyForTests();
+  eventsStub.rows = [];
   window.location.hash = '#/meta';
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-09-28T20:00:00Z'));
@@ -648,5 +666,49 @@ describe('Meta landing', () => {
     await waitFor(() => expect(sw).toHaveAttribute('aria-checked', 'false'));
     fireEvent.click(sw);
     await waitFor(() => expect(sw).toHaveAttribute('aria-checked', 'true'));
+  });
+});
+
+describe('Tournaments row', () => {
+  const EVENT = (id: string, name: string, startDate: string, endDate: string) => ({
+    id,
+    name,
+    startDate,
+    endDate,
+    cup: 'championshipseries',
+    battles: 100,
+    decided: 100,
+    players: 64,
+    blended: true,
+  });
+  const NICE = 'Pokemon Nice Regional Championships 2027';
+
+  it('shows the count, the newest event and its dates, and opens the list', async () => {
+    stubNet(freshNet());
+    eventsStub.rows = [
+      EVENT('2027-nice-regional', NICE, '2027-10-17', '2027-10-18'),
+      EVENT('2027-old', 'Pokemon Old Regional Championships 2027', '2027-09-01', '2027-09-02'),
+    ];
+    renderHome();
+    const row = await screen.findByRole('button', { name: /Tournaments · 2 events/ });
+    expect(row).toHaveClass('action-row');
+    expect(row).toHaveTextContent('Oct 17-18');
+    expect(row).toHaveTextContent(shortEventName(NICE));
+    fireEvent.click(row);
+    expect(window.location.hash).toBe('#/meta/events');
+  });
+
+  it('says event for one, and no row for none', async () => {
+    stubNet(freshNet());
+    eventsStub.rows = [EVENT('a', NICE, '2027-10-17', '2027-10-18')];
+    renderHome();
+    expect(
+      await screen.findByRole('button', { name: /Tournaments · 1 event(?!s)/ }),
+    ).toBeInTheDocument();
+    cleanup();
+    eventsStub.rows = [];
+    renderHome();
+    await screen.findByRole('heading', { name: 'Meta' });
+    expect(screen.queryByText(/Tournaments/)).toBeNull();
   });
 });
