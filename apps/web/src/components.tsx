@@ -823,6 +823,18 @@ export function TrashGlyph() {
   );
 }
 
+/** The Teams tab's three circles, unstyled: the tab bar draws it, and so does the event page's
+ *  "Build these teams" label, each with its own stroke. */
+export function TeamsGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle className="f" cx="8" cy="9" r="3.2" />
+      <circle className="f" cx="16" cy="9" r="3.2" />
+      <circle className="f" cx="12" cy="15.5" r="3.2" />
+    </svg>
+  );
+}
+
 /** A plus, the Add glyph for an IconButton. */
 export function PlusGlyph() {
   return (

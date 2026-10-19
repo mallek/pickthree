@@ -21,6 +21,7 @@ import { Import } from './screens/Import.tsx';
 import { EventPage } from './screens/EventPage.tsx';
 import { Tournaments } from './screens/Tournaments.tsx';
 import { YourBattles } from './screens/YourBattles.tsx';
+import { TeamsGlyph } from './components.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { AchievementToast } from './components/achievements/AchievementToast.tsx';
 import { WelcomeReveal } from './components/achievements/WelcomeReveal.tsx';
@@ -28,13 +29,7 @@ import { NoticeToast } from './components/NoticeToast.tsx';
 import { UpdateToast } from './components/UpdateToast.tsx';
 
 const ICONS = {
-  teams: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle className="f" cx="8" cy="9" r="3.2" />
-      <circle className="f" cx="16" cy="9" r="3.2" />
-      <circle className="f" cx="12" cy="15.5" r="3.2" />
-    </svg>
-  ),
+  teams: <TeamsGlyph />,
   counters: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path className="f" d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />

@@ -4120,6 +4120,47 @@ input[type='range'] {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* A player card's head ends with their on-stream record and the chevron. */
+.player-card-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-record {
+  white-space: nowrap;
+  font-size: 16px;
+}
+/* "Build these teams" carries the Teams tab's three circles, drawn in violet. */
+.row-label-glyph {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.row-label-glyph svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.8;
+}
+/* Build's lineup card as a read-only fact: no remove button or grip beside it to clear. */
+.pick-card.filled.pick-card-static {
+  padding-right: 12px;
+  cursor: default;
+}
+/* A game's result as the Log a Battle chip, shown rather than tapped. */
+.result-chip.result-chip-static {
+  width: auto;
+  height: auto;
+  cursor: default;
+}
+.game-match {
+  gap: 4px;
+}
+.game-watch {
+  margin-left: auto;
+}
 .row-body {
   display: flex;
   flex-direction: column;
