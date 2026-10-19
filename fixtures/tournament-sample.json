@@ -7,8 +7,14 @@
     "league": "great",
     "cup": "championshipseries",
     "vods": [
-      "vod-day-one",
-      "vod-day-two"
+      {
+        "day": 1,
+        "id": "vod-day-one"
+      },
+      {
+        "day": 2,
+        "id": "vod-day-two"
+      }
     ],
     "notes": "Synthetic fixture. Invented screen names, real species ids."
   },
@@ -17,7 +23,7 @@
     "battles": [
       {
         "id": "2027-crown-city-regional-001",
-        "at": "2026-09-18T15:11:00.000Z",
+        "at": "2026-09-18T00:10:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "A",
@@ -66,7 +72,7 @@
       },
       {
         "id": "2027-crown-city-regional-002",
-        "at": "2026-09-18T15:22:00.000Z",
+        "at": "2026-09-18T00:21:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "A",
@@ -115,7 +121,7 @@
       },
       {
         "id": "2027-crown-city-regional-003",
-        "at": "2026-09-18T15:33:00.000Z",
+        "at": "2026-09-18T00:32:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "B",
@@ -164,7 +170,7 @@
       },
       {
         "id": "2027-crown-city-regional-004",
-        "at": "2026-09-18T15:44:00.000Z",
+        "at": "2026-09-18T00:43:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "B",
@@ -213,7 +219,7 @@
       },
       {
         "id": "2027-crown-city-regional-005",
-        "at": "2026-09-18T15:55:00.000Z",
+        "at": "2026-09-18T00:54:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "B",
@@ -262,7 +268,7 @@
       },
       {
         "id": "2027-crown-city-regional-006",
-        "at": "2026-09-18T16:06:00.000Z",
+        "at": "2026-09-18T01:05:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "C",
@@ -311,7 +317,7 @@
       },
       {
         "id": "2027-crown-city-regional-007",
-        "at": "2026-09-18T16:17:00.000Z",
+        "at": "2026-09-18T01:16:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "C",
@@ -360,7 +366,7 @@
       },
       {
         "id": "2027-crown-city-regional-008",
-        "at": "2026-09-18T16:28:00.000Z",
+        "at": "2026-09-18T01:27:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "D",
@@ -409,7 +415,7 @@
       },
       {
         "id": "2027-crown-city-regional-009",
-        "at": "2026-09-18T16:39:00.000Z",
+        "at": "2026-09-18T01:38:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "D",
@@ -458,7 +464,7 @@
       },
       {
         "id": "2027-crown-city-regional-010",
-        "at": "2026-09-18T16:50:00.000Z",
+        "at": "2026-09-18T01:49:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "D",
@@ -507,7 +513,7 @@
       },
       {
         "id": "2027-crown-city-regional-011",
-        "at": "2026-09-18T17:01:00.000Z",
+        "at": "2026-09-18T02:00:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "A",
@@ -556,7 +562,7 @@
       },
       {
         "id": "2027-crown-city-regional-012",
-        "at": "2026-09-18T17:12:00.000Z",
+        "at": "2026-09-18T02:11:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "A",
@@ -605,7 +611,7 @@
       },
       {
         "id": "2027-crown-city-regional-013",
-        "at": "2026-09-18T17:23:00.000Z",
+        "at": "2026-09-18T02:22:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "B",
@@ -654,7 +660,7 @@
       },
       {
         "id": "2027-crown-city-regional-014",
-        "at": "2026-09-18T17:34:00.000Z",
+        "at": "2026-09-18T02:33:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "B",
@@ -703,7 +709,7 @@
       },
       {
         "id": "2027-crown-city-regional-015",
-        "at": "2026-09-18T17:45:00.000Z",
+        "at": "2026-09-18T02:44:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "B",
@@ -752,7 +758,7 @@
       },
       {
         "id": "2027-crown-city-regional-016",
-        "at": "2026-09-18T17:56:00.000Z",
+        "at": "2026-09-18T02:55:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "C",
@@ -801,7 +807,7 @@
       },
       {
         "id": "2027-crown-city-regional-017",
-        "at": "2026-09-18T18:07:00.000Z",
+        "at": "2026-09-18T03:06:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "C",
@@ -850,7 +856,7 @@
       },
       {
         "id": "2027-crown-city-regional-018",
-        "at": "2026-09-18T18:18:00.000Z",
+        "at": "2026-09-18T03:17:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "D",
@@ -899,7 +905,7 @@
       },
       {
         "id": "2027-crown-city-regional-019",
-        "at": "2026-09-18T18:29:00.000Z",
+        "at": "2026-09-18T03:28:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "D",
@@ -948,7 +954,7 @@
       },
       {
         "id": "2027-crown-city-regional-020",
-        "at": "2026-09-18T18:40:00.000Z",
+        "at": "2026-09-18T03:39:00.000Z",
         "day": 1,
         "stage": "groups",
         "group": "D",
@@ -997,7 +1003,7 @@
       },
       {
         "id": "2027-crown-city-regional-021",
-        "at": "2026-09-18T18:51:00.000Z",
+        "at": "2026-09-19T00:10:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1046,7 +1052,7 @@
       },
       {
         "id": "2027-crown-city-regional-022",
-        "at": "2026-09-18T19:02:00.000Z",
+        "at": "2026-09-19T00:21:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1095,7 +1101,7 @@
       },
       {
         "id": "2027-crown-city-regional-023",
-        "at": "2026-09-18T19:13:00.000Z",
+        "at": "2026-09-19T00:32:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1144,7 +1150,7 @@
       },
       {
         "id": "2027-crown-city-regional-024",
-        "at": "2026-09-18T19:24:00.000Z",
+        "at": "2026-09-19T00:43:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1193,7 +1199,7 @@
       },
       {
         "id": "2027-crown-city-regional-025",
-        "at": "2026-09-18T19:35:00.000Z",
+        "at": "2026-09-19T00:54:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1242,7 +1248,7 @@
       },
       {
         "id": "2027-crown-city-regional-026",
-        "at": "2026-09-18T19:46:00.000Z",
+        "at": "2026-09-19T01:05:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1291,7 +1297,7 @@
       },
       {
         "id": "2027-crown-city-regional-027",
-        "at": "2026-09-18T19:57:00.000Z",
+        "at": "2026-09-19T01:16:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1340,7 +1346,7 @@
       },
       {
         "id": "2027-crown-city-regional-028",
-        "at": "2026-09-18T20:08:00.000Z",
+        "at": "2026-09-19T01:27:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1389,7 +1395,7 @@
       },
       {
         "id": "2027-crown-city-regional-029",
-        "at": "2026-09-18T20:19:00.000Z",
+        "at": "2026-09-19T01:38:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1438,7 +1444,7 @@
       },
       {
         "id": "2027-crown-city-regional-030",
-        "at": "2026-09-18T20:30:00.000Z",
+        "at": "2026-09-19T01:49:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1487,7 +1493,7 @@
       },
       {
         "id": "2027-crown-city-regional-031",
-        "at": "2026-09-18T20:41:00.000Z",
+        "at": "2026-09-19T02:00:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1536,7 +1542,7 @@
       },
       {
         "id": "2027-crown-city-regional-032",
-        "at": "2026-09-18T20:52:00.000Z",
+        "at": "2026-09-19T02:11:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1585,7 +1591,7 @@
       },
       {
         "id": "2027-crown-city-regional-033",
-        "at": "2026-09-18T21:03:00.000Z",
+        "at": "2026-09-19T02:22:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,
@@ -1634,7 +1640,7 @@
       },
       {
         "id": "2027-crown-city-regional-034",
-        "at": "2026-09-18T21:14:00.000Z",
+        "at": "2026-09-19T02:33:00.000Z",
         "day": 2,
         "stage": "top_cut",
         "group": null,

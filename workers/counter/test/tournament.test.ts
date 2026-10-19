@@ -47,11 +47,46 @@ describe('OPEN_EQUIVALENT_CUP', () => {
 });
 
 describe('parseEventBody', () => {
+  it('accepts day-keyed vods', () => {
+    const vods = [
+      { day: 1, id: 'v1' },
+      { day: 3, id: 'v3' },
+    ];
+    const r = parseEventBody({ ...event, vods }, 'e-1');
+    expect(r.ok && r.value.vods).toEqual(vods);
+  });
+
+  it('reads a bare list as days 1..n', () => {
+    const r = parseEventBody({ ...event, vods: ['v1', 'v2'] }, 'e-1');
+    expect(r.ok && r.value.vods).toEqual([
+      { day: 1, id: 'v1' },
+      { day: 2, id: 'v2' },
+    ]);
+  });
+
+  it('rejects a bad day', () => {
+    for (const vods of [
+      [{ day: 0, id: 'v1' }],
+      [{ day: 1.5, id: 'v1' }],
+      [
+        { day: 1, id: 'v1' },
+        { day: 1, id: 'v2' },
+      ],
+    ]) {
+      const r = parseEventBody({ ...event, vods }, 'e-1');
+      expect(r.ok).toBe(false);
+      expect(!r.ok && r.reason).toBe('bad vods');
+    }
+  });
+
   it('accepts the shape the pipeline sends and stamps the id from the path', () => {
     const r = parseEventBody(event, '2027-baltimore-regional');
     expect(r.ok).toBe(true);
     expect(r.ok && r.value.id).toBe('2027-baltimore-regional');
-    expect(r.ok && r.value.vods).toEqual(['v2878411375', 'v2879365540']);
+    expect(r.ok && r.value.vods).toEqual([
+      { day: 1, id: 'v2878411375' },
+      { day: 2, id: 'v2879365540' },
+    ]);
     expect(r.ok && r.value.notes).toBeNull();
   });
 

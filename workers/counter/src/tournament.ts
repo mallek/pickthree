@@ -61,8 +61,15 @@ export interface EventInput {
   endDate: string;
   league: string;
   cup: string;
-  vods: string[];
+  vods: VodDay[];
   notes: string | null;
+}
+
+/** One Twitch VOD and the event day it covers. Keyed by day because a day can have no VOD, and a
+ *  bare list indexed by position would then link the wrong day's broadcast. */
+export interface VodDay {
+  day: number;
+  id: string;
 }
 
 export interface SideInput {
@@ -166,8 +173,8 @@ export function parseEventBody(body: unknown, id: string): Parsed<EventInput> {
   if (league === null || cup === null) {
     return fail(-1, 'bad league or cup');
   }
-  const rawVods = body['vods'];
-  if (!Array.isArray(rawVods) || rawVods.some((v) => str(v, VOD) === null)) {
+  const vods = parseVods(body['vods']);
+  if (vods === null) {
     return fail(-1, 'bad vods');
   }
   const notes = nullableText(body['notes'], TEXT);
@@ -176,8 +183,39 @@ export function parseEventBody(body: unknown, id: string): Parsed<EventInput> {
   }
   return {
     ok: true,
-    value: { id, name, startDate, endDate, league, cup, vods: [...(rawVods as string[])], notes },
+    value: { id, name, startDate, endDate, league, cup, vods, notes },
   };
+}
+
+/** Day-keyed `[{day, id}]`, or a bare id list read as days 1..n so every new write is day-keyed. */
+function parseVods(raw: unknown): VodDay[] | null {
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  const out: VodDay[] = [];
+  const seen = new Set<number>();
+  for (let i = 0; i < raw.length; i++) {
+    const v: unknown = raw[i];
+    if (typeof v === 'string') {
+      const id = str(v, VOD);
+      if (id === null) {
+        return null;
+      }
+      out.push({ day: i + 1, id });
+      continue;
+    }
+    if (!isRecord(v)) {
+      return null;
+    }
+    const day = v['day'];
+    const id = str(v['id'], VOD);
+    if (typeof day !== 'number' || !Number.isInteger(day) || day < 1 || id === null || seen.has(day)) {
+      return null;
+    }
+    seen.add(day);
+    out.push({ day, id });
+  }
+  return out;
 }
 
 function parseSide(x: unknown): SideInput | string {

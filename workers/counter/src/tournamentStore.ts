@@ -16,6 +16,7 @@ import {
   type ResultSource,
   type RosterEntryInput,
   type TournamentBattleInput,
+  type VodDay,
   type WinnerSide,
 } from './tournament.js';
 
@@ -38,7 +39,7 @@ export interface EventRow {
   endDate: string;
   league: string;
   cup: string;
-  vods: string[];
+  vods: VodDay[];
   notes: string | null;
   received: string;
 }
@@ -162,6 +163,22 @@ export function putEvent(sql: Sql, e: EventInput, received: string): void {
   );
 }
 
+const DAY_MS = 86_400_000;
+
+/** Day-keyed as stored; a legacy bare list maps to days 1..n only when it has exactly one id per
+ *  event day, otherwise nothing, so a list with a missing day never links the wrong broadcast. */
+function readVods(raw: string, startDate: string, endDate: string): VodDay[] {
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+  if (parsed.every((v) => typeof v === 'string')) {
+    const days = Math.round((Date.parse(endDate) - Date.parse(startDate)) / DAY_MS) + 1;
+    return parsed.length === days ? parsed.map((id, i) => ({ day: i + 1, id: String(id) })) : [];
+  }
+  return parsed as VodDay[];
+}
+
 function eventRow(r: Record<string, unknown>): EventRow {
   return {
     id: String(r['id']),
@@ -170,7 +187,7 @@ function eventRow(r: Record<string, unknown>): EventRow {
     endDate: String(r['end_date']),
     league: String(r['league']),
     cup: String(r['cup']),
-    vods: JSON.parse(String(r['vods'])) as string[],
+    vods: readVods(String(r['vods']), String(r['start_date']), String(r['end_date'])),
     notes: r['notes'] === null || r['notes'] === undefined ? null : String(r['notes']),
     received: String(r['received']),
   };
