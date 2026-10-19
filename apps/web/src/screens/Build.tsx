@@ -310,17 +310,20 @@ export function Build() {
       pick: t.pick,
       mine: true,
     }));
-    const others = hits
-      .filter((id) => !mineStages.has(id))
-      .map((id) => ({
-        key: id,
-        speciesId: id,
-        pick: speciesPick(id),
-        mine: false,
-      }));
+    // Yours only leaves the species stand-ins out.
+    const others = yoursOnly
+      ? []
+      : hits
+          .filter((id) => !mineStages.has(id))
+          .map((id) => ({
+            key: id,
+            speciesId: id,
+            pick: speciesPick(id),
+            mine: false,
+          }));
     return [...fromMine, ...others];
     // speciesPick reads the collection, verdicts and species, all in the list.
-  }, [searching, mine, hits, s.verdicts, s.verdictsError, s.collection, species]);
+  }, [searching, mine, hits, yoursOnly, s.verdicts, s.verdictsError, s.collection, species]);
 
   /** With nothing typed: the same weighted list Log a Battle shows, your own where you have one. */
   const fallback = useMemo(() => {
@@ -337,6 +340,23 @@ export function Build() {
     [s.leagueInfo],
   );
   const suggested = useMemo((): GridItem[] => {
+    if (yoursOnly) {
+      // Your best copy of each species you can run here, in the league's meta order.
+      const seen = new Set<string>();
+      return (s.collection?.specimens ?? [])
+        .filter(usable)
+        .flatMap(tokensOf)
+        .sort((a, b) => (ranks[a.stage] ?? 999) - (ranks[b.stage] ?? 999) || byWorth(a.sp, b.sp))
+        .filter(({ stage }) => {
+          if (seen.has(stage)) {
+            return false;
+          }
+          seen.add(stage);
+          return true;
+        })
+        .slice(0, RECENT_LIMIT)
+        .map((t) => ({ key: tokenKey(t), speciesId: t.stage, pick: t.pick, mine: true }));
+    }
     const legal = new Set(s.leagueInfo?.legal ?? []);
     const ids = recentOpponents(s.sets, fallback, RECENT_LIMIT, ranks).filter((id) =>
       legal.has(id),
@@ -351,8 +371,34 @@ export function Build() {
       };
     });
     // bestOwned and speciesPick read the collection, verdicts and species, all in the list.
-  }, [s.sets, fallback, ranks, s.leagueInfo, s.collection, s.verdicts, s.verdictsError, species]);
+  }, [
+    yoursOnly,
+    s.sets,
+    fallback,
+    ranks,
+    s.leagueInfo,
+    s.collection,
+    s.verdicts,
+    s.verdictsError,
+    species,
+  ]);
   const grid = searching ? picksGrid : suggested;
+  /**
+   * Why Yours only has nothing to show. Until every copy is judged the grid is empty for want of
+   * verdicts, so neither "none match" nor "none can be built" is true yet: say nothing then. If the
+   * verdicts failed, nothing was judged and neither is true either.
+   */
+  const yoursEmptyLine = ((): string | null => {
+    if (s.verdictsError) {
+      return 'Your Pokémon could not be checked for this league.';
+    }
+    if (s.verdictsLoading || Object.keys(s.verdicts).length === 0) {
+      return null;
+    }
+    return searching
+      ? 'None of your Pokémon match. Switch off Yours only to search every Pokémon.'
+      : 'None of your Pokémon can be built for this league.';
+  })();
 
   /** Open the search for one empty slot. */
   const openSlot = (i: number): void => {
@@ -634,7 +680,7 @@ export function Build() {
               <input
                 ref={searchRef}
                 className="search"
-                placeholder={`Search any Pokémon for ${SLOT_LABELS[target]}`}
+                placeholder={`Search ${yoursOnly ? 'your' : 'any'} Pokémon for ${SLOT_LABELS[target]}`}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 // Tapping away closes the search; grid taps keep focus so they still land, and the
@@ -678,8 +724,13 @@ export function Build() {
                 </button>
               ))}
             </div>
-            {grid.length === 0 ? (
+            {grid.length === 0 && !yoursOnly ? (
               <NothingMatches query={query} legalOnly style={{ margin: 0 }} />
+            ) : null}
+            {grid.length === 0 && yoursOnly && yoursEmptyLine ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                {yoursEmptyLine}
+              </p>
             ) : null}
             {!s.collection ? (
               <p className="small muted" style={{ margin: 0 }}>
