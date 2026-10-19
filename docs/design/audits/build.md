@@ -444,7 +444,7 @@ a real phone, and the two empty-state lines ("None of your Pokémon match. Switc
 search every Pokémon.", "None of your Pokémon can be built for this league."), which no capture
 shows (covered by `buildFilters.test.tsx`).
 
-- [ ] Travis, sign-off for the search filters addendum.
+- [x] Travis, 2026-10-19, sign-off for the search filters addendum ("looks good approved").
 
 ## Sign-off
 
