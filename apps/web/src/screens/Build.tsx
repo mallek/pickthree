@@ -26,9 +26,20 @@ import {
   useSpecies,
   NothingMatches,
   useSpeciesSearch,
+  useSticky,
 } from '../components.tsx';
 import { costLine, ivLine, SEP, topPct } from '../format.ts';
-import { Button, ErrorState, Header, IconButton, Sheet, Tag, typeColor } from '@pickthree/ui';
+import {
+  Button,
+  ErrorState,
+  FilterButton,
+  Header,
+  IconButton,
+  Sheet,
+  Tag,
+  typeColor,
+} from '@pickthree/ui';
+import { BuildFilters } from './BuildFilters.tsx';
 import { matchesQuery, parseQuery } from '../search.ts';
 import { stagedSpecimenRecord } from '../searchRecords.ts';
 import { facingScope, suggestKey, useActions, useAppState } from '../state/store.tsx';
@@ -83,6 +94,10 @@ export function Build() {
   /** Move pools by league, species, scanned moves and fast move, fetched once each. */
   const [pools, setPools] = useState<Record<string, MovePool>>({});
   const poolsAsked = useRef(new Set<string>());
+  // The Filters sheet writes this same key. With no collection there is nothing of yours to keep.
+  const [yoursOnlySetting] = useSticky('build.yoursOnly', false);
+  const yoursOnly = yoursOnlySetting && Boolean(s.collection);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (
@@ -615,21 +630,37 @@ export function Build() {
               <b>Choosing {SLOT_LABELS[target]}</b>
               <span className="meta">{ROLE_JOBS[target]}</span>
             </p>
-            <input
-              ref={searchRef}
-              className="search"
-              placeholder={`Search any Pokémon for ${SLOT_LABELS[target]}`}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              // Tapping away closes the search; grid taps keep focus so they still land.
-              onBlur={() => setTarget(null)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  setTarget(null);
-                }
-              }}
-              inputMode="search"
-            />
+            <div className="search-row">
+              <input
+                ref={searchRef}
+                className="search"
+                placeholder={`Search any Pokémon for ${SLOT_LABELS[target]}`}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                // Tapping away closes the search; grid taps keep focus so they still land, and the
+                // Filters sheet hands focus back here when it closes.
+                onBlur={() => {
+                  if (!filtersOpen) {
+                    setTarget(null);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setTarget(null);
+                  }
+                }}
+                inputMode="search"
+              />
+              {s.collection ? (
+                <span style={{ display: 'contents' }} onMouseDown={(e) => e.preventDefault()}>
+                  <FilterButton
+                    iconOnly
+                    count={yoursOnly ? 1 : 0}
+                    onClick={() => setFiltersOpen(true)}
+                  />
+                </span>
+              ) : null}
+            </div>
             <span className="meta">{searching ? 'Matches' : 'Suggested'}</span>
             <div className="recent-row matches tall">
               {grid.map((p) => (
@@ -861,6 +892,7 @@ export function Build() {
           }}
         />
       ) : null}
+      {filtersOpen ? <BuildFilters onClose={() => setFiltersOpen(false)} /> : null}
     </div>
   );
 }
