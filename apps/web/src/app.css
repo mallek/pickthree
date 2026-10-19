@@ -4158,8 +4158,15 @@ input[type='range'] {
 .game-match {
   gap: 4px;
 }
+/* A 44px tap target that takes no more room than the line it sits in. */
 .game-watch {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-block: -14px;
 }
 .row-body {
   display: flex;

@@ -54,6 +54,10 @@ const AUDIT_ENFORCED = new Set([
   'meta-home-error',
   'meta-teams',
   'meta-teams-open',
+  'tournaments',
+  'event',
+  'event-player-open',
+  'event-player-no-roster',
   'your-battles',
   'your-battles-active',
   '21-log-battle',
@@ -196,8 +200,123 @@ page.on('requestfailed', (r) => {
 const fixture = (name) =>
   fs.readFileSync(path.join(here, '..', '..', '..', 'fixtures', name), 'utf8');
 const speciesFixture = JSON.parse(fixture('community-species-sample.json'));
+/** The synthetic tournament, as the worker would read it back, with its dates moved so it ended
+ * four days before this run: the Meta row and list show only recent events, and the event page
+ * hides Watch links on an old one, so a capture must not drift as real time passes. Every date
+ * and every `at` moves by the same offset, which keeps `at = startDate + (day - 1) days +
+ * seconds into that day's VOD`. */
+const tournament = (() => {
+  const src = JSON.parse(fixture('tournament-sample.json'));
+  const dayMs = 86_400_000;
+  const today = Date.parse(new Date().toISOString().slice(0, 10));
+  const offset = today - 4 * dayMs - Date.parse(src.event.endDate);
+  const shiftDate = (d) => new Date(Date.parse(d) + offset).toISOString().slice(0, 10);
+  const shiftAt = (a) => new Date(Date.parse(a) + offset).toISOString();
+  const event = {
+    id: src.id,
+    ...src.event,
+    startDate: shiftDate(src.event.startDate),
+    endDate: shiftDate(src.event.endDate),
+    received: new Date().toISOString(),
+  };
+  const battles = src.battles.battles;
+  const matches = new Map();
+  for (const b of battles) {
+    const m = matches.get(b.match) ?? {
+      match: b.match,
+      day: b.day,
+      stage: b.stage,
+      group: b.group,
+      roundLabel: b.roundLabel,
+      bracket: b.bracket,
+      bracketDepth: b.bracketDepth,
+      matchFormat: b.matchFormat,
+      left: b.left.player,
+      right: b.right.player,
+      games: [],
+    };
+    m.games.push({
+      game: b.game,
+      at: shiftAt(b.at),
+      leftTeam: b.left.team,
+      rightTeam: b.right.team,
+      leftForms: b.left.forms,
+      rightForms: b.right.forms,
+      winnerSide: b.winnerSide,
+      resultSource: b.resultSource,
+      scoreAtStart: b.scoreAtStart,
+      notes: b.notes,
+    });
+    matches.set(b.match, m);
+  }
+  const byPlayer = new Map();
+  for (const r of src.roster.entries) {
+    const held = byPlayer.get(r.player) ?? { player: r.player, species: [] };
+    held.species.push({ species: r.species, moves: r.moves });
+    byPlayer.set(r.player, held);
+  }
+  const stats = new Map();
+  for (const b of battles) {
+    for (const [side, won] of [
+      [b.left, b.winnerSide === 'left'],
+      [b.right, b.winnerSide === 'right'],
+    ]) {
+      side.team.forEach((id, i) => {
+        const st = stats.get(id) ?? {
+          speciesId: id,
+          picks: 0,
+          game1Picks: 0,
+          wins: 0,
+          losses: 0,
+          unresolvedForms: 0,
+          byDepth: new Array(9).fill(0),
+          broughtBy: 0,
+        };
+        st.picks += 1;
+        st.game1Picks += b.game === 1 ? 1 : 0;
+        st.wins += b.winnerSide !== null && won ? 1 : 0;
+        st.losses += b.winnerSide !== null && !won ? 1 : 0;
+        st.unresolvedForms += side.forms[i] === 'unresolved' ? 1 : 0;
+        st.byDepth[Math.min(Math.max(b.bracketDepth, 1), 9) - 1] += 1;
+        stats.set(id, st);
+      });
+    }
+  }
+  for (const r of src.roster.entries) {
+    const st = stats.get(r.species);
+    if (st) {
+      st.broughtBy += 1;
+    }
+  }
+  const players = new Set(battles.flatMap((b) => [b.left.player, b.right.player]));
+  return {
+    id: src.id,
+    list: {
+      events: [
+        {
+          id: src.id,
+          name: event.name,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          cup: event.cup,
+          battles: battles.length,
+          decided: battles.filter((b) => b.winnerSide !== null).length,
+          players: players.size,
+          blended: true,
+        },
+      ],
+    },
+    detail: {
+      event,
+      matches: [...matches.values()],
+      roster: [...byPlayer.values()],
+      species: [...stats.values()].sort((a, b) => b.picks - a.picks),
+    },
+  };
+})();
 await page.evaluateOnNewDocument(
-  (sample, teams, species) => {
+  (sample, teams, species, tournamentJson) => {
+    const tournament = JSON.parse(tournamentJson);
     const worker = 'https://pickthree-counter.travis-c82.workers.dev';
     const meta = (() => {
       const m = JSON.parse(sample);
@@ -261,6 +380,15 @@ await page.evaluateOnNewDocument(
         const until = Date.parse(new URL(url).searchParams.get('until') ?? '');
         return json(until < Date.now() - 5 * 86_400_000 ? lastWeek : meta);
       }
+      if (url.startsWith(`${worker}/api/v1/events`)) {
+        const rest = new URL(url).pathname.replace(/^\/api\/v1\/events\/?/, '');
+        if (rest === '') {
+          return json(tournament.list);
+        }
+        return decodeURIComponent(rest) === tournament.id
+          ? json(tournament.detail)
+          : Promise.resolve(new Response(null, { status: 404 }));
+      }
       if (url.startsWith(`${worker}/api/v1/teams`)) {
         return json(teams);
       }
@@ -280,6 +408,7 @@ await page.evaluateOnNewDocument(
   fixture('community-meta-sample.json'),
   fixture('community-teams-sample.json'),
   fixture('community-species-sample.json'),
+  JSON.stringify(tournament),
 );
 // The last Counters result the compute worker handed back (its opponent and, against one, the grid
 // time), read off the worker's own messages so the run can log how long the shield grids took on
@@ -1934,6 +2063,60 @@ if (!runThis.includes('Run this team')) {
 await shot('meta-teams-open', false, { mustShow: '.tb-team-row.open .row-body' });
 await page.click('.hdr .back');
 await page.waitForFunction(() => window.location.hash === '#/meta', { timeout: 15_000 });
+await metaHomeSettled();
+
+console.log('tournaments');
+// The Meta tab's Tournaments row, the list behind it, one event and its players. The stubbed
+// event ended four days before this run (see `tournament`), so it is inside the 55 day window.
+await page.waitForFunction(
+  () =>
+    [...document.querySelectorAll('.action-row')].some((a) => /Tournaments/.test(a.textContent)),
+  { timeout: 60_000 },
+);
+await page.evaluate(() => {
+  [...document.querySelectorAll('.action-row')]
+    .find((a) => /Tournaments/.test(a.textContent))
+    .click();
+});
+await page.waitForSelector('.event-card', { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
+await assertTitleCentred('tournaments');
+await shot('tournaments');
+
+console.log('event');
+await page.click('.event-card .row-head');
+await page.waitForFunction(() => window.location.hash.startsWith('#/meta/events/'), {
+  timeout: 15_000,
+});
+await page.waitForSelector('[data-event] .tb-team-row .row-head', { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
+await assertTitleCentred('event');
+const watchRows = (await page.$$('a.action-row')).length;
+if (watchRows !== 2) {
+  throw new Error(`event: ${watchRows} Watch rows, expected 2 (one per broadcast day)`);
+}
+await shot('event');
+
+const openPlayer = async (name) => {
+  await page.evaluate((n) => {
+    window.location.hash = `#/meta/events/${window.location.hash.split('/')[3].split('?')[0]}?p=${n}`;
+  }, name);
+  await page.waitForSelector('.tb-team-row.open .row-body', { timeout: 60_000 });
+  await page.evaluate(() => {
+    const row = document.querySelector('.tb-team-row.open');
+    const head = document.querySelector('.sub-head')?.getBoundingClientRect().bottom ?? 0;
+    window.scrollTo(0, window.scrollY + row.getBoundingClientRect().top - head - 8);
+  });
+};
+console.log('event, a player with a six');
+await openPlayer('ARCWARDEN');
+await shot('event-player-open', false, { mustShow: '.tb-team-row.open .row-body' });
+console.log('event, a player with no team list');
+await openPlayer('HOLLOWPINE');
+await shot('event-player-no-roster', false, { mustShow: '.tb-team-row.open .row-body' });
+await page.evaluate(() => {
+  window.location.hash = '#/meta';
+});
 await metaHomeSettled();
 
 console.log('your battles');

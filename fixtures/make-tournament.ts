@@ -202,9 +202,13 @@ MATCHES.forEach((m, mi) => {
   }
 });
 
-/** Every player's six. One roster entry in four carries no moveset, so "movesets known out of
+/** The last player has no RK9 team list on file: the event page must still show them (their
+ *  threes come from the broadcast) and say the six is not known. */
+const NO_ROSTER = PLAYERS[PLAYERS.length - 1] as string;
+
+/** Every other player's six. One roster entry in four carries no moveset, so "movesets known out of
  *  brought by" is a real fraction rather than always 100 percent. */
-const entries = PLAYERS.flatMap((player) =>
+const entries = PLAYERS.filter((player) => player !== NO_ROSTER).flatMap((player) =>
   (ROSTERS.get(player) as string[]).map((species, slot) => ({
     player,
     slot: slot + 1,
