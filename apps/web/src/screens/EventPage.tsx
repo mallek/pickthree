@@ -6,14 +6,15 @@
  */
 import { useMemo } from 'react';
 import {
+  eventOngoing,
   eventPlayers,
   recentSince,
   shortEventName,
   vodUrl,
   type EventDetailV1,
 } from '@pickthree/engine/meta';
-import { Button, Chevron, ErrorState, Header, IconButton, Loading } from '@pickthree/ui';
-import { CogGlyph, useScrollMemory } from '../components.tsx';
+import { Button, Chevron, ErrorState, Header, IconButton, Loading, Tag } from '@pickthree/ui';
+import { CogGlyph, PlayGlyph, useScrollMemory } from '../components.tsx';
 import { battlesText, count } from '../components/meta/boardView.ts';
 import { PlayerCard } from '../components/meta/PlayerCard.tsx';
 import { eventDates } from '../format.ts';
@@ -24,6 +25,13 @@ import { useEventDetail } from '../state/useMeta.ts';
  *  dates compare as text. */
 function watchable(endDate: string): boolean {
   return endDate.slice(0, 10) >= recentSince(new Date()).slice(0, 10);
+}
+
+/** How many calendar days an event runs, start and end included. */
+function dayCount(startDate: string, endDate: string): number {
+  const utc = (iso: string): number => Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+  const n = Math.round((utc(endDate) - utc(startDate)) / 86_400_000) + 1;
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 function EventBody({
@@ -54,6 +62,14 @@ function EventBody({
       const url = vodUrl(event, v.day);
       return url === null ? [] : [{ day: v.day, url }];
     });
+  // While the event runs, a day with no games yet says so; afterwards it just has no line.
+  const ongoing = eventOngoing(event, new Date());
+  const playedDays = new Set(detail.matches.map((m) => m.day));
+  const quietDays = ongoing
+    ? Array.from({ length: dayCount(event.startDate, event.endDate) }, (_, i) => i + 1).filter(
+        (d) => !playedDays.has(d),
+      )
+    : [];
   const wanted = p?.toLowerCase();
   const openName = players.find((pl) => pl.name.toLowerCase() === wanted)?.name ?? null;
   const toggle = (name: string): void => {
@@ -65,6 +81,12 @@ function EventBody({
   return (
     <>
       <p className="tb-fine">
+        {ongoing ? (
+          <>
+            <Tag>Ongoing</Tag>
+            {' · '}
+          </>
+        ) : null}
         {eventDates(event.startDate, event.endDate)} · {battlesText(battles)} from{' '}
         {count(players.length)} {players.length === 1 ? 'player' : 'players'} on stream · {league}
       </p>
@@ -73,7 +95,10 @@ function EventBody({
           {days.map((v) => (
             <a key={v.day} className="action-row" href={v.url} target="_blank" rel="noreferrer">
               <span>
-                <b>Watch day {v.day}</b>
+                <b className="watch-day">
+                  <PlayGlyph />
+                  Watch day {v.day}
+                </b>
                 <span className="small muted">The Twitch broadcast</span>
               </span>
               <span className="chev">
@@ -83,7 +108,16 @@ function EventBody({
           ))}
         </div>
       ) : null}
+      {quietDays.map((d) => (
+        <p className="tb-fine" key={d}>
+          {`Day ${d}: no games yet`}
+        </p>
+      ))}
       <b>Players</b>
+      <p className="tb-fine">
+        Records are games won and lost on stream. 14/15 under a Pokémon: picked in 14 of the
+        player&apos;s 15 streamed games.
+      </p>
       <div className="tb-team-rows">
         {players.map((pl) => (
           <PlayerCard

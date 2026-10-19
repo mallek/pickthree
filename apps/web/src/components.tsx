@@ -835,6 +835,22 @@ export function TeamsGlyph() {
   );
 }
 
+/** A play triangle, leading a Watch link: filled with the link's own color. */
+export function PlayGlyph() {
+  return (
+    <svg
+      className="play-glyph"
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" />
+    </svg>
+  );
+}
+
 /** A plus, the Add glyph for an IconButton. */
 export function PlusGlyph() {
   return (

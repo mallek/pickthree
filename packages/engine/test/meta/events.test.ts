@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RECENT_DAYS,
   champion,
+  eventOngoing,
   eventPlayers,
   recentSince,
   shortEventName,
@@ -430,5 +431,26 @@ describe('shortEventName', () => {
       'Frankfurt Regional',
     );
     expect(shortEventName('Spring Invitational')).toBe('Spring Invitational');
+  });
+});
+
+describe('eventOngoing', () => {
+  const event = { endDate: '2027-10-18' };
+  // Local-time constructors: the viewer's own calendar day, whatever the machine's zone.
+  it('is ongoing through the end date itself', () => {
+    expect(eventOngoing(event, new Date(2027, 9, 16, 9, 0))).toBe(true);
+    expect(eventOngoing(event, new Date(2027, 9, 18, 0, 0))).toBe(true);
+    expect(eventOngoing(event, new Date(2027, 9, 18, 23, 59))).toBe(true);
+  });
+
+  it('is over from the next day', () => {
+    expect(eventOngoing(event, new Date(2027, 9, 19, 0, 0))).toBe(false);
+    expect(eventOngoing(event, new Date(2027, 10, 1, 12, 0))).toBe(false);
+  });
+
+  it('reads only the date part of an end date', () => {
+    expect(eventOngoing({ endDate: '2027-10-18T00:00:00Z' }, new Date(2027, 9, 18, 22, 0))).toBe(
+      true,
+    );
   });
 });

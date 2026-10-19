@@ -297,3 +297,11 @@ export function shortEventName(name: string): string {
   }
   return `${m[1]} ${m[2]}`;
 }
+
+/** Whether an event is still on for the viewer: their local calendar day is on or before its end
+ *  date (the end date itself counts). ISO dates compare as text. */
+export function eventOngoing(event: { endDate: string }, now: Date): boolean {
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return today <= event.endDate.slice(0, 10);
+}

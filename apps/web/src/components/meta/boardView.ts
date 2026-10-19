@@ -33,6 +33,11 @@ export function battleWord(n: number): string {
   return n === 1 ? 'battle' : 'battles';
 }
 
+/** "1 streamed battle", "108 streamed battles": a tournament's games read off the broadcast. */
+export function streamedBattlesText(n: number): string {
+  return `${count(n)} streamed ${battleWord(n)}`;
+}
+
 /** "1 battle", "1,200 battles". */
 export function battlesText(n: number): string {
   return `${count(n)} ${battleWord(n)}`;
