@@ -30,7 +30,9 @@ nothing new below the fold).
 | State | Dark | Light |
 | --- | --- | --- |
 | `build-empty`: three dashed empty slots, no lineup hint (there is no card to tap yet), Find best order and Analyze both disabled | ![](img/build-empty-dark.webp) | ![](img/build-empty-light.webp) |
-| `build-choosing`: the Lead slot's search open, "Choosing Lead" with the role's job above it, the Suggested grid ("yours" tags on owned species) | ![](img/build-choosing-dark.webp) | ![](img/build-choosing-light.webp) |
+| `build-choosing` (re-captured 2026-10-18 for the filter button, see the addendum): the Lead slot's search open, "Choosing Lead" with the role's job above it, the filter button beside the search, the Suggested grid ("yours" tags on owned species) | ![](img/build-choosing-dark.webp) | ![](img/build-choosing-light.webp) |
+| `build-filters-sheet` (addendum, 2026-10-18): the Filters sheet over the open Lead search, Yours only switched on, the badge showing 1 on the filter button behind it | ![](img/build-filters-sheet-dark.webp) | ![](img/build-filters-sheet-light.webp) |
+| `build-yours-only` (addendum, 2026-10-18): Yours only on, the sheet closed, the Lead search still open ("Search your Pokémon for Lead"), Suggested showing only your copies in meta order, each still tagged "yours" | ![](img/build-yours-only-dark.webp) | ![](img/build-yours-only-light.webp) |
 | `build-suggestions`: one pick made (Skarmory), "Best with your first pick" with two + Add rows, each a reason against the pin alone | ![](img/build-suggestions-dark.webp) | ![](img/build-suggestions-light.webp) |
 | `13-build`: all three slots filled with species picks (none owned), "None of these are yours yet, so there is nothing to price.", Analyze enabled (full page) | ![](img/13-build-dark.webp) | ![](img/13-build-light.webp) |
 | `13b-build-moves`: the move sheet open on Azumarill, two charged moves ticked, the third disabled with "Untick one to pick another" and a "Changed" tag on the swapped move | ![](img/13b-build-moves-dark.webp) | ![](img/13b-build-moves-light.webp) |
@@ -355,6 +357,94 @@ Open items for Travis (not fixed on this branch):
 - **Pinned for later (Travis, 2026-09-25):** the shuffle icon next to "Find best order" from the
   design pass ("Find best order (shuffle icon) in the section header", design intake, Page 2,
   first pass). Not in this page's scope; a small follow-up.
+
+## Addendum: search filters (2026-10-18)
+
+Spec: `docs/superpowers/specs/2026-10-18-build-search-filters-design.md`. Build's slot search gets
+Collection's filter pattern: an icon-only filter button beside the input (count badge when a
+switch differs from its default) that opens a Filters sheet. Its one switch, Yours only, narrows
+the search and Suggested to your own copies. Nothing else on the page changed; the signed
+sections above stand as signed, apart from `build-choosing`, which is re-captured because the
+filter button now sits beside its search.
+
+New and re-captured images, dark and light at 390px, WebP 600px wide quality 72 from
+`apps/web/screenshots/<name>-{dark,light}.png`, converted the same way as the rest of this record:
+`build-filters-sheet` and `build-yours-only` (new; rows in the Screenshots table above) and
+`build-choosing` (replaced). All three are viewport shots. Unlike the 2026-09-25 captures, this run's
+game data was built with sprites, so these three show real sprites and "yours" tags rather than
+token letters; the sprite-less fallback is unchanged and was not touched. The other five Build
+captures (`build-empty`, `build-suggestions`, `13-build`, `13b-build-moves`, `build-cost`) were
+re-run in the same audit and not re-converted: nothing in them changed, because the capture flow
+switches Yours only back off before leaving the slot (the switch is held in memory for the
+session) and asserts the placeholder is back to "Search any".
+
+### Automated checks
+
+- [x] `npm run web:audit`: exit 0 on 2026-10-19 against `d39682e` plus this commit's `screens.mjs`.
+      `build-filters-sheet` and `build-yours-only` are added to `AUDIT_ENFORCED` beside
+      `build-choosing`. Zero findings on any enforced Build screen in either theme (the findings
+      list has no `build-*` or `13-build` rows; the 107 it prints are on screens not yet
+      redesigned and none fail the run). No "Browser errors" section.
+- [x] the run's own guards: `build-empty` header edges `{"left":2,"right":0}` and the title
+      centred (unchanged); `build-filters-sheet` must show `.ui-sheet .ui-switch-row`;
+      `build-yours-only` must show `.build-choose .recent-token`; the flow throws `build filters:
+      the slot closed with the sheet` if the search input is gone after Done, and fails if the
+      placeholder does not read "Search any" once Yours only is switched back off.
+- [x] `npm run lint`, `npm run typecheck`, `npm test` (196 files, 2,026 passed, 1 skipped) and
+      `npm run check-colors` all clean at this commit. No new CSS and no new color literals: the
+      row, button, sheet and switch are Collection's own parts.
+
+### Aesthetics
+
+- [x] the filter row matches Collection's: the input and the icon-only filter button share
+      Collection's `.search-row`, the button at the right at the input's height, as in
+      `collection-filters-sheet`. Build's input keeps its own look and focus ring.
+- [x] the badge: `build-yours-only` and `build-filters-sheet` show a "1" on the button with Yours
+      only on; `build-choosing` shows none with it off. It is the `FilterButton`'s own count
+      badge, violet (interaction), not pink: nothing here is measured data.
+- [x] the sheet: titled "Filters" with a Done button, one switch row, "Yours only" over "Only the
+      Pokémon you have" (Collection's line for Hide not collected, word for word), the switch on
+      the right in violet. It is the ui `Sheet` and `Switch`, in the same list markup as
+      Collection's sheet. Two text levels, the label and a muted line, no new sizes.
+- [x] pills unchanged: every token in `build-yours-only` still carries the neutral "yours" `Tag`,
+      as in `build-choosing`; there is no new owned mark and no Yours / Any grouping, per the spec's
+      anti-goals.
+- [x] at most one line of text before the first result: the label "Suggested" sits between the
+      search row and the grid, as before.
+- [x] light as readable as dark: all three states are matched pairs; the audit's per-theme
+      contrast pass is clean on both new screens.
+- [x] sprites unchanged: not affected. These captures do show sprites; no component or CSS that
+      draws one changed.
+
+### Functionality
+
+- [x] the button is named and only offered when it can do something: its name reads "Filters",
+      or "Filters, 1 on" with the switch on, and it is not rendered with no collection imported
+      (that state keeps its existing "No collection imported" line). Tested in
+      `apps/web/test/buildFilters.test.tsx` ("hides the Filters button with no collection",
+      "opens the Filters sheet with Yours only off, and counts it once on").
+- [x] the slot stays open: opening the sheet, flipping the switch and tapping Done leave the search
+      input present (the capture flow throws if not), and the placeholder follows the switch
+      ("Search your Pokémon for Lead" on, "Search any Pokémon for Lead" off; the capture flow
+      asserts the off state). `buildFilters.test.tsx` covers "keeps the slot open through the
+      sheet" and "Escape in the sheet closes the sheet, not the slot".
+- [x] Yours only narrows both lists: the search shows only your copies and Suggested shows your
+      best copy of each species you can run here in the league's meta order, each tagged "yours"
+      (`build-yours-only`). With it off Suggested is today's mixed list (`build-choosing`).
+      Suggest teammates, lead links and every other Build state are unchanged.
+- [x] the input rule still holds: input at the top (with its filter button beside it), results
+      directly under it, the lineup slots under that; the sheet opens over the page and the
+      keyboard-covered area holds no new control.
+- [x] product rules: the switch reads the collection on the device and makes no request; no
+      `connect-src` change; the value is held for the session only (`useSticky`) and resets on
+      reload, as Collection's filters do.
+
+Left for Travis to look at: whether the filter button's place beside Build's input reads right on
+a real phone, and the two empty-state lines ("None of your Pokémon match. Switch off Yours only to
+search every Pokémon.", "None of your Pokémon can be built for this league."), which no capture
+shows (covered by `buildFilters.test.tsx`).
+
+- [ ] Travis, sign-off for the search filters addendum.
 
 ## Sign-off
 

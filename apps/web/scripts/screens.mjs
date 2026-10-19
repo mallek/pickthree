@@ -38,6 +38,8 @@ const AUDIT_ENFORCED = new Set([
   'teams-empty',
   'build-empty',
   'build-choosing',
+  'build-filters-sheet',
+  'build-yours-only',
   'build-suggestions',
   '13-build',
   '13b-build-moves',
@@ -2546,6 +2548,34 @@ await page.$eval('.pick-card.empty', (el) => el.click());
 await page.waitForSelector('.search');
 await page.waitForSelector('.recent-token', { timeout: 15_000 });
 await shot('build-choosing', false, { mustShow: '.build-choose .recent-token' });
+{
+  // Build's search filters: the sheet with Yours only on, then the Suggested grid it narrows. The
+  // switch lives in memory for the session, so it goes back off before any later capture.
+  const openFilters = async () => {
+    await page.click('.ui-filter-icon');
+    await page.waitForSelector('.ui-switch-row');
+  };
+  const closeFilters = async () => {
+    await page.click('.ui-sheet-done');
+    await page.waitForSelector('.ui-sheet', { hidden: true });
+    if (!(await page.$('.search'))) {
+      throw new Error('build filters: the slot closed with the sheet');
+    }
+  };
+  await openFilters();
+  await page.click('.ui-switch-row');
+  await shot('build-filters-sheet', false, { mustShow: '.ui-sheet .ui-switch-row' });
+  await closeFilters();
+  await page.waitForSelector('.build-choose .recent-token', { timeout: 15_000 });
+  await shot('build-yours-only', false, { mustShow: '.build-choose .recent-token' });
+  await openFilters();
+  await page.click('.ui-switch-row');
+  await closeFilters();
+  const placeholder = await page.$eval('.search', (el) => el.getAttribute('placeholder') ?? '');
+  if (!placeholder.startsWith('Search any')) {
+    throw new Error(`build filters: Yours only did not switch off: "${placeholder}"`);
+  }
+}
 await page.keyboard.press('Escape');
 await page.waitForSelector('.search', { hidden: true });
 {
