@@ -92,7 +92,8 @@ Changes:
    `aria-label`. The "Watch day N" rows lead with the same triangle.
 6. "No team list yet: these are the Pokémon picked on stream. A ? is a Pokémon never picked on
    stream, not a missing one." sits directly under the open card's six (players without a team
-   list only).
+   list only), as muted fine print (`tb-fine muted`). The "?" sentence shows only when a slot is
+   unseen (fewer than 6 seen); HOLLOWPINE in the captures shows 6 of 6, so just the first.
 7. Ongoing: `eventOngoing` (`@pickthree/engine/meta`) is true while the viewer's local date is on
    or before the end date. A `Tag` "Ongoing" leads the list card's dates line and the event page's
    facts line, and while ongoing each event day with no matches gets a `tb-fine` "Day N: no games
@@ -112,7 +113,7 @@ games and day 3 has none yet.
 | `event-ongoing`: Ongoing in the facts line, "Day 3: no games yet", the Players line | ![](img/event-ongoing-clarity-dark.webp) | ![](img/event-ongoing-clarity-light.webp) |
 
 Automated checks: `npm run web:audit` exit 0 with no finding on any tournament screen in either
-theme; `npm run web:screens` exit 0; lint, typecheck and check-colors clean; web 959 tests and
+theme; `npm run web:screens` exit 0; lint, typecheck and check-colors clean; web 960 tests and
 engine `events.test.ts` 23 tests pass.
 
 Open for review: at 320px a game row (G label, two threes, chip, Watch) no longer fits on one line, so Watch

@@ -317,7 +317,9 @@ describe('EventPage', () => {
     const card = cardOf('Brock');
     const body = card.querySelector('.row-body') as HTMLElement;
     const note = body.firstElementChild as HTMLElement;
-    expect(note).toHaveClass('tb-fine');
+    // Fine print, as the page's other notes: small and muted, not body text.
+    expect(note).toHaveClass('tb-fine', 'muted');
+    // Brock showed 3 of 6, so the "?" sentence explains the empty slots.
     expect(note.textContent).toBe(
       'No team list yet: these are the Pokémon picked on stream. A ? is a Pokémon never picked on stream, not a missing one.',
     );
@@ -329,6 +331,31 @@ describe('EventPage', () => {
     renderAt('#/meta/events/nice?p=Ash');
     await screen.findByText('Players');
     expect(cardOf('Ash')).not.toHaveTextContent('No team list yet');
+  });
+
+  it('with all six seen, the no-team-list note drops the ? sentence', async () => {
+    // Misty's third game shows three more: six of six seen, no "?" slot to explain.
+    const d = detail();
+    const semis = d.matches[1] as EventMatchV1;
+    semis.games = [
+      ...semis.games,
+      game(
+        3,
+        new Date(Date.UTC(2027, 9, 17, 0, 0, 300)).toISOString(),
+        ['snorlax', 'swampert', 'skarmory'],
+        OPP,
+        'left',
+      ),
+    ];
+    stub.detail = d;
+    renderAt('#/meta/events/nice?p=Misty');
+    await screen.findByText('Players');
+    const card = cardOf('Misty');
+    expect(card).toHaveTextContent('6 of 6 seen');
+    const note = (card.querySelector('.row-body') as HTMLElement).firstElementChild as HTMLElement;
+    expect(note).toHaveClass('tb-fine', 'muted');
+    expect(note.textContent).toBe('No team list yet: these are the Pokémon picked on stream.');
+    expect(card.querySelector('.six-unseen')).toBeNull();
   });
 
   it('under Players, one line says what the records and the counts count', async () => {

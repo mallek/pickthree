@@ -298,9 +298,12 @@ export function PlayerCard({
       {open ? (
         <div className="row-body">
           {player.fromRoster ? null : (
-            <p className="tb-fine">
-              No team list yet: these are the Pokémon picked on stream. A ? is a Pokémon never
-              picked on stream, not a missing one.
+            <p className="tb-fine muted">
+              No team list yet: these are the Pokémon picked on stream.
+              {/* Only a six with a "?" slot needs the "?" explained. */}
+              {player.seen < 6
+                ? ' A ? is a Pokémon never picked on stream, not a missing one.'
+                : null}
             </p>
           )}
           <BuildTheseTeams player={player} />
