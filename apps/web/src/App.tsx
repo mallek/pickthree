@@ -18,6 +18,8 @@ import { Teams } from './screens/Teams.tsx';
 import { TopTeams } from './screens/TopTeams.tsx';
 import { Welcome } from './screens/Welcome.tsx';
 import { Import } from './screens/Import.tsx';
+import { EventPage } from './screens/EventPage.tsx';
+import { Tournaments } from './screens/Tournaments.tsx';
 import { YourBattles } from './screens/YourBattles.tsx';
 import { useActions, useAppState, type Route } from './state/store.tsx';
 import { AchievementToast } from './components/achievements/AchievementToast.tsx';
@@ -71,6 +73,8 @@ function TabBar() {
     route.screen === 'meta' ||
     route.screen === 'meta-teams' ||
     route.screen === 'meta-battles' ||
+    route.screen === 'meta-events' ||
+    route.screen === 'meta-event' ||
     route.screen === 'meta-new' ||
     route.screen === 'meta-log' ||
     route.screen === 'achievements';
@@ -145,6 +149,10 @@ function renderScreen(r: Route) {
       return <YourBattles />;
     case 'meta-teams':
       return <TopTeams />;
+    case 'meta-events':
+      return <Tournaments />;
+    case 'meta-event':
+      return <EventPage key={r.id} id={r.id} {...(r.p ? { p: r.p } : {})} />;
     case 'species':
       return <SpeciesPage key={r.id} id={r.id} />;
     case 'meta-new':
