@@ -243,7 +243,7 @@ function GameByGame({ player, event }: { player: EventPlayer; event: EventDetail
                         aria-label={`Watch game ${g.game.game} against ${opponent}`}
                       >
                         <PlayGlyph />
-                        Watch
+                        <span className="game-watch-word">Watch</span>
                       </a>
                     ) : null}
                   </div>

@@ -4220,6 +4220,26 @@ input[type='range'] {
   min-height: 44px;
   margin-block: -14px;
 }
+/* Below about 360px a game row (G label, two threes, a chip, Watch) only fits on one line with
+   Watch as its glyph alone (the link keeps its aria-label and 44px target, reaching into the row's
+   end padding) and the sprites closer together. */
+@media (max-width: 359px) {
+  .game-watch-word {
+    display: none;
+  }
+  .game-match .build-line {
+    column-gap: 4px;
+  }
+  .game-match .build-sprites {
+    gap: 2px;
+  }
+  .game-match .game-label {
+    min-width: 0;
+  }
+  .game-watch {
+    margin-right: -8px;
+  }
+}
 .row-body {
   display: flex;
   flex-direction: column;

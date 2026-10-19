@@ -108,7 +108,7 @@ games and day 3 has none yet.
 | --- | --- | --- |
 | `event-player-open`: chevrons and the tap hint on Build these teams | ![](img/event-player-open-clarity-dark.webp) | ![](img/event-player-open-clarity-light.webp) |
 | `event-player-no-roster`: the note under the six, G1/G2 rows, play glyph Watch | ![](img/event-player-no-roster-clarity-dark.webp) | ![](img/event-player-no-roster-clarity-light.webp) |
-| `event-player-no-roster-narrow` (320px): Watch wraps to its own line under a game row | ![](img/event-player-no-roster-narrow-clarity-dark.webp) | ![](img/event-player-no-roster-narrow-clarity-light.webp) |
+| `event-player-no-roster-narrow` (320px): each game row on one line, Watch as the glyph alone | ![](img/event-player-no-roster-narrow-clarity-dark.webp) | ![](img/event-player-no-roster-narrow-clarity-light.webp) |
 | `tournaments-ongoing`: Ongoing tag, streamed battles | ![](img/tournaments-ongoing-clarity-dark.webp) | ![](img/tournaments-ongoing-clarity-light.webp) |
 | `event-ongoing`: Ongoing in the facts line, "Day 3: no games yet", the Players line | ![](img/event-ongoing-clarity-dark.webp) | ![](img/event-ongoing-clarity-light.webp) |
 
@@ -116,7 +116,9 @@ Automated checks: `npm run web:audit` exit 0 with no finding on any tournament s
 theme; `npm run web:screens` exit 0; lint, typecheck and check-colors clean; web 960 tests and
 engine `events.test.ts` 23 tests pass.
 
-Open for review: at 320px a game row (G label, two threes, chip, Watch) no longer fits on one line, so Watch
-wraps under it (the row's `flex-wrap`). Seen on rows with and without a chip.
+Narrow phones: below 360px a game row's Watch shows the play glyph alone (the word is a
+`.game-watch-word` span hidden there; the link keeps its aria-label and 44px target) and the
+row's sprites sit 2px apart, so every game row fits on one line at 320px. The "Watch day N" rows
+keep their words.
 
 - [ ] Travis, <date>

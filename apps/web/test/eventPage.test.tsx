@@ -417,6 +417,12 @@ describe('EventPage', () => {
     const watch = within(cardOf('Ash')).getByRole('link', { name: 'Watch game 1 against Brock' });
     expect(watch.querySelector('svg.play-glyph')).not.toBeNull();
     expect(watch.textContent).toBe('Watch');
+    // The word is its own span, so a narrow phone can show the glyph alone; the label stays.
+    expect(watch.querySelector('.game-watch-word')).toHaveTextContent(/^Watch$/);
+    // The day rows keep their words: no narrow-hidden span there.
+    expect(
+      screen.getAllByRole('link', { name: /Watch day/ })[0]?.querySelector('.game-watch-word'),
+    ).toBeNull();
     expect(watch).toHaveClass('game-watch');
     expect(watch).toHaveAttribute('href', 'https://www.twitch.tv/videos/111?t=1h2m3s');
     expect(watch).toHaveAttribute('target', '_blank');
