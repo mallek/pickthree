@@ -71,3 +71,51 @@ converted to WebP (600px wide, quality 72).
 ## Sign-off
 
 - [ ] Travis, <date>
+
+## Addendum: clarity pass (2026-10-19, unsigned)
+
+Branch `tournament-pages-clarity`. Approved by Travis 2026-10-19 as a small clarity pass on the
+signed pages; built from the same signed parts and tokens, no new color literals.
+
+Changes:
+
+1. Under "Players", one `tb-fine` line says what the numbers count: "Records are games won and
+   lost on stream. 14/15 under a Pokémon: picked in 14 of the player's 15 streamed games." A
+   player card's head reads "N streamed games".
+2. List cards read "N streamed battles".
+3. Each "Build these teams" row ends in the action-row `Chevron`, under one `small muted` line,
+   "Tap a team to open it in Build." Games then record, as before.
+4. Picks, game by game: one heading per match (`vs <opponent> · <round>`), then one row per game,
+   `G<n>` in game order: own three, W/L chip (none when undecided), the opponent's three, Watch.
+   The threes keep no lead order.
+5. Watch is a play action: a `currentColor` play triangle plus "Watch", same 44px target and
+   `aria-label`. The "Watch day N" rows lead with the same triangle.
+6. "No team list yet: these are the Pokémon picked on stream. A ? is a Pokémon never picked on
+   stream, not a missing one." sits directly under the open card's six (players without a team
+   list only).
+7. Ongoing: `eventOngoing` (`@pickthree/engine/meta`) is true while the viewer's local date is on
+   or before the end date. A `Tag` "Ongoing" leads the list card's dates line and the event page's
+   facts line, and while ongoing each event day with no matches gets a `tb-fine` "Day N: no games
+   yet".
+
+Captures (dark and light, 390px unless named narrow, from the `npm run web:audit` run of
+2026-10-19). `tournaments-ongoing` and `event-ongoing` are new, enforced captures: `screens.mjs`
+moves the same synthetic event to end tomorrow (flag `pick3.eventOngoing`), so days 1 and 2 have
+games and day 3 has none yet.
+
+| State | Dark | Light |
+| --- | --- | --- |
+| `event-player-open`: chevrons and the tap hint on Build these teams | ![](img/event-player-open-clarity-dark.webp) | ![](img/event-player-open-clarity-light.webp) |
+| `event-player-no-roster`: the note under the six, G1/G2 rows, play glyph Watch | ![](img/event-player-no-roster-clarity-dark.webp) | ![](img/event-player-no-roster-clarity-light.webp) |
+| `event-player-no-roster-narrow` (320px): Watch wraps to its own line under a game row | ![](img/event-player-no-roster-narrow-clarity-dark.webp) | ![](img/event-player-no-roster-narrow-clarity-light.webp) |
+| `tournaments-ongoing`: Ongoing tag, streamed battles | ![](img/tournaments-ongoing-clarity-dark.webp) | ![](img/tournaments-ongoing-clarity-light.webp) |
+| `event-ongoing`: Ongoing in the facts line, "Day 3: no games yet", the Players line | ![](img/event-ongoing-clarity-dark.webp) | ![](img/event-ongoing-clarity-light.webp) |
+
+Automated checks: `npm run web:audit` exit 0 with no finding on any tournament screen in either
+theme; `npm run web:screens` exit 0; lint, typecheck and check-colors clean; web 959 tests and
+engine `events.test.ts` 23 tests pass.
+
+Open for review: at 320px a game row (G label, two threes, chip, Watch) no longer fits on one line, so Watch
+wraps under it (the row's `flex-wrap`). Seen on rows with and without a chip.
+
+- [ ] Travis, <date>
