@@ -4071,6 +4071,55 @@ input[type='range'] {
   font-size: 15px;
   color: var(--text);
 }
+/* A tournament card: a team row whose head is the larger stacked head (name and dates, then the
+   champion, then their six). */
+.event-card .row-head {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.event-card-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.event-card .row-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.event-card .row-sub {
+  font-size: 12px;
+}
+/* A player's six: six equal columns, a sprite (or a dashed "?" never seen) and an optional count. */
+.six-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+.six-slot {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.six-unseen {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--faint);
+  color: var(--faint);
+  font-size: 16px;
+}
+.six-count {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 .row-body {
   display: flex;
   flex-direction: column;
