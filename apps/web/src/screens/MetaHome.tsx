@@ -527,11 +527,6 @@ function EmptyYourMeta() {
 }
 
 /**
- * Meta, the tab root: what trainers are facing (community, read because the player opened it),
- * then either a first visit's invitation to log or the player's own contribution and meta. The
- * community cards fail on their own; the personal cards come from this phone and never wait.
- */
-/**
  * Tournaments: the recent official events, one row into the list. Not drawn while loading, on a
  * failed read, in a league without events or with none recent: the rest of the tab stands alone.
  */
@@ -564,6 +559,11 @@ function TournamentsRow({ league }: { league: string }) {
   );
 }
 
+/**
+ * Meta, the tab root: what trainers are facing (community, read because the player opened it),
+ * then either a first visit's invitation to log or the player's own contribution and meta. The
+ * community cards fail on their own; the personal cards come from this phone and never wait.
+ */
 export function MetaHome() {
   const s = useAppState();
   const { openSheet } = useActions();

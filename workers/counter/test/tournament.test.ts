@@ -87,6 +87,15 @@ describe('parseEventBody', () => {
     }
   });
 
+  it('rejects a day-keyed vod past the last event day', () => {
+    // The event runs 2026-09-18 to 2026-09-20: three days.
+    const ok = parseEventBody({ ...event, vods: [{ day: 3, id: 'v1' }] }, 'e-1');
+    expect(ok.ok).toBe(true);
+    const r = parseEventBody({ ...event, vods: [{ day: 4, id: 'v1' }] }, 'e-1');
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.reason).toBe('bad vods');
+  });
+
   it('accepts the shape the pipeline sends and stamps the id from the path', () => {
     const r = parseEventBody(event, '2027-baltimore-regional');
     expect(r.ok).toBe(true);

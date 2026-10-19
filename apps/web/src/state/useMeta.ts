@@ -386,7 +386,7 @@ export function useSpeciesDetail(
 }
 
 /** Leagues whose tournament events are read: the worker files them all under Great League. */
-const EVENT_LEAGUES = new Set(['great', 'championshipseries']);
+export const EVENT_LEAGUES = new Set(['great', 'championshipseries']);
 
 /**
  * Tournament events from the last RECENT_DAYS, newest as the worker orders them. Outside Great

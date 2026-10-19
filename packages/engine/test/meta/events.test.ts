@@ -200,6 +200,16 @@ describe('finish', () => {
     expect(byName.get('RIGHTY')?.finish).toBe('Finalist');
   });
 
+  it('a grand final with no decided game gives both Finalist and nobody Champion', () => {
+    const d = detail([
+      match('gf', 'LEFTY', 'RIGHTY', [game(A, B, null)], { stage: 'top_cut', bracket: 'grand' }),
+    ]);
+    expect(champion(d)).toBeNull();
+    const players = eventPlayers(d);
+    expect(players.map((p) => p.finish).sort()).toEqual(['Finalist', 'Finalist']);
+    expect(players.some((p) => p.finish === 'Champion')).toBe(false);
+  });
+
   it('a grand final with more decided games for one side goes to that side', () => {
     const d = detail([
       match(

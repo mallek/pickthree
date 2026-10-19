@@ -19,7 +19,7 @@ import { battlesText } from '../components/meta/boardView.ts';
 import { SixRow } from '../components/meta/SixRow.tsx';
 import { eventDates } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
-import { useEventDetail, useRecentEvents } from '../state/useMeta.ts';
+import { EVENT_LEAGUES, useEventDetail, useRecentEvents } from '../state/useMeta.ts';
 
 /** One event: its own component, so each card makes its own detail read. */
 function EventCard({ event }: { event: EventListRowV1 }) {
@@ -57,6 +57,9 @@ function EventCard({ event }: { event: EventListRowV1 }) {
 
 function EventList({ league }: { league: string }) {
   const events = useRecentEvents(league);
+  if (!EVENT_LEAGUES.has(league)) {
+    return <Empty line="Tournaments are Great League events. Switch to Great League to see them." />;
+  }
   if (events.state === 'error') {
     return (
       <ErrorState

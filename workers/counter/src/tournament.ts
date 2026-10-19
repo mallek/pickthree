@@ -82,6 +82,7 @@ export interface SideInput {
 
 export interface TournamentBattleInput {
   id: string;
+  /** Contract: startDate + (day - 1) days + seconds into that day's VOD. pick3 derives the Watch offset from it, so do not change the encoding. */
   at: string;
   day: number;
   stage: Stage;
@@ -215,6 +216,9 @@ function parseVods(raw: unknown, startDate: string, endDate: string): VodDay[] |
     const day = v['day'];
     const id = str(v['id'], VOD);
     if (typeof day !== 'number' || !Number.isInteger(day) || day < 1 || id === null || seen.has(day)) {
+      return null;
+    }
+    if (day > days) {
       return null;
     }
     seen.add(day);

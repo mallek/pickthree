@@ -7,8 +7,8 @@ import { resetMetaDataForTests } from '../src/metaData.ts';
 import { Tournaments } from '../src/screens/Tournaments.tsx';
 import { resetMetaHooksForTests } from '../src/state/useMeta.ts';
 import { AppProvider } from '../src/state/store.tsx';
-import { resetDbForTests } from '../src/storage/db.ts';
-import { fakeHost } from './fakeHost.ts';
+import { resetDbForTests, storage } from '../src/storage/db.ts';
+import { fakeHost, GREAT } from './fakeHost.ts';
 
 // The reads are stubbed: their own tests live with the hooks.
 const stub = vi.hoisted(() => ({
@@ -218,6 +218,31 @@ describe('Tournaments', () => {
   it('says so when there are no recent tournaments', async () => {
     renderList();
     expect(await screen.findByText('No tournaments in the last 55 days')).toBeInTheDocument();
+  });
+
+  it('on another league says tournaments are Great League events, not that none are recent', async () => {
+    await storage.saveSettings({ ...(await storage.loadSettings()), league: 'ultra' });
+    const base = fakeHost();
+    const host = fakeHost({
+      ready: vi.fn(async () => ({
+        ...(await base.ready()),
+        leagues: [
+          GREAT,
+          { ...GREAT, id: 'ultra', title: 'Ultra League', short: 'Ultra', cp: 2500 },
+        ],
+      })),
+    });
+    render(
+      <AppProvider host={host}>
+        <Tournaments />
+      </AppProvider>,
+    );
+    expect(
+      await screen.findByText(
+        'Tournaments are Great League events. Switch to Great League to see them.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No tournaments in the last/)).toBeNull();
   });
 
   it('loading and error states', async () => {

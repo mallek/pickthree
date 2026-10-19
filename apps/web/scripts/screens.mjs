@@ -58,6 +58,9 @@ const AUDIT_ENFORCED = new Set([
   'event',
   'event-player-open',
   'event-player-no-roster',
+  'tournaments-narrow',
+  'event-player-open-narrow',
+  'event-player-no-roster-narrow',
   'your-battles',
   'your-battles-active',
   '21-log-battle',
@@ -2114,6 +2117,31 @@ await shot('event-player-open', false, { mustShow: '.tb-team-row.open .row-body'
 console.log('event, a player with no team list');
 await openPlayer('HOLLOWPINE');
 await shot('event-player-no-roster', false, { mustShow: '.tb-team-row.open .row-body' });
+
+console.log('tournaments and a player, at 320px');
+// The narrowest phone: all six slots and the "N of 6 seen" note must fit. Width only, like
+// log-battle-wide, so the page is not reloaded.
+const viewport = (width) => ({
+  width,
+  height: 844,
+  deviceScaleFactor: 2,
+  isMobile: true,
+  hasTouch: true,
+});
+await page.setViewport(viewport(320));
+await openPlayer('ARCWARDEN');
+await shot('event-player-open-narrow', false, { mustShow: '.tb-team-row.open .row-body' });
+await openPlayer('HOLLOWPINE');
+await shot('event-player-no-roster-narrow', false, {
+  mustShow: '.tb-team-row.open .row-body',
+});
+await page.evaluate(() => {
+  window.location.hash = '#/meta/events';
+});
+await page.waitForSelector('.event-card .six-row', { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
+await shot('tournaments-narrow');
+await page.setViewport(viewport(390));
 await page.evaluate(() => {
   window.location.hash = '#/meta';
 });

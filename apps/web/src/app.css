@@ -4091,24 +4091,51 @@ input[type='range'] {
 }
 .event-card .row-sub {
   font-size: 12px;
+  /* The dates line and "N of 6 seen" are facts, never cut off with an ellipsis. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+/* A move's type chip wraps under its name on a narrow phone instead of painting over it. */
+.event-card .pick-move {
+  flex-wrap: wrap;
+}
+.event-card .pick-move-name {
+  min-width: auto;
 }
 /* A player's six: six equal columns, a sprite (or a dashed "?" never seen) and an optional count. */
 .six-row {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 4px;
   width: 100%;
 }
 .six-slot {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 2px;
+  min-width: 0;
+}
+/* Sprites are 44px at most and shrink with the column on a narrow phone (320px). The token sets
+   its size inline, so the scaling overrides it here and nowhere else. */
+.six-token {
+  display: block;
+  width: 100%;
+  max-width: 44px;
+  aspect-ratio: 1;
+}
+.six-token .token-wrap,
+.six-token .token {
+  width: 100% !important;
+  height: 100% !important;
 }
 .six-unseen {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  max-width: 44px;
+  aspect-ratio: 1;
   border-radius: 50%;
   border: 1.5px dashed var(--faint);
   color: var(--faint);

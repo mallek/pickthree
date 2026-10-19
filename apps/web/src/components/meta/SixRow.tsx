@@ -11,7 +11,9 @@ export function SixRow({ six, counts }: { six: (string | null)[]; counts?: (stri
         // Slots are positional: a slot's index is its identity.
         <span className="six-slot" key={i}>
           {id !== null ? (
-            <PokemonToken speciesId={id} size={44} showInitial={false} />
+            <span className="six-token">
+              <PokemonToken speciesId={id} size={44} showInitial={false} />
+            </span>
           ) : (
             <span className="six-unseen" aria-label="Not seen" role="img">
               ?
