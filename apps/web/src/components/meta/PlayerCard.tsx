@@ -1,7 +1,7 @@
 /**
- * One player on an event page: a large `tb-team-row` whose head is their name, finish, games on
- * stream, record and six (each with how many of their games it was picked in), opening in place
- * onto the threes to build, their RK9 movesets and every game they played on stream.
+ * One player on an event page: a large `tb-team-row` whose head is their name, finish, streamed
+ * games, record and six (each with how many of their games it was picked in), opening in place
+ * onto the threes to build, their RK9 movesets and every game they played on stream, by match.
  */
 import type { CSSProperties } from 'react';
 import { useState } from 'react';
@@ -13,7 +13,14 @@ import type {
 } from '@pickthree/engine/meta';
 import { vodUrl } from '@pickthree/engine/meta';
 import { Button, Chevron, Tag, TypeChip, typeColor } from '@pickthree/ui';
-import { PokemonToken, TeamsGlyph, TypeChips, useName, useSpecies } from '../../components.tsx';
+import {
+  PlayGlyph,
+  PokemonToken,
+  TeamsGlyph,
+  TypeChips,
+  useName,
+  useSpecies,
+} from '../../components.tsx';
 import { useActions, useAppState } from '../../state/store.tsx';
 import { count } from './boardView.ts';
 import { SixRow } from './SixRow.tsx';
@@ -33,7 +40,7 @@ function roundText(label: string | null): string {
   return label.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** The player's games grouped by match, in the order played. */
+/** The player's games grouped by match, matches in the order played, games by game number. */
 function byMatch(played: EventPlayerGame[]): EventPlayerGame[][] {
   const groups = new Map<string, EventPlayerGame[]>();
   for (const g of played) {
@@ -44,7 +51,7 @@ function byMatch(played: EventPlayerGame[]): EventPlayerGame[][] {
       groups.set(g.match.match, [g]);
     }
   }
-  return [...groups.values()];
+  return [...groups.values()].map((games) => [...games].sort((a, b) => a.game.game - b.game.game));
 }
 
 /** The threes they ran: each a Most logged teams row that opens Build with that three. */
@@ -81,13 +88,14 @@ function BuildTheseTeams({ player }: { player: EventPlayer }) {
         <TeamsGlyph />
         Build these teams
       </p>
+      <p className="small muted">Tap a team to open it in Build.</p>
       <div className="stack">
         {shown.map((t) => {
           const rec = `${t.wins}-${t.losses}`;
           return (
             <button
               type="button"
-              className="team-row"
+              className="team-row team-row-go"
               key={t.ids.join('+')}
               aria-label={`${t.ids.map(name).join(', ')}: ${gamesWord(t.games)}, ${rec}`}
               onClick={() => openInBuild(t)}
@@ -99,6 +107,9 @@ function BuildTheseTeams({ player }: { player: EventPlayer }) {
               </span>
               <span className="meta">{gamesWord(t.games)}</span>
               <b>{rec}</b>
+              <span className="chev">
+                <Chevron />
+              </span>
             </button>
           );
         })}
@@ -171,7 +182,10 @@ function Movesets({ player }: { player: EventPlayer }) {
   );
 }
 
-/** Every game they played on stream, by match: their three, the result, the opponent's three. */
+/**
+ * Every game they played on stream: one heading per match, then a row per game (G and its number,
+ * their three, the result, the opponent's three, Watch). A scanned three carries no lead order.
+ */
 function GameByGame({ player, event }: { player: EventPlayer; event: EventDetailV1['event'] }) {
   const name = useName();
   return (
@@ -185,7 +199,7 @@ function GameByGame({ player, event }: { player: EventPlayer; event: EventDetail
           const round = roundText(m.roundLabel);
           return (
             <div className="stack game-match" key={m.match}>
-              <span className="tb-fine">
+              <span className="tb-fine game-match-head">
                 <b>vs {opponent}</b>
                 {round ? ` · ${round}` : ''}
               </span>
@@ -194,6 +208,7 @@ function GameByGame({ player, event }: { player: EventPlayer; event: EventDetail
                 const word = g.result === 'W' ? 'Win' : g.result === 'L' ? 'Loss' : null;
                 return (
                   <div className="build-line" key={g.game.game}>
+                    <span className="game-label">{`G${g.game.game}`}</span>
                     <span className="build-sprites" aria-label={g.mine.map(name).join(', ')}>
                       {/* A scanned three may repeat a species; position is identity. */}
                       {g.mine.map((id, i) => (
@@ -227,7 +242,8 @@ function GameByGame({ player, event }: { player: EventPlayer; event: EventDetail
                         rel="noreferrer"
                         aria-label={`Watch game ${g.game.game} against ${opponent}`}
                       >
-                        Watch
+                        <PlayGlyph />
+                        <span className="game-watch-word">Watch</span>
                       </a>
                     ) : null}
                   </div>
@@ -268,7 +284,7 @@ export function PlayerCard({
                   {' · '}
                 </>
               ) : null}
-              {gamesWord(player.games)} on stream
+              {count(player.games)} streamed {player.games === 1 ? 'game' : 'games'}
               {player.fromRoster ? '' : ` · ${player.seen} of 6 seen`}
             </span>
           </span>
@@ -281,14 +297,17 @@ export function PlayerCard({
       </button>
       {open ? (
         <div className="row-body">
-          <BuildTheseTeams player={player} />
-          {player.fromRoster ? (
-            <Movesets player={player} />
-          ) : (
-            <p className="tb-fine">
-              No team list yet: the six above are what the broadcast showed.
+          {player.fromRoster ? null : (
+            <p className="tb-fine muted">
+              No team list yet: these are the Pokémon picked on stream.
+              {/* Only a six with a "?" slot needs the "?" explained. */}
+              {player.seen < 6
+                ? ' A ? is a Pokémon never picked on stream, not a missing one.'
+                : null}
             </p>
           )}
+          <BuildTheseTeams player={player} />
+          {player.fromRoster ? <Movesets player={player} /> : null}
           <GameByGame player={player} event={event} />
         </div>
       ) : null}

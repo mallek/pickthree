@@ -1,9 +1,16 @@
 /**
  * Tournaments (`#/meta/events`): one card per recent event, newest first. The list route carries
  * no champion, so each card reads its own event's detail (cached for the session) and fills in
- * the champion and their six when it lands; until then it shows the list row alone.
+ * the champion and their six when it lands; until then it shows the list row alone. An event
+ * that has not ended yet for the viewer is tagged Ongoing.
  */
-import { champion, RECENT_DAYS, shortEventName, type EventListRowV1 } from '@pickthree/engine/meta';
+import {
+  champion,
+  eventOngoing,
+  RECENT_DAYS,
+  shortEventName,
+  type EventListRowV1,
+} from '@pickthree/engine/meta';
 import {
   Button,
   Chevron,
@@ -15,7 +22,7 @@ import {
   Tag,
 } from '@pickthree/ui';
 import { CogGlyph } from '../components.tsx';
-import { battlesText } from '../components/meta/boardView.ts';
+import { streamedBattlesText } from '../components/meta/boardView.ts';
 import { SixRow } from '../components/meta/SixRow.tsx';
 import { eventDates } from '../format.ts';
 import { useActions, useAppState } from '../state/store.tsx';
@@ -37,7 +44,13 @@ function EventCard({ event }: { event: EventListRowV1 }) {
           <span className="row-text">
             <span className="row-title">{shortEventName(event.name)}</span>
             <span className="row-sub">
-              {eventDates(event.startDate, event.endDate)} · {battlesText(event.battles)} on stream
+              {eventOngoing(event, new Date()) ? (
+                <>
+                  <Tag>Ongoing</Tag>
+                  {' · '}
+                </>
+              ) : null}
+              {eventDates(event.startDate, event.endDate)} · {streamedBattlesText(event.battles)}
             </span>
           </span>
           <Chevron dir="right" />
@@ -58,7 +71,9 @@ function EventCard({ event }: { event: EventListRowV1 }) {
 function EventList({ league }: { league: string }) {
   const events = useRecentEvents(league);
   if (!EVENT_LEAGUES.has(league)) {
-    return <Empty line="Tournaments are Great League events. Switch to Great League to see them." />;
+    return (
+      <Empty line="Tournaments are Great League events. Switch to Great League to see them." />
+    );
   }
   if (events.state === 'error') {
     return (

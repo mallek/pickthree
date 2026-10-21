@@ -4185,15 +4185,60 @@ input[type='range'] {
 .game-match {
   gap: 4px;
 }
+/* A Build these teams row ends in the action-row chevron: it opens Build. */
+.team-row.team-row-go {
+  grid-template-columns: 1fr auto auto auto;
+}
+.team-row-go .chev {
+  display: flex;
+  color: var(--accent-text);
+}
+/* A game row leads with its number in the match ("G2"). */
+.game-label {
+  min-width: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+/* A play triangle leads every Watch link, in the link's own color. */
+.play-glyph {
+  flex: none;
+}
+.watch-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 /* A 44px tap target that takes no more room than the line it sits in. */
 .game-watch {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   min-width: 44px;
   min-height: 44px;
   margin-block: -14px;
+}
+/* Below about 360px a game row (G label, two threes, a chip, Watch) only fits on one line with
+   Watch as its glyph alone (the link keeps its aria-label and 44px target, reaching into the row's
+   end padding) and the sprites closer together. */
+@media (max-width: 359px) {
+  .game-watch-word {
+    display: none;
+  }
+  .game-match .build-line {
+    column-gap: 4px;
+  }
+  .game-match .build-sprites {
+    gap: 2px;
+  }
+  .game-match .game-label {
+    min-width: 0;
+  }
+  .game-watch {
+    margin-right: -8px;
+  }
 }
 .row-body {
   display: flex;

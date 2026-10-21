@@ -211,7 +211,8 @@ describe('EventPage', () => {
     expect(tag('Gary')).toBe('Finalist');
     expect(tag('Misty')).toBe('Top cut');
     expect(tag('Brock')).toBeUndefined();
-    expect(cardOf('Ash')).toHaveTextContent('7 games on stream');
+    expect(cardOf('Ash')).toHaveTextContent('7 streamed games');
+    expect(cardOf('Ash').querySelector('.row-sub')).not.toHaveTextContent('on stream');
     expect(within(cardOf('Ash')).getByText('4-2')).toBeInTheDocument();
     // Azumarill was picked in 6 of Ash's 7 games.
     expect(cardOf('Ash').querySelectorAll('.six-count')[0]).toHaveTextContent('6/7');
@@ -306,11 +307,156 @@ describe('EventPage', () => {
     await screen.findByText('Players');
     const card = cardOf('Brock');
     expect(card).toHaveTextContent('3 of 6 seen');
-    expect(card).toHaveTextContent(
-      'No team list yet: the six above are what the broadcast showed.',
-    );
     expect(within(card).queryByText('Movesets (RK9 team list)')).toBeNull();
     expect(cardOf('Ash')).not.toHaveTextContent('of 6 seen');
+  });
+
+  it('the no-team-list note sits right under the six, above Build these teams', async () => {
+    renderAt('#/meta/events/nice?p=Brock');
+    await screen.findByText('Players');
+    const card = cardOf('Brock');
+    const body = card.querySelector('.row-body') as HTMLElement;
+    const note = body.firstElementChild as HTMLElement;
+    // Fine print, as the page's other notes: small and muted, not body text.
+    expect(note).toHaveClass('tb-fine', 'muted');
+    // Brock showed 3 of 6, so the "?" sentence explains the empty slots.
+    expect(note.textContent).toBe(
+      'No team list yet: these are the Pokémon picked on stream. A ? is a Pokémon never picked on stream, not a missing one.',
+    );
+    const build = within(card).getByText('Build these teams');
+    expect(note.compareDocumentPosition(build) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(card).not.toHaveTextContent('what the broadcast showed');
+    // A player with a team list gets no note.
+    cleanup();
+    renderAt('#/meta/events/nice?p=Ash');
+    await screen.findByText('Players');
+    expect(cardOf('Ash')).not.toHaveTextContent('No team list yet');
+  });
+
+  it('with all six seen, the no-team-list note drops the ? sentence', async () => {
+    // Misty's third game shows three more: six of six seen, no "?" slot to explain.
+    const d = detail();
+    const semis = d.matches[1] as EventMatchV1;
+    semis.games = [
+      ...semis.games,
+      game(
+        3,
+        new Date(Date.UTC(2027, 9, 17, 0, 0, 300)).toISOString(),
+        ['snorlax', 'swampert', 'skarmory'],
+        OPP,
+        'left',
+      ),
+    ];
+    stub.detail = d;
+    renderAt('#/meta/events/nice?p=Misty');
+    await screen.findByText('Players');
+    const card = cardOf('Misty');
+    expect(card).toHaveTextContent('6 of 6 seen');
+    const note = (card.querySelector('.row-body') as HTMLElement).firstElementChild as HTMLElement;
+    expect(note).toHaveClass('tb-fine', 'muted');
+    expect(note.textContent).toBe('No team list yet: these are the Pokémon picked on stream.');
+    expect(card.querySelector('.six-unseen')).toBeNull();
+  });
+
+  it('under Players, one line says what the records and the counts count', async () => {
+    renderAt('#/meta/events/nice');
+    const heading = await screen.findByText('Players');
+    const line = heading.nextElementSibling as HTMLElement;
+    expect(line).toHaveClass('tb-fine');
+    expect(line.textContent).toBe(
+      "Records are games won and lost on stream. 14/15 under a Pokémon: picked in 14 of the player's 15 streamed games.",
+    );
+  });
+
+  it('Build these teams rows end in a chevron under a tap hint', async () => {
+    renderAt('#/meta/events/nice?p=Ash');
+    await screen.findByText('Players');
+    const card = cardOf('Ash');
+    const label = within(card).getByText('Build these teams');
+    const hint = label.nextElementSibling as HTMLElement;
+    expect(hint).toHaveClass('small', 'muted');
+    expect(hint.textContent).toBe('Tap a team to open it in Build.');
+    const rows = Array.from(card.querySelectorAll('button.team-row'));
+    expect(rows).toHaveLength(3);
+    for (const r of rows) {
+      expect(r.lastElementChild).toHaveClass('chev');
+      expect(r.lastElementChild?.querySelector('svg')).not.toBeNull();
+    }
+    // Games then record, as Most logged teams.
+    expect(rows[0]?.querySelector('.meta')?.nextElementSibling?.tagName).toBe('B');
+  });
+
+  it('games are grouped by match, one heading each, then G1..Gn in game order', async () => {
+    // The grand final's games arrive out of order: the rows still read G1 to G4.
+    const d = detail();
+    const gf = d.matches[2] as EventMatchV1;
+    gf.games = [...gf.games].reverse();
+    stub.detail = d;
+    renderAt('#/meta/events/nice?p=Ash');
+    await screen.findByText('Players');
+    const card = cardOf('Ash');
+    const groups = Array.from(card.querySelectorAll('.game-match'));
+    expect(groups).toHaveLength(2);
+    const heads = groups.map((g) => g.querySelector('.game-match-head')?.textContent);
+    expect(heads).toEqual(['vs Brock · Swiss Round 1', 'vs Gary · Grand Finals']);
+    const labels = (g: Element) =>
+      Array.from(g.querySelectorAll('.game-label')).map((el) => el.textContent);
+    expect(labels(groups[0] as Element)).toEqual(['G1', 'G2', 'G3']);
+    expect(labels(groups[1] as Element)).toEqual(['G1', 'G2', 'G3', 'G4']);
+    // The heading is shown once, not on every game row.
+    expect(card.querySelectorAll('.game-match-head')).toHaveLength(2);
+    const lines = (groups[1] as Element).querySelectorAll('.build-line');
+    // G2 was Gary's: a loss. G4 is undecided: no chip.
+    expect(lines[1]?.querySelector('.result-chip.loss')).not.toBeNull();
+    expect(lines[3]?.querySelector('.result-chip')).toBeNull();
+  });
+
+  it('Watch is a play action: a play glyph and the word, with the full label', async () => {
+    renderAt('#/meta/events/nice?p=Ash');
+    await screen.findByText('Players');
+    const watch = within(cardOf('Ash')).getByRole('link', { name: 'Watch game 1 against Brock' });
+    expect(watch.querySelector('svg.play-glyph')).not.toBeNull();
+    expect(watch.textContent).toBe('Watch');
+    // The word is its own span, so a narrow phone can show the glyph alone; the label stays.
+    expect(watch.querySelector('.game-watch-word')).toHaveTextContent(/^Watch$/);
+    // The day rows keep their words: no narrow-hidden span there.
+    expect(
+      screen.getAllByRole('link', { name: /Watch day/ })[0]?.querySelector('.game-watch-word'),
+    ).toBeNull();
+    expect(watch).toHaveClass('game-watch');
+    expect(watch).toHaveAttribute('href', 'https://www.twitch.tv/videos/111?t=1h2m3s');
+    expect(watch).toHaveAttribute('target', '_blank');
+    expect(watch).toHaveAttribute('rel', 'noreferrer');
+    const day = screen.getAllByRole('link', { name: /Watch day/ })[0] as HTMLElement;
+    // The glyph leads the words.
+    const words = within(day).getByText('Watch day 1');
+    expect(words.firstElementChild).toHaveClass('play-glyph');
+    expect(words.firstChild).toBe(words.firstElementChild);
+  });
+
+  it('while the event runs: Ongoing in the facts line and a line for each day with no games', async () => {
+    // The event runs to the 19th; day 4 has no matches yet.
+    const d = detail();
+    d.event.endDate = '2027-10-19';
+    stub.detail = d;
+    vi.setSystemTime(new Date(2027, 9, 19, 12, 0));
+    renderAt('#/meta/events/nice');
+    await screen.findByText('Players');
+    const facts = screen.getByText(/battles from 4 players on stream/);
+    expect(within(facts).getByText('Ongoing')).toHaveClass('ui-tag');
+    expect(screen.getByText('Day 4: no games yet')).toHaveClass('tb-fine');
+    expect(screen.queryByText(/Day [123]: no games yet/)).toBeNull();
+  });
+
+  it('after the event: no Ongoing and no line for a day without games', async () => {
+    const d = detail();
+    d.event.endDate = '2027-10-19';
+    stub.detail = d;
+    vi.setSystemTime(new Date(2027, 9, 20, 12, 0));
+    renderAt('#/meta/events/nice');
+    await screen.findByText('Players');
+    expect(screen.queryByText('Ongoing')).toBeNull();
+    expect(screen.queryByText(/no games yet/)).toBeNull();
   });
 
   it('Movesets for a player with a team list: role pill N of M, Moves not listed', async () => {

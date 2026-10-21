@@ -63,6 +63,8 @@ const AUDIT_ENFORCED = new Set([
   'tournaments-narrow',
   'event-player-open-narrow',
   'event-player-no-roster-narrow',
+  'tournaments-ongoing',
+  'event-ongoing',
   'your-battles',
   'your-battles-active',
   '21-log-battle',
@@ -209,12 +211,16 @@ const speciesFixture = JSON.parse(fixture('community-species-sample.json'));
  * four days before this run: the Meta row and list show only recent events, and the event page
  * hides Watch links on an old one, so a capture must not drift as real time passes. Every date
  * and every `at` moves by the same offset, which keeps `at = startDate + (day - 1) days +
- * seconds into that day's VOD`. */
-const tournament = (() => {
+ * seconds into that day's VOD`.
+ *
+ * `endsIn` is the end date's day offset from today: -4 for the finished event, 1 for the ongoing
+ * one (`ongoing` below), which ends tomorrow: the fixture streamed days 1 and 2 of three, so
+ * yesterday and today have games and day 3 has none yet. */
+const tournamentEndingIn = (endsIn) => {
   const src = JSON.parse(fixture('tournament-sample.json'));
   const dayMs = 86_400_000;
   const today = Date.parse(new Date().toISOString().slice(0, 10));
-  const offset = today - 4 * dayMs - Date.parse(src.event.endDate);
+  const offset = today + endsIn * dayMs - Date.parse(src.event.endDate);
   const shiftDate = (d) => new Date(Date.parse(d) + offset).toISOString().slice(0, 10);
   const shiftAt = (a) => new Date(Date.parse(a) + offset).toISOString();
   const event = {
@@ -318,7 +324,8 @@ const tournament = (() => {
       species: [...stats.values()].sort((a, b) => b.picks - a.picks),
     },
   };
-})();
+};
+const tournament = { ...tournamentEndingIn(-4), ongoing: tournamentEndingIn(1) };
 await page.evaluateOnNewDocument(
   (sample, teams, species, tournamentJson) => {
     const tournament = JSON.parse(tournamentJson);
@@ -386,12 +393,15 @@ await page.evaluateOnNewDocument(
         return json(until < Date.now() - 5 * 86_400_000 ? lastWeek : meta);
       }
       if (url.startsWith(`${worker}/api/v1/events`)) {
+        // With pick3.eventOngoing set, the same event ends tomorrow instead of four days ago.
+        const t =
+          localStorage.getItem('pick3.eventOngoing') === '1' ? tournament.ongoing : tournament;
         const rest = new URL(url).pathname.replace(/^\/api\/v1\/events\/?/, '');
         if (rest === '') {
-          return json(tournament.list);
+          return json(t.list);
         }
-        return decodeURIComponent(rest) === tournament.id
-          ? json(tournament.detail)
+        return decodeURIComponent(rest) === t.id
+          ? json(t.detail)
           : Promise.resolve(new Response(null, { status: 404 }));
       }
       if (url.startsWith(`${worker}/api/v1/teams`)) {
@@ -2144,9 +2154,42 @@ await page.waitForSelector('.event-card .six-row', { timeout: 60_000 });
 await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
 await shot('tournaments-narrow');
 await page.setViewport(viewport(390));
+
+console.log('tournaments, an event still running');
+// The same event moved to end tomorrow: Ongoing on the list card and in the facts line, and
+// day 3 says it has no games yet. The reads are cached for the session, so this reloads, and
+// reloads again once the flag is off.
 await page.evaluate(() => {
+  localStorage.setItem('pick3.eventOngoing', '1');
+  window.location.hash = '#/meta/events';
+});
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForSelector('.event-card .six-row', { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
+const ongoingTag = await page.evaluate(() =>
+  [...document.querySelectorAll('.event-card .ui-tag')].some((t) => t.textContent === 'Ongoing'),
+);
+if (!ongoingTag) {
+  throw new Error('tournaments-ongoing: no Ongoing tag on the event card');
+}
+await shot('tournaments-ongoing');
+await page.click('.event-card .row-head');
+await page.waitForSelector('[data-event] .tb-team-row .row-head', { timeout: 60_000 });
+await page.waitForFunction(() => !document.querySelector('.scroll .ui-loading'));
+const quietDay = await page.evaluate(() =>
+  [...document.querySelectorAll('[data-event] .tb-fine')].some((p) =>
+    /^Day \d+: no games yet$/.test(p.textContent),
+  ),
+);
+if (!quietDay) {
+  throw new Error('event-ongoing: no "Day N: no games yet" line');
+}
+await shot('event-ongoing');
+await page.evaluate(() => {
+  localStorage.removeItem('pick3.eventOngoing');
   window.location.hash = '#/meta';
 });
+await page.reload({ waitUntil: 'networkidle0' });
 await metaHomeSettled();
 
 console.log('your battles');

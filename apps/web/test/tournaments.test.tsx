@@ -124,6 +124,9 @@ beforeEach(() => {
   stub.list = { state: 'ready', data: { events: [] } };
   stub.details = {};
   window.location.hash = '#/meta/events';
+  // A week after the newest fixture event: nothing is ongoing unless a test says so.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2027, 9, 25, 12, 0));
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response('{}', { status: 404 })),
@@ -132,6 +135,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -148,7 +152,7 @@ function cards(): HTMLElement[] {
 }
 
 describe('Tournaments', () => {
-  it('one card per event, newest first, with short name, dates and battles on stream', async () => {
+  it('one card per event, newest first, with short name, dates and streamed battles', async () => {
     stub.list = {
       state: 'ready',
       data: {
@@ -164,10 +168,29 @@ describe('Tournaments', () => {
     expect(cards()).toHaveLength(2);
     expect(first).toHaveTextContent('Nice Regional');
     expect(first).toHaveTextContent('Oct 17-18');
-    expect(first).toHaveTextContent('108 battles on stream');
+    expect(first).toHaveTextContent('108 streamed battles');
     expect(second).toHaveTextContent('Old Regional');
     expect(second).toHaveTextContent('Sep 1-2');
-    expect(second).toHaveTextContent('40 battles on stream');
+    expect(second).toHaveTextContent('40 streamed battles');
+    expect(first).not.toHaveTextContent('on stream');
+    expect(screen.queryByText('Ongoing')).toBeNull();
+  });
+
+  it('an event that has not ended yet carries an Ongoing tag; the end date itself counts', async () => {
+    stub.list = {
+      state: 'ready',
+      data: {
+        events: [
+          row('old', OLD, '2027-10-17', '2027-10-18', 40),
+          row('nice', NICE, '2027-10-24', '2027-10-25', 12),
+        ],
+      },
+    };
+    renderList();
+    await screen.findByText('Nice Regional');
+    const [nice, old] = cards();
+    expect(within(nice as HTMLElement).getByText('Ongoing')).toHaveClass('ui-tag');
+    expect(within(old as HTMLElement).queryByText('Ongoing')).toBeNull();
   });
 
   it('renders a card before its detail, then the champion and six slots once it loads', async () => {

@@ -184,6 +184,7 @@ describe('the meta subpath', () => {
       'communityWeights',
       'confidence',
       'epochFor',
+      'eventOngoing',
       'eventPlayers',
       'expectedWinRate',
       'facingWeight',
