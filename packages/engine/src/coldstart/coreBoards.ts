@@ -129,7 +129,7 @@ export function coreBoards(input: CupBoardsInput): CoreBoards {
   const top = honestBoardView(input, topPool);
   const topRows = build(scoreTrios(topPool, top.view, types, input.weights), top.view, false);
 
-  const budgetPool = boardPool(input, shipped, false, BOARD_POOL);
+  const budgetPool = boardPool(input, shipped, false, BOARD_POOL, input.budget);
   const budget = honestBoardView(input, budgetPool);
   const budgetRows = build(
     scoreTrios(budgetPool, budget.view, types, input.weights),

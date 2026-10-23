@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { budgetCost } from '../../src/coldstart/boards.js';
 import { coreBoards, coreRowKind, hasExactlyOneMega } from '../../src/coldstart/coreBoards.js';
 import type { CoreRowOut } from '../../src/coldstart/coreBoards.js';
 import type { BattleSimulator } from '../../src/sim/BattleSimulator.js';
@@ -142,6 +143,31 @@ describe.skipIf(!haveStaticData())('coreBoards on the built data', () => {
       for (const f of r.flex) {
         for (const c of f.team.members) {
           expect(c.moveset.eliteTmCount).toBe(0);
+        }
+      }
+    }
+  });
+
+  it('caps every budget member at the dust and candy limit when a budget is set', () => {
+    const budget = { stardust: 150_000, candy: 150, fromLevel: 20 };
+    const capped = coreBoards({
+      league: data.league,
+      index,
+      matrix: data.matrix,
+      rankings: data.rankings,
+      gameMaster: readGameMaster(),
+      weights: new Map(),
+      sim: losingSim,
+      mega: false,
+      budget,
+    });
+    expect(capped.budget.length).toBeGreaterThan(0);
+    for (const r of capped.budget) {
+      for (const f of r.flex) {
+        for (const c of f.team.members) {
+          const cost = budgetCost(c, budget);
+          expect(cost.stardust).toBeLessThanOrEqual(budget.stardust);
+          expect(cost.candy).toBeLessThanOrEqual(budget.candy);
         }
       }
     }

@@ -32,6 +32,10 @@ export const READING_LINES: Record<CoreBoardId, string> = {
   budget: 'Keep the pair. Choose one flex. That makes your team of three.',
   mega: 'Keep the pair. Choose one flex. Every team gets one Mega.',
 };
+/** The Budget board when it is capped on dust and candy instead of Elite TMs. */
+export const LOW_COST_TITLE = 'Budget Cores - Low Stardust';
+export const LOW_COST_NOTE = 'Each Pokemon: under 75k dust and 75 candy from a level 20 start';
+
 export const MASCOT: Record<CoreBoardId, string> = {
   top: 'mascot-pointing.png',
   budget: 'mascot-thinking.png',
@@ -97,19 +101,21 @@ export interface CoreBoardInputs {
   label: string;
   mixLine: string;
   mascot: string;
+  /** Budget board only: capped on dust and candy rather than Elite TMs. */
+  lowCost?: boolean;
 }
 
 export function coreBoardView(index: CoreIndex, i: CoreBoardInputs): CoreBoardView {
   return {
     id: i.id,
     title: i.title,
-    subtitle: SUBTITLES[i.id],
+    subtitle: i.lowCost ? LOW_COST_TITLE : SUBTITLES[i.id],
     readingLine: READING_LINES[i.id],
     label: i.label,
     source: [
       `Strength: pick3 sims vs the ${i.title} meta`,
       i.mixLine,
-      'Flex moves and team order: full analysis in the post',
+      i.lowCost ? LOW_COST_NOTE : 'Flex moves and team order: full analysis in the post',
     ],
     mascot: i.mascot,
     rows: i.rows.map((r) => coreRowView(index, r)),
@@ -151,6 +157,11 @@ export function postCoreBoard(
   index: CoreIndex,
   id: CoreBoardId,
   rows: CoreRowOut[],
+  lowCost = false,
 ): PostCoreBoard {
-  return { id, heading: HEADINGS[id], rows: rows.map((r) => postCoreRow(index, r)) };
+  return {
+    id,
+    heading: lowCost ? LOW_COST_TITLE : HEADINGS[id],
+    rows: rows.map((r) => postCoreRow(index, r)),
+  };
 }

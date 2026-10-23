@@ -12,6 +12,7 @@ import { candidatePool, type Candidate, type Rankings } from '../search/candidat
 import { MatrixView } from '../search/matrixView.js';
 import { DEFAULT_TRIO_OPTIONS, weightedTrioOptions, type TrioIndex } from '../search/trios.js';
 import type { BattleSimulator } from '../sim/BattleSimulator.js';
+import { costToLevel } from '../tables/powerup.js';
 import { movesetDrift, withReplacedRows } from '../sim/matrixSim.js';
 import { coldStartBuilds, coldStartSpecimens, spreadsFromGameMaster } from './pool.js';
 import { presentTeam, scoreTrios, type GeneratedTeam, type ScoredTrio } from './teams.js';
@@ -111,6 +112,34 @@ export const BOARD_POOL = 60;
 /** A pool wide enough to hold every Mega the league's matrix has. */
 export const MEGA_SCAN = 1000;
 
+/**
+ * A per-Pokemon spending cap for the Budget board. A cold-start Pokemon is already at its league
+ * level, so the power-up cost is counted from fromLevel (a typical catch or raid level) up to it,
+ * plus the second-move unlock. Dust and candy (XL included) must both stay at or under the cap.
+ */
+export interface BoardBudget {
+  stardust: number;
+  candy: number;
+  fromLevel: number;
+}
+
+/** Little Cup's Budget board: no Elite TM, and cheap to build from a level 20 start. */
+export const LITTLE_BUDGET: BoardBudget = { stardust: 75_000, candy: 75, fromLevel: 20 };
+
+/** What it costs to take a candidate from budget.fromLevel to its league level, unlock included. */
+export function budgetCost(c: Candidate, budget: BoardBudget): { stardust: number; candy: number } {
+  const s = c.build.specimen;
+  const power = costToLevel(budget.fromLevel, c.build.baseLevel, {
+    shadow: s.shadow,
+    purified: s.purified,
+    lucky: s.lucky,
+  });
+  return {
+    stardust: power.stardust + c.cost.stardust,
+    candy: power.candy + power.xlCandy + c.cost.candy,
+  };
+}
+
 export interface BoardRow {
   team: GeneratedTeam;
   /** Lead, switch, closer: the candidates in the order team.species lists them. */
@@ -131,6 +160,8 @@ export interface CupBoardsInput {
   sim: BattleSimulator;
   /** The league allows Megas (its schedule entry says mega: true). */
   mega: boolean;
+  /** Caps the Budget board's pool by dust and candy; absent means Budget only drops Elite TMs. */
+  budget?: BoardBudget;
 }
 
 export interface CupBoards {
@@ -146,6 +177,7 @@ export function boardPool(
   view: MatrixView,
   allowEliteTm: boolean,
   poolSize: number,
+  budget?: BoardBudget,
 ): Candidate[] {
   const opts = { ...buildOptionsFor(input.league), allowEliteTm };
   const builds = coldStartBuilds(
@@ -157,12 +189,22 @@ export function boardPool(
     input.index,
     opts,
   );
-  return candidatePool(builds, input.rankings, view, input.index, {
+  const { pool } = candidatePool(builds, input.rankings, view, input.index, {
     ...opts,
-    poolSize,
+    // A budget filters after ranking, so rank wide and cut to size once the cap has applied.
+    poolSize: budget ? MEGA_SCAN : poolSize,
     excludedSpecimenIds: [],
     excludedSpecies: [],
-  }).pool;
+  });
+  if (!budget) {
+    return pool;
+  }
+  return pool
+    .filter((c) => {
+      const cost = budgetCost(c, budget);
+      return cost.stardust <= budget.stardust && cost.candy <= budget.candy;
+    })
+    .slice(0, poolSize);
 }
 
 /** A view whose rows match the pool's movesets, re-simulating the rows that do not. */
@@ -213,7 +255,7 @@ export function cupBoards(input: CupBoardsInput): CupBoards {
     noMega,
   );
 
-  const budgetPool = boardPool(input, shipped, false, BOARD_POOL);
+  const budgetPool = boardPool(input, shipped, false, BOARD_POOL, input.budget);
   const budget = honestBoardView(input, budgetPool);
   const budgetRows = rowsOf(
     selectVaried(scoreTrios(budgetPool, budget.view, types, input.weights), speciesOf, select),

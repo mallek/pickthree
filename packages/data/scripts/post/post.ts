@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { GameDataIndex, coreBoards, type CoreRowOut } from '@pickthree/engine';
+import { GameDataIndex, LITTLE_BUDGET, coreBoards, type CoreRowOut } from '@pickthree/engine';
 import { priorWeights, readEpochs, resolveWindow } from '@pickthree/engine/meta';
 import { PvPokeSimulator, loadPvPokeInNode } from '@pickthree/sim-pvpoke';
 import { MASCOT, coreBoardView, postCoreBoard, type CoreBoardId } from './coreViews.js';
@@ -73,6 +73,7 @@ async function main(): Promise<void> {
   }
 
   const mega = data.schedule.some((e) => e.league === data.league.id && e.mega === true);
+  const lowCost = args.league === 'little';
   const sim = new PvPokeSimulator(loadPvPokeInNode(data.gameMaster));
   const boards = coreBoards({
     league: data.league,
@@ -83,6 +84,7 @@ async function main(): Promise<void> {
     weights,
     sim,
     mega,
+    ...(lowCost ? { budget: LITTLE_BUDGET } : {}),
   });
 
   const title = data.league.title;
@@ -101,7 +103,15 @@ async function main(): Promise<void> {
   const pages: [CoreBoardId, string][] = present.map(([id, rows]) => {
     const html = fillCoreBoard(
       template,
-      coreBoardView(index, { id, rows, title, label, mixLine: mix1, mascot: mascot(id) }),
+      coreBoardView(index, {
+        id,
+        rows,
+        title,
+        label,
+        mixLine: mix1,
+        mascot: mascot(id),
+        lowCost: lowCost && id === 'budget',
+      }),
     );
     assertAscii(html);
     return [id, html];
@@ -117,7 +127,7 @@ async function main(): Promise<void> {
     battles: mix.kind === 'blend' ? mix.battles : 0,
     events: mix.kind === 'blend' ? mix.events : 0,
     resimulated: boards.resimulated,
-    boards: present.map(([id, rows]) => postCoreBoard(index, id, rows)),
+    boards: present.map(([id, rows]) => postCoreBoard(index, id, rows, lowCost && id === 'budget')),
   };
   const markdown = postMarkdownCores(run);
   assertPostText(markdown);
