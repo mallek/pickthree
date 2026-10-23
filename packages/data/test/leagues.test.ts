@@ -40,11 +40,11 @@ describe.skipIf(!havePvPoke)('readLeagues', () => {
       expect(tournament!.meta).toBe('great');
       expect(tournament!.kind).toBe('cup');
       expect(tournament!.minCp).toBe(1410);
-      // The cup's own rules, copied from the gamemaster: no megas, no Mimikyu.
+      // The cup's own rules, copied from the gamemaster: no megas, no Mimikyu, no Minior.
       expect(tournament!.include).toEqual([]);
       expect(tournament!.exclude).toEqual([
         { filterType: 'tag', values: ['mega'] },
-        { filterType: 'id', values: ['mimikyu'] },
+        { filterType: 'id', values: ['mimikyu', 'minior_core', 'minior_meteor'] },
       ]);
     } finally {
       if (before !== undefined) {
