@@ -1,0 +1,857 @@
+{
+  "league": "little",
+  "cup": "Little Cup",
+  "day": "2026-10-14T12:00:00.000Z",
+  "weights": "blend",
+  "battles": 62,
+  "events": 0,
+  "mix": "PvPoke meta + 62 shared battles - Oct 14, 2026",
+  "pvpoke": {
+    "commit": "a23fb293300077028a65da534c73bd6367b7ef9d",
+    "date": "2026-10-13"
+  },
+  "resimulated": {
+    "top": [],
+    "budget": [
+      "spearow"
+    ],
+    "mega": []
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Wynaut",
+          "Impidimp"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Ledyba",
+            "strength": 83.9,
+            "coverage": 100,
+            "consistency": 75.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "wynaut",
+              "impidimp",
+              "ledyba"
+            ],
+            "moves": [
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "BUG_BITE",
+                "SILVER_WIND",
+                "SWIFT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wynaut.COUNTER.MIRROR_COAT+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+ledyba.BUG_BITE.SILVER_WIND.SWIFT"
+          },
+          {
+            "name": "Wooloo",
+            "strength": 82.9,
+            "coverage": 100,
+            "consistency": 71.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "wooloo",
+              "impidimp",
+              "wynaut"
+            ],
+            "moves": [
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wooloo.TAKE_DOWN.WILD_CHARGE.STOMP+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+wynaut.COUNTER.MIRROR_COAT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Bronzor",
+          "Impidimp"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Zigzagoon (Galarian) (Shadow)",
+            "strength": 82.5,
+            "coverage": 97.1,
+            "consistency": 75.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "bronzor",
+              "impidimp",
+              "zigzagoon_galarian_shadow"
+            ],
+            "moves": [
+              [
+                "TACKLE",
+                "GYRO_BALL",
+                "PAYBACK"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "SWIFT",
+                "DIG"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/bronzor.TACKLE.GYRO_BALL.PAYBACK+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+zigzagoon_galarian_shadow.TAKE_DOWN.SWIFT.DIG"
+          },
+          {
+            "name": "Swablu (Shadow)",
+            "strength": 82.1,
+            "coverage": 98.1,
+            "consistency": 72.5,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot"
+            ],
+            "species": [
+              "bronzor",
+              "impidimp",
+              "swablu_shadow"
+            ],
+            "moves": [
+              [
+                "TACKLE",
+                "GYRO_BALL",
+                "PAYBACK"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "PECK",
+                "AERIAL_ACE",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/bronzor.TACKLE.GYRO_BALL.PAYBACK+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+swablu_shadow.PECK.AERIAL_ACE.DISARMING_VOICE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Zigzagoon (Galarian)",
+          "Drifloon"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Wynaut",
+            "strength": 81.4,
+            "coverage": 97,
+            "consistency": 71.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "wynaut",
+              "zigzagoon_galarian",
+              "drifloon"
+            ],
+            "moves": [
+              [
+                "COUNTER",
+                "MIRROR_COAT"
+              ],
+              [
+                "TAKE_DOWN",
+                "SWIFT",
+                "DIG"
+              ],
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/wynaut.COUNTER.MIRROR_COAT+zigzagoon_galarian.TAKE_DOWN.SWIFT.DIG+drifloon.HEX.SHADOW_BALL.ICY_WIND"
+          },
+          {
+            "name": "Sandshrew (Alolan)",
+            "strength": 81,
+            "coverage": 95.3,
+            "consistency": 73.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "ducklett"
+            ],
+            "species": [
+              "drifloon",
+              "zigzagoon_galarian",
+              "sandshrew_alolan"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "TAKE_DOWN",
+                "SWIFT",
+                "DIG"
+              ],
+              [
+                "POWDER_SNOW",
+                "NIGHT_SLASH",
+                "GYRO_BALL"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+zigzagoon_galarian.TAKE_DOWN.SWIFT.DIG+sandshrew_alolan.POWDER_SNOW.NIGHT_SLASH.GYRO_BALL"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Bronzor",
+          "Purrloin"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Swablu (Shadow)",
+            "strength": 79.4,
+            "coverage": 100,
+            "consistency": 77.8,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot"
+            ],
+            "species": [
+              "bronzor",
+              "purrloin",
+              "swablu_shadow"
+            ],
+            "moves": [
+              [
+                "TACKLE",
+                "GYRO_BALL",
+                "PAYBACK"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "PECK",
+                "AERIAL_ACE",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/bronzor.TACKLE.GYRO_BALL.PAYBACK+purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+swablu_shadow.PECK.AERIAL_ACE.DISARMING_VOICE"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Purrloin",
+          "Wooloo"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Drifloon",
+            "strength": 77,
+            "coverage": 100,
+            "consistency": 68.2,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [
+              "ducklett",
+              "nickit"
+            ],
+            "species": [
+              "drifloon",
+              "purrloin",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          },
+          {
+            "name": "Ledyba",
+            "strength": 77,
+            "coverage": 100,
+            "consistency": 68.1,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [
+              "ducklett",
+              "binacle",
+              "ledyba"
+            ],
+            "species": [
+              "ledyba",
+              "purrloin",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "BUG_BITE",
+                "SILVER_WIND",
+                "SWIFT"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/ledyba.BUG_BITE.SILVER_WIND.SWIFT+purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          },
+          {
+            "name": "Shelmet",
+            "strength": 76.5,
+            "coverage": 100,
+            "consistency": 66.2,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [
+              "ducklett",
+              "binacle",
+              "ledyba"
+            ],
+            "species": [
+              "shelmet",
+              "purrloin",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "INFESTATION",
+                "BODY_SLAM",
+                "BUG_BUZZ"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/shelmet.INFESTATION.BODY_SLAM.BUG_BUZZ+purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Impidimp",
+          "Wooloo"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Litwick",
+            "strength": 80.7,
+            "coverage": 99,
+            "consistency": 64.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "binacle"
+            ],
+            "species": [
+              "litwick",
+              "impidimp",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "MYSTICAL_FIRE",
+                "HEAT_WAVE"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/litwick.EMBER.MYSTICAL_FIRE.HEAT_WAVE+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          },
+          {
+            "name": "Drifloon",
+            "strength": 80.1,
+            "coverage": 98.3,
+            "consistency": 63.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "drifloon",
+              "impidimp",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          },
+          {
+            "name": "Purrloin",
+            "strength": 79.9,
+            "coverage": 100,
+            "consistency": 59.4,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "binacle"
+            ],
+            "species": [
+              "purrloin",
+              "impidimp",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/purrloin.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          },
+          {
+            "name": "Machop",
+            "strength": 79.8,
+            "coverage": 100,
+            "consistency": 59.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "machop",
+              "impidimp",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "KARATE_CHOP",
+                "CROSS_CHOP",
+                "BRICK_BREAK"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/machop.KARATE_CHOP.CROSS_CHOP.BRICK_BREAK+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Litwick",
+          "Impidimp"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Nickit",
+            "strength": 80.5,
+            "coverage": 94,
+            "consistency": 73.8,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot"
+            ],
+            "species": [
+              "litwick",
+              "impidimp",
+              "nickit"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "MYSTICAL_FIRE",
+                "HEAT_WAVE"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/litwick.EMBER.MYSTICAL_FIRE.HEAT_WAVE+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+nickit.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH"
+          },
+          {
+            "name": "Skrelp",
+            "strength": 79.6,
+            "coverage": 95.6,
+            "consistency": 67.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot",
+              "binacle"
+            ],
+            "species": [
+              "litwick",
+              "impidimp",
+              "skrelp"
+            ],
+            "moves": [
+              [
+                "EMBER",
+                "MYSTICAL_FIRE",
+                "HEAT_WAVE"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "FOUL_PLAY",
+                "PLAY_ROUGH"
+              ],
+              [
+                "ACID",
+                "AQUA_TAIL",
+                "TWISTER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/litwick.EMBER.MYSTICAL_FIRE.HEAT_WAVE+impidimp.SUCKER_PUNCH.FOUL_PLAY.PLAY_ROUGH+skrelp.ACID.AQUA_TAIL.TWISTER"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Nickit",
+          "Cyndaquil (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Wooloo",
+            "strength": 78.9,
+            "coverage": 100,
+            "consistency": 55.4,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "nickit"
+            ],
+            "species": [
+              "nickit",
+              "cyndaquil_shadow",
+              "wooloo"
+            ],
+            "moves": [
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "EMBER",
+                "SWIFT",
+                "FLAME_CHARGE"
+              ],
+              [
+                "TAKE_DOWN",
+                "WILD_CHARGE",
+                "STOMP"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/nickit.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+cyndaquil_shadow.EMBER.SWIFT.FLAME_CHARGE+wooloo.TAKE_DOWN.WILD_CHARGE.STOMP"
+          },
+          {
+            "name": "Aipom (Shadow)",
+            "strength": 78.3,
+            "coverage": 100,
+            "consistency": 53.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot"
+            ],
+            "species": [
+              "aipom_shadow",
+              "cyndaquil_shadow",
+              "nickit"
+            ],
+            "moves": [
+              [
+                "SCRATCH",
+                "SWIFT",
+                "AERIAL_ACE"
+              ],
+              [
+                "EMBER",
+                "SWIFT",
+                "FLAME_CHARGE"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/aipom_shadow.SCRATCH.SWIFT.AERIAL_ACE+cyndaquil_shadow.EMBER.SWIFT.FLAME_CHARGE+nickit.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Drifloon",
+          "Cyndaquil (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Pawniard",
+            "strength": 78.1,
+            "coverage": 92.9,
+            "consistency": 66.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot",
+              "fletchling"
+            ],
+            "species": [
+              "drifloon",
+              "cyndaquil_shadow",
+              "pawniard"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "EMBER",
+                "SWIFT",
+                "FLAME_CHARGE"
+              ],
+              [
+                "FURY_CUTTER",
+                "NIGHT_SLASH",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+cyndaquil_shadow.EMBER.SWIFT.FLAME_CHARGE+pawniard.FURY_CUTTER.NIGHT_SLASH.IRON_HEAD"
+          },
+          {
+            "name": "Sandshrew (Alolan)",
+            "strength": 78.1,
+            "coverage": 92.9,
+            "consistency": 66.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "nickit"
+            ],
+            "species": [
+              "drifloon",
+              "cyndaquil_shadow",
+              "sandshrew_alolan"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "EMBER",
+                "SWIFT",
+                "FLAME_CHARGE"
+              ],
+              [
+                "POWDER_SNOW",
+                "NIGHT_SLASH",
+                "GYRO_BALL"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+cyndaquil_shadow.EMBER.SWIFT.FLAME_CHARGE+sandshrew_alolan.POWDER_SNOW.NIGHT_SLASH.GYRO_BALL"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Drifloon",
+          "Pawniard"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Purrloin (Shadow)",
+            "strength": 75.7,
+            "coverage": 95.5,
+            "consistency": 71.9,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [
+              "hoothoot",
+              "fletchling"
+            ],
+            "species": [
+              "drifloon",
+              "purrloin_shadow",
+              "pawniard"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "NIGHT_SLASH",
+                "PLAY_ROUGH"
+              ],
+              [
+                "FURY_CUTTER",
+                "NIGHT_SLASH",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+purrloin_shadow.SUCKER_PUNCH.NIGHT_SLASH.PLAY_ROUGH+pawniard.FURY_CUTTER.NIGHT_SLASH.IRON_HEAD"
+          },
+          {
+            "name": "Joltik (Shadow)",
+            "strength": 75.2,
+            "coverage": 95.5,
+            "consistency": 69.8,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [
+              "fletchling"
+            ],
+            "species": [
+              "drifloon",
+              "joltik_shadow",
+              "pawniard"
+            ],
+            "moves": [
+              [
+                "HEX",
+                "SHADOW_BALL",
+                "ICY_WIND"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "DISCHARGE",
+                "CROSS_POISON"
+              ],
+              [
+                "FURY_CUTTER",
+                "NIGHT_SLASH",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/little/drifloon.HEX.SHADOW_BALL.ICY_WIND+joltik_shadow.SUCKER_PUNCH.DISCHARGE.CROSS_POISON+pawniard.FURY_CUTTER.NIGHT_SLASH.IRON_HEAD"
+          }
+        ]
+      }
+    ]
+  }
+}

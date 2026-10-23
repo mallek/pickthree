@@ -1,0 +1,1101 @@
+{
+  "league": "fantasy",
+  "cup": "Fantasy Cup",
+  "day": "2026-10-21T05:08:33.257Z",
+  "weights": "blend",
+  "battles": 25,
+  "events": 0,
+  "mix": "PvPoke meta + 25 shared battles - Oct 21, 2026",
+  "pvpoke": {
+    "commit": "bdbb22c6888d0999f9bee1712a0296309dcab3fb",
+    "date": "2026-10-17"
+  },
+  "resimulated": {
+    "top": [],
+    "budget": [
+      "melmetal",
+      "corviknight",
+      "corviknight_shadow",
+      "empoleon",
+      "empoleon_shadow",
+      "heatran_shadow",
+      "tinkaton",
+      "primarina",
+      "heatran",
+      "togekiss",
+      "metagross",
+      "zekrom_shadow",
+      "altaria",
+      "tapu_fini",
+      "latias",
+      "lucario",
+      "florges"
+    ],
+    "mega": []
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Corviknight",
+          "Turtonator"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Weezing (Galarian)",
+            "strength": 95,
+            "coverage": 100,
+            "consistency": 80,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "weezing_galarian",
+              "corviknight",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ],
+              [
+                "SAND_ATTACK",
+                "AIR_CUTTER",
+                "IRON_HEAD"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT+corviknight.SAND_ATTACK.AIR_CUTTER.IRON_HEAD+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Corviknight",
+          "Melmetal"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Altaria",
+            "strength": 93.8,
+            "coverage": 100,
+            "consistency": 75,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "steelix_shadow"
+            ],
+            "species": [
+              "altaria",
+              "corviknight",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ],
+              [
+                "SAND_ATTACK",
+                "AIR_CUTTER",
+                "IRON_HEAD"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER+corviknight.SAND_ATTACK.AIR_CUTTER.IRON_HEAD+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Excadrill (Shadow)",
+            "strength": 93.3,
+            "coverage": 100,
+            "consistency": 73.3,
+            "safety": 100,
+            "structure": "ABC",
+            "exposure": [
+              "corviknight",
+              "forretress_shadow"
+            ],
+            "species": [
+              "excadrill_shadow",
+              "corviknight",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "DRILL_RUN",
+                "ROCK_SLIDE"
+              ],
+              [
+                "SAND_ATTACK",
+                "AIR_CUTTER",
+                "IRON_HEAD"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/excadrill_shadow.MUD_SHOT.DRILL_RUN.ROCK_SLIDE+corviknight.SAND_ATTACK.AIR_CUTTER.IRON_HEAD+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Melmetal",
+          "Doublade"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Mimikyu",
+            "strength": 89.1,
+            "coverage": 96.8,
+            "consistency": 82.6,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian",
+              "corviknight",
+              "steelix_shadow"
+            ],
+            "species": [
+              "melmetal",
+              "doublade",
+              "mimikyu"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH"
+          },
+          {
+            "name": "Altaria",
+            "strength": 89,
+            "coverage": 100,
+            "consistency": 76,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "steelix_shadow"
+            ],
+            "species": [
+              "altaria",
+              "doublade",
+              "melmetal"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH"
+          },
+          {
+            "name": "Togetic",
+            "strength": 88.7,
+            "coverage": 96.9,
+            "consistency": 81,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian",
+              "doublade",
+              "aegislash_shield",
+              "steelix_shadow"
+            ],
+            "species": [
+              "melmetal",
+              "doublade",
+              "togetic"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "FAIRY_WIND",
+                "HEAT_WAVE",
+                "DRAINING_KISS"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+togetic.FAIRY_WIND.HEAT_WAVE.DRAINING_KISS"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Stunfisk (Galarian)",
+          "Turtonator"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Weezing (Galarian)",
+            "strength": 88.8,
+            "coverage": 100,
+            "consistency": 75,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "weezing_galarian",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Klefki",
+            "strength": 88.5,
+            "coverage": 100,
+            "consistency": 74,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "klefki",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "ASTONISH",
+                "FOUL_PLAY",
+                "DRAINING_KISS"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/klefki.ASTONISH.FOUL_PLAY.DRAINING_KISS+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Melmetal",
+            "strength": 88.5,
+            "coverage": 97.8,
+            "consistency": 78.6,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "melmetal",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "THUNDER_SHOCK",
+                "DOUBLE_IRON_BASH",
+                "DYNAMIC_PUNCH"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/melmetal.THUNDER_SHOCK.DOUBLE_IRON_BASH.DYNAMIC_PUNCH+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Aggron (Shadow)",
+            "strength": 88.4,
+            "coverage": 100,
+            "consistency": 73.5,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "aggron_shadow",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "METAL_SOUND",
+                "METEOR_BEAM",
+                "BRICK_BREAK"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/aggron_shadow.METAL_SOUND.METEOR_BEAM.BRICK_BREAK+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Altaria",
+          "Doublade"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Forretress (Shadow)",
+            "strength": 88.2,
+            "coverage": 100,
+            "consistency": 72.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu",
+              "steelix_shadow"
+            ],
+            "species": [
+              "altaria",
+              "doublade",
+              "forretress_shadow"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "VOLT_SWITCH",
+                "SAND_TOMB",
+                "ROCK_TOMB"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+forretress_shadow.VOLT_SWITCH.SAND_TOMB.ROCK_TOMB"
+          },
+          {
+            "name": "Weezing (Galarian)",
+            "strength": 87.7,
+            "coverage": 100,
+            "consistency": 70.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "altaria",
+              "doublade",
+              "weezing_galarian"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "MOONBLAST",
+                "FLAMETHROWER"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.MOONBLAST.FLAMETHROWER+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Stunfisk (Galarian)",
+          "Turtonator"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Weezing (Galarian)",
+            "strength": 88.8,
+            "coverage": 100,
+            "consistency": 75,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "weezing_galarian",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Klefki",
+            "strength": 88.5,
+            "coverage": 100,
+            "consistency": 74,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "klefki",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "ASTONISH",
+                "FOUL_PLAY",
+                "DRAINING_KISS"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/klefki.ASTONISH.FOUL_PLAY.DRAINING_KISS+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Aggron (Shadow)",
+            "strength": 88.4,
+            "coverage": 100,
+            "consistency": 73.5,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "aggron_shadow",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "METAL_SOUND",
+                "METEOR_BEAM",
+                "BRICK_BREAK"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/aggron_shadow.METAL_SOUND.METEOR_BEAM.BRICK_BREAK+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Bronzong",
+            "strength": 87.9,
+            "coverage": 100,
+            "consistency": 71.7,
+            "safety": 80,
+            "structure": "ABB",
+            "exposure": [
+              "stunfisk_galarian",
+              "empoleon"
+            ],
+            "species": [
+              "bronzong",
+              "stunfisk_galarian",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "METAL_SOUND",
+                "PSYSHOCK",
+                "BULLDOZE"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/bronzong.METAL_SOUND.PSYSHOCK.BULLDOZE+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Doublade",
+          "Weezing (Galarian)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Forretress (Shadow)",
+            "strength": 88.5,
+            "coverage": 100,
+            "consistency": 74,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "forretress_shadow",
+              "doublade",
+              "weezing_galarian"
+            ],
+            "moves": [
+              [
+                "VOLT_SWITCH",
+                "SAND_TOMB",
+                "ROCK_TOMB"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/forretress_shadow.VOLT_SWITCH.SAND_TOMB.ROCK_TOMB+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT"
+          },
+          {
+            "name": "Altaria",
+            "strength": 88.2,
+            "coverage": 100,
+            "consistency": 72.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "altaria",
+              "doublade",
+              "weezing_galarian"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT"
+          },
+          {
+            "name": "Corviknight (Shadow)",
+            "strength": 87.9,
+            "coverage": 100,
+            "consistency": 71.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "weezing_galarian",
+              "doublade",
+              "corviknight_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "SAND_ATTACK",
+                "PAYBACK",
+                "SKY_ATTACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+corviknight_shadow.SAND_ATTACK.PAYBACK.SKY_ATTACK"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Stunfisk (Galarian)",
+          "Gabite"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Klefki",
+            "strength": 88,
+            "coverage": 100,
+            "consistency": 72.1,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "klefki",
+              "stunfisk_galarian",
+              "gabite"
+            ],
+            "moves": [
+              [
+                "ASTONISH",
+                "FOUL_PLAY",
+                "DRAINING_KISS"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "MUD_SHOT",
+                "TWISTER",
+                "DIG"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/klefki.ASTONISH.FOUL_PLAY.DRAINING_KISS+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+gabite.MUD_SHOT.TWISTER.DIG"
+          },
+          {
+            "name": "Mimikyu",
+            "strength": 87.8,
+            "coverage": 100,
+            "consistency": 71.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "gabite",
+              "stunfisk_galarian",
+              "mimikyu"
+            ],
+            "moves": [
+              [
+                "MUD_SHOT",
+                "TWISTER",
+                "DIG"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/gabite.MUD_SHOT.TWISTER.DIG+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH"
+          },
+          {
+            "name": "Weezing (Galarian)",
+            "strength": 87.5,
+            "coverage": 98.3,
+            "consistency": 73.5,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "weezing_galarian",
+              "stunfisk_galarian",
+              "gabite"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "SLUDGE",
+                "OVERHEAT"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "MUD_SHOT",
+                "TWISTER",
+                "DIG"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/weezing_galarian.FAIRY_WIND.SLUDGE.OVERHEAT+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+gabite.MUD_SHOT.TWISTER.DIG"
+          },
+          {
+            "name": "Bronzong",
+            "strength": 87.4,
+            "coverage": 100,
+            "consistency": 69.6,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "bronzong",
+              "stunfisk_galarian",
+              "gabite"
+            ],
+            "moves": [
+              [
+                "METAL_SOUND",
+                "PSYSHOCK",
+                "BULLDOZE"
+              ],
+              [
+                "MUD_SHOT",
+                "ROCK_SLIDE",
+                "EARTHQUAKE"
+              ],
+              [
+                "MUD_SHOT",
+                "TWISTER",
+                "DIG"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/bronzong.METAL_SOUND.PSYSHOCK.BULLDOZE+stunfisk_galarian.MUD_SHOT.ROCK_SLIDE.EARTHQUAKE+gabite.MUD_SHOT.TWISTER.DIG"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Altaria",
+          "Doublade"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Forretress (Shadow)",
+            "strength": 87.6,
+            "coverage": 97.8,
+            "consistency": 75,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu",
+              "steelix_shadow"
+            ],
+            "species": [
+              "altaria",
+              "doublade",
+              "forretress_shadow"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "VOLT_SWITCH",
+                "SAND_TOMB",
+                "ROCK_TOMB"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+forretress_shadow.VOLT_SWITCH.SAND_TOMB.ROCK_TOMB"
+          },
+          {
+            "name": "Klefki",
+            "strength": 87.4,
+            "coverage": 100,
+            "consistency": 69.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu",
+              "steelix_shadow"
+            ],
+            "species": [
+              "altaria",
+              "doublade",
+              "klefki"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "FLAMETHROWER",
+                "SKY_ATTACK"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SACRED_SWORD",
+                "IRON_HEAD"
+              ],
+              [
+                "ASTONISH",
+                "FOUL_PLAY",
+                "DRAINING_KISS"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/altaria.DRAGON_BREATH.FLAMETHROWER.SKY_ATTACK+doublade.SHADOW_CLAW.SACRED_SWORD.IRON_HEAD+klefki.ASTONISH.FOUL_PLAY.DRAINING_KISS"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Mimikyu",
+          "Turtonator"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Metagross",
+            "strength": 86.7,
+            "coverage": 100,
+            "consistency": 66.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "metagross",
+              "mimikyu",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "BULLET_PUNCH",
+                "EARTHQUAKE",
+                "PSYCHIC"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/metagross.BULLET_PUNCH.EARTHQUAKE.PSYCHIC+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Tinkaton",
+            "strength": 86.7,
+            "coverage": 100,
+            "consistency": 66.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "stunfisk_galarian"
+            ],
+            "species": [
+              "tinkaton",
+              "mimikyu",
+              "turtonator"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "BULLDOZE",
+                "HEAVY_SLAM"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/tinkaton.FAIRY_WIND.BULLDOZE.HEAVY_SLAM+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT"
+          },
+          {
+            "name": "Corviknight (Shadow)",
+            "strength": 86.3,
+            "coverage": 100,
+            "consistency": 65.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "mimikyu"
+            ],
+            "species": [
+              "turtonator",
+              "mimikyu",
+              "corviknight_shadow"
+            ],
+            "moves": [
+              [
+                "INCINERATE",
+                "DRAGON_CLAW",
+                "OVERHEAT"
+              ],
+              [
+                "SHADOW_CLAW",
+                "SHADOW_SNEAK",
+                "PLAY_ROUGH"
+              ],
+              [
+                "SAND_ATTACK",
+                "PAYBACK",
+                "SKY_ATTACK"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/fantasy/turtonator.INCINERATE.DRAGON_CLAW.OVERHEAT+mimikyu.SHADOW_CLAW.SHADOW_SNEAK.PLAY_ROUGH+corviknight_shadow.SAND_ATTACK.PAYBACK.SKY_ATTACK"
+          }
+        ]
+      }
+    ]
+  }
+}

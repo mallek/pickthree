@@ -1,0 +1,1257 @@
+{
+  "league": "mega-master",
+  "cup": "Master League: Mega Edition",
+  "day": "2026-10-07T21:02:54.323Z",
+  "weights": "blend",
+  "battles": 0,
+  "events": 0,
+  "mix": "PvPoke meta only - Oct 7, 2026",
+  "pvpoke": {
+    "commit": "f627e89e53c0c7b903fff097df7a0ad0ac95decc",
+    "date": "2026-10-05"
+  },
+  "resimulated": {
+    "top": [
+      "gallade_mega"
+    ],
+    "budget": [
+      "mewtwo_mega_y",
+      "mewtwo_mega_x",
+      "gyarados_mega",
+      "garchomp_mega",
+      "rayquaza_mega",
+      "metagross_mega",
+      "latios_mega",
+      "groudon_primal",
+      "latias_mega",
+      "delphox_mega",
+      "dialga_origin",
+      "swampert_mega",
+      "palkia_origin",
+      "ursaluna_shadow",
+      "charizard_mega_y",
+      "kyurem_white",
+      "zekrom",
+      "gengar_mega",
+      "ursaluna",
+      "lugia",
+      "metagross",
+      "reshiram_shadow",
+      "reshiram",
+      "melmetal",
+      "gyarados_shadow",
+      "zekrom_shadow",
+      "xerneas",
+      "latios_shadow",
+      "keldeo_resolute",
+      "hydreigon_shadow",
+      "florges",
+      "zamazenta_crowned_shield",
+      "gallade_mega",
+      "garchomp_shadow",
+      "yveltal",
+      "lugia_shadow",
+      "blastoise_mega",
+      "kyurem",
+      "zacian_crowned_sword",
+      "ampharos_mega"
+    ],
+    "mega": [
+      "gallade_mega",
+      "lopunny_mega",
+      "slowbro_mega",
+      "sharpedo_mega",
+      "sableye_mega"
+    ]
+  },
+  "boards": {
+    "top": [
+      {
+        "core": [
+          "Garchomp (Mega)",
+          "Dialga (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Xerneas",
+            "strength": 86.1,
+            "coverage": 98.1,
+            "consistency": 68.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "xerneas",
+              "garchomp_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "GEOMANCY",
+                "CLOSE_COMBAT",
+                "MOONBLAST"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/xerneas.GEOMANCY.CLOSE_COMBAT.MOONBLAST+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          },
+          {
+            "name": "Florges",
+            "strength": 85.7,
+            "coverage": 100,
+            "consistency": 62.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "florges",
+              "garchomp_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "CHILLING_WATER"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/florges.FAIRY_WIND.MOONBLAST.CHILLING_WATER+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Dialga (Origin)",
+          "Garchomp (Mega)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Florges",
+            "strength": 85.8,
+            "coverage": 100,
+            "consistency": 63.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "dialga_origin",
+              "garchomp_mega",
+              "florges"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "ROAR_OF_TIME",
+                "IRON_HEAD"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "CHILLING_WATER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/dialga_origin.DRAGON_BREATH.ROAR_OF_TIME.IRON_HEAD+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+florges.FAIRY_WIND.MOONBLAST.CHILLING_WATER"
+          },
+          {
+            "name": "Xerneas",
+            "strength": 85,
+            "coverage": 100,
+            "consistency": 60,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "dialga_origin",
+              "garchomp_mega",
+              "xerneas"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "ROAR_OF_TIME",
+                "IRON_HEAD"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "GEOMANCY",
+                "CLOSE_COMBAT",
+                "MOONBLAST"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/dialga_origin.DRAGON_BREATH.ROAR_OF_TIME.IRON_HEAD+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+xerneas.GEOMANCY.CLOSE_COMBAT.MOONBLAST"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Gyarados (Mega)",
+          "Dialga (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Xerneas",
+            "strength": 83.7,
+            "coverage": 91.3,
+            "consistency": 72.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "xerneas",
+              "gyarados_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "GEOMANCY",
+                "CLOSE_COMBAT",
+                "MOONBLAST"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "CRUNCH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/xerneas.GEOMANCY.CLOSE_COMBAT.MOONBLAST+gyarados_mega.DRAGON_BREATH.AQUA_TAIL.CRUNCH+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Kingambit",
+          "Gyarados (Shadow)"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Mewtwo (Mega Y)",
+            "strength": 83.7,
+            "coverage": 94.6,
+            "consistency": 85.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega",
+              "delphox_mega"
+            ],
+            "species": [
+              "kingambit",
+              "mewtwo_mega_y",
+              "gyarados_shadow"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "TWISTER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+gyarados_shadow.DRAGON_BREATH.AQUA_TAIL.TWISTER"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Kingambit",
+          "Mewtwo (Mega Y)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Yveltal",
+            "strength": 81.9,
+            "coverage": 96.7,
+            "consistency": 84,
+            "safety": 50,
+            "structure": "ABC",
+            "exposure": [
+              "groudon_primal",
+              "groudon_primal",
+              "delphox_mega"
+            ],
+            "species": [
+              "kingambit",
+              "mewtwo_mega_y",
+              "yveltal"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "DARK_PULSE",
+                "OBLIVION_WING"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+yveltal.SUCKER_PUNCH.DARK_PULSE.OBLIVION_WING"
+          },
+          {
+            "name": "Palkia (Shadow)",
+            "strength": 81.8,
+            "coverage": 97.1,
+            "consistency": 73.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega"
+            ],
+            "species": [
+              "palkia_shadow",
+              "mewtwo_mega_y",
+              "kingambit"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD"
+          },
+          {
+            "name": "Lugia",
+            "strength": 81.5,
+            "coverage": 97.1,
+            "consistency": 71.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega"
+            ],
+            "species": [
+              "lugia",
+              "mewtwo_mega_y",
+              "kingambit"
+            ],
+            "moves": [
+              [
+                "DRAGON_TAIL",
+                "AEROBLAST",
+                "EARTH_POWER"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/lugia.DRAGON_TAIL.AEROBLAST.EARTH_POWER+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD"
+          }
+        ]
+      }
+    ],
+    "budget": [
+      {
+        "core": [
+          "Florges",
+          "Garchomp (Mega)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Kyurem (White)",
+            "strength": 84.9,
+            "coverage": 95.6,
+            "consistency": 68.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "florges",
+              "garchomp_mega",
+              "kyurem_white"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "FUSION_FLARE",
+                "DRAGON_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+kyurem_white.DRAGON_BREATH.FUSION_FLARE.DRAGON_PULSE"
+          },
+          {
+            "name": "Palkia (Shadow)",
+            "strength": 84.8,
+            "coverage": 95.6,
+            "consistency": 67.9,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "florges",
+              "garchomp_mega",
+              "palkia_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR"
+          },
+          {
+            "name": "Palkia (Origin)",
+            "strength": 84.7,
+            "coverage": 95.6,
+            "consistency": 67.8,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "florges",
+              "garchomp_mega",
+              "palkia_origin"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+palkia_origin.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR"
+          },
+          {
+            "name": "Dialga (Shadow)",
+            "strength": 84.6,
+            "coverage": 97,
+            "consistency": 64.5,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "florges",
+              "garchomp_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Zacian (Crowned Sword)",
+          "Garchomp (Mega)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Kyurem (White)",
+            "strength": 82.1,
+            "coverage": 94.8,
+            "consistency": 68.9,
+            "safety": 70,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal",
+              "garchomp_mega"
+            ],
+            "species": [
+              "zacian_crowned_sword",
+              "garchomp_mega",
+              "kyurem_white"
+            ],
+            "moves": [
+              [
+                "METAL_CLAW",
+                "CLOSE_COMBAT",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "FUSION_FLARE",
+                "DRAGON_PULSE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/zacian_crowned_sword.METAL_CLAW.CLOSE_COMBAT.PLAY_ROUGH+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+kyurem_white.DRAGON_BREATH.FUSION_FLARE.DRAGON_PULSE"
+          },
+          {
+            "name": "Dialga (Shadow)",
+            "strength": 82,
+            "coverage": 96.5,
+            "consistency": 65.2,
+            "safety": 70,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal",
+              "garchomp_mega"
+            ],
+            "species": [
+              "zacian_crowned_sword",
+              "garchomp_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "METAL_CLAW",
+                "CLOSE_COMBAT",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/zacian_crowned_sword.METAL_CLAW.CLOSE_COMBAT.PLAY_ROUGH+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          },
+          {
+            "name": "Palkia (Origin)",
+            "strength": 82,
+            "coverage": 94.8,
+            "consistency": 68.3,
+            "safety": 70,
+            "structure": "ABC",
+            "exposure": [
+              "garchomp_mega"
+            ],
+            "species": [
+              "zacian_crowned_sword",
+              "garchomp_mega",
+              "palkia_origin"
+            ],
+            "moves": [
+              [
+                "METAL_CLAW",
+                "CLOSE_COMBAT",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/zacian_crowned_sword.METAL_CLAW.CLOSE_COMBAT.PLAY_ROUGH+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+palkia_origin.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR"
+          },
+          {
+            "name": "Palkia (Shadow)",
+            "strength": 82,
+            "coverage": 94.8,
+            "consistency": 68.4,
+            "safety": 70,
+            "structure": "ABC",
+            "exposure": [
+              "garchomp_mega"
+            ],
+            "species": [
+              "zacian_crowned_sword",
+              "garchomp_mega",
+              "palkia_shadow"
+            ],
+            "moves": [
+              [
+                "METAL_CLAW",
+                "CLOSE_COMBAT",
+                "PLAY_ROUGH"
+              ],
+              [
+                "DRAGON_TAIL",
+                "TWISTER",
+                "SAND_TOMB"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/zacian_crowned_sword.METAL_CLAW.CLOSE_COMBAT.PLAY_ROUGH+garchomp_mega.DRAGON_TAIL.TWISTER.SAND_TOMB+palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Kyogre (Primal)",
+          "Dialga (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Zygarde (Complete Forme)",
+            "strength": 82,
+            "coverage": 100,
+            "consistency": 68.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal",
+              "rayquaza_mega"
+            ],
+            "species": [
+              "kyogre_primal",
+              "zygarde_complete",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "WATERFALL",
+                "AVALANCHE",
+                "THUNDER"
+              ],
+              [
+                "DRAGON_TAIL",
+                "CRUNCH",
+                "BULLDOZE"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/kyogre_primal.WATERFALL.AVALANCHE.THUNDER+zygarde_complete.DRAGON_TAIL.CRUNCH.BULLDOZE+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Tyranitar",
+          "Kyogre (Primal)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Palkia (Shadow)",
+            "strength": 80.6,
+            "coverage": 100,
+            "consistency": 82.5,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "tyranitar",
+              "kyogre_primal",
+              "palkia_shadow"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "BRUTAL_SWING",
+                "STONE_EDGE"
+              ],
+              [
+                "WATERFALL",
+                "AVALANCHE",
+                "THUNDER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/tyranitar.DRAGON_BREATH.BRUTAL_SWING.STONE_EDGE+kyogre_primal.WATERFALL.AVALANCHE.THUNDER+palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR"
+          },
+          {
+            "name": "Palkia (Origin)",
+            "strength": 80.2,
+            "coverage": 100,
+            "consistency": 81,
+            "safety": 40,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "tyranitar",
+              "kyogre_primal",
+              "palkia_origin"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "BRUTAL_SWING",
+                "STONE_EDGE"
+              ],
+              [
+                "WATERFALL",
+                "AVALANCHE",
+                "THUNDER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/tyranitar.DRAGON_BREATH.BRUTAL_SWING.STONE_EDGE+kyogre_primal.WATERFALL.AVALANCHE.THUNDER+palkia_origin.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Palkia (Shadow)",
+          "Florges"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Latios (Mega)",
+            "strength": 78.5,
+            "coverage": 92.3,
+            "consistency": 69.2,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega"
+            ],
+            "species": [
+              "palkia_shadow",
+              "latios_mega",
+              "florges"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AURA_SPHERE",
+                "DRAGON_CLAW"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR+latios_mega.DRAGON_BREATH.AURA_SPHERE.DRAGON_CLAW+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          },
+          {
+            "name": "Delphox (Mega)",
+            "strength": 76.7,
+            "coverage": 93.7,
+            "consistency": 59.6,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega"
+            ],
+            "species": [
+              "palkia_shadow",
+              "delphox_mega",
+              "florges"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ],
+              [
+                "SCRATCH",
+                "PSYSHOCK",
+                "MYSTICAL_FIRE_PLUS"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "DISARMING_VOICE"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR+delphox_mega.SCRATCH.PSYSHOCK.MYSTICAL_FIRE_PLUS+florges.FAIRY_WIND.MOONBLAST.DISARMING_VOICE"
+          }
+        ]
+      }
+    ],
+    "mega": [
+      {
+        "core": [
+          "Garchomp (Mega)",
+          "Dialga (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Xerneas",
+            "strength": 86.1,
+            "coverage": 98.1,
+            "consistency": 68.2,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "xerneas",
+              "garchomp_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "GEOMANCY",
+                "CLOSE_COMBAT",
+                "MOONBLAST"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/xerneas.GEOMANCY.CLOSE_COMBAT.MOONBLAST+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          },
+          {
+            "name": "Florges",
+            "strength": 85.7,
+            "coverage": 100,
+            "consistency": 62.7,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "florges",
+              "garchomp_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "CHILLING_WATER"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/florges.FAIRY_WIND.MOONBLAST.CHILLING_WATER+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Dialga (Origin)",
+          "Garchomp (Mega)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Florges",
+            "strength": 85.8,
+            "coverage": 100,
+            "consistency": 63.3,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "dialga_origin",
+              "garchomp_mega",
+              "florges"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "ROAR_OF_TIME",
+                "IRON_HEAD"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "FAIRY_WIND",
+                "MOONBLAST",
+                "CHILLING_WATER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/dialga_origin.DRAGON_BREATH.ROAR_OF_TIME.IRON_HEAD+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+florges.FAIRY_WIND.MOONBLAST.CHILLING_WATER"
+          },
+          {
+            "name": "Xerneas",
+            "strength": 85,
+            "coverage": 100,
+            "consistency": 60,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [],
+            "species": [
+              "dialga_origin",
+              "garchomp_mega",
+              "xerneas"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "ROAR_OF_TIME",
+                "IRON_HEAD"
+              ],
+              [
+                "DRAGON_TAIL",
+                "EARTH_POWER",
+                "TWISTER"
+              ],
+              [
+                "GEOMANCY",
+                "CLOSE_COMBAT",
+                "MOONBLAST"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/dialga_origin.DRAGON_BREATH.ROAR_OF_TIME.IRON_HEAD+garchomp_mega.DRAGON_TAIL.EARTH_POWER.TWISTER+xerneas.GEOMANCY.CLOSE_COMBAT.MOONBLAST"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Gyarados (Mega)",
+          "Dialga (Shadow)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Xerneas",
+            "strength": 83.7,
+            "coverage": 91.3,
+            "consistency": 72.4,
+            "safety": 80,
+            "structure": "ABC",
+            "exposure": [
+              "kyogre_primal"
+            ],
+            "species": [
+              "xerneas",
+              "gyarados_mega",
+              "dialga_shadow"
+            ],
+            "moves": [
+              [
+                "GEOMANCY",
+                "CLOSE_COMBAT",
+                "MOONBLAST"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "CRUNCH"
+              ],
+              [
+                "DRAGON_BREATH",
+                "IRON_HEAD",
+                "DRACO_METEOR"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/xerneas.GEOMANCY.CLOSE_COMBAT.MOONBLAST+gyarados_mega.DRAGON_BREATH.AQUA_TAIL.CRUNCH+dialga_shadow.DRAGON_BREATH.IRON_HEAD.DRACO_METEOR"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Kingambit",
+          "Gyarados (Shadow)"
+        ],
+        "flexKind": "mega",
+        "flex": [
+          {
+            "name": "Mewtwo (Mega Y)",
+            "strength": 83.7,
+            "coverage": 94.6,
+            "consistency": 85.7,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega",
+              "delphox_mega"
+            ],
+            "species": [
+              "kingambit",
+              "mewtwo_mega_y",
+              "gyarados_shadow"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "TWISTER"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+gyarados_shadow.DRAGON_BREATH.AQUA_TAIL.TWISTER"
+          }
+        ]
+      },
+      {
+        "core": [
+          "Kingambit",
+          "Mewtwo (Mega Y)"
+        ],
+        "flexKind": "regular",
+        "flex": [
+          {
+            "name": "Yveltal",
+            "strength": 81.9,
+            "coverage": 96.7,
+            "consistency": 84,
+            "safety": 50,
+            "structure": "ABC",
+            "exposure": [
+              "groudon_primal",
+              "groudon_primal",
+              "delphox_mega"
+            ],
+            "species": [
+              "kingambit",
+              "mewtwo_mega_y",
+              "yveltal"
+            ],
+            "moves": [
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "SUCKER_PUNCH",
+                "DARK_PULSE",
+                "OBLIVION_WING"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+yveltal.SUCKER_PUNCH.DARK_PULSE.OBLIVION_WING"
+          },
+          {
+            "name": "Palkia (Shadow)",
+            "strength": 81.8,
+            "coverage": 97.1,
+            "consistency": 73.1,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega"
+            ],
+            "species": [
+              "palkia_shadow",
+              "mewtwo_mega_y",
+              "kingambit"
+            ],
+            "moves": [
+              [
+                "DRAGON_BREATH",
+                "AQUA_TAIL",
+                "DRACO_METEOR"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/palkia_shadow.DRAGON_BREATH.AQUA_TAIL.DRACO_METEOR+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD"
+          },
+          {
+            "name": "Lugia",
+            "strength": 81.5,
+            "coverage": 97.1,
+            "consistency": 71.9,
+            "safety": 60,
+            "structure": "ABC",
+            "exposure": [
+              "metagross_mega"
+            ],
+            "species": [
+              "lugia",
+              "mewtwo_mega_y",
+              "kingambit"
+            ],
+            "moves": [
+              [
+                "DRAGON_TAIL",
+                "AEROBLAST",
+                "EARTH_POWER"
+              ],
+              [
+                "PSYCHO_CUT",
+                "PSYSTRIKE",
+                "THUNDERBOLT"
+              ],
+              [
+                "LOW_KICK",
+                "FOUL_PLAY",
+                "IRON_HEAD"
+              ]
+            ],
+            "link": "https://pick3.gg/#/t/mega-master/lugia.DRAGON_TAIL.AEROBLAST.EARTH_POWER+mewtwo_mega_y.PSYCHO_CUT.PSYSTRIKE.THUNDERBOLT+kingambit.LOW_KICK.FOUL_PLAY.IRON_HEAD"
+          }
+        ]
+      }
+    ]
+  }
+}
