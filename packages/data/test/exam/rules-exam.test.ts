@@ -375,6 +375,37 @@ describe.skipIf(!havePvPoke)('rules exam', () => {
     expect(turnOf(atRaised)).toBeGreaterThan(coreTurn);
   });
 
+  it('every cmp-tie-knockout script differs by exactly the CMP tie signature', () => {
+    // 'explained' accepts any difference once a script is listed, so pin the cause: the traces agree
+    // before the tie turn, the only executed difference is the tie loser's entry on that turn (PvPoke
+    // throws it, ours skips it), and in ours the tie loser is knocked out on that turn.
+    const listed = differences.find((d) => d.id === 'cmp-tie-knockout')?.scripts ?? [];
+    expect(listed.length).toBeGreaterThan(0);
+    const key = (e: ScriptEntry): string => `${e.actor}@${e.turn}#${e.slot}`;
+    for (const id of listed) {
+      const p = runAll().find((x) => x.s.id === id) as Played;
+      expect(p, id).toBeDefined();
+      expect(atkOf(p, 0), `${id} is an Attack tie`).toBe(atkOf(p, 1));
+      const ours = new Set(p.ours.executed.map(key));
+      const theirs = new Set(p.pvpoke.executed.map(key));
+      expect([...ours].filter((k) => !theirs.has(k)), `${id}: nothing only ours`).toEqual([]);
+      const onlyPvPoke = p.pvpoke.executed.filter((e) => !ours.has(key(e)));
+      expect(onlyPvPoke.length, `${id}: one entry only PvPoke threw`).toBe(1);
+      const loser = onlyPvPoke[0] as ScriptEntry;
+      expect(sameTurnPairs(p), `${id}: that entry is on a tie turn`).toContain(loser.turn);
+      const before = (run: ExamRun): ExamRun => ({
+        ...run,
+        trace: run.trace.filter((t) => t.turn < loser.turn),
+      });
+      expect(firstDifference(before(p.ours), before(p.pvpoke)), `${id}: same before the tie`).toBeNull();
+      const tieRecord = p.ours.trace.find((t) => t.turn === loser.turn);
+      expect(tieRecord?.hp[loser.actor], `${id}: ours knocks the tie loser out`).toBe(0);
+      expect(p.ours.trace[p.ours.trace.length - 1]?.turn, `${id}: ours ends on the tie turn`).toBe(
+        loser.turn,
+      );
+    }
+  });
+
   it('the rules exam passes: every mismatch is explained', () => {
     const results: ExamResult[] = runAll().map((p) => ({
       id: p.s.id,
