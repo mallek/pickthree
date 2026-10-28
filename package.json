@@ -28,6 +28,7 @@
     "datamine:fetch": "npm -w @pickthree/data run datamine:fetch",
     "datamine:refresh": "npm -w @pickthree/data run datamine:refresh",
     "battle:build": "npm -w @pickthree/data run battle:build",
+    "exam:data": "npm -w @pickthree/data run exam:data",
     "schedule:refresh": "npm -w @pickthree/data run schedule:refresh",
     "fixtures:make": "tsx fixtures/make-fixtures.ts",
     "fixtures:derive": "tsx fixtures/derive-fixtures.ts",
