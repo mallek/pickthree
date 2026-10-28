@@ -164,7 +164,11 @@ differences:
     evidence: >-
       Datamine 8e227be combat settings roundDurationSeconds 270.0 and turnDurationSeconds 0.5
       (lines 95025-95026). Whether the game's clock pauses for the charged move minigame is not
-      settled here; the 540 vs 480 question is open for Travis and the brainstorm lane.
+      settled here. Datamine 540, PvPoke 480, what the field means is unverified: 480 turns is
+      exactly 4:00 at 0.5s per turn and 540 is 4:30, so the extra 30s may be an intro or charged-move
+      pause allowance rather than battle clock. Ruling: keep 540 in the data and have the engine use
+      it. To settle first-hand, time one GBL match that goes to timeout. Matters only once spec 2 runs
+      real battles to the clock.
     scripts: []
 
   - id: shedinja-hp
