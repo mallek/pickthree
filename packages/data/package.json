@@ -12,11 +12,14 @@
     "datamine:refresh": "tsx src/refresh-datamine.ts",
     "schedule:refresh": "tsx src/refresh-schedule.ts",
     "schedule:check": "tsx src/check-schedule.ts",
-    "schedule:issues": "tsx src/schedule-issues-cli.ts"
+    "schedule:issues": "tsx src/schedule-issues-cli.ts",
+    "battle:build": "tsx src/build-battle.ts"
   },
   "dependencies": {
+    "@pickthree/battle": "0.0.0",
     "@pickthree/engine": "0.0.0",
     "@pickthree/sim-pvpoke": "0.0.0",
-    "sharp": "0.35.4"
+    "sharp": "0.35.4",
+    "yaml": "2.8.1"
   }
 }
