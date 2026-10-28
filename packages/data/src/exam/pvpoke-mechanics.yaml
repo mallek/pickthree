@@ -13,7 +13,9 @@
 #   - PvPoke re-levels Aegislash and Minior on a form change (Pokemon.js:2528-2616 getFormStats:
 #     Blade at ceil(level * 0.5) + 1 in Great League, Meteor by u/Ok_Lobster8494's formula); our
 #     switchForm keeps the level.
-#   - Battle.js:245 runs battle_start changes only in simulate mode, never in sandbox mode.
+#   - Battle.js:245 runs battle_start changes only in simulate mode, not emulate. Sandbox is not a
+#     mode: simulate() sets mode "simulate" before start(), so a sandbox run applies them too
+#     (checked in the vm: Minior starts as minior_meteor; runners.test.ts asserts it).
 #   - Morpeko does not toggle back in PvPoke (see its entry).
 
 mimikyu:
