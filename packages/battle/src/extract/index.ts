@@ -37,3 +37,6 @@ export function extractBattleData(
   };
   return { data: loadBattleData(data), warnings };
 }
+
+export { applyOverrides, validateOverrides } from './overrides.js';
+export type { OverrideEntry, OverrideReport } from './overrides.js';
