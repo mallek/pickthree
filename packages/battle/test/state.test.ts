@@ -38,10 +38,13 @@ describe('battle state', () => {
     expect(s.outcome).toBeNull();
     expect(active(s, 0).startFormId).toBe('m');
   });
-  it('applies shadow multipliers', () => {
+  it('keeps raw form stats for shadow combatants, only the flag differs', () => {
     const s = createBattle(d, { sides: [{ team: [mon('m', { shadow: true })], shields: 0 }, setup.sides[1]] });
-    expect(active(s, 0).atk).toBeCloseTo(active(s, 1).atk * 1.2);
-    expect(active(s, 0).def).toBeCloseTo(active(s, 1).def * 0.8);
+    expect(active(s, 0).shadow).toBe(true);
+    expect(active(s, 1).shadow).toBe(false);
+    expect(active(s, 0).atk).toBe(active(s, 1).atk);
+    expect(active(s, 0).def).toBe(active(s, 1).def);
+    expect(s.usePriority).toBe(false);
   });
   it('rejects a team of two with the spec 2 message', () => {
     expect(() => createBattle(d, { sides: [{ team: [mon(), mon()], shields: 0 }, setup.sides[1]] })).toThrow(
