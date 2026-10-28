@@ -388,7 +388,10 @@ describe.skipIf(!havePvPoke)('rules exam', () => {
       expect(atkOf(p, 0), `${id} is an Attack tie`).toBe(atkOf(p, 1));
       const ours = new Set(p.ours.executed.map(key));
       const theirs = new Set(p.pvpoke.executed.map(key));
-      expect([...ours].filter((k) => !theirs.has(k)), `${id}: nothing only ours`).toEqual([]);
+      expect(
+        [...ours].filter((k) => !theirs.has(k)),
+        `${id}: nothing only ours`,
+      ).toEqual([]);
       const onlyPvPoke = p.pvpoke.executed.filter((e) => !ours.has(key(e)));
       expect(onlyPvPoke.length, `${id}: one entry only PvPoke threw`).toBe(1);
       const loser = onlyPvPoke[0] as ScriptEntry;
@@ -397,7 +400,10 @@ describe.skipIf(!havePvPoke)('rules exam', () => {
         ...run,
         trace: run.trace.filter((t) => t.turn < loser.turn),
       });
-      expect(firstDifference(before(p.ours), before(p.pvpoke)), `${id}: same before the tie`).toBeNull();
+      expect(
+        firstDifference(before(p.ours), before(p.pvpoke)),
+        `${id}: same before the tie`,
+      ).toBeNull();
       const tieRecord = p.ours.trace.find((t) => t.turn === loser.turn);
       expect(tieRecord?.hp[loser.actor], `${id}: ours knocks the tie loser out`).toBe(0);
       expect(p.ours.trace[p.ours.trace.length - 1]?.turn, `${id}: ours ends on the tie turn`).toBe(

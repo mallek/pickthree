@@ -82,7 +82,11 @@ function checkFrac(path: string, v: unknown): number {
 }
 
 function checkForm(family: string, path: string, v: unknown, data: Ref): string {
-  if (typeof v !== 'string' || !Object.hasOwn(data.species, v) || data.species[v]?.family !== family) {
+  if (
+    typeof v !== 'string' ||
+    !Object.hasOwn(data.species, v) ||
+    data.species[v]?.family !== family
+  ) {
     return fail(path, `${JSON.stringify(v)} is not a form of family "${family}"`);
   }
   return v;
