@@ -5,9 +5,8 @@ import { parse } from 'yaml';
 import { ibfcFamilies } from '@pickthree/battle/extract';
 import { minimalTemplates } from '../../battle/test/fixtures/templates.js';
 import { buildBattleData } from '../src/build-battle.js';
-import { datamineFile } from '../src/fetch-datamine.js';
-import { readDatamineLock } from '../src/datamine-lock.js';
 import { BATTLE_INPUT_DIR } from '../src/paths.js';
+import { liveBattleData, liveBuild, type LiveBuild } from './live-data.js';
 
 const source = { commit: 'abc1234', date: '2026-10-27' };
 
@@ -70,23 +69,11 @@ describe('committed YAML', () => {
   });
 });
 
-const lock = readDatamineLock();
-const file = datamineFile(lock);
-const haveDatamine = fs.existsSync(file);
-if (!haveDatamine && process.env.PICKTHREE_REQUIRE_DATAMINE === '1') {
-  throw new Error('Datamine missing. Run npm run datamine:fetch');
-}
-
-describe.skipIf(!haveDatamine)('battle:build on the pinned datamine', () => {
-  const templates = JSON.parse(fs.readFileSync(file, 'utf8')) as unknown;
-  const r = buildBattleData({
-    templates,
-    overridesYaml,
-    mechanicsYaml,
-    source: { commit: lock.commit, date: lock.date },
-  });
+describe.skipIf(liveBattleData() === null)('battle:build on the pinned datamine', () => {
+  const build = (): LiveBuild => liveBuild() as LiveBuild;
 
   it('the committed overrides and mechanics build cleanly on the pinned datamine', () => {
+    const r = build().result;
     expect(r.alarm).toEqual([]);
     expect(r.report.conflicts).toEqual([]);
     expect(Object.keys(r.data.mechanics).sort()).toEqual([
@@ -99,6 +86,7 @@ describe.skipIf(!haveDatamine)('battle:build on the pinned datamine', () => {
     expect(Object.keys(r.data.species).length).toBeGreaterThan(1000);
   });
   it('every ibfc-flagged family has a mechanics entry', () => {
+    const { templates, result: r } = build();
     for (const f of ibfcFamilies(templates)) {
       expect(Object.keys(r.data.mechanics)).toContain(f);
     }
