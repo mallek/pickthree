@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-19a3dbd9-7e83-4f60-b0a9-98f02ecd821d/styles.css">
+<script src="_ds/nocturne-19a3dbd9-7e83-4f60-b0a9-98f02ecd821d/_ds_bundle.js"></script>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:flex-start;gap:10px">
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ s.kicker }}</div>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:22px;font-weight:500;letter-spacing:.08em;color:var(--color-accent-300)">{{ s.hash }}</span>
+        <span style="font-size:13px;color:color-mix(in srgb,var(--color-text) 70%,transparent)">{{ s.turn }}</span>
+      </div>
+      <div style="font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ s.linesTxt }}</div>
+    </div>
+    <sc-if value="{{ s.closable }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-ghost btn-icon" onClick="{{ s.onClose }}" aria-label="Close" style="width:44px;height:44px;flex:none"><i class="ph ph-x" style="font-size:18px"></i></button>
+    </sc-if>
+  </div>
+  <sc-for list="{{ s.sides }}" as="side" hint-placeholder-count="2">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px">
+        <span style="font-weight:500">{{ side.label }}</span>
+        <span style="color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ side.meta }}</span>
+      </div>
+      <sc-for list="{{ side.mons }}" as="m" hint-placeholder-count="3">
+        <div style="{{ m.row }}">
+          <img src="{{ m.spr }}" alt="" style="width:40px;height:40px;margin:-6px -2px;flex:none;object-fit:contain">
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:6px;align-items:baseline;min-width:0">
+              <span style="font-size:13px;font-weight:500;white-space:nowrap">{{ m.name }}</span>
+              <span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 60%,transparent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.tag }}</span>
+              <span style="margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap">{{ m.hpTxt }}</span>
+            </div>
+            <div style="height:4px;border-radius:2px;background:color-mix(in srgb,var(--color-text) 10%,transparent);overflow:hidden"><div style="{{ m.hpBar }}"></div></div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="flex:1;height:2px;border-radius:1px;background:color-mix(in srgb,var(--color-text) 10%,transparent);overflow:hidden"><div style="{{ m.eBar }}"></div></div>
+              <span style="font-size:10.5px;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--color-text) 65%,transparent);width:38px;text-align:right">{{ m.eTxt }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+  <div style="display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:6px 12px;font-size:12px;align-items:baseline">
+    <span></span>
+    <span style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent)">You</span>
+    <span style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent)">Opponent</span>
+    <sc-for list="{{ s.facts }}" as="f" hint-placeholder-count="4">
+      <span style="color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap">{{ f.k }}</span>
+      <span style="font-variant-numeric:tabular-nums">{{ f.me }}</span>
+      <span style="font-variant-numeric:tabular-nums">{{ f.opp }}</span>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:560},&quot;s&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}"></script>
+</body>
+</html>

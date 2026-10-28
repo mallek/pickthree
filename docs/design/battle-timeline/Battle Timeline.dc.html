@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/nocturne-19a3dbd9-7e83-4f60-b0a9-98f02ecd821d/styles.css">
+<script src="_ds/nocturne-19a3dbd9-7e83-4f60-b0a9-98f02ecd821d/_ds_bundle.js"></script>
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+body{margin:0;background:#161826}
+a{color:var(--color-accent-300)}
+a:hover{color:var(--color-accent-200)}
+</style>
+</helmet>
+<div style="--pink:#f294c4;--win:#62d6a2;--loss:#efb860">
+<div style="{{ themeVars }}">
+<div style="background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);min-height:100vh;padding:56px 56px 96px;display:flex;flex-direction:column;gap:56px">
+
+<section id="turn-1" style="display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:6px;max-width:760px">
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent-300)">pick3.gg · battle engine views · round 1</div>
+      <h1 style="font-size:36px;margin:0">One battle as a timeline, its branches, and where they merge</h1>
+      <p style="margin:0;font-size:15px;color:color-mix(in srgb,var(--color-text) 72%,transparent);text-wrap:pretty">Mock data: Mimikyu, Melmetal, Araquanid vs Galarian Stunfisk, Lanturn, Medicham. Every row carries the 6 character state hash; tap one for the full state. Violet is tappable, pink is measured HP and energy.</p>
+    </div>
+    <button onClick="{{ toggleTheme }}" class="btn btn-secondary" style="margin-left:auto"><i class="{{ themeIcon }}"></i><span>{{ themeLabel }}</span></button>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h3 style="margin:0;font-size:20px">View 1: three takes on one battle</h3>
+    <div style="display:flex;gap:48px;flex-wrap:wrap;align-items:flex-start">
+
+      <div id="1a" style="display:flex;flex-direction:column;gap:12px;width:390px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1a</span><span style="font-size:16px;font-weight:500">Horizontal lanes</span></div>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 68%,transparent);text-wrap:pretty">Me on top, them below, time runs right. Reads like a replay. 190 turns is 3.4 screens wide, so hashes collapse to dots on a rail.</p>
+        <div style="width:390px;height:844px;border-radius:34px;overflow:hidden;position:relative;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 6px 18px">
+            <span style="font-weight:600;font-size:15px">pick3</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Battle replay · Line A</span>
+            <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:44px;height:44px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:20px">
+            <div style="display:flex;align-items:center;gap:8px;padding:0 16px">
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/778.png" alt="Mimikyu" style="width:40px;height:40px;margin:-6px">
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/809.png" alt="Melmetal" style="width:40px;height:40px;margin:-6px">
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/752.png" alt="Araquanid" style="width:40px;height:40px;margin:-6px">
+              <span style="flex:1;text-align:center;font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">vs</span>
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10180.png" alt="Galarian Stunfisk" style="width:40px;height:40px;margin:-6px">
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/171.png" alt="Lanturn" style="width:40px;height:40px;margin:-6px">
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/308.png" alt="Medicham" style="width:40px;height:40px;margin:-6px">
+            </div>
+            <div style="position:relative">
+              <div style="position:absolute;left:8px;top:96px;z-index:2;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--color-bg);color:color-mix(in srgb,var(--color-text) 65%,transparent)">You</div>
+              <div style="position:absolute;left:8px;top:196px;z-index:2;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--color-bg);color:color-mix(in srgb,var(--color-text) 65%,transparent)">Opp</div>
+              <div style="overflow-x:auto;overflow-y:hidden">
+                <div style="{{ h.box }}">
+                  <sc-for list="{{ h.axis }}" as="a"><div style="{{ a.style }}">{{ a.txt }}</div></sc-for>
+                  <div style="position:absolute;left:0;right:0;top:140px;height:1px;background:color-mix(in srgb,var(--color-accent) 35%,transparent)"></div>
+                  <div style="{{ h.selLine }}"></div>
+                  <svg width="{{ h.w }}" height="{{ h.hgt }}" style="position:absolute;left:0;top:0;overflow:visible">
+                    <path d="{{ h.meArea }}" style="fill:color-mix(in srgb,var(--pink) 16%,transparent)"></path>
+                    <path d="{{ h.meHp }}" style="fill:none;stroke:var(--pink);stroke-width:1.6"></path>
+                    <path d="{{ h.meE }}" style="fill:none;stroke:var(--pink);stroke-width:1;stroke-dasharray:2 3;opacity:.8"></path>
+                    <path d="{{ h.opArea }}" style="fill:color-mix(in srgb,var(--pink) 16%,transparent)"></path>
+                    <path d="{{ h.opHp }}" style="fill:none;stroke:var(--pink);stroke-width:1.6"></path>
+                    <path d="{{ h.opE }}" style="fill:none;stroke:var(--pink);stroke-width:1;stroke-dasharray:2 3;opacity:.8"></path>
+                  </svg>
+                  <sc-for list="{{ h.ticks }}" as="k"><div style="{{ k }}"></div></sc-for>
+                  <sc-for list="{{ h.spr }}" as="s"><img src="{{ s.src }}" alt="" style="{{ s.style }}"></sc-for>
+                  <sc-for list="{{ h.shields }}" as="s"><div style="{{ s.style }}"><i class="{{ s.icon }}"></i></div></sc-for>
+                  <sc-for list="{{ h.tokens }}" as="m"><div style="{{ m.style }}"><span style="{{ m.dot }}"></span>{{ m.label }}</div></sc-for>
+                  <sc-for list="{{ h.dots }}" as="d"><button onClick="{{ d.onClick }}" style="{{ d.btn }}" aria-label="Select turn"><span style="{{ d.dot }}"></span></button></sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:14px;padding:0 16px;font-size:10.5px;color:color-mix(in srgb,var(--color-text) 62%,transparent);flex-wrap:wrap">
+              <span style="display:flex;gap:5px;align-items:center"><span style="width:14px;height:2px;background:var(--pink)"></span>HP</span>
+              <span style="display:flex;gap:5px;align-items:center"><span style="width:14px;border-top:1px dashed var(--pink)"></span>Energy</span>
+              <span style="display:flex;gap:5px;align-items:center"><span style="width:1px;height:8px;background:color-mix(in srgb,var(--color-text) 45%,transparent)"></span>Fast move</span>
+              <span style="display:flex;gap:5px;align-items:center"><i class="ph ph-shield-check"></i>Shielded</span>
+              <span style="display:flex;gap:5px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid var(--color-accent)"></span>State, tap</span>
+            </div>
+            <div style="margin:0 12px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm);display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 0 14px">
+                <span style="font-size:12px;font-weight:500;flex:1">Selected turn</span>
+                <button onClick="{{ h.prev }}" class="btn btn-ghost btn-icon" aria-label="Previous" style="width:44px;height:36px"><i class="ph ph-caret-left"></i></button>
+                <button onClick="{{ h.next }}" class="btn btn-ghost btn-icon" aria-label="Next" style="width:44px;height:36px"><i class="ph ph-caret-right"></i></button>
+              </div>
+              <dc-import name="LogRow" r="{{ h.row }}" hint-size="100%,110px"></dc-import>
+            </div>
+          </div>
+          <sc-if value="{{ sheetOn.f1a }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(6,7,14,.55)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--color-surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg)"><dc-import name="StateSheet" s="{{ sheetModel }}" hint-size="100%,520px"></dc-import></div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div id="1b" style="display:flex;flex-direction:column;gap:12px;width:390px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1b</span><span style="font-size:16px;font-weight:500">Vertical turn log</span><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:var(--color-accent-900);color:var(--color-accent-300)">Picked for views 2 to 4</span></div>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 68%,transparent);text-wrap:pretty">One row per event, two lanes, the hash pinned to every row. Scrolls the way phones scroll, and a branch can fork sideways without losing the time axis.</p>
+        <div style="width:390px;height:844px;border-radius:34px;overflow:hidden;position:relative;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 6px 18px">
+            <span style="font-weight:600;font-size:15px">pick3</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Turn log · Line A</span>
+            <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:44px;height:44px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+          </div>
+          <div style="display:grid;grid-template-columns:54px minmax(0,1fr) minmax(0,1fr);gap:10px;padding:6px 14px 8px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent);border-bottom:1px solid color-mix(in srgb,var(--color-text) 10%,transparent)">
+            <span>Turn</span><span>You</span><span>Opponent</span>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto">
+            <sc-for list="{{ logA }}" as="r" hint-placeholder-count="6">
+              <div style="border-bottom:1px solid color-mix(in srgb,var(--color-text) 7%,transparent)"><dc-import name="LogRow" r="{{ r }}" hint-size="100%,96px"></dc-import></div>
+            </sc-for>
+            <div style="margin:14px;padding:14px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="{{ outA.badge }}">{{ outA.resTxt }}</span>
+                <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 65%,transparent)">{{ outA.when }}</span>
+                <button onClick="{{ outA.onHash }}" style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:3px 5px;border-radius:4px;border:1px solid var(--color-accent-700);background:var(--color-accent-900);color:var(--color-accent-300);cursor:pointer">{{ outA.hash }}</button>
+              </div>
+              <div style="font-size:12.5px;line-height:1.45">{{ outA.line }}</div>
+            </div>
+          </div>
+          <sc-if value="{{ sheetOn.f1b }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(6,7,14,.55)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--color-surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg)"><dc-import name="StateSheet" s="{{ sheetModel }}" hint-size="100%,520px"></dc-import></div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div id="1c" style="display:flex;flex-direction:column;gap:12px;width:390px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1c</span><span style="font-size:16px;font-weight:500">Chart with a scrubber</span></div>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 68%,transparent);text-wrap:pretty">Whole battle in one glance, drag to any turn, the full state sits underneath. Best overview; worst at telling you what happened on a given turn.</p>
+        <div style="width:390px;height:844px;border-radius:34px;overflow:hidden;position:relative;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 6px 18px">
+            <span style="font-weight:600;font-size:15px">pick3</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Battle chart · Line A</span>
+            <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:44px;height:44px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 16px 20px">
+            <div style="{{ c1.box }}">
+              <div style="{{ c1.bandMe }}"></div>
+              <div style="{{ c1.bandOp }}"></div>
+              <div style="position:absolute;right:2px;top:0;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent)">You</div>
+              <div style="{{ c1.opLabel }}">Opp</div>
+              <svg width="{{ c1.w }}" height="{{ c1.h }}" style="position:absolute;left:0;top:0;overflow:visible">
+                <path d="{{ c1.meArea }}" style="fill:color-mix(in srgb,var(--pink) 16%,transparent)"></path>
+                <path d="{{ c1.meHp }}" style="fill:none;stroke:var(--pink);stroke-width:1.5"></path>
+                <path d="{{ c1.meE }}" style="fill:none;stroke:var(--pink);stroke-width:1;stroke-dasharray:2 3;opacity:.8"></path>
+                <path d="{{ c1.opArea }}" style="fill:color-mix(in srgb,var(--pink) 16%,transparent)"></path>
+                <path d="{{ c1.opHp }}" style="fill:none;stroke:var(--pink);stroke-width:1.5"></path>
+                <path d="{{ c1.opE }}" style="fill:none;stroke:var(--pink);stroke-width:1;stroke-dasharray:2 3;opacity:.8"></path>
+              </svg>
+              <sc-for list="{{ c1.spr }}" as="s"><img src="{{ s.src }}" alt="" style="{{ s.style }}"></sc-for>
+              <sc-for list="{{ c1.marks }}" as="m"><div style="{{ m }}"></div></sc-for>
+              <sc-for list="{{ c1.axis }}" as="a"><div style="{{ a.style }}">{{ a.txt }}</div></sc-for>
+              <div style="{{ c1.line }}"></div>
+            </div>
+            <input type="range" min="0" max="196" value="{{ scrub }}" onChange="{{ onScrub }}" aria-label="Turn" style="width:100%;height:28px;accent-color:var(--color-accent);margin:0">
+            <div style="display:flex;gap:12px;font-size:10.5px;color:color-mix(in srgb,var(--color-text) 62%,transparent);flex-wrap:wrap">
+              <span style="display:flex;gap:5px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-text)"></span>Charged move lands</span>
+              <span style="display:flex;gap:5px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;border:2px solid var(--color-text);box-sizing:border-box"></span>Shielded or soaked</span>
+              <span>Dot color is the move type</span>
+            </div>
+            <div style="border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm);display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 6px 0 14px">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ c1sel.when }}</span>
+                  <span style="font-size:13px;font-weight:500;line-height:1.3">{{ c1sel.txt }}</span>
+                </div>
+                <button onClick="{{ c1sel.prev }}" class="btn btn-ghost btn-icon" aria-label="Previous event" style="width:44px;height:44px;flex:none"><i class="ph ph-caret-left"></i></button>
+                <button onClick="{{ c1sel.next }}" class="btn btn-ghost btn-icon" aria-label="Next event" style="width:44px;height:44px;flex:none"><i class="ph ph-caret-right"></i></button>
+              </div>
+              <dc-import name="StateSheet" s="{{ c1sel.sheet }}" hint-size="100%,460px"></dc-import>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h3 style="margin:0;font-size:20px">Views 2 to 4, built on the turn log (<a href="#1b">1b</a>)</h3>
+    <div style="display:flex;gap:48px;flex-wrap:wrap;align-items:flex-start">
+
+      <div id="1d" style="display:flex;flex-direction:column;gap:12px;width:390px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1d</span><span style="font-size:16px;font-weight:500">Choice point: shield or take it</span></div>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 68%,transparent);text-wrap:pretty">The log forks at T11 into two columns. Only key moments fit at this width; fast move runs fold away.</p>
+        <div style="width:390px;height:844px;border-radius:34px;overflow:hidden;position:relative;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 6px 18px">
+            <span style="font-weight:600;font-size:15px">pick3</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Branch at T11</span>
+            <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:44px;height:44px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding:0 16px 20px">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:8px 0 10px">
+              <div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent)">Shared so far</div>
+              <sc-for list="{{ trunk }}" as="t">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="width:46px;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--color-text) 65%,transparent)">{{ t.tTxt }}</span>
+                  <span style="flex:1;min-width:0">{{ t.txt }}</span>
+                  <button onClick="{{ t.onHash }}" style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:3px 5px;border-radius:4px;border:1px solid var(--color-accent-700);background:var(--color-accent-900);color:var(--color-accent-300);cursor:pointer">{{ t.hash }}</button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm)">
+              <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-git-branch" style="font-size:16px;color:var(--color-accent-300)"></i><span style="font-size:13px;font-weight:500">T11: Stunfisk throws Rock Slide at Mimikyu</span></div>
+              <div style="font-size:11.5px;line-height:1.45;color:color-mix(in srgb,var(--color-text) 72%,transparent)">Shielding spends 1 of your 2 shields and keeps Disguise up. Taking it saves the shield but Disguise breaks now, not at the end.</div>
+            </div>
+            <svg width="358" height="30" viewBox="0 0 358 30" style="display:block"><path d="M179 0 V10 M179 10 C179 20 92 12 92 30 M179 10 C179 20 266 12 266 30" style="fill:none;stroke:color-mix(in srgb,var(--color-text) 35%,transparent);stroke-width:1.5"></path></svg>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:10px;border:1px solid var(--color-accent-700)">
+                <div style="display:flex;align-items:center;gap:6px"><i class="ph ph-shield-check" style="font-size:15px"></i><span style="font-size:13px;font-weight:500">Shield it</span></div>
+                <span style="font-size:10.5px;color:var(--color-accent-300)">Your plan</span>
+                <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag tag-neutral" style="font-size:10.5px">1 shield left</span><span class="tag tag-neutral" style="font-size:10.5px">Disguise up</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--color-text) 18%,transparent)">
+                <div style="display:flex;align-items:center;gap:6px"><i class="ph ph-mask-happy" style="font-size:15px"></i><span style="font-size:13px;font-weight:500">Take it</span></div>
+                <span style="font-size:10.5px;color:color-mix(in srgb,var(--color-text) 60%,transparent)">Alternative</span>
+                <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag tag-neutral" style="font-size:10.5px">2 shields left</span><span class="tag tag-neutral" style="font-size:10.5px">Busted</span></div>
+              </div>
+            </div>
+            <div style="font-size:11px;line-height:1.45;padding:10px 2px;color:color-mix(in srgb,var(--color-text) 65%,transparent);display:flex;gap:6px"><i class="ph ph-info" style="font-size:13px;margin-top:2px;flex:none"></i><span>Same moves on most turns, yet every hash differs: shields left and Mimikyu's form are part of the state, so these two lines never merge.</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ branchRows }}" as="row" hint-placeholder-count="6">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:10.5px;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ row.tTxt }}</span>
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+                    <sc-for list="{{ row.cells }}" as="c">
+                      <div style="{{ c.box }}">
+                        <sc-if value="{{ c.has }}">
+                          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                            <span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 58%,transparent)">{{ c.who }}</span>
+                            <button onClick="{{ c.onHash }}" style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--color-accent-700);background:var(--color-accent-900);color:var(--color-accent-300);cursor:pointer">{{ c.hash }}</button>
+                          </div>
+                          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                            <sc-if value="{{ c.hasSpr }}"><img src="{{ c.spr }}" alt="" style="width:28px;height:28px;margin:-8px -4px -8px -6px;flex:none"></sc-if>
+                            <sc-if value="{{ c.hasDot }}"><span style="{{ c.dot }}"></span></sc-if>
+                            <sc-if value="{{ c.hasIcon }}"><i class="{{ c.icon }}" style="font-size:13px"></i></sc-if>
+                            <span style="font-size:12px;font-weight:500;line-height:1.25">{{ c.title }}</span>
+                          </div>
+                          <sc-if value="{{ c.hasSub }}"><span style="font-size:11px;line-height:1.3;color:color-mix(in srgb,var(--color-text) 66%,transparent)">{{ c.sub }}</span></sc-if>
+                          <span style="font-size:10px;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ c.meta }}</span>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px">
+              <sc-for list="{{ branchOut }}" as="o">
+                <div style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                  <div style="display:flex;align-items:center;gap:6px"><span style="{{ o.badge }}">{{ o.resTxt }}</span><span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 62%,transparent)">{{ o.when }}</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><img src="{{ o.spr }}" alt="" style="width:34px;height:34px;margin:-6px"><span style="font-size:12px;line-height:1.3">{{ o.short }}</span></div>
+                  <div style="height:4px;border-radius:2px;background:color-mix(in srgb,var(--color-text) 10%,transparent);overflow:hidden"><div style="{{ o.hpBar }}"></div></div>
+                  <button onClick="{{ o.onHash }}" style="align-self:flex-start;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:3px 5px;border-radius:4px;border:1px solid var(--color-accent-700);background:var(--color-accent-900);color:var(--color-accent-300);cursor:pointer">{{ o.hash }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ sheetOn.f1d }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(6,7,14,.55)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--color-surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg)"><dc-import name="StateSheet" s="{{ sheetModel }}" hint-size="100%,520px"></dc-import></div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div id="1e" style="display:flex;flex-direction:column;gap:12px;width:390px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1e</span><span style="font-size:16px;font-weight:500">Lines that merge</span></div>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 68%,transparent);text-wrap:pretty">Melmetal vs Lanturn, T117 to T130: which charged move first, and does Lanturn shield each. 8 lines, 6 states.</p>
+        <div style="width:390px;height:844px;border-radius:34px;overflow:hidden;position:relative;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 6px 18px">
+            <span style="font-weight:600;font-size:15px">pick3</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">State tree · T117 to T130</span>
+            <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:44px;height:44px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 16px 24px">
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <span style="font-size:30px;font-weight:500;letter-spacing:-.02em;color:var(--pink)">8 → 6</span>
+              <span style="font-size:12.5px;line-height:1.35;color:color-mix(in srgb,var(--color-text) 72%,transparent)">lines of play reach only 6 distinct states at T130</span>
+            </div>
+            <div style="position:relative;width:358px;height:290px">
+              <svg width="358" height="290" style="position:absolute;inset:0">
+                <sc-for list="{{ tree.edges }}" as="e"><path d="{{ e.d }}" style="{{ e.style }}"></path></sc-for>
+              </svg>
+              <div style="position:absolute;left:0;top:64px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent)">T118 · first throw</div>
+              <div style="position:absolute;left:0;top:180px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent)">T130 · second throw</div>
+              <sc-for list="{{ tree.nodes }}" as="n">
+                <button onClick="{{ n.onClick }}" style="{{ n.style }}">
+                  <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.03em;color:var(--color-accent-300)">{{ n.hash }}</span>
+                  <span style="font-size:10.5px;line-height:1.2;color:var(--color-text)">{{ n.l1 }}</span>
+                  <span style="font-size:10px;line-height:1.2;color:color-mix(in srgb,var(--color-text) 62%,transparent)">{{ n.l2 }}</span>
+                  <sc-if value="{{ n.merged }}"><span style="{{ n.badge }}">×2</span></sc-if>
+                </button>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                <div style="display:flex;align-items:center;gap:6px"><i class="ph ph-git-merge" style="font-size:15px;color:var(--color-accent-300)"></i><span style="font-size:13px;font-weight:500">Why the ×2 states merge</span></div>
+                <span style="font-size:11.5px;line-height:1.45;color:color-mix(in srgb,var(--color-text) 75%,transparent)">Rock Slide then Super Power, or the reverse, both shielded: each shield blocks all but 1 damage, Melmetal spends 85 energy either way and ends at Attack and Defense −1. Lanturn's Spark rounds to 3 damage at both Defense stages, so HP matches too. Same state, same hash, one node.</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                <div style="display:flex;align-items:center;gap:6px"><i class="ph ph-arrows-split" style="font-size:15px"></i><span style="font-size:13px;font-weight:500">Why the others don't</span></div>
+                <span style="font-size:11.5px;line-height:1.45;color:color-mix(in srgb,var(--color-text) 75%,transparent)">When Rock Slide lands after Super Power, it hits at Attack −1 for 24 instead of 30. Order changes the damage, so Lanturn's HP and the hash differ.</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:13px;font-weight:500">How much the full search collapses</span><span style="font-size:10.5px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">mock numbers, log scale</span></div>
+              <sc-for list="{{ collapse }}" as="c">
+                <div style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;align-items:center">
+                  <span style="font-size:11px;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--color-text) 65%,transparent)">{{ c.t }}</span>
+                  <div style="display:flex;flex-direction:column;gap:3px">
+                    <div style="display:flex;align-items:center;gap:6px"><div style="{{ c.lBar }}"></div><span style="font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap">{{ c.lines }} lines</span></div>
+                    <div style="display:flex;align-items:center;gap:6px"><div style="{{ c.sBar }}"></div><span style="font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap">{{ c.states }} states</span></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ sheetOn.f1e }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(6,7,14,.55)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--color-surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg)"><dc-import name="StateSheet" s="{{ sheetModel }}" hint-size="100%,520px"></dc-import></div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div id="1f" style="display:flex;flex-direction:column;gap:12px;width:390px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1f</span><span style="font-size:16px;font-weight:500">Outcome of each line</span></div>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 68%,transparent);text-wrap:pretty">Every leaf of the explored tree, best margin first, with what is left standing on both sides.</p>
+        <div style="width:390px;height:844px;border-radius:34px;overflow:hidden;position:relative;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 6px 18px">
+            <span style="font-weight:600;font-size:15px">pick3</span>
+            <span style="flex:1;min-width:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Outcomes · Mimikyu lead</span>
+            <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:44px;height:44px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px 16px 24px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:22px;font-weight:500">7 lines, 6 end states</span><span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 65%,transparent)">5 win · 2 lose</span></div>
+              <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><div style="flex:5;background:var(--win)"></div><div style="flex:2;background:var(--loss)"></div></div>
+            </div>
+            <sc-for list="{{ outcomes }}" as="o" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="{{ o.badge }}">{{ o.resTxt }}</span>
+                  <span style="font-size:11.5px;color:color-mix(in srgb,var(--color-text) 65%,transparent)">{{ o.when }}</span>
+                  <sc-if value="{{ o.merged }}"><span style="display:flex;align-items:center;gap:3px;font-size:10.5px;color:color-mix(in srgb,var(--color-text) 70%,transparent)"><i class="ph ph-git-merge"></i>2 lines</span></sc-if>
+                  <button onClick="{{ o.onHash }}" style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:3px 5px;border-radius:4px;border:1px solid var(--color-accent-700);background:var(--color-accent-900);color:var(--color-accent-300);cursor:pointer">{{ o.hash }}</button>
+                </div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap">
+                  <sc-for list="{{ o.path }}" as="p"><span class="tag tag-neutral" style="font-size:10.5px">{{ p }}</span></sc-for>
+                </div>
+                <sc-for list="{{ o.teams }}" as="tm">
+                  <div style="display:grid;grid-template-columns:30px repeat(3,minmax(0,1fr));gap:6px;align-items:center">
+                    <span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 58%,transparent)">{{ tm.label }}</span>
+                    <sc-for list="{{ tm.mons }}" as="m">
+                      <div style="{{ m.box }}">
+                        <img src="{{ m.spr }}" alt="" style="width:28px;height:28px;margin:-6px -4px;flex:none">
+                        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                          <span style="font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap">{{ m.nums }}</span>
+                          <div style="height:3px;border-radius:2px;background:color-mix(in srgb,var(--color-text) 10%,transparent);overflow:hidden"><div style="{{ m.hpBar }}"></div></div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ sheetOn.f1f }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(6,7,14,.55)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--color-surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg)"><dc-import name="StateSheet" s="{{ sheetModel }}" hint-size="100%,520px"></dc-import></div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;width:390px;padding-top:36px">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:14px;background:var(--color-surface);box-shadow:var(--shadow-sm)">
+          <h4 style="margin:0">What is hard to show at 390px</h4>
+          <sc-for list="{{ hard }}" as="n">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:13px;font-weight:500">{{ n.t }}</span>
+              <span style="font-size:12.5px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 72%,transparent);text-wrap:pretty">{{ n.d }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:14px;border:1px solid color-mix(in srgb,var(--color-text) 14%,transparent)">
+          <h5 style="margin:0">Assumptions to check</h5>
+          <span style="font-size:12.5px;line-height:1.5;color:color-mix(in srgb,var(--color-text) 72%,transparent)">Disguise is modelled as: the first charged move that lands chips 1/8 of max HP and turns Mimikyu Busted. Switch timer is 45 seconds. Win and loss colors stand in for pick3's existing outcome tokens. HP and energy numbers are illustrative, not engine output.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h3 style="margin:0;font-size:20px">Desktop: chart, log and state side by side</h3>
+    <div id="1g" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--color-accent-700);color:var(--color-accent-300)">1g</span><span style="font-size:16px;font-weight:500">1280px: the three takes stop competing</span></div>
+      <div style="width:1280px;height:860px;border-radius:14px;overflow:hidden;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:16px;padding:12px 24px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 10%,transparent)">
+          <span style="font-weight:600;font-size:16px">pick3</span>
+          <span style="font-size:13px;color:color-mix(in srgb,var(--color-text) 65%,transparent)">Mimikyu, Melmetal, Araquanid vs Galarian Stunfisk, Lanturn, Medicham</span>
+          <div style="margin-left:auto;display:flex;gap:4px;padding:3px;border-radius:8px;border:1px solid color-mix(in srgb,var(--color-text) 14%,transparent)">
+            <button onClick="{{ desk.pickA }}" style="{{ desk.tabA }}">Line A · Shield it</button>
+            <button onClick="{{ desk.pickB }}" style="{{ desk.tabB }}">Line B · Take it</button>
+          </div>
+          <button onClick="{{ toggleTheme }}" class="btn btn-ghost btn-icon" aria-label="Theme" style="width:40px;height:40px"><i class="{{ themeIcon }}" style="font-size:18px"></i></button>
+        </div>
+        <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;padding:20px 24px">
+          <div style="min-height:0;display:flex;flex-direction:column;gap:12px">
+            <div style="padding:14px 16px 10px;border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:6px">
+              <div style="{{ dc.box }}">
+                <div style="{{ dc.bandMe }}"></div>
+                <div style="{{ dc.bandOp }}"></div>
+                <div style="position:absolute;right:2px;top:0;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent)">You</div>
+                <div style="{{ dc.opLabel }}">Opp</div>
+                <svg width="{{ dc.w }}" height="{{ dc.h }}" style="position:absolute;left:0;top:0;overflow:visible">
+                  <path d="{{ dc.meArea }}" style="fill:color-mix(in srgb,var(--pink) 16%,transparent)"></path>
+                  <path d="{{ dc.meHp }}" style="fill:none;stroke:var(--pink);stroke-width:1.6"></path>
+                  <path d="{{ dc.meE }}" style="fill:none;stroke:var(--pink);stroke-width:1;stroke-dasharray:2 3;opacity:.8"></path>
+                  <path d="{{ dc.opArea }}" style="fill:color-mix(in srgb,var(--pink) 16%,transparent)"></path>
+                  <path d="{{ dc.opHp }}" style="fill:none;stroke:var(--pink);stroke-width:1.6"></path>
+                  <path d="{{ dc.opE }}" style="fill:none;stroke:var(--pink);stroke-width:1;stroke-dasharray:2 3;opacity:.8"></path>
+                </svg>
+                <sc-for list="{{ dc.spr }}" as="s"><img src="{{ s.src }}" alt="" style="{{ s.style }}"></sc-for>
+                <sc-for list="{{ dc.marks }}" as="m"><div style="{{ m }}"></div></sc-for>
+                <sc-for list="{{ dc.axis }}" as="a"><div style="{{ a.style }}">{{ a.txt }}</div></sc-for>
+                <div style="{{ dc.line }}"></div>
+              </div>
+              <input type="range" min="0" max="196" value="{{ desk.scrub }}" onChange="{{ desk.onScrub }}" aria-label="Turn" style="width:100%;accent-color:var(--color-accent);margin:0">
+            </div>
+            <div style="flex:1;min-height:0;overflow-y:auto;border-radius:12px;border:1px solid color-mix(in srgb,var(--color-text) 10%,transparent)">
+              <div style="display:grid;grid-template-columns:54px minmax(0,1fr) minmax(0,1fr);gap:10px;padding:8px 14px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent);border-bottom:1px solid color-mix(in srgb,var(--color-text) 10%,transparent)"><span>Turn</span><span>You</span><span>Opponent</span></div>
+              <sc-for list="{{ desk.rows }}" as="r" hint-placeholder-count="5">
+                <div style="{{ r.wrap }}"><dc-import name="LogRow" r="{{ r.m }}" hint-size="100%,90px"></dc-import></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+            <div style="border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-sm)"><dc-import name="StateSheet" s="{{ desk.sheet }}" hint-size="100%,480px"></dc-import></div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--color-text) 12%,transparent)">
+              <div style="display:flex;align-items:center;gap:8px"><span style="{{ desk.out.badge }}">{{ desk.out.resTxt }}</span><span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 65%,transparent)">{{ desk.out.when }}</span></div>
+              <span style="font-size:12.5px;line-height:1.45">{{ desk.out.line }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Dark&quot;,&quot;Light&quot;],&quot;default&quot;:&quot;Dark&quot;,&quot;tsType&quot;:&quot;'Dark'|'Light'&quot;}}">
+const SPR = id => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png';
+const MONS = {
+  mim: { name: 'Mimikyu', max: 121, spr: 778 }, mel: { name: 'Melmetal', max: 165, spr: 809 }, ara: { name: 'Araquanid', max: 140, spr: 752 },
+  stf: { name: 'Stunfisk', max: 156, spr: 10180 }, lan: { name: 'Lanturn', max: 178, spr: 171 }, med: { name: 'Medicham', max: 133, spr: 308 },
+};
+const ME = ['mim', 'mel', 'ara'], OPP = ['stf', 'lan', 'med'];
+const TYPE = { ghost: '#8a6fc0', rock: '#b9a13c', water: '#5f8ff0', ground: '#d6ae55', electric: '#eec331', fighting: '#c8503f', bug: '#9cb52a' };
+const MV = { 'Shadow Claw': 'ghost', 'Shadow Ball': 'ghost', 'Thunder Shock': 'electric', 'Rock Slide': 'rock', 'Super Power': 'fighting', 'Bug Bite': 'bug', 'Bubble Beam': 'water', 'Mud Shot': 'ground', 'Earthquake': 'ground', 'Spark': 'electric', 'Thunderbolt': 'electric', 'Counter': 'fighting', 'Dynamic Punch': 'fighting' };
+const GLOSS = {
+  disguise: { term: 'Disguise:', text: "Mimikyu's starting form. The first charged move that lands only chips 1/8 of max HP, then Mimikyu turns Busted. A shield blocks the move and keeps Disguise up." },
+  turn: { term: 'Turn:', text: 'half a second. Fast moves take 1 to 4 turns and build energy (E, max 100) for charged moves.' },
+  switch: { term: 'Switch timer:', text: "after a swap you can't swap again for 45 seconds. Bringing a Pokémon in after a faint is free and doesn't start it." },
+  stage: { term: 'Attack −1:', text: 'a stat stage. Stages stay until that Pokémon leaves the field.' },
+  cmp: { term: 'CMP (charged move priority):', text: 'both sides throw on the same turn, so the higher Attack goes first. Rock Slide knocks Lanturn out and Thunderbolt never fires.' },
+};
+const LIGHT = {
+  '--color-bg': '#f2f3f8', '--color-surface': '#ffffff', '--color-text': '#1c1e2b', '--color-divider': 'rgba(28,30,43,.14)', '--color-accent': '#6a5cc4',
+  '--color-accent-100': '#2b2741', '--color-accent-200': '#3a3360', '--color-accent-300': '#4f4486', '--color-accent-400': '#5d5294', '--color-accent-500': '#796cbf',
+  '--color-accent-600': '#968ae0', '--color-accent-700': '#c9c2f7', '--color-accent-800': '#e2defc', '--color-accent-900': '#efedff',
+  '--color-neutral-100': '#292b31', '--color-neutral-200': '#3f424d', '--color-neutral-300': '#595d6c', '--color-neutral-400': '#75798c', '--color-neutral-500': '#9397ab',
+  '--color-neutral-600': '#b2b6ca', '--color-neutral-700': '#cfd3e5', '--color-neutral-800': '#e4e7f5', '--color-neutral-900': '#f3f5fe',
+  '--pink': '#c23d7c', '--win': '#17855a', '--loss': '#a3620a',
+  '--shadow-sm': '0 0 0 1px #dfe2ee', '--shadow-md': '0 0 0 1px #d4d8e6, 0 6px 18px rgba(28,30,60,.10)', '--shadow-lg': '0 0 0 1px #d4d8e6, 0 18px 44px rgba(28,30,60,.14)',
+};
+
+const F = (t1, t, mm, mn, om, on, p, x) => ({ k: 'fast', t1, t, me: mm ? { move: mm, n: mn } : null, opp: om ? { move: om, n: on } : null, p, ...(x || {}) });
+const C = (t, by, move, res, p, x) => ({ k: 'cm', t, by, move, res, p, ...(x || {}) });
+const SW = (t, side, to, p, x) => ({ k: 'sw', t, side, to, p: p || {}, ...(x || {}) });
+const IN = (t, side, to) => ({ k: 'in', t, side, to, p: {} });
+const CMP = (t, first, fm, om, p, x) => ({ k: 'cmp', t, first, fm, om, p, ...(x || {}) });
+const END = (t, res) => ({ k: 'end', t, res, p: {} });
+
+function S0() { return { t: 0, act: { me: 'mim', opp: 'stf' }, hp: { mim: 121, mel: 165, ara: 140, stf: 156, lan: 178, med: 133 }, e: { mim: 0, mel: 0, ara: 0, stf: 0, lan: 0, med: 0 }, form: { mim: 'Disguise' }, sh: { me: 2, opp: 2 }, stg: { me: [0, 0], opp: [0, 0] }, swr: { me: 0, opp: 0 } }; }
+function apply(s, ev) {
+  const n = JSON.parse(JSON.stringify(s)); n.t = ev.t; const p = ev.p || {};
+  if (ev.k === 'sw' || ev.k === 'in') { n.act[ev.side] = ev.to; n.stg[ev.side] = [0, 0]; }
+  for (const id in MONS) if (p[id]) { n.hp[id] = p[id][0]; n.e[id] = p[id][1]; }
+  if (p.f) Object.assign(n.form, p.f);
+  if (p.sh) n.sh = { me: p.sh[0], opp: p.sh[1] };
+  if (p.stg) for (const k in p.stg) n.stg[k] = p.stg[k];
+  if (p.swr) Object.assign(n.swr, p.swr);
+  return n;
+}
+function hash6(s) {
+  const str = JSON.stringify([s.t, s.act, s.hp, s.e, s.form, s.sh, s.stg, s.swr]);
+  let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; h >>>= 0;
+  const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; let o = '';
+  for (let i = 0; i < 6; i++) { o += A[h % 32]; h = Math.floor(h / 32); }
+  return o;
+}
+const REG = {};
+function reg(h, s, lines) { if (!REG[h]) REG[h] = { state: s, lines: lines || 1 }; else if (lines) REG[h].lines = Math.max(REG[h].lines, lines); return h; }
+function build(line) { let s = S0(); return line.map(ev => { const b = s; s = apply(b, ev); const h = reg(hash6(s), s); return { ev, before: b, after: s, hash: h }; }); }
+const sprOf = (s, id) => SPR(id === 'mim' && s.form.mim === 'Busted' ? 10143 : MONS[id].spr);
+
+const LA = [
+  { k: 'start', t: 0, p: {}, gloss: 'disguise' },
+  F(1, 10, 'Shadow Claw', 5, 'Mud Shot', 5, { mim: [106, 30], stf: [141, 45] }, { gloss: 'turn' }),
+  C(11, 'opp', 'Rock Slide', 'shield', { mim: [105, 30], stf: [141, 0], sh: [1, 2] }, { choice: true, why: 'Keeps Disguise up' }),
+  SW(12, 'me', 'ara', { swr: { me: 102 } }, { gloss: 'switch', fx: 'Counter to Stunfisk' }),
+  F(13, 23, 'Bug Bite', 11, 'Mud Shot', 5, { ara: [135, 44], stf: [130, 45] }),
+  C(24, 'me', 'Bubble Beam', 'take', { ara: [135, 4], stf: [88, 45], stg: { opp: [-1, 0] } }, { gloss: 'stage', fx: 'Stunfisk Attack −1' }),
+  F(25, 35, 'Bug Bite', 11, 'Mud Shot', 5, { ara: [131, 48], stf: [77, 90] }),
+  C(36, 'opp', 'Earthquake', 'take', { ara: [110, 48], stf: [77, 25] }),
+  F(37, 40, 'Bug Bite', 4, 'Mud Shot', 2, { ara: [108, 64], stf: [73, 43] }),
+  C(41, 'me', 'Bubble Beam', 'take', { ara: [108, 24], stf: [38, 43], stg: { opp: [-2, 0] } }, { fx: 'Stunfisk Attack −2' }),
+  F(42, 59, 'Bug Bite', 18, 'Mud Shot', 9, { ara: [100, 96], stf: [29, 100] }),
+  SW(60, 'opp', 'lan', { swr: { opp: 150 } }, { fx: 'Counter-swap' }),
+  C(61, 'me', 'Bubble Beam', 'take', { ara: [100, 56], lan: [166, 0], stg: { opp: [-1, 0] } }, { fx: 'Lanturn Attack −1' }),
+  F(62, 101, 'Bug Bite', 40, 'Spark', 13, { ara: [50, 100], lan: [106, 100] }),
+  SW(102, 'me', 'mel', { swr: { me: 192 } }, { fx: 'Timer was ready' }),
+  C(103, 'opp', 'Thunderbolt', 'take', { mel: [121, 0], lan: [106, 45] }, { why: 'Not super effective, so no shield' }),
+  F(104, 117, 'Thunder Shock', 7, 'Spark', 4, { mel: [109, 63], lan: [93, 81] }),
+  C(118, 'me', 'Rock Slide', 'shield', { mel: [109, 18], lan: [92, 81], sh: [1, 1] }),
+  F(119, 129, 'Thunder Shock', 6, 'Spark', 4, { mel: [97, 72], lan: [81, 100] }),
+  C(130, 'me', 'Super Power', 'shield', { mel: [97, 32], lan: [80, 100], sh: [1, 0], stg: { me: [-1, -1] } }, { merge: true, fx: 'Melmetal Attack and Defense −1' }),
+  F(131, 141, 'Thunder Shock', 5, 'Spark', 3, { mel: [88, 77], lan: [70, 100] }),
+  CMP(142, 'me', 'Rock Slide', 'Thunderbolt', { mel: [88, 32], lan: [0, 100] }, { gloss: 'cmp' }),
+  IN(143, 'opp', 'med'),
+  F(144, 151, 'Thunder Shock', 4, 'Counter', 4, { mel: [60, 68], med: [121, 28] }),
+  C(152, 'me', 'Rock Slide', 'take', { mel: [60, 23], med: [84, 28] }),
+  F(153, 157, 'Thunder Shock', 2, 'Counter', 3, { mel: [39, 41], med: [78, 50] }),
+  C(158, 'opp', 'Dynamic Punch', 'shield', { mel: [38, 41], med: [78, 0], sh: [0, 0] }, { why: 'Super effective, so shield' }),
+  F(159, 166, 'Thunder Shock', 4, 'Counter', 4, { mel: [0, 77], med: [70, 28] }),
+  IN(167, 'me', 'ara'),
+  C(168, 'me', 'Bubble Beam', 'take', { ara: [50, 60], med: [40, 28], stg: { opp: [-1, 0] } }, { fx: 'Banked energy' }),
+  C(169, 'me', 'Bubble Beam', 'take', { ara: [50, 20], med: [12, 28], stg: { opp: [-2, 0] } }),
+  F(170, 175, 'Bug Bite', 6, 'Counter', 3, { ara: [41, 38], med: [0, 46] }),
+  IN(176, 'opp', 'stf'),
+  C(177, 'opp', 'Rock Slide', 'take', { ara: [0, 38], stf: [29, 55] }, { why: 'No shields left' }),
+  IN(178, 'me', 'mim'),
+  C(179, 'opp', 'Rock Slide', 'soak', { mim: [90, 30], stf: [29, 10], f: { mim: 'Busted' } }),
+  F(180, 189, 'Shadow Claw', 5, 'Mud Shot', 5, { mim: [75, 60], stf: [14, 55] }),
+  CMP(190, 'me', 'Shadow Ball', 'Rock Slide', { mim: [75, 5], stf: [0, 55] }),
+  END(190, 'win'),
+];
+const iC1 = LA.findIndex(e => e.choice), i176 = LA.findIndex(e => e.k === 'in' && e.t === 176);
+const LB = [
+  ...LA.slice(0, iC1),
+  C(11, 'opp', 'Rock Slide', 'soak', { mim: [91, 30], stf: [141, 0], f: { mim: 'Busted' } }, { choice: true }),
+  ...LA.slice(iC1 + 1, i176 + 1).map(e => (e.p && e.p.sh ? { ...e, p: { ...e.p, sh: [e.p.sh[0] + 1, e.p.sh[1]] } } : e)),
+  C(177, 'opp', 'Rock Slide', 'shield', { ara: [40, 38], stf: [29, 55], sh: [0, 0] }, { why: 'The shield kept at T11' }),
+  C(179, 'opp', 'Rock Slide', 'take', { ara: [0, 38], stf: [29, 10] }, { why: 'No shields left' }),
+  IN(180, 'me', 'mim'),
+  F(181, 192, 'Shadow Claw', 6, 'Mud Shot', 6, { mim: [73, 66], stf: [11, 64] }),
+  C(193, 'opp', 'Rock Slide', 'take', { mim: [31, 66], stf: [11, 19] }, { why: 'No Disguise left to soak it' }),
+  C(194, 'me', 'Shadow Ball', 'take', { mim: [31, 11], stf: [0, 19] }),
+  END(194, 'win'),
+];
+const RA = build(LA), RB = build(LB);
+
+// merge tree from T117
+const baseRow = RA.find(r => r.ev.k === 'fast' && r.ev.t === 117);
+const L1 = {
+  SPsh: { l1: 'Super Power', l2: 'shielded', p: { mel: [109, 23], lan: [92, 81], sh: [1, 1], stg: { me: [-1, -1] } } },
+  RSsh: { l1: 'Rock Slide', l2: 'shielded', p: { mel: [109, 18], lan: [92, 81], sh: [1, 1] } },
+  SPtk: { l1: 'Super Power', l2: 'lands, 34', p: { mel: [109, 23], lan: [59, 81], sh: [1, 2], stg: { me: [-1, -1] } } },
+  RStk: { l1: 'Rock Slide', l2: 'lands, 30', p: { mel: [109, 18], lan: [63, 81], sh: [1, 2] } },
+};
+const L1order = ['SPsh', 'RSsh', 'SPtk', 'RStk'];
+for (const k of L1order) { const s = apply(baseRow.after, { k: 'cm', t: 118, p: L1[k].p }); L1[k].state = s; L1[k].hash = reg(hash6(s), s); }
+const L2 = [
+  { from: ['SPsh'], lan: 57, sh: 1 }, { from: ['SPsh', 'RSsh'], lan: 80, sh: 0 }, { from: ['RSsh', 'SPtk'], lan: 47, sh: 1 },
+  { from: ['SPtk'], lan: 24, sh: 2 }, { from: ['RStk'], lan: 51, sh: 1 }, { from: ['RStk'], lan: 18, sh: 2 },
+];
+for (const n of L2) {
+  const hs = n.from.map(k => { const s = apply(L1[k].state, { k: 'cm', t: 130, p: { mel: [97, 32], lan: [n.lan, 100], sh: [1, n.sh], stg: { me: [-1, -1] } } }); n.state = s; return hash6(s); });
+  n.hash = reg(hs[0], n.state, n.from.length);
+}
+
+function mkFinal(base, t, patch) { const s = apply(base, { k: 'end', t, p: patch }); return { s, h: reg(hash6(s), s) }; }
+const finA = RA[RA.length - 1].after, finB = RB[RB.length - 1].after;
+const OUT = [
+  { res: 'win', s: finA, h: hash6(finA), t: 190, path: ['T11 Shield', 'T118 Rock Slide first', 'Lanturn shields both'], lines: 1 },
+  { res: 'win', ...(() => { const f = mkFinal(finA, 188, { mim: [61, 9], sh: [0, 1] }); return { s: f.s, h: f.h }; })(), t: 188, path: ['T11 Shield', 'Lanturn shields one of two'], lines: 2 },
+  { res: 'win', ...(() => { const f = mkFinal(finA, 186, { mim: [52, 14], sh: [0, 1] }); return { s: f.s, h: f.h }; })(), t: 186, path: ['T11 Shield', 'T118 Rock Slide lands', 'T130 Super Power shielded'], lines: 1 },
+  { res: 'win', s: finB, h: hash6(finB), t: 194, path: ['T11 Take it', 'T118 Rock Slide first', 'Lanturn shields both'], lines: 1 },
+  { res: 'loss', ...(() => { const f = mkFinal(finA, 214, { mim: [0, 22], stf: [22, 64], sh: [0, 1] }); return { s: f.s, h: f.h }; })(), t: 214, path: ['T11 Shield', 'Lanturn takes both', 'They keep shields for the end'], lines: 1 },
+  { res: 'loss', ...(() => { const f = mkFinal(finB, 205, { mim: [0, 40], stf: [29, 100], med: [18, 30], sh: [0, 0] }); return { s: f.s, h: f.h }; })(), t: 205, path: ['T11 Take it', 'T90 Araquanid shields Thunderbolt', 'No shield left for Dynamic Punch'], lines: 1 },
+];
+
+const muted = a => 'color-mix(in srgb,var(--color-text) ' + a + '%,transparent)';
+const bar = (p, kind) => ({ width: Math.max(0, Math.min(100, p)) + '%', height: '100%', background: kind === 'hp' ? 'var(--pink)' : 'color-mix(in srgb,var(--pink) 55%,transparent)', borderRadius: '2px' });
+const dotStyle = (c, s) => ({ width: (s || 8) + 'px', height: (s || 8) + 'px', borderRadius: '50%', background: c, flex: 'none', display: 'inline-block' });
+const tokenBox = c => ({ display: 'flex', alignItems: 'center', gap: '6px', padding: '3px 7px', borderRadius: '6px', alignSelf: 'flex-start', maxWidth: '100%', background: 'color-mix(in srgb,' + c + ' 18%,transparent)', border: '1px solid color-mix(in srgb,' + c + ' 50%,transparent)' });
+const badge = res => ({ fontSize: '11px', fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '99px', color: res === 'win' ? 'var(--win)' : 'var(--loss)', background: 'color-mix(in srgb,' + (res === 'win' ? 'var(--win)' : 'var(--loss)') + ' 16%,transparent)', border: '1px solid color-mix(in srgb,' + (res === 'win' ? 'var(--win)' : 'var(--loss)') + ' 45%,transparent)' });
+const tTxt = ev => (ev.k === 'fast' ? 'T' + ev.t1 + '-' + ev.t : 'T' + ev.t);
+
+function cellModel(r, side) {
+  const { ev, before: b, after: a } = r; const c = { has: false, title: '', sub: '', icon: '', spr: '', color: null, token: false, dim: false };
+  const other = side === 'me' ? 'opp' : 'me';
+  if (ev.k === 'start') { c.has = true; c.title = 'Leads ' + MONS[a.act[side]].name; c.spr = sprOf(a, a.act[side]); }
+  else if (ev.k === 'fast' && ev[side]) { c.has = true; c.title = ev[side].move + ' ×' + ev[side].n; c.color = TYPE[MV[ev[side].move]]; }
+  else if (ev.k === 'cm') {
+    if (ev.by === side) { c.has = true; c.token = true; c.title = ev.move; c.color = TYPE[MV[ev.move]]; c.sub = ev.fx || ''; }
+    else {
+      const tg = b.act[side], dmg = b.hp[tg] - a.hp[tg]; c.has = true;
+      if (ev.res === 'shield') { c.icon = 'ph ph-shield-check'; c.title = 'Shields'; c.sub = a.sh[side] + ' left' + (ev.why ? '. ' + ev.why : ''); }
+      else if (ev.res === 'soak') { c.icon = 'ph ph-mask-happy'; c.title = 'Disguise soaks it'; c.sub = '−' + dmg + ' HP, now Busted'; }
+      else { c.icon = 'ph ph-heart-break'; c.title = 'Takes ' + dmg; c.sub = ev.why || ''; }
+    }
+  } else if (ev.k === 'cmp') {
+    c.has = true; c.token = true;
+    if (ev.first === side) { c.title = ev.fm; c.color = TYPE[MV[ev.fm]]; c.sub = 'Goes first: higher Attack'; }
+    else { c.title = ev.om; c.color = TYPE[MV[ev.om]]; c.sub = 'Never fires'; c.dim = true; }
+  } else if ((ev.k === 'sw' || ev.k === 'in') && ev.side === side) {
+    c.has = true; c.spr = sprOf(a, ev.to); c.title = (ev.k === 'sw' ? 'Swaps to ' : 'Sends ') + MONS[ev.to].name; c.sub = ev.k === 'sw' ? (ev.fx || '') : 'Free swap after a faint';
+  }
+  const pa = b.act[side]; const faint = b.hp[pa] > 0 && a.hp[pa] === 0 ? MONS[pa].name + ' faints' : '';
+  const act = a.act[side], m = MONS[act];
+  const timer = a.swr[side] > a.t ? 'Swap in ' + Math.ceil((a.swr[side] - a.t) / 2) + 's' : '';
+  return {
+    has: c.has, title: c.title, hasSub: !!c.sub, sub: c.sub, hasIcon: !!c.icon, icon: c.icon, hasSpr: !!c.spr, spr: c.spr, hasDot: !!c.color, dot: dotStyle(c.color),
+    box: c.token ? { ...tokenBox(c.color), opacity: c.dim ? 0.55 : 1 } : { display: 'flex', alignItems: 'center', gap: '6px', minHeight: '20px' },
+    hasFaint: !!faint, faint, mon: m.name + (act === 'mim' ? ' · ' + a.form.mim : ''), nums: a.hp[act] + ' HP · ' + a.e[act] + ' E',
+    hpBar: bar(a.hp[act] / m.max * 100, 'hp'), eBar: bar(a.e[act], 'e'), hasTimer: !!timer, timer,
+  };
+}
+function rowModel(r, onHash, opts) {
+  const ev = r.ev; opts = opts || {};
+  let mark = null;
+  if (ev.choice) mark = { href: '#1d', icon: 'ph ph-git-branch', txt: 'Choice point: 2 branches, see 1d' };
+  if (ev.merge) mark = { href: '#1e', icon: 'ph ph-git-merge', txt: '2 lines reach this state, see 1e' };
+  const g = ev.gloss ? GLOSS[ev.gloss] : null;
+  return { tTxt: tTxt(ev), hash: r.hash, onHash: () => onHash(r.hash, r), me: cellModel(r, 'me'), opp: cellModel(r, 'opp'), hasMark: !!mark && !opts.noMarks, mark: mark || {}, hasGloss: !!g && !opts.noGloss, gloss: g || {} };
+}
+function series(rows, side, X, y0, y1) {
+  const Y = p => y1 - p * (y1 - y0); const segs = []; let cur = null;
+  const pt = (s, id) => [s.hp[id] / MONS[id].max, s.e[id] / 100];
+  for (const r of rows) {
+    const ev = r.ev, a = r.after, b = r.before, id = a.act[side];
+    if (ev.k === 'end') continue;
+    if (!cur || b.act[side] !== id) { const [h, e] = pt(a, id); cur = { t0: ev.t, spr: sprOf(a, id), hp: [[ev.t, h]], e: [[ev.t, e]] }; segs.push(cur); continue; }
+    const [hb, eb] = pt(b, id), [ha, ea] = pt(a, id);
+    if (ev.k === 'cm' || ev.k === 'cmp') { cur.hp.push([ev.t, hb], [ev.t, ha]); cur.e.push([ev.t, eb], [ev.t, ea]); }
+    else if (ev.k === 'fast') { cur.hp.push([ev.t, ha]); cur.e.push([ev.t, ea]); }
+  }
+  const f = v => v.toFixed(1);
+  const line = k => segs.map(sg => 'M' + sg[k].map(([t, p]) => f(X(t)) + ',' + f(Y(p))).join(' L')).join(' ');
+  const area = segs.map(sg => 'M' + f(X(sg.t0)) + ',' + y1 + ' L' + sg.hp.map(([t, p]) => f(X(t)) + ',' + f(Y(p))).join(' L') + ' L' + f(X(sg.hp[sg.hp.length - 1][0])) + ',' + y1 + ' Z').join(' ');
+  return { hp: line('hp'), e: line('e'), area, sprites: segs.map(sg => ({ t: sg.t0, spr: sg.spr })) };
+}
+function chartModel(rows, W, c, scrub) {
+  const X = t => 8 + t * ((W - 16) / 196);
+  const me = series(rows, 'me', X, c.me[0], c.me[1]), op = series(rows, 'opp', X, c.opp[0], c.opp[1]);
+  const marks = [];
+  rows.forEach(r => {
+    const ev = r.ev;
+    const mk = (side, move, filled, dim) => { const col = TYPE[MV[move]]; marks.push({ position: 'absolute', left: (X(ev.t) - 4.5) + 'px', top: (side === 'me' ? c.mkMe : c.mkOpp) + 'px', width: '9px', height: '9px', borderRadius: '50%', boxSizing: 'border-box', background: filled ? col : 'transparent', border: '2px solid ' + col, opacity: dim ? 0.4 : 1 }); };
+    if (ev.k === 'cm') mk(ev.by, ev.move, ev.res === 'take');
+    if (ev.k === 'cmp') { mk(ev.first, ev.fm, true); mk(ev.first === 'me' ? 'opp' : 'me', ev.om, false, true); }
+  });
+  const sp = (list, top) => list.map(s => ({ src: s.spr, style: { position: 'absolute', left: (X(s.t) - 4) + 'px', top: top + 'px', width: c.sz + 'px', height: c.sz + 'px', objectFit: 'contain' } }));
+  const axis = []; for (let t = 0; t <= 190; t += c.step) axis.push({ txt: (t / 2) + 's', style: { position: 'absolute', left: X(t) + 'px', top: c.axis + 'px', fontSize: '10px', transform: 'translateX(-50%)', color: muted(55), fontVariantNumeric: 'tabular-nums' } });
+  const band = b => ({ position: 'absolute', left: 0, right: 0, top: b[0] + 'px', height: (b[1] - b[0]) + 'px', borderBottom: '1px solid ' + muted(14) });
+  return {
+    box: { position: 'relative', width: W + 'px', height: c.h + 'px' }, w: W, h: c.h,
+    meHp: me.hp, meArea: me.area, meE: me.e, opHp: op.hp, opArea: op.area, opE: op.e, marks,
+    spr: [...sp(me.sprites, c.me[0] - c.sz + 6), ...sp(op.sprites, c.opp[0] - c.sz + 6)], axis,
+    bandMe: band(c.me), bandOp: band(c.opp),
+    opLabel: { position: 'absolute', right: '2px', top: (c.opp[0] - 14) + 'px', fontSize: '10px', letterSpacing: '.08em', textTransform: 'uppercase', color: muted(60) },
+    line: { position: 'absolute', left: X(scrub) + 'px', top: 0, height: (c.axis - 2) + 'px', width: '1.5px', background: 'var(--color-accent)' },
+  };
+}
+function model1a(rows, sel, onSel) {
+  const SX = 7, PAD = 26, X = t => PAD + t * SX, W = PAD * 2 + 196 * SX, H = 276;
+  const me = series(rows, 'me', X, 66, 118), op = series(rows, 'opp', X, 166, 218);
+  const tokens = [], ticks = [], shields = [], dots = [];
+  const last = { me: [-999, -999], opp: [-999, -999] }, tokRow = { me: [22, 42], opp: [228, 248] };
+  const addTok = (side, t, move, dim) => {
+    const x = X(t), L = last[side]; const row = x - L[0] > 86 ? 0 : (x - L[1] > 86 ? 1 : 0); L[row] = x; const col = TYPE[MV[move]];
+    tokens.push({ label: move, dot: dotStyle(col, 7), style: { position: 'absolute', left: (x - 5) + 'px', top: tokRow[side][row] + 'px', ...tokenBox(col), padding: '1px 6px', gap: '5px', fontSize: '10.5px', whiteSpace: 'nowrap', opacity: dim ? 0.5 : 1, color: 'var(--color-text)' } });
+  };
+  rows.forEach((r, i) => {
+    const ev = r.ev;
+    if (ev.k === 'fast') ['me', 'opp'].forEach(sd => { const d = ev[sd]; if (!d) return; const span = ev.t - ev.t1 + 1; for (let j = 0; j < d.n; j++) { const t = ev.t1 - 1 + (j + 1) * span / d.n; ticks.push({ position: 'absolute', left: X(t) + 'px', top: (sd === 'me' ? 122 : 152) + 'px', width: '1px', height: '6px', background: muted(45) }); } });
+    if (ev.k === 'cm') {
+      addTok(ev.by, ev.t, ev.move); const def = ev.by === 'me' ? 'opp' : 'me';
+      if (ev.res !== 'take') shields.push({ icon: ev.res === 'shield' ? 'ph ph-shield-check' : 'ph ph-mask-happy', style: { position: 'absolute', left: (X(ev.t) - 10) + 'px', top: (def === 'me' ? 84 : 184) + 'px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--color-surface)', border: '1px solid ' + muted(30), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' } });
+    }
+    if (ev.k === 'cmp') { addTok(ev.first, ev.t, ev.fm); addTok(ev.first === 'me' ? 'opp' : 'me', ev.t, ev.om, true); }
+    if (ev.k !== 'end') dots.push({ onClick: () => onSel(i), btn: { position: 'absolute', left: (X(ev.t) - 11) + 'px', top: '129px', width: '22px', height: '22px', padding: 0, border: 0, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }, dot: i === sel ? { width: '12px', height: '12px', borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 0 3px var(--color-accent-800)' } : { width: '8px', height: '8px', borderRadius: '50%', border: '1.5px solid var(--color-accent)', background: 'var(--color-bg)', boxSizing: 'border-box' } });
+  });
+  const axis = []; for (let t = 0; t <= 190; t += 20) axis.push({ txt: 'T' + t, style: { position: 'absolute', left: X(t) + 'px', top: '2px', fontSize: '10px', transform: 'translateX(-50%)', color: muted(55), fontVariantNumeric: 'tabular-nums' } });
+  const spr = [...me.sprites.map(s => ({ src: s.spr, style: { position: 'absolute', left: (X(s.t) - 2) + 'px', top: '58px', width: '30px', height: '30px', objectFit: 'contain' } })), ...op.sprites.map(s => ({ src: s.spr, style: { position: 'absolute', left: (X(s.t) - 2) + 'px', top: '158px', width: '30px', height: '30px', objectFit: 'contain' } }))];
+  return { box: { position: 'relative', width: W + 'px', height: H + 'px' }, w: W, hgt: H, meHp: me.hp, meArea: me.area, meE: me.e, opHp: op.hp, opArea: op.area, opE: op.e, tokens, ticks, shields, dots, axis, spr, selLine: { position: 'absolute', left: X(rows[sel].ev.t) + 'px', top: '16px', height: '252px', width: '1px', background: 'color-mix(in srgb,var(--color-accent) 70%,transparent)' } };
+}
+function sheetModel(h, opts) {
+  const R = REG[h]; if (!R) return null; const s = R.state; opts = opts || {};
+  const fmt = v => (v === 0 ? '0' : v > 0 ? '+' + v : '−' + Math.abs(v));
+  const side = (sd, ids, label) => {
+    const alive = ids.filter(id => s.hp[id] > 0).length;
+    return { label, meta: alive + ' of 3 standing', mons: ids.map(id => {
+      const m = MONS[id], act = s.act[sd] === id, dead = s.hp[id] <= 0;
+      const tag = [act && !dead ? 'Out now' : '', id === 'mim' ? s.form.mim : '', dead ? 'Fainted' : ''].filter(Boolean).join(' · ');
+      return { spr: sprOf(s, id), name: m.name, tag, hpTxt: s.hp[id] + ' / ' + m.max, hpBar: bar(s.hp[id] / m.max * 100, 'hp'), eBar: bar(s.e[id], 'e'), eTxt: s.e[id] + ' E', row: { display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 8px', borderRadius: '8px', background: act ? muted(6) : 'transparent', opacity: dead ? 0.45 : 1 } };
+    }) };
+  };
+  const tm = sd => (s.swr[sd] > s.t ? Math.ceil((s.swr[sd] - s.t) / 2) + 's left' : 'Ready');
+  return {
+    kicker: opts.kicker || 'Battle state', hash: h, turn: 'Turn ' + s.t + ' · ' + (s.t / 2) + 's of 240s',
+    linesTxt: R.lines > 1 ? R.lines + ' lines of play reach this exact state' : '1 explored line reaches this state',
+    closable: !!opts.onClose, onClose: opts.onClose,
+    sides: [side('me', ME, 'You'), side('opp', OPP, 'Opponent')],
+    facts: [{ k: 'Shields', me: String(s.sh.me), opp: String(s.sh.opp) }, { k: 'Switch timer', me: tm('me'), opp: tm('opp') }, { k: 'Stat stages', me: 'Atk ' + fmt(s.stg.me[0]) + ' · Def ' + fmt(s.stg.me[1]), opp: 'Atk ' + fmt(s.stg.opp[0]) + ' · Def ' + fmt(s.stg.opp[1]) }],
+  };
+}
+function compact(r, onHash) {
+  const ev = r.ev, a = r.after, b = r.before;
+  let who = ev.k === 'cm' ? ev.by : ev.k === 'cmp' ? ev.first : ev.side; let title = '', sub = '', color = null, spr = '', icon = '';
+  if (ev.k === 'cm') {
+    title = ev.move; color = TYPE[MV[ev.move]]; const def = who === 'me' ? 'opp' : 'me', tg = b.act[def], dn = MONS[tg].name;
+    sub = ev.res === 'shield' ? dn + ' shields' : ev.res === 'soak' ? 'Disguise soaks it' : dn + ' takes ' + (b.hp[tg] - a.hp[tg]);
+    if (a.hp[tg] === 0) sub += ' and faints';
+  } else if (ev.k === 'cmp') { title = ev.fm + ' first'; color = TYPE[MV[ev.fm]]; sub = 'CMP win, ' + MONS[b.act[ev.first === 'me' ? 'opp' : 'me']].name + ' faints'; }
+  else if (ev.k === 'sw' || ev.k === 'in') { title = (ev.k === 'sw' ? 'Swaps to ' : 'Sends ') + MONS[ev.to].name; spr = sprOf(a, ev.to); }
+  else if (ev.k === 'fast') { const sd = ['me', 'opp'].find(x => b.hp[b.act[x]] > 0 && a.hp[b.act[x]] === 0); who = sd; title = MONS[b.act[sd]].name + ' faints'; icon = 'ph ph-x-circle'; sub = 'to fast moves'; }
+  return {
+    has: true, who: who === 'me' ? 'You' : 'Opp', title, sub, hasSub: !!sub, hasDot: !!color, dot: dotStyle(color), hasSpr: !!spr, spr, hasIcon: !!icon, icon,
+    hash: r.hash, onHash: () => onHash(r.hash), meta: 'Shields ' + a.sh.me + ' : ' + a.sh.opp + ' · ' + a.form.mim,
+    box: { display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0, padding: '8px', borderRadius: '8px', background: muted(5) },
+  };
+}
+const isKey = r => r.ev.k === 'cm' || r.ev.k === 'cmp' || r.ev.k === 'sw' || r.ev.k === 'in' || (r.ev.k === 'fast' && ['me', 'opp'].some(x => r.before.hp[r.before.act[x]] > 0 && r.after.hp[r.before.act[x]] === 0));
+function outcomeModel(o, onHash) {
+  const team = (ids, label) => ({ label, mons: ids.map(id => { const m = MONS[id], dead = o.s.hp[id] <= 0; return { spr: sprOf(o.s, id), nums: dead ? 'Fainted' : o.s.hp[id] + ' HP · ' + o.s.e[id] + ' E', hpBar: bar(o.s.hp[id] / m.max * 100, 'hp'), box: { display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, opacity: dead ? 0.4 : 1 } }; }) });
+  return { resTxt: o.res === 'win' ? 'Win' : 'Loss', badge: badge(o.res), when: 'T' + o.t + ' · ' + Math.floor(o.t / 120) + ':' + String(Math.round((o.t / 2) % 60)).padStart(2, '0'), hash: o.h, onHash: () => onHash(o.h), path: o.path, merged: o.lines > 1, teams: [team(ME, 'You'), team(OPP, 'Opp')] };
+}
+function outSummary(rows, onHash) {
+  const last = rows[rows.length - 1], s = last.after; const left = ME.filter(id => s.hp[id] > 0);
+  const lineTxt = left.map(id => MONS[id].name + ' ' + s.hp[id] + ' HP and ' + s.e[id] + ' E left' + (id === 'mim' ? ' (' + s.form.mim + ')' : '')).join(', ');
+  return { resTxt: last.ev.res === 'win' ? 'Win' : 'Loss', badge: badge(last.ev.res), when: 'T' + last.ev.t + ' · ' + (last.ev.t / 2) + 's', hash: last.hash, onHash: () => onHash(last.hash), line: 'All three of theirs faint. ' + lineTxt + '.' };
+}
+const HARD = [
+  { t: 'The full state never fits a row', d: '6 Pokémon × HP, energy and form, plus shields, stat stages and two switch timers. Rows show the active pair only; everything else lives behind the hash.' },
+  { t: 'Horizontal time is 3.4 screens wide', d: '190 turns at 7px each. Hash chips collide, so 1a uses a dot rail and shows one chip at a time. Back to back throws (T168, T169) sit 7px apart, under a usable tap target.' },
+  { t: 'Fast move ticks', d: 'Up to 40 in a run. The log folds them to a count (Bug Bite ×40); the chart in 1c cannot show them at 1.8px per turn.' },
+  { t: 'Two branches is the ceiling', d: 'Side by side columns are 175px each, which fits key moments only. A third branch needs a stacked list with a diff summary instead.' },
+  { t: 'Tree width', d: 'About 6 nodes per level before hash chips overlap. Wider trees need a zoomed window of turns, as in 1e.' },
+  { t: 'Long names and type colors', d: 'Galarian Stunfisk shortens to Stunfisk in lanes. Fighting and Electric tokens sit near the red and pink roles, so every token also carries the move name.' },
+];
+const COLLAPSE = [
+  { t: 'T20', lines: '1,840', states: '612', l: 3.26, s: 2.79 }, { t: 'T60', lines: '2.1M', states: '48k', l: 6.32, s: 4.68 },
+  { t: 'T100', lines: '3.9B', states: '410k', l: 9.59, s: 5.61 }, { t: 'T140', lines: '7.2T', states: '1.9M', l: 12.86, s: 6.28 },
+  { t: 'T190', lines: '1.3×10¹⁵', states: '4.6M', l: 15.11, s: 6.66 },
+];
+
+class Component extends DCLogic {
+  state = { dark: null, sheet: null, sel1a: 2, scrub: 130, dLine: 'A', dScrub: 130 };
+  renderVals() {
+    const st = this.state;
+    const dark = st.dark ?? ((this.props.theme ?? 'Dark') === 'Dark');
+    const open = f => h => this.setState({ sheet: { f, h } });
+    const closeSheet = () => this.setState({ sheet: null });
+    const sheetOn = {}; ['f1a', 'f1b', 'f1d', 'f1e', 'f1f'].forEach(f => (sheetOn[f] = !!st.sheet && st.sheet.f === f));
+    const sheet = st.sheet ? sheetModel(st.sheet.h, { onClose: closeSheet }) : null;
+
+    const rowsA = RA.filter(r => r.ev.k !== 'end');
+    const logA = rowsA.map(r => rowModel(r, open('f1b')));
+    const sel = Math.min(st.sel1a, rowsA.length - 1);
+    const h = model1a(RA, sel, i => this.setState({ sel1a: i }));
+    h.row = rowModel(rowsA[sel], open('f1a'), { noMarks: true, noGloss: true });
+    h.prev = () => this.setState({ sel1a: Math.max(0, sel - 1) });
+    h.next = () => this.setState({ sel1a: Math.min(rowsA.length - 1, sel + 1) });
+
+    const pickIdx = (rows, t) => { let k = 0; rows.forEach((r, i) => { if ((r.ev.t1 ?? r.ev.t) <= t) k = i; }); return k; };
+    const c1 = chartModel(RA, 358, { me: [22, 72], opp: [118, 168], mkMe: 78, mkOpp: 96, axis: 174, h: 190, step: 40, sz: 24 }, st.scrub);
+    const ci = pickIdx(rowsA, st.scrub), cr = rowsA[ci];
+    const summ = r => { const a = cellModel(r, 'me'), b = cellModel(r, 'opp'); return [a.has ? MONS[r.after.act.me].name.split(' ')[0] + ': ' + a.title : '', b.has ? MONS[r.before.act.opp].name + ': ' + b.title : ''].filter(Boolean).join(' · '); };
+    const c1sel = { when: tTxt(cr.ev) + ' · ' + cr.ev.t / 2 + 's', txt: summ(cr), sheet: sheetModel(cr.hash, { kicker: 'State after this event' }),
+      prev: () => this.setState({ scrub: rowsA[Math.max(0, ci - 1)].ev.t }), next: () => this.setState({ scrub: rowsA[Math.min(rowsA.length - 1, ci + 1)].ev.t }) };
+
+    const o1d = open('f1d');
+    const trunk = RA.slice(0, iC1).map(r => ({ tTxt: tTxt(r.ev), txt: r.ev.k === 'start' ? 'Mimikyu leads into Stunfisk' : 'Shadow Claw ×5 · Mud Shot ×5', hash: r.hash, onHash: () => o1d(r.hash) }));
+    const kA = RA.slice(iC1).filter(isKey), kB = RB.slice(iC1).filter(isKey);
+    const turns = [...new Set([...kA, ...kB].map(r => r.ev.t))].sort((x, y) => x - y);
+    const empty = { has: false, box: { minHeight: '20px', borderLeft: '1px dashed ' + muted(18), marginLeft: '12px' } };
+    const branchRows = turns.map(t => { const a = kA.find(r => r.ev.t === t), b = kB.find(r => r.ev.t === t); return { tTxt: 'T' + t + ' · ' + t / 2 + 's', cells: [a ? compact(a, o1d) : empty, b ? compact(b, o1d) : empty] }; });
+    const bo = (rows, short) => { const l = rows[rows.length - 1]; return { ...outSummary(rows, o1d), spr: sprOf(l.after, 'mim'), short, hpBar: bar(l.after.hp.mim / 121 * 100, 'hp') }; };
+    const branchOut = [bo(RA, 'Mimikyu 75 HP, 5 E'), bo(RB, 'Mimikyu 31 HP, 11 E')];
+
+    const o1e = open('f1e');
+    const nodes = [], edges = [];
+    const edge = (x1, y1, x2, y2, hot) => edges.push({ d: 'M' + x1 + ' ' + y1 + ' C' + x1 + ' ' + ((y1 + y2) / 2) + ' ' + x2 + ' ' + ((y1 + y2) / 2) + ' ' + x2 + ' ' + y2, style: { fill: 'none', stroke: hot ? 'var(--color-accent)' : muted(30), strokeWidth: hot ? 1.8 : 1.2 } });
+    const nodeBox = (x, y, w, hh, merged) => ({ position: 'absolute', left: (x - w / 2) + 'px', top: y + 'px', width: w + 'px', height: hh + 'px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px', padding: '2px', borderRadius: '8px', cursor: 'pointer', background: 'var(--color-surface)', border: merged ? '2px solid var(--color-accent)' : '1px solid var(--color-accent-700)', boxShadow: merged ? '0 0 0 4px var(--color-accent-900)' : 'none', fontFamily: 'inherit' });
+    const mb = { position: 'absolute', top: '-9px', right: '-8px', fontSize: '10px', fontWeight: 600, padding: '1px 5px', borderRadius: '99px', background: 'var(--color-accent)', color: 'var(--color-bg)' };
+    nodes.push({ hash: baseRow.hash, l1: 'T117', l2: 'Melmetal 63 E', merged: false, badge: mb, onClick: () => o1e(baseRow.hash), style: nodeBox(179, 2, 104, 50) });
+    const x1 = [45, 135, 224, 313], x2 = [31, 90, 149, 209, 268, 327];
+    L1order.forEach((k, i) => { edge(179, 52, x1[i], 82); nodes.push({ hash: L1[k].hash, l1: L1[k].l1, l2: L1[k].l2, merged: false, badge: mb, onClick: () => o1e(L1[k].hash), style: nodeBox(x1[i], 82, 82, 56) }); });
+    L2.forEach((n, i) => { n.from.forEach(k => edge(x1[L1order.indexOf(k)], 138, x2[i], 200, n.from.length > 1)); nodes.push({ hash: n.hash, l1: 'Lan ' + n.lan, l2: n.sh + ' shield' + (n.sh === 1 ? '' : 's'), merged: n.from.length > 1, badge: mb, onClick: () => o1e(n.hash), style: nodeBox(x2[i], 200, 56, 62, n.from.length > 1) }); });
+    const collapse = COLLAPSE.map(c => ({ ...c, lBar: { width: (c.l / 16 * 62) + '%', height: '6px', borderRadius: '3px', border: '1px solid var(--pink)', boxSizing: 'border-box' }, sBar: { width: (c.s / 16 * 62) + '%', height: '6px', borderRadius: '3px', background: 'var(--pink)' } }));
+
+    const outcomes = OUT.map(o => outcomeModel(o, open('f1f')));
+
+    const DR = st.dLine === 'A' ? RA : RB; const dRows = DR.filter(r => r.ev.k !== 'end');
+    const di = pickIdx(dRows, st.dScrub);
+    const tab = on => ({ padding: '6px 12px', borderRadius: '6px', border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '12.5px', background: on ? 'var(--color-accent-900)' : 'transparent', color: on ? 'var(--color-accent-300)' : muted(70), boxShadow: on ? 'inset 0 0 0 1px var(--color-accent-700)' : 'none' });
+    const desk = {
+      tabA: tab(st.dLine === 'A'), tabB: tab(st.dLine === 'B'), pickA: () => this.setState({ dLine: 'A' }), pickB: () => this.setState({ dLine: 'B' }),
+      scrub: st.dScrub, onScrub: e => this.setState({ dScrub: +e.target.value }),
+      rows: dRows.map((r, i) => ({ m: rowModel(r, () => this.setState({ dScrub: r.ev.t }), { noMarks: true }), wrap: { borderBottom: '1px solid ' + muted(7), background: i === di ? 'var(--color-accent-900)' : 'transparent' } })),
+      sheet: sheetModel(dRows[di].hash, { kicker: 'Line ' + st.dLine + ' · ' + tTxt(dRows[di].ev) }),
+      out: outSummary(DR, () => {}),
+    };
+    const dc = chartModel(DR, 806, { me: [30, 112], opp: [160, 242], mkMe: 120, mkOpp: 138, axis: 250, h: 266, step: 20, sz: 28 }, st.dScrub);
+
+    return {
+      themeVars: dark ? {} : LIGHT, themeIcon: dark ? 'ph ph-sun' : 'ph ph-moon', themeLabel: dark ? 'Light theme' : 'Dark theme',
+      toggleTheme: () => this.setState({ dark: !dark }), sheetOn, sheetModel: sheet, closeSheet,
+      h, logA, outA: outSummary(RA, open('f1b')),
+      c1, c1sel, scrub: st.scrub, onScrub: e => this.setState({ scrub: +e.target.value }),
+      trunk, branchRows, branchOut, tree: { nodes, edges }, collapse, outcomes, hard: HARD, desk, dc,
+    };
+  }
+}
+</script>
+</body>
+</html>

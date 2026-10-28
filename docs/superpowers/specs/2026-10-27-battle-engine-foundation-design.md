@@ -86,6 +86,10 @@ This first spec builds the floor everything else stands on: game data we extract
   A traced battle records each turn's state hash next to its HP, energy and forms (amended at
   validate-plan, 2026-10-27). Travis wants to see a battle as a timeline with those hashes, and see
   two lines of play meet where their hashes match; the trace is the data that view reads.
+  Each turn's record also carries what that view shows per turn without a rerun: max HP, shields
+  left and stat stages for both sides (amended at the second validate-plan, 2026-10-27, from the
+  timeline mock in `docs/design/battle-timeline/`). The switch timer and the bench join the record
+  in spec 2, when 3v3 arrives.
 
 ## The exam
 
@@ -203,6 +207,9 @@ synthetic data; the exams run against live data and assert invariants (they agre
    the Disguise, swap after the opponent's first charged move, expect the counter-swap, shield on
    Melmetal only when the opponent has a super-effective charged move, bring Mimikyu back last with
    its Disguise and banked energy. A lower-rated player model gets these wrong in measurable ways.
+   The timeline mock (`docs/design/battle-timeline/`) also asks for each decision to carry a short
+   reason ("Keeps Disguise up", "Not super effective, so no shield") and for a state to show how
+   many explored lines reach it. Both belong to this spec: players say why, search counts lines.
 3. **Your three vs the field.** The opponent pool comes from pick3's own measured data (the
    community team board and tournament rosters), weighted by how often each team shows up, with
    standard movesets (almost everyone runs them; off-meta sets are ignored at first). Output: your
