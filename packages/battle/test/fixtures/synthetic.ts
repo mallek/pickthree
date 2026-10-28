@@ -32,6 +32,21 @@ export function makeSpecies(id: string, over: Partial<SpeciesData> = {}): Specie
   };
 }
 
+/** Synthetic data with a `shifter` family (forms shifter_a, shifter_b) and a second family `other`. */
+export function makeShifterData(): BattleData {
+  const data = makeData();
+  data.moves['BLAST_CHARGED'] = makeMove('BLAST_CHARGED', {
+    category: 'charged',
+    power: 80,
+    energy: 60,
+    energyGain: 0,
+  });
+  data.species['shifter_a'] = makeSpecies('shifter_a', { family: 'shifter' });
+  data.species['shifter_b'] = makeSpecies('shifter_b', { family: 'shifter' });
+  data.species['other_mon'] = makeSpecies('other_mon', { family: 'other' });
+  return data;
+}
+
 export function makeData(over: Partial<BattleData> = {}): BattleData {
   return {
     version: 1,
