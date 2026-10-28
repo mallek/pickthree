@@ -3,7 +3,9 @@
 # through both engines and compares HP and energy turn by turn. A script that differs passes only when
 # an entry here lists it. An entry that lists a script which now matches is reported stale and fails
 # the exam, like a redundant override. Each entry names the behaviour, what each engine does, and the
-# evidence for our side.
+# evidence for our side. An entry with `scripts: []` documents a difference no exam script exercises
+# (the exam runs our engine on PvPoke's converted data and a transcription of PvPoke's mechanics): it
+# explains no script and is never stale, but needs the same fields and evidence.
 #
 # Cites: PvPoke at the pinned commit (packages/data/.pvpoke/src/js; the vendored copies in
 # packages/sim-pvpoke/vendor are byte for byte the same): Battle.js and pokemon/Pokemon.js.
@@ -19,9 +21,10 @@
 #   - Charged move priority uses form Attack without the shadow multiplier or stat stages in both
 #     (Battle.js:262 and :783 read stats.atk; Pokemon.js:2258-2263 keeps the shadow bonus in
 #     shadowAtkMult). cmp-tie-shadow shows PvPoke treating a shadow vs plain pair with equal IVs as a tie.
-#   - Timeout: PvPoke stops at 240000 ms (Battle.js:636) counting 10000 ms per charged move; ours stops
-#     at 480 turns. Every exam script ends in a knockout well before either clock (rules-exam.test.ts
-#     asserts it), so no script exercises this.
+#   - Timeout in the exam: PvPoke stops at 240000 ms (Battle.js:636) counting 10000 ms per charged
+#     move; ours, on the converted exam data, at 480 turns (convert.ts ROUND_TURNS). Every exam script
+#     ends in a knockout well before either clock (rules-exam.test.ts asserts it), so no script
+#     exercises this. Real data uses 540 turns: see round-length below.
 
 differences:
   - id: cmp-tie-knockout
@@ -96,3 +99,83 @@ differences:
       when the crossing hit lands on the turn Minior's own 3-turn Rollout resolves, so no fast move is
       in flight (a property of its levels and IVs, guarded by rules-exam.test.ts).
     scripts: [minior-core]
+
+  # Documentation entries: real differences the exam does not exercise.
+
+  - id: animation-turns
+    behaviour: >-
+      The animation when Mimikyu busts, Aegislash changes stance, Morpeko changes mode, or Minior
+      turns Core.
+    ours: >-
+      The animate effect freezes the battle for 5 turns after the turn it fires: the turn counter
+      advances, nothing else happens (packages/battle/src/rules/turn.ts:69-74; mechanics.yaml animate
+      turns 5 on mimikyu, aegislash, morpeko and minior).
+    pvpoke: >-
+      No turn cost for Mimikyu, Aegislash or Morpeko (Battle.js:1029-1040, :1205-1206, :1281-1300,
+      :1555-1584 change form only). Only an hp-triggered change (Minior) adds animationTime 5000 ms to
+      its clock and resets both cooldowns like a charged move (Battle.js:1649, :1668-1670, :548-550;
+      pokemon.json:38563).
+    evidence: >-
+      Datamine 8e227be ibfc animationDurationTurns 5 in both directions on V0681_POKEMON_AEGISLASH
+      (lines 469415, 469420), V0778_POKEMON_MIMIKYU (491340, 491345) and V0877_POKEMON_MORPEKO
+      (509738, 509745). Minior has no ibfc flag; its 5 turns are a guess (mechanics.yaml source).
+      Recorded-battle evidence for the exact freeze semantics is still wanted.
+    scripts: []
+
+  - id: morpeko-toggle
+    behaviour: Morpeko's form and Aura Wheel after its second and later charged moves.
+    ours: >-
+      Toggles on every charged move, Full Belly to Hangry and back, swapping AURA_WHEEL_ELECTRIC and
+      AURA_WHEEL_DARK (packages/data/battle/mechanics.yaml:52-66).
+    pvpoke: >-
+      Changes Full Belly to Hangry once and never back: morpeko_hangry has no formChange of its own
+      (pokemon.json:41577-41598), changeForm keeps Full Belly's (Pokemon.js:2482-2484), whose target
+      is Hangry, so the activeFormId check at Battle.js:1573 never passes again.
+    evidence: >-
+      Datamine 8e227be V0877_POKEMON_MORPEKO ibfc carries both defaultToAlternateIbfcSettings and
+      alternateToDefaultIbfcSettings (lines 509738, 509745); the game toggles. The exam's
+      transcription (packages/data/src/exam/pvpoke-mechanics.yaml:86-101) follows PvPoke, so the
+      morpeko script matches.
+    scripts: []
+
+  - id: mega-damage-bonus
+    behaviour: Damage from a Mega Pokemon's charged moves.
+    ours: >-
+      No Mega multiplier: damage is the plain formula (packages/battle/src/rules/damage.ts:44). Mega
+      forms and Mega moves are extracted as data only (packages/battle/src/extract/species.ts:177-210).
+    pvpoke: >-
+      Multiplies a Mega's Mega-move damage by MEGA_BONUS[megaLevel - 1], 1 to 1.3
+      (DamageCalculator.js:10, :40-41, :68, :87-88, :104).
+    evidence: >-
+      Plan decision 'Megas' (docs/superpowers/plans/2026-10-27-battle-engine-foundation.md): the bonus
+      is not modelled in this slice, it belongs to cup readiness (spec 4). Not a claim that the game
+      lacks it. No exam script uses a Mega.
+    scripts: []
+
+  - id: round-length
+    behaviour: When a battle times out.
+    ours: >-
+      After settings.roundTurns turns, roundDurationSeconds / turnDurationSeconds from the datamine
+      (packages/battle/src/extract/settings.ts:79; packages/battle/src/rules/turn.ts:18): 270 / 0.5 =
+      540 turns. A turn with a charged move is one turn.
+    pvpoke: >-
+      Stops once its clock passes 240000 ms (Battle.js:636), 480 turns of 500 ms, and a turn with a
+      charged move adds chargedMinigameTime 10000 ms instead of 500 (Battle.js:58, :504-514).
+    evidence: >-
+      Datamine 8e227be combat settings roundDurationSeconds 270.0 and turnDurationSeconds 0.5
+      (lines 95025-95026). Whether the game's clock pauses for the charged move minigame is not
+      settled here; the 540 vs 480 question is open for Travis and the brainstorm lane.
+    scripts: []
+
+  - id: shedinja-hp
+    behaviour: Shedinja's HP.
+    ours: >-
+      The general formula, max(10, floor((base hp + hp IV) * cpm)) on base stamina 1
+      (packages/battle/src/rules/stats.ts:39): with 15 HP IV, 10 at level 20, 11 at level 30, 13 at
+      level 50.
+    pvpoke: Always 10 (Pokemon.js:384-388, special case on dex 292).
+    evidence: >-
+      Datamine 8e227be V0292_POKEMON_SHEDINJA baseStamina 1 (line 367771) with no special case, so ours follows the
+      game master's formula. Unconfirmed against the game: a recorded Shedinja's HP at a high level
+      would settle it.
+    scripts: []

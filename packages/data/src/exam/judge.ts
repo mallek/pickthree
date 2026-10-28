@@ -11,6 +11,7 @@ export interface Difference {
   ours: string;
   pvpoke: string;
   evidence: string;
+  /** Scripts this entry explains. Empty: a documentation entry, a difference no script exercises. */
   scripts: string[];
 }
 export interface ScriptVerdict {
@@ -61,8 +62,12 @@ export function validateDifferences(raw: unknown): Difference[] {
       }
     }
     const scripts = item['scripts'];
-    if (!Array.isArray(scripts) || scripts.length === 0) {
-      throw new Error(`${where}.scripts must list at least one script id`);
+    // An empty list is a documentation entry: a known difference no exam script exercises. It still
+    // needs behaviour, ours, pvpoke and evidence, explains no script and is never stale.
+    if (!Array.isArray(scripts)) {
+      throw new Error(
+        `${where}.scripts must be a list of script ids (empty for a difference the exam does not exercise)`,
+      );
     }
     scripts.forEach((s: unknown, n: number) => {
       if (typeof s !== 'string' || s === '') {

@@ -157,6 +157,19 @@ describe('judge', () => {
     expect(stale).toEqual(['d1: gone is not an exam script']);
   });
 
+  it('a documentation entry (no scripts) is never stale and explains nothing', () => {
+    const other = [BASE[0] as ExamTurn, turn(2, [90, 78], [6, 8]), turn(3, [70, 0], [9, 12])];
+    const { verdicts, stale } = judge(
+      [
+        { id: 's1', ours: run(BASE), pvpoke: run(BASE), script: [] },
+        { id: 's2', ours: run(BASE), pvpoke: run(other), script: [] },
+      ],
+      [difference('doc', []), difference('d1', ['s1'])],
+    );
+    expect(verdicts.map((v) => v.status)).toEqual(['match', 'mismatch']);
+    expect(stale).toEqual(['d1: s1 now matches']);
+  });
+
   it('the report carries the runs notes', () => {
     const { report } = judge(
       [
@@ -219,14 +232,31 @@ describe('validateDifferences', () => {
     expect(() => validateDifferences(raw)).toThrow('differences.yaml: [2].evidence is required');
   });
 
-  it('rejects a blank field, an empty scripts list and a duplicate id', () => {
+  it('accepts a documentation entry: scripts is an empty list', () => {
+    const doc = { ...good.differences[0], id: 'doc', scripts: [] };
+    expect(validateDifferences({ differences: [doc] })).toEqual([doc]);
+  });
+
+  it('rejects a documentation entry without evidence', () => {
+    const doc: Record<string, unknown> = { ...good.differences[0], scripts: [] };
+    delete doc['evidence'];
+    expect(() => validateDifferences({ differences: [doc] })).toThrow(
+      'differences.yaml: [0].evidence is required',
+    );
+  });
+
+  it('rejects a blank field, a missing scripts list and a duplicate id', () => {
     const entry = good.differences[0] as Record<string, unknown>;
     expect(() => validateDifferences({ differences: [{ ...entry, ours: '  ' }] })).toThrow(
       'differences.yaml: [0].ours is required',
     );
-    expect(() => validateDifferences({ differences: [{ ...entry, scripts: [] }] })).toThrow(
-      'differences.yaml: [0].scripts must list at least one script id',
-    );
+    const noScripts: Record<string, unknown> = { ...entry };
+    delete noScripts['scripts'];
+    for (const bad of [noScripts, { ...entry, scripts: 's1' }]) {
+      expect(() => validateDifferences({ differences: [bad] })).toThrow(
+        'differences.yaml: [0].scripts must be a list of script ids (empty for a difference the exam does not exercise)',
+      );
+    }
     expect(() => validateDifferences({ differences: [entry, entry] })).toThrow(
       'differences.yaml: [1].id cmp-tie-ko is a duplicate',
     );
