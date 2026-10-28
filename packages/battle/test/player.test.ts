@@ -14,6 +14,8 @@ function view(actor: 0 | 1, turn: number): BattleView {
     hp: 100,
     maxHp: 100,
     energy: 0,
+    atk: 50,
+    def: 50,
     atkStage: 0,
     defStage: 0,
     shadow: false,

@@ -6,6 +6,9 @@ export interface CombatantView {
   hp: number;
   maxHp: number;
   energy: number;
+  /** Unbuffed form stats, the inputs damageOf expects. */
+  atk: number;
+  def: number;
   atkStage: number;
   defStage: number;
   shadow: boolean;

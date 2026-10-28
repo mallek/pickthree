@@ -14,6 +14,8 @@ function combatantView(data: BattleData, c: CombatantState): CombatantView {
     hp: c.hp,
     maxHp: c.maxHp,
     energy: c.energy,
+    atk: c.atk,
+    def: c.def,
     atkStage: c.atkStage,
     defStage: c.defStage,
     shadow: c.shadow,
