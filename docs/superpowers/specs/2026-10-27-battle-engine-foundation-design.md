@@ -83,6 +83,9 @@ This first spec builds the floor everything else stands on: game data we extract
   to 10^16 lines per team pair, far too many to enumerate, but many lines reach the same state. Later
   specs (perfect-play search, measuring how forgiving a team is) depend on searching states instead
   of lines, which is impossible if state cannot be copied and compared.
+  A traced battle records each turn's state hash next to its HP, energy and forms (amended at
+  validate-plan, 2026-10-27). Travis wants to see a battle as a timeline with those hashes, and see
+  two lines of play meet where their hashes match; the trace is the data that view reads.
 
 ## The exam
 
@@ -112,6 +115,13 @@ Two exams, both using PvPoke only as a grade.
      patch behaviour inside the vm context at runtime, the same way the shim already supplies
      globals. The vendored files stay byte for byte. If something still cannot be scripted, run it
      in `simulate` mode with a stub AI and say so in the exam output.
+   - Our own mechanics file runs too (amended at validate-plan, 2026-10-27). Because both engines
+     run on PvPoke's numbers, the rules exam exercises PvPoke's form behaviour transcribed into our
+     vocabulary, not the entries we ship. So every entry in our own mechanics file must also run in
+     a battle on our own extracted data, in a test that asserts the behaviour the entry claims (for
+     example: Disguise blocks the first unshielded charged move and busts, a shielded hit leaves it
+     up; Minior turns Core below half HP; Morpeko flips on each charged move). Invariants, no pinned
+     numbers. A mechanics entry nobody has run in a battle is not done.
    - CI gate (builder's call): the rules exam runs in CI next to the golden test, using the cached
      data build plus a cached datamine fetch.
 2. **Data exam (report, not gate).** Compare our extracted species, moves and cup rules against
@@ -155,8 +165,12 @@ synthetic data; the exams run against live data and assert invariants (they agre
 ## Findings from recon (2026-10-27)
 
 - PokeMiners `game_masters` was last updated 2026-08-29, two months stale at the time of writing.
-  Minior's form change is absent from it, and Cramorant's Gulp Missile appears only as an unnamed
-  move number (593). Freshness is the program's main risk, which is why overrides exist.
+  Freshness is the program's main risk, which is why overrides exist. Corrected at validate-plan
+  (recon against commit 8e227be): move 593 is Dive, not Gulp Missile. Gulp Missile is present as
+  594 (Gulping) and 595 (Gorging) with its debuffs but no power or energy, so an override is still
+  needed for its damage. Minior's Core stats are present as the `MINIOR_<COLOR>` forms and Meteor
+  is the formless base; only the `ibfc` flag for Minior is missing, so Minior needs a mechanics
+  entry and no species override. Integer move ids are named from their template ids.
 - The datamine carries cup rules in `combatLeague` templates (for example
   `COMBAT_LEAGUE_VS_SEEKER_GREAT_HALLOWEEN`: CP 1500, types Bug/Poison/Dark/Fairy/Ghost, bans,
   unique Pokemon). A cup appears there only once it ships in the client, which can be later than
