@@ -46,6 +46,12 @@ describe('parseFeed', () => {
       title: 'Mega Color Cup',
       mega: true,
     });
+    expect(byLeague('halloweenmega')).toMatchObject({
+      cup: 'halloweenmega',
+      cp: 1500,
+      title: 'Mega Halloween Cup',
+      mega: true,
+    });
     expect(byLeague('mega-great')).toMatchObject({ cup: 'mega', cp: 1500, mega: true });
     expect(byLeague('mega-ultra')).toMatchObject({ cup: 'mega', cp: 2500, mega: true });
     expect(byLeague('mega-master')).toMatchObject({ cup: 'mega', cp: 10000, mega: true });
@@ -65,14 +71,12 @@ describe('parseFeed', () => {
   });
 
   it('reports an unmapped Mega cup by its cup title and has no skippedMega field', () => {
-    expect(parsed.unmapped).toContain('Mega Halloween Cup');
+    expect(parsed.unmapped).toContain('Mega Catch Cup');
     expect(parsed).not.toHaveProperty('skippedMega');
   });
 
   it('reports a cup it cannot map, once, and still writes the rest', () => {
-    expect(parsed.unmapped).toEqual(
-      expect.arrayContaining(['Spooky Cup', 'Mega Halloween Cup', 'Mega Catch Cup']),
-    );
+    expect(parsed.unmapped).toEqual(expect.arrayContaining(['Spooky Cup', 'Mega Catch Cup']));
     expect(parsed.entries.length).toBeGreaterThan(0);
   });
 

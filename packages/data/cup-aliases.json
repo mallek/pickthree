@@ -8,6 +8,7 @@
     "note": "confirmed by Travis 2026-09-29 (rules match GBL 2026 GO LAIC Cup; GBL also bans megas, which pick3 never recommends)"
   },
   "Mega Color Cup": { "cup": "colormega" },
+  "Mega Halloween Cup": { "cup": "halloweenmega" },
   "Great League: Mega Edition": {
     "cup": "mega",
     "cp": 1500,
