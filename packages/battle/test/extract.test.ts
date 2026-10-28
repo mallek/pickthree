@@ -373,6 +373,32 @@ describe('extractBattleData: species', () => {
     expect(Object.keys(data.species).sort()).toEqual(['rockmon', 'rockmon_red']);
     expect(data.species['rockmon']?.baseStats.atk).toBe(100);
   });
+  it('drops a formless template equal to a differently named kept form', () => {
+    const stats = { baseAttack: 180, baseDefense: 100, baseStamina: 120 };
+    const common = {
+      pokemonId: 'ROCKMON',
+      type: 'POKEMON_TYPE_ROCK',
+      stats,
+      quickMoves: ['ZAP_FAST'],
+      cinematicMoves: ['BOLT'],
+    };
+    const { data } = run([
+      ZAP,
+      BOLT,
+      tPokemon('V0774_POKEMON_ROCKMON', common),
+      tPokemon('V0774_POKEMON_ROCKMON_RED', { ...common, form: 'ROCKMON_RED' }),
+    ]);
+    expect(Object.keys(data.species)).toEqual(['rockmon_red']);
+  });
+  it('nulls a shadow whose move cannot be resolved and warns', () => {
+    const { data, warnings } = run([
+      ZAP,
+      BOLT,
+      fakemon({ shadow: { shadowChargeMove: 'NOPE', purifiedChargeMove: 'BOLT' } }),
+    ]);
+    expect(data.species['fakemon']?.shadow).toBeNull();
+    expect(warnings).toEqual(['species fakemon: move ref NOPE has no combatMove template']);
+  });
   it('lets a form template win an id collision with a formless one', () => {
     const formless = fakemon(
       { stats: { baseAttack: 1, baseDefense: 1, baseStamina: 1 } },
