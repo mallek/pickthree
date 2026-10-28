@@ -47,4 +47,45 @@ export default tseslint.config(
     files: ['scripts/audit.mjs'],
     rules: { 'no-restricted-syntax': 'off' },
   },
+  {
+    files: ['packages/battle/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@pickthree/sim-pvpoke',
+                '@pickthree/sim-pvpoke/*',
+                '**/sim-pvpoke/**',
+                '**/.pvpoke/**',
+              ],
+              message: 'packages/battle never reads PvPoke. Spec 2026-10-27, Anti-goals.',
+            },
+            {
+              group: ['@pickthree/engine', '@pickthree/engine/*', 'node:*'],
+              message: 'packages/battle is pure: no engine, no Node built-ins.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/engine/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@pickthree/battle', '@pickthree/battle/*'],
+              message: 'engine must not import battle in this slice.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
