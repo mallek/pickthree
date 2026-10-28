@@ -100,7 +100,7 @@ describe('mechanics in the turn loop', () => {
     expect(switched).toBeGreaterThan(CH_HIT);
   });
 
-  it('beforeChargedMove moves filter: a rule for another move does not match', () => {
+  it('afterChargedMove moves filter: a rule for another move does not match', () => {
     const d = dataWith('shape', [
       { when: { event: 'afterChargedMove', moves: ['CHBUFF'] }, do: [{ effect: 'switchForm', to: 'fb' }] },
     ]);
@@ -247,14 +247,23 @@ describe('mechanics in the turn loop', () => {
     ];
     const d = dataWith('bomb', rules);
     d.species['bomb'] = makeSpecies('bomb', { family: 'bomb', baseStats: { atk: 100, def: 100, hp: 10 } });
+    // the tank holds a shield and would raise it if asked: no prompt is raised for the fired move
+    const prompts: IncomingCharged[] = [];
+    const tank: TestPlayer = {
+      ...thrower(),
+      shield(_v, incoming) {
+        prompts.push(incoming);
+        return true;
+      },
+    };
     const r = runBattle(
       d,
       duel(mon('tank', 'F0', { startEnergy: 50 }), mon('bomb', 'F0'), [1, 0]),
-      [thrower(), player()],
+      [tank, player()],
       seededRandom(1),
       { maxTurns: 1, trace: true },
     );
-    // the bomb has no shield, the tank has one; neither prompt is raised for the fired move
+    expect(prompts).toEqual([]);
     const a = r.final.sides[0].team[0]!;
     const b = r.final.sides[1].team[0]!;
     expect(b.hp).toBe(0);
@@ -278,10 +287,15 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('fireMove from a living owner costs no energy and does not raise charged triggers', () => {
-    const d = dataWith('shape', [
-      { when: { event: 'afterChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV' }] },
-      { when: { event: 'hitByChargedMove' }, do: [{ effect: 'statStages', target: 'self', atk: 1 }] },
-    ]);
+    const d = dataWith('shape', [{ when: { event: 'afterChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV' }] }]);
+    // the hit rule sits on the defender's family, where a raised trigger would show
+    d.mechanics['giant'] = {
+      family: 'giant',
+      source: 'synthetic',
+      entered: '2026-10-27',
+      resetOnSwitchOut: false,
+      rules: [{ when: { event: 'hitByChargedMove' }, do: [{ effect: 'statStages', target: 'self', atk: 1 }] }],
+    };
     const { state, ctx } = startedDuel(
       d,
       duel(mon('fa', 'F0', { startEnergy: 100 }), mon('giant', 'F0'), [0, 0]),
@@ -292,7 +306,7 @@ describe('mechanics in the turn loop', () => {
     // CH cost 50, the fired move cost nothing; the giant took two hits but hitByChargedMove fired once
     expect(active(state, 0).energy).toBe(50);
     expect(ctx.events.filter((e) => e.kind === 'fire').length).toBe(1);
-    expect(active(state, 1).atkStage).toBe(0);
+    expect(active(state, 1).atkStage).toBe(1);
     expect(active(state, 1).maxHp - active(state, 1).hp).toBeGreaterThan(CH_HIT);
   });
 
@@ -339,15 +353,11 @@ describe('mechanics in the turn loop', () => {
       { when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] },
       { when: { event: 'afterChargedMove', form: 'fb' }, do: [{ effect: 'switchForm', to: 'startForm' }] },
     ]);
-    const { state, ctx } = startedDuel(d, duel(mon('fa', 'F0', { startEnergy: 50 }), mon('giant', 'F0')), thrower(), player());
-    // run battleStart through the real entry point
     const r = runBattle(d, duel(mon('fa', 'F0', { startEnergy: 50 }), mon('giant', 'F0')), [thrower(), player()], seededRandom(1), {
       maxTurns: 1,
     });
     expect(r.final.sides[0].team[0]!.formId).toBe('fa');
     expect(r.final.sides[0].team[0]!.atk).toBe(50);
-    expect(state.turn).toBe(1);
-    expect(ctx.events.length).toBe(0);
   });
 
   it('notStartForm: a revert-to-start rule fires once from a switched form, never from the start form', () => {
