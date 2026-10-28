@@ -517,8 +517,14 @@ export interface BattleEvent {
   kind: 'fast' | 'charged' | 'shield' | 'buff' | 'form' | 'faint' | 'animate' | 'fire';
   move?: MoveId; slot?: number; damage?: number; form?: FormId;
 }
-export interface TurnRecord { turn: number; hp: [number, number]; energy: [number, number]; forms: [FormId, FormId]; hash: string; events: BattleEvent[] }
-// hash: hashState(state) after the turn (spec, "Battle state cheap to copy and compare", amended a524595)
+export interface TurnRecord {
+  turn: number; hp: [number, number]; maxHp: [number, number]; energy: [number, number];
+  shields: [number, number]; stages: [StageChange, StageChange]; forms: [FormId, FormId];
+  hash: string; events: BattleEvent[];
+}
+// Every field is read from the state after the turn, the same moment as hash: hashState(state).
+// What a timeline view shows per turn without a rerun (spec, "Battle state cheap to copy and
+// compare", amended a524595 and e5584ed). Switch timer and bench arrive with spec 2.
 export interface RunOptions { trace?: boolean; maxTurns?: number }   // maxTurns defaults to settings.roundTurns
 export interface BattleResult { outcome: 'win0' | 'win1' | 'tie' | 'timeout'; turns: number; final: BattleState; trace: TurnRecord[] }
 export interface BattleContext { data: BattleData; players: [Player, Player]; random: RandomSource; events: BattleEvent[] }
@@ -558,7 +564,7 @@ stepTurn(state):
 
   `resolveFast`: damage via `damageOf` with the attacker's current stats and stages; `defender.hp = max(0, hp - damage)`; `energy = min(maxEnergy, energy + energyGain)`; on faint set `faintSource = 'fast'`; push a `fast` event.
   `resolveCharged`: `energy -= cost`; compute damage; if defender has shields: `incoming = { move, damage, blockedByMechanic }` (false until Task 7) and `players[defender].shield(view, incoming)`; shield means damage 1, `shields -= 1`, a `shield` event. Then apply damage, faint sets `faintSource = 'charged'`. Buffs: `chance >= 1` always applies; otherwise `random.buffProcs`. `self` changes go to the attacker, `opponent` to the defender, each clamped to `stages.min..max`; opponent debuffs apply even through a shield (PvPoke applies them; its `shieldBuffModifier` is always 0). Push `charged` (with `slot`) and `buff` events.
-  `runBattle`: `createBattle`, then (Task 7: battleStart), then `stepTurn` until `outcome`; when `opts.trace`, push a `TurnRecord` after every `stepTurn`, carrying the events that turn produced and `hash: hashState(state)` taken after the turn (frozen turns included, so a timeline can show two lines of play meeting where their hashes match).
+  `runBattle`: `createBattle`, then (Task 7: battleStart), then `stepTurn` until `outcome`; when `opts.trace`, push a `TurnRecord` after every `stepTurn`, carrying the events that turn produced plus `maxHp`, `shields` (the side's count), `stages` (`{ atk: atkStage, def: defStage }`) and `hash: hashState(state)`, all taken after the turn (frozen turns included, so a timeline can show two lines of play meeting where their hashes match).
 
 - [ ] **Step 1: Write the failing tests** in `turn.test.ts`, synthetic Pokemon with CPM 0.5, equal stats, a 1-turn fast move (power 10, gain 10) and a 2-turn fast move:
 
@@ -594,6 +600,15 @@ it('the trace carries each turn state hash', () => {
   expect(a.trace.at(-1)!.hash).toBe(hashState(a.final));
   expect(a.trace.map((r) => r.hash)).toEqual(b.trace.map((r) => r.hash));
   expect(new Set(a.trace.map((r) => r.hash)).size).toBe(a.trace.length);   // the turn counter alone makes every state distinct
+});
+it('the trace shows shields, stages and max HP as they stand after each turn', () => {
+  // side 1 shields side 0's charged move (1 shield); side 0's charged move carries a guaranteed self +1 Attack
+  const r = runBattle(d, setup, [throwsBuffMove, shieldsOnce], seededRandom(4), { trace: true });
+  const t = r.trace.findIndex((x) => x.events.some((e) => e.kind === 'shield'));
+  expect(r.trace[t]!.shields[1]).toBe(r.trace[t - 1]!.shields[1] - 1);
+  const b = r.trace.findIndex((x) => x.events.some((e) => e.kind === 'buff' && e.actor === 0));
+  expect(r.trace[b]!.stages[0].atk).toBe(r.trace[b - 1]!.stages[0].atk + 1);
+  expect(r.trace.every((x) => x.maxHp[0] === r.final.sides[0].team[0]!.maxHp)).toBe(true);
 });
 ```
 
@@ -948,7 +963,6 @@ The rules exam (Tasks 14-16) runs PvPoke's form behaviour transcribed into our v
   - `side(formId, fastMove, chargedMove, shields, level = 20): SideSetup` with IVs 15/15/15 (chosen here, not PvPoke values).
   - `plainOpponent(data, formId, level): SideSetup`: that species' first fast move and first charged move without `buffs`; throws `no unbuffed charged move for <formId>` otherwise. The opponent is `azumarill` unless a scenario says otherwise, so no opponent stage change muddies a stage assertion.
   - `turnOf(trace, pred: (e: BattleEvent) => boolean): number` (first turn with a matching event; throws `scenario never reached: <label>` when none, so a scenario that silently stops exercising its entry fails loudly).
-  - `stateAt(data, setup, players, turn)`: reruns the same battle with `maxTurns: turn` and returns `final`, to read stages that the trace does not carry.
   - `assertFrozen(trace)`: for every `animate` event with `turns: N` at turn t (the stated `N` is read from the mechanics entry), records t+1 .. t+N have the same `hp` and `energy` as record t and no events.
 - Move names come from each species' datamine pool (`SHADOW_CLAW_FAST`, `PLAY_ROUGH`, `PSYCHO_CUT_FAST`, `GYRO_BALL`, `WATER_GUN_FAST`, `DIVE`, `THUNDER_SHOCK_FAST`, `AURA_WHEEL_ELECTRIC`, `ROLLOUT_FAST`, `POWER_GEM`). If one ever leaves the pool, `createBattle` names it; fix the test, not the data.
 
@@ -966,7 +980,7 @@ describe('mimikyu', () => {
     const hit = r.trace[t - 1]!.events.find((e) => e.kind === 'charged' && e.actor === 1)!;
     expect(hit.damage).toBe(1);
     expect(r.trace[t - 1]!.forms[0]).toBe('mimikyu_busted');
-    expect(stateAt(data, setup, players, t).sides[0].team[0]!.defStage).toBe(-1);
+    expect(r.trace[t - 1]!.stages[0].def).toBe(-1);
   });
   it('a shielded hit leaves the disguise up', ...);       // 1 shield, shields: [true]; form after that turn still mimikyu_disguised
   it('the bust animation freezes the stated turns', () => { assertFrozen(r.trace); });
@@ -1006,7 +1020,7 @@ describe('minior', () => {
 });
 ```
 
-  `maxHp` for the Minior and Cramorant ratios comes from `stateAt(..., 1)` (the trace carries HP, not max HP).
+  Stages, shields and max HP (for the Minior and Cramorant ratios) are read straight from the trace records; no scenario reruns a battle.
 - [ ] **Step 2: Run.** `npx vitest run --project data packages/data/test/mechanics-live.test.ts` -> FAIL (helpers missing).
 - [ ] **Step 3: Implement** `live-data.ts` and the helpers; switch `build-battle.test.ts` to `liveBattleData()`. A failing scenario is either a wrong mechanics entry (fix `mechanics.yaml`, commit it with the test) or an engine bug (fix it in `packages/battle` with a synthetic unit test pinning the behaviour, per Task 7's style).
 - [ ] **Step 4: Run.** The same command -> PASS with the datamine present; with `PICKTHREE_DATAMINE_DIR` pointed at an empty temp dir and `PICKTHREE_REQUIRE_DATAMINE=1` -> fails with the "Datamine missing" message; without the REQUIRE variable -> skipped.
@@ -1074,7 +1088,7 @@ export function expandScript(data: BattleData, s: PolicyScript): ScriptEntry[];
 ```
 
   `runPvPokeScript`: new `Battle`, `setCP(1500)`, `setLevelCap(51)`, two `Pokemon` built like `PvPokeSimulator.buildPokemon` (IVs then `setLevel`, `selectMove`), `setShadowType('shadow')` when asked, `setNewPokemon(p, i, false)`, `reset()`, `setShields`; `setSandboxMode(true)` then `setActions(script.map(e => new TimelineAction('charged', e.actor, e.turn, e.slot, { shielded: e.shielded, buffs: e.buff ?? false, priority: 0 })))` with `TimelineAction` from `ctx.evaluate`. Wrap the instance's `step` (`const inner = battle.step; battle.step = () => { inner(); record(); }`) so each call records `{ turn: battle.getTurns() - 1, hp, energy, forms: activeFormId }`. After `simulate()`, `executed` = the script entries whose action has `processed === true`. If Minior does not start in Meteor form under sandbox, patch `start` inside the vm the same way (wrap, apply the `battle_start` change) and push a line to `notes` saying so; otherwise no patch.
-  `runOursScript`: `runBattle(data, setup, [new ScriptedPlayer(0, script), new ScriptedPlayer(1, script)], scriptedRandom(script), { trace: true })`; map `TurnRecord` to `ExamTurn`, dropping `events` and `hash` (PvPoke has no state hash to compare); `executed` = script entries matched by a `charged` event with the same actor, turn and slot.
+  `runOursScript`: `runBattle(data, setup, [new ScriptedPlayer(0, script), new ScriptedPlayer(1, script)], scriptedRandom(script), { trace: true })`; map `TurnRecord` to `ExamTurn`, dropping `events`, `hash`, `maxHp`, `shields` and `stages` (the exam compares HP and energy; PvPoke has no state hash); `executed` = script entries matched by a `charged` event with the same actor, turn and slot.
   `expandScript`: runs our engine with a policy player (local to `expand.ts`: decides charged `slot` when affordable while its count is under `times`; shield answers from `shields[self]` in prompt order; a recording `RandomSource` answering from `buffs` in roll order) and records each fired charged move as a `ScriptEntry` with the shield answer given to it and the buff answer used for it. Our own scripted rerun of the result must reproduce the policy run; `expandScript` asserts that and throws `expandScript <id>: scripted rerun diverged at turn <n>` otherwise.
 
 - [ ] **Step 1: Write the failing tests** (live, skip without a checkout): a fast-only mirror (`times: 0` both sides) gives traces of the same length from both runners with `executed` empty; a script with one charged move on side 0 is executed by both runners (`executed` has it); `expandScript` is deterministic (two calls deep-equal); the rerun check holds.
