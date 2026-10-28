@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadPvPokeInNode } from '../src/node-host.js';
+import { createPvPokeContext, loadPvPokeInNode } from '../src/node-host.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const gmPath =
@@ -39,5 +39,20 @@ describe.skipIf(!havePvPoke)('node host', () => {
   it('does not share state between two runtimes', () => {
     const rt2 = loadPvPokeInNode(gamemaster);
     expect(rt2.gm).not.toBe(rt.gm);
+  });
+});
+
+describe.skipIf(!havePvPoke)('PvPoke vm context', () => {
+  const gamemaster = JSON.parse(fs.readFileSync(gmPath, 'utf8')) as unknown;
+  const ctx = createPvPokeContext(gamemaster);
+
+  it('evaluates expressions in the bundle context, top-level class bindings included', () => {
+    expect(ctx.evaluate<number>('DamageMultiplier.STAB')).toBeGreaterThan(1);
+    expect(ctx.evaluate<string>('typeof TimelineAction')).toBe('function');
+  });
+
+  it('carries the same runtime loadPvPokeInNode returns', () => {
+    expect(ctx.runtime.gm.getPokemonById('azumarill')?.speciesName).toBe('Azumarill');
+    expect(ctx.evaluate<unknown>('__pvpoke.GameMaster.getInstance()')).toBe(ctx.runtime.gm);
   });
 });

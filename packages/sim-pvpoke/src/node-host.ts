@@ -11,7 +11,18 @@ interface Exported {
   flushAjax: () => void;
 }
 
-export function loadPvPokeInNode(gamemaster: unknown): PvPokeRuntime {
+/** A loaded PvPoke bundle plus a way to read anything in its vm context. */
+export interface PvPokeContext {
+  runtime: PvPokeRuntime;
+  /**
+   * Runs `expression` as a script in the bundle's context and returns its value. Reaches top-level
+   * `class` bindings (TimelineAction, DamageMultiplier, DamageCalculator), which are not properties
+   * of the global object.
+   */
+  evaluate<T>(expression: string): T;
+}
+
+export function createPvPokeContext(gamemaster: unknown): PvPokeContext {
   if (cachedSource === null) {
     cachedSource = buildBundleSource();
   }
@@ -35,9 +46,20 @@ export function loadPvPokeInNode(gamemaster: unknown): PvPokeRuntime {
     throw new Error('PvPoke GameMaster did not load the injected game master');
   }
   return {
-    GameMaster: exported.GameMaster,
-    Battle: exported.Battle,
-    Pokemon: exported.Pokemon,
-    gm,
+    runtime: {
+      GameMaster: exported.GameMaster,
+      Battle: exported.Battle,
+      Pokemon: exported.Pokemon,
+      gm,
+    },
+    evaluate<T>(expression: string): T {
+      return new vm.Script(expression, { filename: 'pvpoke-evaluate.js' }).runInContext(
+        context,
+      ) as T;
+    },
   };
+}
+
+export function loadPvPokeInNode(gamemaster: unknown): PvPokeRuntime {
+  return createPvPokeContext(gamemaster).runtime;
 }

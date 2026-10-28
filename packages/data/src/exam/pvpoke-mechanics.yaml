@@ -1,0 +1,113 @@
+# PvPoke's in-battle form behaviour at the pinned commit (d98f521), transcribed into OUR mechanics
+# vocabulary (packages/battle/src/mechanics/vocabulary.ts) with PvPoke's own species and move ids.
+# The rules exam runs our engine on this file and on PvPoke's numbers, so a mismatch is a rules
+# difference, not a data one. It is NOT what we ship: packages/data/battle/mechanics.yaml is.
+#
+# Cites are to packages/data/.pvpoke/src (js/battle/Battle.js, js/pokemon/Pokemon.js,
+# data/gamemaster/pokemon.json). The vendored copies in packages/sim-pvpoke/vendor are identical.
+#
+# No animate effects anywhere: PvPoke charges no turns for a form change. What this vocabulary
+# cannot say is left out here and belongs on the known-differences list (Task 16):
+#   - Minior's animationTime 5000 (pokemon.json:38563, Battle.js:1649 and :1670) adds 5000 ms to
+#     PvPoke's clock without freezing any turn; our animate freezes turns.
+#   - PvPoke re-levels Aegislash and Minior on a form change (Pokemon.js:2528-2616 getFormStats:
+#     Blade at ceil(level * 0.5) + 1 in Great League, Meteor by u/Ok_Lobster8494's formula); our
+#     switchForm keeps the level.
+#   - Battle.js:245 runs battle_start changes only in simulate mode, never in sandbox mode.
+#   - Morpeko does not toggle back in PvPoke (see its entry).
+
+mimikyu:
+  source: "PvPoke d98f521: pokemon.json:38653 mimikyu formChange (charged_move_damage, effect protect, alternativeFormId mimikyu_busted); pokemon.json:38676 mimikyu_busted nativeStatBuffs [0, -1]."
+  entered: "2026-10-28"
+  # pokemon.json:38686 resetOnSwitch false
+  resetOnSwitchOut: false
+  rules:
+    # Battle.js:1281 protect: an unshielded, non-instant charged move deals 1 damage.
+    # Battle.js:1629 charged_move_damage: same conditions, change into mimikyu_busted.
+    # Pokemon.js:2495-2500 changeForm applies the new form's nativeStatBuffs [0, -1]: Defense -1.
+    # mimikyu_busted's own formChange is trigger none (pokemon.json:38686), so it never re-disguises.
+    - when: { event: hitByChargedMove, form: mimikyu }
+      do:
+        - { effect: blockDamage }
+        - { effect: switchForm, to: mimikyu_busted }
+        - { effect: statStages, target: self, def: -1 }
+
+aegislash:
+  source: "PvPoke d98f521: pokemon.json:34424 aegislash_shield formChange (activate_charged, ANY, to aegislash_blade); pokemon.json:34390 aegislash_blade formChange (activate_shield, to aegislash_shield)."
+  entered: "2026-10-28"
+  # pokemon.json:34390 and :34424 resetOnSwitch true
+  resetOnSwitchOut: true
+  # No battleStart replaceMove: PvPoke's aegislash_shield species already lists the
+  # AEGISLASH_CHARGE_* fast moves. Their 1 damage and 6 energy (Battle.js:1332, :1361,
+  # DamageCalculator.js aegislash_shield case) are what power 0 and energyGain 6 give anyway.
+  rules:
+    # Battle.js:1031 activate_charged: before the charged move's damage, change into Blade.
+    # Pokemon.js:2512-2515 changeForm(aegislash_blade) swaps the charge fast moves for Blade's.
+    - when: { event: beforeChargedMove, form: aegislash_shield }
+      do:
+        - { effect: switchForm, to: aegislash_blade }
+        - { effect: replaceMove, from: AEGISLASH_CHARGE_AIR_SLASH, to: AIR_SLASH }
+        - { effect: replaceMove, from: AEGISLASH_CHARGE_PSYCHO_CUT, to: PSYCHO_CUT }
+    # Battle.js:1205 activate_shield: on shielding, change back into Shield.
+    # Pokemon.js:2517-2520 changeForm(aegislash_shield) swaps the fast moves back.
+    - when: { event: shieldUsed, form: aegislash_blade }
+      do:
+        - { effect: switchForm, to: aegislash_shield }
+        - { effect: replaceMove, from: AIR_SLASH, to: AEGISLASH_CHARGE_AIR_SLASH }
+        - { effect: replaceMove, from: PSYCHO_CUT, to: AEGISLASH_CHARGE_PSYCHO_CUT }
+
+cramorant:
+  source: "PvPoke d98f521: pokemon.json:40529 cramorant formChange (charged_move, moveIDs DIVE and SURF, alternativeFormId variable); pokemon.json:40559 gorging and :40589 gulping formChange (charged_move on their Gulp Missile, to cramorant)."
+  entered: "2026-10-28"
+  # pokemon.json:40529, :40559 and :40589 resetOnSwitch true
+  resetOnSwitchOut: true
+  rules:
+    # Battle.js:1555-1584 charged_move after Dive or Surf; variable form at Battle.js:1560-1570:
+    # hp / maxHp > 0.5 is gulping, else gorging. Only base cramorant carries this trigger.
+    - when: { event: afterChargedMove, moves: [DIVE, SURF], form: cramorant, hpAbove: 0.5 }
+      do: [{ effect: switchForm, to: cramorant_gulping }]
+    - when: { event: afterChargedMove, moves: [DIVE, SURF], form: cramorant, hpAtMost: 0.5 }
+      do: [{ effect: switchForm, to: cramorant_gorging }]
+    # Battle.js:1591-1625 an unshielded, non-instant charged hit on gulping or gorging queues
+    # GULP_MISSILE_ARROKUDA or GULP_MISSILE_PIKACHU. The missile is tagged ignoresFaint
+    # (Battle.js:479 lets it fire from a fainted Cramorant). Firing it trips the form's own
+    # charged_move trigger (Battle.js:1555, pokemon.json:40559 and :40589): back to cramorant.
+    - when: { event: hitByChargedMove, form: cramorant_gulping }
+      do:
+        - { effect: fireMove, move: GULP_MISSILE_ARROKUDA, ignoresFaint: true }
+        - { effect: switchForm, to: cramorant }
+    - when: { event: hitByChargedMove, form: cramorant_gorging }
+      do:
+        - { effect: fireMove, move: GULP_MISSILE_PIKACHU, ignoresFaint: true }
+        - { effect: switchForm, to: cramorant }
+
+morpeko:
+  source: "PvPoke d98f521: pokemon.json:41563 morpeko_full_belly formChange (type toggle, charged_move, ANY, alternativeFormId morpeko_hangry); morpeko_hangry has no formChange."
+  entered: "2026-10-28"
+  # pokemon.json:41563 resetOnSwitch true
+  resetOnSwitchOut: true
+  rules:
+    # Battle.js:1555-1584 charged_move after any charged move: change into Hangry.
+    # Pokemon.js:2508-2510 changeForm(morpeko_hangry) swaps AURA_WHEEL_ELECTRIC for AURA_WHEEL_DARK.
+    # No rule back. PvPoke never reads type toggle: Hangry keeps Full Belly's formChange (changeForm
+    # only replaces it when the new form has one, Pokemon.js:2483) whose target is Hangry, so the
+    # check at Battle.js:1573 never passes again. Checked in the vm: the second Aura Wheel is Dark
+    # and no second form change happens. The game toggles; this is a known difference.
+    - when: { event: afterChargedMove, form: morpeko_full_belly }
+      do:
+        - { effect: switchForm, to: morpeko_hangry }
+        - { effect: replaceMove, from: AURA_WHEEL_ELECTRIC, to: AURA_WHEEL_DARK }
+
+minior:
+  source: "PvPoke d98f521: pokemon.json:38527 minior_core formChange (battle_start, to minior_meteor); pokemon.json:38557 minior_meteor formChange (hp, amount 0.5, to minior_core, animationTime 5000)."
+  entered: "2026-10-28"
+  # pokemon.json:38527 and :38557 resetOnSwitch false
+  resetOnSwitchOut: false
+  rules:
+    # Battle.js:245 battle_start (simulate mode only): minior_core starts as minior_meteor.
+    - when: { event: battleStart, form: minior_core }
+      do: [{ effect: switchForm, to: minior_meteor }]
+    # Battle.js:1644-1646 hp: after any hit, hp / maxHp < 0.5 and hp > 0, change into minior_core.
+    # animationTime 5000 (Battle.js:1649, :1670) is left out: see the header.
+    - when: { event: hpBelow, fraction: 0.5, form: minior_meteor }
+      do: [{ effect: switchForm, to: minior_core }]
