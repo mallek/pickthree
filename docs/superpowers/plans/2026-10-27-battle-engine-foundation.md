@@ -46,7 +46,7 @@ Recon on 2026-10-27 against datamine commit `8e227be44f288d34463e23bf04e9b564d3c
 - **Megas.** Mega forms (from `tempEvoOverrides`) and Mega moves (`COMBAT_VM_MOVE_TEMP_EVOLUTION_*`) are extracted as data. The Mega damage bonus and PvPoke's "+" Mega moves are not modelled by the rules engine in this slice (cup readiness, spec 4). No exam script uses a Mega.
 - **Float constants.** The game's numbers are float32; extraction stores every multiplier from the datamine through `Math.fround` (fround(1.3) equals PvPoke's `DamageMultiplier.BONUS` exactly). For the rules exam the converter takes PvPoke's own constants from its vm context, so constants never pose as rule mismatches. The data exam lists constant differences (PvPoke's `SHADOW_ATK` is a plain 1.2).
 - **Seeded overrides.** Gulp Missile (15 percent of the target's max HP plus 1) and Aegislash Shield's fast moves (0 power, 6 energy) are community-known values the datamine does not carry. Their `source` says exactly that; Travis replaces them with first-hand evidence when he has it.
-- **PvPoke sandbox and `battle_start`.** `Battle.js:245` applies `battle_start` form changes when `mode == "simulate"`, and `simulate()` sets that mode even in sandbox, so no patch is planned for it. The harness checks that Minior starts in Meteor form in PvPoke and patches only if it does not (Task 14).
+- **PvPoke sandbox and `battle_start`.** `Battle.js:245` applies `battle_start` form changes when `mode == "simulate"`, and `simulate()` sets that mode even in sandbox, so no patch is planned for it. The harness checks that Minior starts in Meteor form in PvPoke and patches only if it does not (Task 15).
 
 ---
 
@@ -103,6 +103,8 @@ packages/data/
   src/exam/idmap.ts                   NEW our ids -> PvPoke ids (data exam only)
   src/exam/data-exam.ts               NEW data exam report CLI
   test/datamine-lock.test.ts, test/fetch-datamine.test.ts, test/build-battle.test.ts
+  test/live-data.ts                   NEW shared loader: pinned datamine + committed YAML -> BattleData
+  test/mechanics-live.test.ts         NEW every shipped mechanics entry run in a battle
   test/exam/*.test.ts
 
 packages/sim-pvpoke/src/node-host.ts  MODIFY: createPvPokeContext (exposes vm evaluate)
@@ -515,7 +517,8 @@ export interface BattleEvent {
   kind: 'fast' | 'charged' | 'shield' | 'buff' | 'form' | 'faint' | 'animate' | 'fire';
   move?: MoveId; slot?: number; damage?: number; form?: FormId;
 }
-export interface TurnRecord { turn: number; hp: [number, number]; energy: [number, number]; forms: [FormId, FormId]; events: BattleEvent[] }
+export interface TurnRecord { turn: number; hp: [number, number]; energy: [number, number]; forms: [FormId, FormId]; hash: string; events: BattleEvent[] }
+// hash: hashState(state) after the turn (spec, "Battle state cheap to copy and compare", amended a524595)
 export interface RunOptions { trace?: boolean; maxTurns?: number }   // maxTurns defaults to settings.roundTurns
 export interface BattleResult { outcome: 'win0' | 'win1' | 'tie' | 'timeout'; turns: number; final: BattleState; trace: TurnRecord[] }
 export interface BattleContext { data: BattleData; players: [Player, Player]; random: RandomSource; events: BattleEvent[] }
@@ -555,7 +558,7 @@ stepTurn(state):
 
   `resolveFast`: damage via `damageOf` with the attacker's current stats and stages; `defender.hp = max(0, hp - damage)`; `energy = min(maxEnergy, energy + energyGain)`; on faint set `faintSource = 'fast'`; push a `fast` event.
   `resolveCharged`: `energy -= cost`; compute damage; if defender has shields: `incoming = { move, damage, blockedByMechanic }` (false until Task 7) and `players[defender].shield(view, incoming)`; shield means damage 1, `shields -= 1`, a `shield` event. Then apply damage, faint sets `faintSource = 'charged'`. Buffs: `chance >= 1` always applies; otherwise `random.buffProcs`. `self` changes go to the attacker, `opponent` to the defender, each clamped to `stages.min..max`; opponent debuffs apply even through a shield (PvPoke applies them; its `shieldBuffModifier` is always 0). Push `charged` (with `slot`) and `buff` events.
-  `runBattle`: `createBattle`, then (Task 7: battleStart), then `stepTurn` until `outcome`; when `opts.trace`, push a `TurnRecord` after every `stepTurn`, carrying the events that turn produced.
+  `runBattle`: `createBattle`, then (Task 7: battleStart), then `stepTurn` until `outcome`; when `opts.trace`, push a `TurnRecord` after every `stepTurn`, carrying the events that turn produced and `hash: hashState(state)` taken after the turn (frozen turns included, so a timeline can show two lines of play meeting where their hashes match).
 
 - [ ] **Step 1: Write the failing tests** in `turn.test.ts`, synthetic Pokemon with CPM 0.5, equal stats, a 1-turn fast move (power 10, gain 10) and a 2-turn fast move:
 
@@ -585,6 +588,13 @@ it('a guaranteed self buff and an opponent debuff both apply, the debuff even th
 it('a chance buff applies only when buffProcs says so', ...);
 it('stages clamp at +4 and -4', ...);
 it('same inputs and same random outcomes give the same battle', ...);   // hash of final + trace equality
+it('the trace carries each turn state hash', () => {
+  const a = runBattle(d, setup, [playerA, playerB], seededRandom(3), { trace: true });
+  const b = runBattle(d, setup, [playerA, playerB], seededRandom(3), { trace: true });
+  expect(a.trace.at(-1)!.hash).toBe(hashState(a.final));
+  expect(a.trace.map((r) => r.hash)).toEqual(b.trace.map((r) => r.hash));
+  expect(new Set(a.trace.map((r) => r.hash)).size).toBe(a.trace.length);   // the turn counter alone makes every state distinct
+});
 ```
 
 - [ ] **Step 2: Run.** `npx vitest run --project battle packages/battle/test/turn.test.ts packages/battle/test/charged.test.ts` -> FAIL.
@@ -922,7 +932,89 @@ it('every ibfc-flagged family has a mechanics entry', () => {
 
 ---
 
-### Task 13: Exam harness, PvPoke context and converter
+### Task 13: Our mechanics file runs in battle
+
+The rules exam (Tasks 14-16) runs PvPoke's form behaviour transcribed into our vocabulary, never the entries we ship. This task runs every entry in `packages/data/battle/mechanics.yaml` in a real battle on our own extracted data (spec, The exam, "Our own mechanics file runs too", amended a524595). Invariants only, no pinned numbers.
+
+**Files:**
+- Create: `packages/data/test/live-data.ts`, `packages/data/test/mechanics-live.test.ts`
+- Modify: `packages/data/test/build-battle.test.ts` (use the shared loader)
+
+**Interfaces:**
+- Consumes: `buildBattleData` (Task 12), `readDatamineLock`, `datamineFile` (Task 9), `BATTLE_INPUT_DIR` (Task 9), `runBattle`, `TurnRecord`, `BattleEvent` (Task 6), `Player`, `BattleView`, `RandomSource`, `seededRandom` (Task 5), `damageOf` (Task 2).
+- Produces (`test/live-data.ts`): `liveBattleData(): BattleData | null`. Returns `null` when the pinned datamine file is absent; throws `Datamine missing. Run npm run datamine:fetch` when it is absent and `PICKTHREE_REQUIRE_DATAMINE === '1'`. Otherwise reads the datamine and the two committed YAML files, runs `buildBattleData`, caches the result for the test run. Task 12's live test switches to it.
+- Test helpers (local to `mechanics-live.test.ts`, not exported from any package):
+  - `policy(opts: { slot?: number; when?: (v: BattleView) => boolean; shields?: boolean[] }): Player`: fires `slot` (default 0) whenever affordable and `when` (default always) holds, otherwise fast; answers shield prompts from `shields` in order, `false` when exhausted.
+  - `side(formId, fastMove, chargedMove, shields, level = 20): SideSetup` with IVs 15/15/15 (chosen here, not PvPoke values).
+  - `plainOpponent(data, formId, level): SideSetup`: that species' first fast move and first charged move without `buffs`; throws `no unbuffed charged move for <formId>` otherwise. The opponent is `azumarill` unless a scenario says otherwise, so no opponent stage change muddies a stage assertion.
+  - `turnOf(trace, pred: (e: BattleEvent) => boolean): number` (first turn with a matching event; throws `scenario never reached: <label>` when none, so a scenario that silently stops exercising its entry fails loudly).
+  - `stateAt(data, setup, players, turn)`: reruns the same battle with `maxTurns: turn` and returns `final`, to read stages that the trace does not carry.
+  - `assertFrozen(trace)`: for every `animate` event with `turns: N` at turn t (the stated `N` is read from the mechanics entry), records t+1 .. t+N have the same `hp` and `energy` as record t and no events.
+- Move names come from each species' datamine pool (`SHADOW_CLAW_FAST`, `PLAY_ROUGH`, `PSYCHO_CUT_FAST`, `GYRO_BALL`, `WATER_GUN_FAST`, `DIVE`, `THUNDER_SHOCK_FAST`, `AURA_WHEEL_ELECTRIC`, `ROLLOUT_FAST`, `POWER_GEM`). If one ever leaves the pool, `createBattle` names it; fix the test, not the data.
+
+- [ ] **Step 1: Write the failing tests** in `mechanics-live.test.ts` (`describe.skipIf(liveBattleData() === null)`), one `describe` per family plus a coverage check:
+
+```ts
+it('every family in mechanics.yaml has a scenario here', () => {
+  expect(Object.keys(data.mechanics).sort()).toEqual(Object.keys(SCENARIOS).sort());
+});
+
+describe('mimikyu', () => {
+  // mimikyu_disguised, 0 shields, vs plainOpponent firing when affordable
+  it('the first unshielded charged hit deals 1 damage, busts the disguise, Defense -1', () => {
+    const t = turnOf(r.trace, (e) => e.kind === 'charged' && e.actor === 1);
+    const hit = r.trace[t - 1]!.events.find((e) => e.kind === 'charged' && e.actor === 1)!;
+    expect(hit.damage).toBe(1);
+    expect(r.trace[t - 1]!.forms[0]).toBe('mimikyu_busted');
+    expect(stateAt(data, setup, players, t).sides[0].team[0]!.defStage).toBe(-1);
+  });
+  it('a shielded hit leaves the disguise up', ...);       // 1 shield, shields: [true]; form after that turn still mimikyu_disguised
+  it('the bust animation freezes the stated turns', () => { assertFrozen(r.trace); });
+});
+
+describe('aegislash', () => {
+  it('starts in Shield form with the charge fast moves', ...);   // trace[0].forms[0] aegislash_shield; first fast event move AEGISLASH_CHARGE_PSYCHO_CUT
+  it('flips to Blade on its charged move, before damage', ...);  // the turn of its first charged event has a form event to aegislash_blade ahead of the charged event; later fast events use PSYCHO_CUT_FAST
+  it('goes back to Shield when it shields', ...);                // 1 shield, shields: [true], opponent fires; after the shield event the form is aegislash_shield and fast events use AEGISLASH_CHARGE_PSYCHO_CUT again
+  it('each form change freezes the stated turns', () => { assertFrozen(r.trace); });
+});
+
+describe('cramorant', () => {
+  it('Dive above half HP makes it gulping; the next charged hit fires Gulp Missile and returns it to base', ...);
+  // policy fires DIVE at once; after its charged event, forms[0] cramorant_gulping;
+  // the turn of the next opponent charged event on it also has a fire event
+  // (move GULP_MISSILE_GULPING, actor 0) and forms[0] back to cramorant
+  it('Dive at or below half HP makes it gorging and fires the gorging missile', ...);
+  // policy when: v => v.self.hp / v.self.maxHp <= 0.5
+  it('Gulp Missile still fires when the hit knocks Cramorant out', ...);
+  // search opponent levels 20, 25, ... 50 for a run where the hit after gorging leaves Cramorant at 0;
+  // assert at least one such run exists and that its final turn has the fire event and the opponent lost HP to it
+});
+
+describe('morpeko', () => {
+  it('toggles form and Aura Wheel on every charged move', ...);
+  // across its charged events in order: moves alternate AURA_WHEEL_ELECTRIC, AURA_WHEEL_DARK, ...;
+  // forms after each alternate morpeko_hangry, morpeko_full_belly, ...; at least two charged events
+  it('each toggle freezes the stated turns', () => { assertFrozen(r.trace); });
+});
+
+describe('minior', () => {
+  it('registered as a color form, it starts in Meteor form', ...);   // side('minior_red', ...); trace[0].forms[0] is 'minior'
+  it('turns Core (its own color) once below half HP, and only once', ...);
+  // the first record with hp[0] / maxHp < 0.5 has forms[0] 'minior_red' and a form event; exactly one form event after battle start
+  it('the Core animation freezes the stated turns', () => { assertFrozen(r.trace); });
+});
+```
+
+  `maxHp` for the Minior and Cramorant ratios comes from `stateAt(..., 1)` (the trace carries HP, not max HP).
+- [ ] **Step 2: Run.** `npx vitest run --project data packages/data/test/mechanics-live.test.ts` -> FAIL (helpers missing).
+- [ ] **Step 3: Implement** `live-data.ts` and the helpers; switch `build-battle.test.ts` to `liveBattleData()`. A failing scenario is either a wrong mechanics entry (fix `mechanics.yaml`, commit it with the test) or an engine bug (fix it in `packages/battle` with a synthetic unit test pinning the behaviour, per Task 7's style).
+- [ ] **Step 4: Run.** The same command -> PASS with the datamine present; with `PICKTHREE_DATAMINE_DIR` pointed at an empty temp dir and `PICKTHREE_REQUIRE_DATAMINE=1` -> fails with the "Datamine missing" message; without the REQUIRE variable -> skipped.
+- [ ] **Step 5: Commit.** `git add packages/data/test/live-data.ts packages/data/test/mechanics-live.test.ts packages/data/test/build-battle.test.ts` (plus any `mechanics.yaml` or `packages/battle` fix with its test) then `git commit -m "data: run every shipped mechanics entry in a battle on our data"`.
+
+---
+
+### Task 14: Exam harness, PvPoke context and converter
 
 **Files:**
 - Modify: `packages/sim-pvpoke/src/node-host.ts`, `packages/sim-pvpoke/src/index.ts`
@@ -949,14 +1041,14 @@ it('every ibfc-flagged family has a mechanics entry', () => {
 
 ---
 
-### Task 14: Script runners and expansion
+### Task 15: Script runners and expansion
 
 **Files:**
 - Create: `packages/data/src/exam/run-pvpoke.ts`, `packages/data/src/exam/run-ours.ts`, `packages/data/src/exam/expand.ts`
 - Test: `packages/data/test/exam/runners.test.ts`
 
 **Interfaces:**
-- Consumes: `createPvPokeContext` (Task 13), `pvpokeToBattleData` (Task 13), `runBattle`, `ScriptedPlayer`, `scriptedRandom`, `ScriptEntry` (Tasks 5, 6).
+- Consumes: `createPvPokeContext` (Task 14), `pvpokeToBattleData` (Task 14), `runBattle`, `ScriptedPlayer`, `scriptedRandom`, `ScriptEntry` (Tasks 5, 6).
 - Produces:
 
 ```ts
@@ -982,7 +1074,7 @@ export function expandScript(data: BattleData, s: PolicyScript): ScriptEntry[];
 ```
 
   `runPvPokeScript`: new `Battle`, `setCP(1500)`, `setLevelCap(51)`, two `Pokemon` built like `PvPokeSimulator.buildPokemon` (IVs then `setLevel`, `selectMove`), `setShadowType('shadow')` when asked, `setNewPokemon(p, i, false)`, `reset()`, `setShields`; `setSandboxMode(true)` then `setActions(script.map(e => new TimelineAction('charged', e.actor, e.turn, e.slot, { shielded: e.shielded, buffs: e.buff ?? false, priority: 0 })))` with `TimelineAction` from `ctx.evaluate`. Wrap the instance's `step` (`const inner = battle.step; battle.step = () => { inner(); record(); }`) so each call records `{ turn: battle.getTurns() - 1, hp, energy, forms: activeFormId }`. After `simulate()`, `executed` = the script entries whose action has `processed === true`. If Minior does not start in Meteor form under sandbox, patch `start` inside the vm the same way (wrap, apply the `battle_start` change) and push a line to `notes` saying so; otherwise no patch.
-  `runOursScript`: `runBattle(data, setup, [new ScriptedPlayer(0, script), new ScriptedPlayer(1, script)], scriptedRandom(script), { trace: true })`; map `TurnRecord` to `ExamTurn`; `executed` = script entries matched by a `charged` event with the same actor, turn and slot.
+  `runOursScript`: `runBattle(data, setup, [new ScriptedPlayer(0, script), new ScriptedPlayer(1, script)], scriptedRandom(script), { trace: true })`; map `TurnRecord` to `ExamTurn`, dropping `events` and `hash` (PvPoke has no state hash to compare); `executed` = script entries matched by a `charged` event with the same actor, turn and slot.
   `expandScript`: runs our engine with a policy player (local to `expand.ts`: decides charged `slot` when affordable while its count is under `times`; shield answers from `shields[self]` in prompt order; a recording `RandomSource` answering from `buffs` in roll order) and records each fired charged move as a `ScriptEntry` with the shield answer given to it and the buff answer used for it. Our own scripted rerun of the result must reproduce the policy run; `expandScript` asserts that and throws `expandScript <id>: scripted rerun diverged at turn <n>` otherwise.
 
 - [ ] **Step 1: Write the failing tests** (live, skip without a checkout): a fast-only mirror (`times: 0` both sides) gives traces of the same length from both runners with `executed` empty; a script with one charged move on side 0 is executed by both runners (`executed` has it); `expandScript` is deterministic (two calls deep-equal); the rerun check holds.
@@ -993,14 +1085,14 @@ export function expandScript(data: BattleData, s: PolicyScript): ScriptEntry[];
 
 ---
 
-### Task 15: The rules exam and the known-differences list
+### Task 16: The rules exam and the known-differences list
 
 **Files:**
 - Create: `packages/data/src/exam/scripts.ts`, `packages/data/src/exam/judge.ts`, `packages/data/battle/differences.yaml`
 - Test: `packages/data/test/exam/rules-exam.test.ts`, `packages/data/test/exam/judge.test.ts`
 
 **Interfaces:**
-- Consumes: Tasks 13, 14.
+- Consumes: Tasks 14, 15.
 - Produces (`judge.ts`):
 
 ```ts
@@ -1032,13 +1124,13 @@ it('the rules exam passes: every mismatch is explained', () => {
 ```
 
 - [ ] **Step 2: Run.** `npx vitest run --project data packages/data/test/exam` -> FAIL.
-- [ ] **Step 3: Implement** `judge.ts` and `scripts.ts`, then run the exam and work every mismatch to ground: read the first differing turn in both engines (PvPoke's logic at the `Battle.js` lines cited in Task 13), fix our engine where it is wrong (each fix with a synthetic unit test in `packages/battle/test/` pinning the corrected behaviour), and record true differences in `differences.yaml` with evidence.
+- [ ] **Step 3: Implement** `judge.ts` and `scripts.ts`, then run the exam and work every mismatch to ground: read the first differing turn in both engines (PvPoke's logic at the `Battle.js` lines cited in Task 14), fix our engine where it is wrong (each fix with a synthetic unit test in `packages/battle/test/` pinning the corrected behaviour), and record true differences in `differences.yaml` with evidence.
 - [ ] **Step 4: Run.** `npx vitest run --project data packages/data/test/exam` -> PASS; `npm test` -> all projects PASS, golden test included.
 - [ ] **Step 5: Commit.** `git commit -m "exam: rules exam with known-differences list"` (stage `scripts.ts`, `judge.ts`, `differences.yaml`, both tests, and any battle fixes with their tests).
 
 ---
 
-### Task 16: The data exam report
+### Task 17: The data exam report
 
 **Files:**
 - Create: `packages/data/src/exam/idmap.ts`, `packages/data/src/exam/data-exam.ts`
@@ -1046,7 +1138,7 @@ it('the rules exam passes: every mismatch is explained', () => {
 - Test: `packages/data/test/exam/data-exam.test.ts`
 
 **Interfaces:**
-- Consumes: `buildBattleData` (Task 12), `pvpokeToBattleData` (Task 13).
+- Consumes: `buildBattleData` (Task 12), `pvpokeToBattleData` (Task 14).
 - Produces (`idmap.ts`): `toPvPokeSpeciesId(ourId: string, pvpokeIds: ReadonlySet<string>): string | null` (exact match first; then suffix rewrites in order: `_alola` -> `_alolan`, `_galarian`, `_hisuian`, `_paldea` -> `_paldean`, `mimikyu_disguised` -> `mimikyu`, `minior` -> `minior_meteor`, `minior_red` -> `minior_core`; return the first candidate present in `pvpokeIds`), `toPvPokeMoveId(ourId: string): string` (strip a trailing `_FAST`).
 - Produces (`data-exam.ts`): `diffData(ours: BattleData, theirs: BattleData): DataDiff` with `interface DataDiff { onlyOurs: string[]; onlyTheirs: string[]; species: string[]; moves: string[]; settings: string[]; summary: string }` (each string one human line, e.g. `species azumarill: baseStats.atk ours 112 pvpoke 112` only when they differ; `moves THUNDER_SHOCK: energyGain ours 9 pvpoke 9` likewise; settings lines compare every `BattleSettings` field and the CPM table up to level 51). Cups: our `leagues` against PvPoke `gm.data.cups` and `formats` mapped by id heuristic (strip `vs_seeker_`, `_great`, `_ultra`, `_master`; compare CP cap, types, bans), unmapped both ways listed. The CLI ensures the datamine and the PvPoke checkout, builds both, writes `packages/data/.battle/data-exam.md` (header: both commits and dates, so freshness reads at a glance), prints the summary. Report, not a gate: exit 0 whatever it finds.
 
@@ -1058,7 +1150,7 @@ it('the rules exam passes: every mismatch is explained', () => {
 
 ---
 
-### Task 17: CI and repo docs
+### Task 18: CI and repo docs
 
 **Files:**
 - Modify: `.github/workflows/ci.yml`, `CLAUDE.md`
