@@ -92,6 +92,7 @@ differences:
       Morpeko, not as a cooldown reset. Checked by rules-exam.test.ts (same test as
       form-change-relevel): with PvPoke's battle CP at 10000 (no re-level) minior-core matches until
       after Minior turns Core on a turn when its Take Down is mid-move; PvPoke's Minior is then not free
-      on the turn ours throws Power Gem. minior-core-same-level (1-turn Rollout) shows the hp trigger
-      itself matching when no fast move is in flight.
+      on the turn ours throws Power Gem. minior-core-same-level shows the hp trigger itself matching
+      when the crossing hit lands on the turn Minior's own 3-turn Rollout resolves, so no fast move is
+      in flight (a property of its levels and IVs, guarded by rules-exam.test.ts).
     scripts: [minior-core]

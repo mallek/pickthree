@@ -334,6 +334,21 @@ describe.skipIf(!havePvPoke)('rules exam', () => {
     expect(fired).toBe(true);
   });
 
+  it('minior-core-same-level turns Core on a turn when no fast move is in flight', () => {
+    // Its match relies on this: PvPoke resets both cooldowns after the hp form change
+    // (minior-hp-form-timing), which only shows when a fast move is still in flight. Both sides'
+    // fast moves resolving on the Core turn means neither was mid-move.
+    const p = runAll().find((x) => x.s.id === 'minior-core-same-level') as Played;
+    const core = formSteps(p, 0).find((st) => st.form === 'minior_core');
+    expect(core).toBeDefined();
+    for (const side of [0, 1] as const) {
+      expect(
+        core?.record.events.some((e) => e.kind === 'fast' && e.actor === side),
+        `side ${side} fast move resolves on the Core turn`,
+      ).toBe(true);
+    }
+  });
+
   it('raising PvPoke battle CP past the caps removes the form re-level divergence', () => {
     // Evidence for differences.yaml form-change-relevel and minior-hp-form-timing: at battle CP
     // 10000 PvPoke's getFormStats keeps the level, as ours does.

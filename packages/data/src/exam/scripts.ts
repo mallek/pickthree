@@ -397,9 +397,11 @@ export const EXAM_SCRIPTS: PolicyScript[] = [
     buffs: [],
   },
   {
-    // Minior with PvPoke's battle CP at 10000, where getFormStats keeps the level (no re-level), and a
-    // 1-turn fast move, so the hp form change's cooldown reset changes nothing: battle start Core to
-    // Meteor and the hp trigger Meteor to Core are compared turn for turn.
+    // Minior with PvPoke's battle CP at 10000, where getFormStats keeps the level (no re-level).
+    // Rollout is a 3-turn move like Take Down; here the hit that crosses half HP lands on the turn
+    // Minior's own Rollout resolves, so no fast move is in flight and PvPoke's cooldown reset changes
+    // nothing. That is a property of these levels and IVs (rules-exam.test.ts guards it): battle start
+    // Core to Meteor and the hp trigger Meteor to Core are compared turn for turn.
     id: 'minior-core-same-level',
     covers: ['form-minior'],
     sides: [side('minior_core', 20, [5, 10, 12], 'ROLLOUT', ['POWER_GEM'], 0), MEDICHAM(0)],
