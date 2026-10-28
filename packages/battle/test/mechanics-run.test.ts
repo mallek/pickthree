@@ -3,7 +3,8 @@ import type { BattleData } from '../src/data/types.js';
 import type { MechanicsRule } from '../src/mechanics/vocabulary.js';
 import type { IncomingCharged } from '../src/player/types.js';
 import { seededRandom } from '../src/random.js';
-import { runBattle, type BattleContext } from '../src/rules/battle.js';
+import { runBattle, startBattle, type BattleContext } from '../src/rules/battle.js';
+import { hashState } from '../src/state/snapshot.js';
 import { stepTurn } from '../src/rules/turn.js';
 import { active, createBattle, type BattleSetup } from '../src/state/state.js';
 import { makeMove, makeSpecies } from './fixtures/synthetic.js';
@@ -47,6 +48,22 @@ describe('mechanics in the turn loop', () => {
     expect(a.hp).toBe(99); // one point from the opponent's zero-power fast move
     expect(a.maxHp).toBe(100);
     expect(r.trace[0]!.events.some((e) => e.kind === 'form' && e.form === 'fb' && e.actor === 0)).toBe(true);
+  });
+
+  it('stepping by hand from startBattle replays runBattle: same forms, hashes and outcome', () => {
+    const d = dataWith('shape', [{ when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
+    const setup = duel(mon('fa', 'F1', { startEnergy: 40 }), mon('tank', 'F1'), [1, 1]);
+    const r = runBattle(d, setup, [thrower(), thrower()], seededRandom(7), { maxTurns: 40, trace: true });
+    const { state, ctx } = startBattle(d, setup, [thrower(), thrower()], seededRandom(7), { maxTurns: 40 });
+    expect(active(state, 0).formId).toBe('fb');
+    expect(state.usePriority).toBe(true);
+    const hashes: string[] = [];
+    while (state.outcome === null) {
+      stepTurn(state, ctx);
+      hashes.push(hashState(state));
+    }
+    expect(hashes).toEqual(r.trace.map((t) => t.hash));
+    expect(state.outcome).toBe(r.outcome);
   });
 
   it('battleStart runs for both sides in order, then use-priority is recomputed from the new forms', () => {

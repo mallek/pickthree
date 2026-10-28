@@ -22,6 +22,7 @@ export { DefaultPlayer } from './player/default.js';
 export { seededRandom } from './random.js';
 export {
   runBattle,
+  startBattle,
   type BattleEvent,
   type TurnRecord,
   type RunOptions,

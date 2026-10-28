@@ -66,13 +66,17 @@ function record(state: BattleState, played: number, events: BattleEvent[]): Turn
   };
 }
 
-export function runBattle(
+/**
+ * A battle ready for its first stepTurn: battleStart raised for both sides, then use-priority
+ * recomputed from the forms they ended in. Events from battleStart stay in ctx.events.
+ */
+export function startBattle(
   data: BattleData,
   setup: BattleSetup,
   players: [Player, Player],
   random: RandomSource,
-  opts: RunOptions = {},
-): BattleResult {
+  opts: Pick<RunOptions, 'maxTurns'> = {},
+): { state: BattleState; ctx: BattleContext } {
   const state = createBattle(data, setup);
   const ctx: BattleContext = { data, players, random, events: [] };
   if (opts.maxTurns !== undefined) {
@@ -81,6 +85,17 @@ export function runBattle(
   fireEvent(state, ctx, 0, 'battleStart');
   fireEvent(state, ctx, 1, 'battleStart');
   state.usePriority = active(state, 0).atk !== active(state, 1).atk;
+  return { state, ctx };
+}
+
+export function runBattle(
+  data: BattleData,
+  setup: BattleSetup,
+  players: [Player, Player],
+  random: RandomSource,
+  opts: RunOptions = {},
+): BattleResult {
+  const { state, ctx } = startBattle(data, setup, players, random, opts);
   const trace: TurnRecord[] = [];
   while (state.outcome === null) {
     const played = state.turn;
