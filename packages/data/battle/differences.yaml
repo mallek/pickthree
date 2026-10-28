@@ -1,0 +1,92 @@
+# Known differences between our battle engine and PvPoke's simulator (the rules exam's grader).
+# packages/data/test/exam/rules-exam.test.ts plays every script in packages/data/src/exam/scripts.ts
+# through both engines and compares HP and energy turn by turn. A script that differs passes only when
+# an entry here lists it. An entry that lists a script which now matches is reported stale and fails
+# the exam, like a redundant override. Each entry names the behaviour, what each engine does, and the
+# evidence for our side.
+#
+# Cites: PvPoke at the pinned commit (packages/data/.pvpoke/src/js; the vendored copies in
+# packages/sim-pvpoke/vendor are byte for byte the same): Battle.js and pokemon/Pokemon.js.
+# Ours: packages/battle/src.
+#
+# Checked and NOT a difference (no entry, the exam scripts match):
+#   - Gulp Missile: PvPoke queues it as the next action of the turn (Battle.js:1591-1625), ours fires
+#     it inside the charged move that triggered it. Both resolve it before the other side's queued
+#     charged move, so cramorant-gulping, cramorant-mirror-surf and cramorant-gorging match.
+#   - Cramorant mirror priority: PvPoke forces usePriority for cramorant vs cramorant (Battle.js:262-264).
+#     With equal Attack its only effect is the knockout skip at Battle.js:479, which ours always does,
+#     so cmp-tie-ko-cramorant matches.
+#   - Charged move priority uses form Attack without the shadow multiplier or stat stages in both
+#     (Battle.js:262 and :783 read stats.atk; Pokemon.js:2258-2263 keeps the shadow bonus in
+#     shadowAtkMult). cmp-tie-shadow shows PvPoke treating a shadow vs plain pair with equal IVs as a tie.
+#   - Timeout: PvPoke stops at 240000 ms (Battle.js:636) counting 10000 ms per charged move; ours stops
+#     at 480 turns. Every exam script ends in a knockout well before either clock (rules-exam.test.ts
+#     asserts it), so no script exercises this.
+
+differences:
+  - id: cmp-tie-knockout
+    behaviour: >-
+      Both sides throw a charged move on the same turn with equal Attack, and the first move to
+      resolve knocks the other side out.
+    ours: >-
+      The tie goes to the side the RandomSource names (scripts: side 0). That move resolves first, and
+      the knocked-out side's charged move is skipped, whether or not Attack decided the order
+      (packages/battle/src/rules/turn.ts:107, faintSource 'charged').
+    pvpoke: >-
+      With equal Attack, usePriority is false (Battle.js:259-265), and the knocked-out thrower is
+      skipped only when usePriority is true (Battle.js:478-481), so both moves resolve: the second
+      side throws from 0 HP and the battle ends in a double knockout.
+    evidence: >-
+      Spec decision of 2026-10-27 (docs/superpowers/specs/2026-10-27-battle-engine-foundation-design.md
+      and the plan's 'CMP tie with a knockout'): a CMP tie is a caller-supplied random outcome and a
+      Pokemon knocked out by the winner's move does not act, as in the game. PvPoke itself skips a
+      charged-move-fainted thrower whenever it resolves an order (Battle.js:478-481: 'Check if knocked
+      out from a priority move'), and skips a fast move from a Pokemon knocked out by a charged move
+      regardless of priority (Battle.js:451-461); its equal-Attack path lets both charged moves resolve
+      so a simulation needs no coin flip.
+      Exam: cmp-tie-ko and cmp-tie-shadow, turn of the tie, PvPoke executes the second side's entry and
+      ours does not.
+    scripts: [cmp-tie-ko, cmp-tie-shadow]
+
+  - id: form-change-relevel
+    behaviour: >-
+      Attack and Defense after a form change between forms with different base stats (Aegislash
+      Shield and Blade, Minior Core and Meteor).
+    ours: >-
+      switchForm keeps level and IVs and recomputes Attack and Defense from the new form's base stats
+      at the same level (packages/battle/src/rules/mechanics.ts:52-60). HP is kept.
+    pvpoke: >-
+      changeForm calls getFormStats (Pokemon.js:2486-2491, :2528-2616), which at battle CP 1500 or 2500
+      maps the level to the new form (Blade at ceil(level * 0.5) + 1 in Great League, Meteor by
+      floor((47 * level / 25 + 1) * 2) / 2 credited to u/Ok_Lobster8494), then steps the level down
+      until the form fits the CP cap. HP is kept. Going back to the starting form uses the original level.
+    evidence: >-
+      Plan decision 'Form stats' (docs/superpowers/plans/2026-10-27-battle-engine-foundation.md): the
+      datamine (8e227be) carries only base stats for AEGISLASH_BLADE / AEGISLASH_SHIELD and the
+      MINIOR forms, no level mapping, and the vocabulary has no effect that changes level. Checked in
+      the exam harness: with PvPoke's battle CP raised past both caps (so getFormStats keeps the level)
+      the aegislash script matches turn for turn, so the level mapping is the whole difference there.
+      Open for the brainstorm lane: PvPoke's mappings are community-derived from observed in-game
+      stats, so the game may be on PvPoke's side; a fix needs a vocabulary change, not an exam change.
+    scripts: [aegislash, minior-core]
+
+  - id: minior-hp-form-timing
+    behaviour: >-
+      Minior Meteor changing into Core below half HP while one side's fast move is still in flight.
+    ours: >-
+      The hpBelow rule switches the form inside the hit that crossed half HP and nothing else changes:
+      cooldowns run on (pvpoke-mechanics.yaml has no animate for it, and an animate would freeze turns,
+      which PvPoke does not do).
+    pvpoke: >-
+      The hp form change sets roundFormAnimation (Battle.js:1644-1670), which resets both Pokemon's
+      cooldown to 500 ms at the end of the turn like a charged move (Battle.js:546-550), and adds
+      animationTime 5000 ms to its clock (Battle.js:1649, :1670). A Minior part way through a 3-turn
+      fast move gets its next decision early, shifting its fast move cadence.
+    evidence: >-
+      Plan seed for this list (the transcription in pvpoke-mechanics.yaml cannot express a cooldown
+      reset without frozen turns). Our shipped mechanics.yaml models Minior's change as an animation of
+      frozen turns, like the datamine's ibfc animationDurationTurns: 5 on Mimikyu, Aegislash and
+      Morpeko, not as a cooldown reset. Checked in the exam harness with PvPoke's battle CP raised past
+      the caps (no re-level): minior-core then matches until Minior turns Core on a turn when its Take
+      Down is mid-move, after which PvPoke's Minior is not free on the turn ours throws Power Gem.
+    scripts: [minior-core]
