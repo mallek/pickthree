@@ -19,3 +19,12 @@ export const PVPOKE_JS_DIR = path.join(PVPOKE_DIR, 'src', 'js');
 
 /** The hand-kept meta reset list, beside seasons.json; the data build ships a validated copy. */
 export const EPOCHS_PATH = path.join(DATA_PACKAGE_DIR, 'epochs.json');
+
+/** The pinned PokeMiners game master: lock beside pvpoke.lock.json, download cached by commit. */
+export const DATAMINE_LOCK_PATH = path.join(DATA_PACKAGE_DIR, 'datamine.lock.json');
+export const DATAMINE_DIR =
+  process.env.PICKTHREE_DATAMINE_DIR ?? path.join(DATA_PACKAGE_DIR, '.datamine');
+/** Hand-kept battle engine inputs, and the generated battle data (gitignored). */
+export const BATTLE_INPUT_DIR = path.join(DATA_PACKAGE_DIR, 'battle');
+export const BATTLE_OUT_DIR =
+  process.env.PICKTHREE_BATTLE_OUT ?? path.join(DATA_PACKAGE_DIR, '.battle');

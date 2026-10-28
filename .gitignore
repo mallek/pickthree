@@ -9,6 +9,8 @@ Thumbs.db
 # pinned PvPoke checkout, produced by npm run data:build
 packages/data/.pvpoke/
 packages/data/.cache/
+packages/data/.datamine/
+packages/data/.battle/
 
 # generated static data (rebuilt from the pinned commit)
 apps/web/public/data/
