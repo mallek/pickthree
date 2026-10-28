@@ -46,6 +46,9 @@ function matches(when: When, c: CombatantState, event: EventName, info: EventInf
   if (when.hpAtMost !== undefined && !(fraction <= when.hpAtMost)) {
     return false;
   }
+  if (when.notStartForm === true && c.formId === c.startFormId) {
+    return false;
+  }
   return true;
 }
 

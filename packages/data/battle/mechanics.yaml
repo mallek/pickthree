@@ -71,7 +71,8 @@ minior:
   rules:
     - when: { event: battleStart, form: [minior_blue, minior_green, minior_indigo, minior_orange, minior_red, minior_violet, minior_yellow] }
       do: [{ effect: switchForm, to: minior }]
-    - when: { event: hpBelow, fraction: 0.5, form: minior }
+    # notStartForm: registered as plain Meteor (minior) there is no Core color to return to, so it stays Meteor.
+    - when: { event: hpBelow, fraction: 0.5, form: minior, notStartForm: true }
       do:
         - { effect: switchForm, to: startForm }
         - { effect: animate, turns: 5 }

@@ -110,6 +110,28 @@ describe('validateMechanics', () => {
       'mechanics.yaml: shifter.rules[0].do[0].turns must be a positive integer',
     );
   });
+  it('accepts notStartForm: true and rejects any other value', () => {
+    const ok = entry([rule({ event: 'hpBelow', fraction: 0.5, notStartForm: true }, [])]);
+    expect(validateMechanics(structuredClone(ok), data)['shifter']!.rules[0]!.when.notStartForm).toBe(true);
+    for (const bad of [false, 'yes', 1]) {
+      const raw = entry([rule({ event: 'hpBelow', fraction: 0.5, notStartForm: bad }, [])]);
+      expect(() => validateMechanics(raw, data)).toThrow(
+        'mechanics.yaml: shifter.rules[0].when.notStartForm must be true (omit it otherwise)',
+      );
+    }
+  });
+  it('rejects a move named like an Object prototype key', () => {
+    const raw = entry([rule({ event: 'battleStart' }, [{ effect: 'fireMove', move: 'constructor' }])]);
+    expect(() => validateMechanics(raw, data)).toThrow(
+      'mechanics.yaml: shifter.rules[0].do[0].move "constructor" is not a move',
+    );
+  });
+  it('rejects a form named like an Object prototype key', () => {
+    const raw = entry([rule({ event: 'battleStart' }, [{ effect: 'switchForm', to: 'constructor' }])]);
+    expect(() => validateMechanics(raw, data)).toThrow(
+      'mechanics.yaml: shifter.rules[0].do[0].to "constructor" is not a form of family "shifter"',
+    );
+  });
   it('rejects a missing source', () => {
     expect(() => validateMechanics(entry([], { source: '' }), data)).toThrow(
       'mechanics.yaml: shifter.source must be a non-empty string',

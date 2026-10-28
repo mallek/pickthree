@@ -350,6 +350,36 @@ describe('mechanics in the turn loop', () => {
     expect(ctx.events.length).toBe(0);
   });
 
+  it('notStartForm: a revert-to-start rule fires once from a switched form, never from the start form', () => {
+    const d = dataWith('shape', [
+      { when: { event: 'battleStart', form: 'fa' }, do: [{ effect: 'switchForm', to: 'fb' }] },
+      {
+        when: { event: 'hpBelow', fraction: 0.5, form: 'fb', notStartForm: true },
+        do: [
+          { effect: 'switchForm', to: 'startForm' },
+          { effect: 'animate', turns: 2 },
+        ],
+      },
+    ]);
+    const run = (formId: string) =>
+      runBattle(d, duel(mon(formId, 'F0'), mon('tank', 'F1')), [player(), player()], seededRandom(1), {
+        maxTurns: 60,
+        trace: true,
+      });
+    const animates = (r: ReturnType<typeof run>) =>
+      r.trace.flatMap((t) => t.events).filter((e) => e.kind === 'animate' && e.actor === 0);
+    // started in fa, switched to fb: below half it returns to fa once
+    const switched = run('fa');
+    expect(animates(switched).length).toBe(1);
+    expect(switched.final.sides[0].team[0]!.formId).toBe('fa');
+    // started in fb: fb is the start form, so the rule never matches however long it stays below half
+    const plain = run('fb');
+    const below = plain.trace.filter((t) => t.hp[0] > 0 && t.hp[0] / t.maxHp[0] < 0.5);
+    expect(below.length).toBeGreaterThan(1);
+    expect(animates(plain)).toEqual([]);
+    expect(plain.trace.flatMap((t) => t.events).filter((e) => e.kind === 'form')).toEqual([]);
+  });
+
   it('animate freezes N turns: turn counter advances, HP and energy do not move', () => {
     const d = dataWith('shape', [{ when: { event: 'afterChargedMove' }, do: [{ effect: 'animate', turns: 3 }] }]);
     const { state, ctx } = startedDuel(

@@ -24,6 +24,9 @@ export interface When {
   form?: FormId | FormId[]; // condition: current form is (one of) these
   hpAbove?: number; // condition: hp / maxHp > value
   hpAtMost?: number; // condition: hp / maxHp <= value
+  // condition: the current form is not the form the battle began in. Only `true` is valid. Guards a
+  // rule that switches back to startForm, so it never fires when there is nothing to switch back to.
+  notStartForm?: true;
 }
 export type Effect =
   | { effect: 'switchForm'; to: FormId | 'startForm' }

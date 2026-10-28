@@ -468,6 +468,31 @@ function minior(): void {
   it('the Core animation freezes the stated turns', () => {
     assertFrozen(open().trace, statedTurns(data(), 'minior'));
   });
+
+  // Registered as plain Meteor there is no Core color to turn into: it stays Meteor and never
+  // freezes the battle again and again below half HP.
+  const meteor = memo(() =>
+    battle(
+      // level 40 so it lives for several hits below half HP
+      side('minior', 'ROLLOUT_FAST', 'POWER_GEM', 0, 40),
+      plainOpponent(data(), OPPONENT, OPP_LEVEL),
+      policy({ when: never }),
+      policy(),
+    ),
+  );
+
+  it('registered as Meteor, it stays Meteor below half HP and animates at most once', () => {
+    const r = meteor();
+    const below = r.trace.filter((rec) => rec.hp[0] > 0 && rec.hp[0] / rec.maxHp[0] < 0.5);
+    if (below.length < 2) {
+      throw new Error('scenario never reached: Minior below half HP for more than one turn');
+    }
+    expect(allEvents(r.trace, (e) => e.kind === 'animate' && e.actor === 0).length).toBeLessThanOrEqual(1);
+    expect(allEvents(r.trace, isForm(0))).toEqual([]);
+    for (const rec of r.trace) {
+      expect(rec.forms[0]).toBe('minior');
+    }
+  });
 }
 
 const SCENARIOS: Record<string, () => void> = { mimikyu, aegislash, cramorant, morpeko, minior };

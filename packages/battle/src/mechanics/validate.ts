@@ -82,14 +82,14 @@ function checkFrac(path: string, v: unknown): number {
 }
 
 function checkForm(family: string, path: string, v: unknown, data: Ref): string {
-  if (typeof v !== 'string' || data.species[v]?.family !== family) {
+  if (typeof v !== 'string' || !Object.hasOwn(data.species, v) || data.species[v]?.family !== family) {
     return fail(path, `${JSON.stringify(v)} is not a form of family "${family}"`);
   }
   return v;
 }
 
 function checkMove(path: string, v: unknown, data: Ref): string {
-  if (typeof v !== 'string' || data.moves[v] === undefined) {
+  if (typeof v !== 'string' || !Object.hasOwn(data.moves, v)) {
     return fail(path, `${JSON.stringify(v)} is not a move`);
   }
   return v;
@@ -138,6 +138,12 @@ function validateWhen(family: string, path: string, w: unknown, data: Ref): When
   }
   if (w['hpAtMost'] !== undefined) {
     out.hpAtMost = checkFrac(`${path}.hpAtMost`, w['hpAtMost']);
+  }
+  if (w['notStartForm'] !== undefined) {
+    if (w['notStartForm'] !== true) {
+      return fail(`${path}.notStartForm`, 'must be true (omit it otherwise)');
+    }
+    out.notStartForm = true;
   }
   return out;
 }
