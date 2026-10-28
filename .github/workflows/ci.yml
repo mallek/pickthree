@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PICKTHREE_REQUIRE_PVPOKE: '1'
+      PICKTHREE_REQUIRE_DATAMINE: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +23,12 @@ jobs:
             packages/data/.pvpoke
             packages/data/.cache
           key: pvpoke-${{ hashFiles('packages/data/pvpoke.lock.json') }}
+      - name: Cache datamine
+        uses: actions/cache@v4
+        with:
+          path: packages/data/.datamine
+          key: datamine-${{ hashFiles('packages/data/datamine.lock.json') }}
+      - run: npm run datamine:fetch
       - run: npm run lint
       - run: npm run check-tokens
       - run: npm run typecheck
