@@ -16,3 +16,6 @@ export {
   type QueuedAction,
 } from './state/state.js';
 export { snapshot, restore, hashState } from './state/snapshot.js';
+export type * from './player/types.js';
+export { ScriptedPlayer, scriptedRandom, type ScriptEntry } from './player/scripted.js';
+export { seededRandom } from './random.js';
