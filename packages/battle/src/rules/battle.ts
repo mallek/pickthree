@@ -2,6 +2,7 @@ import type { BattleData, FormId, MoveId, StageChange } from '../data/types.js';
 import type { Player, RandomSource } from '../player/types.js';
 import { hashState } from '../state/snapshot.js';
 import { active, createBattle, type BattleSetup, type BattleState } from '../state/state.js';
+import { fireEvent } from './mechanics.js';
 import { stepTurn } from './turn.js';
 
 export interface BattleEvent {
@@ -12,6 +13,7 @@ export interface BattleEvent {
   slot?: number;
   damage?: number;
   form?: FormId;
+  turns?: number;
 }
 export interface TurnRecord {
   turn: number;
@@ -41,6 +43,8 @@ export interface BattleContext {
   events: BattleEvent[];
   /** Turn limit for the timeout outcome. Defaults to settings.roundTurns. */
   maxTurns?: number;
+  /** Set when a mechanic's animate effect fires this turn, so the turn resets cooldowns like a charged move. */
+  animated?: boolean;
 }
 
 function record(state: BattleState, played: number, events: BattleEvent[]): TurnRecord {
@@ -74,7 +78,9 @@ export function runBattle(
   if (opts.maxTurns !== undefined) {
     ctx.maxTurns = opts.maxTurns;
   }
-  // Task 7: battleStart mechanics hooks go here
+  fireEvent(state, ctx, 0, 'battleStart');
+  fireEvent(state, ctx, 1, 'battleStart');
+  state.usePriority = active(state, 0).atk !== active(state, 1).atk;
   const trace: TurnRecord[] = [];
   while (state.outcome === null) {
     const played = state.turn;

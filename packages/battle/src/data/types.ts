@@ -2,7 +2,7 @@ import type { MechanicsEntry } from '../mechanics/vocabulary.js';
 
 export type TypeId = string; // lowercase, e.g. 'fire'
 export type MoveId = string; // datamine name, e.g. 'ROLLOUT_FAST', 'DIVE'
-export type FormId = string; // e.g. 'mimikyu_disguised', 'minior', 'cramorant'
+export type FormId = string; // e.g. 'species_form'
 
 export interface StatStages {
   min: number;

@@ -1,6 +1,7 @@
 import type { MoveData } from '../data/types.js';
 import { active, type BattleState } from '../state/state.js';
 import type { BattleContext } from './battle.js';
+import { fireEvent } from './mechanics.js';
 import { moveDamage } from './view.js';
 
 export function resolveFast(state: BattleState, ctx: BattleContext, actor: 0 | 1): void {
@@ -15,5 +16,5 @@ export function resolveFast(state: BattleState, ctx: BattleContext, actor: 0 | 1
     d.faintSource = 'fast';
   }
   ctx.events.push({ turn: state.turn, actor, kind: 'fast', move: move.id, damage });
-  // Task 7: mechanics hooks go here
+  fireEvent(state, ctx, other, 'hpBelow');
 }

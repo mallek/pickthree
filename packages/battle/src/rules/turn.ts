@@ -76,6 +76,7 @@ export function stepTurn(state: BattleState, ctx: BattleContext): void {
     const c = active(state, side);
     c.cooldown = Math.max(0, c.cooldown - 1);
   }
+  ctx.animated = false;
   const chargedLast = state.chargedLastTurn;
   queueDecisions(state, ctx);
 
@@ -119,7 +120,7 @@ export function stepTurn(state: BattleState, ctx: BattleContext): void {
   }
 
   state.chargedLastTurn = anyCharged;
-  if (anyCharged) {
+  if (anyCharged || ctx.animated) {
     for (const side of [0, 1] as const) {
       active(state, side).cooldown = 1;
     }

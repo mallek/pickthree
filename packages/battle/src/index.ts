@@ -30,3 +30,4 @@ export {
 export { stepTurn } from './rules/turn.js';
 export { resolveFast } from './rules/fast.js';
 export { resolveCharged } from './rules/charged.js';
+export { fireEvent, blocksDamage } from './rules/mechanics.js';
