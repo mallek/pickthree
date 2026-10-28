@@ -35,16 +35,18 @@ describe('validateOverrides', () => {
       }),
     ).toThrow('overrides.yaml: moves[2].entered "2026-13-01" must be YYYY-MM-DD');
     expect(() =>
-      validateOverrides({ species: [{ id: 'C', set: { dex: 1 }, source: 's', entered: '2026-02-30' }] }),
+      validateOverrides({
+        species: [{ id: 'C', set: { dex: 1 }, source: 's', entered: '2026-02-30' }],
+      }),
     ).toThrow('overrides.yaml: species[0].entered "2026-02-30" must be YYYY-MM-DD');
     expect(() =>
       validateOverrides({ moves: [{ id: 'C', set: { power: 1 }, source: 's', entered: 'soon' }] }),
     ).toThrow('overrides.yaml: moves[0].entered "soon" must be YYYY-MM-DD');
   });
   it('rejects both add and set, and neither', () => {
-    expect(() =>
-      validateOverrides({ moves: [{ id: 'A', add: {}, set: {}, ...base }] }),
-    ).toThrow('overrides.yaml: moves[0] must have exactly one of add or set');
+    expect(() => validateOverrides({ moves: [{ id: 'A', add: {}, set: {}, ...base }] })).toThrow(
+      'overrides.yaml: moves[0] must have exactly one of add or set',
+    );
     expect(() => validateOverrides({ species: [{ id: 'A', ...base }] })).toThrow(
       'overrides.yaml: species[0] must have exactly one of add or set',
     );

@@ -11,9 +11,24 @@ import { makeMove } from './fixtures/synthetic.js';
 
 function dataWithMoves() {
   const d = makeBattleData();
-  d.moves['CHLOW'] = makeMove('CHLOW', { category: 'charged', power: 30, energy: 35, energyGain: 0 });
-  d.moves['CHHIGH'] = makeMove('CHHIGH', { category: 'charged', power: 80, energy: 60, energyGain: 0 });
-  d.moves['CHCHEAP'] = makeMove('CHCHEAP', { category: 'charged', power: 50, energy: 40, energyGain: 0 });
+  d.moves['CHLOW'] = makeMove('CHLOW', {
+    category: 'charged',
+    power: 30,
+    energy: 35,
+    energyGain: 0,
+  });
+  d.moves['CHHIGH'] = makeMove('CHHIGH', {
+    category: 'charged',
+    power: 80,
+    energy: 60,
+    energyGain: 0,
+  });
+  d.moves['CHCHEAP'] = makeMove('CHCHEAP', {
+    category: 'charged',
+    power: 50,
+    energy: 40,
+    energyGain: 0,
+  });
   d.moves['FKO'] = makeMove('FKO', { power: 100, energyGain: 5, turns: 1 });
   return d;
 }
@@ -42,33 +57,58 @@ describe('DefaultPlayer', () => {
 
   it('throws the affordable charged move with more damage', () => {
     const d = dataWithMoves();
-    const v = viewOf(d, ['tank', 'F1', { startEnergy: 100, chargedMoves: ['CHLOW', 'CHHIGH'] }], ['tank', 'F1']);
+    const v = viewOf(
+      d,
+      ['tank', 'F1', { startEnergy: 100, chargedMoves: ['CHLOW', 'CHHIGH'] }],
+      ['tank', 'F1'],
+    );
     expect(new DefaultPlayer().decide(v)).toEqual({ kind: 'charged', slot: 1 });
   });
 
   it('breaks damage ties by lower energy cost, then lower slot', () => {
     const d = dataWithMoves();
-    d.moves['CHCHEAP'] = makeMove('CHCHEAP', { category: 'charged', power: 50, energy: 40, energyGain: 0 });
-    const v = viewOf(d, ['tank', 'F1', { startEnergy: 100, chargedMoves: ['CH', 'CHCHEAP'] }], ['tank', 'F1']);
+    d.moves['CHCHEAP'] = makeMove('CHCHEAP', {
+      category: 'charged',
+      power: 50,
+      energy: 40,
+      energyGain: 0,
+    });
+    const v = viewOf(
+      d,
+      ['tank', 'F1', { startEnergy: 100, chargedMoves: ['CH', 'CHCHEAP'] }],
+      ['tank', 'F1'],
+    );
     expect(new DefaultPlayer().decide(v)).toEqual({ kind: 'charged', slot: 1 });
   });
 
   it('plays fast when fast knocks out', () => {
     const d = dataWithMoves();
-    const v = viewOf(d, ['tank', 'FKO', { startEnergy: 100, chargedMoves: ['CHHIGH'] }], ['glass', 'F1']);
+    const v = viewOf(
+      d,
+      ['tank', 'FKO', { startEnergy: 100, chargedMoves: ['CHHIGH'] }],
+      ['glass', 'F1'],
+    );
     expect(new DefaultPlayer().decide(v)).toEqual({ kind: 'fast' });
   });
 
   it('plays fast when no charged move is affordable', () => {
     const d = dataWithMoves();
-    const v = viewOf(d, ['tank', 'F1', { startEnergy: 0, chargedMoves: ['CHHIGH'] }], ['tank', 'F1']);
+    const v = viewOf(
+      d,
+      ['tank', 'F1', { startEnergy: 0, chargedMoves: ['CHHIGH'] }],
+      ['tank', 'F1'],
+    );
     expect(new DefaultPlayer().decide(v)).toEqual({ kind: 'fast' });
   });
 
   it('shields a knockout hit', () => {
     const d = dataWithMoves();
     const v = viewOf(d, ['glass', 'F1'], ['tank', 'F1'], [1, 1]);
-    const incoming: IncomingCharged = { move: d.moves['CH'] as MoveData, damage: v.self.hp, blockedByMechanic: false };
+    const incoming: IncomingCharged = {
+      move: d.moves['CH'] as MoveData,
+      damage: v.self.hp,
+      blockedByMechanic: false,
+    };
     expect(new DefaultPlayer().shield(v, incoming)).toBe(true);
   });
 
@@ -77,14 +117,22 @@ describe('DefaultPlayer', () => {
     const v = viewOf(d, ['tank', 'F1'], ['tank', 'F1'], [1, 1]);
     const mv = d.moves['CH'] as MoveData;
     const big = Math.ceil(v.self.maxHp * 0.3);
-    expect(new DefaultPlayer().shield(v, { move: mv, damage: big, blockedByMechanic: false })).toBe(true);
-    expect(new DefaultPlayer().shield(v, { move: mv, damage: big - 1, blockedByMechanic: false })).toBe(false);
+    expect(new DefaultPlayer().shield(v, { move: mv, damage: big, blockedByMechanic: false })).toBe(
+      true,
+    );
+    expect(
+      new DefaultPlayer().shield(v, { move: mv, damage: big - 1, blockedByMechanic: false }),
+    ).toBe(false);
   });
 
   it('does not shield a hit its mechanics block', () => {
     const d = dataWithMoves();
     const v = viewOf(d, ['glass', 'F1'], ['tank', 'F1'], [1, 1]);
-    const incoming: IncomingCharged = { move: d.moves['CH'] as MoveData, damage: 9999, blockedByMechanic: true };
+    const incoming: IncomingCharged = {
+      move: d.moves['CH'] as MoveData,
+      damage: 9999,
+      blockedByMechanic: true,
+    };
     expect(new DefaultPlayer().shield(v, incoming)).toBe(false);
   });
 

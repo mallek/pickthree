@@ -68,21 +68,24 @@ describe('charged moves', () => {
     expect(r2.final.sides[0].team[0]!.energy).toBe(50);
   });
 
-  it.each([0, 1] as const)('equal attack: cmpTieWinner %i picks the order and the loser does not fire', (winner) => {
-    const r = runBattle(
-      d,
-      duel(mon('glass', 'F0', { startEnergy: 50 }), mon('glass', 'F0', { startEnergy: 50 })),
-      [thrower(), thrower()],
-      fixedRandom(winner),
-    );
-    expect(r.outcome).toBe(winner === 0 ? 'win0' : 'win1');
-    const loser = r.final.sides[winner === 0 ? 1 : 0].team[0]!;
-    const won = r.final.sides[winner].team[0]!;
-    expect(loser.hp).toBe(0);
-    expect(loser.energy).toBe(50);
-    expect(won.hp).toBe(30);
-    expect(won.energy).toBe(0);
-  });
+  it.each([0, 1] as const)(
+    'equal attack: cmpTieWinner %i picks the order and the loser does not fire',
+    (winner) => {
+      const r = runBattle(
+        d,
+        duel(mon('glass', 'F0', { startEnergy: 50 }), mon('glass', 'F0', { startEnergy: 50 })),
+        [thrower(), thrower()],
+        fixedRandom(winner),
+      );
+      expect(r.outcome).toBe(winner === 0 ? 'win0' : 'win1');
+      const loser = r.final.sides[winner === 0 ? 1 : 0].team[0]!;
+      const won = r.final.sides[winner].team[0]!;
+      expect(loser.hp).toBe(0);
+      expect(loser.energy).toBe(50);
+      expect(won.hp).toBe(30);
+      expect(won.energy).toBe(0);
+    },
+  );
 
   it('a shield takes the hit for 1 damage and spends one shield', () => {
     const p1 = player(undefined, () => true);
@@ -114,7 +117,11 @@ describe('charged moves', () => {
   it('a guaranteed self buff and an opponent debuff both apply, the debuff even through a shield', () => {
     const r = runBattle(
       d,
-      duel(mon('tank', 'F0', { startEnergy: 50, chargedMoves: ['CHBUFF'] }), mon('tank', 'F0'), [0, 1]),
+      duel(
+        mon('tank', 'F0', { startEnergy: 50, chargedMoves: ['CHBUFF'] }),
+        mon('tank', 'F0'),
+        [0, 1],
+      ),
       [thrower(), player(undefined, () => true)],
       seededRandom(1),
       { maxTurns: 1 },
@@ -150,7 +157,11 @@ describe('charged moves', () => {
   });
 
   it('same inputs and same random outcomes give the same battle', () => {
-    const setup = duel(mon('tank', 'F1', { startEnergy: 20 }), mon('tank', 'F2', { chargedMoves: ['CHCHANCE'] }), [1, 1]);
+    const setup = duel(
+      mon('tank', 'F1', { startEnergy: 20 }),
+      mon('tank', 'F2', { chargedMoves: ['CHCHANCE'] }),
+      [1, 1],
+    );
     const go = () =>
       runBattle(d, setup, [thrower(), thrower()], seededRandom(7), { trace: true, maxTurns: 60 });
     const a = go();
@@ -161,7 +172,8 @@ describe('charged moves', () => {
 
   it('the trace carries each turn state hash', () => {
     const setup = duel(mon('tank', 'F1', { startEnergy: 20 }), mon('tank', 'F2'), [1, 1]);
-    const go = () => runBattle(d, setup, [thrower(), thrower()], seededRandom(3), { trace: true, maxTurns: 40 });
+    const go = () =>
+      runBattle(d, setup, [thrower(), thrower()], seededRandom(3), { trace: true, maxTurns: 40 });
     const a = go();
     const b = go();
     expect(a.trace.at(-1)!.hash).toBe(hashState(a.final));
@@ -176,7 +188,10 @@ describe('charged moves', () => {
       [0, 1],
     );
     const shieldsOnce = player(undefined, () => true);
-    const r = runBattle(d, setup, [thrower(), shieldsOnce], seededRandom(4), { trace: true, maxTurns: 10 });
+    const r = runBattle(d, setup, [thrower(), shieldsOnce], seededRandom(4), {
+      trace: true,
+      maxTurns: 10,
+    });
     const t = r.trace.findIndex((x) => x.events.some((e) => e.kind === 'shield'));
     expect(t).toBeGreaterThan(0);
     expect(r.trace[t]!.shields[1]).toBe(r.trace[t - 1]!.shields[1] - 1);

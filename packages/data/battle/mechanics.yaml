@@ -1,7 +1,7 @@
 # In-battle form changes, written in the fixed vocabulary of packages/battle/src/mechanics/vocabulary.ts.
 # A species that needs a trigger or effect not listed there is a code change.
 mimikyu:
-  source: "Datamine 8e227be ibfc on V0778_POKEMON_MIMIKYU (BEFORE_CM_ATTACKER, 5 turns); Disguise from the game."
+  source: 'Datamine 8e227be ibfc on V0778_POKEMON_MIMIKYU (BEFORE_CM_ATTACKER, 5 turns); Disguise from the game.'
   entered: 2026-10-27
   resetOnSwitchOut: false
   rules:
@@ -12,7 +12,7 @@ mimikyu:
         - { effect: statStages, target: self, def: -1 }
         - { effect: animate, turns: 5 }
 aegislash:
-  source: "Datamine 8e227be ibfc on V0681_POKEMON_AEGISLASH (BEFORE_CM_ATTACKER, 5 turns); Shield fast moves from overrides.yaml."
+  source: 'Datamine 8e227be ibfc on V0681_POKEMON_AEGISLASH (BEFORE_CM_ATTACKER, 5 turns); Shield fast moves from overrides.yaml.'
   entered: 2026-10-27
   resetOnSwitchOut: true
   rules:
@@ -33,7 +33,7 @@ aegislash:
         - { effect: replaceMove, from: AIR_SLASH_FAST, to: AEGISLASH_CHARGE_AIR_SLASH }
         - { effect: animate, turns: 5 }
 cramorant:
-  source: "Datamine 8e227be ibfc on V0845_POKEMON_CRAMORANT (combatEnable, no settings); Gulp Missile moves 594/595."
+  source: 'Datamine 8e227be ibfc on V0845_POKEMON_CRAMORANT (combatEnable, no settings); Gulp Missile moves 594/595.'
   entered: 2026-10-27
   resetOnSwitchOut: true
   rules:
@@ -50,7 +50,7 @@ cramorant:
         - { effect: fireMove, move: GULP_MISSILE_GORGING, ignoresFaint: true }
         - { effect: switchForm, to: cramorant }
 morpeko:
-  source: "Datamine 8e227be ibfc on V0877_POKEMON_MORPEKO (AFTER_CM_ATTACKER, 5 turns, move 406 <-> 407)."
+  source: 'Datamine 8e227be ibfc on V0877_POKEMON_MORPEKO (AFTER_CM_ATTACKER, 5 turns, move 406 <-> 407).'
   entered: 2026-10-27
   resetOnSwitchOut: true
   rules:
@@ -65,11 +65,24 @@ morpeko:
         - { effect: replaceMove, from: AURA_WHEEL_DARK, to: AURA_WHEEL_ELECTRIC }
         - { effect: animate, turns: 5 }
 minior:
-  source: "Not flagged in datamine 8e227be. Meteor until below half HP, then Core (in-game, 2026 season). Animation length unconfirmed; 5 turns as the other ibfc species."
+  source: 'Not flagged in datamine 8e227be. Meteor until below half HP, then Core (in-game, 2026 season). Animation length unconfirmed; 5 turns as the other ibfc species.'
   entered: 2026-10-27
   resetOnSwitchOut: false
   rules:
-    - when: { event: battleStart, form: [minior_blue, minior_green, minior_indigo, minior_orange, minior_red, minior_violet, minior_yellow] }
+    - when:
+        {
+          event: battleStart,
+          form:
+            [
+              minior_blue,
+              minior_green,
+              minior_indigo,
+              minior_orange,
+              minior_red,
+              minior_violet,
+              minior_yellow,
+            ],
+        }
       do: [{ effect: switchForm, to: minior }]
     # notStartForm: registered as plain Meteor (minior) there is no Core color to return to, so it stays Meteor.
     - when: { event: hpBelow, fraction: 0.5, form: minior, notStartForm: true }

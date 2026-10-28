@@ -61,7 +61,13 @@ function policy(opts: PolicyOptions = {}): Player {
   };
 }
 
-function side(formId: FormId, fastMove: MoveId, chargedMove: MoveId, shields: number, level = 20): SideSetup {
+function side(
+  formId: FormId,
+  fastMove: MoveId,
+  chargedMove: MoveId,
+  shields: number,
+  level = 20,
+): SideSetup {
   return { team: [{ formId, level, ivs: IVS, fastMove, chargedMoves: [chargedMove] }], shields };
 }
 
@@ -87,7 +93,12 @@ function battle(s0: SideSetup, s1: SideSetup, p0: Player, p1: Player, seed = 1):
 }
 
 /** The first turn (1-based, trace[turn - 1]) with a matching event. */
-function turnOf(trace: TurnRecord[], pred: (e: BattleEvent) => boolean, label: string, after = 0): number {
+function turnOf(
+  trace: TurnRecord[],
+  pred: (e: BattleEvent) => boolean,
+  label: string,
+  after = 0,
+): number {
   const rec = trace.find((r) => r.turn > after && r.events.some(pred));
   if (!rec) {
     throw new Error(`scenario never reached: ${label}`);
@@ -103,7 +114,11 @@ function recordAt(trace: TurnRecord[], turn: number): TurnRecord {
   return rec;
 }
 
-function eventAt(trace: TurnRecord[], turn: number, pred: (e: BattleEvent) => boolean): BattleEvent {
+function eventAt(
+  trace: TurnRecord[],
+  turn: number,
+  pred: (e: BattleEvent) => boolean,
+): BattleEvent {
   const e = recordAt(trace, turn).events.find(pred);
   if (!e) {
     throw new Error(`no matching event at turn ${turn}`);
@@ -117,7 +132,9 @@ function statedTurns(data: BattleData, family: string): number {
   if (!entry) {
     throw new Error(`no mechanics entry for ${family}`);
   }
-  const turns = entry.rules.flatMap((r) => r.do).flatMap((e) => (e.effect === 'animate' ? [e.turns] : []));
+  const turns = entry.rules
+    .flatMap((r) => r.do)
+    .flatMap((e) => (e.effect === 'animate' ? [e.turns] : []));
   const first = turns[0];
   if (first === undefined || turns.some((t) => t !== first)) {
     throw new Error(`${family}: expected one stated animate length, got [${turns.join(', ')}]`);
@@ -224,7 +241,11 @@ function mimikyu(): void {
 
   it('a shielded hit leaves the disguise up', () => {
     const r = shielded();
-    const t = turnOf(r.trace, (e) => e.kind === 'shield' && e.actor === 0, 'Mimikyu shields a charged move');
+    const t = turnOf(
+      r.trace,
+      (e) => e.kind === 'shield' && e.actor === 0,
+      'Mimikyu shields a charged move',
+    );
     const rec = recordAt(r.trace, t);
     expect(rec.forms[0]).toBe('mimikyu_disguised');
     expect(rec.stages[0].def).toBe(0);
@@ -304,7 +325,11 @@ function aegislash(): void {
 
   it('goes back to Shield when it shields', () => {
     const r = guarded();
-    const t = turnOf(r.trace, (e) => e.kind === 'shield' && e.actor === 0, 'Aegislash shields in Blade form');
+    const t = turnOf(
+      r.trace,
+      (e) => e.kind === 'shield' && e.actor === 0,
+      'Aegislash shields in Blade form',
+    );
     expect(recordAt(r.trace, t - 1).forms[0]).toBe('aegislash_blade');
     const events = recordAt(r.trace, t).events;
     const shieldAt = events.findIndex((e) => e.kind === 'shield' && e.actor === 0);
@@ -417,7 +442,9 @@ function morpeko(): void {
     }
     turns.forEach((rec, i) => {
       const even = i % 2 === 0;
-      expect(eventAt(r.trace, rec.turn, isCharged(0)).move).toBe(even ? 'AURA_WHEEL_ELECTRIC' : 'AURA_WHEEL_DARK');
+      expect(eventAt(r.trace, rec.turn, isCharged(0)).move).toBe(
+        even ? 'AURA_WHEEL_ELECTRIC' : 'AURA_WHEEL_DARK',
+      );
       expect(rec.forms[0]).toBe(even ? 'morpeko_hangry' : 'morpeko_full_belly');
       expect(rec.events.some(isForm(0))).toBe(true);
     });
@@ -487,7 +514,9 @@ function minior(): void {
     if (below.length < 2) {
       throw new Error('scenario never reached: Minior below half HP for more than one turn');
     }
-    expect(allEvents(r.trace, (e) => e.kind === 'animate' && e.actor === 0).length).toBeLessThanOrEqual(1);
+    expect(
+      allEvents(r.trace, (e) => e.kind === 'animate' && e.actor === 0).length,
+    ).toBeLessThanOrEqual(1);
     expect(allEvents(r.trace, isForm(0))).toEqual([]);
     for (const rec of r.trace) {
       expect(rec.forms[0]).toBe('minior');

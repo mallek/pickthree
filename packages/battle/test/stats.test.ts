@@ -27,6 +27,8 @@ describe('stats', () => {
     expect(cpOf(d, 'tiny', { atk: 0, def: 0, hp: 0 }, 1)).toBe(10);
   });
   it('unknown form throws', () => {
-    expect(() => formStats(makeData(), 'nope', { atk: 0, def: 0, hp: 0 }, 1)).toThrow('unknown form nope');
+    expect(() => formStats(makeData(), 'nope', { atk: 0, def: 0, hp: 0 }, 1)).toThrow(
+      'unknown form nope',
+    );
   });
 });

@@ -14,7 +14,11 @@ export interface DamageInput {
   defenderMaxHp: number;
 }
 
-export function effectiveness(data: BattleData, moveType: TypeId, defender: readonly TypeId[]): number {
+export function effectiveness(
+  data: BattleData,
+  moveType: TypeId,
+  defender: readonly TypeId[],
+): number {
   const row = data.types.indexOf(moveType);
   if (row < 0) {
     throw new Error(`unknown type ${moveType}`);
@@ -36,8 +40,12 @@ export function damageOf(data: BattleData, input: DamageInput): number {
   if (move.damageKind === 'percentMaxHp') {
     return Math.floor((move.power / 100) * input.defenderMaxHp) + 1;
   }
-  const attack = input.atk * (stageMultiplier(s.stages, input.atkStage, 'atk') * (input.attackerShadow ? s.shadowAtk : 1));
-  const defense = input.def * (stageMultiplier(s.stages, input.defStage, 'def') * (input.defenderShadow ? s.shadowDef : 1));
+  const attack =
+    input.atk *
+    (stageMultiplier(s.stages, input.atkStage, 'atk') * (input.attackerShadow ? s.shadowAtk : 1));
+  const defense =
+    input.def *
+    (stageMultiplier(s.stages, input.defStage, 'def') * (input.defenderShadow ? s.shadowDef : 1));
   const eff = effectiveness(data, move.type, input.defenderTypes);
   const stab = input.attackerTypes.includes(move.type) ? s.stab : 1;
   const bonus = move.category === 'fast' ? s.fastBonus : s.chargedBonus;

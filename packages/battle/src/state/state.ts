@@ -114,7 +114,10 @@ function buildSide(data: BattleData, setup: SideSetup): SideState {
 }
 
 export function createBattle(data: BattleData, setup: BattleSetup): BattleState {
-  const sides: [SideState, SideState] = [buildSide(data, setup.sides[0]), buildSide(data, setup.sides[1])];
+  const sides: [SideState, SideState] = [
+    buildSide(data, setup.sides[0]),
+    buildSide(data, setup.sides[1]),
+  ];
   const a0 = sides[0].team[0] as CombatantState;
   const a1 = sides[1].team[0] as CombatantState;
   return {

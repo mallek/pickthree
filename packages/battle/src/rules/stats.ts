@@ -49,7 +49,11 @@ export function cpOf(data: BattleData, formId: FormId, ivs: Ivs, level: number):
   return Math.max(10, Math.floor((atk * Math.sqrt(def) * Math.sqrt(hp) * cpm * cpm) / 10));
 }
 
-export function stageMultiplier(stages: StatStages, stage: number, which: 'atk' | 'def' = 'atk'): number {
+export function stageMultiplier(
+  stages: StatStages,
+  stage: number,
+  which: 'atk' | 'def' = 'atk',
+): number {
   const clamped = Math.min(stages.max, Math.max(stages.min, stage));
   return stages[which][clamped - stages.min] as number;
 }

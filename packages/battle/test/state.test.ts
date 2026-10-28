@@ -17,7 +17,12 @@ function mon(formId = 'm', over: Record<string, unknown> = {}) {
     ...over,
   };
 }
-const setup: BattleSetup = { sides: [{ team: [mon()], shields: 2 }, { team: [mon()], shields: 1 }] };
+const setup: BattleSetup = {
+  sides: [
+    { team: [mon()], shields: 2 },
+    { team: [mon()], shields: 1 },
+  ],
+};
 
 describe('battle state', () => {
   it('creates full HP, zero energy unless startEnergy, shields per side', () => {
@@ -39,7 +44,9 @@ describe('battle state', () => {
     expect(active(s, 0).startFormId).toBe('m');
   });
   it('keeps raw form stats for shadow combatants, only the flag differs', () => {
-    const s = createBattle(d, { sides: [{ team: [mon('m', { shadow: true })], shields: 0 }, setup.sides[1]] });
+    const s = createBattle(d, {
+      sides: [{ team: [mon('m', { shadow: true })], shields: 0 }, setup.sides[1]],
+    });
     expect(active(s, 0).shadow).toBe(true);
     expect(active(s, 1).shadow).toBe(false);
     expect(active(s, 0).atk).toBe(active(s, 1).atk);
@@ -47,9 +54,9 @@ describe('battle state', () => {
     expect(s.usePriority).toBe(false);
   });
   it('rejects a team of two with the spec 2 message', () => {
-    expect(() => createBattle(d, { sides: [{ team: [mon(), mon()], shields: 0 }, setup.sides[1]] })).toThrow(
-      '3v3 arrives in spec 2; this slice takes one Pokemon per side',
-    );
+    expect(() =>
+      createBattle(d, { sides: [{ team: [mon(), mon()], shields: 0 }, setup.sides[1]] }),
+    ).toThrow('3v3 arrives in spec 2; this slice takes one Pokemon per side');
   });
   it('rejects bad input', () => {
     const bad = (m: Record<string, unknown>, shields = 0) =>

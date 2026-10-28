@@ -7,14 +7,14 @@ moves:
     entered: 2026-10-27
   - id: GULP_MISSILE_GORGING
     set: { power: 15, damageKind: percentMaxHp, type: water }
-    source: "As GULP_MISSILE_GULPING (595)."
+    source: 'As GULP_MISSILE_GULPING (595).'
     entered: 2026-10-27
   - id: AEGISLASH_CHARGE_PSYCHO_CUT
     add: { type: psychic, category: fast, power: 0, energy: 0, energyGain: 6, turns: 2 }
-    source: "Community-documented: Aegislash Shield Forme fast attacks do minimal damage and give 6 energy. Not in the datamine. First-hand evidence wanted."
+    source: 'Community-documented: Aegislash Shield Forme fast attacks do minimal damage and give 6 energy. Not in the datamine. First-hand evidence wanted.'
     entered: 2026-10-27
   - id: AEGISLASH_CHARGE_AIR_SLASH
     add: { type: flying, category: fast, power: 0, energy: 0, energyGain: 6, turns: 3 }
-    source: "As AEGISLASH_CHARGE_PSYCHO_CUT."
+    source: 'As AEGISLASH_CHARGE_PSYCHO_CUT.'
     entered: 2026-10-27
 species: []

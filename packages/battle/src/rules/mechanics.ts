@@ -9,7 +9,11 @@ export interface EventInfo {
   move?: MoveId;
 }
 
-const CHARGED_EVENTS: readonly EventName[] = ['beforeChargedMove', 'afterChargedMove', 'hitByChargedMove'];
+const CHARGED_EVENTS: readonly EventName[] = [
+  'beforeChargedMove',
+  'afterChargedMove',
+  'hitByChargedMove',
+];
 
 function rulesFor(state: BattleState, ctx: BattleContext, side: 0 | 1): MechanicsRule[] {
   const species = ctx.data.species[active(state, side).formId];
@@ -113,11 +117,17 @@ export function fireEvent(
 }
 
 /** True when a matching hitByChargedMove rule on `defender` carries blockDamage. */
-export function blocksDamage(state: BattleState, ctx: BattleContext, defender: 0 | 1, move?: MoveId): boolean {
+export function blocksDamage(
+  state: BattleState,
+  ctx: BattleContext,
+  defender: 0 | 1,
+  move?: MoveId,
+): boolean {
   const c = active(state, defender);
   const info: EventInfo = move === undefined ? {} : { move };
   return rulesFor(state, ctx, defender).some(
     (rule) =>
-      matches(rule.when, c, 'hitByChargedMove', info) && rule.do.some((effect) => effect.effect === 'blockDamage'),
+      matches(rule.when, c, 'hitByChargedMove', info) &&
+      rule.do.some((effect) => effect.effect === 'blockDamage'),
   );
 }

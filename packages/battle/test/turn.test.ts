@@ -13,9 +13,15 @@ const HIT = 8;
 
 describe('turn loop', () => {
   it('1-turn fast moves land every turn', () => {
-    const r = runBattle(d, duel(mon('tank', 'F1'), mon('tank', 'F1')), [player(), player()], seededRandom(1), {
-      maxTurns: 3,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('tank', 'F1'), mon('tank', 'F1')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 3,
+      },
+    );
     for (const side of [0, 1] as const) {
       const c = r.final.sides[side].team[0]!;
       expect(c.maxHp - c.hp).toBe(3 * HIT);
@@ -42,9 +48,15 @@ describe('turn loop', () => {
   });
 
   it('energy caps at maxEnergy', () => {
-    const r = runBattle(d, duel(mon('tank', 'FBIG'), mon('tank', 'FBIG')), [player(), player()], seededRandom(1), {
-      maxTurns: 3,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('tank', 'FBIG'), mon('tank', 'FBIG')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 3,
+      },
+    );
     expect(r.final.sides[0].team[0]!.energy).toBe(100);
   });
 
@@ -52,9 +64,15 @@ describe('turn loop', () => {
     const unaffordable = player(() => ({ kind: 'charged', slot: 0 }));
     const noSlot = player(() => ({ kind: 'charged', slot: 5 }));
     const negative = player(() => ({ kind: 'charged', slot: -1 }));
-    const r = runBattle(d, duel(mon('tank', 'F1'), mon('tank', 'F1')), [unaffordable, noSlot], seededRandom(1), {
-      maxTurns: 2,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('tank', 'F1'), mon('tank', 'F1')),
+      [unaffordable, noSlot],
+      seededRandom(1),
+      {
+        maxTurns: 2,
+      },
+    );
     const a = r.final.sides[0].team[0]!;
     const b = r.final.sides[1].team[0]!;
     // turn 1: energy 0 < 50, fast; turn 2: energy 10 < 50, fast. Never negative.
@@ -62,7 +80,13 @@ describe('turn loop', () => {
     expect(b.energy).toBe(20);
     expect(b.maxHp - b.hp).toBe(2 * HIT);
     expect(() =>
-      runBattle(d, duel(mon('tank', 'F1'), mon('tank', 'F1')), [negative, negative], seededRandom(1), { maxTurns: 2 }),
+      runBattle(
+        d,
+        duel(mon('tank', 'F1'), mon('tank', 'F1')),
+        [negative, negative],
+        seededRandom(1),
+        { maxTurns: 2 },
+      ),
     ).not.toThrow();
   });
 
@@ -77,16 +101,27 @@ describe('turn loop', () => {
   });
 
   it('stops at maxTurns with timeout', () => {
-    const r = runBattle(d, duel(mon('tank', 'F0'), mon('tank', 'F0')), [player(), player()], seededRandom(1), {
-      maxTurns: 20,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('tank', 'F0'), mon('tank', 'F0')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 20,
+      },
+    );
     expect(r.outcome).toBe('timeout');
     expect(r.turns).toBe(20);
     expect(r.final.sides[0].team[0]!.hp).toBe(500 - 20);
   });
 
   it('defaults maxTurns to settings.roundTurns', () => {
-    const r = runBattle(d, duel(mon('giant', 'F0'), mon('giant', 'F0')), [player(), player()], seededRandom(1));
+    const r = runBattle(
+      d,
+      duel(mon('giant', 'F0'), mon('giant', 'F0')),
+      [player(), player()],
+      seededRandom(1),
+    );
     expect(r.outcome).toBe('timeout');
     expect(r.turns).toBe(d.settings.roundTurns);
   });
@@ -94,7 +129,12 @@ describe('turn loop', () => {
   it('a frozen turn only advances the counter', () => {
     const state = createBattle(d, duel(mon('tank', 'F1'), mon('tank', 'F1')));
     state.frozenTurns = 2;
-    const ctx: BattleContext = { data: d, players: [player(), player()], random: fixedRandom(0), events: [] };
+    const ctx: BattleContext = {
+      data: d,
+      players: [player(), player()],
+      random: fixedRandom(0),
+      events: [],
+    };
     stepTurn(state, ctx);
     expect(state.turn).toBe(2);
     expect(state.frozenTurns).toBe(1);

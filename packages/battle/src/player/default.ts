@@ -36,7 +36,11 @@ export class DefaultPlayer implements Player {
       }
       const dmg = damageAgainst(view, move);
       const current = best >= 0 ? view.self.chargedMoves[best] : undefined;
-      if (current === undefined || dmg > bestDamage || (dmg === bestDamage && move.energy < current.energy)) {
+      if (
+        current === undefined ||
+        dmg > bestDamage ||
+        (dmg === bestDamage && move.energy < current.energy)
+      ) {
         best = slot;
         bestDamage = dmg;
       }

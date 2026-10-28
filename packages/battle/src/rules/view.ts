@@ -40,7 +40,12 @@ export function buildView(state: BattleState, data: BattleData, side: 0 | 1): Ba
 }
 
 /** Damage `actor`'s active Pokemon would deal with `move` to the other side's active Pokemon right now. */
-export function moveDamage(state: BattleState, data: BattleData, actor: 0 | 1, move: MoveData): number {
+export function moveDamage(
+  state: BattleState,
+  data: BattleData,
+  actor: 0 | 1,
+  move: MoveData,
+): number {
   const other: 0 | 1 = actor === 0 ? 1 : 0;
   const a = active(state, actor);
   const d = active(state, other);

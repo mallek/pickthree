@@ -53,7 +53,12 @@ function queueDecisions(state: BattleState, ctx: BattleContext): void {
   }
 }
 
-function chargedOrder(state: BattleState, ctx: BattleContext, x: QueuedAction, y: QueuedAction): QueuedAction[] {
+function chargedOrder(
+  state: BattleState,
+  ctx: BattleContext,
+  x: QueuedAction,
+  y: QueuedAction,
+): QueuedAction[] {
   if (state.usePriority) {
     const ax = active(state, x.actor).atk;
     const ay = active(state, y.actor).atk;
@@ -98,7 +103,9 @@ export function stepTurn(state: BattleState, ctx: BattleContext): void {
   state.queue = waiting;
   fast.sort((p, q) => p.actor - q.actor);
   const chargedQueue =
-    charged.length === 2 ? chargedOrder(state, ctx, charged[0] as QueuedAction, charged[1] as QueuedAction) : charged;
+    charged.length === 2
+      ? chargedOrder(state, ctx, charged[0] as QueuedAction, charged[1] as QueuedAction)
+      : charged;
 
   let anyCharged = false;
   for (const q of chargedQueue) {

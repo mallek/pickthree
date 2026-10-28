@@ -8,7 +8,15 @@ import { hashState } from '../src/state/snapshot.js';
 import { stepTurn } from '../src/rules/turn.js';
 import { active, createBattle, type BattleSetup } from '../src/state/state.js';
 import { makeMove, makeSpecies } from './fixtures/synthetic.js';
-import { duel, fixedRandom, makeBattleData, mon, player, thrower, type TestPlayer } from './fixtures/battle.js';
+import {
+  duel,
+  fixedRandom,
+  makeBattleData,
+  mon,
+  player,
+  thrower,
+  type TestPlayer,
+} from './fixtures/battle.js';
 
 const CH_HIT = 40; // tank (atk 50) onto def 50 with CH
 
@@ -17,9 +25,23 @@ function dataWith(family: string, rules: MechanicsRule[]): BattleData {
   const d = makeBattleData();
   d.species['fa'] = makeSpecies('fa', { family, baseStats: { atk: 100, def: 100, hp: 200 } });
   d.species['fb'] = makeSpecies('fb', { family, baseStats: { atk: 300, def: 200, hp: 200 } });
-  d.species['plain_fb'] = makeSpecies('plain_fb', { family: 'plain_fb', baseStats: { atk: 300, def: 200, hp: 200 } });
-  d.moves['FIREMV'] = makeMove('FIREMV', { category: 'charged', power: 50, energy: 50, energyGain: 0 });
-  d.mechanics[family] = { family, source: 'synthetic', entered: '2026-10-27', resetOnSwitchOut: false, rules };
+  d.species['plain_fb'] = makeSpecies('plain_fb', {
+    family: 'plain_fb',
+    baseStats: { atk: 300, def: 200, hp: 200 },
+  });
+  d.moves['FIREMV'] = makeMove('FIREMV', {
+    category: 'charged',
+    power: 50,
+    energy: 50,
+    energyGain: 0,
+  });
+  d.mechanics[family] = {
+    family,
+    source: 'synthetic',
+    entered: '2026-10-27',
+    resetOnSwitchOut: false,
+    rules,
+  };
   return d;
 }
 
@@ -35,11 +57,19 @@ function startedDuel(d: BattleData, setup: BattleSetup, p0: TestPlayer, p1: Test
 
 describe('mechanics in the turn loop', () => {
   it('battleStart switches form and recomputes attack and defense, HP kept', () => {
-    const d = dataWith('shape', [{ when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
-    const r = runBattle(d, duel(mon('fa', 'F0'), mon('tank', 'F0')), [player(), player()], seededRandom(1), {
-      maxTurns: 1,
-      trace: true,
-    });
+    const d = dataWith('shape', [
+      { when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] },
+    ]);
+    const r = runBattle(
+      d,
+      duel(mon('fa', 'F0'), mon('tank', 'F0')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 1,
+        trace: true,
+      },
+    );
     const a = r.final.sides[0].team[0]!;
     expect(a.formId).toBe('fb');
     expect(a.startFormId).toBe('fa');
@@ -47,14 +77,23 @@ describe('mechanics in the turn loop', () => {
     expect(a.def).toBe(100);
     expect(a.hp).toBe(99); // one point from the opponent's zero-power fast move
     expect(a.maxHp).toBe(100);
-    expect(r.trace[0]!.events.some((e) => e.kind === 'form' && e.form === 'fb' && e.actor === 0)).toBe(true);
+    expect(
+      r.trace[0]!.events.some((e) => e.kind === 'form' && e.form === 'fb' && e.actor === 0),
+    ).toBe(true);
   });
 
   it('stepping by hand from startBattle replays runBattle: same forms, hashes and outcome', () => {
-    const d = dataWith('shape', [{ when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
+    const d = dataWith('shape', [
+      { when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] },
+    ]);
     const setup = duel(mon('fa', 'F1', { startEnergy: 40 }), mon('tank', 'F1'), [1, 1]);
-    const r = runBattle(d, setup, [thrower(), thrower()], seededRandom(7), { maxTurns: 40, trace: true });
-    const { state, ctx } = startBattle(d, setup, [thrower(), thrower()], seededRandom(7), { maxTurns: 40 });
+    const r = runBattle(d, setup, [thrower(), thrower()], seededRandom(7), {
+      maxTurns: 40,
+      trace: true,
+    });
+    const { state, ctx } = startBattle(d, setup, [thrower(), thrower()], seededRandom(7), {
+      maxTurns: 40,
+    });
     expect(active(state, 0).formId).toBe('fb');
     expect(state.usePriority).toBe(true);
     const hashes: string[] = [];
@@ -67,23 +106,40 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('battleStart runs for both sides in order, then use-priority is recomputed from the new forms', () => {
-    const d = dataWith('shape', [{ when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
+    const d = dataWith('shape', [
+      { when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] },
+    ]);
     // fa and tank both have attack 50, so priority starts off
     expect(createBattle(d, duel(mon('fa', 'F0'), mon('tank', 'F0'))).usePriority).toBe(false);
-    const r = runBattle(d, duel(mon('fa', 'F0'), mon('tank', 'F0')), [player(), player()], seededRandom(1), {
-      maxTurns: 1,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('fa', 'F0'), mon('tank', 'F0')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 1,
+      },
+    );
     expect(r.final.usePriority).toBe(true);
   });
 
   it('hpBelow fires once when guarded by a form condition', () => {
     const d = dataWith('shape', [
-      { when: { event: 'hpBelow', fraction: 0.5, form: 'fa' }, do: [{ effect: 'switchForm', to: 'fb' }] },
+      {
+        when: { event: 'hpBelow', fraction: 0.5, form: 'fa' },
+        do: [{ effect: 'switchForm', to: 'fb' }],
+      },
     ]);
-    const r = runBattle(d, duel(mon('fa', 'F0'), mon('tank', 'F1')), [player(), player()], seededRandom(1), {
-      maxTurns: 10,
-      trace: true,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('fa', 'F0'), mon('tank', 'F1')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 10,
+        trace: true,
+      },
+    );
     const switches = r.trace.flatMap((t) => t.events).filter((e) => e.kind === 'form');
     expect(switches.length).toBe(1);
     expect(r.final.sides[0].team[0]!.formId).toBe('fb');
@@ -92,8 +148,15 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('hpBelow does not fire on a hit that leaves the target at 0 HP', () => {
-    const d = dataWith('shape', [{ when: { event: 'hpBelow', fraction: 0.5 }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
-    const { state, ctx } = startedDuel(d, duel(mon('fa', 'F0'), mon('tank', 'F0', { startEnergy: 50 })), player(), thrower());
+    const d = dataWith('shape', [
+      { when: { event: 'hpBelow', fraction: 0.5 }, do: [{ effect: 'switchForm', to: 'fb' }] },
+    ]);
+    const { state, ctx } = startedDuel(
+      d,
+      duel(mon('fa', 'F0'), mon('tank', 'F0', { startEnergy: 50 })),
+      player(),
+      thrower(),
+    );
     active(state, 0).hp = 30; // the 40 point hit leaves 0
     stepTurn(state, ctx);
     expect(state.outcome).toBe('win1');
@@ -101,7 +164,12 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('beforeChargedMove switches form before damage, so damage uses the new attack', () => {
-    const d = dataWith('shape', [{ when: { event: 'beforeChargedMove', form: 'fa' }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
+    const d = dataWith('shape', [
+      {
+        when: { event: 'beforeChargedMove', form: 'fa' },
+        do: [{ effect: 'switchForm', to: 'fb' }],
+      },
+    ]);
     const run = (formId: string) => {
       const r = runBattle(
         d,
@@ -119,9 +187,17 @@ describe('mechanics in the turn loop', () => {
 
   it('afterChargedMove moves filter: a rule for another move does not match', () => {
     const d = dataWith('shape', [
-      { when: { event: 'afterChargedMove', moves: ['CHBUFF'] }, do: [{ effect: 'switchForm', to: 'fb' }] },
+      {
+        when: { event: 'afterChargedMove', moves: ['CHBUFF'] },
+        do: [{ effect: 'switchForm', to: 'fb' }],
+      },
     ]);
-    const { state, ctx } = startedDuel(d, duel(mon('fa', 'F0', { startEnergy: 50 }), mon('tank', 'F0')), thrower(), player());
+    const { state, ctx } = startedDuel(
+      d,
+      duel(mon('fa', 'F0', { startEnergy: 50 }), mon('tank', 'F0')),
+      thrower(),
+      player(),
+    );
     stepTurn(state, ctx);
     expect(active(state, 0).formId).toBe('fa');
     const again = startedDuel(
@@ -136,13 +212,29 @@ describe('mechanics in the turn loop', () => {
 
   it('afterChargedMove picks a form by hpAbove / hpAtMost', () => {
     const d = dataWith('shape', [
-      { when: { event: 'afterChargedMove', hpAbove: 0.5 }, do: [{ effect: 'switchForm', to: 'fa' }] },
-      { when: { event: 'afterChargedMove', hpAtMost: 0.5 }, do: [{ effect: 'switchForm', to: 'fb' }] },
+      {
+        when: { event: 'afterChargedMove', hpAbove: 0.5 },
+        do: [{ effect: 'switchForm', to: 'fa' }],
+      },
+      {
+        when: { event: 'afterChargedMove', hpAtMost: 0.5 },
+        do: [{ effect: 'switchForm', to: 'fb' }],
+      },
     ]);
-    const healthy = startedDuel(d, duel(mon('fb', 'F0', { startEnergy: 50 }), mon('tank', 'F0')), thrower(), player());
+    const healthy = startedDuel(
+      d,
+      duel(mon('fb', 'F0', { startEnergy: 50 }), mon('tank', 'F0')),
+      thrower(),
+      player(),
+    );
     stepTurn(healthy.state, healthy.ctx);
     expect(active(healthy.state, 0).formId).toBe('fa');
-    const hurt = startedDuel(d, duel(mon('fa', 'F0', { startEnergy: 50 }), mon('tank', 'F0')), thrower(), player());
+    const hurt = startedDuel(
+      d,
+      duel(mon('fa', 'F0', { startEnergy: 50 }), mon('tank', 'F0')),
+      thrower(),
+      player(),
+    );
     active(hurt.state, 0).hp = 50;
     stepTurn(hurt.state, hurt.ctx);
     expect(active(hurt.state, 0).formId).toBe('fb');
@@ -168,7 +260,9 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('shieldUsed switches form on the defender', () => {
-    const d = dataWith('shape', [{ when: { event: 'shieldUsed', form: 'fa' }, do: [{ effect: 'switchForm', to: 'fb' }] }]);
+    const d = dataWith('shape', [
+      { when: { event: 'shieldUsed', form: 'fa' }, do: [{ effect: 'switchForm', to: 'fb' }] },
+    ]);
     const defender = player(undefined, () => true);
     const r = runBattle(
       d,
@@ -189,7 +283,11 @@ describe('mechanics in the turn loop', () => {
     const d = dataWith('shape', [
       {
         when: { event: 'hitByChargedMove', form: 'fa' },
-        do: [{ effect: 'blockDamage' }, { effect: 'switchForm', to: 'fb' }, { effect: 'statStages', target: 'self', def: -1 }],
+        do: [
+          { effect: 'blockDamage' },
+          { effect: 'switchForm', to: 'fb' },
+          { effect: 'statStages', target: 'self', def: -1 },
+        ],
       },
     ]);
     // no shields
@@ -232,9 +330,15 @@ describe('mechanics in the turn loop', () => {
       seen.push(incoming);
       return false;
     });
-    runBattle(d, duel(mon('tank', 'F0', { startEnergy: 50 }), mon('fa', 'F0'), [0, 1]), [thrower(), defender], seededRandom(1), {
-      maxTurns: 1,
-    });
+    runBattle(
+      d,
+      duel(mon('tank', 'F0', { startEnergy: 50 }), mon('fa', 'F0'), [0, 1]),
+      [thrower(), defender],
+      seededRandom(1),
+      {
+        maxTurns: 1,
+      },
+    );
     expect(seen[0]!.blockedByMechanic).toBe(false);
   });
 
@@ -260,10 +364,16 @@ describe('mechanics in the turn loop', () => {
 
   it('fireMove resolves at once, unshieldable, even after its owner faints when ignoresFaint', () => {
     const rules: MechanicsRule[] = [
-      { when: { event: 'hitByChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV', ignoresFaint: true }] },
+      {
+        when: { event: 'hitByChargedMove' },
+        do: [{ effect: 'fireMove', move: 'FIREMV', ignoresFaint: true }],
+      },
     ];
     const d = dataWith('bomb', rules);
-    d.species['bomb'] = makeSpecies('bomb', { family: 'bomb', baseStats: { atk: 100, def: 100, hp: 10 } });
+    d.species['bomb'] = makeSpecies('bomb', {
+      family: 'bomb',
+      baseStats: { atk: 100, def: 100, hp: 10 },
+    });
     // the tank holds a shield and would raise it if asked: no prompt is raised for the fired move
     const prompts: IncomingCharged[] = [];
     const tank: TestPlayer = {
@@ -291,8 +401,13 @@ describe('mechanics in the turn loop', () => {
     expect(a.maxHp - a.hp).toBe(fire.damage);
     expect(r.final.sides[0].shields).toBe(1);
     // without ignoresFaint a fainted owner does not fire
-    const quiet = dataWith('bomb', [{ when: { event: 'hitByChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV' }] }]);
-    quiet.species['bomb'] = makeSpecies('bomb', { family: 'bomb', baseStats: { atk: 100, def: 100, hp: 10 } });
+    const quiet = dataWith('bomb', [
+      { when: { event: 'hitByChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV' }] },
+    ]);
+    quiet.species['bomb'] = makeSpecies('bomb', {
+      family: 'bomb',
+      baseStats: { atk: 100, def: 100, hp: 10 },
+    });
     const r2 = runBattle(
       quiet,
       duel(mon('tank', 'F0', { startEnergy: 50 }), mon('bomb', 'F0')),
@@ -304,14 +419,21 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('fireMove from a living owner costs no energy and does not raise charged triggers', () => {
-    const d = dataWith('shape', [{ when: { event: 'afterChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV' }] }]);
+    const d = dataWith('shape', [
+      { when: { event: 'afterChargedMove' }, do: [{ effect: 'fireMove', move: 'FIREMV' }] },
+    ]);
     // the hit rule sits on the defender's family, where a raised trigger would show
     d.mechanics['giant'] = {
       family: 'giant',
       source: 'synthetic',
       entered: '2026-10-27',
       resetOnSwitchOut: false,
-      rules: [{ when: { event: 'hitByChargedMove' }, do: [{ effect: 'statStages', target: 'self', atk: 1 }] }],
+      rules: [
+        {
+          when: { event: 'hitByChargedMove' },
+          do: [{ effect: 'statStages', target: 'self', atk: 1 }],
+        },
+      ],
     };
     const { state, ctx } = startedDuel(
       d,
@@ -338,9 +460,15 @@ describe('mechanics in the turn loop', () => {
         ],
       },
     ]);
-    const r = runBattle(d, duel(mon('fa', 'F1'), mon('tank', 'F1')), [player(), player()], seededRandom(1), {
-      maxTurns: 1,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('fa', 'F1'), mon('tank', 'F1')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 1,
+      },
+    );
     const a = r.final.sides[0].team[0]!;
     expect(a.fastMove).toBe('F2');
     expect(a.chargedMoves).toEqual(['CHBUFF']);
@@ -357,9 +485,15 @@ describe('mechanics in the turn loop', () => {
         ],
       },
     ]);
-    const r = runBattle(d, duel(mon('fa', 'F0'), mon('tank', 'F0')), [player(), player()], seededRandom(1), {
-      maxTurns: 1,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('fa', 'F0'), mon('tank', 'F0')),
+      [player(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 1,
+      },
+    );
     expect(r.final.sides[0].team[0]!.atkStage).toBe(4);
     expect(r.final.sides[1].team[0]!.defStage).toBe(-4);
     expect(r.final.sides[1].team[0]!.atkStage).toBe(-1);
@@ -368,11 +502,20 @@ describe('mechanics in the turn loop', () => {
   it('switchForm to startForm returns to the form the battle began in', () => {
     const d = dataWith('shape', [
       { when: { event: 'battleStart' }, do: [{ effect: 'switchForm', to: 'fb' }] },
-      { when: { event: 'afterChargedMove', form: 'fb' }, do: [{ effect: 'switchForm', to: 'startForm' }] },
+      {
+        when: { event: 'afterChargedMove', form: 'fb' },
+        do: [{ effect: 'switchForm', to: 'startForm' }],
+      },
     ]);
-    const r = runBattle(d, duel(mon('fa', 'F0', { startEnergy: 50 }), mon('giant', 'F0')), [thrower(), player()], seededRandom(1), {
-      maxTurns: 1,
-    });
+    const r = runBattle(
+      d,
+      duel(mon('fa', 'F0', { startEnergy: 50 }), mon('giant', 'F0')),
+      [thrower(), player()],
+      seededRandom(1),
+      {
+        maxTurns: 1,
+      },
+    );
     expect(r.final.sides[0].team[0]!.formId).toBe('fa');
     expect(r.final.sides[0].team[0]!.atk).toBe(50);
   });
@@ -389,10 +532,16 @@ describe('mechanics in the turn loop', () => {
       },
     ]);
     const run = (formId: string) =>
-      runBattle(d, duel(mon(formId, 'F0'), mon('tank', 'F1')), [player(), player()], seededRandom(1), {
-        maxTurns: 60,
-        trace: true,
-      });
+      runBattle(
+        d,
+        duel(mon(formId, 'F0'), mon('tank', 'F1')),
+        [player(), player()],
+        seededRandom(1),
+        {
+          maxTurns: 60,
+          trace: true,
+        },
+      );
     const animates = (r: ReturnType<typeof run>) =>
       r.trace.flatMap((t) => t.events).filter((e) => e.kind === 'animate' && e.actor === 0);
     // started in fa, switched to fb: below half it returns to fa once
@@ -408,7 +557,9 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('animate freezes N turns: turn counter advances, HP and energy do not move', () => {
-    const d = dataWith('shape', [{ when: { event: 'afterChargedMove' }, do: [{ effect: 'animate', turns: 3 }] }]);
+    const d = dataWith('shape', [
+      { when: { event: 'afterChargedMove' }, do: [{ effect: 'animate', turns: 3 }] },
+    ]);
     const { state, ctx } = startedDuel(
       d,
       duel(mon('fa', 'F1', { startEnergy: 50 }), mon('giant', 'F1')),
@@ -433,8 +584,15 @@ describe('mechanics in the turn loop', () => {
   });
 
   it('animate raised outside a charged move still resets both cooldowns', () => {
-    const d = dataWith('shape', [{ when: { event: 'hpBelow', fraction: 0.95 }, do: [{ effect: 'animate', turns: 2 }] }]);
-    const { state, ctx } = startedDuel(d, duel(mon('fa', 'F2'), mon('tank', 'F1')), player(), player());
+    const d = dataWith('shape', [
+      { when: { event: 'hpBelow', fraction: 0.95 }, do: [{ effect: 'animate', turns: 2 }] },
+    ]);
+    const { state, ctx } = startedDuel(
+      d,
+      duel(mon('fa', 'F2'), mon('tank', 'F1')),
+      player(),
+      player(),
+    );
     stepTurn(state, ctx);
     expect(state.frozenTurns).toBe(2);
     expect(active(state, 0).cooldown).toBe(1);

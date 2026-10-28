@@ -19,8 +19,8 @@
 #   - Morpeko does not toggle back in PvPoke (see its entry).
 
 mimikyu:
-  source: "PvPoke d98f521: pokemon.json:38653 mimikyu formChange (charged_move_damage, effect protect, alternativeFormId mimikyu_busted); pokemon.json:38676 mimikyu_busted nativeStatBuffs [0, -1]."
-  entered: "2026-10-28"
+  source: 'PvPoke d98f521: pokemon.json:38653 mimikyu formChange (charged_move_damage, effect protect, alternativeFormId mimikyu_busted); pokemon.json:38676 mimikyu_busted nativeStatBuffs [0, -1].'
+  entered: '2026-10-28'
   # pokemon.json:38686 resetOnSwitch false
   resetOnSwitchOut: false
   rules:
@@ -35,8 +35,8 @@ mimikyu:
         - { effect: statStages, target: self, def: -1 }
 
 aegislash:
-  source: "PvPoke d98f521: pokemon.json:34424 aegislash_shield formChange (activate_charged, ANY, to aegislash_blade); pokemon.json:34390 aegislash_blade formChange (activate_shield, to aegislash_shield)."
-  entered: "2026-10-28"
+  source: 'PvPoke d98f521: pokemon.json:34424 aegislash_shield formChange (activate_charged, ANY, to aegislash_blade); pokemon.json:34390 aegislash_blade formChange (activate_shield, to aegislash_shield).'
+  entered: '2026-10-28'
   # pokemon.json:34390 and :34424 resetOnSwitch true
   resetOnSwitchOut: true
   # No battleStart replaceMove: PvPoke's aegislash_shield species already lists the
@@ -59,8 +59,8 @@ aegislash:
         - { effect: replaceMove, from: PSYCHO_CUT, to: AEGISLASH_CHARGE_PSYCHO_CUT }
 
 cramorant:
-  source: "PvPoke d98f521: pokemon.json:40529 cramorant formChange (charged_move, moveIDs DIVE and SURF, alternativeFormId variable); pokemon.json:40559 gorging and :40589 gulping formChange (charged_move on their Gulp Missile, to cramorant)."
-  entered: "2026-10-28"
+  source: 'PvPoke d98f521: pokemon.json:40529 cramorant formChange (charged_move, moveIDs DIVE and SURF, alternativeFormId variable); pokemon.json:40559 gorging and :40589 gulping formChange (charged_move on their Gulp Missile, to cramorant).'
+  entered: '2026-10-28'
   # pokemon.json:40529, :40559 and :40589 resetOnSwitch true
   resetOnSwitchOut: true
   rules:
@@ -84,8 +84,8 @@ cramorant:
         - { effect: switchForm, to: cramorant }
 
 morpeko:
-  source: "PvPoke d98f521: pokemon.json:41563 morpeko_full_belly formChange (type toggle, charged_move, ANY, alternativeFormId morpeko_hangry); morpeko_hangry has no formChange."
-  entered: "2026-10-28"
+  source: 'PvPoke d98f521: pokemon.json:41563 morpeko_full_belly formChange (type toggle, charged_move, ANY, alternativeFormId morpeko_hangry); morpeko_hangry has no formChange.'
+  entered: '2026-10-28'
   # pokemon.json:41563 resetOnSwitch true
   resetOnSwitchOut: true
   rules:
@@ -101,8 +101,8 @@ morpeko:
         - { effect: replaceMove, from: AURA_WHEEL_ELECTRIC, to: AURA_WHEEL_DARK }
 
 minior:
-  source: "PvPoke d98f521: pokemon.json:38527 minior_core formChange (battle_start, to minior_meteor); pokemon.json:38557 minior_meteor formChange (hp, amount 0.5, to minior_core, animationTime 5000)."
-  entered: "2026-10-28"
+  source: 'PvPoke d98f521: pokemon.json:38527 minior_core formChange (battle_start, to minior_meteor); pokemon.json:38557 minior_meteor formChange (hp, amount 0.5, to minior_core, animationTime 5000).'
+  entered: '2026-10-28'
   # pokemon.json:38527 and :38557 resetOnSwitch false
   resetOnSwitchOut: false
   rules:

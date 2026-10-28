@@ -25,7 +25,8 @@ function applyBuffs(
   const buffs = move.buffs;
   if (buffs && (buffs.self || buffs.opponent)) {
     const procs =
-      buffs.chance >= 1 || ctx.random.buffProcs({ turn: state.turn, actor, move: move.id, chance: buffs.chance });
+      buffs.chance >= 1 ||
+      ctx.random.buffProcs({ turn: state.turn, actor, move: move.id, chance: buffs.chance });
     if (procs) {
       if (buffs.self) {
         applyChange(ctx, a, buffs.self);
@@ -38,7 +39,12 @@ function applyBuffs(
   }
 }
 
-export function resolveCharged(state: BattleState, ctx: BattleContext, actor: 0 | 1, slot: number): void {
+export function resolveCharged(
+  state: BattleState,
+  ctx: BattleContext,
+  actor: 0 | 1,
+  slot: number,
+): void {
   const other: 0 | 1 = actor === 0 ? 1 : 0;
   const a = active(state, actor);
   const d = active(state, other);
