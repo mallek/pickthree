@@ -85,7 +85,10 @@ export function validateDifferences(raw: unknown): Difference[] {
   });
 }
 
-/** The first turn where HP or energy differ ('turn 14: hp[1] ours 87 pvpoke 85'), else a length mismatch, else null. */
+/**
+ * The first turn where HP, energy or form differ ('turn 14: hp[1] ours 87 pvpoke 85'), else a length
+ * mismatch, else null. Turn numbers must agree record by record before anything else is compared.
+ */
 export function firstDifference(a: ExamRun, b: ExamRun): string | null {
   const shared = Math.min(a.trace.length, b.trace.length);
   for (let i = 0; i < shared; i += 1) {
@@ -94,7 +97,10 @@ export function firstDifference(a: ExamRun, b: ExamRun): string | null {
     if (x === undefined || y === undefined) {
       break;
     }
-    for (const field of ['hp', 'energy'] as const) {
+    if (x.turn !== y.turn) {
+      return `turn numbering differs at record ${i + 1}: ours ${x.turn} pvpoke ${y.turn}`;
+    }
+    for (const field of ['hp', 'energy', 'forms'] as const) {
       for (const side of [0, 1] as const) {
         if (x[field][side] !== y[field][side]) {
           return `turn ${x.turn}: ${field}[${side}] ours ${x[field][side]} pvpoke ${y[field][side]}`;

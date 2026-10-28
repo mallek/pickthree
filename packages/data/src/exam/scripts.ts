@@ -284,14 +284,36 @@ export const EXAM_SCRIPTS: PolicyScript[] = [
     covers: ['form-aegislash'],
     sides: [
       side('aegislash_shield', 30, [3, 14, 13], 'AEGISLASH_CHARGE_PSYCHO_CUT', ['SHADOW_BALL'], 2),
-      AZUMARILL(1),
+      AZUMARILL(2),
     ],
     policy: [
       { slot: 0, times: 6 },
       { slot: 0, times: 6 },
     ],
-    // Aegislash shields Azumarill's first move (back to Shield form) after its own move turned it Blade
-    shields: [[true, true], [false]],
+    // Azumarill's first move hits Shield form unshielded; Aegislash turns Blade for its own move
+    // (Azumarill shields), then shields Azumarill's next move and turns back to Shield.
+    shields: [
+      [false, true],
+      [true, true],
+    ],
+    buffs: [],
+  },
+  {
+    // Level 3, where PvPoke's Great League Blade mapping (ceil(level * 0.5) + 1) is the same level,
+    // so the form mechanics themselves are compared turn for turn: Shield to Blade before its charged
+    // move with the fast move swap, then back to Shield when it shields Obstagoon's next Night Slash.
+    // Obstagoon shields Flash Cannon, so Blade form battles on until it is shielded back.
+    id: 'aegislash-same-level',
+    covers: ['form-aegislash'],
+    sides: [
+      side('aegislash_shield', 3, [15, 15, 15], 'AEGISLASH_CHARGE_PSYCHO_CUT', ['FLASH_CANNON'], 2),
+      side('obstagoon', 2, [0, 0, 0], 'COUNTER', ['NIGHT_SLASH'], 1),
+    ],
+    policy: [
+      { slot: 0, times: 3 },
+      { slot: 0, times: 3 },
+    ],
+    shields: [[true, true], [true]],
     buffs: [],
   },
   {
@@ -373,5 +395,20 @@ export const EXAM_SCRIPTS: PolicyScript[] = [
     ],
     shields: [[], []],
     buffs: [],
+  },
+  {
+    // Minior with PvPoke's battle CP at 10000, where getFormStats keeps the level (no re-level), and a
+    // 1-turn fast move, so the hp form change's cooldown reset changes nothing: battle start Core to
+    // Meteor and the hp trigger Meteor to Core are compared turn for turn.
+    id: 'minior-core-same-level',
+    covers: ['form-minior'],
+    sides: [side('minior_core', 20, [5, 10, 12], 'ROLLOUT', ['POWER_GEM'], 0), MEDICHAM(0)],
+    policy: [
+      { slot: 0, times: 4 },
+      { slot: 0, times: 0 },
+    ],
+    shields: [[], []],
+    buffs: [],
+    pvpokeCp: 10000,
   },
 ];

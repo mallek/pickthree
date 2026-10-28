@@ -44,6 +44,22 @@ describe('firstDifference', () => {
     expect(firstDifference(run(BASE), run(other))).toBe('turn 1: energy[0] ours 3 pvpoke 4');
   });
 
+  it('reports turn numbering that differs before comparing numbers', () => {
+    const other = [BASE[0] as ExamTurn, { ...(BASE[1] as ExamTurn), turn: 3 }, BASE[2] as ExamTurn];
+    expect(firstDifference(run(BASE), run(other))).toBe(
+      'turn numbering differs at record 2: ours 2 pvpoke 3',
+    );
+  });
+
+  it('compares forms after hp and energy', () => {
+    const other = [
+      BASE[0] as ExamTurn,
+      { ...(BASE[1] as ExamTurn), forms: ['a', 'c'] as [string, string] },
+      BASE[2] as ExamTurn,
+    ];
+    expect(firstDifference(run(BASE), run(other))).toBe('turn 2: forms[1] ours b pvpoke c');
+  });
+
   it('reports a length mismatch when the shared turns agree', () => {
     expect(firstDifference(run(BASE), run(BASE.slice(0, 2)))).toBe(
       'length: ours 3 turns pvpoke 2 turns',

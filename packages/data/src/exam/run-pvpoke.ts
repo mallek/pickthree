@@ -67,13 +67,23 @@ function buildPokemon(
   return p;
 }
 
+export interface PvPokeRunOptions {
+  /**
+   * PvPoke's battle CP, 1500 by default. In sandbox mode with set levels it only reaches the form
+   * change re-level (Pokemon.js getFormStats maps the level at 1500 and 2500 and steps it down to the
+   * cap); 10000 turns that mapping off, which isolates the rules from the re-level difference.
+   */
+  cp?: number;
+}
+
 export function runPvPokeScript(
   ctx: PvPokeContext,
   sides: [ExamSide, ExamSide],
   script: readonly ScriptEntry[],
+  opts: PvPokeRunOptions = {},
 ): ExamRun {
   const battle = new ctx.runtime.Battle() as PvPokeSandboxBattle;
-  battle.setCP(1500);
+  battle.setCP(opts.cp ?? 1500);
   battle.setLevelCap(51);
   const pokes: [PvPokeCombatant, PvPokeCombatant] = [
     buildPokemon(ctx, sides[0], 0, battle),

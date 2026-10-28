@@ -27,6 +27,8 @@ export interface PolicyScript {
   shields: [boolean[], boolean[]];
   /** Answers for chance buff rolls, in order; missing = false. */
   buffs: boolean[];
+  /** PvPoke's battle CP for this script (runPvPokeScript `cp`); omitted = 1500. */
+  pvpokeCp?: number;
 }
 
 const key = (actor: 0 | 1, turn: number): string => `${actor}:${turn}`;

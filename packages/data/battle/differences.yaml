@@ -63,9 +63,12 @@ differences:
     evidence: >-
       Plan decision 'Form stats' (docs/superpowers/plans/2026-10-27-battle-engine-foundation.md): the
       datamine (8e227be) carries only base stats for AEGISLASH_BLADE / AEGISLASH_SHIELD and the
-      MINIOR forms, no level mapping, and the vocabulary has no effect that changes level. Checked in
-      the exam harness: with PvPoke's battle CP raised past both caps (so getFormStats keeps the level)
-      the aegislash script matches turn for turn, so the level mapping is the whole difference there.
+      MINIOR forms, no level mapping, and the vocabulary has no effect that changes level. Checked by
+      rules-exam.test.ts ('raising PvPoke battle CP past the caps removes the form re-level
+      divergence'): with PvPoke's battle CP at 10000 (getFormStats keeps the level) the aegislash script
+      matches turn for turn, so the level mapping is the whole difference there. The form mechanics
+      themselves are compared without it by aegislash-same-level (level 3, where the Blade mapping is
+      the same level) and minior-core-same-level (PvPoke battle CP 10000), which match.
       Open for the brainstorm lane: PvPoke's mappings are community-derived from observed in-game
       stats, so the game may be on PvPoke's side; a fix needs a vocabulary change, not an exam change.
     scripts: [aegislash, minior-core]
@@ -86,7 +89,9 @@ differences:
       Plan seed for this list (the transcription in pvpoke-mechanics.yaml cannot express a cooldown
       reset without frozen turns). Our shipped mechanics.yaml models Minior's change as an animation of
       frozen turns, like the datamine's ibfc animationDurationTurns: 5 on Mimikyu, Aegislash and
-      Morpeko, not as a cooldown reset. Checked in the exam harness with PvPoke's battle CP raised past
-      the caps (no re-level): minior-core then matches until Minior turns Core on a turn when its Take
-      Down is mid-move, after which PvPoke's Minior is not free on the turn ours throws Power Gem.
+      Morpeko, not as a cooldown reset. Checked by rules-exam.test.ts (same test as
+      form-change-relevel): with PvPoke's battle CP at 10000 (no re-level) minior-core matches until
+      after Minior turns Core on a turn when its Take Down is mid-move; PvPoke's Minior is then not free
+      on the turn ours throws Power Gem. minior-core-same-level (1-turn Rollout) shows the hp trigger
+      itself matching when no fast move is in flight.
     scripts: [minior-core]
