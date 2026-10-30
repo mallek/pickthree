@@ -14,6 +14,11 @@ Known gaps and deferred minors from the part 1 build. None block ship.
   a shield-forced form change.
 - A plain-Meteor Minior stays Meteor all battle (`notStartForm`). Accepted.
 - The Minior timing and CMP-tie differences entries rest on design decisions, not recorded battles.
+- An explained script is checked only up to its first difference (the `first` in its
+  `differences.yaml` listing). Past that the traces differ everywhere, so a second bug after a known
+  divergence is not caught by the judge; only the targeted tests in `rules-exam.test.ts` pin more.
+- Every exam CMP tie goes to side 0 (`ScriptedPlayer.cmpTieWinner`). A tie won by side 1 is never
+  graded against PvPoke. Add a per-script tie winner to `ScriptEntry` and a mirrored script.
 
 ## Deferred minors
 

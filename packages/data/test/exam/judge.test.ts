@@ -25,8 +25,15 @@ const BASE: ExamTurn[] = [
   turn(3, [80, 0], [9, 12]),
 ];
 
-function difference(id: string, scripts: string[]): Difference {
-  return { id, behaviour: 'b', ours: 'o', pvpoke: 'p', evidence: 'e', scripts };
+function difference(id: string, scripts: [string, string][]): Difference {
+  return {
+    id,
+    behaviour: 'b',
+    ours: 'o',
+    pvpoke: 'p',
+    evidence: 'e',
+    scripts: scripts.map(([script, first]) => ({ id: script, first })),
+  };
 }
 
 describe('firstDifference', () => {
@@ -100,7 +107,7 @@ describe('judge', () => {
     const other = [BASE[0] as ExamTurn, turn(2, [90, 78], [6, 8]), turn(3, [70, 0], [9, 12])];
     const { verdicts, stale } = judge(
       [{ id: 's1', ours: run(BASE), pvpoke: run(other), script: [] }],
-      [difference('d1', ['s1'])],
+      [difference('d1', [['s1', 'hp[1]']])],
     );
     expect(verdicts).toEqual([
       {
@@ -133,16 +140,68 @@ describe('judge', () => {
   it('an unexecuted script listed by a difference is explained', () => {
     const { verdicts } = judge(
       [{ id: 's1', ours: run(BASE, []), pvpoke: run(BASE, [ENTRY]), script: [ENTRY] }],
-      [difference('d1', ['s1'])],
+      [difference('d1', [['s1', 'executed']])],
     );
     expect(verdicts[0]?.status).toBe('explained');
     expect(verdicts[0]?.explainedBy).toBe('d1');
   });
 
+  it('a listed script whose first difference is not the one the entry names is a mismatch', () => {
+    // energy[0] differs on turn 1, before the hp[1] difference d1 explains
+    const other = [
+      turn(1, [100, 100], [4, 4]),
+      turn(2, [90, 78], [6, 8]),
+      turn(3, [70, 0], [9, 12]),
+    ];
+    const { verdicts, report } = judge(
+      [{ id: 's1', ours: run(BASE), pvpoke: run(other), script: [] }],
+      [difference('d1', [['s1', 'hp[1]']])],
+    );
+    expect(verdicts[0]?.status).toBe('mismatch');
+    expect(verdicts[0]?.explainedBy).toBeNull();
+    expect(report).toContain('expected hp[1] (d1)');
+  });
+
+  it('the side is part of the first difference', () => {
+    const other = [BASE[0] as ExamTurn, turn(2, [90, 78], [6, 8]), turn(3, [70, 0], [9, 12])];
+    const { verdicts } = judge(
+      [{ id: 's1', ours: run(BASE), pvpoke: run(other), script: [] }],
+      [difference('d1', [['s1', 'hp[0]']])],
+    );
+    expect(verdicts[0]?.status).toBe('mismatch');
+  });
+
+  it('a later entry rides along with the entry that explains the first difference', () => {
+    const other = [BASE[0] as ExamTurn, turn(2, [90, 78], [6, 8]), turn(3, [70, 0], [9, 12])];
+    const { verdicts } = judge(
+      [{ id: 's1', ours: run(BASE), pvpoke: run(other), script: [] }],
+      [difference('d1', [['s1', 'hp[1]']]), difference('d2', [['s1', 'later']])],
+    );
+    expect(verdicts[0]).toMatchObject({ status: 'explained', explainedBy: 'd1, d2' });
+  });
+
+  it('a later entry alone explains nothing', () => {
+    const other = [BASE[0] as ExamTurn, turn(2, [90, 78], [6, 8]), turn(3, [70, 0], [9, 12])];
+    const { verdicts } = judge(
+      [{ id: 's1', ours: run(BASE), pvpoke: run(other), script: [] }],
+      [difference('d2', [['s1', 'later']])],
+    );
+    expect(verdicts[0]?.status).toBe('mismatch');
+  });
+
+  it('a trace difference names the first difference even when the executed sets differ too', () => {
+    const other = [BASE[0] as ExamTurn, turn(2, [90, 78], [6, 8]), turn(3, [70, 0], [9, 12])];
+    const { verdicts } = judge(
+      [{ id: 's1', ours: run(BASE, []), pvpoke: run(other, [ENTRY]), script: [ENTRY] }],
+      [difference('d1', [['s1', 'hp[1]']])],
+    );
+    expect(verdicts[0]?.status).toBe('explained');
+  });
+
   it('a difference listing a script that now matches is stale', () => {
     const { verdicts, stale, report } = judge(
       [{ id: 's1', ours: run(BASE), pvpoke: run(BASE), script: [] }],
-      [difference('d1', ['s1'])],
+      [difference('d1', [['s1', 'hp[1]']])],
     );
     expect(verdicts[0]?.status).toBe('match');
     expect(stale).toEqual(['d1: s1 now matches']);
@@ -152,7 +211,7 @@ describe('judge', () => {
   it('a difference listing a script the exam does not have is stale', () => {
     const { stale } = judge(
       [{ id: 's1', ours: run(BASE), pvpoke: run(BASE), script: [] }],
-      [difference('d1', ['gone'])],
+      [difference('d1', [['gone', 'hp[1]']])],
     );
     expect(stale).toEqual(['d1: gone is not an exam script']);
   });
@@ -164,7 +223,7 @@ describe('judge', () => {
         { id: 's1', ours: run(BASE), pvpoke: run(BASE), script: [] },
         { id: 's2', ours: run(BASE), pvpoke: run(other), script: [] },
       ],
-      [difference('doc', []), difference('d1', ['s1'])],
+      [difference('doc', []), difference('d1', [['s1', 'hp[1]']])],
     );
     expect(verdicts.map((v) => v.status)).toEqual(['match', 'mismatch']);
     expect(stale).toEqual(['d1: s1 now matches']);
@@ -193,7 +252,7 @@ describe('judge', () => {
         { id: 's1', ours: run(BASE), pvpoke: run(other), script: [] },
         { id: 's2', ours: run(BASE), pvpoke: run(BASE), script: [] },
       ],
-      [difference('d1', ['s2'])],
+      [difference('d1', [['s2', 'hp[1]']])],
     );
     expect(/^[\x20-\x7e\n]*$/.test(report)).toBe(true);
   });
@@ -208,7 +267,7 @@ describe('validateDifferences', () => {
         ours: 'o',
         pvpoke: 'p',
         evidence: 'e',
-        scripts: ['s1'],
+        scripts: [{ id: 's1', first: 'hp[1]' }],
       },
     ],
   };
@@ -226,7 +285,13 @@ describe('validateDifferences', () => {
       differences: [
         good.differences[0],
         { ...good.differences[0], id: 'y' },
-        { id: 'x', behaviour: 'b', ours: 'o', pvpoke: 'p', scripts: ['s1'] },
+        {
+          id: 'x',
+          behaviour: 'b',
+          ours: 'o',
+          pvpoke: 'p',
+          scripts: [{ id: 's1', first: 'hp[1]' }],
+        },
       ],
     };
     expect(() => validateDifferences(raw)).toThrow('differences.yaml: [2].evidence is required');
@@ -254,11 +319,25 @@ describe('validateDifferences', () => {
     delete noScripts['scripts'];
     for (const bad of [noScripts, { ...entry, scripts: 's1' }]) {
       expect(() => validateDifferences({ differences: [bad] })).toThrow(
-        'differences.yaml: [0].scripts must be a list of script ids (empty for a difference the exam does not exercise)',
+        'differences.yaml: [0].scripts must be a list (empty for a difference the exam does not exercise)',
       );
     }
     expect(() => validateDifferences({ differences: [entry, entry] })).toThrow(
       'differences.yaml: [1].id cmp-tie-ko is a duplicate',
     );
+  });
+
+  it('rejects a script listing without an id or with an unknown first difference', () => {
+    const entry = good.differences[0] as Record<string, unknown>;
+    expect(() => validateDifferences({ differences: [{ ...entry, scripts: ['s1'] }] })).toThrow(
+      'differences.yaml: [0].scripts[0] must be { id, first }',
+    );
+    for (const first of ['hp', 'hp[2]', 'speed[0]', '']) {
+      expect(() =>
+        validateDifferences({ differences: [{ ...entry, scripts: [{ id: 's1', first }] }] }),
+      ).toThrow(
+        'differences.yaml: [0].scripts[0].first must be hp[0|1], energy[0|1], forms[0|1], executed, length, turn or later',
+      );
+    }
   });
 });

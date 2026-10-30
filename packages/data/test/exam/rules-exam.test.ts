@@ -376,10 +376,12 @@ describe.skipIf(!havePvPoke)('rules exam', () => {
   });
 
   it('every cmp-tie-knockout script differs by exactly the CMP tie signature', () => {
-    // 'explained' accepts any difference once a script is listed, so pin the cause: the traces agree
-    // before the tie turn, the only executed difference is the tie loser's entry on that turn (PvPoke
-    // throws it, ours skips it), and in ours the tie loser is knocked out on that turn.
-    const listed = differences.find((d) => d.id === 'cmp-tie-knockout')?.scripts ?? [];
+    // 'explained' checks only the first difference's field and side, so pin the whole cause: the
+    // traces agree before the tie turn, the only executed difference is the tie loser's entry on that
+    // turn (PvPoke throws it, ours skips it), and in ours the tie loser is knocked out on that turn.
+    const listed = (differences.find((d) => d.id === 'cmp-tie-knockout')?.scripts ?? []).map(
+      (s) => s.id,
+    );
     expect(listed.length).toBeGreaterThan(0);
     const key = (e: ScriptEntry): string => `${e.actor}@${e.turn}#${e.slot}`;
     for (const id of listed) {

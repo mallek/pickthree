@@ -1,8 +1,13 @@
 # Known differences between our battle engine and PvPoke's simulator (the rules exam's grader).
 # packages/data/test/exam/rules-exam.test.ts plays every script in packages/data/src/exam/scripts.ts
 # through both engines and compares HP and energy turn by turn. A script that differs passes only when
-# an entry here lists it. An entry that lists a script which now matches is reported stale and fails
-# the exam, like a redundant override. Each entry names the behaviour, what each engine does, and the
+# an entry here lists it with the first difference the script shows: `first` is the field and side of
+# the first differing trace value (hp[0], energy[1], forms[1]), or turn, length or executed (see
+# packages/data/src/exam/judge.ts). A new bug that shows before the known divergence moves the first
+# difference and fails the exam. `first: later` lists a script whose first difference another entry
+# owns, for a difference that shows only after it; it explains nothing alone. Past the first
+# difference the traces differ everywhere, so the exam checks nothing there. An entry that lists a
+# script which now matches is reported stale and fails the exam, like a redundant override. Each entry names the behaviour, what each engine does, and the
 # evidence for our side. An entry with `scripts: []` documents a difference no exam script exercises
 # (the exam runs our engine on PvPoke's converted data and a transcription of PvPoke's mechanics): it
 # explains no script and is never stale, but needs the same fields and evidence.
@@ -49,7 +54,9 @@ differences:
       so a simulation needs no coin flip.
       Exam: cmp-tie-ko and cmp-tie-shadow, turn of the tie, PvPoke executes the second side's entry and
       ours does not.
-    scripts: [cmp-tie-ko, cmp-tie-shadow]
+    scripts:
+      - { id: cmp-tie-ko, first: 'hp[0]' }
+      - { id: cmp-tie-shadow, first: 'hp[0]' }
 
   - id: form-change-relevel
     behaviour: >-
@@ -74,7 +81,9 @@ differences:
       the same level) and minior-core-same-level (PvPoke battle CP 10000), which match.
       Open for the brainstorm lane: PvPoke's mappings are community-derived from observed in-game
       stats, so the game may be on PvPoke's side; a fix needs a vocabulary change, not an exam change.
-    scripts: [aegislash, minior-core]
+    scripts:
+      - { id: aegislash, first: 'hp[0]' }
+      - { id: minior-core, first: 'hp[1]' }
 
   - id: minior-hp-form-timing
     behaviour: >-
@@ -98,7 +107,9 @@ differences:
       on the turn ours throws Power Gem. minior-core-same-level shows the hp trigger itself matching
       when the crossing hit lands on the turn Minior's own 3-turn Rollout resolves, so no fast move is
       in flight (a property of its levels and IVs, guarded by rules-exam.test.ts).
-    scripts: [minior-core]
+      In minior-core the re-level (form-change-relevel) shows first, so this entry is listed as later.
+    scripts:
+      - { id: minior-core, first: later }
 
   # Documentation entries: real differences the exam does not exercise.
 
